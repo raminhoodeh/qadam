@@ -141,11 +141,10 @@ body, html {
     border-radius: 9999px;
     overflow: hidden;
     z-index: -1;
+    isolation: isolate;
     /* Apply the SVG turbulence/displacement filter to whatever is behind */
-    -webkit-backdrop-filter: url("#liquid-glass-filter") blur(0px);
-    backdrop-filter: url("#liquid-glass-filter") blur(0px);
-    /* Very subtle white tint so it reads as glass */
-    background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: url("#liquid-glass-filter");
+    backdrop-filter: url("#liquid-glass-filter");
 }
 
 /* Thin specular highlight streak at the top edge */
