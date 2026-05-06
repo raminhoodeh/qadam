@@ -142,11 +142,8 @@ body, html {
     overflow: hidden;
     z-index: -1;
     isolation: isolate;
-    /* SVG refraction for subtle warping + frosted glass blur */
-    -webkit-backdrop-filter: url("#liquid-glass-filter") blur(6px);
-    backdrop-filter: url("#liquid-glass-filter") blur(6px);
-    /* Very subtle glass tint */
-    background: rgba(255, 255, 255, 0.04);
+    -webkit-backdrop-filter: url("#liquid-glass-filter");
+    backdrop-filter: url("#liquid-glass-filter");
 }
 
 /* Thin specular highlight streak at the top edge */
