@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qadam.</title>
+    <meta name="description" content="Powering seamless experiences and real-time connections with EOS.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+
+<body>
+    <section class="hero-section">
+        <!-- Background Video -->
+        <video class="video-background" autoplay muted loop playsinline>
+            <source
+                src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4"
+                type="video/mp4">
+        </video>
+
+        <!-- Overlay -->
+        <div class="overlay"></div>
+
+        <!-- SVG Liquid Glass Filter Definition (hidden) -->
+        <svg class="liquid-glass-svg-defs" aria-hidden="true">
+            <defs>
+                <filter id="liquid-glass-filter" x="-20%" y="-20%" width="140%" height="140%"
+                    color-interpolation-filters="sRGB">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="1" seed="1"
+                        result="turbulence" />
+                    <feGaussianBlur in="turbulence" stdDeviation="2" result="blurredNoise" />
+                    <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="70" xChannelSelector="R"
+                        yChannelSelector="B" result="displaced" />
+                    <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur" />
+                    <feComposite in="finalBlur" in2="finalBlur" operator="over" />
+                </filter>
+            </defs>
+        </svg>
+
+        <div class="content-wrapper">
+            <!-- Navbar -->
+            <nav class="navbar">
+                <div class="logo">
+                    <img src="logo.png" alt="QADAM Logo" style="height: 43.2px; width: auto; object-fit: contain;">
+                </div>
+
+                <div class="nav-right">
+                    <button class="liquid-glass-btn" id="nav-waitlist-btn"
+                        onclick="window.open('https://www.notion.so/Qadam-Specifications-v3-3566fe2ecf37800abef8c5c717cc6656?source=copy_link', '_blank')">
+                        <span class="liquid-glass-backdrop"></span>
+                        <span class="liquid-glass-shine"></span>
+                        <span class="liquid-glass-label">Read Whitepaper</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Hero Content -->
+            <main class="hero-content">
+                <div class="hero-badge">
+                    <span class="liquid-glass-backdrop"></span>
+                    <span class="liquid-glass-shine"></span>
+                    <div class="dot"></div>
+                    <span class="badge-text">Early access available from <span>July 23, 2026</span></span>
+                </div>
+
+                <h1 class="hero-heading">A hedge fund team that fits inside your laptop.</h1>
+
+                <p class="hero-subtitle">
+                    Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a
+                    local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of
+                    Quant]. 500+ live data feeds across 5 intelligence pipelines. One
+                    overseeing Fund Manager [you].<br><br>Operates a self-imposed trading
+                    strategy based on a deep and continuous understanding of its own cognition, latency and data
+                    quality. Optimised for prediction markets, crude oil, defence, silver, and semiconductors. Join the
+                    waitlist and be the first to install the system on your machine, tailoring it to your needs over
+                    time.
+                </p>
+
+                <div class="hero-ctas">
+                    <button class="liquid-glass-btn liquid-glass-btn--hero" id="hero-waitlist-btn"
+                        onclick="window.open('https://wa.link/s1pqwy', '_blank')">
+                        <span class="liquid-glass-backdrop"></span>
+                        <span class="liquid-glass-shine"></span>
+                        <span class="liquid-glass-label">Join Waitlist</span>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </section>
+    <script src="diffusion.js"></script>
+</body>
+
+</html>
