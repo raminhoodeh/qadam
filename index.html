@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam.</title>
-    <meta name="description" content="Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. 500+ live data feeds across 5 intelligence pipelines. One overseeing Fund Manager [you].">
+    <meta name="description"
+        content="Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. 500+ live data feeds across 5 intelligence pipelines. One overseeing Fund Manager [you].">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
@@ -30,9 +31,9 @@
                     <feTurbulence type="fractalNoise" baseFrequency="0.05 0.05" numOctaves="1" seed="1"
                         result="turbulence" />
                     <feGaussianBlur in="turbulence" stdDeviation="2" result="blurredNoise" />
-                    <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="100" xChannelSelector="R"
+                    <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="70" xChannelSelector="R"
                         yChannelSelector="B" result="displaced" />
-                    <feGaussianBlur in="displaced" stdDeviation="1.5" result="finalBlur" />
+                    <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur" />
                     <feComposite in="finalBlur" in2="finalBlur" operator="over" />
                 </filter>
             </defs>
