@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "key": "akber_6_stage_filter",
+  "name": "Akber 6-Stage Filter",
+  "purpose": "Applies the six-stage trader review process as a signal integrity gate.",
+  "allowed_agent_keys": [
+    "strategy_lead",
+    "risk_agent",
+    "signal_auditor"
+  ],
+  "source_documents": [
+    "docs/qadam-for-fund-managers.md",
+    "specs/qadam-specs.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

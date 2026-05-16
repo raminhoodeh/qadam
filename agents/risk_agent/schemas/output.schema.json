@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Risk Agent Output",
+  "type": "object",
+  "required": ["agent_key", "status", "decision", "reason", "blocked"],
+  "properties": {
+    "agent_key": { "const": "risk_agent" },
+    "status": { "type": "string" },
+    "decision": { "type": "string" },
+    "reason": { "type": "string" },
+    "blocked": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

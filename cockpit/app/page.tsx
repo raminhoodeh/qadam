@@ -67,8 +67,10 @@ export default async function DashboardPage() {
   );
   const resourceCount = health.resource_registry.resource_count;
   const claimCount = health.world_model.claim_count;
+  const agentCount = health.agent_os.agent_count;
+  const skillCount = health.agent_os.skill_count;
   const executionDisabled = health.execution_summary.write_enabled === 0;
-  const sourceLine = `${health.source_count} sources · ${resourceCount} resources · ${claimCount} private claim cards · execution ${
+  const sourceLine = `${health.source_count} sources · ${resourceCount} resources · ${agentCount} agents · execution ${
     executionDisabled ? "disabled" : "write-enabled"
   }`;
   const heartbeatSummary = health.source_heartbeat.summary ?? {};
@@ -83,6 +85,11 @@ export default async function DashboardPage() {
       title: "World-Model Corpus",
       count: `${claimCount} claim cards`,
       detail: health.world_model.evidence_boundary
+    },
+    {
+      title: "Agent OS",
+      count: `${agentCount} agents · ${skillCount} skills`,
+      detail: `${health.agent_os.tool_grant_count} tool grants · ${health.agent_os.error_count} errors · ${health.agent_os.boundary}`
     },
     {
       title: "Governance Forum",

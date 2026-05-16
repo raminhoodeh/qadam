@@ -6,6 +6,13 @@ before dependencies are installed.
 
 from __future__ import annotations
 
+from orchestrator.agent_registry import (
+    agent_detail as registry_agent_detail,
+    agent_registry as registry_agents,
+    agent_registry_summary,
+    skill_detail as registry_skill_detail,
+    skill_registry as registry_skills,
+)
 from orchestrator.adapters import (
     fetch_gdelt_live_sync,
     fetch_gdelt_sample,
@@ -114,6 +121,32 @@ def world_model_claims() -> dict[str, object]:
 
 def world_model_claim_detail(key: str) -> dict[str, object]:
     return registry_world_model_claim_detail(key)
+
+
+def agent_registry_status() -> dict[str, object]:
+    return agent_registry_summary()
+
+
+def agent_registry() -> dict[str, object]:
+    return {
+        "summary": agent_registry_summary(),
+        "agents": registry_agents(),
+    }
+
+
+def agent_detail(key: str) -> dict[str, object]:
+    return registry_agent_detail(key)
+
+
+def skill_registry() -> dict[str, object]:
+    return {
+        "summary": agent_registry_summary(),
+        "skills": registry_skills(),
+    }
+
+
+def skill_detail(key: str) -> dict[str, object]:
+    return registry_skill_detail(key)
 
 
 def governance_comments(limit: int = 20) -> dict[str, object]:
@@ -298,6 +331,11 @@ def build_server():
     mcp.tool()(resource_detail)
     mcp.tool()(world_model_claims)
     mcp.tool()(world_model_claim_detail)
+    mcp.tool()(agent_registry_status)
+    mcp.tool()(agent_registry)
+    mcp.tool()(agent_detail)
+    mcp.tool()(skill_registry)
+    mcp.tool()(skill_detail)
     mcp.tool()(governance_comments)
     mcp.tool()(create_governance_comment)
     mcp.tool()(ingestion_status)

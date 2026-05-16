@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "key": "research_analyst",
+  "display_name": "Research Analyst",
+  "owner": "Local LLM",
+  "status": "manifest_ready",
+  "role": "Compresses and triages Qadam observations before frontier research or strategy synthesis.",
+  "allowed_tools": [
+    "source_registry",
+    "source_detail",
+    "resource_registry",
+    "resource_detail",
+    "world_model_claims",
+    "world_model_claim_detail",
+    "source_heartbeat_status",
+    "gdelt_sample",
+    "oref_sample",
+    "nasa_firms_sample",
+    "fred_sample",
+    "rss_sample",
+    "agent_registry_status",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "live_source_registry",
+    "resource_registry",
+    "world_model_corpus",
+    "source_heartbeat",
+    "adapters"
+  ],
+  "allowed_skills": [
+    "macro_intelligence",
+    "prediction_markets",
+    "physical_anomaly_monitoring",
+    "options_volatility_flow",
+    "private_edge_world_model"
+  ],
+  "allowed_secret_names": [],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "signal_final_approval"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate high-uncertainty or high-impact observations to the Strategy Lead with evidence refs."
+}

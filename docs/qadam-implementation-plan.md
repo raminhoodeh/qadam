@@ -386,6 +386,8 @@ Exit criteria:
 
 Objective: formalize the agent architecture before giving the local LLM, frontier LLM, quantum module, or execution adapters more authority.
 
+Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 85 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
+
 New reference input:
 
 - Anthropic's `financial-services` repo is a useful architecture reference for named financial workflow agents, reusable skill bundles, connector grants, managed-agent cookbooks, validation scripts, and secret-scan discipline.

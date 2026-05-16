@@ -296,6 +296,14 @@ Exit checks:
 
 This slice captures the key lesson from Anthropic's `financial-services` reference implementation: financial agents become safer and easier to operate when each named agent is a folder with explicit instructions, reusable skills, declared connectors/tools, validation, and secret scanning.
 
+Implemented state:
+
+- `agents/` contains 8 role folders with `agent.md`, `permissions.json`, and `schemas/output.schema.json`.
+- `skills/` contains 7 reusable Qadam skill bundles with `SKILL.md` and `skill.json`.
+- `orchestrator/agent_registry.py` exposes agent and skill registry summaries.
+- `scripts/check_agent_manifests.py` validates counts, grants, forbidden actions, output schemas, and raw-secret patterns.
+- System health and cockpit fallback data include `agent_os`.
+
 Deliverables:
 
 - Add a future `agents/` contract:

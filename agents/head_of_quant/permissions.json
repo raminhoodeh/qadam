@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "key": "head_of_quant",
+  "display_name": "Head of Quant",
+  "owner": "Quantum Compute",
+  "status": "manifest_ready",
+  "role": "Owns quantum provider readiness, local simulation boundaries, and classical fallback output shape.",
+  "allowed_tools": [
+    "quantum_provider_registry",
+    "system_health",
+    "resource_registry",
+    "resource_detail",
+    "agent_registry_status",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "quantum_provider_registry",
+    "resource_registry",
+    "cockpit_health"
+  ],
+  "allowed_skills": [
+    "macro_intelligence",
+    "risk_and_postmortems"
+  ],
+  "allowed_secret_names": [
+    "QCTRL_API_KEY",
+    "IBM_QUANTUM_TOKEN",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_REGION"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "quantum_hardware_submit"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate missing credentials, queue ambiguity, or fallback mismatch to the COO and Risk Agent."
+}

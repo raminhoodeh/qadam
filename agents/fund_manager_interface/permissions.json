@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "key": "fund_manager_interface",
+  "display_name": "Fund Manager Interface",
+  "owner": "qadam.trade Cockpit",
+  "status": "manifest_ready",
+  "role": "Presents Qadam status, agent ownership, governance comments, and escalation items to founding Fund Managers.",
+  "allowed_tools": [
+    "system_health",
+    "qadam_module_map",
+    "governance_comments",
+    "create_governance_comment",
+    "founding_manager_access",
+    "agent_registry_status",
+    "agent_registry",
+    "agent_detail",
+    "skill_registry",
+    "skill_detail"
+  ],
+  "allowed_source_groups": [
+    "cockpit_health",
+    "governance_forum",
+    "resource_registry",
+    "event_log"
+  ],
+  "allowed_skills": [
+    "risk_and_postmortems"
+  ],
+  "allowed_secret_names": [],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "unallowlisted_access"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate kill-switch requests, governance concerns, and live-capital requests to explicit future approval flows."
+}

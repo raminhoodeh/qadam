@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "key": "signal_auditor",
+  "display_name": "Signal Auditor",
+  "owner": "Signal Integrity Gate",
+  "status": "manifest_ready",
+  "role": "Audits evidence quality, invalidation, uncertainty, and private-prior boundaries before risk review.",
+  "allowed_tools": [
+    "source_registry",
+    "source_detail",
+    "resource_registry",
+    "resource_detail",
+    "world_model_claims",
+    "world_model_claim_detail",
+    "source_heartbeat_status",
+    "gdelt_status",
+    "oref_status",
+    "nasa_firms_status",
+    "fred_status",
+    "rss_status",
+    "agent_registry_status",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "live_source_registry",
+    "resource_registry",
+    "world_model_corpus",
+    "source_heartbeat",
+    "adapters"
+  ],
+  "allowed_skills": [
+    "akber_6_stage_filter",
+    "private_edge_world_model",
+    "risk_and_postmortems"
+  ],
+  "allowed_secret_names": [],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "risk_cap_override"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate failed audits to Strategy Lead with exact missing evidence or invalidation reason."
+}

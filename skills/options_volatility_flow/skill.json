@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "key": "options_volatility_flow",
+  "name": "Options And Volatility Flow",
+  "purpose": "Frames options-flow, volatility, implied-move, and Black-Scholes gap assumptions.",
+  "allowed_agent_keys": [
+    "research_analyst",
+    "strategy_lead"
+  ],
+  "source_documents": [
+    "docs/qadam-resource-registry.md",
+    "specs/qadam-general-context.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

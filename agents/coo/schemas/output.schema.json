@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "COO Output",
+  "type": "object",
+  "required": ["agent_key", "status", "summary", "evidence_refs", "next_actions"],
+  "properties": {
+    "agent_key": { "const": "coo" },
+    "status": { "type": "string" },
+    "summary": { "type": "string" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "next_actions": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

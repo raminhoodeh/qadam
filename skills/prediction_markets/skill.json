@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "key": "prediction_markets",
+  "name": "Prediction Markets",
+  "purpose": "Frames probability gaps, liquidity caveats, and prediction-market evidence boundaries.",
+  "allowed_agent_keys": [
+    "research_analyst",
+    "strategy_lead"
+  ],
+  "source_documents": [
+    "specs/qadam-specs.md",
+    "docs/qadam-resource-registry.md",
+    "docs/api-source-inventory.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

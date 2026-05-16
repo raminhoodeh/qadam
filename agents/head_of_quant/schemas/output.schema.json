@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Head Of Quant Output",
+  "type": "object",
+  "required": ["agent_key", "status", "summary", "backend", "fallback"],
+  "properties": {
+    "agent_key": { "const": "head_of_quant" },
+    "status": { "type": "string" },
+    "summary": { "type": "string" },
+    "backend": { "type": "string" },
+    "fallback": { "type": "string" }
+  },
+  "additionalProperties": true
+}

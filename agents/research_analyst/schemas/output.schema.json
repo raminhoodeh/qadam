@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Research Analyst Output",
+  "type": "object",
+  "required": ["agent_key", "status", "summary", "evidence_refs", "uncertainty"],
+  "properties": {
+    "agent_key": { "const": "research_analyst" },
+    "status": { "type": "string" },
+    "summary": { "type": "string" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "uncertainty": { "type": "string" }
+  },
+  "additionalProperties": true
+}

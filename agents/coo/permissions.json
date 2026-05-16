@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "key": "coo",
+  "display_name": "COO",
+  "owner": "Python Orchestrator",
+  "status": "manifest_ready",
+  "role": "Coordinates Qadam runtime health, local checks, source heartbeat, and module handoffs.",
+  "allowed_tools": [
+    "system_health",
+    "qadam_module_map",
+    "source_heartbeat_status",
+    "run_source_heartbeat",
+    "ingestion_status",
+    "execution_venues",
+    "agent_registry_status",
+    "agent_registry",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "cockpit_health",
+    "source_heartbeat",
+    "local_stores",
+    "event_log",
+    "execution_registry"
+  ],
+  "allowed_skills": [
+    "risk_and_postmortems"
+  ],
+  "allowed_secret_names": [],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "unlogged_state_change"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate degraded modules, missing manifests, or execution ambiguity to the Fund Manager Interface."
+}

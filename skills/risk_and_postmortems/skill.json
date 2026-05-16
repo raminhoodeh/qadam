@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "key": "risk_and_postmortems",
+  "name": "Risk And Postmortems",
+  "purpose": "Structures risk decisions, execution-readiness checks, and learning-loop postmortems.",
+  "allowed_agent_keys": [
+    "coo",
+    "head_of_quant",
+    "risk_agent",
+    "signal_auditor",
+    "execution_auditor",
+    "fund_manager_interface"
+  ],
+  "source_documents": [
+    "specs/qadam-specs.md",
+    "docs/qadam-master-implementation-plan.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

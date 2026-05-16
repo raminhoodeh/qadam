@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "key": "macro_intelligence",
+  "name": "Macro Intelligence",
+  "purpose": "Turns macro observations into regime context, uncertainty, and risk notes.",
+  "allowed_agent_keys": [
+    "research_analyst",
+    "strategy_lead",
+    "head_of_quant"
+  ],
+  "source_documents": [
+    "specs/qadam-specs.md",
+    "docs/api-source-inventory.md",
+    "docs/qadam-resource-registry.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

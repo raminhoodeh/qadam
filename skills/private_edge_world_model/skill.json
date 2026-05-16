@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "key": "private_edge_world_model",
+  "name": "Private Edge World Model",
+  "purpose": "Turns the private world-model corpus into falsifiable priors and red-team prompts.",
+  "allowed_agent_keys": [
+    "research_analyst",
+    "strategy_lead",
+    "signal_auditor"
+  ],
+  "source_documents": [
+    "how-the-world-works/",
+    "docs/how-the-world-works-integration.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

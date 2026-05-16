@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "key": "physical_anomaly_monitoring",
+  "name": "Physical Anomaly Monitoring",
+  "purpose": "Interprets physical anomalies with explicit corroboration requirements.",
+  "allowed_agent_keys": [
+    "research_analyst",
+    "strategy_lead"
+  ],
+  "source_documents": [
+    "docs/api-source-inventory.md",
+    "specs/Qadam - World Monitor Integration Reference.md"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access"
+  ]
+}

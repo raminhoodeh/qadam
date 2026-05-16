@@ -136,6 +136,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - API source inventory.
 - API key setup guide for the credential-gated adapters.
 - Agent/skill manifest plan shaped by Anthropic's financial-services reference: named workflow agents, reusable skill bundles, explicit tool grants, validation, and secret scanning.
+- Phase 1E Agent OS manifests for 8 named Qadam agents and 7 reusable skill bundles.
 - Startup and foundation checks.
 
 ## Source Pipelines
@@ -234,6 +235,13 @@ Current ingestion state:
 - The NASA FIRMS live path is read-only, credential-gated, bbox-first, and turns high-confidence thermal anomalies into physical observations.
 - The FRED live path is read-only, uses `FRED_API_KEY` when configured, and falls back to official public FRED CSV when no key is present.
 - The RSS live path is read-only, rejects HTML/non-feed responses, archives raw feed attempts, and turns headlines into narrative observations.
+
+Current Agent OS state:
+
+- `agents/` contains manifests for COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
+- `skills/` contains reusable Qadam bundles for macro intelligence, prediction markets, physical anomaly monitoring, options/volatility flow, Akber's 6-stage filter, private world-model priors, and risk/postmortems.
+- `scripts/check_agent_manifests.py` verifies role files, tool grants, skill references, output schemas, forbidden actions, and secret-pattern hygiene.
+- System health and the cockpit expose `agent_os` status with agent count, skill count, and tool-grant count.
 
 Durable-mode commands:
 

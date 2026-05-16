@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fund Manager Interface Output",
+  "type": "object",
+  "required": ["agent_key", "status", "summary", "visible_to", "actions"],
+  "properties": {
+    "agent_key": { "const": "fund_manager_interface" },
+    "status": { "type": "string" },
+    "summary": { "type": "string" },
+    "visible_to": { "type": "array", "items": { "type": "string" } },
+    "actions": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

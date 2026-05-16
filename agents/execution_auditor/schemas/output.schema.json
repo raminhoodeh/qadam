@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Execution Auditor Output",
+  "type": "object",
+  "required": ["agent_key", "status", "venue_key", "ready", "reason"],
+  "properties": {
+    "agent_key": { "const": "execution_auditor" },
+    "status": { "type": "string" },
+    "venue_key": { "type": "string" },
+    "ready": { "type": "boolean" },
+    "reason": { "type": "string" }
+  },
+  "additionalProperties": true
+}

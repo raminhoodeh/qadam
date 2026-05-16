@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "key": "risk_agent",
+  "display_name": "Risk Agent",
+  "owner": "Policy Router",
+  "status": "manifest_ready",
+  "role": "Evaluates proposed signals against caps, stale data, degraded sources, venue readiness, and kill-switches.",
+  "allowed_tools": [
+    "execution_venues",
+    "system_health",
+    "source_heartbeat_status",
+    "gdelt_status",
+    "oref_status",
+    "nasa_firms_status",
+    "fred_status",
+    "rss_status",
+    "secret_registry_status",
+    "agent_registry_status",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "execution_registry",
+    "source_heartbeat",
+    "adapters",
+    "secret_status",
+    "event_log"
+  ],
+  "allowed_skills": [
+    "akber_6_stage_filter",
+    "risk_and_postmortems"
+  ],
+  "allowed_secret_names": [
+    "ALPACA_API_KEY",
+    "ALPACA_API_SECRET",
+    "KALSHI_API_KEY",
+    "KALSHI_API_SECRET"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "manual_cap_override"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate blocked or ambiguous risk decisions to the Fund Manager Interface."
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "key": "strategy_lead",
+  "display_name": "Strategy Lead",
+  "owner": "Frontier LLM",
+  "status": "manifest_ready",
+  "role": "Synthesizes research into thesis drafts, evidence trails, invalidation, and proposed signal memos.",
+  "allowed_tools": [
+    "resource_registry",
+    "resource_detail",
+    "world_model_claims",
+    "world_model_claim_detail",
+    "source_heartbeat_status",
+    "gdelt_status",
+    "oref_status",
+    "nasa_firms_status",
+    "fred_status",
+    "rss_status",
+    "gdelt_sample",
+    "nasa_firms_sample",
+    "fred_sample",
+    "rss_sample",
+    "agent_registry_status",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "live_source_registry",
+    "resource_registry",
+    "world_model_corpus",
+    "source_heartbeat",
+    "adapters"
+  ],
+  "allowed_skills": [
+    "macro_intelligence",
+    "prediction_markets",
+    "physical_anomaly_monitoring",
+    "options_volatility_flow",
+    "akber_6_stage_filter",
+    "private_edge_world_model"
+  ],
+  "allowed_secret_names": [],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "risk_cap_override"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate executable-looking ideas to Signal Auditor and Risk Agent as non-executable proposals."
+}

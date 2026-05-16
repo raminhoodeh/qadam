@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from orchestrator.agent_registry import agent_registry_summary
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, unresolved_sources
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
@@ -89,6 +90,14 @@ def main() -> int:
     print(f"quantum_providers={[provider['key'] + ':' + provider['status'] for provider in providers]}")
     qctrl = next(provider for provider in providers if provider["key"] == "qctrl")
     print(f"qctrl_configured={qctrl['credential_configured']}")
+
+    agent_os = agent_registry_summary()
+    print(f"agent_os_status={agent_os['status']}")
+    print(f"agent_os_agent_count={agent_os['agent_count']}")
+    print(f"agent_os_skill_count={agent_os['skill_count']}")
+    if agent_os["status"] != "ok":
+        print("agent_os_not_ok=true")
+        return 1
 
     event_log_path = (ROOT / settings.runtime_dir / "foundation_check_event_log.jsonl").resolve()
     event_log = EventLog(event_log_path, echo=False)

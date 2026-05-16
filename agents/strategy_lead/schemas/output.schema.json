@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Strategy Lead Output",
+  "type": "object",
+  "required": ["agent_key", "status", "thesis", "evidence_refs", "invalidation"],
+  "properties": {
+    "agent_key": { "const": "strategy_lead" },
+    "status": { "type": "string" },
+    "thesis": { "type": "string" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "invalidation": { "type": "string" }
+  },
+  "additionalProperties": true
+}

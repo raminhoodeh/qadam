@@ -224,6 +224,13 @@ Phase 1 is done when:
 
 Objective: formalize Qadam's named agents before model autonomy expands.
 
+Current implementation start:
+
+- Agent registry, skill bundles, manifest validation, explicit tool grants, and cockpit/system-health status exist.
+- Eight named agents validate locally.
+- Seven reusable skill bundles validate locally.
+- Current validation reports 85 tool grants and 13 secret-name grants, all names only.
+
 Reference pattern:
 
 - Anthropic's `financial-services` repo is a useful architecture reference because it separates named financial agents, reusable vertical skills, connector grants, managed-agent cookbooks, manifest checks, and secret scanning.
@@ -588,12 +595,11 @@ These apply from Phase 0 onward.
 
 ## Recommended Next Implementation Batch
 
-The foundation skeleton is upright. The next batch should formalize the Agent OS before Qadam thinks, predicts, calculates, or trades.
+The Agent OS manifest layer is in place. The next batch should enforce those permissions at runtime before Qadam thinks, predicts, calculates, or trades.
 
-1. Agent manifest schema.
-2. Eight initial agent folders.
-3. Seven reusable skill bundles.
-4. Manifest and skill validation script.
-5. Explicit MCP tool grants per agent.
-6. Secret scan over agent and skill files.
-7. Cockpit agent ownership and permission status.
+1. Agent invocation wrapper.
+2. Tool-grant enforcement before MCP tool calls.
+3. Sample output fixtures for each agent schema.
+4. Minimal Research Analyst shadow triage queue.
+5. Cockpit drill-down for agent permissions and forbidden actions.
+6. Keep execution authority outside the LLM layer.

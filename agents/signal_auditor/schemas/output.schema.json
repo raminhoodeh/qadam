@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Signal Auditor Output",
+  "type": "object",
+  "required": ["agent_key", "status", "passed", "reason", "evidence_refs"],
+  "properties": {
+    "agent_key": { "const": "signal_auditor" },
+    "status": { "type": "string" },
+    "passed": { "type": "boolean" },
+    "reason": { "type": "string" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "key": "execution_auditor",
+  "display_name": "Execution Auditor",
+  "owner": "Execution Registry",
+  "status": "manifest_ready",
+  "role": "Audits venue readiness, credential status, account scope, kill-switches, and paper/live boundaries.",
+  "allowed_tools": [
+    "execution_venues",
+    "secret_registry_status",
+    "system_health",
+    "agent_registry_status",
+    "skill_registry"
+  ],
+  "allowed_source_groups": [
+    "execution_registry",
+    "secret_status",
+    "cockpit_health"
+  ],
+  "allowed_skills": [
+    "risk_and_postmortems"
+  ],
+  "allowed_secret_names": [
+    "ALPACA_API_KEY",
+    "ALPACA_API_SECRET",
+    "KALSHI_API_KEY",
+    "KALSHI_API_SECRET"
+  ],
+  "forbidden_actions": [
+    "broker_write",
+    "live_capital_execution",
+    "undeclared_tool_call",
+    "raw_secret_access",
+    "order_retry"
+  ],
+  "output_schemas": [
+    "schemas/output.schema.json"
+  ],
+  "escalation": "Escalate any venue ambiguity or live-capital path to COO and Fund Manager Interface."
+}

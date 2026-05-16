@@ -228,6 +228,14 @@ Exit gate:
 
 Objective: make Qadam's agents explicit, permissioned, and inspectable before deeper intelligence or execution work begins.
 
+Current implementation start:
+
+- `agents/` contains 8 named role manifests: COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
+- `skills/` contains 7 reusable skill bundles: macro intelligence, prediction markets, physical anomaly monitoring, options/volatility flow, Akber 6-stage filter, private edge/world-model priors, and risk/postmortems.
+- `orchestrator/agent_registry.py` validates agent folders, permissions, skill references, tool grants, output schemas, forbidden actions, and raw-secret patterns.
+- `scripts/check_agent_manifests.py` is wired into `start_qadam.sh`.
+- System health, FastMCP-style tools, and the cockpit expose Agent OS status.
+
 Why now:
 
 - Anthropic's `financial-services` repo is a useful reference pattern for financial workflow agents: named agents, vertical skill bundles, MCP-style data connectors, managed-agent deployment cookbooks, validation scripts, and secret-scan discipline.
@@ -454,14 +462,12 @@ Do not try to build all of Qadam at once. Qadam is created by making each module
 
 Phase 0 foundation is substantially implemented, and Phase 1 has started with test ingestion, source heartbeat, and promoted read-only adapters for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 
-The next practical batch is Phase 1E:
+Phase 1E is implemented at the manifest-contract level. The next practical batch is to turn these manifests into runtime enforcement before Phase 2 intelligence starts:
 
-1. Define the agent manifest schema.
-2. Add manifests for COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
-3. Add reusable Qadam skill bundles for macro, prediction markets, physical anomalies, options/volatility, Akber's filter, private edge, and risk/postmortems.
-4. Add `scripts/check_agent_manifests.py`.
-5. Map existing MCP tools and registries to explicit agent grants.
-6. Add secret scanning over agent and skill files.
-7. Add cockpit health fields for agent ownership and permission status.
+1. Add an agent invocation wrapper that checks tool grants before every tool call.
+2. Add sample output fixtures for each agent schema.
+3. Add a minimal local triage queue for Research Analyst shadow packets.
+4. Add cockpit drill-down for agent permissions and forbidden actions.
+5. Keep broker-write authority unavailable until Phase 5 execution policy exists.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.
