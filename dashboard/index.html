@@ -23,99 +23,176 @@
         </header>
 
         <section class="hidden" data-dashboard>
-            <p class="eyebrow">Qadam</p>
-            <h1>System Map</h1>
-            <p class="copy">Logged in as <span data-user-email></span>. This live web cockpit shows the founding release map while the local MacBook orchestrator remains private.</p>
-
-            <section class="status-band panel">
-                <p><span class="dot"></span>PAPER MODE · GBP 1000 trial · founding access only</p>
-                <p class="mini">Static live cockpit · local orchestrator not exposed to the internet</p>
+            <section class="dashboard-hero">
+                <div>
+                    <p class="eyebrow">Qadam cockpit</p>
+                    <h1>System Operating Map</h1>
+                    <p class="copy">Logged in as <span data-user-email></span>. This founding cockpit shows how the fund is wired together while the local MacBook orchestrator remains private.</p>
+                </div>
+                <div class="mode-stack" aria-label="Operating mode">
+                    <span><span class="dot"></span>Paper mode</span>
+                    <span>&pound;1,000 first-month test</span>
+                    <span>Live capital disabled</span>
+                </div>
             </section>
 
-            <section class="dashboard-grid">
-                <div class="column">
-                    <p class="label">Intelligence pipelines</p>
-                    <article class="card">
-                        <p class="label">Conflict</p>
-                        <h2>ACLED, GDELT, Oref</h2>
-                        <p>Conflict event pressure and regional catalyst monitoring.</p>
-                    </article>
-                    <article class="card">
-                        <p class="label">Physical</p>
-                        <h2>FIRMS, AIS, Wingbits</h2>
-                        <p>Fire, vessel, aviation, logistics, and weather-linked physical signals.</p>
-                    </article>
-                    <article class="card">
-                        <p class="label">Macro</p>
-                        <h2>FRED, BLS, ECB</h2>
-                        <p>Inflation, labour, liquidity, and policy context.</p>
-                    </article>
-                    <article class="card">
-                        <p class="label">Market</p>
-                        <h2>Alpaca, Kalshi, Polymarket</h2>
-                        <p>Paper execution rails and prediction-market pricing.</p>
-                    </article>
-                </div>
-
-                <div class="core">
-                    <p class="label">Hybrid fund core</p>
-                    <div class="core-grid">
-                        <article class="card">
-                            <p class="label">COO</p>
-                            <h2>Python Orchestrator</h2>
-                            <p>Coordinates modules, health checks, logs, and paper-mode boundaries.</p>
-                        </article>
-                        <article class="card">
-                            <p class="label">Research Analyst</p>
-                            <h2>Local LLM</h2>
-                            <p>Filters noisy intelligence locally before escalation.</p>
-                        </article>
-                        <article class="card">
-                            <p class="label">Strategy Lead</p>
-                            <h2>Frontier LLM</h2>
-                            <p>Builds thesis packets, challenges assumptions, and prepares reviews.</p>
-                        </article>
-                        <article class="card">
-                            <p class="label">Head of Quant</p>
-                            <h2>Quantum Compute</h2>
-                            <p>Runs quantum-assisted modelling where it can add useful comparison value.</p>
-                        </article>
-                        <article class="card">
-                            <p class="label">Event Log</p>
-                            <h2>Local MacBook Storage</h2>
-                            <p>Records decisions and postmortems locally for the trial phase.</p>
-                        </article>
-                        <article class="card">
-                            <p class="label">Governance</p>
-                            <h2>Founding Managers</h2>
-                            <p>Ramin, Troy, Ion live now. Akber and Anas pending email access.</p>
-                        </article>
+            <section class="system-map-panel" aria-label="Qadam system flow">
+                <div class="map-title-row">
+                    <div>
+                        <p class="label">End-to-end flow</p>
+                        <h2>From live sources to paper trades and postmortems</h2>
                     </div>
+                    <p class="mini">Static live shell · process health comes from the local orchestrator in the next sprint</p>
                 </div>
 
-                <div class="column">
-                    <p class="label">Outputs</p>
-                    <article class="card">
-                        <p class="label">System Health</p>
-                        <h2>Live web shell</h2>
-                        <p>The private local orchestrator is not yet exposed to Vercel.</p>
+                <div class="flow-map">
+                    <article class="flow-node sources">
+                        <b class="node-status online">Registered</b>
+                        <p class="label">01 · Data</p>
+                        <h3>Live Source Pipelines</h3>
+                        <p>Conflict, physical, macro, market, social, and later TradingView alerts.</p>
+                        <span>35 registered sources</span>
                     </article>
-                    <article class="card">
-                        <p class="label">Signal Review</p>
-                        <h2>Shadow intelligence</h2>
-                        <p>Signals are review packets only until execution rules are proven.</p>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node storage">
+                        <b class="node-status local-only">Local only</b>
+                        <p class="label">02 · Memory</p>
+                        <h3>Event Log + Knowledge Graph</h3>
+                        <p>Raw archive, normalized observations, evidence trail, and local replay.</p>
+                        <span>MacBook canonical state</span>
                     </article>
-                    <article class="card">
-                        <p class="label">Broker Rail</p>
-                        <h2>Paper mode</h2>
-                        <p>First release is restricted to the &pound;1000 test account.</p>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node local">
+                        <b class="node-status pending">Pending</b>
+                        <p class="label">03 · Research Analyst</p>
+                        <h3>Local LLM</h3>
+                        <p>Gemma filters noisy packets locally and compresses candidate evidence.</p>
+                        <span>Pending LM Studio check</span>
                     </article>
-                    <article class="card">
-                        <p class="label">Comments Forum</p>
-                        <h2>Next build step</h2>
-                        <p>Private member suggestions will move into Supabase-backed storage.</p>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node frontier">
+                        <b class="node-status pending">Pending</b>
+                        <p class="label">04 · Strategy Lead</p>
+                        <h3>Frontier LLM</h3>
+                        <p>Gemini tests the thesis, builds scenarios, and challenges assumptions.</p>
+                        <span>Credential probe pending</span>
+                    </article>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node quantum">
+                        <b class="node-status offline">Deferred</b>
+                        <p class="label">05 · Head of Quant</p>
+                        <h3>Quantum / Classical Oracle</h3>
+                        <p>Weekly modelling layer with classical fallback and future Q-CTRL/IBM/Braket paths.</p>
+                        <span>Not real-time execution</span>
+                    </article>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node risk">
+                        <b class="node-status blocked">Blocked</b>
+                        <p class="label">06 · Risk Gate</p>
+                        <h3>Strategy + Policy</h3>
+                        <p>Akber filter, signal integrity, stale-data checks, size caps, and kill-switches.</p>
+                        <span>No bypass allowed</span>
+                    </article>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node trade">
+                        <b class="node-status blocked">Shadow</b>
+                        <p class="label">07 · Trade Layer</p>
+                        <h3>Paper Trade Proof</h3>
+                        <p>First month tests candidates against a &pound;1,000 paper account and TradingView-assisted market view.</p>
+                        <span>Live capital blocked</span>
+                    </article>
+                    <div class="flow-arrow">↓</div>
+                    <article class="flow-node learning">
+                        <b class="node-status waiting">Waiting</b>
+                        <p class="label">08 · Learning</p>
+                        <h3>Postmortem Loop</h3>
+                        <p>Every closed trade becomes a lesson: catalyst, evidence, thesis, risk, outcome, adjustment.</p>
+                        <span>100-trade maturity benchmark</span>
                     </article>
                 </div>
+            </section>
+
+            <section class="cockpit-grid">
+                <article class="console-panel" aria-label="Process console">
+                    <div class="panel-heading">
+                        <p class="label">Process console</p>
+                        <h2>Current system state</h2>
+                    </div>
+                    <ol class="console-feed">
+                        <li><time>Now</time><span>Live cockpit online through Supabase allowlist.</span></li>
+                        <li><time>Now</time><span>Local orchestrator private; Vercel has no MacBook bridge yet.</span></li>
+                        <li><time>Next</time><span>TradingView MCP install: read-only technical-analysis tooling.</span></li>
+                        <li><time>Next</time><span>LM Studio readiness check for gemma-4-e4b.</span></li>
+                        <li><time>Next</time><span>Gemini model-list probe without generation.</span></li>
+                        <li><time>Gate</time><span>Broker and live-capital execution remain disabled.</span></li>
+                    </ol>
+                </article>
+
+                <article class="trade-panel" aria-label="Trade layer">
+                    <div class="panel-heading">
+                        <p class="label">Trade layer</p>
+                        <h2>First-month proof sprint</h2>
+                    </div>
+                    <div class="trade-route">
+                        <span>Signal</span>
+                        <span>Risk check</span>
+                        <span>Trade candidate</span>
+                        <span>Paper order</span>
+                        <span>Open position</span>
+                        <span>Exit</span>
+                        <span>Postmortem</span>
+                    </div>
+                    <dl class="trade-facts">
+                        <div>
+                            <dt>Account</dt>
+                            <dd>&pound;1,000 test/paper account</dd>
+                        </div>
+                        <div>
+                            <dt>TradingView role</dt>
+                            <dd>Market view and later webhook alerts; not a broker or execution API.</dd>
+                        </div>
+                        <div>
+                            <dt>Current authority</dt>
+                            <dd>Observation only. Qadam can show candidates, not place live trades.</dd>
+                        </div>
+                        <div>
+                            <dt>Proof rule</dt>
+                            <dd>Catalyst → evidence → thesis → price gap → risk → paper trade → lesson.</dd>
+                        </div>
+                    </dl>
+                </article>
+
+                <article class="worldview-panel" aria-label="Private edge layer">
+                    <div class="panel-heading">
+                        <p class="label">Private edge layer</p>
+                        <h2>Worldview + strategy</h2>
+                    </div>
+                    <p>The private world-model shapes suspicion, scenario generation, and power-map questions. It never becomes trade evidence unless corroborated by live sources and logged in the Event Log.</p>
+                    <p class="mini">The Akber six-stage filter remains the strategy discipline before any trade candidate reaches the paper rail.</p>
+                </article>
+
+                <article class="fund-manager-panel" aria-label="Fund Manager view">
+                    <div class="panel-heading">
+                        <p class="label">Fund Manager view</p>
+                        <h2>What this page must answer</h2>
+                    </div>
+                    <ul class="manager-list">
+                        <li>What is Qadam watching?</li>
+                        <li>Which modules are alive, pending, blocked, or local-only?</li>
+                        <li>What is Qadam thinking about next?</li>
+                        <li>What is it forbidden from doing?</li>
+                        <li>Which trades are candidates, blocked, open, closed, or ready for postmortem?</li>
+                    </ul>
+                </article>
+
+                <article class="comments-panel" aria-label="Fund Manager comments">
+                    <div class="panel-heading">
+                        <p class="label">Fund Manager comments</p>
+                        <h2>Improvement forum</h2>
+                    </div>
+                    <p>Ramin, Troy, Akber, Anas, and Ion will be able to suggest changes to modules, sources, strategy gates, and postmortems here.</p>
+                    <p class="mini">Supabase-backed comments are the next cockpit feature after the process map stabilizes.</p>
+                </article>
             </section>
         </section>
     </main>

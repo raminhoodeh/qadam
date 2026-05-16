@@ -191,6 +191,32 @@ input {
     padding: 16px;
 }
 
+.dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 20px;
+    align-items: end;
+    margin-bottom: 22px;
+}
+
+.mode-stack {
+    display: grid;
+    gap: 8px;
+    min-width: 250px;
+}
+
+.mode-stack span {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--muted);
+    padding: 9px 12px;
+}
+
+.mode-stack span:first-child {
+    color: var(--text);
+}
+
 .dot {
     display: inline-block;
     width: 10px;
@@ -198,6 +224,142 @@ input {
     border-radius: 999px;
     background: var(--green);
     margin-right: 8px;
+}
+
+.system-map-panel,
+.console-panel,
+.trade-panel,
+.worldview-panel,
+.fund-manager-panel,
+.comments-panel {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    backdrop-filter: blur(18px);
+    padding: 18px;
+}
+
+.system-map-panel {
+    margin-bottom: 16px;
+}
+
+.map-title-row,
+.panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.flow-map {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.flow-arrow {
+    display: none;
+}
+
+.flow-node {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    min-height: 204px;
+    padding: 46px 15px 15px;
+    position: relative;
+}
+
+.flow-node::after {
+    content: "→";
+    color: var(--muted);
+    position: absolute;
+    right: -11px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.flow-node:nth-of-type(4n)::after,
+.flow-node:last-child::after {
+    content: "";
+}
+
+.flow-node h3 {
+    font-size: 20px;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.flow-node p {
+    color: var(--muted);
+    line-height: 1.45;
+    margin-top: 10px;
+}
+
+.flow-node span {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    bottom: 14px;
+    color: var(--muted);
+    display: block;
+    font-size: 13px;
+    left: 15px;
+    padding-top: 10px;
+    position: absolute;
+    right: 15px;
+}
+
+.node-status {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    left: 14px;
+    padding: 5px 8px;
+    position: absolute;
+    text-transform: uppercase;
+    top: 12px;
+}
+
+.node-status.online {
+    border-color: rgba(101, 214, 143, 0.45);
+    color: #b8ffd0;
+}
+
+.node-status.local-only,
+.node-status.waiting {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--muted);
+}
+
+.node-status.pending {
+    border-color: rgba(226, 170, 82, 0.45);
+    color: #ffe0a7;
+}
+
+.node-status.blocked,
+.node-status.offline {
+    border-color: rgba(227, 105, 105, 0.45);
+    color: #ffd1d1;
+}
+
+.sources {
+    border-color: rgba(101, 214, 143, 0.38);
+}
+
+.trade {
+    border-color: rgba(226, 170, 82, 0.48);
+}
+
+.risk {
+    border-color: rgba(227, 105, 105, 0.38);
+}
+
+.cockpit-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 14px;
+    align-items: start;
 }
 
 .dashboard-grid {
@@ -229,6 +391,108 @@ input {
     margin-top: 8px;
 }
 
+.console-feed {
+    counter-reset: console;
+    display: grid;
+    gap: 10px;
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+.console-feed li {
+    align-items: start;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 62px 1fr;
+    padding-top: 10px;
+}
+
+.console-feed time {
+    color: var(--green);
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.console-feed span,
+.trade-facts dd,
+.worldview-panel p,
+.comments-panel p {
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.trade-route {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin-top: 16px;
+}
+
+.trade-route span {
+    align-items: center;
+    border: 1px solid rgba(226, 170, 82, 0.35);
+    border-radius: 6px;
+    color: var(--text);
+    display: flex;
+    font-size: 13px;
+    justify-content: center;
+    min-height: 56px;
+    padding: 8px;
+    text-align: center;
+}
+
+.trade-facts {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0 0;
+}
+
+.trade-facts div {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 150px 1fr;
+    padding-top: 10px;
+}
+
+.trade-facts dt {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.trade-facts dd {
+    margin: 0;
+}
+
+.worldview-panel,
+.fund-manager-panel,
+.comments-panel {
+    min-height: 170px;
+}
+
+.worldview-panel p + p,
+.fund-manager-panel p + p,
+.comments-panel p + p {
+    margin-top: 10px;
+}
+
+.manager-list {
+    display: grid;
+    gap: 9px;
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+.manager-list li {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--muted);
+    line-height: 1.45;
+    padding-top: 9px;
+}
+
 .mini {
     color: var(--muted);
     font-size: 13px;
@@ -241,8 +505,11 @@ input {
 
 @media (max-width: 900px) {
     .hero,
+    .dashboard-hero,
     .dashboard-grid,
-    .core-grid {
+    .cockpit-grid,
+    .core-grid,
+    .flow-map {
         grid-template-columns: 1fr;
     }
 
@@ -253,6 +520,34 @@ input {
 
     h1 {
         font-size: 40px;
+    }
+
+    .mode-stack {
+        min-width: 0;
+    }
+
+    .map-title-row,
+    .panel-heading {
+        display: grid;
+    }
+
+    .flow-node {
+        min-height: auto;
+        padding-bottom: 58px;
+    }
+
+    .flow-node::after {
+        content: "";
+    }
+
+    .flow-arrow {
+        color: var(--muted);
+        display: block;
+        text-align: center;
+    }
+
+    .trade-route {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -268,5 +563,15 @@ input {
 
     h1 {
         font-size: 34px;
+    }
+
+    .auth-shell,
+    .dashboard-shell {
+        width: min(100% - 24px, 1120px);
+    }
+
+    .trade-facts div,
+    .console-feed li {
+        grid-template-columns: 1fr;
     }
 }
