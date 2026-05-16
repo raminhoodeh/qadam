@@ -42,10 +42,11 @@ By the end of this foundation pass, Qadam should boot as a coherent system:
 
 | Area | Foundation Choice | Purpose |
 | --- | --- | --- |
-| Cockpit | Next.js App Router + Clerk | Allowlisted login and system-map dashboard at `qadam.trade`. |
+| Cockpit | Next.js App Router + Supabase Auth | Allowlisted login and system-map dashboard at `qadam.trade`. |
 | Deployment | Existing Vercel project `qadam` | Host the landing page and future authenticated cockpit deliberately. |
 | Orchestrator | Python 3.12, asyncio, uvloop | The COO process coordinating health, logs, tools, and later adapters. |
 | Tool layer | FastMCP-style tools | Uniform interface for source registry and future modules. |
+| TradingView MCP | Read-only market/technical-analysis tool server | Useful tooling, not a TradingView retail data API key. |
 | Event Log | PostgreSQL + TimescaleDB | Append-only audit trail and deterministic replay. |
 | Knowledge Graph | ChromaDB | Empty local vector store, ready for resolved catalyst memory. |
 | Local storage | MacBook 1TB SSD | Canonical saved state: raw payloads, Event Log data, Chroma persistence, runtime files, proof records. |
@@ -176,6 +177,7 @@ Exit checks:
 
 - Registry count remains 35.
 - Pipeline counts remain conflict 5, physical 7, macro 6, market 9, social 8.
+- TradingView is treated as MCP read-only tooling now and paid-account webhook alerts later; Qadam does not expect a TradingView retail data API key for direct pulls.
 - Cockpit can show all pipeline groups from the Orchestrator API.
 - A simulated degraded source appears as degraded in health output.
 
@@ -391,9 +393,9 @@ Deliverables:
 
 - Preserve the live unauthenticated landing page until the production routing plan is approved.
 - Add a top-right Login entrypoint to the live landing page navigation.
-- Add canonical `/login` or `/sign-in` Clerk route.
+- Add canonical `/login` Supabase Auth route.
 - Add protected `/dashboard` route for the authenticated System Map.
-- Redirect successful Clerk sign-in to `/dashboard`.
+- Redirect successful Supabase sign-in to `/dashboard`.
 - Redirect unauthenticated `/dashboard` visits back to login.
 - Restrict cockpit access to Ramin, Troy, Akber, Anas, and Ion.
 - Initial allowlisted emails are Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, and Ion `isioras@yahoo.co.uk`; Akber and Anas remain pending until their emails are known.
@@ -401,7 +403,7 @@ Deliverables:
 - Keep Vercel credentials runtime-only through `data/runtime/vercel.env` or an external secret store.
 - Use `scripts/inspect_vercel_project.sh` for read-only project verification.
 - Use `scripts/deploy_cockpit_vercel.sh` only when a cockpit deploy is intended.
-- Wire Clerk auth with a founding Fund Manager allowlist.
+- Wire Supabase Auth with a founding Fund Manager allowlist.
 - Make the first authenticated route the System Map.
 - Keep unauthenticated landing page separate from authenticated cockpit.
 - Add private comments/forum stub for improvement suggestions.
@@ -417,7 +419,7 @@ Deliverables:
 Implemented state:
 
 - `/` now renders a public cockpit entry page with Login.
-- `/login` redirects to `/sign-in`; `/sign-in` and `/sign-up` render Clerk auth when keys are configured.
+- `/login` renders Supabase Auth; `/sign-in` redirects to `/login`; `/sign-up` creates allowlisted Supabase Auth accounts.
 - `/dashboard` renders a dynamic System Map from the cockpit health contract.
 - `/settings` is protected alongside `/dashboard`.
 - `/api/health` fetches the Python COO health endpoint when configured.
@@ -448,7 +450,7 @@ Exit checks:
 - Vercel project inspection succeeds without deploying.
 - Production deploy path is documented before changing the live domain.
 - Live landing page shows a top-right Login entrypoint.
-- Login reaches Clerk sign-in.
+- Login reaches Supabase Auth.
 - Successful sign-in reaches the System Map.
 - Unauthenticated `/dashboard` access redirects to login.
 - Non-allowlisted accounts cannot access the cockpit.
@@ -527,7 +529,7 @@ The foundation is complete when:
 
 1. Vercel project inspection succeeds for the existing `qadam.trade` project without deploying.
 2. `qadam.trade` shows a top-right Login entrypoint.
-3. Login reaches Clerk sign-in.
+3. Login reaches Supabase Auth.
 4. Successful allowlisted login redirects to the cockpit System Map.
 5. Unauthenticated `/dashboard` access redirects to login.
 6. Non-allowlisted accounts cannot access the cockpit.
@@ -557,7 +559,7 @@ The foundation is complete when:
 7. Agent/skill manifest contract.
 8. Execution venue contract stub and disabled venue registry.
 9. Cockpit System Map connected to health API.
-10. Clerk auth.
+10. Supabase Auth.
 11. Secrets provider.
 12. FastMCP tools.
 13. launchd supervision.

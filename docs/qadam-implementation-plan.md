@@ -67,7 +67,7 @@ Already scaffolded:
 Known scaffold limitations:
 
 - Event Log is currently in-memory only.
-- Cockpit now has local Clerk routes, a protected `/dashboard`, and founding Fund Manager allowlist enforcement.
+- Cockpit now has local Supabase Auth routes, a protected `/dashboard`, and founding Fund Manager allowlist enforcement.
 - Live `qadam.trade` production routing still needs a deliberate deploy before the Login entrypoint is public.
 - The remote Vercel project is currently configured as a generic project with root directory `.`; production deploys should be deliberate while the existing landing page is live.
 - The resource registry is documentary only; it does not yet have a database table, cockpit view, or module-to-resource tracking workflow.
@@ -301,7 +301,7 @@ Build order:
 3. Migration runner and replay test.
 4. ChromaDB initialization.
 5. Local data directory contract for raw payloads, runtime files, Chroma persistence, model cache, and local backups.
-6. Clerk founding Fund Manager auth allowlist.
+6. Supabase founding Fund Manager auth allowlist.
 7. Secret loading via macOS Keychain or strict local file permissions.
 8. FastMCP tools: `ticker_echo`, `source_registry`, `source_detail`.
 9. Orchestrator health endpoint.
@@ -342,6 +342,8 @@ Build order:
 
 Current implementation note: the Phase 1 foundation can already emit deterministic test observations for all 35 registered sources. GDELT, Oref, NASA FIRMS, FRED, and RSS have promoted read-only adapter paths with local raw archives and degraded-state handling. NASA FIRMS is credential-gated behind `NASA_FIRMS_API_KEY` and is the first physical pipeline adapter promoted into Qadam.
 
+TradingView decision: a paid TradingView account does not provide a standard retail market-data API key for Qadam to pull bars, prices, indicators, or watchlists. Use TradingView MCP as read-only market/technical-analysis tooling through Codex/MCP without a TradingView login. Use the paid TradingView account later for webhook alerts, but only after Qadam has a secure authenticated webhook receiver that writes to the Event Log and cannot trigger execution.
+
 Tier 1 order:
 
 - ACLED.
@@ -360,6 +362,7 @@ Tier 2 order:
 - AIS Maritime, using AISStream as MVP if Spire/MarineTraffic is unavailable.
 - Wingbits.
 - X API.
+- TradingView alert webhooks after secure receiver exists.
 
 Tier 3 order:
 
@@ -703,6 +706,8 @@ Live promotion:
 
 `qadam.trade` is the login surface and command cockpit for the founding Fund Managers: Ramin, Troy, Akber, Anas, and Ion. It starts as a landing page, but the authenticated experience is a system-map dashboard showing how the entire hybrid fund is wired together: Python COO, local LLM Research Analyst, frontier LLM Strategy Lead, quantum Head of Quant, data pipelines, Event Log, Knowledge Graph, Risk Agent, broker adapters, notifications, kill-switches, and internal comments/forum notes.
 
+Immediate dashboard design decision: the cockpit's main view is a diagrammatic system map, not a generic card grid. Every node must show status. The supporting views are a read-only process console, Fund Manager view, trade layer, and comments/forum area. The first-month trade layer must show the £1000 paper/test account, TradingView-assisted market view, live-capital block, and the full trade reasoning chain from catalyst to postmortem.
+
 Current deployment anchor:
 
 - Vercel project: `qadam`, ID `prj_apm3Zfd9fpWq4wsJiSunkVmxdCVQ`.
@@ -715,11 +720,11 @@ Deployment policy:
 
 - Do not overwrite the live landing page accidentally.
 - Keep the unauthenticated landing page and authenticated cockpit as separate experiences until the routing plan is explicit.
-- Preferred production shape: `qadam.trade` remains the landing page, while logged-in users enter the cockpit through Clerk and land on the System Map.
-- Local cockpit route shape now exists: `/` public entry, `/login` alias, `/sign-in`, `/sign-up`, `/dashboard`, and `/settings`.
+- Preferred production shape: `qadam.trade` remains the landing page, while logged-in users enter the cockpit through Supabase Auth and land on the System Map.
+- Local cockpit route shape now exists: `/` public entry, `/login`, `/sign-in` alias, `/sign-up`, `/dashboard`, and `/settings`.
 - The live top-right navigation must change from only `Read Whitepaper` to include `Login`.
-- `Login` must route to Clerk sign-in, then redirect authenticated users to the System Map dashboard.
-- Clerk access must be allowlisted to Ramin, Troy, Akber, Anas, and Ion for the first release.
+- `Login` must route to Supabase Auth, then redirect authenticated users to the System Map dashboard.
+- Supabase Auth access must be allowlisted to Ramin, Troy, Akber, Anas, and Ion for the first release.
 - `/dashboard` must be protected; unauthenticated users redirect to login.
 - `/login` or `/sign-in` must exist as the canonical auth entrypoint.
 - Before production deployment, update the Vercel project framework/root settings to match the chosen app layout.
@@ -758,7 +763,7 @@ Phase 0 cockpit requirements:
 - Static content shell.
 - System-map layout stub with module nodes and pipeline groups.
 - Live landing page top-right Login entrypoint.
-- Clerk sign-in route.
+- Supabase login route.
 - Authenticated redirect to Dashboard / System Map.
 - Protected `/dashboard` route.
 - Founding Fund Manager allowlist.

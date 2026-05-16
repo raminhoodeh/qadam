@@ -86,7 +86,7 @@ Cross-cutting:
 
 ## qadam.trade Cockpit
 
-`qadam.trade` is the login surface and command cockpit. After Clerk login, the first view is a system map showing how the fund is wired together:
+`qadam.trade` is the login surface and command cockpit. After Supabase login, the first view is a system map showing how the fund is wired together:
 
 - Python script [COO]
 - Local LLM [Research Analyst]
@@ -100,8 +100,9 @@ The dashboard should show health, uptime, heartbeat, degraded-state, and process
 Current local cockpit state:
 
 - `/` renders a public cockpit entry page with a Login action.
-- `/login` redirects to `/sign-in`; `/sign-in` and `/sign-up` render Clerk auth when Clerk keys are configured, and show a setup notice when they are not.
-- `/dashboard` renders the health-driven System Map and is protected by Clerk middleware.
+- `/login` renders Supabase email/password login.
+- `/sign-in` redirects to `/login`; `/sign-up` creates allowlisted Supabase Auth accounts.
+- `/dashboard` renders the health-driven System Map and is protected by Supabase session cookies plus Qadam's founding-manager allowlist.
 - `/dashboard` and `/settings` enforce Qadam's founding Fund Manager email allowlist after sign-in.
 - `/api/health` proxies the Python COO health payload when `QADAM_ORCHESTRATOR_URL` is set.
 - If the COO is offline, the cockpit falls back to a degraded local shell instead of crashing.
@@ -152,6 +153,12 @@ These are live or live-adjacent data feeds, not the full set of Qadam research/b
 - Market: UnusualWhales, Polymarket, Kalshi, Hyperliquid, Alpaca, RapidAPI, Coinglass, Chainlink, Bookmap.
 - Social: RSS, Telegram, X, Reddit, SEC EDGAR, STOCK Act, Patents, GitHub.
 
+TradingView boundary:
+
+- A paid TradingView account does not provide a standard retail data API key for Qadam to pull market data directly.
+- TradingView MCP is useful as read-only market and technical-analysis tooling through Codex/MCP, and does not require a TradingView login.
+- TradingView paid-account alerts can become a webhook source later, after Qadam has a secure authenticated receiver that writes to the Event Log and cannot trigger execution.
+
 ## Resource Registry
 
 `specs/qadam-general-context.md` also defines Qadam's broader resource base: strategy guardrails, signal benchmarks, AI architecture references, prediction-market open-source tools, OSINT references, technical infrastructure candidates, institutional analyst frameworks, product references, and prediction-market papers. These live in `docs/qadam-resource-registry.md`.
@@ -187,7 +194,34 @@ Current founding access list:
 2. Start storage with Docker Compose when Docker is available.
 3. Run `./start_qadam.sh` to verify the foundation.
 4. Set `QADAM_START_ORCHESTRATOR=1` when you want the local health endpoint to run.
-5. For cockpit login, set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` in the cockpit environment, then open `/sign-in`.
+5. For cockpit login, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the cockpit environment, then open `/login`.
+
+Supabase cockpit auth:
+
+- Project ref: `eipijgublkypksygsyet`.
+- Public URL: `https://eipijgublkypksygsyet.supabase.co`.
+- Use the Supabase public anon/publishable key for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- Keep the Supabase secret key server-only as `SUPABASE_SECRET_KEY`.
+- Never put a Supabase secret or service-role key in a `NEXT_PUBLIC_` variable.
+
+Optional Codex Supabase MCP access:
+
+```bash
+codex mcp add supabase --url https://mcp.supabase.com/mcp?project_ref=eipijgublkypksygsyet
+```
+
+Then enable remote MCP client support in `~/.codex/config.toml`:
+
+```toml
+[mcp]
+remote_mcp_client_enabled = true
+```
+
+Finally run:
+
+```bash
+codex mcp login supabase
+```
 
 Current Event Log state:
 

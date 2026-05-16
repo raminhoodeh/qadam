@@ -50,7 +50,7 @@ Build Qadam as replaceable modules around stable contracts.
 | Control Plane | Python COO / Orchestrator | Routing, health, scheduling, module state, process supervision | Phase 0 |
 | Audit Plane | Event Log | Append-only truth, replay, trade/system audit | Phase 0 |
 | Knowledge Plane | ChromaDB Knowledge Graph | Catalyst memory, embeddings, nearest-neighbour recall | Phase 0 shell, Phase 6 live |
-| Cockpit Plane | Next.js + Clerk | Login, System Map, health, signals, postmortems, settings | Phase 0 shell, Phase 5 functional |
+| Cockpit Plane | Next.js + Supabase Auth | Login, System Map, health, signals, postmortems, settings | Phase 0 shell, Phase 5 functional |
 | Fund Manager Forum | Cockpit + Event Log | Private suggestions and governance comments from Ramin, Troy, Akber, Anas, and Ion | Phase 0 stub, Phase 5 functional |
 | Live Ingress Plane | World Monitor source adapters | 35 live/live-adjacent feeds across 5 pipelines | Phase 1 |
 | Resource Plane | Resource Registry | Strategy references, papers, OSS stacks, product benchmarks, provenance | Phase 0 |
@@ -130,7 +130,7 @@ Trading state: none.
 8. Execution registry with disabled Alpaca paper and optional PriveX-style venue placeholders.
 9. FastMCP tools over those endpoints.
 10. Cockpit System Map shell.
-11. Clerk route plan: top-right Login, `/login` or `/sign-in`, protected `/dashboard`, founding Fund Manager allowlist.
+11. Supabase Auth route plan: top-right Login, `/login`, protected `/dashboard`, founding Fund Manager allowlist.
 12. Comments/forum stub.
 13. Vercel deployment guardrails.
 14. One-command foundation verification.
@@ -187,7 +187,7 @@ Trading state: none.
 | Normalized event writer | Unified event schema for all sources | Event validates against schema |
 | Heartbeat monitor | Source SLA, last success, latency, degraded status | Simulated stale source appears degraded |
 | Tier 1 adapters | ACLED, Oref, NASA FIRMS, UnusualWhales, Polymarket, Kalshi, Alpaca | Each writes sample event or intentional unavailable state |
-| Tier 2 adapters | FRED, AIS, Wingbits, GDELT, RSS, X | Each has heartbeat and rate-limit behavior |
+| Tier 2 adapters | FRED, AIS, Wingbits, GDELT, RSS, X, TradingView alert webhooks | Each has heartbeat and rate-limit behavior |
 | Tier 3 adapters | BLS, ECB, UN Comtrade, BIS, USGS, Reddit, Telegram, SEC, STOCK Act | Conflicts are resolved or marked deferred |
 | Tier 4 adapters | UCDP, ArcGIS/USACE, Space-Track/CelesTrak, GPSJam, IODA, Coinglass, Bookmap, Chainlink, Hyperliquid, GitHub, Patents, RapidAPI | Later feeds can be added without schema changes |
 | Trust seed | Initial Trust Score structure | Source < 0.3 quarantine path exists |
@@ -203,6 +203,12 @@ Trading state: none.
 5. Tier 1 adapters in read-only mode.
 6. Tier 2 adapters.
 7. Tier 3 and conflict-resolution adapters.
+
+TradingView boundary:
+
+- Paid TradingView accounts are useful for charting and alerts, but they do not provide a normal retail API key for Qadam data ingestion.
+- TradingView MCP is registered as read-only market/technical-analysis tooling and does not require TradingView login credentials.
+- TradingView alert webhooks become a source adapter only after Qadam has an authenticated webhook receiver, Event Log writes, replay tests, and no execution path.
 8. Tier 4 deferred/fallback adapters.
 9. Historical backfill where licensing allows.
 10. Initial Trust Score table.
@@ -564,6 +570,8 @@ The cockpit should evolve without becoming a trading toy.
 | Phase 1 | Source health, heartbeat, degraded-state banners |
 | Phase 1E | Agent ownership map, tool grants, skill bundle status, forbidden-action warnings |
 | Phase 1F | Runtime permission status, enforced blocks, shadow triage queue state |
+
+Live cockpit sprint decision: the dashboard's main view is the system map. Each node shows status. The supporting surfaces are process console, Fund Manager view, trade layer, and comments. The first-month trade layer is a £1000 paper/test-account view with TradingView as the market/chart layer and later alert source; live capital remains blocked.
 | Phase 2 | Hidden/debug shadow signals, evidence trail previews |
 | Phase 3 | Quantum job status and fallback visibility |
 | Phase 4 | Manifested Strategy review and approval record |
@@ -574,7 +582,7 @@ The cockpit should evolve without becoming a trading toy.
 Production routing requirement:
 
 - `qadam.trade` remains the public landing page.
-- Top-right Login routes to Clerk.
+- Top-right Login routes to Supabase Auth.
 - Successful login routes to protected `/dashboard`.
 - Login allowlist is limited to Ramin, Troy, Akber, Anas, and Ion in the first release.
 - Unauthenticated `/dashboard` redirects to login.

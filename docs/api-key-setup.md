@@ -46,6 +46,23 @@ If a key is ever pasted into a chat, committed, or shown publicly, rotate it at 
 | 5 | Unusual Whales | `UNUSUAL_WHALES_API_KEY` | Options flow, dark pool, congressional trading, and volatility context. | Subscribe/request API access, then create/copy the API token from the API dashboard. |
 | 6 | FRED | `FRED_API_KEY` | Better official macro API access. | Log into a FRED account and request a distinct API key for Qadam. Qadam can still use public CSV fallback without it. |
 
+## TradingView
+
+Your paid TradingView account is useful, but it does not provide a normal retail API key for direct Qadam market-data pulls.
+
+Use TradingView in two separate ways:
+
+| Use | Status | Qadam treatment |
+| --- | --- | --- |
+| TradingView MCP | Now | Read-only market and technical-analysis tooling through Codex/MCP. No TradingView login or API key expected. |
+| TradingView paid-account alerts | Later | Webhook alert source after Qadam has a secure authenticated receiver, Event Log writes, replay tests, and no execution path. |
+
+Setup command for the MCP tool after installing `uv`:
+
+```bash
+codex mcp add tradingview -- uvx --from tradingview-mcp-server tradingview-mcp
+```
+
 ## Quantum Keys
 
 Qadam does not need quantum hardware to complete Phase 1D. Keep these as readiness credentials until the quantum provider registry is promoted:

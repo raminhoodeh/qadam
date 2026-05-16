@@ -40,7 +40,7 @@ Qadam should not mix all inputs into one bucket.
 
 | Layer | What It Contains | What It Does |
 | --- | --- | --- |
-| Live Source Registry | ACLED, FIRMS, Oref, UnusualWhales, Polymarket, Kalshi, Alpaca, GDELT, Telegram, RSS, etc. | Feeds the machine with observable data and heartbeat status. |
+| Live Source Registry | ACLED, FIRMS, Oref, UnusualWhales, Polymarket, Kalshi, Alpaca, GDELT, Telegram, RSS, TradingView alerts, etc. | Feeds the machine with observable data and heartbeat status. |
 | Resource Registry | Papers, open-source tools, product references, analytical frameworks, build inspiration. | Guides architecture, signal design, UX, and research methods. |
 | Private World-Model Corpus | `how-the-world-works/` | Quietly shapes Qadam's suspicion, hidden-incentive reasoning, scenario generation, and narrative analysis. Currently 4 markdown files. |
 
@@ -76,6 +76,7 @@ Core modules:
 | Risk Agent | Position size, caps, drawdown, stale-data checks, kill-switch enforcement. |
 | Execution Venue Registry | Disabled/read-only venue map covering credential status, account/subaccount scope, network/chain scope, mode, reconciliation, and kill-switch state. |
 | Broker / Venue Adapters | Alpaca paper/live, prediction-market adapters, and later optional venues such as PriveX-style perps rails. |
+| TradingView MCP / Alerts | Read-only technical-analysis MCP tooling now; paid TradingView account alert webhooks later. |
 | Knowledge Graph | Resolved catalyst memory and nearest-neighbour recall. |
 | Cockpit | `qadam.trade` login, dashboard, system map, signal review, comments forum, postmortems. |
 | Fund Manager Forum | Private suggestions and governance comments from Ramin, Troy, Akber, Anas, and Ion. |
@@ -107,6 +108,7 @@ The first release of Qadam is a local-first autonomous trial system.
 Operating constraints:
 
 - Account: £1000 test/paper account.
+- First-month sprint: use the £1000 test account as the proof surface, with TradingView as the visible market/chart layer and later alert source, before any live-capital path exists.
 - Execution: Qadam may trade autonomously in the test account after Phase 5/7 gates are met.
 - Capital boundary: no live capital in the first release.
 - Access boundary: first-release login is limited to Ramin, Troy, Akber, Anas, and Ion.
@@ -130,6 +132,7 @@ Design implications:
 - Never store broker credentials, API keys, or Vercel tokens in committed files.
 - Make test/live environment separation impossible to miss in config and cockpit.
 - The cockpit must clearly show `TEST ACCOUNT` / `PAPER MODE` status during autonomous trading.
+- The cockpit must show the full trade lifecycle: signal, risk check, trade candidate, paper order, open position, exit/invalidation, and postmortem.
 
 ## 7. Phase 0 - Foundation
 
@@ -199,6 +202,7 @@ Current implementation start:
 - Remaining live adapters stay unimplemented until each source is promoted from test data to real API mode.
 - GDELT is promoted to the first real read-only adapter path; Oref is promoted as the second, higher-trust conflict alert adapter; NASA FIRMS is promoted as the first physical anomaly adapter; FRED is promoted as the first macro regime adapter; RSS is promoted as the first narrative feed adapter.
 - No promoted adapter is allowed to influence signal confidence without corroboration and Signal Integrity Gate approval.
+- TradingView note: a paid TradingView account does not provide a normal retail data API key. Treat TradingView MCP as read-only market/technical-analysis tooling that does not require a TradingView login, and treat the paid TradingView account as useful later for webhook alerts once Qadam has a secure receiver.
 
 Objective: make Qadam observe the world.
 
@@ -209,7 +213,7 @@ Build:
 - Normalized event schema.
 - Heartbeat and SLA monitor.
 - Tier 1 adapters: ACLED, Oref, NASA FIRMS, UnusualWhales, Polymarket, Kalshi, Alpaca.
-- Tier 2 adapters: FRED, AIS, Wingbits, GDELT, RSS, X.
+- Tier 2 adapters: FRED, AIS, Wingbits, GDELT, RSS, X, TradingView webhook alerts.
 - Tier 3 adapters: BLS, ECB, UN Comtrade, BIS, USGS, Reddit, Telegram, SEC, STOCK Act.
 - Tier 4 adapters or deferred stubs.
 - Initial Trust Score table.
@@ -469,6 +473,9 @@ Current repository state:
 - `/login/` and `/sign-up/` use Supabase JS browser auth with project `eipijgublkypksygsyet`.
 - `/dashboard/` checks the Supabase browser session and Qadam founding Fund Manager allowlist before showing the System Map.
 - The live System Map is a static founding-release map and clearly says the local MacBook orchestrator is not exposed to Vercel.
+- The live dashboard now needs to prioritize a diagrammatic operating map, a read-only process console, a first-month trade layer, and Fund Manager comments.
+- The first-month trade layer should explicitly show the £1000 paper/test account, TradingView-assisted market view, live-capital block, and the full reasoning chain from catalyst to postmortem.
+- Immediate design decision: the dashboard is not a generic SaaS card grid. The main view is the system map; every node must show status; the secondary views are process console, Fund Manager view, trade layer, and comments.
 - The richer Next.js cockpit remains in `cockpit/` as the local/server-rendered target for later health, settings, and API-backed views.
 - Supabase URL Configuration must keep `https://qadam.trade` as Site URL and allow redirects for both `qadam.trade` and `www.qadam.trade`.
 
@@ -481,6 +488,7 @@ Target state:
 - Login allowlist is limited to Ramin, Troy, Akber, Anas, and Ion in the first release.
 - `/dashboard` opens the System Map.
 - Dashboard includes a private comments/forum area for suggestions and improvement notes.
+- Dashboard includes a trade layer that shows candidates, blocked trades, paper orders, open positions, exits, and postmortems once those backends exist.
 - Unauthenticated `/dashboard` redirects to login.
 - Supabase project `eipijgublkypksygsyet` is the Auth backend for the cockpit; Codex can use the Supabase MCP server after local `codex mcp login supabase` authentication.
 - Production deploys remain deliberate while the landing page is live.
@@ -509,11 +517,14 @@ The live access surface is now functional through the static `qadam.trade` cockp
 
 Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts and provider-safe probes have started. The next practical batch is controlled model use:
 
-1. Commit and cleanly document the static cockpit workaround in source control.
-2. Start LM Studio and run the local `/models` readiness check against `gemma-4-e4b`.
-3. Run the Gemini model-list credential probe without text generation.
-4. Add the first local Research Analyst inference call over queued shadow packets.
-5. Add Evidence Trail rendering in a cockpit-hidden debug view or static debug page.
-6. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
+1. Finish the live cockpit sprint: diagrammatic operating map, read-only process console, first-month £1000 trade layer, and Fund Manager comments placeholder.
+2. Commit and cleanly document the static cockpit workaround in source control.
+3. Install `uv` and register TradingView MCP as read-only market/technical-analysis tooling; no TradingView retail data API key is expected.
+4. Add a future TradingView alert webhook receiver only after Qadam has a secure authenticated ingestion endpoint.
+5. Start LM Studio and run the local `/models` readiness check against `gemma-4-e4b`.
+6. Run the Gemini model-list credential probe without text generation.
+7. Add the first local Research Analyst inference call over queued shadow packets.
+8. Add Evidence Trail rendering in a cockpit-hidden debug view or static debug page.
+9. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.
