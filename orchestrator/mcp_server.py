@@ -41,6 +41,11 @@ from orchestrator.execution import execution_registry
 from orchestrator.governance import GovernanceStore
 from orchestrator.ingestion import ingestion_spine_summary
 from orchestrator.ingestion import run_test_ingestion as run_test_ingestion_spine
+from orchestrator.intelligence import (
+    provider_status as intelligence_provider_status,
+    run_shadow_intelligence_sample as run_shadow_intelligence_sample_once,
+    shadow_intelligence_summary,
+)
 from orchestrator.quantum import quantum_providers
 from orchestrator.resource_registry import (
     resource_detail as registry_resource_detail,
@@ -224,6 +229,18 @@ def run_test_ingestion(limit: int = 5, tier: int | None = None, pipeline: str | 
     return run_test_ingestion_spine(limit=limit, tier=tier, pipeline=pipeline)
 
 
+def shadow_intelligence_status() -> dict[str, object]:
+    return shadow_intelligence_summary(Settings.from_env())
+
+
+def shadow_intelligence_provider_status() -> dict[str, object]:
+    return intelligence_provider_status(Settings.from_env())
+
+
+def run_shadow_intelligence_sample() -> dict[str, object]:
+    return run_shadow_intelligence_sample_once()
+
+
 def gdelt_status() -> dict[str, object]:
     return gdelt_adapter_status(Settings.from_env())
 
@@ -377,6 +394,9 @@ def build_server():
     mcp.tool()(source_heartbeat_status)
     mcp.tool()(run_source_heartbeat)
     mcp.tool()(run_test_ingestion)
+    mcp.tool()(shadow_intelligence_status)
+    mcp.tool()(shadow_intelligence_provider_status)
+    mcp.tool()(run_shadow_intelligence_sample)
     mcp.tool()(gdelt_status)
     mcp.tool()(gdelt_sample)
     mcp.tool()(gdelt_live_read_only)

@@ -17,7 +17,10 @@
     "skill_registry",
     "agent_runtime_status",
     "agent_tool_authorization",
-    "research_shadow_triage_queue"
+    "research_shadow_triage_queue",
+    "shadow_intelligence_status",
+    "shadow_intelligence_provider_status",
+    "run_shadow_intelligence_sample"
   ],
   "allowed_source_groups": [
     "cockpit_health",

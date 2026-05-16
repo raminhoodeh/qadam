@@ -306,6 +306,7 @@ Implemented state:
 - `scripts/check_agent_runtime.py` verifies the runtime enforcement path.
 - System health and cockpit fallback data include `agent_os`.
 - System health and cockpit fallback data include `agent_runtime`.
+- Shadow intelligence contracts now sit after this foundation slice: Evidence Trail, Proposed Signal, deterministic triage, provider status, and no execution authority.
 
 Deliverables:
 

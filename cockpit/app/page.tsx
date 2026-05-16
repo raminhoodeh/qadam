@@ -97,6 +97,13 @@ export default async function DashboardPage() {
       detail: `${health.agent_runtime.authorization_check_count} grant checks · ${health.agent_runtime.sample_output_count} sample outputs · ${health.agent_runtime.boundary}`
     },
     {
+      title: "Shadow Intelligence",
+      count: `${health.shadow_intelligence.store.signal_count ?? 0} shadow signals`,
+      detail: `Gemini ${health.shadow_intelligence.provider_status.frontier_llm.mode.replaceAll("_", " ")} · ${
+        health.shadow_intelligence.provider_status.local_llm.provider
+      } ${health.shadow_intelligence.provider_status.local_llm.mode.replaceAll("_", " ")}`
+    },
+    {
       title: "Governance Forum",
       count: `${health.governance_forum.comment_count} comments`,
       detail: `Visible to ${health.governance_forum.visibility.replaceAll("_", " ")}`

@@ -290,6 +290,15 @@ Exit gate:
 
 Objective: make Qadam think in shadow mode.
 
+Current implementation start:
+
+- Evidence Trail and Proposed Signal contracts exist in `orchestrator/intelligence.py`.
+- Deterministic keyword/anomaly triage can produce shadow-only signals from sample evidence.
+- Gemini and LM Studio provider status report configured/missing without model calls.
+- `scripts/check_shadow_intelligence.py` is wired into `start_qadam.sh`.
+- System health, FastMCP-style tools, and cockpit registry cards expose Shadow Intelligence status.
+- Every Phase 2 output remains non-executable.
+
 Build:
 
 - Proposed Signal schema.
@@ -483,12 +492,12 @@ Do not try to build all of Qadam at once. Qadam is created by making each module
 
 Phase 0 foundation is substantially implemented, and Phase 1 has started with test ingestion, source heartbeat, and promoted read-only adapters for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. The next practical batch is Phase 2 shadow intelligence:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts have started. The next practical batch is provider-safe local model integration:
 
-1. Add Proposed Signal and Evidence Trail schemas.
-2. Add a deterministic keyword/anomaly triage fallback before Gemma.
-3. Add a local Research Analyst shadow triage runner that consumes queued packets.
-4. Add Gemini/Gemma provider stubs that report configured/missing status without inference.
+1. Add an LM Studio local health probe that only checks `/models` after the user starts LM Studio.
+2. Add a Gemini dry-run guard that confirms credentials without generating trading content.
+3. Add a Research Analyst shadow triage runner that consumes queued packets.
+4. Add Evidence Trail rendering in a cockpit-hidden debug view.
 5. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.

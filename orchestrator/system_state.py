@@ -20,6 +20,7 @@ from orchestrator.execution import execution_registry
 from orchestrator.governance import GovernanceStore
 from orchestrator.heartbeat import registry_heartbeats
 from orchestrator.ingestion import ingestion_spine_summary
+from orchestrator.intelligence import shadow_intelligence_summary
 from orchestrator.local_store import local_store_health
 from orchestrator.quantum import quantum_providers
 from orchestrator.resource_registry import resource_registry_summary
@@ -70,6 +71,7 @@ def module_map(storage_health: dict[str, Any] | None = None) -> list[dict[str, s
         {"key": "world_model", "label": "World-Model Lens", "owner": "Private Corpus", "status": "foundational_prior"},
         {"key": "agent_os", "label": "Agent OS", "owner": "Manifest Registry", "status": "manifest_ready"},
         {"key": "agent_runtime", "label": "Agent Runtime", "owner": "Permission Gate", "status": "enforced"},
+        {"key": "shadow_intelligence", "label": "Shadow Intelligence", "owner": "Research Analyst", "status": "shadow_ready"},
         {"key": "governance_forum", "label": "Governance Forum", "owner": "Fund Managers", "status": "local"},
         {"key": "ingestion_spine", "label": "Test Ingestion Spine", "owner": "World Monitor Adapters", "status": "test_data_ready"},
         {"key": "gdelt_adapter", "label": "GDELT Adapter", "owner": "Conflict Pipeline", "status": "sample_ready"},
@@ -126,6 +128,7 @@ def build_system_health(
         "world_model": world_model_summary(),
         "agent_os": agent_health,
         "agent_runtime": runtime_health,
+        "shadow_intelligence": shadow_intelligence_summary(settings),
         "governance_forum": governance_health,
         "ingestion_spine": ingestion_spine_summary(settings),
         "source_heartbeat": source_heartbeat_summary(settings),

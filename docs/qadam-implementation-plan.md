@@ -386,7 +386,7 @@ Exit criteria:
 
 Objective: formalize the agent architecture before giving the local LLM, frontier LLM, quantum module, or execution adapters more authority.
 
-Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 99 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
+Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 109 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
 
 New reference input:
 
@@ -441,6 +441,8 @@ Exit criteria:
 ## 9. Phase 2 - Intelligence Stack
 
 Objective: run Gemma and Gemini end-to-end in shadow mode.
+
+Current implementation note: Phase 2 has started with Evidence Trail and Proposed Signal contracts, deterministic keyword/anomaly triage, local Shadow Signal storage, and provider readiness reporting for Gemini and LM Studio. No model calls are made yet, and every shadow signal is non-executable.
 
 Build order:
 

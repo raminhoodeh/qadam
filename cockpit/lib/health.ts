@@ -81,6 +81,29 @@ export type CockpitHealth = {
     shadow_queue_packet_count: number;
     boundary: string;
   };
+  shadow_intelligence: {
+    status: string;
+    schema_version: number;
+    store: {
+      status: string;
+      signal_count?: number;
+      execution_allowed_count?: number;
+    };
+    provider_status: {
+      status: string;
+      frontier_llm: {
+        provider: string;
+        credential_configured: boolean;
+        mode: string;
+      };
+      local_llm: {
+        provider: string;
+        model: string;
+        mode: string;
+      };
+    };
+    boundary: string;
+  };
   governance_forum: {
     status: string;
     comment_count: number;
@@ -132,6 +155,7 @@ const fallbackModules: ModuleStatus[] = [
   { key: "knowledge_graph", label: "Knowledge Graph", owner: "Embedded Chroma", status: "registered" },
   { key: "agent_os", label: "Agent OS", owner: "Manifest Registry", status: "manifest_ready" },
   { key: "agent_runtime", label: "Agent Runtime", owner: "Permission Gate", status: "enforced" },
+  { key: "shadow_intelligence", label: "Shadow Intelligence", owner: "Research Analyst", status: "shadow_ready" },
   { key: "execution_registry", label: "Execution Registry", owner: "Risk Agent", status: "disabled" },
   { key: "cockpit", label: "Cockpit", owner: "qadam.trade", status: "registered" }
 ];
@@ -183,6 +207,17 @@ const fallbackHealth: CockpitHealth = {
     shadow_queue_status: "empty",
     shadow_queue_packet_count: 0,
     boundary: "Runtime grants are enforced before tool use. Shadow triage has no execution authority."
+  },
+  shadow_intelligence: {
+    status: "unknown",
+    schema_version: 1,
+    store: { status: "empty", signal_count: 0, execution_allowed_count: 0 },
+    provider_status: {
+      status: "unknown",
+      frontier_llm: { provider: "gemini", credential_configured: false, mode: "missing_key" },
+      local_llm: { provider: "lm_studio", model: "gemma-4-e4b", mode: "configured_not_called" }
+    },
+    boundary: "Phase 2 shadow intelligence can propose review packets only; execution remains impossible."
   },
   governance_forum: {
     status: "unknown",
@@ -250,6 +285,7 @@ export async function getCockpitHealth(): Promise<CockpitHealth> {
       fund_managers: health.fund_managers ?? fallbackHealth.fund_managers,
       agent_os: health.agent_os ?? fallbackHealth.agent_os,
       agent_runtime: health.agent_runtime ?? fallbackHealth.agent_runtime,
+      shadow_intelligence: health.shadow_intelligence ?? fallbackHealth.shadow_intelligence,
       source_heartbeat: health.source_heartbeat ?? fallbackHealth.source_heartbeat,
       execution_venues: health.execution_venues ?? fallbackHealth.execution_venues,
       execution_summary: health.execution_summary ?? fallbackHealth.execution_summary

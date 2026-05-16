@@ -244,6 +244,13 @@ Current Agent OS state:
 - `scripts/check_agent_runtime.py` verifies runtime tool authorization, blocked broker-write tools, sample outputs, and the Research Analyst shadow triage queue.
 - System health and the cockpit expose `agent_os` and `agent_runtime` status with agent count, skill count, tool-grant count, enforced block count, and shadow queue state.
 
+Current shadow intelligence state:
+
+- `orchestrator/intelligence.py` defines Evidence Trail and Proposed Signal contracts.
+- `scripts/check_shadow_intelligence.py` runs deterministic keyword/anomaly triage without calling Gemini or LM Studio.
+- Gemini and LM Studio provider readiness are reported as configured/missing, but no model inference runs in this check.
+- All shadow signals are marked non-executable with `execution_allowed=false`.
+
 Durable-mode commands:
 
 1. Run `scripts/bootstrap_runtime.sh`.
