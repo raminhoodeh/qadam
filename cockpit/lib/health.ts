@@ -95,11 +95,16 @@ export type CockpitHealth = {
         provider: string;
         credential_configured: boolean;
         mode: string;
+        probe_status?: string;
+        model_count?: number;
       };
       local_llm: {
         provider: string;
         model: string;
         mode: string;
+        probe_status?: string;
+        model_available?: boolean;
+        available_model_count?: number;
       };
     };
     boundary: string;
@@ -214,8 +219,15 @@ const fallbackHealth: CockpitHealth = {
     store: { status: "empty", signal_count: 0, execution_allowed_count: 0 },
     provider_status: {
       status: "unknown",
-      frontier_llm: { provider: "gemini", credential_configured: false, mode: "missing_key" },
-      local_llm: { provider: "lm_studio", model: "gemma-4-e4b", mode: "configured_not_called" }
+      frontier_llm: { provider: "gemini", credential_configured: false, mode: "missing_key", probe_status: "missing_key" },
+      local_llm: {
+        provider: "lm_studio",
+        model: "gemma-4-e4b",
+        mode: "configured_not_called",
+        probe_status: "not_called",
+        model_available: false,
+        available_model_count: 0
+      }
     },
     boundary: "Phase 2 shadow intelligence can propose review packets only; execution remains impossible."
   },

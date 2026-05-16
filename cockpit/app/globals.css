@@ -71,6 +71,9 @@ h2 {
   padding: 10px 14px;
   text-decoration: none;
   background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
 }
 
 .statusBand {
@@ -235,11 +238,62 @@ h2 {
   max-width: 860px;
 }
 
+.entryShell {
+  min-height: 100vh;
+}
+
+.entryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.userActions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.authShell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 28px 16px;
+}
+
+.authPanel {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1fr);
+  width: min(980px, 100%);
+}
+
+.authPanel > div:first-child {
+  padding-top: 10px;
+}
+
+.accessPanel {
+  border-top: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 22px;
+}
+
 @media (max-width: 900px) {
   .mapLayout,
   .governanceGrid,
-  .registryGrid {
+  .registryGrid,
+  .entryGrid,
+  .authPanel {
     grid-template-columns: 1fr;
+  }
+
+  .authPanel {
+    width: min(460px, 100%);
   }
 }
 
@@ -252,5 +306,9 @@ h2 {
 
   .nodeGrid {
     grid-template-columns: 1fr;
+  }
+
+  .userActions {
+    align-items: flex-start;
   }
 }

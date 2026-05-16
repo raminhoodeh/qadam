@@ -20,7 +20,11 @@
     "research_shadow_triage_queue",
     "shadow_intelligence_status",
     "shadow_intelligence_provider_status",
-    "run_shadow_intelligence_sample"
+    "shadow_intelligence_provider_probes",
+    "lm_studio_models_status",
+    "gemini_credential_status",
+    "run_shadow_intelligence_sample",
+    "run_research_shadow_triage_queue"
   ],
   "allowed_source_groups": [
     "cockpit_health",

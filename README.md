@@ -99,7 +99,10 @@ The dashboard should show health, uptime, heartbeat, degraded-state, and process
 
 Current local cockpit state:
 
-- `/` renders a health-driven System Map.
+- `/` renders a public cockpit entry page with a Login action.
+- `/login` redirects to `/sign-in`; `/sign-in` and `/sign-up` render Clerk auth when Clerk keys are configured, and show a setup notice when they are not.
+- `/dashboard` renders the health-driven System Map and is protected by Clerk middleware.
+- `/dashboard` and `/settings` enforce Qadam's founding Fund Manager email allowlist after sign-in.
 - `/api/health` proxies the Python COO health payload when `QADAM_ORCHESTRATOR_URL` is set.
 - If the COO is offline, the cockpit falls back to a degraded local shell instead of crashing.
 - Promoted adapters, source counts, unresolved sources, local-store status, execution venues, and Fund Manager access are rendered from the health contract.
@@ -184,6 +187,7 @@ Current founding access list:
 2. Start storage with Docker Compose when Docker is available.
 3. Run `./start_qadam.sh` to verify the foundation.
 4. Set `QADAM_START_ORCHESTRATOR=1` when you want the local health endpoint to run.
+5. For cockpit login, set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` in the cockpit environment, then open `/sign-in`.
 
 Current Event Log state:
 
@@ -248,7 +252,9 @@ Current shadow intelligence state:
 
 - `orchestrator/intelligence.py` defines Evidence Trail and Proposed Signal contracts.
 - `scripts/check_shadow_intelligence.py` runs deterministic keyword/anomaly triage without calling Gemini or LM Studio.
-- Gemini and LM Studio provider readiness are reported as configured/missing, but no model inference runs in this check.
+- Gemini and LM Studio provider readiness are reported as configured/missing, with optional safe probes that list models only and do not generate content.
+- `scripts/check_llm_provider_probes.py` can run dry status checks by default, or `--local-live` after LM Studio is running.
+- The Research Analyst shadow triage runner consumes queued packets and converts them into non-executable shadow signals.
 - All shadow signals are marked non-executable with `execution_allowed=false`.
 
 Durable-mode commands:

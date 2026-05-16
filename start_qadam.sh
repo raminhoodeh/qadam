@@ -15,6 +15,7 @@ fi
 "$PYTHON_BIN" scripts/check_agent_manifests.py
 "$PYTHON_BIN" scripts/check_agent_runtime.py
 "$PYTHON_BIN" scripts/check_shadow_intelligence.py
+"$PYTHON_BIN" scripts/check_llm_provider_probes.py
 "$PYTHON_BIN" scripts/check_chroma_store.py
 "$PYTHON_BIN" scripts/check_source_heartbeat.py
 "$PYTHON_BIN" scripts/check_gdelt_adapter.py

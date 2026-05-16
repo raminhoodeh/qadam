@@ -416,11 +416,14 @@ Deliverables:
 
 Implemented state:
 
-- `/` renders a dynamic System Map from the cockpit health contract.
+- `/` now renders a public cockpit entry page with Login.
+- `/login` redirects to `/sign-in`; `/sign-in` and `/sign-up` render Clerk auth when keys are configured.
+- `/dashboard` renders a dynamic System Map from the cockpit health contract.
+- `/settings` is protected alongside `/dashboard`.
 - `/api/health` fetches the Python COO health endpoint when configured.
 - Cockpit fallback renders a degraded local state when the COO is offline.
 - Promoted adapters, local-store degradation, unresolved sources, execution venues, and Fund Manager access are visible in the System Map.
-- `COCKPIT.md` documents the cockpit data contract and current route surface.
+- The current route surface is documented in the README and master implementation plan.
 
 System Map nodes:
 

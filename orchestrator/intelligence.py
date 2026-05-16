@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from statistics import fmean
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from orchestrator.config import Settings
@@ -100,28 +102,135 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def provider_status(settings: Settings | None = None) -> dict[str, Any]:
+def _http_json_probe(url: str, *, timeout_seconds: float = 1.2) -> dict[str, Any]:
+    request = Request(url, headers={"User-Agent": "qadam-shadow-intelligence/1.0"})
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310 - caller controls trusted probe URLs.
+            body = response.read().decode("utf-8")
+            return {
+                "status": "ok",
+                "http_status": response.status,
+                "payload": json.loads(body) if body else {},
+            }
+    except HTTPError as exc:
+        return {"status": "http_error", "http_status": exc.code, "reason": exc.reason}
+    except (TimeoutError, URLError, OSError) as exc:
+        return {"status": "connection_error", "http_status": None, "reason": str(exc)}
+    except json.JSONDecodeError as exc:
+        return {"status": "parse_error", "http_status": None, "reason": str(exc)}
+
+
+def gemini_credential_probe(
+    settings: Settings | None = None,
+    *,
+    live: bool = False,
+    timeout_seconds: float = 1.2,
+) -> dict[str, Any]:
     settings = settings or Settings.from_env()
-    gemini_configured = bool(secret_value("GEMINI_API_KEY", settings) or secret_value("GOOGLE_API_KEY", settings))
+    api_key = secret_value("GEMINI_API_KEY", settings) or secret_value("GOOGLE_API_KEY", settings)
+    if not api_key:
+        return {
+            "provider": "gemini",
+            "credential_configured": False,
+            "mode": "missing_key",
+            "probe_status": "missing_key",
+            "boundary": "No Gemini calls are made without a configured key.",
+        }
+    if not live:
+        return {
+            "provider": "gemini",
+            "credential_configured": True,
+            "mode": "configured_not_called",
+            "probe_status": "not_called",
+            "boundary": "Dry status only. No Gemini request was made.",
+        }
+
+    probe = _http_json_probe(
+        f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}",
+        timeout_seconds=timeout_seconds,
+    )
+    model_count = 0
+    if isinstance(probe.get("payload"), dict):
+        models = probe["payload"].get("models", [])
+        model_count = len(models) if isinstance(models, list) else 0
+    return {
+        "provider": "gemini",
+        "credential_configured": True,
+        "mode": "credential_probe_called",
+        "probe_status": "ok" if probe["status"] == "ok" else "degraded",
+        "http_status": probe["http_status"],
+        "model_count": model_count,
+        "boundary": "Credential probe lists Gemini models only. It sends no trading content and generates no text.",
+    }
+
+
+def lm_studio_models_probe(
+    settings: Settings | None = None,
+    *,
+    live: bool = False,
+    timeout_seconds: float = 1.2,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
     local_provider = secret_value("LOCAL_LLM_PROVIDER", settings) or "lm_studio"
     lm_studio_base_url = secret_value("LM_STUDIO_BASE_URL", settings) or "http://127.0.0.1:1234/v1"
     lm_studio_model = secret_value("LM_STUDIO_MODEL", settings) or ""
     lm_studio_configured = local_provider == "lm_studio" and bool(lm_studio_base_url and lm_studio_model)
+    base_payload = {
+        "provider": local_provider,
+        "model": lm_studio_model or "missing",
+        "base_url_configured": bool(lm_studio_base_url),
+    }
+    if not lm_studio_configured:
+        return base_payload | {
+            "mode": "missing_config",
+            "probe_status": "missing_config",
+            "model_available": False,
+            "available_model_count": 0,
+            "boundary": "LM Studio requires LOCAL_LLM_PROVIDER, LM_STUDIO_MODEL, and LM_STUDIO_BASE_URL.",
+        }
+    if not live:
+        return base_payload | {
+            "mode": "configured_not_called",
+            "probe_status": "not_called",
+            "model_available": False,
+            "available_model_count": 0,
+            "boundary": "Dry status only. LM Studio was not called.",
+        }
+
+    probe = _http_json_probe(f"{lm_studio_base_url.rstrip('/')}/models", timeout_seconds=timeout_seconds)
+    models_payload = probe.get("payload", {})
+    models = models_payload.get("data", []) if isinstance(models_payload, dict) else []
+    model_ids = [item.get("id") for item in models if isinstance(item, dict) and isinstance(item.get("id"), str)]
+    return base_payload | {
+        "mode": "models_probe_called",
+        "probe_status": "ok" if probe["status"] == "ok" else "not_running",
+        "http_status": probe["http_status"],
+        "model_available": bool(lm_studio_model and lm_studio_model in model_ids),
+        "available_model_count": len(model_ids),
+        "boundary": "LM Studio probe lists local models only. It does not run inference.",
+    }
+
+
+def provider_status(
+    settings: Settings | None = None,
+    *,
+    local_live: bool = False,
+    gemini_live: bool = False,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    frontier = gemini_credential_probe(settings, live=gemini_live)
+    local = lm_studio_models_probe(settings, live=local_live)
+    frontier_ready = frontier["credential_configured"] and frontier["probe_status"] in {"not_called", "ok"}
+    local_ready = (
+        local["provider"] == "lm_studio"
+        and local["base_url_configured"]
+        and local["model"] != "missing"
+        and local["probe_status"] in {"not_called", "ok"}
+    )
     return {
-        "status": "ok" if gemini_configured and lm_studio_configured else "degraded",
-        "frontier_llm": {
-            "provider": "gemini",
-            "credential_configured": gemini_configured,
-            "mode": "configured_not_called" if gemini_configured else "missing_key",
-            "boundary": "No Gemini calls are made by Phase 2 status checks.",
-        },
-        "local_llm": {
-            "provider": local_provider,
-            "model": lm_studio_model or "missing",
-            "base_url_configured": bool(lm_studio_base_url),
-            "mode": "configured_not_called" if lm_studio_configured else "missing_config",
-            "boundary": "LM Studio is not called until the user starts it and approves a local model check.",
-        },
+        "status": "ok" if frontier_ready and local_ready else "degraded",
+        "frontier_llm": frontier,
+        "local_llm": local,
     }
 
 
@@ -301,6 +410,90 @@ def run_shadow_intelligence_sample(
         "store": store.health(),
         "event_log": event_log.health(),
         "boundary": "Shadow signals are non-executable and cannot reach broker or risk routing.",
+    }
+
+
+def _triage_queue_path(settings: Settings | None = None) -> Path:
+    settings = settings or Settings.from_env()
+    return Path(settings.runtime_dir) / "research_triage_queue.jsonl"
+
+
+def read_research_shadow_triage_queue(settings: Settings | None = None) -> tuple[dict[str, Any], ...]:
+    path = _triage_queue_path(settings)
+    if not path.exists():
+        return ()
+    packets: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                packet = json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"invalid research triage packet line {line_number} in {path}") from exc
+            if isinstance(packet, dict):
+                packets.append(packet)
+    return tuple(packets)
+
+
+def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
+    refs = packet.get("source_event_refs", [])
+    ref_text = ", ".join(ref for ref in refs if isinstance(ref, str)) or "no source refs"
+    summary = str(packet.get("summary", "")).strip() or "Research Analyst queued an empty shadow packet."
+    uncertainty = str(packet.get("uncertainty", "unknown")).lower()
+    trust_score = 0.56
+    if uncertainty in {"low", "bounded", "known"}:
+        trust_score = 0.68
+    elif uncertainty in {"high", "unknown"}:
+        trust_score = 0.48
+    return EvidenceItem(
+        evidence_id=f"shadow_triage_packet:{packet.get('packet_id', 'unknown')}",
+        source="agent_runtime.research_triage_queue",
+        event_type="research_shadow_triage_packet",
+        summary=f"{summary} Source refs: {ref_text}",
+        trust_score=trust_score,
+        observed_at=str(packet.get("created_at") or _now()),
+        raw_ref=str(packet.get("packet_id") or "unknown"),
+    )
+
+
+def run_research_shadow_triage_queue(
+    *,
+    limit: int = 10,
+    settings: Settings | None = None,
+    store: ShadowSignalStore | None = None,
+    event_log: EventLog | None = None,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    store = store or ShadowSignalStore(settings=settings)
+    event_log = event_log or EventLog(echo=False)
+    packets = read_research_shadow_triage_queue(settings)
+    selected = packets[-limit:] if limit > 0 else packets
+    evidence = tuple(_packet_to_evidence(packet) for packet in selected)
+    signals = deterministic_shadow_triage(evidence)
+    for signal in signals:
+        store.write(signal)
+    event_log.write(
+        "research_shadow_triage_queue_processed",
+        "intelligence",
+        {
+            "packet_count": len(packets),
+            "processed_packet_count": len(selected),
+            "shadow_signal_count": len(signals),
+            "execution_allowed_count": sum(1 for signal in signals if signal.execution_allowed),
+        },
+    )
+    return {
+        "status": "ok",
+        "queue_path": str(_triage_queue_path(settings)),
+        "packet_count": len(packets),
+        "processed_packet_count": len(selected),
+        "shadow_signal_count": len(signals),
+        "execution_allowed_count": sum(1 for signal in signals if signal.execution_allowed),
+        "store": store.health(),
+        "event_log": event_log.health(),
+        "boundary": "Research Analyst triage runner produces shadow-only signals with no execution authority.",
     }
 
 

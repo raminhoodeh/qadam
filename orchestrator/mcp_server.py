@@ -42,7 +42,10 @@ from orchestrator.governance import GovernanceStore
 from orchestrator.ingestion import ingestion_spine_summary
 from orchestrator.ingestion import run_test_ingestion as run_test_ingestion_spine
 from orchestrator.intelligence import (
+    gemini_credential_probe,
+    lm_studio_models_probe,
     provider_status as intelligence_provider_status,
+    run_research_shadow_triage_queue as run_research_shadow_triage_queue_once,
     run_shadow_intelligence_sample as run_shadow_intelligence_sample_once,
     shadow_intelligence_summary,
 )
@@ -237,8 +240,31 @@ def shadow_intelligence_provider_status() -> dict[str, object]:
     return intelligence_provider_status(Settings.from_env())
 
 
+def shadow_intelligence_provider_probes(
+    local_live: bool = False,
+    gemini_live: bool = False,
+) -> dict[str, object]:
+    return intelligence_provider_status(
+        Settings.from_env(),
+        local_live=local_live,
+        gemini_live=gemini_live,
+    )
+
+
+def lm_studio_models_status(live: bool = False) -> dict[str, object]:
+    return lm_studio_models_probe(Settings.from_env(), live=live)
+
+
+def gemini_credential_status(live: bool = False) -> dict[str, object]:
+    return gemini_credential_probe(Settings.from_env(), live=live)
+
+
 def run_shadow_intelligence_sample() -> dict[str, object]:
     return run_shadow_intelligence_sample_once()
+
+
+def run_research_shadow_triage_queue(limit: int = 10) -> dict[str, object]:
+    return run_research_shadow_triage_queue_once(limit=limit)
 
 
 def gdelt_status() -> dict[str, object]:
@@ -396,7 +422,11 @@ def build_server():
     mcp.tool()(run_test_ingestion)
     mcp.tool()(shadow_intelligence_status)
     mcp.tool()(shadow_intelligence_provider_status)
+    mcp.tool()(shadow_intelligence_provider_probes)
+    mcp.tool()(lm_studio_models_status)
+    mcp.tool()(gemini_credential_status)
     mcp.tool()(run_shadow_intelligence_sample)
+    mcp.tool()(run_research_shadow_triage_queue)
     mcp.tool()(gdelt_status)
     mcp.tool()(gdelt_sample)
     mcp.tool()(gdelt_live_read_only)

@@ -229,7 +229,7 @@ Current implementation start:
 - Agent registry, skill bundles, manifest validation, explicit tool grants, and cockpit/system-health status exist.
 - Eight named agents validate locally.
 - Seven reusable skill bundles validate locally.
-- Current validation reports 109 tool grants and 13 secret-name grants, all names only.
+- Current validation reports 121 tool grants and 13 secret-name grants, all names only.
 
 Reference pattern:
 
@@ -303,6 +303,8 @@ Current implementation start:
 - Evidence Trail and Proposed Signal schemas exist.
 - Deterministic keyword/anomaly triage fallback exists.
 - Gemini and LM Studio readiness are reported without inference calls.
+- LM Studio `/models` and Gemini model-list credential probes exist as safe optional checks.
+- Research Analyst queued packets can be converted into non-executable shadow signals.
 - Shadow Signal store is local-only and all generated signals have `execution_allowed=false`.
 - Cockpit can show Shadow Intelligence status.
 
@@ -627,10 +629,10 @@ These apply from Phase 0 onward.
 
 ## Recommended Next Implementation Batch
 
-The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts have started. The next batch should add safe provider probes and a shadow triage runner.
+The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts plus safe provider probes have started. The next batch should add controlled model calls and debug rendering.
 
-1. LM Studio `/models` readiness probe after the user starts LM Studio.
-2. Gemini credential dry-run guard with no trading content.
-3. Research Analyst shadow triage runner over queued packets.
+1. Start LM Studio and verify `gemma-4-e4b` through the `/models` readiness probe.
+2. Run Gemini model-list credential validation without text generation.
+3. Add the first local Research Analyst inference call over queued packets.
 4. Evidence Trail debug renderer.
 5. Cockpit-hidden debug view for shadow outputs.

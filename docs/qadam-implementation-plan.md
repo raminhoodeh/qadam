@@ -67,8 +67,8 @@ Already scaffolded:
 Known scaffold limitations:
 
 - Event Log is currently in-memory only.
-- Cockpit is a visual shell, not authenticated yet.
-- Live `qadam.trade` currently has no top-right Login button and no `/login`, `/sign-in`, or `/dashboard` route.
+- Cockpit now has local Clerk routes, a protected `/dashboard`, and founding Fund Manager allowlist enforcement.
+- Live `qadam.trade` production routing still needs a deliberate deploy before the Login entrypoint is public.
 - The remote Vercel project is currently configured as a generic project with root directory `.`; production deploys should be deliberate while the existing landing page is live.
 - The resource registry is documentary only; it does not yet have a database table, cockpit view, or module-to-resource tracking workflow.
 - The How The World Works corpus is accepted as a private foundational prior, but is not yet structured into claim cards, observable signatures, or falsification tests.
@@ -386,7 +386,7 @@ Exit criteria:
 
 Objective: formalize the agent architecture before giving the local LLM, frontier LLM, quantum module, or execution adapters more authority.
 
-Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 109 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
+Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 121 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
 
 New reference input:
 
@@ -442,7 +442,7 @@ Exit criteria:
 
 Objective: run Gemma and Gemini end-to-end in shadow mode.
 
-Current implementation note: Phase 2 has started with Evidence Trail and Proposed Signal contracts, deterministic keyword/anomaly triage, local Shadow Signal storage, and provider readiness reporting for Gemini and LM Studio. No model calls are made yet, and every shadow signal is non-executable.
+Current implementation note: Phase 2 has started with Evidence Trail and Proposed Signal contracts, deterministic keyword/anomaly triage, local Shadow Signal storage, optional model-list provider probes for Gemini and LM Studio, and a Research Analyst queue runner. No text generation calls are made yet, and every shadow signal is non-executable.
 
 Build order:
 
@@ -716,6 +716,7 @@ Deployment policy:
 - Do not overwrite the live landing page accidentally.
 - Keep the unauthenticated landing page and authenticated cockpit as separate experiences until the routing plan is explicit.
 - Preferred production shape: `qadam.trade` remains the landing page, while logged-in users enter the cockpit through Clerk and land on the System Map.
+- Local cockpit route shape now exists: `/` public entry, `/login` alias, `/sign-in`, `/sign-up`, `/dashboard`, and `/settings`.
 - The live top-right navigation must change from only `Read Whitepaper` to include `Login`.
 - `Login` must route to Clerk sign-in, then redirect authenticated users to the System Map dashboard.
 - Clerk access must be allowlisted to Ramin, Troy, Akber, Anas, and Ion for the first release.

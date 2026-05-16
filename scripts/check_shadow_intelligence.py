@@ -10,7 +10,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from orchestrator.intelligence import run_shadow_intelligence_sample, shadow_intelligence_summary
+from orchestrator.intelligence import (
+    provider_status,
+    run_research_shadow_triage_queue,
+    run_shadow_intelligence_sample,
+    shadow_intelligence_summary,
+)
 
 
 def main() -> int:
@@ -32,7 +37,16 @@ def main() -> int:
     print(f"shadow_intelligence_local_provider={local['provider']}")
     print(f"shadow_intelligence_local_model={local['model']}")
     print(f"shadow_intelligence_local_mode={local['mode']}")
+    print(f"shadow_intelligence_local_probe_status={local['probe_status']}")
+    print(f"shadow_intelligence_gemini_probe_status={frontier['probe_status']}")
     print(f"shadow_intelligence_boundary={result['boundary']}")
+
+    dry_providers = provider_status()
+    triage_result = run_research_shadow_triage_queue(limit=5)
+    print(f"shadow_intelligence_provider_probe_mode={dry_providers['status']}")
+    print(f"shadow_intelligence_queue_packet_count={triage_result['packet_count']}")
+    print(f"shadow_intelligence_queue_processed_count={triage_result['processed_packet_count']}")
+    print(f"shadow_intelligence_queue_signal_count={triage_result['shadow_signal_count']}")
 
     if result["status"] != "ok":
         return 1
@@ -44,6 +58,9 @@ def main() -> int:
         return 1
     if result["store"]["status"] != "ok":
         print("shadow_intelligence_store_not_ok=true")
+        return 1
+    if triage_result["execution_allowed_count"] != 0:
+        print("shadow_intelligence_queue_execution_allowed_not_zero=true")
         return 1
 
     print("shadow_intelligence_check=ok")

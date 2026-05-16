@@ -152,8 +152,8 @@ Build:
 - Disabled Execution Venue Registry shaped by PriveX Starter lessons: read-only first, explicit account/subaccount/network scope, auth errors separated from transient errors, and no automatic POST retries.
 - FastMCP tools: `ticker_echo`, `source_registry`, `source_detail`, `resource_registry`, `world_model_claim`, `system_health`, `module_map`.
 - Agent/skill manifest plan shaped by Anthropic's `financial-services` reference: named workflow agents, reusable skill bundles, explicit connector grants, manifest validation, and secret scanning.
-- Next.js cockpit shell with System Map.
-- Clerk route plan: top-right Login, `/login` or `/sign-in`, protected `/dashboard`.
+- Next.js cockpit shell with public `/`, protected `/dashboard`, System Map, and settings route.
+- Clerk sign-in/sign-up routes with founding Fund Manager allowlist enforcement in the cockpit.
 - Vercel linked read-only to existing `qadam.trade` project.
 - Founding Fund Manager access list: Ramin, Troy, Akber, Anas, Ion.
 - Initial email allowlist: `raminhoodeh@gmail.com`, `troycookecareer@gmail.com`, `isioras@yahoo.co.uk`; Akber and Anas pending.
@@ -295,6 +295,8 @@ Current implementation start:
 - Evidence Trail and Proposed Signal contracts exist in `orchestrator/intelligence.py`.
 - Deterministic keyword/anomaly triage can produce shadow-only signals from sample evidence.
 - Gemini and LM Studio provider status report configured/missing without model calls.
+- Provider-safe probes exist: LM Studio `/models` can be checked after LM Studio is running, and Gemini can be checked through a model-list credential probe without text generation.
+- The Research Analyst shadow triage runner consumes queued packets and writes non-executable shadow signals.
 - `scripts/check_shadow_intelligence.py` is wired into `start_qadam.sh`.
 - System health, FastMCP-style tools, and cockpit registry cards expose Shadow Intelligence status.
 - Every Phase 2 output remains non-executable.
@@ -455,12 +457,13 @@ Exit gate:
 
 ## 15. qadam.trade Route Plan
 
-Current live state:
+Current repository state:
 
 - `qadam.trade` redirects to `www.qadam.trade`.
 - Public landing page exists.
 - Top-right currently has `Read Whitepaper`, not Login.
-- `/login`, `/sign-in`, and `/dashboard` are not live yet.
+- The local cockpit now has public `/`, `/login` -> `/sign-in`, Clerk `/sign-in` and `/sign-up`, protected `/dashboard`, and protected `/settings`.
+- `/dashboard` and `/settings` enforce Qadam's founding Fund Manager email allowlist after Clerk sign-in.
 
 Target state:
 
@@ -492,11 +495,11 @@ Do not try to build all of Qadam at once. Qadam is created by making each module
 
 Phase 0 foundation is substantially implemented, and Phase 1 has started with test ingestion, source heartbeat, and promoted read-only adapters for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts have started. The next practical batch is provider-safe local model integration:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts and provider-safe probes have started. The next practical batch is controlled model use:
 
-1. Add an LM Studio local health probe that only checks `/models` after the user starts LM Studio.
-2. Add a Gemini dry-run guard that confirms credentials without generating trading content.
-3. Add a Research Analyst shadow triage runner that consumes queued packets.
+1. Start LM Studio and run the local `/models` readiness check against `gemma-4-e4b`.
+2. Run the Gemini model-list credential probe without text generation.
+3. Add the first local Research Analyst inference call over queued shadow packets.
 4. Add Evidence Trail rendering in a cockpit-hidden debug view.
 5. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 

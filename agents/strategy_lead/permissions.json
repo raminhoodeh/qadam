@@ -24,7 +24,9 @@
     "skill_registry",
     "agent_runtime_status",
     "shadow_intelligence_status",
-    "shadow_intelligence_provider_status"
+    "shadow_intelligence_provider_status",
+    "shadow_intelligence_provider_probes",
+    "gemini_credential_status"
   ],
   "allowed_source_groups": [
     "live_source_registry",
