@@ -10,6 +10,7 @@ Primary spec: `specs/qadam-specs.md`.
 Planning docs:
 
 - `docs/qadam-master-implementation-plan.md` - start here; this is the day-to-day control document.
+- `docs/api-key-setup.md`
 - `docs/qadam-for-fund-managers.md` - trader-facing explanation for Ramin, Troy, Akber, Anas, and Ion.
 - `docs/api-source-inventory.md`
 - `docs/qadam-resource-registry.md`
@@ -133,6 +134,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Local store health checks for Postgres/Timescale and Chroma, with degraded status until the services are running.
 - Next.js cockpit shell wired to the local health contract.
 - API source inventory.
+- API key setup guide for the credential-gated adapters.
 - Startup and foundation checks.
 
 ## Source Pipelines
@@ -217,6 +219,7 @@ Current ingestion state:
 - `scripts/check_source_heartbeat.py` verifies all 35 source readiness states, promoted adapter count, missing credential map, and local heartbeat store.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
 - `scripts/check_oref_adapter.py` verifies the Oref sample path and can run a live read-only check with `--live`.
+- `scripts/check_nasa_firms_adapter.py` verifies the NASA FIRMS sample path and can run a live read-only area CSV check with `--live` when `NASA_FIRMS_API_KEY` is configured.
 - `scripts/check_fred_adapter.py` verifies the FRED macro sample path and can run a live read-only check with `--live`.
 - `scripts/check_rss_adapter.py` verifies the RSS sample path and can run a live read-only check with `--live`.
 - Test observations write to local JSONL and emit Event Log entries.
@@ -227,6 +230,7 @@ Current ingestion state:
 - The data environment map currently distinguishes promoted adapters, derived sources, deferred sources, missing-credential sources, local bridges, fallback-only sources, and ready-to-build/ready-to-port sources.
 - The GDELT live path is read-only and degrades cleanly on network/API failure while preserving the raw attempt locally.
 - The Oref live path is read-only, treats empty active alerts as valid, and degrades cleanly on timeout, HTML, or parse failure.
+- The NASA FIRMS live path is read-only, credential-gated, bbox-first, and turns high-confidence thermal anomalies into physical observations.
 - The FRED live path is read-only, uses `FRED_API_KEY` when configured, and falls back to official public FRED CSV when no key is present.
 - The RSS live path is read-only, rejects HTML/non-feed responses, archives raw feed attempts, and turns headlines into narrative observations.
 

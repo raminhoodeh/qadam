@@ -502,6 +502,299 @@ def fetch_oref_live_sync() -> dict[str, Any]:
     return asyncio.run(fetch_oref_live())
 
 
+DEFAULT_FIRMS_AREAS: tuple[dict[str, str], ...] = (
+    {"name": "Strait of Hormuz", "bbox": "52.0,24.0,58.5,28.5"},
+    {"name": "Suez Canal / Red Sea North", "bbox": "31.0,27.0,34.5,31.5"},
+    {"name": "Gulf refinery corridor", "bbox": "47.0,23.0,56.0,31.0"},
+    {"name": "Eastern Mediterranean ports", "bbox": "29.0,30.0,37.5,37.0"},
+)
+
+
+class NASAFIRMSAdapter:
+    source_key = "nasa_firms"
+    source_name = "NASA FIRMS"
+    source_label = "physical.nasa_firms"
+    base_url = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
+    default_source = "VIIRS_SNPP_NRT"
+    trust_score = 0.88
+
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        archive: RawPayloadArchive | None = None,
+        event_log: EventLog | None = None,
+    ) -> None:
+        self.settings = settings or Settings.from_env()
+        self.archive = archive or RawPayloadArchive(self.settings)
+        self.event_log = event_log or EventLog(echo=False)
+
+    def sample_payload(self, bbox: str | None = None, days: int = 1) -> dict[str, Any]:
+        now = datetime.now(timezone.utc)
+        return {
+            "bbox": bbox or DEFAULT_FIRMS_AREAS[0]["bbox"],
+            "days": days,
+            "source": self.default_source,
+            "detections": [
+                {
+                    "latitude": "26.2121",
+                    "longitude": "56.2407",
+                    "bright_ti4": "367.2",
+                    "scan": "0.41",
+                    "track": "0.45",
+                    "acq_date": now.date().isoformat(),
+                    "acq_time": now.strftime("%H%M"),
+                    "satellite": "SNPP",
+                    "instrument": "VIIRS",
+                    "confidence": "h",
+                    "version": "2.0NRT",
+                    "bright_ti5": "312.4",
+                    "frp": "82.5",
+                    "daynight": "N",
+                    "infrastructure_type": "energy corridor",
+                },
+                {
+                    "latitude": "26.0300",
+                    "longitude": "56.1000",
+                    "bright_ti4": "318.1",
+                    "scan": "0.40",
+                    "track": "0.42",
+                    "acq_date": now.date().isoformat(),
+                    "acq_time": now.strftime("%H%M"),
+                    "satellite": "SNPP",
+                    "instrument": "VIIRS",
+                    "confidence": "n",
+                    "version": "2.0NRT",
+                    "bright_ti5": "300.1",
+                    "frp": "4.2",
+                    "daynight": "D",
+                    "infrastructure_type": "background thermal point",
+                },
+            ],
+            "sample": True,
+        }
+
+    @staticmethod
+    def _parse_csv(text: str) -> list[dict[str, str]]:
+        stripped = text.strip()
+        if not stripped:
+            return []
+        reader = csv.DictReader(io.StringIO(stripped))
+        return [dict(row) for row in reader]
+
+    @staticmethod
+    def _ingested_at(acq_date: str, acq_time: str) -> str:
+        padded = acq_time.zfill(4)[:4] if acq_time else "0000"
+        try:
+            parsed = datetime.fromisoformat(f"{acq_date}T{padded[:2]}:{padded[2:]}:00+00:00")
+        except ValueError:
+            parsed = datetime.now(timezone.utc)
+        return parsed.isoformat()
+
+    def normalize_payload(self, payload: dict[str, Any]) -> tuple[UnifiedEvent, ...]:
+        detections = payload.get("detections")
+        if not isinstance(detections, list):
+            return ()
+
+        events: list[UnifiedEvent] = []
+        for detection in detections:
+            if not isinstance(detection, dict):
+                continue
+            confidence = str(detection.get("confidence") or "").lower()
+            frp = _parse_float(detection.get("frp"))
+            latitude = _parse_float(detection.get("latitude"))
+            longitude = _parse_float(detection.get("longitude"))
+            if confidence != "h" or frp is None or frp <= 50 or latitude is None or longitude is None:
+                continue
+
+            acq_date = str(detection.get("acq_date") or "")
+            acq_time = str(detection.get("acq_time") or "")
+            infrastructure_type = str(detection.get("infrastructure_type") or "unclassified")
+            summary = (
+                f"High-confidence NASA FIRMS thermal anomaly at {latitude:.4f},{longitude:.4f}; "
+                f"FRP {frp:g}; {infrastructure_type}"
+            )
+            events.append(
+                UnifiedEvent(
+                    schema_version=UNIFIED_EVENT_SCHEMA_VERSION,
+                    event_id=str(uuid4()),
+                    source=self.source_label,
+                    trust_score_at_ingestion=self.trust_score,
+                    event_type="physical_anomaly",
+                    raw_payload={
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "frp": frp,
+                        "confidence": confidence,
+                        "acq_date": acq_date,
+                        "acq_time": acq_time,
+                        "satellite": detection.get("satellite"),
+                        "instrument": detection.get("instrument"),
+                        "daynight": detection.get("daynight"),
+                        "bbox": payload.get("bbox"),
+                        "source": payload.get("source"),
+                        "infrastructure_type": infrastructure_type,
+                    },
+                    normalised_summary=summary[:240],
+                    coordinates={"lat": latitude, "lon": longitude},
+                    ingested_at=self._ingested_at(acq_date, acq_time),
+                    linked_catalyst_id=None,
+                )
+            )
+        return tuple(events)
+
+    def envelope_from_payload(
+        self,
+        payload: dict[str, Any],
+        *,
+        archive: bool = True,
+        degraded: bool = False,
+        degraded_reason: str | None = None,
+    ) -> SourceEnvelope:
+        archive_path = self.archive.write(self.source_key, payload) if archive else None
+        events = self.normalize_payload(payload)
+        envelope = SourceEnvelope(
+            events=events,
+            source=self.source_label,
+            trust_score=self.trust_score,
+            fetched_at=datetime.now(timezone.utc).isoformat(),
+            degraded=degraded,
+            degraded_reason=degraded_reason,
+            raw_archive_path=str(archive_path) if archive_path else None,
+        )
+        self.event_log.write(
+            "source_adapter_fetch_completed",
+            "nasa_firms_adapter",
+            {
+                "source": self.source_label,
+                "event_count": len(events),
+                "degraded": degraded,
+                "raw_archive_path": envelope.raw_archive_path,
+            },
+        )
+        return envelope
+
+    async def fetch_live(
+        self,
+        *,
+        bbox: str | None = None,
+        days: int = 1,
+        source: str | None = None,
+        timeout_seconds: float = 12.0,
+    ) -> SourceEnvelope:
+        try:
+            import httpx
+        except ImportError as exc:
+            raise RuntimeError("httpx is not installed. Run scripts/bootstrap_runtime.sh first.") from exc
+
+        map_key = secret_value("NASA_FIRMS_API_KEY", self.settings)
+        selected_bbox = bbox or DEFAULT_FIRMS_AREAS[0]["bbox"]
+        selected_source = source or self.default_source
+        days = max(1, min(days, 10))
+
+        if not map_key:
+            payload = {
+                "bbox": selected_bbox,
+                "days": days,
+                "source": selected_source,
+                "detections": [],
+                "_qadam_request": {"bbox": selected_bbox, "days": days, "source": selected_source},
+                "_qadam_error_type": "MissingSecret",
+                "_qadam_error": "NASA_FIRMS_API_KEY is not configured",
+            }
+            return self.envelope_from_payload(
+                payload,
+                degraded=True,
+                degraded_reason="nasa_firms_missing_api_key",
+            )
+
+        url = f"{self.base_url}/{map_key}/{selected_source}/{selected_bbox}/{days}"
+        headers = {"Accept": "text/csv, */*", "User-Agent": "Qadam/0.1 read-only NASA FIRMS adapter"}
+        try:
+            async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=True, headers=headers) as client:
+                response = await client.get(url)
+                if response.status_code == 404:
+                    payload = {
+                        "bbox": selected_bbox,
+                        "days": days,
+                        "source": selected_source,
+                        "detections": [],
+                        "not_found_no_fire_data": True,
+                        "_qadam_request": {"bbox": selected_bbox, "days": days, "source": selected_source},
+                    }
+                    return self.envelope_from_payload(payload)
+                response.raise_for_status()
+                detections = self._parse_csv(response.text)
+        except httpx.HTTPError as exc:
+            status_code = exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None
+            payload = {
+                "bbox": selected_bbox,
+                "days": days,
+                "source": selected_source,
+                "detections": [],
+                "_qadam_request": {"bbox": selected_bbox, "days": days, "source": selected_source},
+                "_qadam_error_type": exc.__class__.__name__,
+                "_qadam_error": "NASA FIRMS HTTP request failed",
+                "_qadam_status_code": status_code,
+            }
+            return self.envelope_from_payload(
+                payload,
+                degraded=True,
+                degraded_reason=f"nasa_firms_http_error:{exc.__class__.__name__}",
+            )
+
+        payload = {
+            "bbox": selected_bbox,
+            "days": days,
+            "source": selected_source,
+            "detections": detections,
+            "_qadam_request": {"bbox": selected_bbox, "days": days, "source": selected_source},
+        }
+        return self.envelope_from_payload(payload)
+
+    def fetch_sample(self, *, bbox: str | None = None, days: int = 1) -> SourceEnvelope:
+        return self.envelope_from_payload(self.sample_payload(bbox=bbox, days=days))
+
+
+def nasa_firms_adapter_status(settings: Settings | None = None) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    archive_root = Path(settings.raw_payload_dir) / NASAFIRMSAdapter.source_key
+    key_status = secret_value("NASA_FIRMS_API_KEY", settings)
+    return {
+        "key": NASAFIRMSAdapter.source_key,
+        "source": NASAFIRMSAdapter.source_label,
+        "mode": "sample_ready_live_requires_key",
+        "auth": "api_key",
+        "credential_configured": bool(key_status),
+        "trust_score": NASAFIRMSAdapter.trust_score,
+        "default_area_count": len(DEFAULT_FIRMS_AREAS),
+        "raw_archive_root": str(archive_root),
+        "raw_archive_exists": archive_root.exists(),
+        "live_boundary": "Read-only. High-confidence thermal anomalies become physical observations, not trade triggers.",
+    }
+
+
+def fetch_nasa_firms_sample(bbox: str | None = None, days: int = 1) -> dict[str, Any]:
+    return NASAFIRMSAdapter().fetch_sample(bbox=bbox, days=days).to_dict()
+
+
+async def fetch_nasa_firms_live(
+    bbox: str | None = None,
+    days: int = 1,
+    source: str | None = None,
+) -> dict[str, Any]:
+    envelope = await NASAFIRMSAdapter().fetch_live(bbox=bbox, days=days, source=source)
+    return envelope.to_dict()
+
+
+def fetch_nasa_firms_live_sync(
+    bbox: str | None = None,
+    days: int = 1,
+    source: str | None = None,
+) -> dict[str, Any]:
+    return asyncio.run(fetch_nasa_firms_live(bbox, days, source))
+
+
 DEFAULT_FRED_SERIES: tuple[dict[str, str], ...] = (
     {"series_id": "DFF", "title": "Fed Funds Rate"},
     {"series_id": "DGS10", "title": "10-Year Treasury Yield"},

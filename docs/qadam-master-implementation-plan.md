@@ -176,12 +176,13 @@ Current implementation start:
 
 - Test-data ingestion spine exists in `orchestrator/ingestion.py`.
 - Shared adapter envelope, raw archive, and normalized event schema exist in `orchestrator/adapters.py`.
-- First read-only public adapters exist for GDELT, Oref, FRED, and RSS.
+- First read-only public adapters exist for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 - Source heartbeat and `data_environment_map.json` generation exist in `orchestrator/source_health.py`.
 - `scripts/check_test_ingestion.py` proves typed source observations and Event Log writes without live API calls.
 - `scripts/check_source_heartbeat.py` proves all 35 sources are classified by readiness, missing credentials, promoted adapter state, and deferred reasons.
 - `scripts/check_gdelt_adapter.py` proves GDELT sample normalization and graceful degraded handling for live network/API failure.
 - `scripts/check_oref_adapter.py` proves Oref sample normalization and graceful degraded handling for live network/API failure.
+- `scripts/check_nasa_firms_adapter.py` proves NASA FIRMS sample normalization, bbox-first area requests, credential-gated live mode, raw archive writes, and graceful degraded handling when the key is missing.
 - `scripts/check_fred_adapter.py` proves FRED macro normalization, sigma/pct-change calculation, public CSV fallback, raw archive writes, and graceful degraded handling for live feed failure.
 - `scripts/check_rss_adapter.py` proves RSS feed normalization, keyword filtering, raw archive writes, and graceful degraded handling for live feed failure.
 - `migrations/0003_source_observation.sql` defines durable observation storage for Postgres/Timescale.
@@ -190,7 +191,7 @@ Current implementation start:
 - Durable Postgres seed/write helpers exist in `orchestrator/postgres_store.py`.
 - `scripts/start_local_stores.sh` is ready to start services, migrate, and seed once Docker/OrbStack/Podman/Colima is available.
 - Remaining live adapters stay unimplemented until each source is promoted from test data to real API mode.
-- GDELT is promoted to the first real read-only adapter path; Oref is promoted as the second, higher-trust conflict alert adapter; FRED is promoted as the first macro regime adapter; RSS is promoted as the first narrative feed adapter.
+- GDELT is promoted to the first real read-only adapter path; Oref is promoted as the second, higher-trust conflict alert adapter; NASA FIRMS is promoted as the first physical anomaly adapter; FRED is promoted as the first macro regime adapter; RSS is promoted as the first narrative feed adapter.
 - No promoted adapter is allowed to influence signal confidence without corroboration and Signal Integrity Gate approval.
 
 Objective: make Qadam observe the world.

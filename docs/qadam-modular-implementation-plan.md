@@ -163,6 +163,7 @@ Current implementation start:
 - `data/runtime/data_environment_map.json` is generated locally and remains ignored by Git.
 - GDELT now has the first real read-only adapter path with raw archive, normalized events, Event Log entries, and degraded-state handling.
 - Oref now has the second read-only adapter path, including healthy empty-alert handling and degraded-state handling for timeout, HTML, or parse failure.
+- NASA FIRMS now has the first physical read-only adapter path, including bbox-first area requests, credential-gated live mode, high-confidence thermal anomaly filtering, raw archive, and degraded-state handling.
 - FRED now has the first macro read-only adapter path, including rate/dollar/volatility/credit/crude series, public CSV fallback, sigma calculation, raw archive, and degraded-state handling.
 - RSS now has the first narrative read-only adapter path, including feed validation, keyword filtering, raw archive, normalized headline events, and degraded-state handling.
 - Local Python 3.12 dependencies are bootstrapped in `.venv`.

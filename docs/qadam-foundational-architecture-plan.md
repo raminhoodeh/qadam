@@ -134,7 +134,7 @@ Deliverables:
 
 Implemented state:
 
-- `orchestrator/adapters.py` implements the shared envelope plus GDELT, Oref, FRED, and RSS adapters.
+- `orchestrator/adapters.py` implements the shared envelope plus GDELT, Oref, NASA FIRMS, FRED, and RSS adapters.
 - `scripts/check_gdelt_adapter.py` checks sample mode and optional live read-only mode.
 - GDELT output writes to the raw archive and Event Log.
 - Live GDELT timeout is represented as a degraded source check with archived request metadata.
@@ -142,6 +142,10 @@ Implemented state:
 - `scripts/check_oref_adapter.py` checks sample mode and optional live read-only mode.
 - Empty active Oref alerts are treated as a healthy zero-event result.
 - Oref timeout, HTML, or parse failure is represented as degraded source state with archived request metadata.
+- NASA FIRMS is implemented as the first physical pipeline adapter.
+- `scripts/check_nasa_firms_adapter.py` checks sample mode and optional live read-only area CSV mode.
+- NASA FIRMS live mode requires `NASA_FIRMS_API_KEY`; missing credentials produce a degraded credential state, not a crash.
+- High-confidence FIRMS detections above the FRP threshold become physical anomaly observations.
 - FRED is implemented as the first macro read-only adapter.
 - `scripts/check_fred_adapter.py` checks sample mode and optional live read-only mode with sigma filtering.
 - FRED uses `FRED_API_KEY` when configured and the official public FRED CSV fallback when no key is present; series failures are represented as degraded or partial source state.

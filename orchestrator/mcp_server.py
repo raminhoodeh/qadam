@@ -13,10 +13,13 @@ from orchestrator.adapters import (
     fetch_fred_sample,
     fetch_oref_live_sync,
     fetch_oref_sample,
+    fetch_nasa_firms_live_sync,
+    fetch_nasa_firms_sample,
     fetch_rss_live_sync,
     fetch_rss_sample,
     fred_adapter_status,
     gdelt_adapter_status,
+    nasa_firms_adapter_status,
     oref_adapter_status,
     rss_adapter_status,
 )
@@ -191,6 +194,22 @@ def oref_live_read_only() -> dict[str, object]:
     return fetch_oref_live_sync()
 
 
+def nasa_firms_status() -> dict[str, object]:
+    return nasa_firms_adapter_status(Settings.from_env())
+
+
+def nasa_firms_sample(bbox: str | None = None, days: int = 1) -> dict[str, object]:
+    return fetch_nasa_firms_sample(bbox=bbox, days=days)
+
+
+def nasa_firms_live_read_only(
+    bbox: str | None = None,
+    days: int = 1,
+    source: str | None = None,
+) -> dict[str, object]:
+    return fetch_nasa_firms_live_sync(bbox=bbox, days=days, source=source)
+
+
 def rss_status() -> dict[str, object]:
     return rss_adapter_status(Settings.from_env())
 
@@ -291,6 +310,9 @@ def build_server():
     mcp.tool()(oref_status)
     mcp.tool()(oref_sample)
     mcp.tool()(oref_live_read_only)
+    mcp.tool()(nasa_firms_status)
+    mcp.tool()(nasa_firms_sample)
+    mcp.tool()(nasa_firms_live_read_only)
     mcp.tool()(rss_status)
     mcp.tool()(rss_sample)
     mcp.tool()(rss_live_read_only)

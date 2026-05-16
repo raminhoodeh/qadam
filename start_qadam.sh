@@ -16,6 +16,7 @@ fi
 "$PYTHON_BIN" scripts/check_source_heartbeat.py
 "$PYTHON_BIN" scripts/check_gdelt_adapter.py
 "$PYTHON_BIN" scripts/check_oref_adapter.py
+"$PYTHON_BIN" scripts/check_nasa_firms_adapter.py
 "$PYTHON_BIN" scripts/check_fred_adapter.py
 "$PYTHON_BIN" scripts/check_rss_adapter.py
 

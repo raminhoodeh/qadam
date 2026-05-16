@@ -12,6 +12,7 @@ from typing import Any
 from orchestrator.adapters import (
     fred_adapter_status,
     gdelt_adapter_status,
+    nasa_firms_adapter_status,
     oref_adapter_status,
     rss_adapter_status,
 )
@@ -26,6 +27,7 @@ DATA_ENVIRONMENT_MAP_SCHEMA_VERSION = 1
 PROMOTED_ADAPTER_STATUS = {
     "gdelt": gdelt_adapter_status,
     "oref": oref_adapter_status,
+    "nasa_firms": nasa_firms_adapter_status,
     "fred": fred_adapter_status,
     "rss": rss_adapter_status,
 }
@@ -117,6 +119,8 @@ def _secret_state(source: SourceSpec, settings: Settings) -> tuple[tuple[str, ..
 def _runtime_status(source: SourceSpec, missing_secrets: tuple[str, ...], promoted: bool) -> tuple[str, str | None]:
     if source.status == "derived":
         return "derived", None
+    if promoted and missing_secrets:
+        return "unavailable_missing_credentials", "missing_credentials"
     if promoted:
         return "live_optional", None
     if source.status in {"needs_clarity", "needs_choice", "needs_new_adapter"}:

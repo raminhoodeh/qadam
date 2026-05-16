@@ -340,6 +340,8 @@ Build order:
 10. `data_environment_map.json`.
 11. Cockpit degraded-mode banners.
 
+Current implementation note: the Phase 1 foundation can already emit deterministic test observations for all 35 registered sources. GDELT, Oref, NASA FIRMS, FRED, and RSS have promoted read-only adapter paths with local raw archives and degraded-state handling. NASA FIRMS is credential-gated behind `NASA_FIRMS_API_KEY` and is the first physical pipeline adapter promoted into Qadam.
+
 Tier 1 order:
 
 - ACLED.

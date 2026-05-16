@@ -22,7 +22,7 @@ Key split decisions:
 | --- | --- | --- |
 | ACLED | OAuth, `https://api.acleddata.com/acled/read` | World Monitor has reusable OAuth/token-cache logic. |
 | Oref | Public, `https://www.oref.org.il/WarningMessages/alert/alerts.json` | Spec says 5s cadence, but practical relay code uses a slower protected path. |
-| NASA FIRMS | API key, FIRMS area CSV endpoint | Needs bbox parameterization and pacing. |
+| NASA FIRMS | API key, FIRMS area CSV endpoint | Promoted as the first physical adapter; bbox-first, read-only, credential-gated, and paced conservatively. |
 | UnusualWhales | API key, `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Not implemented in World Monitor; build fresh. |
 | Polymarket | Public CLOB plus wallet/execution later | World Monitor uses Gamma discovery, not full CLOB execution. |
 | Kalshi | API key, trading API | World Monitor uses an elections/trade endpoint for discovery. |

@@ -5,7 +5,13 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from orchestrator.adapters import fred_adapter_status, gdelt_adapter_status, oref_adapter_status, rss_adapter_status
+from orchestrator.adapters import (
+    fred_adapter_status,
+    gdelt_adapter_status,
+    nasa_firms_adapter_status,
+    oref_adapter_status,
+    rss_adapter_status,
+)
 from orchestrator.chroma_store import knowledge_graph_health
 from orchestrator.config import Settings
 from orchestrator.execution import execution_registry
@@ -64,6 +70,7 @@ def module_map(storage_health: dict[str, Any] | None = None) -> list[dict[str, s
         {"key": "ingestion_spine", "label": "Test Ingestion Spine", "owner": "World Monitor Adapters", "status": "test_data_ready"},
         {"key": "gdelt_adapter", "label": "GDELT Adapter", "owner": "Conflict Pipeline", "status": "sample_ready"},
         {"key": "oref_adapter", "label": "Oref Adapter", "owner": "Conflict Pipeline", "status": "sample_ready"},
+        {"key": "nasa_firms_adapter", "label": "NASA FIRMS Adapter", "owner": "Physical Pipeline", "status": "credential_gated"},
         {"key": "fred_adapter", "label": "FRED Adapter", "owner": "Macro Pipeline", "status": "sample_ready"},
         {"key": "rss_adapter", "label": "RSS Adapter", "owner": "Narrative Pipeline", "status": "sample_ready"},
         {"key": "cockpit", "label": "Cockpit", "owner": "qadam.trade", "status": "shell"},
@@ -111,6 +118,7 @@ def build_system_health(
         "adapters": {
             "gdelt": gdelt_adapter_status(settings),
             "oref": oref_adapter_status(settings),
+            "nasa_firms": nasa_firms_adapter_status(settings),
             "fred": fred_adapter_status(settings),
             "rss": rss_adapter_status(settings),
         },

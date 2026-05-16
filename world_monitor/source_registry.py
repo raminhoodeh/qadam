@@ -105,8 +105,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "3 hours",
         "250 requests/day free tier; budget 8/day",
         ("NASA_FIRMS_API_KEY",),
-        "ready_to_port",
-        "World Monitor uses fixed regions; Qadam needs bbox-first adapter.",
+        "adapter_live_requires_key",
+        "Promoted into Qadam as a read-only bbox-first adapter; live mode is credential-gated.",
     ),
     SourceSpec(
         "wingbits",

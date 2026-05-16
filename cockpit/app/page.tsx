@@ -32,7 +32,9 @@ function statusClass(status: string): string {
     return "degraded";
   }
   if (normalised.includes("pending") || normalised.includes("not_started")) return "pending";
-  if (normalised.includes("disabled") || normalised.includes("blocked")) return "disabled";
+  if (normalised.includes("disabled") || normalised.includes("blocked") || normalised.includes("credential_gated")) {
+    return "disabled";
+  }
   return "registered";
 }
 
@@ -48,8 +50,11 @@ function adapterDetail(adapter: AdapterStatus): string {
   const count =
     adapter.default_series_count ? `${adapter.default_series_count} series` :
     adapter.default_feed_count ? `${adapter.default_feed_count} feeds` :
+    adapter.default_area_count ? `${adapter.default_area_count} areas` :
     adapter.source;
-  return `${count} · trust ${adapter.trust_score.toFixed(2)} · ${adapter.auth.replaceAll("_", " ")}`;
+  const credential =
+    adapter.credential_configured === false && adapter.auth !== "none" ? "credential missing" : adapter.auth.replaceAll("_", " ");
+  return `${count} · trust ${adapter.trust_score.toFixed(2)} · ${credential}`;
 }
 
 export default async function DashboardPage() {

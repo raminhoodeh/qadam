@@ -13,6 +13,8 @@ export type AdapterStatus = {
   trust_score: number;
   default_feed_count?: number;
   default_series_count?: number;
+  default_area_count?: number;
+  credential_configured?: boolean;
   raw_archive_exists: boolean;
   live_boundary: string;
 };
