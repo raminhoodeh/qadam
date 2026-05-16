@@ -66,6 +66,7 @@ export default async function DashboardPage() {
   const sourceLine = `${health.source_count} sources · ${resourceCount} resources · ${claimCount} private claim cards · execution ${
     executionDisabled ? "disabled" : "write-enabled"
   }`;
+  const heartbeatSummary = health.source_heartbeat.summary ?? {};
 
   const registryCards = [
     {
@@ -87,6 +88,13 @@ export default async function DashboardPage() {
       title: "Test Ingestion Spine",
       count: health.ingestion_spine.mode,
       detail: health.ingestion_spine.boundary
+    },
+    {
+      title: "Source Heartbeat",
+      count: `${heartbeatSummary.promoted_adapter_count ?? 0} promoted`,
+      detail: `${heartbeatSummary.missing_credential_source_count ?? 0} sources missing credentials · ${
+        heartbeatSummary.deferred_count ?? 0
+      } deferred`
     },
     ...adapters.map((adapter) => ({
       title: adapterTitle(adapter),
@@ -187,6 +195,7 @@ export default async function DashboardPage() {
       <section className="liveMeta">
         <span>Health source: {health.source ?? "cockpit"}</span>
         <span>Unresolved sources: {health.unresolved_sources.length}</span>
+        <span>Source map: {labelForStatus(health.source_heartbeat.status)}</span>
         <span>Offline stores: {health.local_stores.summary?.offline_services?.join(", ") || "none"}</span>
       </section>
 

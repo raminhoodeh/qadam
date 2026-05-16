@@ -16,6 +16,7 @@ from orchestrator.local_store import local_store_health
 from orchestrator.quantum import quantum_providers
 from orchestrator.resource_registry import resource_registry_summary
 from orchestrator.secrets import validate_secret_file
+from orchestrator.source_health import source_heartbeat_summary
 from orchestrator.world_model import world_model_summary
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, unresolved_sources
 
@@ -106,6 +107,7 @@ def build_system_health(
         "world_model": world_model_summary(),
         "governance_forum": governance_health,
         "ingestion_spine": ingestion_spine_summary(settings),
+        "source_heartbeat": source_heartbeat_summary(settings),
         "adapters": {
             "gdelt": gdelt_adapter_status(settings),
             "oref": oref_adapter_status(settings),

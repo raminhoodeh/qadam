@@ -20,6 +20,7 @@ The cockpit is the Founding Fund Manager view of Qadam. It should be useful even
 - `world_model`
 - `governance_forum`
 - `ingestion_spine`
+- `source_heartbeat`
 - `local_stores`
 - `event_log`
 - `execution_venues`, `execution_summary`

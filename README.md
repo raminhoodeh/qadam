@@ -212,7 +212,9 @@ Current ingestion state:
 
 - `orchestrator/ingestion.py` creates deterministic test observations from the 35-source registry.
 - `orchestrator/adapters.py` defines the reusable source-adapter envelope, raw archive, normalized event schema, and the first read-only public adapters.
+- `orchestrator/source_health.py` builds the source heartbeat run and `data/runtime/data_environment_map.json`.
 - `scripts/check_test_ingestion.py` verifies the adapter contract without calling live APIs.
+- `scripts/check_source_heartbeat.py` verifies all 35 source readiness states, promoted adapter count, missing credential map, and local heartbeat store.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
 - `scripts/check_oref_adapter.py` verifies the Oref sample path and can run a live read-only check with `--live`.
 - `scripts/check_fred_adapter.py` verifies the FRED macro sample path and can run a live read-only check with `--live`.
@@ -222,6 +224,7 @@ Current ingestion state:
 - `orchestrator/postgres_store.py` can seed durable reference/world-model tables and write test observations into Postgres once the database is running.
 - `scripts/run_test_ingestion_durable.py --all` writes all 35 deterministic observations into Timescale once migrations are applied.
 - Individual live adapters should replace test observations one at a time after their credentials, rate limits, and failure modes are clear.
+- The data environment map currently distinguishes promoted adapters, derived sources, deferred sources, missing-credential sources, local bridges, fallback-only sources, and ready-to-build/ready-to-port sources.
 - The GDELT live path is read-only and degrades cleanly on network/API failure while preserving the raw attempt locally.
 - The Oref live path is read-only, treats empty active alerts as valid, and degrades cleanly on timeout, HTML, or parse failure.
 - The FRED live path is read-only, uses `FRED_API_KEY` when configured, and falls back to official public FRED CSV when no key is present.

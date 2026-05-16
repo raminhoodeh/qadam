@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
-from world_monitor.source_registry import SOURCE_SPECS
+from orchestrator.source_health import build_data_environment_map
 
 
 @dataclass(frozen=True)
@@ -17,13 +16,14 @@ class Heartbeat:
 
 
 def registry_heartbeats() -> tuple[Heartbeat, ...]:
-    checked_at = datetime.now(timezone.utc).isoformat()
+    data_map = build_data_environment_map()
+    checked_at = str(data_map["generated_at"])
     return tuple(
         Heartbeat(
-            source=source.key,
-            status="registered",
+            source=source["source_key"],
+            status=source["runtime_status"],
             checked_at=checked_at,
-            message=source.status,
+            message=source["registry_status"],
         )
-        for source in SOURCE_SPECS
+        for source in data_map["sources"]
     )

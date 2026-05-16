@@ -159,6 +159,8 @@ Current implementation start:
 - The Phase 1 spine can emit deterministic test observations for registered sources without live network calls.
 - Test observations are local-only and write Event Log entries.
 - This proves the adapter contract before API credentials and live rate limits are introduced.
+- Source heartbeat now classifies all 35 sources into promoted, derived, deferred, missing credentials, local bridge, fallback-only, ready-to-build, or ready-to-port states.
+- `data/runtime/data_environment_map.json` is generated locally and remains ignored by Git.
 - GDELT now has the first real read-only adapter path with raw archive, normalized events, Event Log entries, and degraded-state handling.
 - Oref now has the second read-only adapter path, including healthy empty-alert handling and degraded-state handling for timeout, HTML, or parse failure.
 - FRED now has the first macro read-only adapter path, including rate/dollar/volatility/credit/crude series, public CSV fallback, sigma calculation, raw archive, and degraded-state handling.

@@ -36,6 +36,8 @@ from orchestrator.resource_registry import (
     resource_registry_summary,
 )
 from orchestrator.secrets import secret_statuses, validate_secret_file
+from orchestrator.source_health import run_source_heartbeat as run_source_heartbeat_once
+from orchestrator.source_health import source_heartbeat_summary
 from orchestrator.system_state import build_system_health, founding_fund_managers, module_map
 from orchestrator.world_model import (
     world_model_claim_detail as registry_world_model_claim_detail,
@@ -141,6 +143,14 @@ def create_governance_comment(
 
 def ingestion_status() -> dict[str, object]:
     return ingestion_spine_summary(Settings.from_env())
+
+
+def source_heartbeat_status() -> dict[str, object]:
+    return source_heartbeat_summary(Settings.from_env())
+
+
+def run_source_heartbeat() -> dict[str, object]:
+    return run_source_heartbeat_once(settings=Settings.from_env())
 
 
 def run_test_ingestion(limit: int = 5, tier: int | None = None, pipeline: str | None = None) -> dict[str, object]:
@@ -272,6 +282,8 @@ def build_server():
     mcp.tool()(governance_comments)
     mcp.tool()(create_governance_comment)
     mcp.tool()(ingestion_status)
+    mcp.tool()(source_heartbeat_status)
+    mcp.tool()(run_source_heartbeat)
     mcp.tool()(run_test_ingestion)
     mcp.tool()(gdelt_status)
     mcp.tool()(gdelt_sample)

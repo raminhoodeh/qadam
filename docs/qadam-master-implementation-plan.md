@@ -177,7 +177,9 @@ Current implementation start:
 - Test-data ingestion spine exists in `orchestrator/ingestion.py`.
 - Shared adapter envelope, raw archive, and normalized event schema exist in `orchestrator/adapters.py`.
 - First read-only public adapters exist for GDELT, Oref, FRED, and RSS.
+- Source heartbeat and `data_environment_map.json` generation exist in `orchestrator/source_health.py`.
 - `scripts/check_test_ingestion.py` proves typed source observations and Event Log writes without live API calls.
+- `scripts/check_source_heartbeat.py` proves all 35 sources are classified by readiness, missing credentials, promoted adapter state, and deferred reasons.
 - `scripts/check_gdelt_adapter.py` proves GDELT sample normalization and graceful degraded handling for live network/API failure.
 - `scripts/check_oref_adapter.py` proves Oref sample normalization and graceful degraded handling for live network/API failure.
 - `scripts/check_fred_adapter.py` proves FRED macro normalization, sigma/pct-change calculation, public CSV fallback, raw archive writes, and graceful degraded handling for live feed failure.

@@ -159,6 +159,14 @@ Deliverables:
 - Add heartbeat API response grouped by pipeline.
 - Add expandable source groups for the system map.
 
+Implemented state:
+
+- `orchestrator/source_health.py` produces source heartbeat runs and `data/runtime/data_environment_map.json`.
+- `scripts/check_source_heartbeat.py` validates all 35 source readiness records.
+- `scripts/run_source_heartbeat.py` can run once or on an interval for local scheduler use.
+- System health includes `source_heartbeat` summary, including promoted adapters, deferred sources, and missing credential source count.
+- The cockpit System Map shows source heartbeat status and a Source Heartbeat registry card.
+
 Exit checks:
 
 - Registry count remains 35.

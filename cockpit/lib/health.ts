@@ -70,6 +70,19 @@ export type CockpitHealth = {
     source_count: number;
     boundary: string;
   };
+  source_heartbeat: {
+    status: string;
+    data_environment_map_path: string;
+    generated_at?: string;
+    summary?: {
+      source_count?: number;
+      promoted_adapter_count?: number;
+      deferred_count?: number;
+      missing_credential_source_count?: number;
+      by_runtime_status?: Record<string, number>;
+    };
+    boundary: string;
+  };
   local_stores: {
     status: string;
     summary?: {
@@ -138,6 +151,17 @@ const fallbackHealth: CockpitHealth = {
     source_count: 35,
     boundary: "No live API calls from fallback mode."
   },
+  source_heartbeat: {
+    status: "not_started",
+    data_environment_map_path: "data/runtime/data_environment_map.json",
+    summary: {
+      source_count: 35,
+      promoted_adapter_count: 0,
+      deferred_count: 0,
+      missing_credential_source_count: 0
+    },
+    boundary: "Run source heartbeat locally to build the data environment map."
+  },
   local_stores: {
     status: "degraded",
     summary: { offline_services: ["orchestrator"] }
@@ -180,6 +204,7 @@ export async function getCockpitHealth(): Promise<CockpitHealth> {
       adapters: health.adapters ?? fallbackHealth.adapters,
       pipeline_counts: health.pipeline_counts ?? fallbackHealth.pipeline_counts,
       fund_managers: health.fund_managers ?? fallbackHealth.fund_managers,
+      source_heartbeat: health.source_heartbeat ?? fallbackHealth.source_heartbeat,
       execution_venues: health.execution_venues ?? fallbackHealth.execution_venues,
       execution_summary: health.execution_summary ?? fallbackHealth.execution_summary
     };
