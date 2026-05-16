@@ -382,6 +382,38 @@ Exit criteria:
 - At least 20 sources score > 0.5.
 - At least two physical/logistics sources pass trust and latency thresholds.
 
+## 8A. Phase 1E - Agent And Skill Manifests
+
+Objective: formalize the agent architecture before giving the local LLM, frontier LLM, quantum module, or execution adapters more authority.
+
+New reference input:
+
+- Anthropic's `financial-services` repo is a useful architecture reference for named financial workflow agents, reusable skill bundles, connector grants, managed-agent cookbooks, validation scripts, and secret-scan discipline.
+- Qadam should adopt the modular file structure and permission model, not the licensed connector set.
+
+Build:
+
+1. Add an `agents/` manifest contract.
+2. Create initial manifests for COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
+3. Add reusable `skills/` bundles for macro intelligence, prediction markets, physical anomaly monitoring, options and volatility flow, Akber 6-stage filter, private edge / world-model priors, and risk/postmortems.
+4. Add a manifest checker that validates role, scope, source access, MCP tool grants, secret names, forbidden actions, and output schemas.
+5. Add a deterministic skill-sync step so each agent gets only approved skills.
+6. Add cockpit visibility for agent ownership and permission boundaries.
+
+Operating rule:
+
+- Live-capital work follows the Anthropic-style posture: agents draft, humans approve.
+- First-release paper-mode trading remains different: Qadam may trade autonomously in the £1000 paper account only after deterministic Risk Agent, execution venue, kill-switch, and Event Log gates are built.
+- No LLM agent ever receives direct broker write authority.
+
+Exit criteria:
+
+- Every named agent has a validated manifest.
+- Every skill bundle is reusable and traceable to a single source.
+- Every agent has explicit allowed and forbidden tools.
+- Secret scanning covers agent and skill files.
+- Paper execution authority is reserved for the future execution policy path, not the LLM prompt layer.
+
 ## 9. Phase 2 - Intelligence Stack
 
 Objective: run Gemma and Gemini end-to-end in shadow mode.
@@ -759,20 +791,24 @@ Review cadence:
 - Monthly: full metric set, Reflective Manifestation, Shadow Strategy, Knowledge Graph, Brier Score.
 - 90-day: full demo proof review and live decision.
 
-## 17. Markdown-First Agent Structure
+## 17. Markdown-First Agent And Skill Structure
 
-The repository must move toward the canonical structure in `qadam-specs.md`.
+The repository must move toward the canonical structure in `qadam-specs.md`, sharpened by the Anthropic `financial-services` reference pattern.
 
 Every agent folder contains:
 
-- One `.md` instruction file.
-- Python scripts that enforce the rules.
-- Output schema.
-- Fallback instructions.
+- `agent.md` for role, scope, operating doctrine, escalation, and forbidden actions.
+- `permissions.json` for allowed sources, resources, tools, secrets-by-name, and connector grants.
+- `skills/` references to approved reusable bundles.
+- `schemas/` for typed outputs.
+- Optional `commands/` only when command capability is explicitly safe and declared.
+- Fallback instructions for degraded mode.
 
 Critical rule:
 
 - No agent logic lives in Orchestrator Python. Orchestrator Python is plumbing. Markdown files are the routing and reasoning layer.
+- No agent can call an undeclared connector, shell command, web fetch, broker endpoint, or secret.
+- Broker writes are never exposed directly to an LLM agent; they pass through deterministic policy and execution adapters.
 
 Required agent docs:
 
@@ -788,6 +824,24 @@ Required agent docs:
 - `STRATEGY.md`
 - `KNOWLEDGE_GRAPH.md`
 - `COCKPIT.md`
+
+Required reusable skill bundles:
+
+- `MACRO_INTELLIGENCE.md`
+- `PREDICTION_MARKETS.md`
+- `PHYSICAL_ANOMALY_MONITORING.md`
+- `OPTIONS_VOLATILITY_FLOW.md`
+- `AKBER_6_STAGE_FILTER.md`
+- `PRIVATE_EDGE_WORLD_MODEL.md`
+- `RISK_AND_POSTMORTEMS.md`
+
+Required checks:
+
+- Manifest validation.
+- Skill-reference validation.
+- Tool-grant validation.
+- Secret scan over agent and skill files.
+- Cockpit-visible agent ownership map.
 
 ## 18. Non-Blocking Decisions
 

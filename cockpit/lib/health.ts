@@ -133,7 +133,7 @@ const fallbackHealth: CockpitHealth = {
   },
   resource_registry: {
     status: "unknown",
-    resource_count: 28,
+    resource_count: 29,
     boundary: "Resources guide architecture, research, and UX; they are not live data feeds."
   },
   world_model: {

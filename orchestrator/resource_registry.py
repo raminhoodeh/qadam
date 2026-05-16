@@ -106,6 +106,16 @@ RESOURCE_ENTRIES: tuple[ResourceEntry, ...] = (
         ("research_analyst", "quant_plane"),
     ),
     ResourceEntry(
+        "anthropic_financial_services",
+        "Anthropic Financial Services",
+        "ai_architecture",
+        "https://github.com/anthropics/financial-services",
+        "Reference pattern for named financial workflow agents, reusable skill bundles, connector grants, validation, and secret scanning.",
+        ("agent_os", "research_analyst", "strategy_lead", "risk_agent", "fund_manager_cockpit"),
+        validation_status="architecture_reference",
+        decision_notes="Adopt the manifest/permission pattern, not the licensed connector set or vendor dependency.",
+    ),
+    ResourceEntry(
         "how_the_world_works",
         "How The World Works Corpus",
         "private_world_model",
@@ -275,7 +285,7 @@ def resource_registry_summary() -> dict[str, Any]:
     production_active = [resource.key for resource in RESOURCE_ENTRIES if resource.production_active]
     return {
         "status": "ok" if not production_active else "needs_review",
-        "source_document": "specs/qadam-general-context.md",
+        "source_document": "specs/qadam-general-context.md plus linked resource-specific references",
         "resource_count": len(RESOURCE_ENTRIES),
         "categories": dict(sorted(by_category.items())),
         "production_active_count": len(production_active),

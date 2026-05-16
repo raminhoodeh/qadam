@@ -51,6 +51,7 @@ By the end of this foundation pass, Qadam should boot as a coherent system:
 | Local storage | MacBook 1TB SSD | Canonical saved state: raw payloads, Event Log data, Chroma persistence, runtime files, proof records. |
 | Resource registry | Markdown now, database table later | Strategy references, papers, product benchmarks, OSS stacks, and analytical frameworks. |
 | World-model corpus | Markdown now, claim cards later | Private foundational worldview, esoteric edge hypotheses, power maps, narrative lenses, and falsification tests. |
+| Agent/skill manifests | Markdown/JSON manifest folders | Declare Qadam agent roles, skill bundles, allowed tools, and forbidden actions before model autonomy expands. |
 | Execution rail contracts | Disabled `ExecutionVenue` + `BrokerAdapter` registry | Define safe venue boundaries before any venue can place orders. PriveX Starter informs this contract as an optional later execution rail, not a first-release dependency. |
 | Secrets | macOS Keychain or strict local secret file | Runtime-only credentials, split research, quantum, and execution keys. |
 | Quantum provider registry | Local simulator now, Q-CTRL/IBM/Braket later | Show credential readiness without submitting Phase 0 quantum jobs. |
@@ -291,7 +292,47 @@ Exit checks:
 - Tool responses match typed schemas.
 - Tool failures log events.
 
-## Build Slice 5A - Execution Venue Contract Stub
+## Build Slice 5A - Agent And Skill Manifest Contract
+
+This slice captures the key lesson from Anthropic's `financial-services` reference implementation: financial agents become safer and easier to operate when each named agent is a folder with explicit instructions, reusable skills, declared connectors/tools, validation, and secret scanning.
+
+Deliverables:
+
+- Add a future `agents/` contract:
+  - `agent.md`
+  - `permissions.json`
+  - `skills/` references
+  - `schemas/`
+  - `commands/` only where commands are safe and declared
+- Add a future `skills/` contract for reusable Qadam bundles:
+  - macro intelligence
+  - prediction markets
+  - physical anomaly monitoring
+  - options and volatility flow
+  - Akber 6-stage filter
+  - private edge / world-model priors
+  - risk and postmortems
+- Add manifest validation:
+  - every agent declares allowed tools and sources
+  - every skill reference resolves to one source bundle
+  - no agent has direct broker write authority
+  - no raw secrets appear in agent or skill files
+  - forbidden capabilities fail the check
+- Add a health payload section for agent registry status and permission boundaries.
+
+Boundary:
+
+- Qadam uses the Anthropic pattern as architecture inspiration, not as a dependency.
+- For live capital, agents draft and humans approve.
+- For the first-release £1000 paper account, autonomous trades remain allowed only after deterministic policy gates, Risk Agent checks, execution venue checks, kill-switches, and Event Log writes exist.
+
+Exit checks:
+
+- Agent manifest checker passes.
+- Cockpit can show the owner agent for major modules.
+- No agent can call an undeclared tool, connector, shell command, or execution endpoint.
+
+## Build Slice 5B - Execution Venue Contract Stub
 
 This slice defines the shape of future execution without enabling trading. It exists because Qadam should not discover execution safety rules for the first time while connected to a broker.
 
@@ -487,7 +528,8 @@ The foundation is complete when:
 16. Resource registry is linked and distinguished from the live source registry.
 17. How The World Works corpus is linked as Qadam's private world-model foundation and distinguished from factual evidence.
 18. Execution venue registry exists in disabled/read-only form, with no order submission path.
-19. No trading, model inference, or source ingestion is required for the foundation to pass.
+19. Agent/skill manifest contract exists, with explicit tool grants and forbidden-action checks.
+20. No trading, model inference, or source ingestion is required for the foundation to pass.
 
 ## Recommended Implementation Order
 
@@ -497,12 +539,13 @@ The foundation is complete when:
 4. Source heartbeat model.
 5. Resource registry and module-mapping schema.
 6. World-model claim schema and guardrails.
-7. Execution venue contract stub and disabled venue registry.
-8. Cockpit System Map connected to health API.
-9. Clerk auth.
-10. Secrets provider.
-11. FastMCP tools.
-12. launchd supervision.
-13. Observability and acceptance test.
+7. Agent/skill manifest contract.
+8. Execution venue contract stub and disabled venue registry.
+9. Cockpit System Map connected to health API.
+10. Clerk auth.
+11. Secrets provider.
+12. FastMCP tools.
+13. launchd supervision.
+14. Observability and acceptance test.
 
 This order gets the nervous system visible early, then makes it durable.

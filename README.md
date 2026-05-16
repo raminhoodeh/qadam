@@ -135,6 +135,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Next.js cockpit shell wired to the local health contract.
 - API source inventory.
 - API key setup guide for the credential-gated adapters.
+- Agent/skill manifest plan shaped by Anthropic's financial-services reference: named workflow agents, reusable skill bundles, explicit tool grants, validation, and secret scanning.
 - Startup and foundation checks.
 
 ## Source Pipelines

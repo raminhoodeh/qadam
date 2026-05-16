@@ -39,6 +39,7 @@ Build Qadam as replaceable modules around stable contracts.
 - Fail closed: stale data, missing secrets, model failure, quantum delay, or broker uncertainty should degrade or block, not silently continue.
 - No direct UI-to-broker path: cockpit actions go through Orchestrator policy gates and Event Log writes.
 - No LLM-to-broker path: LLMs propose, summarize, and challenge; deterministic policy code decides whether anything can act.
+- Agent manifests before agent autonomy: every agent declares role, tool grants, data access, output schema, and forbidden actions before it can run.
 - No venue writes before read-only proof: health, permissions, positions, balances, market metadata, and venue limits must be observable before `place_order()` can exist.
 - No automatic retry for order-creating POST calls.
 
@@ -54,6 +55,7 @@ Build Qadam as replaceable modules around stable contracts.
 | Live Ingress Plane | World Monitor source adapters | 35 live/live-adjacent feeds across 5 pipelines | Phase 1 |
 | Resource Plane | Resource Registry | Strategy references, papers, OSS stacks, product benchmarks, provenance | Phase 0 |
 | World-Model Plane | How The World Works corpus | Private foundational lens, esoteric edge, hidden-incentive hypotheses, narrative lenses, scenario trees | Phase 0 seed, Phase 2 reasoning |
+| Agent OS Plane | Agent manifests + skill bundles | Named Qadam roles, reusable skills, explicit tool/data permissions, validation, and sync | Phase 1E |
 | Tool Plane | FastMCP-style tools | Uniform tool interface for sources, health, modules, and later actions | Phase 0 |
 | Intelligence Plane | Gemma + Gemini + swarm | Triage, research, evidence trails, proposed signals | Phase 2 |
 | Quant Plane | Classical + Qiskit + Q-CTRL + IBM/Braket | Weekly oracle, pattern recognition, strategy collapse, optional optimization/error suppression | Phase 3 |
@@ -75,6 +77,8 @@ Each module should be replaceable if it obeys its contract.
 | `SourceAdapter` | `fetch()`, `normalize()`, `heartbeat()` | raw payload, normalized event, source SLA |
 | `ResourceRegistry` | `list_resources()`, `map_to_module()` | provenance mapping, validation status |
 | `WorldModelCorpus` | `extract_claims()`, `map_claim_to_observables()`, `score_after_outcome()` | claim card, corroboration status, falsification result |
+| `AgentManifest` | `role`, `scope`, `allowed_tools`, `allowed_sources`, `allowed_skills`, `forbidden_actions`, `output_schema` | manifest validation result, permission map, escalation boundary |
+| `SkillBundle` | reusable markdown instructions plus tests/examples | source bundle, synced agent copies, dependency map |
 | `MCPTool` | typed request/response | call started, call completed, call failed |
 | `TriageModel` | `triage(event_batch)` | confidence, uncertainty, dropped reason |
 | `ResearchModel` | `research(candidate)` | evidence trail, assumptions, citations, risk flags |
@@ -215,6 +219,48 @@ Phase 1 is done when:
 - Trust Score seed data exists.
 - Degraded mode is visible and logged.
 - Canonical saved data remains local.
+
+## Phase 1E - Agent And Skill Manifests
+
+Objective: formalize Qadam's named agents before model autonomy expands.
+
+Reference pattern:
+
+- Anthropic's `financial-services` repo is a useful architecture reference because it separates named financial agents, reusable vertical skills, connector grants, managed-agent cookbooks, manifest checks, and secret scanning.
+- Qadam adopts the structure and safety pattern, not Anthropic's licensed data connectors or human-signoff-only operating model.
+
+Trading state: none. This phase creates permissions and manifests; it does not create execution.
+
+### Phase 1E Modules
+
+| Module | Build In This Phase | Independent Exit Check |
+| --- | --- | --- |
+| Agent registry | `agents/` folders for COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, Fund Manager Interface | Registry count and ownership map validate |
+| Skill bundles | `skills/` folders for macro, prediction markets, physical anomalies, options/volatility, Akber filter, private edge, risk/postmortems | Skill references resolve deterministically |
+| Tool grants | Per-agent allowed MCP tools, source groups, resources, and secrets-by-name | No agent has undeclared tool access |
+| Output schemas | Typed outputs for triage, research packet, signal audit, risk decision, execution audit, forum response | Sample outputs validate |
+| Manifest checker | Local script validates manifests, bundle references, forbidden actions, and secret leakage | Check fails on undeclared connector or raw key |
+| Cockpit ownership map | System Map can show which agent owns each module and permission boundary | Agent/module map renders from health contract |
+
+### Phase 1E Build Order
+
+1. Define manifest schema.
+2. Add the eight initial agent manifests.
+3. Add reusable skill bundle folders.
+4. Add sync/check scripts.
+5. Map existing MCP tools to explicit agent grants.
+6. Add forbidden-action checks: no shell, no web fetch, no broker write, no undeclared connector unless explicitly granted.
+7. Add cockpit health surface for agent ownership and permission status.
+
+### Phase 1E Gate
+
+Phase 1E is done when:
+
+- Every named agent has a validated manifest.
+- Every reusable skill has one source of truth and synced agent references.
+- Every tool grant is explicit.
+- Live-capital action requires future human signoff.
+- Paper-account autonomy remains possible only through deterministic Risk Agent and execution-policy gates, not direct LLM authority.
 
 ## Phase 2 - Intelligence Stack In Shadow Mode
 
@@ -476,6 +522,7 @@ The cockpit should evolve without becoming a trading toy.
 | --- | --- |
 | Phase 0 | Login route plan, protected dashboard shell, System Map placeholder, kill-switch placement |
 | Phase 1 | Source health, heartbeat, degraded-state banners |
+| Phase 1E | Agent ownership map, tool grants, skill bundle status, forbidden-action warnings |
 | Phase 2 | Hidden/debug shadow signals, evidence trail previews |
 | Phase 3 | Quantum job status and fallback visibility |
 | Phase 4 | Manifested Strategy review and approval record |
@@ -511,6 +558,10 @@ Future database tables:
 - `reference_registry`
 - `reference_module_mapping`
 - `reference_validation_note`
+- `agent_manifest`
+- `agent_tool_grant`
+- `skill_bundle`
+- `skill_bundle_reference`
 - `world_model_claim`
 - `world_model_observable_signature`
 - `world_model_outcome_score`
@@ -523,6 +574,8 @@ These apply from Phase 0 onward.
 - Missing source heartbeat means degraded, not silently fresh.
 - Missing optional API key means source unavailable, not failed.
 - Missing execution key means execution disabled.
+- Missing agent manifest means the agent cannot run.
+- Missing or undeclared tool grant means the tool call is blocked.
 - LLM uncertainty must be logged.
 - Quantum delay must fall back to classical output.
 - Any broker ambiguity blocks new orders until reconciled.
@@ -533,19 +586,14 @@ These apply from Phase 0 onward.
 - Any signal without transaction-cost assumptions is blocked.
 - Any proposed trade above cap is blocked.
 
-## Recommended First Implementation Batch
+## Recommended Next Implementation Batch
 
-The first batch should produce a working skeleton that proves the architecture without touching markets.
+The foundation skeleton is upright. The next batch should formalize the Agent OS before Qadam thinks, predicts, calculates, or trades.
 
-1. Real Event Log schema and replay.
-2. Config/secrets provider.
-3. Orchestrator health and module map.
-4. Source registry and Resource Registry API/tool access.
-5. How The World Works corpus registered as Qadam's private foundational world-model layer.
-6. FastMCP tools for registry, source detail, resource detail, world-model claim detail, and health.
-7. Clerk login route and protected local dashboard.
-8. System Map UI with live-source, resource-provenance, and world-model lens sections.
-9. Vercel read-only inspection retained; no production deploy until route plan is approved.
-10. Foundation acceptance script expanded to check registries, health, adapters, and auth route files.
-
-This gets Qadam's skeleton upright before we ask it to think, predict, calculate, or trade.
+1. Agent manifest schema.
+2. Eight initial agent folders.
+3. Seven reusable skill bundles.
+4. Manifest and skill validation script.
+5. Explicit MCP tool grants per agent.
+6. Secret scan over agent and skill files.
+7. Cockpit agent ownership and permission status.

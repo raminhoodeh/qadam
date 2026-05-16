@@ -1,6 +1,6 @@
 # Qadam Resource Registry
 
-Source document: `specs/qadam-general-context.md`.
+Primary source document: `specs/qadam-general-context.md`. Additional architecture references are linked in individual entries.
 
 This registry is separate from the World Monitor API/source registry. World Monitor is the live 5-pipeline ingress layer for machine-readable data feeds. This document tracks the broader Qadam build resources: strategy wisdom, reference products, open-source stacks, research papers, analytical frameworks, and implementation ideas that should guide architecture and product decisions.
 
@@ -68,10 +68,13 @@ These resources guide Qadam's agent architecture, swarm simulation, and continuo
 | Markov regime engine | Reference for regime-aware gating before signals fire. |
 | Google TimesFM | Candidate time-series forecasting model for research/testing. |
 | Karpathy AutoResearch / nanochat | Reference pattern for postmortem agents and experiment loops. |
+| Anthropic financial-services | Reference pattern for named financial workflow agents, reusable skill bundles, MCP connector grants, managed-agent cookbooks, validation scripts, and secret-scan discipline. |
 
 Foundation implication:
 
 - The foundation should reserve module slots for Research Analyst, Strategy Lead, Postmortem Agents, Regime Engine, and Swarm Simulation even before those modules execute live work.
+- Add an Agent Operating System layer before deeper intelligence/execution work: named agent manifests, reusable Qadam skill bundles, explicit tool grants, validation, and secret scanning.
+- Adopt the structure/safety pattern from Anthropic's reference, but keep Qadam's own local-first architecture, source registry, and paper-mode autonomy model.
 
 ## Esoteric Edge / World-Model Corpus
 

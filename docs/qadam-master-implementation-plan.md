@@ -68,6 +68,7 @@ Core modules:
 | Source Registry | Live data feed registry, status, heartbeat, Trust Score. |
 | Resource Registry | Non-live build and research references. |
 | World-Model Corpus | Private foundational worldview and adversarial hypothesis layer. |
+| Agent Operating System | File-based agent manifests, skill bundles, tool grants, and connector permissions. |
 | FastMCP Tools | Typed interface for source, resource, health, and module access. |
 | Local LLM | Gemma triage and compression on the laptop. |
 | Frontier LLM | Gemini research, synthesis, debate, and strategy reasoning. |
@@ -90,6 +91,8 @@ Core modules:
 - Layer A surfaces; Layer B acts.
 - No direct UI-to-broker path.
 - No LLM-to-broker path.
+- No agent can call an undeclared tool, connector, shell command, or execution endpoint.
+- Every agent must declare its role, allowed data, allowed tools, output schema, and escalation path before it can run.
 - No venue can write orders until it has passed read-only health, permission, position, and reconciliation checks.
 - Never retry order-creating POST requests automatically.
 - Venue account/subaccount/network scope must be explicit before any order path is enabled.
@@ -148,6 +151,7 @@ Build:
 - Private World-Model Corpus registry from the 4 markdown files in `how-the-world-works/`.
 - Disabled Execution Venue Registry shaped by PriveX Starter lessons: read-only first, explicit account/subaccount/network scope, auth errors separated from transient errors, and no automatic POST retries.
 - FastMCP tools: `ticker_echo`, `source_registry`, `source_detail`, `resource_registry`, `world_model_claim`, `system_health`, `module_map`.
+- Agent/skill manifest plan shaped by Anthropic's `financial-services` reference: named workflow agents, reusable skill bundles, explicit connector grants, manifest validation, and secret scanning.
 - Next.js cockpit shell with System Map.
 - Clerk route plan: top-right Login, `/login` or `/sign-in`, protected `/dashboard`.
 - Vercel linked read-only to existing `qadam.trade` project.
@@ -219,6 +223,39 @@ Exit gate:
 - Stale data appears as degraded.
 - Trust Score seed exists.
 - Saved data remains local.
+
+## 8A. Phase 1E - Agent And Skill Manifests
+
+Objective: make Qadam's agents explicit, permissioned, and inspectable before deeper intelligence or execution work begins.
+
+Why now:
+
+- Anthropic's `financial-services` repo is a useful reference pattern for financial workflow agents: named agents, vertical skill bundles, MCP-style data connectors, managed-agent deployment cookbooks, validation scripts, and secret-scan discipline.
+- Qadam should adopt the architecture pattern, not the vendor dependency or licensed connector set.
+- This phase prevents hidden authority from accumulating inside prompts, scripts, or future LLM calls.
+
+Build:
+
+- Add an `agents/` directory with one manifest folder per named Qadam role: COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
+- Add a `skills/` directory for reusable bundles: macro intelligence, prediction markets, physical anomaly monitoring, options and volatility flow, Akber 6-stage filter, private edge / world-model priors, and risk/postmortems.
+- Each agent manifest declares role, scope, allowed source groups, allowed Resource Registry references, allowed MCP tools, allowed secrets by name, output schema, escalation and signoff rules, and forbidden actions.
+- Add `scripts/check_agent_manifests.py` to validate manifests, skill references, tool grants, and forbidden capabilities.
+- Add a deterministic skill sync step only after the source skill bundle is validated.
+- Extend secret scanning so agent manifests and skill bundles cannot contain raw keys.
+
+Critical boundary:
+
+- Anthropic's reference defaults to "agents draft, humans approve." Qadam keeps that for live capital.
+- Qadam's £1000 first-release paper account is different: autonomous paper trades are allowed only after the Phase 5/7 policy gates, Risk Agent checks, execution venue checks, kill-switches, and Event Log writes exist.
+- No live-capital trade can be placed without an explicit future approval model.
+
+Exit gate:
+
+- All agent manifests validate locally.
+- Each agent has least-privilege tool grants.
+- No agent has direct broker write access.
+- Paper execution authority is reserved for the future execution path, not the LLM agent itself.
+- The cockpit can show which agent owns each module and which tools it is allowed to use.
 
 ## 9. Phase 2 - Intelligence Stack
 
@@ -415,22 +452,16 @@ Do not try to build all of Qadam at once. Qadam is created by making each module
 
 ## 17. Immediate Next Build Batch
 
-The next practical batch should be Phase 0 only:
+Phase 0 foundation is substantially implemented, and Phase 1 has started with test ingestion, source heartbeat, and promoted read-only adapters for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 
-1. Postgres/Timescale Event Log schema - implemented as migration v1.
-2. Replay test - implemented through local JSONL Event Log.
-3. Config and secret provider - implemented with strict runtime-only secret file checks.
-4. Orchestrator health endpoint with module map - implemented, including degraded local-store state.
-5. Source Registry API/tool - partially implemented through registry tools and health payload.
-6. Resource Registry API/tool - implemented as a non-live reference registry.
-7. World-Model Corpus claim-card schema - implemented with private foundational priors.
-8. Disabled Execution Venue Registry with Alpaca paper intended and PriveX-style venues marked optional/later - implemented.
-9. Local data directory contract for 1TB SSD operation - implemented.
-10. Founding Fund Manager login allowlist - implemented as foundation config; Clerk enforcement next.
-11. Cockpit protected dashboard route - shell implemented; Clerk enforcement next.
-12. System Map wired to local health data - implemented through `/api/health`, COO fetch, and degraded cockpit fallback.
-13. Internal comments/forum schema - implemented as local governance comments.
-14. Paper/test-mode status banner - implemented in cockpit shell.
-15. Expanded foundation check - implemented with source, execution, quantum, Event Log, secret, and local-store checks.
+The next practical batch is Phase 1E:
 
-When this batch is complete, Qadam will not trade, predict, or ingest live data yet. It will simply have a durable nervous system. That is the correct first win.
+1. Define the agent manifest schema.
+2. Add manifests for COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
+3. Add reusable Qadam skill bundles for macro, prediction markets, physical anomalies, options/volatility, Akber's filter, private edge, and risk/postmortems.
+4. Add `scripts/check_agent_manifests.py`.
+5. Map existing MCP tools and registries to explicit agent grants.
+6. Add secret scanning over agent and skill files.
+7. Add cockpit health fields for agent ownership and permission status.
+
+This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.
