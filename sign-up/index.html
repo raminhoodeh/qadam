@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qadam Sign Up</title>
+    <meta name="description" content="Create an allowlisted founding Fund Manager account for Qadam.">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+
+<body>
+    <main class="auth-shell">
+        <header class="topbar">
+            <a class="logo-link" href="/" aria-label="Qadam home">
+                <img src="/logo.png" alt="QADAM Logo">
+            </a>
+            <nav class="nav-actions" aria-label="Sign up navigation">
+                <a class="button" href="/login/">Login</a>
+                <a class="button" href="/">Home</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div>
+                <p class="eyebrow">Qadam Cockpit</p>
+                <h1>Create Founding Access</h1>
+                <p class="copy">Only allowlisted founding Fund Manager emails can create accounts for this first release.</p>
+            </div>
+
+            <section class="panel">
+                <p class="label">Supabase Auth</p>
+                <h2>Email and password</h2>
+                <p class="status" data-status></p>
+                <form class="auth-form" data-signup-form>
+                    <label>
+                        <span>Email</span>
+                        <input name="email" type="email" autocomplete="email" required>
+                    </label>
+                    <label>
+                        <span>Password</span>
+                        <input name="password" type="password" autocomplete="new-password" required minlength="8">
+                    </label>
+                    <button class="primary" type="submit">Create Account</button>
+                </form>
+            </section>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/auth.js"></script>
+</body>
+
+</html>

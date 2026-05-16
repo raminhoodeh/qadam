@@ -84,7 +84,9 @@ body, html {
 }
 
 .nav-right {
-    /* no absolute positioning — normal flow */
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
 .logo {
@@ -284,7 +286,8 @@ body, html {
         padding: 20px 40px;
     }
     .nav-right {
-        /* normal flow on tablet */
+        display: flex;
+        gap: 8px;
     }
 }
 

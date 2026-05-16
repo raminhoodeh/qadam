@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qadam System Map</title>
+    <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+
+<body>
+    <main class="dashboard-shell">
+        <header class="topbar">
+            <a class="logo-link" href="/" aria-label="Qadam home">
+                <img src="/logo.png" alt="QADAM Logo">
+            </a>
+            <nav class="nav-actions" aria-label="Dashboard navigation">
+                <a class="button" href="/whitepaper/">Whitepaper</a>
+                <button type="button" data-signout>Sign Out</button>
+            </nav>
+        </header>
+
+        <section class="hidden" data-dashboard>
+            <p class="eyebrow">Qadam</p>
+            <h1>System Map</h1>
+            <p class="copy">Logged in as <span data-user-email></span>. This live web cockpit shows the founding release map while the local MacBook orchestrator remains private.</p>
+
+            <section class="status-band panel">
+                <p><span class="dot"></span>PAPER MODE · GBP 1000 trial · founding access only</p>
+                <p class="mini">Static live cockpit · local orchestrator not exposed to the internet</p>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="column">
+                    <p class="label">Intelligence pipelines</p>
+                    <article class="card">
+                        <p class="label">Conflict</p>
+                        <h2>ACLED, GDELT, Oref</h2>
+                        <p>Conflict event pressure and regional catalyst monitoring.</p>
+                    </article>
+                    <article class="card">
+                        <p class="label">Physical</p>
+                        <h2>FIRMS, AIS, Wingbits</h2>
+                        <p>Fire, vessel, aviation, logistics, and weather-linked physical signals.</p>
+                    </article>
+                    <article class="card">
+                        <p class="label">Macro</p>
+                        <h2>FRED, BLS, ECB</h2>
+                        <p>Inflation, labour, liquidity, and policy context.</p>
+                    </article>
+                    <article class="card">
+                        <p class="label">Market</p>
+                        <h2>Alpaca, Kalshi, Polymarket</h2>
+                        <p>Paper execution rails and prediction-market pricing.</p>
+                    </article>
+                </div>
+
+                <div class="core">
+                    <p class="label">Hybrid fund core</p>
+                    <div class="core-grid">
+                        <article class="card">
+                            <p class="label">COO</p>
+                            <h2>Python Orchestrator</h2>
+                            <p>Coordinates modules, health checks, logs, and paper-mode boundaries.</p>
+                        </article>
+                        <article class="card">
+                            <p class="label">Research Analyst</p>
+                            <h2>Local LLM</h2>
+                            <p>Filters noisy intelligence locally before escalation.</p>
+                        </article>
+                        <article class="card">
+                            <p class="label">Strategy Lead</p>
+                            <h2>Frontier LLM</h2>
+                            <p>Builds thesis packets, challenges assumptions, and prepares reviews.</p>
+                        </article>
+                        <article class="card">
+                            <p class="label">Head of Quant</p>
+                            <h2>Quantum Compute</h2>
+                            <p>Runs quantum-assisted modelling where it can add useful comparison value.</p>
+                        </article>
+                        <article class="card">
+                            <p class="label">Event Log</p>
+                            <h2>Local MacBook Storage</h2>
+                            <p>Records decisions and postmortems locally for the trial phase.</p>
+                        </article>
+                        <article class="card">
+                            <p class="label">Governance</p>
+                            <h2>Founding Managers</h2>
+                            <p>Ramin, Troy, Ion live now. Akber and Anas pending email access.</p>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="column">
+                    <p class="label">Outputs</p>
+                    <article class="card">
+                        <p class="label">System Health</p>
+                        <h2>Live web shell</h2>
+                        <p>The private local orchestrator is not yet exposed to Vercel.</p>
+                    </article>
+                    <article class="card">
+                        <p class="label">Signal Review</p>
+                        <h2>Shadow intelligence</h2>
+                        <p>Signals are review packets only until execution rules are proven.</p>
+                    </article>
+                    <article class="card">
+                        <p class="label">Broker Rail</p>
+                        <h2>Paper mode</h2>
+                        <p>First release is restricted to the &pound;1000 test account.</p>
+                    </article>
+                    <article class="card">
+                        <p class="label">Comments Forum</p>
+                        <h2>Next build step</h2>
+                        <p>Private member suggestions will move into Supabase-backed storage.</p>
+                    </article>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/auth.js"></script>
+</body>
+
+</html>

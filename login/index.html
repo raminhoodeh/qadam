@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qadam Login</title>
+    <meta name="description" content="Founding Fund Manager login for the Qadam cockpit.">
+    <link rel="stylesheet" href="/auth.css">
+    <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+
+<body>
+    <main class="auth-shell">
+        <header class="topbar">
+            <a class="logo-link" href="/" aria-label="Qadam home">
+                <img src="/logo.png" alt="QADAM Logo">
+            </a>
+            <nav class="nav-actions" aria-label="Login navigation">
+                <a class="button" href="/whitepaper/">Whitepaper</a>
+                <a class="button" href="/">Home</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div>
+                <p class="eyebrow">Qadam Cockpit</p>
+                <h1>Founding Fund Manager Login</h1>
+                <p class="copy">Supabase handles identity. Qadam checks the founding Fund Manager allowlist before opening the System Map.</p>
+            </div>
+
+            <section class="panel">
+                <p class="label">Supabase Auth</p>
+                <h2>Email and password</h2>
+                <p class="status" data-status></p>
+                <form class="auth-form" data-login-form>
+                    <label>
+                        <span>Email</span>
+                        <input name="email" type="email" autocomplete="email" required>
+                    </label>
+                    <label>
+                        <span>Password</span>
+                        <input name="password" type="password" autocomplete="current-password" required>
+                    </label>
+                    <button class="primary" type="submit">Login</button>
+                    <a class="copy" href="/sign-up/">Create an allowlisted account</a>
+                </form>
+            </section>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/auth.js"></script>
+</body>
+
+</html>
