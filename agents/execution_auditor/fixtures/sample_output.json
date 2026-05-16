@@ -1,0 +1,7 @@
+{
+  "agent_key": "execution_auditor",
+  "status": "blocked",
+  "venue_key": "alpaca_paper",
+  "ready": false,
+  "reason": "Paper venue is registered but order submission is not implemented."
+}

@@ -241,7 +241,8 @@ Current Agent OS state:
 - `agents/` contains manifests for COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
 - `skills/` contains reusable Qadam bundles for macro intelligence, prediction markets, physical anomaly monitoring, options/volatility flow, Akber's 6-stage filter, private world-model priors, and risk/postmortems.
 - `scripts/check_agent_manifests.py` verifies role files, tool grants, skill references, output schemas, forbidden actions, and secret-pattern hygiene.
-- System health and the cockpit expose `agent_os` status with agent count, skill count, and tool-grant count.
+- `scripts/check_agent_runtime.py` verifies runtime tool authorization, blocked broker-write tools, sample outputs, and the Research Analyst shadow triage queue.
+- System health and the cockpit expose `agent_os` and `agent_runtime` status with agent count, skill count, tool-grant count, enforced block count, and shadow queue state.
 
 Durable-mode commands:
 

@@ -1,0 +1,7 @@
+{
+  "agent_key": "signal_auditor",
+  "status": "reviewed",
+  "passed": false,
+  "reason": "Signal lacks corroboration and transaction-cost assumptions.",
+  "evidence_refs": ["source_heartbeat_status"]
+}

@@ -15,7 +15,9 @@
     "agent_registry",
     "agent_detail",
     "skill_registry",
-    "skill_detail"
+    "skill_detail",
+    "agent_runtime_status",
+    "research_shadow_triage_queue"
   ],
   "allowed_source_groups": [
     "cockpit_health",

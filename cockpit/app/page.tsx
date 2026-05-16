@@ -92,6 +92,11 @@ export default async function DashboardPage() {
       detail: `${health.agent_os.tool_grant_count} tool grants · ${health.agent_os.error_count} errors · ${health.agent_os.boundary}`
     },
     {
+      title: "Agent Runtime",
+      count: `${health.agent_runtime.expected_block_count} enforced blocks`,
+      detail: `${health.agent_runtime.authorization_check_count} grant checks · ${health.agent_runtime.sample_output_count} sample outputs · ${health.agent_runtime.boundary}`
+    },
+    {
       title: "Governance Forum",
       count: `${health.governance_forum.comment_count} comments`,
       detail: `Visible to ${health.governance_forum.visibility.replaceAll("_", " ")}`

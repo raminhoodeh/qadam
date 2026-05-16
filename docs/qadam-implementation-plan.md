@@ -386,7 +386,7 @@ Exit criteria:
 
 Objective: formalize the agent architecture before giving the local LLM, frontier LLM, quantum module, or execution adapters more authority.
 
-Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 85 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
+Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 99 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
 
 New reference input:
 
@@ -415,6 +415,28 @@ Exit criteria:
 - Every agent has explicit allowed and forbidden tools.
 - Secret scanning covers agent and skill files.
 - Paper execution authority is reserved for the future execution policy path, not the LLM prompt layer.
+
+## 8B. Phase 1F - Agent Runtime Enforcement
+
+Objective: enforce the manifest permissions at runtime before Qadam starts Phase 2 shadow intelligence.
+
+Current implementation note: Phase 1F now has runtime tool authorization, broker-write hard blocks, sample output fixtures for all 8 agents, and a local Research Analyst shadow triage queue. The check is wired into startup, and system health/cockpit expose Agent Runtime status.
+
+Build:
+
+1. Runtime authorization wrapper.
+2. Tool-grant checks before tool use.
+3. Sample output fixtures for every agent schema.
+4. Local shadow triage queue.
+5. MCP-style status and authorization tools.
+6. Cockpit runtime permission status.
+
+Exit criteria:
+
+- Allowed tool calls pass only when explicitly granted.
+- Missing-grant calls block.
+- Broker-write tools block for every agent.
+- Shadow triage packets remain local-only and non-executable.
 
 ## 9. Phase 2 - Intelligence Stack
 

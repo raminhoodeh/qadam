@@ -229,7 +229,7 @@ Current implementation start:
 - Agent registry, skill bundles, manifest validation, explicit tool grants, and cockpit/system-health status exist.
 - Eight named agents validate locally.
 - Seven reusable skill bundles validate locally.
-- Current validation reports 85 tool grants and 13 secret-name grants, all names only.
+- Current validation reports 99 tool grants and 13 secret-name grants, all names only.
 
 Reference pattern:
 
@@ -268,6 +268,29 @@ Phase 1E is done when:
 - Every tool grant is explicit.
 - Live-capital action requires future human signoff.
 - Paper-account autonomy remains possible only through deterministic Risk Agent and execution-policy gates, not direct LLM authority.
+
+## Phase 1F - Agent Runtime Enforcement
+
+Objective: enforce Agent OS permissions at runtime before shadow intelligence starts.
+
+Current implementation state:
+
+- Agent runtime authorization checks allow or block tool use from manifest grants.
+- Research Analyst can use source tools but is blocked from execution venue tools.
+- Risk Agent can inspect execution venues but cannot place orders.
+- Strategy Lead is hard-blocked from broker-write tools.
+- All 8 agents have sample output fixtures that validate against their output schemas.
+- Research Analyst shadow triage queue writes local-only non-executable packets.
+
+### Phase 1F Gate
+
+Phase 1F is done when:
+
+- Allowed tool calls pass.
+- Missing-grant tool calls block.
+- Broker-write tools block.
+- Sample outputs validate.
+- Shadow triage queue exists and is clearly non-executable.
 
 ## Phase 2 - Intelligence Stack In Shadow Mode
 
@@ -530,6 +553,7 @@ The cockpit should evolve without becoming a trading toy.
 | Phase 0 | Login route plan, protected dashboard shell, System Map placeholder, kill-switch placement |
 | Phase 1 | Source health, heartbeat, degraded-state banners |
 | Phase 1E | Agent ownership map, tool grants, skill bundle status, forbidden-action warnings |
+| Phase 1F | Runtime permission status, enforced blocks, shadow triage queue state |
 | Phase 2 | Hidden/debug shadow signals, evidence trail previews |
 | Phase 3 | Quantum job status and fallback visibility |
 | Phase 4 | Manifested Strategy review and approval record |
@@ -595,11 +619,11 @@ These apply from Phase 0 onward.
 
 ## Recommended Next Implementation Batch
 
-The Agent OS manifest layer is in place. The next batch should enforce those permissions at runtime before Qadam thinks, predicts, calculates, or trades.
+The Agent OS runtime layer is in place. The next batch should start Phase 2 shadow intelligence without execution.
 
-1. Agent invocation wrapper.
-2. Tool-grant enforcement before MCP tool calls.
-3. Sample output fixtures for each agent schema.
-4. Minimal Research Analyst shadow triage queue.
-5. Cockpit drill-down for agent permissions and forbidden actions.
-6. Keep execution authority outside the LLM layer.
+1. Proposed Signal schema.
+2. Evidence Trail schema.
+3. Deterministic keyword/anomaly triage fallback.
+4. Research Analyst shadow triage runner.
+5. Gemma/Gemini provider status stubs.
+6. Cockpit-hidden debug view for shadow outputs.

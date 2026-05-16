@@ -1,0 +1,7 @@
+{
+  "agent_key": "risk_agent",
+  "status": "blocked",
+  "decision": "block",
+  "reason": "Execution venue write path is disabled in foundation mode.",
+  "blocked": true
+}

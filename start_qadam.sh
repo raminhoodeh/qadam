@@ -13,6 +13,7 @@ fi
 "$PYTHON_BIN" scripts/check_local_stores.py
 "$PYTHON_BIN" scripts/check_registries.py
 "$PYTHON_BIN" scripts/check_agent_manifests.py
+"$PYTHON_BIN" scripts/check_agent_runtime.py
 "$PYTHON_BIN" scripts/check_chroma_store.py
 "$PYTHON_BIN" scripts/check_source_heartbeat.py
 "$PYTHON_BIN" scripts/check_gdelt_adapter.py

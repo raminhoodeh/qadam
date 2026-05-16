@@ -1,0 +1,7 @@
+{
+  "agent_key": "research_analyst",
+  "status": "shadow_only",
+  "summary": "Sample event batch contains one physical anomaly and macro context requiring corroboration.",
+  "evidence_refs": ["nasa_firms_sample", "fred_sample"],
+  "uncertainty": "medium"
+}

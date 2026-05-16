@@ -19,7 +19,9 @@
     "fred_sample",
     "rss_sample",
     "agent_registry_status",
-    "skill_registry"
+    "skill_registry",
+    "agent_runtime_status",
+    "create_research_shadow_triage_packet"
   ],
   "allowed_source_groups": [
     "live_source_registry",

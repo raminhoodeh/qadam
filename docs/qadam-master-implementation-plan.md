@@ -233,8 +233,10 @@ Current implementation start:
 - `agents/` contains 8 named role manifests: COO, Research Analyst, Strategy Lead, Head of Quant, Risk Agent, Signal Auditor, Execution Auditor, and Fund Manager Interface.
 - `skills/` contains 7 reusable skill bundles: macro intelligence, prediction markets, physical anomaly monitoring, options/volatility flow, Akber 6-stage filter, private edge/world-model priors, and risk/postmortems.
 - `orchestrator/agent_registry.py` validates agent folders, permissions, skill references, tool grants, output schemas, forbidden actions, and raw-secret patterns.
+- `orchestrator/agent_runtime.py` enforces tool-grant checks before tool use, validates sample outputs, blocks broker-write tools, and maintains a Research Analyst shadow triage queue.
 - `scripts/check_agent_manifests.py` is wired into `start_qadam.sh`.
-- System health, FastMCP-style tools, and the cockpit expose Agent OS status.
+- `scripts/check_agent_runtime.py` is wired into `start_qadam.sh`.
+- System health, FastMCP-style tools, and the cockpit expose Agent OS and Agent Runtime status.
 
 Why now:
 
@@ -264,6 +266,25 @@ Exit gate:
 - No agent has direct broker write access.
 - Paper execution authority is reserved for the future execution path, not the LLM agent itself.
 - The cockpit can show which agent owns each module and which tools it is allowed to use.
+
+## 8B. Phase 1F - Agent Runtime Enforcement
+
+Objective: make Qadam enforce agent permissions before Phase 2 intelligence begins.
+
+Implemented state:
+
+- `authorize_tool_call(agent_key, tool_name)` returns allow/block decisions from the manifest grants.
+- Broker-write tools such as `place_order`, `cancel_order`, and `close_position` are hard-blocked.
+- Sample output fixtures exist for all 8 agents and validate against each agent's output schema.
+- Research Analyst can queue a local shadow triage packet, marked non-executable.
+- Runtime status is exposed through system health, FastMCP-style tools, startup checks, and cockpit registry cards.
+
+Exit gate:
+
+- Allowed tool calls pass only for agents with explicit grants.
+- Undeclared or missing-grant tool calls block.
+- Broker-write tools block for every agent.
+- Shadow triage queue writes local-only packets with no signal, risk, or execution authority.
 
 ## 9. Phase 2 - Intelligence Stack
 
@@ -462,12 +483,12 @@ Do not try to build all of Qadam at once. Qadam is created by making each module
 
 Phase 0 foundation is substantially implemented, and Phase 1 has started with test ingestion, source heartbeat, and promoted read-only adapters for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 
-Phase 1E is implemented at the manifest-contract level. The next practical batch is to turn these manifests into runtime enforcement before Phase 2 intelligence starts:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. The next practical batch is Phase 2 shadow intelligence:
 
-1. Add an agent invocation wrapper that checks tool grants before every tool call.
-2. Add sample output fixtures for each agent schema.
-3. Add a minimal local triage queue for Research Analyst shadow packets.
-4. Add cockpit drill-down for agent permissions and forbidden actions.
-5. Keep broker-write authority unavailable until Phase 5 execution policy exists.
+1. Add Proposed Signal and Evidence Trail schemas.
+2. Add a deterministic keyword/anomaly triage fallback before Gemma.
+3. Add a local Research Analyst shadow triage runner that consumes queued packets.
+4. Add Gemini/Gemma provider stubs that report configured/missing status without inference.
+5. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.

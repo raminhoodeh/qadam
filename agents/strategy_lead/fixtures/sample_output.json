@@ -1,0 +1,7 @@
+{
+  "agent_key": "strategy_lead",
+  "status": "draft_only",
+  "thesis": "A chokepoint anomaly could become relevant if corroborated by shipping, oil, and news sources.",
+  "evidence_refs": ["physical_anomaly_monitoring", "macro_intelligence"],
+  "invalidation": "No corroborating source confirms disruption within the review window."
+}

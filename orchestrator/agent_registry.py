@@ -76,6 +76,10 @@ DECLARED_MCP_TOOLS: tuple[str, ...] = (
     "agent_detail",
     "skill_registry",
     "skill_detail",
+    "agent_runtime_status",
+    "agent_tool_authorization",
+    "research_shadow_triage_queue",
+    "create_research_shadow_triage_packet",
 )
 
 KNOWN_SOURCE_GROUPS: tuple[str, ...] = (

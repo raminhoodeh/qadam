@@ -302,7 +302,10 @@ Implemented state:
 - `skills/` contains 7 reusable Qadam skill bundles with `SKILL.md` and `skill.json`.
 - `orchestrator/agent_registry.py` exposes agent and skill registry summaries.
 - `scripts/check_agent_manifests.py` validates counts, grants, forbidden actions, output schemas, and raw-secret patterns.
+- `orchestrator/agent_runtime.py` enforces runtime tool grants, validates sample outputs, blocks broker-write tools, and writes a local Research Analyst shadow triage queue.
+- `scripts/check_agent_runtime.py` verifies the runtime enforcement path.
 - System health and cockpit fallback data include `agent_os`.
+- System health and cockpit fallback data include `agent_runtime`.
 
 Deliverables:
 

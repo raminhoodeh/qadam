@@ -13,6 +13,12 @@ from orchestrator.agent_registry import (
     skill_detail as registry_skill_detail,
     skill_registry as registry_skills,
 )
+from orchestrator.agent_runtime import (
+    agent_runtime_summary,
+    authorize_tool_call,
+    create_shadow_triage_packet,
+    shadow_triage_queue_summary,
+)
 from orchestrator.adapters import (
     fetch_gdelt_live_sync,
     fetch_gdelt_sample,
@@ -147,6 +153,31 @@ def skill_registry() -> dict[str, object]:
 
 def skill_detail(key: str) -> dict[str, object]:
     return registry_skill_detail(key)
+
+
+def agent_runtime_status() -> dict[str, object]:
+    return agent_runtime_summary(Settings.from_env())
+
+
+def agent_tool_authorization(agent_key: str, tool_name: str) -> dict[str, object]:
+    return authorize_tool_call(agent_key, tool_name).to_dict()
+
+
+def research_shadow_triage_queue() -> dict[str, object]:
+    return shadow_triage_queue_summary(Settings.from_env())
+
+
+def create_research_shadow_triage_packet(
+    source_event_refs: list[str],
+    summary: str,
+    uncertainty: str = "unknown",
+) -> dict[str, object]:
+    return create_shadow_triage_packet(
+        source_event_refs=tuple(source_event_refs),
+        summary=summary,
+        uncertainty=uncertainty,
+        settings=Settings.from_env(),
+    )
 
 
 def governance_comments(limit: int = 20) -> dict[str, object]:
@@ -336,6 +367,10 @@ def build_server():
     mcp.tool()(agent_detail)
     mcp.tool()(skill_registry)
     mcp.tool()(skill_detail)
+    mcp.tool()(agent_runtime_status)
+    mcp.tool()(agent_tool_authorization)
+    mcp.tool()(research_shadow_triage_queue)
+    mcp.tool()(create_research_shadow_triage_packet)
     mcp.tool()(governance_comments)
     mcp.tool()(create_governance_comment)
     mcp.tool()(ingestion_status)

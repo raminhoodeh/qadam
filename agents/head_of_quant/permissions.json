@@ -11,7 +11,8 @@
     "resource_registry",
     "resource_detail",
     "agent_registry_status",
-    "skill_registry"
+    "skill_registry",
+    "agent_runtime_status"
   ],
   "allowed_source_groups": [
     "quantum_provider_registry",

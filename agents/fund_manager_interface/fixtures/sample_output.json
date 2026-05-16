@@ -1,0 +1,7 @@
+{
+  "agent_key": "fund_manager_interface",
+  "status": "visible",
+  "summary": "Founding Fund Managers can view system status and comments; execution remains disabled.",
+  "visible_to": ["Ramin", "Troy", "Ion", "Akber", "Anas"],
+  "actions": ["review", "comment", "future_kill_switch"]
+}

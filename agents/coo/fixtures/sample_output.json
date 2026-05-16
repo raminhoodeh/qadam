@@ -1,0 +1,7 @@
+{
+  "agent_key": "coo",
+  "status": "ok",
+  "summary": "Foundation checks completed with degraded local stores accepted.",
+  "evidence_refs": ["system_health", "source_heartbeat_status"],
+  "next_actions": ["Keep execution disabled", "Continue runtime permission enforcement"]
+}

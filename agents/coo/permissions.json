@@ -14,7 +14,10 @@
     "execution_venues",
     "agent_registry_status",
     "agent_registry",
-    "skill_registry"
+    "skill_registry",
+    "agent_runtime_status",
+    "agent_tool_authorization",
+    "research_shadow_triage_queue"
   ],
   "allowed_source_groups": [
     "cockpit_health",

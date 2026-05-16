@@ -10,7 +10,9 @@
     "secret_registry_status",
     "system_health",
     "agent_registry_status",
-    "skill_registry"
+    "skill_registry",
+    "agent_runtime_status",
+    "agent_tool_authorization"
   ],
   "allowed_source_groups": [
     "execution_registry",

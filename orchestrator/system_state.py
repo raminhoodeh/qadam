@@ -13,6 +13,7 @@ from orchestrator.adapters import (
     rss_adapter_status,
 )
 from orchestrator.agent_registry import agent_registry_summary
+from orchestrator.agent_runtime import agent_runtime_summary
 from orchestrator.chroma_store import knowledge_graph_health
 from orchestrator.config import Settings
 from orchestrator.execution import execution_registry
@@ -68,6 +69,7 @@ def module_map(storage_health: dict[str, Any] | None = None) -> list[dict[str, s
         {"key": "resource_registry", "label": "Resource Registry", "owner": "Reference Provenance", "status": "registered"},
         {"key": "world_model", "label": "World-Model Lens", "owner": "Private Corpus", "status": "foundational_prior"},
         {"key": "agent_os", "label": "Agent OS", "owner": "Manifest Registry", "status": "manifest_ready"},
+        {"key": "agent_runtime", "label": "Agent Runtime", "owner": "Permission Gate", "status": "enforced"},
         {"key": "governance_forum", "label": "Governance Forum", "owner": "Fund Managers", "status": "local"},
         {"key": "ingestion_spine", "label": "Test Ingestion Spine", "owner": "World Monitor Adapters", "status": "test_data_ready"},
         {"key": "gdelt_adapter", "label": "GDELT Adapter", "owner": "Conflict Pipeline", "status": "sample_ready"},
@@ -91,6 +93,7 @@ def build_system_health(
     knowledge_health = knowledge_graph_health(settings)
     governance_health = GovernanceStore(settings=settings).health()
     agent_health = agent_registry_summary()
+    runtime_health = agent_runtime_summary(settings)
     event_status = (event_log_health or {}).get("status", "not_started")
     system_status = "ok"
     if (
@@ -98,6 +101,7 @@ def build_system_health(
         or storage_health["status"] == "error"
         or governance_health["status"] == "degraded"
         or agent_health["status"] == "error"
+        or runtime_health["status"] == "error"
     ):
         system_status = "error"
     elif storage_health["status"] == "degraded":
@@ -121,6 +125,7 @@ def build_system_health(
         "resource_registry": resource_registry_summary(),
         "world_model": world_model_summary(),
         "agent_os": agent_health,
+        "agent_runtime": runtime_health,
         "governance_forum": governance_health,
         "ingestion_spine": ingestion_spine_summary(settings),
         "source_heartbeat": source_heartbeat_summary(settings),

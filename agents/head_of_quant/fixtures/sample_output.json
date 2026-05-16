@@ -1,0 +1,7 @@
+{
+  "agent_key": "head_of_quant",
+  "status": "fallback_ready",
+  "summary": "Local simulation is the only active path; hardware submission remains disabled.",
+  "backend": "qiskit_aer_or_classical_fallback",
+  "fallback": "classical-fallback"
+}

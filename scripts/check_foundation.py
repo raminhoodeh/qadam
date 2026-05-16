@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from orchestrator.agent_registry import agent_registry_summary
+from orchestrator.agent_runtime import agent_runtime_summary
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, unresolved_sources
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
@@ -97,6 +98,14 @@ def main() -> int:
     print(f"agent_os_skill_count={agent_os['skill_count']}")
     if agent_os["status"] != "ok":
         print("agent_os_not_ok=true")
+        return 1
+
+    agent_runtime = agent_runtime_summary(settings)
+    print(f"agent_runtime_status={agent_runtime['status']}")
+    print(f"agent_runtime_authorization_check_count={agent_runtime['authorization_check_count']}")
+    print(f"agent_runtime_expected_block_count={agent_runtime['expected_block_count']}")
+    if agent_runtime["status"] != "ok":
+        print("agent_runtime_not_ok=true")
         return 1
 
     event_log_path = (ROOT / settings.runtime_dir / "foundation_check_event_log.jsonl").resolve()

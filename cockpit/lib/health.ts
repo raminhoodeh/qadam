@@ -72,6 +72,15 @@ export type CockpitHealth = {
     warning_count: number;
     boundary: string;
   };
+  agent_runtime: {
+    status: string;
+    authorization_check_count: number;
+    expected_block_count: number;
+    sample_output_count: number;
+    shadow_queue_status: string;
+    shadow_queue_packet_count: number;
+    boundary: string;
+  };
   governance_forum: {
     status: string;
     comment_count: number;
@@ -122,6 +131,7 @@ const fallbackModules: ModuleStatus[] = [
   { key: "event_log", label: "Event Log", owner: "Local JSONL fallback", status: "fallback" },
   { key: "knowledge_graph", label: "Knowledge Graph", owner: "Embedded Chroma", status: "registered" },
   { key: "agent_os", label: "Agent OS", owner: "Manifest Registry", status: "manifest_ready" },
+  { key: "agent_runtime", label: "Agent Runtime", owner: "Permission Gate", status: "enforced" },
   { key: "execution_registry", label: "Execution Registry", owner: "Risk Agent", status: "disabled" },
   { key: "cockpit", label: "Cockpit", owner: "qadam.trade", status: "registered" }
 ];
@@ -164,6 +174,15 @@ const fallbackHealth: CockpitHealth = {
     error_count: 0,
     warning_count: 0,
     boundary: "Agents declare permissions and skills only. They do not receive broker-write authority."
+  },
+  agent_runtime: {
+    status: "unknown",
+    authorization_check_count: 0,
+    expected_block_count: 0,
+    sample_output_count: 8,
+    shadow_queue_status: "empty",
+    shadow_queue_packet_count: 0,
+    boundary: "Runtime grants are enforced before tool use. Shadow triage has no execution authority."
   },
   governance_forum: {
     status: "unknown",
@@ -230,6 +249,7 @@ export async function getCockpitHealth(): Promise<CockpitHealth> {
       pipeline_counts: health.pipeline_counts ?? fallbackHealth.pipeline_counts,
       fund_managers: health.fund_managers ?? fallbackHealth.fund_managers,
       agent_os: health.agent_os ?? fallbackHealth.agent_os,
+      agent_runtime: health.agent_runtime ?? fallbackHealth.agent_runtime,
       source_heartbeat: health.source_heartbeat ?? fallbackHealth.source_heartbeat,
       execution_venues: health.execution_venues ?? fallbackHealth.execution_venues,
       execution_summary: health.execution_summary ?? fallbackHealth.execution_summary
