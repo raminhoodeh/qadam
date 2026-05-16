@@ -152,9 +152,10 @@ Build:
 - Disabled Execution Venue Registry shaped by PriveX Starter lessons: read-only first, explicit account/subaccount/network scope, auth errors separated from transient errors, and no automatic POST retries.
 - FastMCP tools: `ticker_echo`, `source_registry`, `source_detail`, `resource_registry`, `world_model_claim`, `system_health`, `module_map`.
 - Agent/skill manifest plan shaped by Anthropic's `financial-services` reference: named workflow agents, reusable skill bundles, explicit connector grants, manifest validation, and secret scanning.
-- Next.js cockpit shell with public `/`, protected `/dashboard`, System Map, and settings route.
-- Clerk sign-in/sign-up routes with founding Fund Manager allowlist enforcement in the cockpit.
-- Vercel linked read-only to existing `qadam.trade` project.
+- Local Next.js cockpit shell with public `/`, protected `/dashboard`, System Map, and settings route retained as the richer server-rendered cockpit target.
+- Live static cockpit workaround deployed through `landing-page-repo`: `/login/`, `/sign-up/`, and `/dashboard/` are real static routes on `qadam.trade`.
+- Supabase Auth login/sign-up is live through the browser client, with founding Fund Manager allowlist enforcement before opening `/dashboard/`.
+- Vercel is linked to the existing `qadam.trade` project; both `qadam.trade` and `www.qadam.trade` are explicitly aliased to the live static deployment.
 - Founding Fund Manager access list: Ramin, Troy, Akber, Anas, Ion.
 - Initial email allowlist: `raminhoodeh@gmail.com`, `troycookecareer@gmail.com`, `isioras@yahoo.co.uk`; Akber and Anas pending.
 - Local comments/forum schema for signal, module, strategy, and postmortem suggestions.
@@ -168,7 +169,8 @@ Exit gate:
 - Local storage paths are created and permission-checked.
 - Source Registry, Resource Registry, and World-Model Corpus are distinct.
 - Execution venues are visible but disabled/read-only; no venue can place orders.
-- Cockpit shell renders the System Map.
+- Live static cockpit renders the System Map after Supabase login.
+- The live cockpit clearly marks itself as a static web shell while the local MacBook orchestrator remains private and not exposed to Vercel.
 - Cockpit access model is limited to the five founding Fund Managers.
 - Comment/forum entries can be saved locally and linked to a module or signal.
 - No secret appears in committed files.
@@ -459,23 +461,31 @@ Exit gate:
 
 Current repository state:
 
-- `qadam.trade` redirects to `www.qadam.trade`.
-- Public landing page exists.
-- Top-right currently has `Read Whitepaper`, not Login.
-- The local cockpit now has public `/`, `/login` -> `/sign-in`, Clerk `/sign-in` and `/sign-up`, protected `/dashboard`, and protected `/settings`.
-- `/dashboard` and `/settings` enforce Qadam's founding Fund Manager email allowlist after Clerk sign-in.
+- `qadam.trade` and `www.qadam.trade` are both explicitly aliased to the active Vercel production deployment.
+- Public landing page exists in `landing-page-repo`.
+- Top-right includes `Read Whitepaper` and `Login`.
+- Live production cockpit currently uses a static workaround in `landing-page-repo`, not the Next.js cockpit app.
+- Live static routes are `/login/`, `/sign-up/`, and `/dashboard/`.
+- `/login/` and `/sign-up/` use Supabase JS browser auth with project `eipijgublkypksygsyet`.
+- `/dashboard/` checks the Supabase browser session and Qadam founding Fund Manager allowlist before showing the System Map.
+- The live System Map is a static founding-release map and clearly says the local MacBook orchestrator is not exposed to Vercel.
+- The richer Next.js cockpit remains in `cockpit/` as the local/server-rendered target for later health, settings, and API-backed views.
+- Supabase URL Configuration must keep `https://qadam.trade` as Site URL and allow redirects for both `qadam.trade` and `www.qadam.trade`.
 
 Target state:
 
 - Landing page remains public.
 - Top-right includes Login.
-- Login routes to Clerk.
+- Login routes to Supabase Auth.
 - Successful sign-in routes to protected `/dashboard`.
 - Login allowlist is limited to Ramin, Troy, Akber, Anas, and Ion in the first release.
 - `/dashboard` opens the System Map.
 - Dashboard includes a private comments/forum area for suggestions and improvement notes.
 - Unauthenticated `/dashboard` redirects to login.
-- Production deploys remain deliberate while landing page is live.
+- Supabase project `eipijgublkypksygsyet` is the Auth backend for the cockpit; Codex can use the Supabase MCP server after local `codex mcp login supabase` authentication.
+- Production deploys remain deliberate while the landing page is live.
+- Next target is to decide whether to keep hardening the static cockpit or move production back to the Next.js cockpit after Vercel route behavior is diagnosed.
+- Before exposing live health, the MacBook orchestrator needs a secure read-only bridge; until then, the production dashboard must stay a static/fallback system map.
 
 ## 16. How To Build Without Getting Overwhelmed
 
@@ -495,12 +505,15 @@ Do not try to build all of Qadam at once. Qadam is created by making each module
 
 Phase 0 foundation is substantially implemented, and Phase 1 has started with test ingestion, source heartbeat, and promoted read-only adapters for GDELT, Oref, NASA FIRMS, FRED, and RSS.
 
+The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
+
 Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts and provider-safe probes have started. The next practical batch is controlled model use:
 
-1. Start LM Studio and run the local `/models` readiness check against `gemma-4-e4b`.
-2. Run the Gemini model-list credential probe without text generation.
-3. Add the first local Research Analyst inference call over queued shadow packets.
-4. Add Evidence Trail rendering in a cockpit-hidden debug view.
-5. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
+1. Commit and cleanly document the static cockpit workaround in source control.
+2. Start LM Studio and run the local `/models` readiness check against `gemma-4-e4b`.
+3. Run the Gemini model-list credential probe without text generation.
+4. Add the first local Research Analyst inference call over queued shadow packets.
+5. Add Evidence Trail rendering in a cockpit-hidden debug view or static debug page.
+6. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.
