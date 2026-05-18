@@ -39,6 +39,7 @@ AWS_REGION=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_BOT_USERNAME=
 TELEGRAM_DEFAULT_CHAT_ID=
+TELEGRAM_GROUP_CHAT_ID=
 QADAM_TELEGRAM_ENABLED=false
 QADAM_TELEGRAM_DRY_RUN=true
 ```
@@ -85,7 +86,8 @@ Required later for Phase D8A/T1:
 | --- | --- |
 | `TELEGRAM_BOT_TOKEN` | BotFather token for the Qadam Telegram bot. Store locally only. |
 | `TELEGRAM_BOT_USERNAME` | Human-readable bot username for diagnostics. |
-| `TELEGRAM_DEFAULT_CHAT_ID` | Optional private group/chat target for first test delivery. |
+| `TELEGRAM_DEFAULT_CHAT_ID` | Optional private DM target for first test delivery. |
+| `TELEGRAM_GROUP_CHAT_ID` | Optional private group target for founding-member delivery tests. |
 | `QADAM_TELEGRAM_ENABLED=false` | Global send gate. Defaults disabled. |
 | `QADAM_TELEGRAM_DRY_RUN=true` | Writes outbox messages without sending. Defaults dry-run. |
 
@@ -93,8 +95,9 @@ Setup path:
 
 1. Create the bot in Telegram through BotFather.
 2. Store the token only in `data/runtime/qadam-secrets.env`.
-3. Send one message to the bot or add it to the intended private test group, then capture `TELEGRAM_DEFAULT_CHAT_ID` locally.
-4. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
+3. Send one message to the bot, then capture `TELEGRAM_DEFAULT_CHAT_ID` locally.
+4. Add the bot to the intended private test group, then capture `TELEGRAM_GROUP_CHAT_ID` locally.
+5. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
 5. Verify the dashboard shows Telegram as disabled/dry-run.
 6. Send one explicit private test message only after the local checks pass.
 
@@ -114,7 +117,7 @@ Qadam does not need quantum hardware to complete Phase 1D. Keep these as readine
 
 NASA FIRMS is now the first physical pipeline adapter promoted into Qadam. Without `NASA_FIRMS_API_KEY`, the adapter is healthy in sample mode and marked `unavailable_missing_credentials` for live mode. With the key configured, `scripts/check_nasa_firms_adapter.py --live` can make a read-only FIRMS area CSV request and archive the sanitized result locally.
 
-As of 2026-05-18, NASA FIRMS, Alpaca paper, ACLED, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and LM Studio settings are configured in the local ignored secret file. Kalshi and Telegram default chat ID remain pending.
+As of 2026-05-18, NASA FIRMS, Alpaca paper, ACLED, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings are configured in the local ignored secret file. Kalshi remains region-unavailable.
 
 Official references:
 

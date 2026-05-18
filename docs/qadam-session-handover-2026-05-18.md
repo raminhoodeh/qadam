@@ -66,8 +66,8 @@ Important verified numbers from the last completed run:
 Local credential status as of 2026-05-18:
 
 - Stored locally in `data/runtime/qadam-secrets.env` with strict local permissions: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and local LM Studio settings.
-- Still missing or not usable locally: Kalshi credentials, Telegram default chat ID, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
-- Telegram remains dry-run and disabled for sends until a default chat ID and explicit send approval exist.
+- Still missing or not usable locally: Kalshi credentials, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
+- Telegram has private and group delivery targets locally configured, but remains dry-run and disabled for normal sends until explicit send approval exists.
 - ACLED token refresh is now a tracked credential requirement, but automatic refresh still needs implementation and a live read-only check.
 - Kalshi is blocked by current location/account availability and should remain deferred until eligibility is resolved.
 
@@ -145,7 +145,7 @@ cd /Users/raminhoodeh/Desktop/qadam
 ./scripts/check_phase1_live_adapters.py --live --source=kalshi
 ```
 
-5. Add `TELEGRAM_DEFAULT_CHAT_ID` only after the bot has received a first message from the target chat. Keep `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true` until explicit send testing is approved.
+5. Keep Telegram in `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true` until explicit send testing is approved.
 
 6. Refresh and deploy the cockpit only after checks pass:
 

@@ -57,7 +57,7 @@ As of 2026-05-18, the local MacBook secret file has configured values for these 
 Still pending:
 
 - Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
-- Telegram still needs `TELEGRAM_DEFAULT_CHAT_ID` before any real delivery target is configured.
+- Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
 - ACLED token refresh automation needs implementation before relying on the access token long-term.
 - UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials.
 
@@ -72,7 +72,7 @@ These are the highest-value keys for Phase 1 and the first paper proof.
 | 3 | Kalshi | Usually free key; trading fees later | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Create a Kalshi account, generate API credentials, keep read-only/paper posture until execution policy exists. | `./scripts/check_phase1_live_adapters.py --live --source=kalshi` |
 | 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Prefer token plus refresh-token automation over repeated password use. | `./scripts/check_phase1_live_adapters.py --live --source=acled` |
 | 5 | FRED | Free | `FRED_API_KEY` | Create a FRED API key. Qadam has CSV fallback, but a key improves reliability. | `./scripts/check_fred_adapter.py --live` |
-| 6 | Telegram Bot | Free | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID` | Create a bot with BotFather. Keep `QADAM_TELEGRAM_DRY_RUN=true` first. | `./scripts/check_telegram_config.py && ./scripts/check_telegram_outbox.py` |
+| 6 | Telegram Bot | Free | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Create a bot with BotFather. Keep `QADAM_TELEGRAM_DRY_RUN=true` first. | `./scripts/check_telegram_config.py && ./scripts/check_telegram_outbox.py` |
 
 Minimum useful outcome after Batch A:
 
@@ -83,7 +83,7 @@ Minimum useful outcome after Batch A:
 - Telegram can be dry-run without sending.
 - All credentials remain local.
 
-Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, and the Telegram bot token are locally configured. Kalshi and Telegram default chat ID remain the two practical gaps.
+Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, and Telegram bot private/group delivery targets are locally configured. Kalshi remains unavailable in Ramin's current regions; UnusualWhales remains the main practical Batch A credential gap.
 
 ## 4. Batch B - Add Confirmation Feeds
 

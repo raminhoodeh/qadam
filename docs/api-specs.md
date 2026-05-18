@@ -46,7 +46,7 @@ Not yet proven live:
 Current local credential snapshot as of 2026-05-18:
 
 - Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and LM Studio settings.
-- Pending or deferred: Kalshi credentials, Telegram default chat ID, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
+- Pending or deferred: Kalshi credentials, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
 - ACLED refresh-token automation is required before treating ACLED as durable live infrastructure.
 - Telegram remains outbound-only, dry-run, and send-disabled until a chat ID and explicit send-test approval exist.
 
@@ -67,7 +67,7 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Alpaca paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account mirror and eventual £1000 autonomous test execution. |
 | Gemini | `GEMINI_API_KEY` | Frontier LLM Strategy Lead / deep research packets. |
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Founding Fund Manager cockpit auth. |
-| Telegram bot | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID` | Outbound member communications, alerts, and delivery status. |
+| Telegram bot | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Outbound member communications, alerts, and delivery status. |
 
 ### Batch B - Market, Macro, And Social Confirmation
 
@@ -168,7 +168,7 @@ These are not all World Monitor data sources, but they are required to make Qada
 | Prediction markets | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Read-only first; guarded execution later. |
 | Prediction markets | Polymarket / pmxt / Polyrouter | `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER_ADDRESS`, `POLYMARKET_CHAIN_ID`, `POLYROUTER_API_KEY`, `PMXT_CONFIG_PATH` | Disabled until paper/sandbox-safe path is explicit. |
 | Charts / alerts | TradingView | `TRADINGVIEW_WEBHOOK_SECRET`, `TRADINGVIEW_ALERT_RECEIVER_URL` | Paid-account alerts become observed signals only. No normal retail market-data API key. |
-| Member alerts | Telegram Bot API | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID` | Outbound notifications only. No Telegram trade commands. |
+| Member alerts | Telegram Bot API | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Outbound notifications only. No Telegram trade commands. |
 | Email fallback | Resend or SMTP | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` | Delivery fallback only. |
 | External uptime | UptimeRobot or equivalent | `UPTIMEROBOT_API_KEY` | Optional monitor for public cockpit availability. |
 
@@ -308,6 +308,7 @@ TRADINGVIEW_MCP_ENABLED=false
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_BOT_USERNAME=
 TELEGRAM_DEFAULT_CHAT_ID=
+TELEGRAM_GROUP_CHAT_ID=
 QADAM_TELEGRAM_ENABLED=false
 QADAM_TELEGRAM_DRY_RUN=true
 

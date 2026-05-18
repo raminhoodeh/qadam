@@ -20,8 +20,11 @@ const TELEGRAM_FIELDS = [
     "bot_configured",
     "boundary",
     "default_chat_configured",
+    "delivery_target_count",
+    "delivery_target_modes",
     "dry_run_message_count",
     "failed_count",
+    "group_chat_configured",
     "last_sent_time",
     "member_count",
     "mode",
@@ -65,6 +68,9 @@ async function main() {
     assert(telegram.status === "dry_run", "Telegram status is not dry_run");
     assert(telegram.mode === "dry_run", "Telegram mode is not dry_run");
     assert(telegram.send_gate === "disabled", "Telegram send gate is not disabled");
+    assert(telegram.default_chat_configured === true, "Telegram private target is not configured");
+    assert(telegram.group_chat_configured === true, "Telegram group target is not configured");
+    assert(telegram.delivery_target_count >= 2, "Telegram delivery target count is too low");
     assert(telegram.member_count >= 5, "Telegram member count missing");
     assert(telegram.pending_queue_count >= 4, "Telegram dry-run queue missing");
     assert(telegram.dry_run_message_count >= 4, "Telegram dry-run messages missing");

@@ -342,6 +342,8 @@ class TelegramCommunicationsStore:
         bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
         bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
         default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
+        group_chat_configured = secret_status("TELEGRAM_GROUP_CHAT_ID", self.settings).configured
+        delivery_target_count = int(default_chat_configured) + int(group_chat_configured)
         counts = Counter(message.status for message in outbox)
         verified_members = [
             member for member in members if member.status == "verified" and bool(member.chat_id)
@@ -370,6 +372,16 @@ class TelegramCommunicationsStore:
             "bot_configured": bot_configured,
             "bot_username_configured": bot_username_configured,
             "default_chat_configured": default_chat_configured,
+            "group_chat_configured": group_chat_configured,
+            "delivery_target_count": delivery_target_count,
+            "delivery_target_modes": [
+                mode
+                for mode, configured in (
+                    ("private_default", default_chat_configured),
+                    ("group", group_chat_configured),
+                )
+                if configured
+            ],
             "member_count": len(members),
             "verified_member_count": len(verified_members),
             "pending_member_count": len(pending_members),

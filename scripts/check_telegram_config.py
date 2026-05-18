@@ -37,6 +37,8 @@ def main() -> int:
     print("telegram_config_send_gate=" + status["send_gate"])
     print(f"telegram_config_bot_configured={status['bot_configured']}")
     print(f"telegram_config_default_chat_configured={status['default_chat_configured']}")
+    print(f"telegram_config_group_chat_configured={status['group_chat_configured']}")
+    print(f"telegram_config_delivery_target_count={status['delivery_target_count']}")
     print(f"telegram_config_member_count={status['member_count']}")
     print(f"telegram_config_verified_member_count={status['verified_member_count']}")
     print(f"telegram_config_pending_member_count={status['pending_member_count']}")
