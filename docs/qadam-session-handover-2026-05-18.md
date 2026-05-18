@@ -68,7 +68,9 @@ Local credential status as of 2026-05-18:
 - Stored locally in `data/runtime/qadam-secrets.env` with strict local permissions: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and local LM Studio settings.
 - Still missing or not usable locally: Kalshi credentials, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
 - Telegram has private and group delivery targets locally configured, but remains dry-run and disabled for normal sends until explicit send approval exists.
-- ACLED token refresh is now a tracked credential requirement, but automatic refresh still needs implementation and a live read-only check.
+- Phase 1 live source hardening now exists as `scripts/check_phase1_live_source_hardening.py`. It writes the ignored local report `data/runtime/phase1_live_source_validation.json` and keeps each promoted source explicitly marked as `live`, `degraded`, `missing_credentials`, or `sample_ready`.
+- Current live read-only validation: NASA FIRMS, FRED, RSS, Polymarket, Alpaca, BLS, ECB, SEC EDGAR, and Telegram are live; GDELT, Oref, and ACLED are degraded; UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter remain missing or deferred.
+- ACLED token refresh is now a tracked credential requirement, but automatic refresh and account-scope confirmation still need implementation before ACLED counts as durable live infrastructure.
 - Kalshi is blocked by current location/account availability and should remain deferred until eligibility is resolved.
 
 ## Key Boundary
@@ -134,15 +136,14 @@ cd /Users/raminhoodeh/Desktop/qadam
 
 ```bash
 ./scripts/check_nasa_firms_adapter.py --live
-./scripts/check_phase1_live_adapters.py --live --source=alpaca
-./scripts/check_phase1_live_adapters.py --live --source=acled
 ./scripts/check_fred_adapter.py --live
+./scripts/check_phase1_live_source_hardening.py --live
 ```
 
 4. Keep Kalshi deferred until credentials and location eligibility are available:
 
 ```bash
-./scripts/check_phase1_live_adapters.py --live --source=kalshi
+./scripts/check_phase1_live_source_hardening.py --live
 ```
 
 5. Keep Telegram in `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true` until explicit send testing is approved.

@@ -25,6 +25,7 @@ fi
 "$PYTHON_BIN" scripts/check_source_heartbeat.py
 "$PYTHON_BIN" scripts/check_phase1_data_spine.py
 "$PYTHON_BIN" scripts/check_phase1_live_adapters.py
+"$PYTHON_BIN" scripts/check_phase1_live_source_hardening.py
 "$PYTHON_BIN" scripts/check_historical_backfills.py
 "$PYTHON_BIN" scripts/check_trust_score_seed.py
 "$PYTHON_BIN" scripts/check_postgres_timescale_ingestion.py

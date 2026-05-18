@@ -33,6 +33,7 @@ Implemented locally:
 - Generic Phase 1 read-only adapters: ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS Maritime, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, Telegram.
 - Adapter coverage: 19 promoted source contracts out of the 35-source registry.
 - Every promoted adapter has sample mode, masked credential status, raw payload archival, normalized event output, degraded-state handling, and no signal/order authority.
+- `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
 - Historical backfill planning and local sample-run records exist for ACLED, GDELT, NASA FIRMS, FRED, RSS, Polymarket, Kalshi, Alpaca, BLS, ECB, UN Comtrade, and SEC EDGAR.
 - Trust Score seed covers all 35 sources, but scores are priors until replaced by backtests and live observations.
 - Postgres/Timescale durable ingestion is coded as a local contract and is live only when the local database service is running.
@@ -40,15 +41,17 @@ Implemented locally:
 Not yet proven live:
 
 - Any credential-gated source without a configured local secret remains blocked as `missing_credentials`.
-- Any public source still needs live latency, provider-response, replay, and rate-limit checks before it can count as a mature feed.
+- Any public or configured source that fails a read-only live check is kept as `degraded` with the provider error class preserved locally.
 - No adapter may promote signal confidence or create paper/live orders by itself.
 
-Current local credential snapshot as of 2026-05-18:
+Current local live-readiness snapshot as of 2026-05-18:
 
-- Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and LM Studio settings.
-- Pending or deferred: Kalshi credentials, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
+- Live in read-only validation: NASA FIRMS, FRED, RSS, Polymarket, Alpaca paper account mirror, BLS public sample, ECB public exchange-rate series, SEC EDGAR public filing metadata, and Telegram bot status.
+- Degraded in read-only validation: GDELT, Oref, and ACLED. ACLED has local credentials but currently fails live validation with HTTP 403, so token refresh, entitlement, or account-scope confirmation is still required.
+- Missing or deferred credentials: UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter.
+- Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings.
 - ACLED refresh-token automation is required before treating ACLED as durable live infrastructure.
-- Telegram remains outbound-only, dry-run, and send-disabled until a chat ID and explicit send-test approval exist.
+- Telegram remains outbound-only and cannot trigger execution.
 
 ## 2. API Onboarding Batches
 
@@ -115,7 +118,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 
 | # | Source | Pipeline | Tier | Credential Placeholders | Endpoint / Access Pattern | Qadam Use |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | ACLED API | Conflict | 1 | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | `https://api.acleddata.com/acled/read` | Political violence, protests, port-region escalation, and corridor risk. |
+| 1 | ACLED API | Conflict | 1 | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | `https://acleddata.com/api/acled/read` | Political violence, protests, port-region escalation, and corridor risk. |
 | 2 | UCDP API | Conflict | 4 | `UCDP_ACCESS_TOKEN` optional/reference | `https://ucdpapi.pcr.uu.se/api/gedevents/23.1` | Historical conflict base rates and longer-cycle geopolitical context. |
 | 3 | GDELT Project API | Conflict | 2 | none | `https://api.gdeltproject.org/api/v2/doc/doc` | News tone, narrative velocity, global event extraction, and cross-language tension maps. |
 | 4 | Oref API | Conflict | 1 | `OREF_PROXY_AUTH` optional | `https://www.oref.org.il/WarningMessages/alert/alerts.json` | Israeli Home Front Command alerts; high-trust regional instability signal. |
@@ -130,7 +133,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 13 | FRED API | Macro | 2 | `FRED_API_KEY` optional | FRED observations API and public CSV fallback | Interest rates, yields, money supply, liquidity, and macro regime features. |
 | 14 | BLS API | Macro | 3 | `BLS_API_KEY` | `https://api.bls.gov/publicAPI/v2/timeseries/data/` | CPI, PPI, labour, and inflation context. |
 | 15 | BIS Statistics | Macro | 3 | none | `https://stats.bis.org/api/v1/data/` | Global banking, settlement, liquidity, and systemic-risk context. |
-| 16 | ECB Data Portal | Macro | 3 | none | `https://data-api.ecb.europa.eu/service/data/` | FX, rates, European policy, and USD/EUR-sensitive catalyst calibration. |
+| 16 | ECB Data Portal | Macro | 3 | none | `https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A` | FX, rates, European policy, and USD/EUR-sensitive catalyst calibration. |
 | 17 | UN Comtrade API | Macro | 3 | `COMTRADE_API_KEY` | `https://comtradeapi.un.org/data/v1/get/` | Trade flows, tariff trends, supply-chain rerouting, commodity demand. |
 | 18 | USGS | Macro / Physical conflict | 3 | none currently | USGS minerals APIs or earthquake API | Spec conflict: qadam-specs says earthquake API; integration reference says minerals/commodity statistics. |
 | 19 | UnusualWhales | Market | 1 | `UNUSUAL_WHALES_API_KEY` | `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Options flow, dark pool, gamma, congressional trades, institutional confirmation. |

@@ -45,12 +45,12 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="conflict_event",
         trust_score=0.86,
         sample_summary="ACLED conflict event near an energy or defence-relevant region.",
-        primary_endpoint="https://api.acleddata.com/acled/read",
+        primary_endpoint="https://acleddata.com/api/acled/read",
         required_any_secret_groups=(("ACLED_ACCESS_TOKEN",), ("ACLED_EMAIL", "ACLED_PASSWORD")),
         notes=(
             "Credential-gated ACLED read path. Token preferred; email/password remains "
-            "supported as a local-only fallback. ACLED_REFRESH_TOKEN is tracked for "
-            "future automatic token renewal."
+            "tracked for refresh-token automation. ACLED_REFRESH_TOKEN is tracked for "
+            "automatic token renewal."
         ),
     ),
     "unusual_whales": Phase1AdapterConfig(
@@ -78,9 +78,8 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         trust_score=0.76,
         sample_summary="Kalshi market metadata available for a macro, election, rates, or geopolitical contract.",
         primary_endpoint="https://trading-api.kalshi.com/trade-api/v2/markets",
-        public_live=True,
         required_any_secret_groups=(("KALSHI_API_KEY", "KALSHI_API_SECRET"),),
-        notes="Public market metadata may work without keys; authenticated paths stay read-only.",
+        notes="Kalshi is region/account gated for Ramin; authenticated paths stay read-only when available.",
     ),
     "alpaca": Phase1AdapterConfig(
         key="alpaca",
@@ -129,7 +128,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="macro_release",
         trust_score=0.86,
         sample_summary="ECB series observation available for liquidity, rates, or EUR macro context.",
-        primary_endpoint="https://data-api.ecb.europa.eu/service/data/",
+        primary_endpoint="https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A",
         public_live=True,
     ),
     "un_comtrade": Phase1AdapterConfig(
@@ -356,6 +355,11 @@ class Phase1ReadOnlyAdapter:
             if api_key and api_secret:
                 headers["APCA-API-KEY-ID"] = api_key
                 headers["APCA-API-SECRET-KEY"] = api_secret
+        elif key == "acled":
+            token = secret_value("ACLED_ACCESS_TOKEN", self.settings)
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+                headers["Content-Type"] = "application/json"
         elif key == "twitter_x":
             token = secret_value("X_BEARER_TOKEN", self.settings)
             if token:
@@ -374,16 +378,7 @@ class Phase1ReadOnlyAdapter:
     def _request_params(self) -> dict[str, Any]:
         key = self.config.key
         if key == "acled":
-            params: dict[str, Any] = {"limit": 25}
-            token = secret_value("ACLED_ACCESS_TOKEN", self.settings)
-            email = secret_value("ACLED_EMAIL", self.settings)
-            password = secret_value("ACLED_PASSWORD", self.settings)
-            if token:
-                params["access_token"] = token
-            elif email and password:
-                params["email"] = email
-                params["password"] = password
-            return params
+            return {"limit": 25, "_format": "json"}
         if key == "polymarket":
             return {"limit": 25}
         if key == "kalshi":
@@ -395,7 +390,7 @@ class Phase1ReadOnlyAdapter:
         if key == "bls":
             return {}
         if key == "ecb":
-            return {}
+            return {"lastNObservations": 25, "format": "jsondata"}
         if key == "un_comtrade":
             return {"max": 25}
         if key == "sec_edgar":

@@ -68,9 +68,9 @@ These are the highest-value keys for Phase 1 and the first paper proof.
 | Order | Provider | Cost posture | Variables | What to do | Verification |
 | --- | --- | --- | --- | --- | --- |
 | 1 | NASA FIRMS | Free | `NASA_FIRMS_API_KEY` | Request a FIRMS MAP_KEY from NASA. | `./scripts/check_nasa_firms_adapter.py --live` |
-| 2 | Alpaca Paper | Free to start | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Create an Alpaca account, open Paper Trading, generate paper API keys. Use paper keys only. | `./scripts/check_phase1_live_adapters.py --live --source=alpaca` |
-| 3 | Kalshi | Usually free key; trading fees later | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Create a Kalshi account, generate API credentials, keep read-only/paper posture until execution policy exists. | `./scripts/check_phase1_live_adapters.py --live --source=kalshi` |
-| 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Prefer token plus refresh-token automation over repeated password use. | `./scripts/check_phase1_live_adapters.py --live --source=acled` |
+| 2 | Alpaca Paper | Free to start | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Create an Alpaca account, open Paper Trading, generate paper API keys. Use paper keys only. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 3 | Kalshi | Usually free key; trading fees later | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Create a Kalshi account, generate API credentials, keep read-only/paper posture until execution policy exists. Current setup remains region/account gated. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Prefer token plus refresh-token automation over repeated password use. Current endpoint is `https://acleddata.com/api/acled/read`. | `./scripts/check_phase1_live_source_hardening.py --live` |
 | 5 | FRED | Free | `FRED_API_KEY` | Create a FRED API key. Qadam has CSV fallback, but a key improves reliability. | `./scripts/check_fred_adapter.py --live` |
 | 6 | Telegram Bot | Free | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Create a bot with BotFather. Keep `QADAM_TELEGRAM_DRY_RUN=true` first. | `./scripts/check_telegram_config.py && ./scripts/check_telegram_outbox.py` |
 
@@ -91,11 +91,11 @@ These improve signal quality but should not block the first proof.
 
 | Order | Provider | Cost posture | Variables | What to do | Verification |
 | --- | --- | --- | --- | --- | --- |
-| 7 | BLS | Free with key / public limits | `BLS_API_KEY` | Register for a BLS API key. | `./scripts/check_phase1_live_adapters.py --live --source=bls` |
-| 8 | SEC EDGAR | Free, no secret | `SEC_USER_AGENT` | Set a real user-agent string with contact email. Do not leave the placeholder. | `./scripts/check_phase1_live_adapters.py --live --source=sec_edgar` |
-| 9 | UN Comtrade | Free/plan dependent | `COMTRADE_API_KEY` | Create a UN Comtrade account/API subscription key. | `./scripts/check_phase1_live_adapters.py --live --source=un_comtrade` |
-| 10 | Reddit | Usually free at low scale; terms-sensitive | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Create a Reddit developer app for read-only monitoring. Keep usage low and compliant. | `./scripts/check_phase1_live_adapters.py --live --source=reddit` |
-| 11 | X API | Paid/credit-based | `X_BEARER_TOKEN` | Only buy if RSS/GDELT/Reddit cannot cover the narrative edge. Start with the lowest useful tier. | `./scripts/check_phase1_live_adapters.py --live --source=twitter_x` |
+| 7 | BLS | Free with key / public limits | `BLS_API_KEY` | Register for a BLS API key. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 8 | SEC EDGAR | Free, no secret | `SEC_USER_AGENT` | Set a real user-agent string with contact email. Do not leave the placeholder. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 9 | UN Comtrade | Free/plan dependent | `COMTRADE_API_KEY` | Create a UN Comtrade account/API subscription key. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 10 | Reddit | Usually free at low scale; terms-sensitive | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Create a Reddit developer app for read-only monitoring. Keep usage low and compliant. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 11 | X API | Paid/credit-based | `X_BEARER_TOKEN` | Only buy if RSS/GDELT/Reddit cannot cover the narrative edge. Start with the lowest useful tier. | `./scripts/check_phase1_live_source_hardening.py --live` |
 
 Minimum useful outcome after Batch B:
 
