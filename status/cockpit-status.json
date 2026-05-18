@@ -61,31 +61,7 @@
     "evidence_packets": [
       {
         "average_trust_score": 0.56,
-        "created_at": "2026-05-18T07:53:33.223145+00:00",
-        "items": [
-          {
-            "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:20b1d76b-aad1-4562-b9e9-a12ebfac5a23",
-            "observed_at": "2026-05-17T07:46:28.598362+00:00",
-            "source": "agent_runtime.research_triage_queue",
-            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-            "trust_score": 0.56
-          }
-        ],
-        "min_trust_score": 0.56,
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "bc210659-45b5-4e43-9fc4-4ca31b4860f0",
-        "source_count": 1,
-        "sources": [
-          "agent_runtime.research_triage_queue"
-        ],
-        "trail_id": "b25f2f06-e329-4fe3-bb65-9b341737ef5b"
-      },
-      {
-        "average_trust_score": 0.56,
-        "created_at": "2026-05-18T07:53:33.223161+00:00",
+        "created_at": "2026-05-18T08:56:50.173725+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
@@ -100,16 +76,16 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "cbfdc227-483d-4208-af85-ece86ef281f5",
+        "signal_id": "524e5f91-4f61-4d74-bbe8-7f490a049e20",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "6dcad8ff-b975-4aa5-8470-5a9efc4b5851"
+        "trail_id": "2c8254db-33a1-497c-98d3-8e5d1498ca07"
       },
       {
         "average_trust_score": 0.56,
-        "created_at": "2026-05-18T07:53:33.223171+00:00",
+        "created_at": "2026-05-18T08:56:50.173741+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
@@ -124,16 +100,16 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "24e64d8b-6aa9-4809-8043-d5cd593eecbe",
+        "signal_id": "3c33de24-91a1-4efb-95bc-7630b8da47b5",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "bf550f3e-5682-4432-a38f-f863fb6f702b"
+        "trail_id": "5ef638e0-6cba-4f54-9c9b-92ead323285f"
       },
       {
         "average_trust_score": 0.56,
-        "created_at": "2026-05-18T07:53:33.223181+00:00",
+        "created_at": "2026-05-18T08:56:50.173752+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
@@ -148,16 +124,16 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "045cfe88-d670-4306-9f5d-f5f68f8a8ba3",
+        "signal_id": "dddc21b7-77ea-400c-aa93-8a37809ea070",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "ecd80435-78b0-48b9-a224-c4cdac010037"
+        "trail_id": "b8cee6ff-9e86-4f35-927d-eefdaf931d28"
       },
       {
         "average_trust_score": 0.56,
-        "created_at": "2026-05-18T07:53:33.223190+00:00",
+        "created_at": "2026-05-18T08:56:50.173762+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
@@ -172,20 +148,44 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "66ec30d5-431c-4807-a577-d68c1bda7994",
+        "signal_id": "7dfbd272-68f2-4ae2-98b7-97647beedd1f",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "d5cc0494-c193-415c-8b18-d38e230f4eef"
+        "trail_id": "9decc91a-aaf2-4ce7-8f56-57dcb61f62ed"
+      },
+      {
+        "average_trust_score": 0.56,
+        "created_at": "2026-05-18T08:56:50.173771+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:89344698-24b3-42c5-a651-115eb015ece4",
+            "observed_at": "2026-05-18T08:56:49.939131+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+            "trust_score": 0.56
+          }
+        ],
+        "min_trust_score": 0.56,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "d5c0c14b-a053-4630-b7c4-1cd970be91bd",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "5eb65185-25f3-4365-a663-2417d28e2b49"
       }
     ],
     "hypotheses": [
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
         "confidence": 0.427,
-        "created_at": "2026-05-18T07:53:33.223153+00:00",
-        "evidence_packet_id": "bc210659-45b5-4e43-9fc4-4ca31b4860f0",
+        "created_at": "2026-05-18T08:56:50.173733+00:00",
+        "evidence_packet_id": "524e5f91-4f61-4d74-bbe8-7f490a049e20",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -194,7 +194,7 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "bc210659-45b5-4e43-9fc4-4ca31b4860f0",
+        "signal_id": "524e5f91-4f61-4d74-bbe8-7f490a049e20",
         "status": "shadow_only",
         "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
         "title": "Shadow watch: macro_watchlist"
@@ -202,8 +202,8 @@
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
         "confidence": 0.427,
-        "created_at": "2026-05-18T07:53:33.223166+00:00",
-        "evidence_packet_id": "cbfdc227-483d-4208-af85-ece86ef281f5",
+        "created_at": "2026-05-18T08:56:50.173747+00:00",
+        "evidence_packet_id": "3c33de24-91a1-4efb-95bc-7630b8da47b5",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -212,7 +212,7 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "cbfdc227-483d-4208-af85-ece86ef281f5",
+        "signal_id": "3c33de24-91a1-4efb-95bc-7630b8da47b5",
         "status": "shadow_only",
         "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
         "title": "Shadow watch: macro_watchlist"
@@ -220,8 +220,8 @@
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
         "confidence": 0.427,
-        "created_at": "2026-05-18T07:53:33.223176+00:00",
-        "evidence_packet_id": "24e64d8b-6aa9-4809-8043-d5cd593eecbe",
+        "created_at": "2026-05-18T08:56:50.173757+00:00",
+        "evidence_packet_id": "dddc21b7-77ea-400c-aa93-8a37809ea070",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -230,7 +230,7 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "24e64d8b-6aa9-4809-8043-d5cd593eecbe",
+        "signal_id": "dddc21b7-77ea-400c-aa93-8a37809ea070",
         "status": "shadow_only",
         "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
         "title": "Shadow watch: macro_watchlist"
@@ -238,8 +238,8 @@
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
         "confidence": 0.427,
-        "created_at": "2026-05-18T07:53:33.223185+00:00",
-        "evidence_packet_id": "045cfe88-d670-4306-9f5d-f5f68f8a8ba3",
+        "created_at": "2026-05-18T08:56:50.173766+00:00",
+        "evidence_packet_id": "7dfbd272-68f2-4ae2-98b7-97647beedd1f",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -248,7 +248,7 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "045cfe88-d670-4306-9f5d-f5f68f8a8ba3",
+        "signal_id": "7dfbd272-68f2-4ae2-98b7-97647beedd1f",
         "status": "shadow_only",
         "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
         "title": "Shadow watch: macro_watchlist"
@@ -256,8 +256,8 @@
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
         "confidence": 0.427,
-        "created_at": "2026-05-18T07:53:33.223194+00:00",
-        "evidence_packet_id": "66ec30d5-431c-4807-a577-d68c1bda7994",
+        "created_at": "2026-05-18T08:56:50.173775+00:00",
+        "evidence_packet_id": "d5c0c14b-a053-4630-b7c4-1cd970be91bd",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -266,42 +266,13 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "66ec30d5-431c-4807-a577-d68c1bda7994",
+        "signal_id": "d5c0c14b-a053-4630-b7c4-1cd970be91bd",
         "status": "shadow_only",
         "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
         "title": "Shadow watch: macro_watchlist"
       }
     ],
     "local_research_assessments": [
-      {
-        "anomalies": [
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation."
-        ],
-        "assessment_id": "d60496da-ba5b-42b7-8390-224cc968400a",
-        "confidence": 0.4,
-        "created_at": "2026-05-17T11:15:15.508141+00:00",
-        "escalation_recommendation": "hold_shadow",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
-        ],
-        "mode": "dry_contract",
-        "model": "gemma-4-e4b",
-        "next_questions": [
-          "Which independent source can corroborate this observation?",
-          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
-          "Which stale-data or missing-credential condition could invalidate the packet?"
-        ],
-        "paper_order_allowed": false,
-        "provider": "lm_studio",
-        "status": "shadow_only",
-        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
-        "watch_focus": "macro_watchlist"
-      },
       {
         "anomalies": [
           "Sample shadow triage packet for runtime enforcement validation.",
@@ -359,6 +330,35 @@
         "status": "shadow_only",
         "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
         "watch_focus": "macro_watchlist"
+      },
+      {
+        "anomalies": [
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation."
+        ],
+        "assessment_id": "beb973b4-1d63-405e-9c9b-2e4c7b0b7e3d",
+        "confidence": 0.4,
+        "created_at": "2026-05-18T08:56:50.263400+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "signal_integrity_gate",
+          "risk_agent_review",
+          "market_price_confirmation"
+        ],
+        "mode": "dry_contract",
+        "model": "gemma-4-e4b",
+        "next_questions": [
+          "Which independent source can corroborate this observation?",
+          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
+          "Which stale-data or missing-credential condition could invalidate the packet?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
+        "watch_focus": "macro_watchlist"
       }
     ],
     "model_activity": [
@@ -388,19 +388,6 @@
       }
     ],
     "shadow_packets": [
-      {
-        "agent_key": "research_analyst",
-        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-17T07:46:28.598362+00:00",
-        "packet_id": "20b1d76b-aad1-4562-b9e9-a12ebfac5a23",
-        "source_event_refs": [
-          "sample:nasa_firms:physical_anomaly",
-          "sample:fred:macro_context"
-        ],
-        "status": "queued_shadow_only",
-        "summary": "Sample shadow triage packet for runtime enforcement validation.",
-        "uncertainty": "medium"
-      },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
@@ -445,6 +432,19 @@
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
         "created_at": "2026-05-18T07:53:32.989597+00:00",
         "packet_id": "d6514ce8-22b1-4ea6-bdad-107eeb9cdfc3",
+        "source_event_refs": [
+          "sample:nasa_firms:physical_anomaly",
+          "sample:fred:macro_context"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "uncertainty": "medium"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-18T08:56:49.939131+00:00",
+        "packet_id": "89344698-24b3-42c5-a651-115eb015ece4",
         "source_event_refs": [
           "sample:nasa_firms:physical_anomaly",
           "sample:fred:macro_context"
@@ -542,7 +542,7 @@
   },
   "d1_snapshot": {
     "browser_authority": "read_only",
-    "generated_at": "2026-05-18T08:01:53.779586+00:00",
+    "generated_at": "2026-05-18T08:56:51.406975+00:00",
     "landing_copy": "landing-page-repo/status/cockpit-status.json",
     "local_orchestrator_exposed": false,
     "phase": "D1",
@@ -885,7 +885,7 @@
     "supabase_table": "fund_manager_comments",
     "visibility": "founding_fund_managers"
   },
-  "generated_at": "2026-05-18T08:01:53.779586+00:00",
+  "generated_at": "2026-05-18T08:56:51.406975+00:00",
   "live_bridge": {
     "allowed_methods": [
       "GET",
@@ -907,7 +907,7 @@
       "PATCH",
       "DELETE"
     ],
-    "generated_at": "2026-05-18T08:01:53.779586+00:00",
+    "generated_at": "2026-05-18T08:56:51.406975+00:00",
     "health_checks": [
       "auth_required",
       "rate_limit_enforced",
@@ -938,7 +938,7 @@
       "current_process": "supervising local modules",
       "key": "coo",
       "label": "COO",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Python Orchestrator",
       "raw_status": "registered",
@@ -949,7 +949,7 @@
       "current_process": "waiting for local LLM readiness",
       "key": "research_analyst",
       "label": "Research Analyst",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Local LLM",
       "raw_status": "pending",
@@ -960,7 +960,7 @@
       "current_process": "waiting for frontier model probe",
       "key": "strategy_lead",
       "label": "Strategy Lead",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Frontier LLM",
       "raw_status": "pending",
@@ -971,7 +971,7 @@
       "current_process": "deferred weekly oracle",
       "key": "head_of_quant",
       "label": "Head of Quant",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Quantum Compute",
       "raw_status": "registered",
@@ -982,7 +982,7 @@
       "current_process": "recording local audit trail",
       "key": "event_log",
       "label": "Event Log",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "Postgres/Timescale",
       "raw_status": "jsonl_fallback",
@@ -993,18 +993,18 @@
       "current_process": "holding local memory shell",
       "key": "knowledge_graph",
       "label": "Knowledge Graph",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "ChromaDB",
-      "raw_status": "not_running",
-      "status": "degraded"
+      "raw_status": "registered",
+      "status": "online"
     },
     {
       "authority": "write_blocked",
       "current_process": "execution disabled in foundation mode",
       "key": "execution_registry",
       "label": "Execution Registry",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Risk Agent",
       "raw_status": "disabled",
@@ -1015,7 +1015,7 @@
       "current_process": "registered",
       "key": "resource_registry",
       "label": "Resource Registry",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Reference Provenance",
       "raw_status": "registered",
@@ -1026,7 +1026,7 @@
       "current_process": "foundational prior",
       "key": "world_model",
       "label": "World-Model Lens",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "Private Corpus",
       "raw_status": "foundational_prior",
@@ -1037,7 +1037,7 @@
       "current_process": "manifest permissions available",
       "key": "agent_os",
       "label": "Agent OS",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Manifest Registry",
       "raw_status": "manifest_ready",
@@ -1048,7 +1048,7 @@
       "current_process": "broker-write tools blocked",
       "key": "agent_runtime",
       "label": "Agent Runtime",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Permission Gate",
       "raw_status": "enforced",
@@ -1059,7 +1059,7 @@
       "current_process": "shadow-only review packets available",
       "key": "shadow_intelligence",
       "label": "Shadow Intelligence",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Research Analyst",
       "raw_status": "shadow_ready",
@@ -1070,7 +1070,7 @@
       "current_process": "local",
       "key": "governance_forum",
       "label": "Governance Forum",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "Fund Managers",
       "raw_status": "local",
@@ -1081,7 +1081,7 @@
       "current_process": "outbound dry-run member communications",
       "key": "telegram_bot",
       "label": "Telegram Bot",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "Fund Manager Interface",
       "raw_status": "dry_run",
@@ -1092,7 +1092,7 @@
       "current_process": "serving authenticated public-safe status snapshots",
       "key": "live_bridge",
       "label": "Secure Live Bridge",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "qadam.trade API",
       "raw_status": "read_only_ready",
@@ -1103,7 +1103,7 @@
       "current_process": "test data ready",
       "key": "ingestion_spine",
       "label": "Test Ingestion Spine",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": true,
       "owner": "World Monitor Adapters",
       "raw_status": "test_data_ready",
@@ -1114,7 +1114,7 @@
       "current_process": "sample ready",
       "key": "gdelt_adapter",
       "label": "GDELT Adapter",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1125,7 +1125,7 @@
       "current_process": "sample ready",
       "key": "oref_adapter",
       "label": "Oref Adapter",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1136,7 +1136,7 @@
       "current_process": "credential gated",
       "key": "nasa_firms_adapter",
       "label": "NASA FIRMS Adapter",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Physical Pipeline",
       "raw_status": "credential_gated",
@@ -1147,7 +1147,7 @@
       "current_process": "sample ready",
       "key": "fred_adapter",
       "label": "FRED Adapter",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Macro Pipeline",
       "raw_status": "sample_ready",
@@ -1158,7 +1158,7 @@
       "current_process": "sample ready",
       "key": "rss_adapter",
       "label": "RSS Adapter",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "Narrative Pipeline",
       "raw_status": "sample_ready",
@@ -1169,7 +1169,7 @@
       "current_process": "static live shell frozen",
       "key": "cockpit",
       "label": "Cockpit",
-      "last_heartbeat": "2026-05-18T08:01:53.779586+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406975+00:00",
       "local_only": false,
       "owner": "qadam.trade",
       "raw_status": "shell",
@@ -1181,99 +1181,53 @@
       "component": "historical_backfill",
       "message": "historical_backfill: historical_backfill_sample_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.124711+00:00"
+      "timestamp": "2026-05-18T08:56:51.038646+00:00"
     },
     {
       "component": "historical_backfill",
       "message": "historical_backfill: historical_backfill_sample_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.124769+00:00"
+      "timestamp": "2026-05-18T08:56:51.038716+00:00"
     },
     {
       "component": "historical_backfill",
       "message": "historical_backfill: historical_backfill_sample_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.124826+00:00"
+      "timestamp": "2026-05-18T08:56:51.038789+00:00"
     },
     {
       "component": "gdelt_adapter",
       "message": "gdelt_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.252595+00:00"
+      "timestamp": "2026-05-18T08:56:51.168363+00:00"
     },
     {
       "component": "oref_adapter",
       "message": "oref_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.296885+00:00"
+      "timestamp": "2026-05-18T08:56:51.213607+00:00"
     },
     {
       "component": "nasa_firms_adapter",
       "message": "nasa_firms_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.344988+00:00"
+      "timestamp": "2026-05-18T08:56:51.260420+00:00"
     },
     {
       "component": "fred_adapter",
       "message": "fred_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.388731+00:00"
+      "timestamp": "2026-05-18T08:56:51.302961+00:00"
     },
     {
       "component": "rss_adapter",
       "message": "rss_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T07:53:34.430691+00:00"
+      "timestamp": "2026-05-18T08:56:51.345127+00:00"
     }
   ],
   "schema_version": 1,
   "source_heartbeat_history": [
-    {
-      "by_pipeline": {
-        "conflict": 5,
-        "macro": 6,
-        "market": 9,
-        "physical": 7,
-        "social": 8
-      },
-      "by_runtime_status": {
-        "deferred": 3,
-        "derived": 1,
-        "fallback_only": 1,
-        "live_optional": 10,
-        "local_bridge_required": 1,
-        "ready_to_build": 7,
-        "unavailable_missing_credentials": 12
-      },
-      "checked_at": "2026-05-17T11:31:48.330981+00:00",
-      "deferred_count": 3,
-      "missing_credential_source_count": 14,
-      "promoted_adapter_count": 19,
-      "source_count": 35
-    },
-    {
-      "by_pipeline": {
-        "conflict": 5,
-        "macro": 6,
-        "market": 9,
-        "physical": 7,
-        "social": 8
-      },
-      "by_runtime_status": {
-        "deferred": 3,
-        "derived": 1,
-        "fallback_only": 1,
-        "live_optional": 10,
-        "local_bridge_required": 1,
-        "ready_to_build": 7,
-        "unavailable_missing_credentials": 12
-      },
-      "checked_at": "2026-05-17T16:29:47.084551+00:00",
-      "deferred_count": 3,
-      "missing_credential_source_count": 14,
-      "promoted_adapter_count": 19,
-      "source_count": 35
-    },
     {
       "by_pipeline": {
         "conflict": 5,
@@ -1338,6 +1292,52 @@
         "unavailable_missing_credentials": 12
       },
       "checked_at": "2026-05-18T07:53:34.017270+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-18T08:56:50.881478+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-18T08:56:50.931049+00:00",
       "deferred_count": 3,
       "missing_credential_source_count": 14,
       "promoted_adapter_count": 19,
@@ -1596,7 +1596,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1618,7 +1618,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1640,7 +1640,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1662,7 +1662,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1684,7 +1684,7 @@
       "degraded_reason": null,
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1706,7 +1706,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1728,7 +1728,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1750,7 +1750,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1772,7 +1772,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1794,7 +1794,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1816,7 +1816,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1838,7 +1838,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1860,7 +1860,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1882,7 +1882,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1904,7 +1904,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1926,7 +1926,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1948,7 +1948,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1970,7 +1970,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1992,7 +1992,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2014,7 +2014,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2036,7 +2036,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2058,7 +2058,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2080,7 +2080,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2102,7 +2102,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2124,7 +2124,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2146,7 +2146,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2168,7 +2168,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2190,7 +2190,7 @@
       "degraded_reason": null,
       "endpoint_count": 3,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2212,7 +2212,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2234,7 +2234,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2256,7 +2256,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2278,7 +2278,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2300,7 +2300,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2322,7 +2322,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2344,7 +2344,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T08:01:53.779587+00:00",
+      "last_heartbeat": "2026-05-18T08:56:51.406976+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
