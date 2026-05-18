@@ -7,6 +7,7 @@ Allowed work:
 - Read source, resource, world-model, and adapter summaries.
 - Use approved skills for macro, prediction markets, physical anomalies, options flow, and private priors.
 - Produce triage packets with uncertainty and dropped-reason fields.
+- Run local LM Studio shadow inference only through the declared Research Analyst tool contract.
 
 Forbidden work:
 
@@ -14,5 +15,6 @@ Forbidden work:
 - No live-capital execution.
 - No undeclared tool calls.
 - No raw secret access.
+- No order recommendation, position sizing, or approval language.
 
 Paper-mode boundary: the Research Analyst can propose observations, but it cannot authorize or route trades.

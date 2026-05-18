@@ -11,6 +11,15 @@
     "source_heartbeat_status",
     "run_source_heartbeat",
     "ingestion_status",
+    "run_test_ingestion",
+    "phase1_live_adapter_registry_status",
+    "phase1_live_adapter_status",
+    "phase1_live_adapter_sample",
+    "phase1_live_adapter_live_read_only",
+    "historical_backfill_plan",
+    "run_historical_backfill_sample",
+    "trust_score_seed_status",
+    "postgres_timescale_ingestion_status",
     "execution_venues",
     "agent_registry_status",
     "agent_registry",
@@ -24,7 +33,9 @@
     "lm_studio_models_status",
     "gemini_credential_status",
     "run_shadow_intelligence_sample",
-    "run_research_shadow_triage_queue"
+    "run_research_shadow_triage_queue",
+    "local_research_analyst_status",
+    "run_local_research_analyst_inference"
   ],
   "allowed_source_groups": [
     "cockpit_health",

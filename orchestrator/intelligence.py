@@ -22,6 +22,7 @@ from orchestrator.secrets import secret_value
 
 EVIDENCE_TRAIL_SCHEMA_VERSION = 1
 PROPOSED_SIGNAL_SCHEMA_VERSION = 1
+LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION = 1
 
 KEYWORD_WEIGHTS: dict[str, float] = {
     "oil": 0.22,
@@ -98,6 +99,37 @@ class ProposedSignal:
         return payload
 
 
+@dataclass(frozen=True)
+class LocalResearchAssessment:
+    schema_version: int
+    assessment_id: str
+    status: str
+    mode: str
+    provider: str
+    model: str
+    packet_ids: tuple[str, ...]
+    summary: str
+    watch_focus: str
+    anomalies: tuple[str, ...]
+    missing_correlations: tuple[str, ...]
+    next_questions: tuple[str, ...]
+    escalation_recommendation: str
+    confidence: float
+    raw_response_status: str
+    execution_allowed: bool
+    paper_order_allowed: bool
+    created_at: str
+    boundary: str
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["packet_ids"] = list(self.packet_ids)
+        payload["anomalies"] = list(self.anomalies)
+        payload["missing_correlations"] = list(self.missing_correlations)
+        payload["next_questions"] = list(self.next_questions)
+        return payload
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -118,6 +150,59 @@ def _http_json_probe(url: str, *, timeout_seconds: float = 1.2) -> dict[str, Any
         return {"status": "connection_error", "http_status": None, "reason": str(exc)}
     except json.JSONDecodeError as exc:
         return {"status": "parse_error", "http_status": None, "reason": str(exc)}
+
+
+def _http_json_post(
+    url: str,
+    payload: dict[str, Any],
+    *,
+    timeout_seconds: float = 8.0,
+    api_key: str | None = None,
+) -> dict[str, Any]:
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "qadam-local-research-analyst/1.0",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310 - trusted local/provider URL.
+            body = response.read().decode("utf-8")
+            return {
+                "status": "ok",
+                "http_status": response.status,
+                "payload": json.loads(body) if body else {},
+            }
+    except HTTPError as exc:
+        body = ""
+        try:
+            body = exc.read().decode("utf-8")[:500]
+        except Exception:  # noqa: BLE001 - diagnostic only, no secret material expected
+            body = ""
+        return {"status": "http_error", "http_status": exc.code, "reason": exc.reason, "body": body}
+    except (TimeoutError, URLError, OSError) as exc:
+        return {"status": "connection_error", "http_status": None, "reason": str(exc)}
+    except json.JSONDecodeError as exc:
+        return {"status": "parse_error", "http_status": None, "reason": str(exc)}
+
+
+def _resolve_lm_studio_model_id(configured_model: str, model_ids: list[str]) -> str:
+    if not configured_model:
+        return ""
+    if configured_model in model_ids:
+        return configured_model
+    configured_lower = configured_model.lower()
+    for model_id in model_ids:
+        normalized = model_id.lower()
+        if normalized.endswith(f"/{configured_lower}") or normalized.endswith(configured_lower):
+            return model_id
+    return configured_model
 
 
 def gemini_credential_probe(
@@ -201,11 +286,13 @@ def lm_studio_models_probe(
     models_payload = probe.get("payload", {})
     models = models_payload.get("data", []) if isinstance(models_payload, dict) else []
     model_ids = [item.get("id") for item in models if isinstance(item, dict) and isinstance(item.get("id"), str)]
+    resolved_model = _resolve_lm_studio_model_id(lm_studio_model, model_ids)
     return base_payload | {
         "mode": "models_probe_called",
         "probe_status": "ok" if probe["status"] == "ok" else "not_running",
         "http_status": probe["http_status"],
-        "model_available": bool(lm_studio_model and lm_studio_model in model_ids),
+        "model_available": bool(resolved_model and resolved_model in model_ids),
+        "resolved_model": resolved_model,
         "available_model_count": len(model_ids),
         "boundary": "LM Studio probe lists local models only. It does not run inference.",
     }
@@ -437,6 +524,382 @@ def read_research_shadow_triage_queue(settings: Settings | None = None) -> tuple
     return tuple(packets)
 
 
+def _coerce_string_list(value: Any, *, fallback: tuple[str, ...] = ()) -> tuple[str, ...]:
+    if isinstance(value, list):
+        return tuple(str(item).strip() for item in value if str(item).strip())[:6]
+    if isinstance(value, str) and value.strip():
+        return (value.strip(),)
+    return fallback
+
+
+def _extract_json_object(text: str) -> dict[str, Any]:
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        stripped = stripped.strip("`")
+        if stripped.startswith("json"):
+            stripped = stripped[4:].strip()
+    try:
+        loaded = json.loads(stripped)
+    except json.JSONDecodeError:
+        start = stripped.find("{")
+        end = stripped.rfind("}")
+        if start < 0 or end <= start:
+            raise
+        loaded = json.loads(stripped[start : end + 1])
+    if not isinstance(loaded, dict):
+        raise ValueError("local model response was not a JSON object")
+    return loaded
+
+
+def _packet_projection(packet: dict[str, Any]) -> dict[str, Any]:
+    refs = packet.get("source_event_refs", [])
+    return {
+        "packet_id": str(packet.get("packet_id", "unknown")),
+        "status": str(packet.get("status", "unknown")),
+        "summary": str(packet.get("summary", ""))[:600],
+        "uncertainty": str(packet.get("uncertainty", "unknown")),
+        "source_event_refs": [str(ref)[:160] for ref in refs if isinstance(ref, str)][:8],
+        "created_at": str(packet.get("created_at", "")),
+    }
+
+
+def _deterministic_local_research_assessment(
+    packets: tuple[dict[str, Any], ...],
+    *,
+    provider: str,
+    model: str,
+    mode: str,
+    raw_response_status: str,
+) -> LocalResearchAssessment:
+    summaries = " ".join(str(packet.get("summary", "")) for packet in packets)
+    packet_ids = tuple(str(packet.get("packet_id", "unknown")) for packet in packets)
+    focus = _instrument_focus(summaries)
+    confidence = round(min(0.82, 0.4 + _keyword_strength(summaries) * 0.45), 3)
+    anomalies: tuple[str, ...] = ("no queued packets",)
+    next_questions: tuple[str, ...] = ("wait for source heartbeat and shadow triage inputs",)
+    if packets:
+        anomalies = tuple(
+            str(packet.get("summary", "shadow packet requires review"))[:180]
+            for packet in packets[-3:]
+        )
+        next_questions = (
+            "Which independent source can corroborate this observation?",
+            "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
+            "Which stale-data or missing-credential condition could invalidate the packet?",
+        )
+    missing_correlations = ("signal_integrity_gate", "risk_agent_review", "market_price_confirmation")
+    if len(packets) < 2:
+        missing_correlations += ("second_independent_source",)
+    return LocalResearchAssessment(
+        schema_version=LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION,
+        assessment_id=str(uuid4()),
+        status="shadow_only",
+        mode=mode,
+        provider=provider,
+        model=model or "missing",
+        packet_ids=packet_ids,
+        summary=(
+            "Local Research Analyst contract produced a shadow-only assessment. "
+            f"Current focus: {focus}. No execution path is available."
+        ),
+        watch_focus=focus,
+        anomalies=anomalies,
+        missing_correlations=missing_correlations,
+        next_questions=next_questions,
+        escalation_recommendation="hold_shadow",
+        confidence=confidence,
+        raw_response_status=raw_response_status,
+        execution_allowed=False,
+        paper_order_allowed=False,
+        created_at=_now(),
+        boundary="Local Research Analyst output is compression only. It cannot approve signals, risk, or orders.",
+    )
+
+
+def _assessment_from_model_payload(
+    payload: dict[str, Any],
+    packets: tuple[dict[str, Any], ...],
+    *,
+    provider: str,
+    model: str,
+    raw_response_status: str,
+) -> LocalResearchAssessment:
+    packet_ids = tuple(str(packet.get("packet_id", "unknown")) for packet in packets)
+    confidence_value = payload.get("confidence", 0.0)
+    try:
+        confidence = float(confidence_value)
+    except (TypeError, ValueError):
+        confidence = 0.0
+    confidence = round(max(0.0, min(1.0, confidence)), 3)
+    recommendation = str(payload.get("escalation_recommendation", "hold_shadow")).strip()
+    if recommendation not in {"hold_shadow", "escalate_to_strategy_lead_shadow"}:
+        recommendation = "hold_shadow"
+    return LocalResearchAssessment(
+        schema_version=LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION,
+        assessment_id=str(uuid4()),
+        status="shadow_only",
+        mode="live_local_llm",
+        provider=provider,
+        model=model,
+        packet_ids=packet_ids,
+        summary=str(payload.get("summary", "Local model returned an empty summary."))[:1000],
+        watch_focus=str(payload.get("watch_focus", "macro_watchlist"))[:120],
+        anomalies=_coerce_string_list(payload.get("anomalies"), fallback=("none_identified",)),
+        missing_correlations=_coerce_string_list(
+            payload.get("missing_correlations"),
+            fallback=("second_independent_source", "signal_integrity_gate"),
+        ),
+        next_questions=_coerce_string_list(
+            payload.get("next_questions"),
+            fallback=("What source can corroborate this packet?",),
+        ),
+        escalation_recommendation=recommendation,
+        confidence=confidence,
+        raw_response_status=raw_response_status,
+        execution_allowed=False,
+        paper_order_allowed=False,
+        created_at=_now(),
+        boundary="Local Research Analyst output is compression only. It cannot approve signals, risk, or orders.",
+    )
+
+
+class LocalResearchAssessmentStore:
+    def __init__(self, path: str | Path | None = None, settings: Settings | None = None) -> None:
+        self.settings = settings or Settings.from_env()
+        self.path = Path(path or Path(self.settings.runtime_dir) / "local_research_assessments.jsonl")
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def write(self, assessment: LocalResearchAssessment) -> None:
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(assessment.to_dict(), sort_keys=True) + "\n")
+
+    def read(self) -> tuple[dict[str, Any], ...]:
+        if not self.path.exists():
+            return ()
+        assessments: list[dict[str, Any]] = []
+        with self.path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    loaded = json.loads(stripped)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"invalid local research assessment line {line_number} in {self.path}") from exc
+                if isinstance(loaded, dict):
+                    assessments.append(loaded)
+        return tuple(assessments)
+
+    def health(self) -> dict[str, Any]:
+        try:
+            assessments = self.read()
+        except Exception as exc:  # noqa: BLE001 - health should report failure
+            return {"status": "degraded", "path": str(self.path), "error": str(exc)}
+        return {
+            "status": "ok",
+            "path": str(self.path),
+            "schema_version": LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION,
+            "assessment_count": len(assessments),
+            "execution_allowed_count": sum(
+                1 for assessment in assessments if assessment.get("execution_allowed") is True
+            ),
+            "paper_order_allowed_count": sum(
+                1 for assessment in assessments if assessment.get("paper_order_allowed") is True
+            ),
+            "last_assessment_id": assessments[-1].get("assessment_id") if assessments else None,
+        }
+
+
+def local_research_analyst_status(settings: Settings | None = None) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    store = LocalResearchAssessmentStore(settings=settings)
+    local = lm_studio_models_probe(settings, live=False)
+    return {
+        "status": "ready" if local["probe_status"] in {"not_called", "ok"} else "degraded",
+        "schema_version": LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION,
+        "provider": local["provider"],
+        "model": local["model"],
+        "store": store.health(),
+        "boundary": "Local Research Analyst assessments are shadow-only compression, not trade authority.",
+    }
+
+
+def run_local_research_analyst_inference(
+    *,
+    limit: int = 5,
+    live: bool = False,
+    settings: Settings | None = None,
+    store: LocalResearchAssessmentStore | None = None,
+    event_log: EventLog | None = None,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    store = store or LocalResearchAssessmentStore(settings=settings)
+    event_log = event_log or EventLog(echo=False)
+    local_provider = secret_value("LOCAL_LLM_PROVIDER", settings) or "lm_studio"
+    base_url = secret_value("LM_STUDIO_BASE_URL", settings) or "http://127.0.0.1:1234/v1"
+    model = secret_value("LM_STUDIO_MODEL", settings) or ""
+    packets = read_research_shadow_triage_queue(settings)
+    selected = packets[-limit:] if limit > 0 else packets
+
+    if not live:
+        assessment = _deterministic_local_research_assessment(
+            selected,
+            provider=local_provider,
+            model=model,
+            mode="dry_contract",
+            raw_response_status="not_called",
+        )
+        store.write(assessment)
+        event_log.write(
+            "local_research_assessment_recorded",
+            "intelligence",
+            {
+                "assessment_id": assessment.assessment_id,
+                "mode": assessment.mode,
+                "packet_count": len(selected),
+                "execution_allowed": assessment.execution_allowed,
+                "paper_order_allowed": assessment.paper_order_allowed,
+            },
+        )
+        return {
+            "status": "ok",
+            "mode": "dry_contract",
+            "packet_count": len(packets),
+            "processed_packet_count": len(selected),
+            "assessment": assessment.to_dict(),
+            "store": store.health(),
+            "event_log": event_log.health(),
+            "boundary": assessment.boundary,
+        }
+
+    provider_probe = lm_studio_models_probe(settings, live=True, timeout_seconds=1.5)
+    if provider_probe["probe_status"] != "ok":
+        event_log.write(
+            "local_research_assessment_blocked",
+            "intelligence",
+            {
+                "reason": "lm_studio_not_running",
+                "probe_status": provider_probe["probe_status"],
+                "execution_allowed": False,
+                "paper_order_allowed": False,
+            },
+        )
+        return {
+            "status": "degraded",
+            "mode": "live_local_llm",
+            "provider_status": provider_probe,
+            "reason": "LM Studio local server is not reachable on the configured base URL.",
+            "store": store.health(),
+            "event_log": event_log.health(),
+            "boundary": "No model inference was run. Execution remains impossible.",
+        }
+    resolved_model = str(provider_probe.get("resolved_model") or model)
+
+    system_prompt = (
+        "You are Qadam's local Research Analyst. Compress queued shadow packets into "
+        "a cautious research assessment. Return valid JSON only. The first character "
+        "must be { and the final character must be }. Do not wrap the JSON in Markdown. "
+        "Do not include commentary before or after the JSON. Do not recommend orders, "
+        "position sizes, approvals, or execution. Treat private world-view priors as "
+        "hypotheses only. Use exactly these keys: summary string, watch_focus string, "
+        "anomalies array of strings, missing_correlations array of strings, "
+        "next_questions array of strings, escalation_recommendation either hold_shadow "
+        "or escalate_to_strategy_lead_shadow, confidence number from 0 to 1."
+    )
+    user_payload = {
+        "mode": "paper_shadow_only",
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "packets": [_packet_projection(packet) for packet in selected],
+    }
+    response = _http_json_post(
+        f"{base_url.rstrip('/')}/chat/completions",
+        {
+            "model": resolved_model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(user_payload, sort_keys=True)},
+            ],
+            "temperature": 0.1,
+            "max_tokens": 900,
+            "stream": False,
+        },
+        timeout_seconds=float(secret_value("LM_STUDIO_TIMEOUT_SECONDS", settings) or "90"),
+        api_key=secret_value("LM_STUDIO_API_KEY", settings),
+    )
+    if response["status"] != "ok":
+        event_log.write(
+            "local_research_assessment_blocked",
+            "intelligence",
+            {
+                "reason": response["status"],
+                "http_status": response.get("http_status"),
+                "execution_allowed": False,
+                "paper_order_allowed": False,
+            },
+        )
+        return {
+            "status": "degraded",
+            "mode": "live_local_llm",
+            "provider_status": provider_probe,
+            "reason": response["status"],
+            "detail": response.get("reason") or response.get("body") or "no_detail",
+            "http_status": response.get("http_status"),
+            "store": store.health(),
+            "event_log": event_log.health(),
+            "boundary": "Local model call failed. Execution remains impossible.",
+        }
+
+    choices = response["payload"].get("choices", []) if isinstance(response.get("payload"), dict) else []
+    content = ""
+    if choices and isinstance(choices[0], dict):
+        message = choices[0].get("message", {})
+        if isinstance(message, dict):
+            content = str(message.get("content", ""))
+    try:
+        model_payload = _extract_json_object(content)
+        assessment = _assessment_from_model_payload(
+            model_payload,
+            selected,
+            provider=local_provider,
+            model=resolved_model,
+            raw_response_status="ok",
+        )
+    except Exception:
+        assessment = _deterministic_local_research_assessment(
+            selected,
+            provider=local_provider,
+            model=resolved_model,
+            mode="live_local_llm_parse_fallback",
+            raw_response_status="parse_fallback",
+        )
+
+    store.write(assessment)
+    event_log.write(
+        "local_research_assessment_recorded",
+        "intelligence",
+        {
+            "assessment_id": assessment.assessment_id,
+            "mode": assessment.mode,
+            "packet_count": len(selected),
+            "escalation_recommendation": assessment.escalation_recommendation,
+            "execution_allowed": assessment.execution_allowed,
+            "paper_order_allowed": assessment.paper_order_allowed,
+        },
+    )
+    return {
+        "status": "ok",
+        "mode": assessment.mode,
+        "provider_status": provider_probe,
+        "packet_count": len(packets),
+        "processed_packet_count": len(selected),
+        "assessment": assessment.to_dict(),
+        "store": store.health(),
+        "event_log": event_log.health(),
+        "boundary": assessment.boundary,
+    }
+
+
 def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
     refs = packet.get("source_event_refs", [])
     ref_text = ", ".join(ref for ref in refs if isinstance(ref, str)) or "no source refs"
@@ -500,11 +963,13 @@ def run_research_shadow_triage_queue(
 def shadow_intelligence_summary(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     store = ShadowSignalStore(settings=settings)
+    local_research = LocalResearchAssessmentStore(settings=settings)
     providers = provider_status(settings)
     return {
         "status": "shadow_ready" if providers["status"] in {"ok", "degraded"} else "degraded",
         "schema_version": PROPOSED_SIGNAL_SCHEMA_VERSION,
         "store": store.health(),
+        "local_research": local_research.health(),
         "provider_status": providers,
         "boundary": "Phase 2 shadow intelligence can propose review packets only; execution remains impossible.",
     }

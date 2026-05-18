@@ -3,5 +3,9 @@
   "status": "draft_only",
   "thesis": "A chokepoint anomaly could become relevant if corroborated by shipping, oil, and news sources.",
   "evidence_refs": ["physical_anomaly_monitoring", "macro_intelligence"],
-  "invalidation": "No corroborating source confirms disruption within the review window."
+  "invalidation": "No corroborating source confirms disruption within the review window.",
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Strategy Lead can draft thesis packets only. It cannot approve risk or execute orders."
 }

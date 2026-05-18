@@ -1,8 +1,7 @@
-import { UserButton } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/server";
+import { signOutAction } from "../login/actions";
 import { getCockpitHealth } from "../../lib/health";
 import type { AdapterStatus } from "../../lib/health";
-import { isFoundingManager } from "../../lib/access";
+import { requireFundManager, supabaseAuthConfigured } from "../../lib/supabase-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -60,60 +59,31 @@ function adapterDetail(adapter: AdapterStatus): string {
   return `${count} · trust ${adapter.trust_score.toFixed(2)} · ${credential}`;
 }
 
-function primaryEmail(user: Awaited<ReturnType<typeof currentUser>>): string | null {
-  return user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses[0]?.emailAddress ?? null;
-}
-
-function AccessDenied({ email }: { email: string | null }) {
+function AuthNotConfigured() {
   return (
     <main className="shell">
       <section className="topbar">
         <div>
           <p className="eyebrow">Qadam Cockpit</p>
-          <h1>Access Pending</h1>
+          <h1>Login Not Configured</h1>
         </div>
-        <UserButton afterSignOutUrl="/" />
+        <a className="settingsLink" href="/login">Set Up Login</a>
       </section>
       <section className="notePanel accessPanel">
-        <p className="sectionLabel">Founding Fund Manager allowlist</p>
-        <h2>This account is signed in, but it is not currently allowlisted for the cockpit.</h2>
-        <p>
-          Signed-in email: {email ?? "unknown"}. First-release access is limited to Ramin, Troy,
-          Akber, Anas, and Ion.
-        </p>
+        <p className="sectionLabel">Supabase keys required</p>
+        <h2>Add Supabase URL and publishable key before opening the protected System Map.</h2>
+        <p>Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in the cockpit environment.</p>
       </section>
     </main>
   );
 }
 
 export default async function DashboardPage() {
-  const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
-  if (!clerkConfigured) {
-    return (
-      <main className="shell">
-        <section className="topbar">
-          <div>
-            <p className="eyebrow">Qadam Cockpit</p>
-            <h1>Login Not Configured</h1>
-          </div>
-          <a className="settingsLink" href="/sign-in">Set Up Login</a>
-        </section>
-        <section className="notePanel accessPanel">
-          <p className="sectionLabel">Clerk keys required</p>
-          <h2>Add Clerk keys before opening the protected System Map.</h2>
-          <p>
-            Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY in the cockpit environment.
-          </p>
-        </section>
-      </main>
-    );
+  if (!supabaseAuthConfigured()) {
+    return <AuthNotConfigured />;
   }
 
-  const user = await currentUser();
-  const email = primaryEmail(user);
-  if (!isFoundingManager(email)) {
-    return <AccessDenied email={email} />;
-  }
+  const user = await requireFundManager();
 
   const health = await getCockpitHealth();
   const modules = health.modules;
@@ -219,7 +189,9 @@ export default async function DashboardPage() {
         </div>
         <div className="userActions">
           <a className="settingsLink" href="/settings">Settings</a>
-          <UserButton afterSignOutUrl="/" />
+          <form action={signOutAction}>
+            <button className="settingsLink" type="submit">Sign Out</button>
+          </form>
         </div>
       </section>
 
@@ -280,6 +252,7 @@ export default async function DashboardPage() {
 
       <section className="liveMeta">
         <span>Health source: {health.source ?? "cockpit"}</span>
+        <span>Signed in: {user.email}</span>
         <span>Unresolved sources: {health.unresolved_sources.length}</span>
         <span>Source map: {labelForStatus(health.source_heartbeat.status)}</span>
         <span>Offline stores: {health.local_stores.summary?.offline_services?.join(", ") || "none"}</span>

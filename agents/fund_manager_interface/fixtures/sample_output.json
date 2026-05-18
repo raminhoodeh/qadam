@@ -3,5 +3,9 @@
   "status": "visible",
   "summary": "Founding Fund Managers can view system status and comments; execution remains disabled.",
   "visible_to": ["Ramin", "Troy", "Ion", "Akber", "Anas"],
-  "actions": ["review", "comment", "future_kill_switch"]
+  "actions": ["review", "comment", "future_kill_switch"],
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Fund Manager Interface is read/comment/control-surface only. It cannot create broker orders."
 }

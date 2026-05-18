@@ -1,65 +1,57 @@
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { currentSupabaseUser } from "../lib/supabase-auth";
 
-export default function CockpitEntryPage() {
-  const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+export default async function HomePage() {
+  const user = await currentSupabaseUser();
 
   return (
-    <main className="shell entryShell">
-      <section className="topbar">
-        <div>
-          <p className="eyebrow">Qadam Cockpit</p>
-          <h1>Fund Manager Access</h1>
-        </div>
-        {clerkConfigured ? (
-          <>
-            <SignedOut>
-              <SignInButton mode="redirect" forceRedirectUrl="/dashboard">
-                <button className="settingsLink" type="button">Login</button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <div className="userActions">
-                <a className="settingsLink" href="/dashboard">Dashboard</a>
-                <UserButton afterSignOutUrl="/" />
-              </div>
-            </SignedIn>
-          </>
-        ) : (
-          <a className="settingsLink" href="/sign-in">Login</a>
-        )}
-      </section>
+    <main className="landingPage">
+      <section className="landingHero">
+        <video className="landingVideo" autoPlay muted loop playsInline>
+          <source
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4"
+            type="video/mp4"
+          />
+        </video>
+        <div className="landingOverlay" />
+        <nav className="landingNav" aria-label="Qadam navigation">
+          <a className="landingLogo" href="/" aria-label="Qadam home">
+            <img src="/logo.png" alt="QADAM" />
+          </a>
+          <div className="landingActions">
+            <a className="glassButton secondaryGlass" href="/whitepaper">
+              Read Whitepaper
+            </a>
+            <a className="glassButton" href={user ? "/dashboard" : "/login"}>
+              {user ? "Dashboard" : "Login"}
+            </a>
+          </div>
+        </nav>
 
-      <section className="statusBand registered">
-        <div>
-          <span className="statusDot registered" />
-          <p>PAPER MODE · GBP 1000 trial · Founding access only</p>
+        <div className="landingContent">
+          <div className="landingBadge">
+            <span />
+            Early access available from July 23, 2026
+          </div>
+          <h1>A hedge fund team that fits inside your laptop.</h1>
+          <p>
+            Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local
+            LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. 500+ live
+            data feeds across 5 intelligence pipelines. One overseeing Fund Manager [you].
+          </p>
+          <p>
+            Qadam operates on a self-imposed trading strategy based on a deep and continuous understanding of its own
+            cognition, latency and data quality. Phase 1 is optimised for prediction markets, crude oil, defence,
+            silver, and semiconductors.
+          </p>
+          <div className="landingCtas">
+            <a className="glassButton heroGlass" href="https://wa.link/s1pqwy" target="_blank" rel="noreferrer">
+              Join Waitlist
+            </a>
+            <a className="plainHeroLink" href={user ? "/dashboard" : "/login"}>
+              {user ? "Open cockpit" : "Fund Manager login"}
+            </a>
+          </div>
         </div>
-        <p>System Map, health, sources, modules, shadow intelligence, and governance notes.</p>
-      </section>
-
-      <section className="entryGrid">
-        <article className="mapNode">
-          <p className="tileLabel">Access model</p>
-          <h2>Ramin, Troy, Ion now. Akber and Anas pending emails.</h2>
-          <p className="mutedCopy">
-            Clerk handles identity. Qadam applies its own founding Fund Manager allowlist before showing the cockpit.
-          </p>
-        </article>
-        <article className="mapNode">
-          <p className="tileLabel">First view after login</p>
-          <h2>System Map</h2>
-          <p className="mutedCopy">
-            The dashboard shows the COO, Research Analyst, Strategy Lead, Head of Quant, data feeds,
-            local stores, execution rails, and uptime state.
-          </p>
-        </article>
-        <article className="mapNode">
-          <p className="tileLabel">Operating boundary</p>
-          <h2>Shadow intelligence only</h2>
-          <p className="mutedCopy">
-            The current cockpit can observe provider readiness and proposed signals. It cannot place trades.
-          </p>
-        </article>
       </section>
     </main>
   );

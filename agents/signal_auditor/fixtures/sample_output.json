@@ -3,5 +3,9 @@
   "status": "reviewed",
   "passed": false,
   "reason": "Signal lacks corroboration and transaction-cost assumptions.",
-  "evidence_refs": ["source_heartbeat_status"]
+  "evidence_refs": ["source_heartbeat_status"],
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Signal Auditor can review evidence only. It cannot promote a signal into an order."
 }

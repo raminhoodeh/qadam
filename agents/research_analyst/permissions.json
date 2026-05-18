@@ -13,6 +13,11 @@
     "world_model_claims",
     "world_model_claim_detail",
     "source_heartbeat_status",
+    "phase1_live_adapter_registry_status",
+    "phase1_live_adapter_status",
+    "phase1_live_adapter_sample",
+    "historical_backfill_plan",
+    "trust_score_seed_status",
     "gdelt_sample",
     "oref_sample",
     "nasa_firms_sample",
@@ -27,7 +32,9 @@
     "shadow_intelligence_provider_probes",
     "lm_studio_models_status",
     "run_shadow_intelligence_sample",
-    "run_research_shadow_triage_queue"
+    "run_research_shadow_triage_queue",
+    "local_research_analyst_status",
+    "run_local_research_analyst_inference"
   ],
   "allowed_source_groups": [
     "live_source_registry",

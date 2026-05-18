@@ -27,7 +27,7 @@ Non-negotiable principles:
 - AI and Quantum are leverage, not authority.
 - Fail closed, never open.
 - Everything is logged and replayable.
-- Telegram is the primary human-in-the-loop channel.
+- Telegram is the primary human-in-the-loop communications channel, but it is outbound-only until a later explicitly approved command design exists.
 
 Product boundaries:
 
@@ -66,14 +66,14 @@ Already scaffolded:
 
 Known scaffold limitations:
 
-- Event Log is currently in-memory only.
+- Event Log has local JSONL fallbacks and Postgres/Timescale migration/write helpers, but durable live Postgres requires the local database service to be running.
 - Cockpit now has local Supabase Auth routes, a protected `/dashboard`, and founding Fund Manager allowlist enforcement.
 - Live `qadam.trade` production routing still needs a deliberate deploy before the Login entrypoint is public.
 - The remote Vercel project is currently configured as a generic project with root directory `.`; production deploys should be deliberate while the existing landing page is live.
 - The resource registry is documentary only; it does not yet have a database table, cockpit view, or module-to-resource tracking workflow.
 - The How The World Works corpus is accepted as a private foundational prior, but is not yet structured into claim cards, observable signatures, or falsification tests.
 - Health port smoke test was blocked by the sandbox, not by code.
-- Adapter files are placeholders; source registry is real.
+- The source registry is real and Phase 1 now has 19 promoted read-only adapter contracts. Full live ingestion still depends on provider credentials, local Postgres/Timescale availability, rate-limit configuration, and historical backfill runs.
 
 ## 2. Core Architecture To Preserve
 
@@ -102,7 +102,7 @@ Cross-cutting:
 - Knowledge Graph in ChromaDB.
 - Architect Agent.
 - Web cockpit at `qadam.trade`.
-- Telegram notification channel.
+- Telegram Bot notification channel for member alerts, trade lifecycle updates, insight digests, and system warnings.
 
 First release operating mode:
 
@@ -340,7 +340,7 @@ Build order:
 10. `data_environment_map.json`.
 11. Cockpit degraded-mode banners.
 
-Current implementation note: the Phase 1 foundation can already emit deterministic test observations for all 35 registered sources. GDELT, Oref, NASA FIRMS, FRED, and RSS have promoted read-only adapter paths with local raw archives and degraded-state handling. NASA FIRMS is credential-gated behind `NASA_FIRMS_API_KEY` and is the first physical pipeline adapter promoted into Qadam.
+Current implementation note: the Phase 1 foundation can already emit deterministic test observations for all 35 registered sources. GDELT, Oref, NASA FIRMS, FRED, and RSS have dedicated promoted read-only adapter paths with local raw archives and degraded-state handling. A generic Phase 1 read-only adapter promotion layer now covers ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram, taking promoted adapter coverage to 19 sources. The new layer provides sample events, masked credential status, raw archive writes, normalized events, fail-closed live fetches, and no signal/order authority. Historical backfill planning and a local sample-runner exist for 12 priority sources; Trust Score seed exists for all 35 sources, with 22 above 0.5 and three physical/logistics sources meeting the current seed threshold. Postgres/Timescale durable ingestion has a non-destructive status check and remains `ready_waiting_for_local_service` until local Postgres is running. `scripts/check_phase1_data_spine.py` is now the acceptance gate for registry count, 5-pipeline coverage, promoted adapter coverage, heartbeat-map consistency, safe credential-status shape, and a full 35-source deterministic ingestion run.
 
 TradingView decision: a paid TradingView account does not provide a standard retail market-data API key for Qadam to pull bars, prices, indicators, or watchlists. Use TradingView MCP as read-only market/technical-analysis tooling through Codex/MCP without a TradingView login. Use the paid TradingView account later for webhook alerts, but only after Qadam has a secure authenticated webhook receiver that writes to the Event Log and cannot trigger execution.
 
@@ -362,7 +362,7 @@ Tier 2 order:
 - AIS Maritime, using AISStream as MVP if Spire/MarineTraffic is unavailable.
 - Wingbits.
 - X API.
-- TradingView alert webhooks after secure receiver exists.
+- TradingView alert path: D7 local observed-alert contract now; public webhook only after secure receiver exists.
 
 Tier 3 order:
 
@@ -389,7 +389,7 @@ Exit criteria:
 
 Objective: formalize the agent architecture before giving the local LLM, frontier LLM, quantum module, or execution adapters more authority.
 
-Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 121 declared tool grants, 13 secret-name grants, and zero broker-write authority. The validation check is wired into startup, and system health/cockpit expose Agent OS status.
+Current implementation note: Phase 1E now has 8 validated agent manifests, 7 validated reusable skill bundles, 130 declared tool grants, 13 secret-name grants, and zero broker-write authority. Every agent sample output now carries explicit `execution_allowed=false`, `paper_order_allowed=false`, `broker_write_allowed=false`, and a boundary statement. The validation checks are wired into startup, and system health/cockpit expose Agent OS status.
 
 New reference input:
 
@@ -423,7 +423,7 @@ Exit criteria:
 
 Objective: enforce the manifest permissions at runtime before Qadam starts Phase 2 shadow intelligence.
 
-Current implementation note: Phase 1F now has runtime tool authorization, broker-write hard blocks, sample output fixtures for all 8 agents, and a local Research Analyst shadow triage queue. The check is wired into startup, and system health/cockpit expose Agent Runtime status.
+Current implementation note: Phase 1F now has runtime tool authorization, broker-write hard blocks, undeclared-tool hard blocks, sample output fixtures for all 8 agents, and a local Research Analyst shadow triage queue. `scripts/check_phase1_agent_os.py` is now the acceptance gate for manifests, skills, runtime grants, authority flags, required per-agent tools, and fail-closed behavior. The check is wired into startup, and system health/cockpit expose Agent Runtime status.
 
 Build:
 
@@ -445,7 +445,7 @@ Exit criteria:
 
 Objective: run Gemma and Gemini end-to-end in shadow mode.
 
-Current implementation note: Phase 2 has started with Evidence Trail and Proposed Signal contracts, deterministic keyword/anomaly triage, local Shadow Signal storage, optional model-list provider probes for Gemini and LM Studio, and a Research Analyst queue runner. No text generation calls are made yet, and every shadow signal is non-executable.
+Current implementation note: Phase 2 has started with Evidence Trail and Proposed Signal contracts, deterministic keyword/anomaly triage, local Shadow Signal storage, optional model-list provider probes for Gemini and LM Studio, a Research Analyst queue runner, and a live LM Studio/Gemma local Research Analyst assessment path. Every shadow signal and local assessment remains non-executable.
 
 Build order:
 
@@ -569,7 +569,7 @@ Build order:
 6. Alpaca paper adapter.
 7. Prediction-market adapter experiments behind hard wrappers.
 8. Kill-switch panel and event model.
-9. Telegram alerting and cockpit deep links.
+9. Telegram Bot communications rail: dry-run outbox, safe templates, cockpit Communications panel, then one private test send.
 10. Signal Review page for policy-required approval.
 11. First paper execution drill.
 
@@ -622,7 +622,9 @@ Exit criteria:
 - Risk Agent blocks cap violations.
 - All three kill-switches fire, log, and alert.
 - Paper order opens, fills, closes, and logs every transition.
-- Telegram alerting works for drawdown, broker failure, kill-switch, and Event Log silence.
+- Telegram alerting works for drawdown, broker failure, kill-switch, Event Log silence, trade lifecycle updates, and insight digests.
+- Telegram has no command path for placing, approving, rejecting, modifying, closing, or resizing trades.
+- Telegram delivery, retry, failure, and suppression are logged.
 
 ## 13. Phase 6 - Postmortem & Learning Loop
 
@@ -750,7 +752,7 @@ Design and safety requirements:
 - Degraded states are loud.
 - The first authenticated page is a system map, not a marketing page.
 - The system map shows module connectivity, health, uptime, last heartbeat, current process state, and degraded/fallback state.
-- Modules represented on the map: Python COO, local LLM, frontier LLM, quantum backend, Architect Agent, Event Log, Knowledge Graph, Trust Score service, Risk Agent, broker adapters, Telegram notifier, all five live World Monitor pipelines, and the Qadam Resource Registry / reference-provenance layer.
+- Modules represented on the map: Python COO, local LLM, frontier LLM, quantum backend, Architect Agent, Event Log, Knowledge Graph, Trust Score service, Risk Agent, broker adapters, Telegram Bot notifier, all five live World Monitor pipelines, and the Qadam Resource Registry / reference-provenance layer.
 - Data sources can be expanded from each pipeline node to show live/degraded/unavailable status and last successful ingestion.
 - Resource Registry entries can be expanded separately to show which strategy reference, paper, product benchmark, or open-source stack informed a module.
 - Dashboard LCP target <= 500ms locally.
@@ -778,7 +780,8 @@ Phase 5 cockpit requirements:
 - Functional Signal Review.
 - Functional internal comments/forum linked to modules, signals, strategies, and postmortems.
 - Kill-switch panel first in DOM tree.
-- Telegram deep-link prewarming.
+- Telegram Communications panel showing bot status, dry-run/live-send mode, verified/pending members, pending messages, failed sends, suppressed sends, and last delivered trade/insight update.
+- Telegram deep-link prewarming without execution authority.
 
 ## 16. Metrics And Review Cadence
 

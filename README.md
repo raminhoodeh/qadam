@@ -10,7 +10,12 @@ Primary spec: `specs/qadam-specs.md`.
 Planning docs:
 
 - `docs/qadam-master-implementation-plan.md` - start here; this is the day-to-day control document.
+- `docs/qadam-dashboard-implementation-plan.md` - cockpit, system map, cognition view, trade layer, money/timeline, and phased dashboard build path.
+- `docs/qadam-telegram-bot-implementation-plan.md` - Telegram bot communications rail for member alerts, insights, trade lifecycle updates, and dashboard visibility.
+- `docs/qadam-user-guide.md` - founding-member user guide for reading and using the Qadam cockpit.
 - `docs/api-key-setup.md`
+- `docs/qadam-api-key-acquisition-plan.md`
+- `docs/api-specs.md` - full API/provider inventory, credential placeholders, source onboarding batches, and unresolved provider decisions.
 - `docs/qadam-for-fund-managers.md` - trader-facing explanation for Ramin, Troy, Akber, Anas, and Ion.
 - `docs/api-source-inventory.md`
 - `docs/qadam-resource-registry.md`
@@ -94,15 +99,28 @@ Cross-cutting:
 - Quantum computer [Head of Quant]
 - World Monitor intelligence pipelines and active data sources
 - Event Log, Knowledge Graph, Risk Agent, broker adapters, notifications, and kill-switches
+- Telegram Bot communications rail for founding-member alerts, trade lifecycle updates, insight digests, and system warnings
 
-The dashboard should show health, uptime, heartbeat, degraded-state, and process status for every major module. It is a map of the system first, and a trading dashboard second.
+The dashboard should show health, uptime, heartbeat, degraded-state, and process status for every major module. It is a map of the system first, and a trading dashboard second. The detailed dashboard build path lives in `docs/qadam-dashboard-implementation-plan.md`.
+
+The dashboard must eventually answer, from real status data:
+
+- What Qadam is watching.
+- Which modules are alive, pending, blocked, degraded, or local-only.
+- What Qadam is thinking about and how it is analyzing sources and news.
+- Which trades are candidates, blocked, staged, submitted, open, closed, or ready for postmortem.
+- What Qadam is forbidden from doing.
+- How the £1000 paper account is performing over time.
+- What Telegram communications were sent, queued, failed, suppressed, or pending delivery to founding members.
 
 Current local cockpit state:
 
+- The live production `qadam.trade` cockpit currently uses a static Supabase-authenticated workaround in `landing-page-repo`.
 - `/` renders a public cockpit entry page with a Login action.
 - `/login` renders Supabase email/password login.
 - `/sign-in` redirects to `/login`; `/sign-up` creates allowlisted Supabase Auth accounts.
 - `/dashboard` renders the health-driven System Map and is protected by Supabase session cookies plus Qadam's founding-manager allowlist.
+- `/guide` renders the protected Qadam User Guide and is linked from the dashboard.
 - `/dashboard` and `/settings` enforce Qadam's founding Fund Manager email allowlist after sign-in.
 - `/api/health` proxies the Python COO health payload when `QADAM_ORCHESTRATOR_URL` is set.
 - If the COO is offline, the cockpit falls back to a degraded local shell instead of crashing.
@@ -128,19 +146,30 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 
 - Python orchestrator shell.
 - World Monitor 35-source registry.
+- API Specs appendix covering the 35 canonical data sources, model providers, quantum providers, broker rails, notification services, TradingView alert boundary, and optional providers discovered in the pasted `world-monitor/` reference codebase.
 - Qadam resource registry from `specs/qadam-general-context.md`.
 - How The World Works integration note for the private esoteric edge corpus.
 - Structured world-model claim cards, all marked as private foundational priors.
 - Local founding Fund Manager governance comment store.
 - Phase 1 test-data ingestion spine for typed source observations without live API calls.
+- Phase 1 data-spine acceptance gate for all 35 sources, all 5 pipelines, promoted adapter coverage, heartbeat consistency, and full deterministic ingestion.
+- Phase 1 read-only live adapter promotion layer for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- Historical backfill planning and local sample-run contract for 12 priority sources, with credential-aware blocked/ready states.
+- Trust Score seed contract across all 35 sources: 22 sources currently score above 0.5 from priors/promoted adapters; real-data scoring remains pending.
+- Postgres/Timescale durable ingestion contract and status check; it passes as `ready_waiting_for_local_service` until local Postgres is running.
 - FastMCP-style tool scaffold.
 - Postgres/Timescale and Chroma service definitions.
 - Local store health checks for Postgres/Timescale and Chroma, with degraded status until the services are running.
 - Next.js cockpit shell wired to the local health contract.
 - API source inventory.
 - API key setup guide for the credential-gated adapters.
+- API specs and placeholder ledger in `docs/api-specs.md`; real keys still belong only in `data/runtime/qadam-secrets.env`.
 - Agent/skill manifest plan shaped by Anthropic's financial-services reference: named workflow agents, reusable skill bundles, explicit tool grants, validation, and secret scanning.
 - Phase 1E Agent OS manifests for 8 named Qadam agents and 7 reusable skill bundles.
+- Phase 1E/1F Agent OS acceptance gate for manifests, skills, runtime grants, broker-write blocks, undeclared-tool blocks, and explicit non-execution output flags.
+- Frozen D0 cockpit shell and D1 public-safe cockpit status contract.
+- D6 read-only paper account mirror for the £1000 trial balance, P&L, drawdown, positions, closed trades, postmortem counts, and 100-closed-trade maturity benchmark.
+- D7 local TradingView alert intake contract for observed chart signals, duplicate protection, Event Log writes, and cockpit visibility with no trade-candidate or order authority.
 - Startup and foundation checks.
 
 ## Source Pipelines
@@ -153,11 +182,14 @@ These are live or live-adjacent data feeds, not the full set of Qadam research/b
 - Market: UnusualWhales, Polymarket, Kalshi, Hyperliquid, Alpaca, RapidAPI, Coinglass, Chainlink, Bookmap.
 - Social: RSS, Telegram, X, Reddit, SEC EDGAR, STOCK Act, Patents, GitHub.
 
+The detailed source credential list lives in `docs/api-specs.md`. Qadam should onboard providers in batches: first NASA FIRMS, ACLED, UnusualWhales, Kalshi, Alpaca paper, Gemini, Supabase, and Telegram bot; then FRED, BLS, UN Comtrade, X, Reddit, Telegram MTProto, AIS, and Wingbits; then the lower-frequency physical, crypto, patent, GitHub, and quantum providers.
+
 TradingView boundary:
 
 - A paid TradingView account does not provide a standard retail data API key for Qadam to pull market data directly.
 - TradingView MCP is useful as read-only market and technical-analysis tooling through Codex/MCP, and does not require a TradingView login.
-- TradingView paid-account alerts can become a webhook source later, after Qadam has a secure authenticated receiver that writes to the Event Log and cannot trigger execution.
+- TradingView paid-account alerts now have a local D7 intake contract: Qadam can represent an alert as an observed signal, deduplicate it, write a safe Event Log entry, and show it in the cockpit.
+- The public TradingView webhook URL remains later work. It requires a secure authenticated receiver and still cannot trigger execution.
 
 ## Resource Registry
 
@@ -257,6 +289,7 @@ Current ingestion state:
 - `orchestrator/source_health.py` builds the source heartbeat run and `data/runtime/data_environment_map.json`.
 - `scripts/check_test_ingestion.py` verifies the adapter contract without calling live APIs.
 - `scripts/check_source_heartbeat.py` verifies all 35 source readiness states, promoted adapter count, missing credential map, and local heartbeat store.
+- `scripts/check_phase1_data_spine.py` verifies the whole Phase 1 source contract: 35 sources, 5 pipelines, promoted adapters, heartbeat-map consistency, safe credential-status shape, and full deterministic ingestion.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
 - `scripts/check_oref_adapter.py` verifies the Oref sample path and can run a live read-only check with `--live`.
 - `scripts/check_nasa_firms_adapter.py` verifies the NASA FIRMS sample path and can run a live read-only area CSV check with `--live` when `NASA_FIRMS_API_KEY` is configured.
@@ -280,6 +313,7 @@ Current Agent OS state:
 - `skills/` contains reusable Qadam bundles for macro intelligence, prediction markets, physical anomaly monitoring, options/volatility flow, Akber's 6-stage filter, private world-model priors, and risk/postmortems.
 - `scripts/check_agent_manifests.py` verifies role files, tool grants, skill references, output schemas, forbidden actions, and secret-pattern hygiene.
 - `scripts/check_agent_runtime.py` verifies runtime tool authorization, blocked broker-write tools, sample outputs, and the Research Analyst shadow triage queue.
+- `scripts/check_phase1_agent_os.py` verifies the combined Agent OS gate: 8 agents, 7 skills, 130 tool grants, broker-write blocking, undeclared-tool blocking, required per-agent tools, and explicit `execution_allowed=false` / `paper_order_allowed=false` / `broker_write_allowed=false` sample outputs.
 - System health and the cockpit expose `agent_os` and `agent_runtime` status with agent count, skill count, tool-grant count, enforced block count, and shadow queue state.
 
 Current shadow intelligence state:
@@ -289,7 +323,30 @@ Current shadow intelligence state:
 - Gemini and LM Studio provider readiness are reported as configured/missing, with optional safe probes that list models only and do not generate content.
 - `scripts/check_llm_provider_probes.py` can run dry status checks by default, or `--local-live` after LM Studio is running.
 - The Research Analyst shadow triage runner consumes queued packets and converts them into non-executable shadow signals.
+- `scripts/check_local_research_analyst.py` validates the local Research Analyst assessment contract in dry mode by default, and `--live` calls LM Studio only after the local server is running.
+- Local Research Analyst assessments are stored in `data/runtime/local_research_assessments.jsonl` as shadow-only compression records with no execution authority.
 - All shadow signals are marked non-executable with `execution_allowed=false`.
+
+Current dashboard status-contract state:
+
+- `orchestrator/cockpit_status.py` builds the public-safe cockpit status contract and includes the D9 Secure Live Bridge status.
+- `scripts/export_cockpit_status.py` writes `data/runtime/cockpit-status.json`, `cockpit-status.signature.json`, and, when the static site repo exists, matching files in `landing-page-repo/status/`.
+- `scripts/check_cockpit_status.py` validates that D0 is frozen, Qadam is in paper mode, live capital is disabled, module/source status exists, and the public snapshot contains no raw token-like values, allowlist emails, local absolute paths, secret lists, or broker authority.
+- `landing-page-repo/dashboard.js` now tries the authenticated `/api/cockpit-status` live bridge first, then falls back to `/status/cockpit-status.json`, and renders modules, source groups, cognition, forbidden actions, trade state, communications, paper-account fields, comments, and process console from the contract.
+- Dashboard Plan D3 is implemented locally: the Watching panel renders all 35 registered sources under 5 pipeline groups with readiness, credential state, adapter state, degraded reason, trust placeholder, and heartbeat time; D7 appends TradingView paid alerts as an observed market alert source.
+- Dashboard Plan D4 is implemented locally: the Cognition panel renders current focus, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked-by-reason state from the public-safe snapshot.
+- Dashboard Plan D5 is implemented locally: `orchestrator/trade_intent.py` and `scripts/check_trade_intent.py` create a local Trade Intent Store and the cockpit renders one candidate and one blocked D5 test intent from that store.
+- Trade intent remains non-executing: `execution_allowed=false`, `paper_order_allowed=false`, no broker order path, no live capital, and no staged paper orders.
+- Dashboard Plan D6 is implemented locally: `orchestrator/paper_account.py` and `scripts/check_paper_account.py` create a read-only paper account mirror with £1000 starting/current balance, zero realized/unrealized P&L, zero drawdown, zero open positions, zero closed trades, and 0/100 maturity progress until real read-only broker data is connected.
+- The cockpit money panel now renders those D6 mirror fields from the public-safe snapshot; it still has no broker write path, no live capital, and no ability to place orders.
+- Dashboard Plan D7 is implemented locally: `orchestrator/tradingview_alerts.py` and `scripts/check_tradingview_alerts.py` validate a TradingView paid-alert intake contract, block duplicate alerts, fail closed on receiver-key mismatch, and export observed signals to the cockpit with `execution_allowed=false`, `paper_order_allowed=false`, and `trade_candidate_created=false`.
+- The cockpit now shows TradingView alerts under Watching and as observed signals in the Trade Layer; they are not candidates, staged orders, submitted orders, or positions.
+- The cockpit now exports `decision_philosophy` from the private `how-the-world-works/` corpus and renders Qadam's worldview lens in the system map, Private Edge panel, hypothesis cards, and each observed-signal/trade decision card while labelling it as a private prior, not evidence.
+- Dashboard Plan D8/D8A/D8B is implemented locally: the cockpit shows Fund Manager comments, Telegram dry-run Communications, and the protected User Guide.
+- Dashboard Plan D9 is implemented locally: the Secure Live Bridge contract, signed snapshot manifest, read-only authenticated API route, rate-limit boundary, write-method blocks, and static fallback are in place.
+- The cockpit cognition contract can now include sanitized local Research Analyst assessments: summary, watch focus, missing correlations, next questions, confidence, and shadow-only authority flags.
+- Telegram Bot planning now treats Telegram as an outbound-only member communications rail: trade lifecycle updates, insight digests, health warnings, delivery status, and dashboard visibility, with no execution authority.
+- The protected static cockpit now links to `/guide/`, a user guide explaining the dashboard panels, status labels, trade states, member permissions, daily operating routine, and red flags.
 
 Durable-mode commands:
 

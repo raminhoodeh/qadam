@@ -1,27 +1,16 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Qadam Cockpit",
-  description: "Local-first Qadam intelligence cockpit"
+  title: "Qadam",
+  description:
+    "A boutique macro intelligence fund running on a hybrid system of local orchestration, AI research, and quantum-assisted modelling."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const document = (
+  return (
     <html lang="en">
       <body>{children}</body>
     </html>
-  );
-
-  if (!publishableKey) {
-    return document;
-  }
-
-  return (
-    <ClerkProvider publishableKey={publishableKey}>
-      {document}
-    </ClerkProvider>
   );
 }

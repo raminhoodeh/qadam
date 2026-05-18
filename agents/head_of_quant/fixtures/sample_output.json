@@ -3,5 +3,9 @@
   "status": "fallback_ready",
   "summary": "Local simulation is the only active path; hardware submission remains disabled.",
   "backend": "qiskit_aer_or_classical_fallback",
-  "fallback": "classical-fallback"
+  "fallback": "classical-fallback",
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Head of Quant is an oracle/comparison layer only. It cannot originate or execute trades."
 }

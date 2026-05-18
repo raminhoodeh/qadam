@@ -24,6 +24,144 @@ a {
   color: inherit;
 }
 
+.landingPage {
+  background: #071012;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.landingHero {
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.landingVideo,
+.landingOverlay {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.landingVideo {
+  object-fit: cover;
+  z-index: -3;
+}
+
+.landingOverlay {
+  background:
+    linear-gradient(90deg, rgba(3, 9, 10, 0.78), rgba(3, 9, 10, 0.38) 54%, rgba(3, 9, 10, 0.2)),
+    linear-gradient(0deg, rgba(3, 9, 10, 0.58), rgba(3, 9, 10, 0.08) 42%);
+  z-index: -2;
+}
+
+.landingNav {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 auto;
+  padding: 22px 24px 0;
+  width: min(1180px, 100%);
+}
+
+.landingLogo img {
+  display: block;
+  height: 43px;
+  object-fit: contain;
+  width: auto;
+}
+
+.landingActions,
+.landingCtas {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.glassButton,
+.plainHeroLink {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  min-height: 44px;
+  padding: 11px 18px;
+  text-decoration: none;
+}
+
+.glassButton {
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 18px 50px rgba(0, 0, 0, 0.18);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.secondaryGlass {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.heroGlass {
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 700;
+}
+
+.plainHeroLink {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+}
+
+.landingContent {
+  display: grid;
+  gap: 22px;
+  margin: 0 auto;
+  min-height: calc(100vh - 88px);
+  padding: 9vh 24px 9vh;
+  place-content: center start;
+  width: min(1180px, 100%);
+}
+
+.landingBadge {
+  align-items: center;
+  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.88);
+  display: inline-flex;
+  font-size: 14px;
+  gap: 9px;
+  line-height: 1.3;
+  padding: 10px 14px;
+  width: fit-content;
+}
+
+.landingBadge span {
+  background: #62d28f;
+  border-radius: 999px;
+  height: 8px;
+  width: 8px;
+}
+
+.landingContent h1 {
+  color: #ffffff;
+  font-size: 76px;
+  letter-spacing: 0;
+  line-height: 0.95;
+  max-width: 900px;
+}
+
+.landingContent p {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 18px;
+  line-height: 1.55;
+  max-width: 760px;
+}
+
 .shell {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
@@ -283,7 +421,64 @@ h2 {
   padding: 22px;
 }
 
+.authForm {
+  display: grid;
+  gap: 14px;
+}
+
+.authForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.authForm label span {
+  color: var(--muted);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.authForm input {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  padding: 11px 12px;
+}
+
+.primaryAction {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.primaryAction:disabled {
+  background: #89857c;
+  cursor: not-allowed;
+}
+
+.formStatus {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+
+.formStatus.error {
+  background: #fbefef;
+  border-color: #ddbaba;
+  color: #8f2525;
+}
+
+.formStatus.registered {
+  background: #edf6f2;
+  border-color: #b7d7c9;
+  color: var(--accent);
+}
+
 @media (max-width: 900px) {
+  .landingContent h1 {
+    font-size: 58px;
+  }
+
   .mapLayout,
   .governanceGrid,
   .registryGrid,
@@ -298,6 +493,56 @@ h2 {
 }
 
 @media (max-width: 560px) {
+  .landingHero {
+    min-height: 100svh;
+  }
+
+  .landingNav {
+    align-items: flex-start;
+    padding: 16px 16px 0;
+  }
+
+  .landingLogo img {
+    height: 36px;
+  }
+
+  .landingActions {
+    justify-content: flex-end;
+    max-width: 190px;
+  }
+
+  .glassButton,
+  .plainHeroLink {
+    min-height: 40px;
+    padding: 9px 13px;
+  }
+
+  .secondaryGlass {
+    display: none;
+  }
+
+  .landingContent {
+    gap: 17px;
+    min-height: calc(100svh - 76px);
+    padding: 7vh 16px 7vh;
+  }
+
+  .landingContent h1 {
+    font-size: 46px;
+    max-width: 11ch;
+  }
+
+  .landingContent p {
+    font-size: 15px;
+    line-height: 1.48;
+  }
+
+  .landingCtas {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   .topbar,
   .statusBand {
     align-items: flex-start;

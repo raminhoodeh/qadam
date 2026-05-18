@@ -6,6 +6,7 @@ Allowed work:
 
 - Read system health, module map, founding-manager access, governance comments, and agent permissions.
 - Create local governance comments through the declared comment tool.
+- Read Telegram communications status and queue dry-run member communication samples.
 - Present paper/live status clearly.
 
 Forbidden work:
@@ -14,5 +15,6 @@ Forbidden work:
 - No live-capital execution.
 - No undeclared tool calls.
 - No raw secret access.
+- No Telegram trade commands or live-send authority.
 
 Paper-mode boundary: Fund Managers can review, comment, and use future kill-switches, but individual paper trades remain governed by deterministic Qadam policy gates.

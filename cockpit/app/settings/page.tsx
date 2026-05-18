@@ -1,18 +1,12 @@
-import { UserButton } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/server";
-import { isFoundingManager } from "../../lib/access";
-
-function primaryEmail(user: Awaited<ReturnType<typeof currentUser>>): string | null {
-  return user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses[0]?.emailAddress ?? null;
-}
+import { signOutAction } from "../login/actions";
+import { requireFundManager, supabaseAuthConfigured } from "../../lib/supabase-auth";
 
 export default function SettingsPage() {
   return <SettingsContent />;
 }
 
 async function SettingsContent() {
-  const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
-  if (!clerkConfigured) {
+  if (!supabaseAuthConfigured()) {
     return (
       <main className="shell">
         <section className="topbar">
@@ -20,37 +14,18 @@ async function SettingsContent() {
             <p className="eyebrow">Settings</p>
             <h1>Login Not Configured</h1>
           </div>
-          <a className="settingsLink" href="/sign-in">Set Up Login</a>
+          <a className="settingsLink" href="/login">Set Up Login</a>
         </section>
         <section className="notePanel accessPanel">
-          <p className="sectionLabel">Clerk keys required</p>
-          <h2>Add Clerk keys before opening protected settings.</h2>
-          <p>Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY in the cockpit environment.</p>
+          <p className="sectionLabel">Supabase keys required</p>
+          <h2>Add Supabase URL and publishable key before opening protected settings.</h2>
+          <p>Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in the cockpit environment.</p>
         </section>
       </main>
     );
   }
 
-  const user = await currentUser();
-  const email = primaryEmail(user);
-  if (!isFoundingManager(email)) {
-    return (
-      <main className="shell">
-        <section className="topbar">
-          <div>
-            <p className="eyebrow">Settings</p>
-            <h1>Access Pending</h1>
-          </div>
-          <UserButton afterSignOutUrl="/" />
-        </section>
-        <section className="notePanel accessPanel">
-          <p className="sectionLabel">Founding Fund Manager allowlist</p>
-          <h2>This account cannot access cockpit settings.</h2>
-          <p>Signed-in email: {email ?? "unknown"}.</p>
-        </section>
-      </main>
-    );
-  }
+  const user = await requireFundManager();
 
   return (
     <main className="shell">
@@ -61,14 +36,17 @@ async function SettingsContent() {
         </div>
         <div className="userActions">
           <a className="settingsLink" href="/dashboard">Dashboard</a>
-          <UserButton afterSignOutUrl="/" />
+          <form action={signOutAction}>
+            <button className="settingsLink" type="submit">Sign Out</button>
+          </form>
         </div>
       </section>
 
       <section className="settingsList">
         <div>
           <p>Auth</p>
-          <strong>Clerk single-user account</strong>
+          <strong>Supabase Auth allowlist</strong>
+          <span>{user.email}</span>
         </div>
         <div>
           <p>Health</p>

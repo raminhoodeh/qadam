@@ -3,5 +3,9 @@
   "status": "shadow_only",
   "summary": "Sample event batch contains one physical anomaly and macro context requiring corroboration.",
   "evidence_refs": ["nasa_firms_sample", "fred_sample"],
-  "uncertainty": "medium"
+  "uncertainty": "medium",
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Research Analyst output is compression only. It cannot approve signals, risk, or orders."
 }

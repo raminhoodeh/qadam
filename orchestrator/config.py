@@ -17,6 +17,13 @@ def _csv_tuple(value: str) -> tuple[str, ...]:
     return tuple(item.strip() for item in value.split(",") if item.strip())
 
 
+def _bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
     env: str
@@ -36,6 +43,16 @@ class Settings:
     secrets_file: str
     fund_manager_allowlist: tuple[str, ...]
     pending_fund_managers: tuple[str, ...]
+    telegram_enabled: bool
+    telegram_dry_run: bool
+    telegram_bot_configured: bool
+    telegram_bot_username_configured: bool
+    telegram_default_chat_configured: bool
+    live_bridge_enabled: bool
+    live_bridge_endpoint: str
+    live_bridge_max_age_seconds: int
+    live_bridge_stale_after_seconds: int
+    live_bridge_rate_limit_per_minute: int
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -63,4 +80,14 @@ class Settings:
             secrets_file=os.getenv("QADAM_SECRETS_FILE", "./data/runtime/qadam-secrets.env"),
             fund_manager_allowlist=allowlist,
             pending_fund_managers=pending,
+            telegram_enabled=_bool_env("QADAM_TELEGRAM_ENABLED", False),
+            telegram_dry_run=_bool_env("QADAM_TELEGRAM_DRY_RUN", True),
+            telegram_bot_configured=bool(os.getenv("TELEGRAM_BOT_TOKEN", "").strip()),
+            telegram_bot_username_configured=bool(os.getenv("TELEGRAM_BOT_USERNAME", "").strip()),
+            telegram_default_chat_configured=bool(os.getenv("TELEGRAM_DEFAULT_CHAT_ID", "").strip()),
+            live_bridge_enabled=_bool_env("QADAM_LIVE_BRIDGE_ENABLED", True),
+            live_bridge_endpoint=os.getenv("QADAM_STATUS_BRIDGE_ENDPOINT", "/api/cockpit-status"),
+            live_bridge_max_age_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_MAX_AGE_SECONDS", "15")),
+            live_bridge_stale_after_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS", "60")),
+            live_bridge_rate_limit_per_minute=int(os.getenv("QADAM_STATUS_BRIDGE_RATE_LIMIT_PER_MINUTE", "60")),
         )

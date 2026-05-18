@@ -18,6 +18,7 @@ from orchestrator.adapters import (
 )
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTER_KEYS, phase1_live_adapter_status
 from orchestrator.secrets import secret_status
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, SourceSpec
 
@@ -30,6 +31,10 @@ PROMOTED_ADAPTER_STATUS = {
     "nasa_firms": nasa_firms_adapter_status,
     "fred": fred_adapter_status,
     "rss": rss_adapter_status,
+    **{
+        key: (lambda settings=None, key=key: phase1_live_adapter_status(key, settings))
+        for key in PHASE1_LIVE_ADAPTER_KEYS
+    },
 }
 
 OPTIONAL_SECRET_KEYS = {
@@ -139,8 +144,11 @@ def _runtime_status(source: SourceSpec, missing_secrets: tuple[str, ...], promot
 def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settings) -> SourceHeartbeat:
     promoted = source.key in PROMOTED_ADAPTER_STATUS
     configured, missing = _secret_state(source, settings)
-    runtime_status, degraded_reason = _runtime_status(source, missing, promoted)
     adapter_status = PROMOTED_ADAPTER_STATUS[source.key](settings) if promoted else {}
+    if source.key in PHASE1_LIVE_ADAPTER_KEYS:
+        if adapter_status.get("credential_configured") or adapter_status.get("mode") == "sample_ready_live_optional":
+            missing = ()
+    runtime_status, degraded_reason = _runtime_status(source, missing, promoted)
     return SourceHeartbeat(
         schema_version=SOURCE_HEARTBEAT_SCHEMA_VERSION,
         source_key=source.key,

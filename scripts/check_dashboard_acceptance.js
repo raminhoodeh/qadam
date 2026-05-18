@@ -1,0 +1,206 @@
+#!/usr/bin/env node
+
+const fs = require("node:fs");
+const path = require("node:path");
+
+const {
+    assert,
+    assertIncludes,
+    renderWithStatus,
+    status
+} = require("./check_dashboard_renderer.js");
+
+const repoRoot = path.resolve(__dirname, "..");
+const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
+const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
+const planPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
+
+const html = fs.readFileSync(htmlPath, "utf8");
+const css = fs.readFileSync(cssPath, "utf8");
+const renderer = fs.readFileSync(rendererPath, "utf8");
+const plan = fs.readFileSync(planPath, "utf8");
+
+function assertText(text, needle, label) {
+    assert(text.includes(needle), `${label} missing ${needle}`);
+}
+
+function assertFileExists(relativePath) {
+    const filePath = path.join(repoRoot, relativePath);
+    assert(fs.existsSync(filePath), `missing acceptance dependency ${relativePath}`);
+}
+
+function assertNoUnsafePublicText(text, label) {
+    [
+        /\/Users\//,
+        /\/private\//,
+        /\/var\/folders\//,
+        /\\Users\\/,
+        /\b[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/,
+        /\d{6,}:[A-Za-z0-9_-]{20,}/,
+        /sk-[A-Za-z0-9_-]{20,}/,
+        /ghp_[A-Za-z0-9_]{20,}/,
+        /PVZ[0-9A-Za-z_-]{20,}/,
+        /TELEGRAM_BOT_TOKEN=/,
+        /TELEGRAM_DEFAULT_CHAT_ID=/,
+        /SUPABASE_SECRET_KEY=/,
+        /GEMINI_API_KEY=/,
+        /ANTHROPIC_API_KEY=/,
+        /OPENAI_API_KEY=/
+    ].forEach((pattern) => {
+        assert(!pattern.test(text), `${label} contains unsafe public text: ${pattern}`);
+    });
+}
+
+[
+    "scripts/check_dashboard_page_architecture.js",
+    "scripts/check_dashboard_information_hierarchy.js",
+    "scripts/check_dashboard_system_map.js",
+    "scripts/check_dashboard_visual_system.js",
+    "scripts/check_dashboard_section_explainers.js",
+    "scripts/check_dashboard_panel_redesign.js",
+    "scripts/check_dashboard_density_toggle.js",
+    "scripts/check_dashboard_renderer.js",
+    "scripts/check_dashboard_live_bridge.js",
+    "scripts/check_dashboard_watching_view.js",
+    "scripts/check_dashboard_cognition_view.js",
+    "scripts/check_dashboard_trade_board.js",
+    "scripts/check_dashboard_money_panel.js",
+    "scripts/check_dashboard_tradingview_source.js",
+    "scripts/check_dashboard_communications.js",
+    "scripts/check_dashboard_forum.js",
+    "scripts/check_protected_user_guide.js",
+    "scripts/check_cockpit_status.py",
+    "scripts/check_live_bridge.py"
+].forEach(assertFileExists);
+
+[
+    "Phase D10A - Scrollable Cockpit Page Architecture",
+    "Phase D10B - Dashboard Information Hierarchy",
+    "Phase D10C - Real System Map",
+    "Phase D10D - Visual System Upgrade",
+    "Phase D10E - Section Explainers",
+    "Phase D10F - Panel-Level Redesign",
+    "Phase D10G - Executive / Terminal Density Toggle",
+    "Phase D10H - Testing And Acceptance"
+].forEach((needle) => assertText(plan, needle, "implementation plan"));
+
+[
+    "dashboard-detail-flow",
+    "Morning review",
+    "What needs attention before reading the map",
+    "system-flow-diagram",
+    "Closed-loop rule",
+    "data-section-explainer",
+    "explainer-grid",
+    "data-panel-brief",
+    "data-density-toggle",
+    "data-density-option=\"executive\"",
+    "data-density-option=\"terminal\"",
+    "/auth.css?v=20260517-d10g-density",
+    "/dashboard.js?v=20260517-d10g-density"
+].forEach((needle) => assertText(html, needle, "dashboard HTML"));
+
+[
+    "This cockpit is read-only",
+    "No node is a command button",
+    "No command route",
+    "A candidate is not an order",
+    "live capital disabled",
+    "Telegram cannot place, approve, reject, modify, close, or resize trades",
+    "Worldview is context only, not evidence",
+    "not shell access",
+    "Read-only paper account mirror",
+    "cannot originate trades or bypass risk"
+].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
+
+[
+    "--bg: #0a0a0c",
+    "--font-sans",
+    "--font-mono",
+    "--glow-cyan",
+    "backdrop-filter: blur",
+    ".dashboard-detail-flow",
+    ".system-flow-diagram",
+    ".panel-brief",
+    ".section-explainer",
+    ".density-toggle",
+    "html[data-dashboard-density=\"terminal\"] .dashboard-shell"
+].forEach((needle) => assertText(css, needle, "dashboard CSS"));
+
+[
+    "function renderPanelBrief",
+    "function replacePanelBrief",
+    "function renderFlowMap",
+    "function renderOperatingSummary",
+    "function initDashboardDensityToggle",
+    "window.setDashboardDensity",
+    "document.documentElement.dataset.dashboardDensity",
+    "renderQadamDashboardStatus"
+].forEach((needle) => assertText(renderer, needle, "dashboard renderer"));
+
+assertNoUnsafePublicText(html, "dashboard HTML");
+assertNoUnsafePublicText(css, "dashboard CSS");
+assertNoUnsafePublicText(renderer, "dashboard renderer");
+
+(async () => {
+    const rendered = await renderWithStatus(status);
+
+    assert(
+        rendered.document.documentElement.dataset.dashboardStatus === "rendered",
+        "dashboard acceptance expected rendered status"
+    );
+    assert(
+        rendered.document.documentElement.dataset.dashboardStatusSource === "live_bridge",
+        "dashboard acceptance expected live bridge preference"
+    );
+    assert(
+        rendered.document.documentElement.dataset.dashboardDensity === "executive",
+        "dashboard acceptance expected Executive density by default"
+    );
+
+    [
+        ["[data-status-banner]", "D1 public-safe snapshot loaded"],
+        ["[data-status-banner]", "D9 live bridge connected"],
+        ["[data-operating-summary]", "Paper account"],
+        ["[data-operating-summary]", "Source quality"],
+        ["[data-operating-summary]", "Safety state"],
+        ["[data-operating-summary]", "Bridge"],
+        ["[data-fund-model]", "Fund Manager"],
+        ["[data-fund-model]", "Python keeps the book"],
+        ["[data-fund-model]", "Models inform, gates decide"],
+        ["[data-flow-map]", "Watched Sources"],
+        ["[data-flow-map]", "Event Log"],
+        ["[data-flow-map]", "Research Analyst"],
+        ["[data-flow-map]", "Risk Agent"],
+        ["[data-flow-map]", "Paper Account Mirror"],
+        ["[data-flow-map]", "Telegram Bot"],
+        ["[data-flow-map]", "Closed-loop rule"],
+        ["[data-flow-map]", "Input"],
+        ["[data-flow-map]", "Output"],
+        ["[data-source-summary]", "Sources"],
+        ["[data-watching-list]", "pipeline-row"],
+        ["[data-cognition]", "Panel readout"],
+        ["[data-cognition]", "Hypotheses and evidence"],
+        ["[data-worldview]", "Panel readout"],
+        ["[data-worldview]", "Decision chain"],
+        ["[data-forbidden-actions]", "live capital"],
+        ["[data-communications]", "Panel readout"],
+        ["[data-communications]", "Recent outbox"],
+        ["[data-trade-layer]", "Panel readout"],
+        ["[data-trade-layer]", "Observed signals"],
+        ["[data-trade-layer]", "Candidates"],
+        ["[data-trade-layer]", "Blocked trades"],
+        ["[data-capital]", "Panel readout"],
+        ["[data-capital]", "Current"],
+        ["[data-capital]", "Closed trades"],
+        ["[data-comments-summary]", "Local notes"],
+        ["[data-comments-list]", "<li>"],
+        ["[data-process-console]", "<li>"]
+    ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
+
+    console.log("dashboard_acceptance=ok");
+})().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+});

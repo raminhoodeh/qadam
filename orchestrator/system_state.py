@@ -26,6 +26,7 @@ from orchestrator.quantum import quantum_providers
 from orchestrator.resource_registry import resource_registry_summary
 from orchestrator.secrets import validate_secret_file
 from orchestrator.source_health import source_heartbeat_summary
+from orchestrator.telegram_comms import telegram_status
 from orchestrator.world_model import world_model_summary
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, unresolved_sources
 
@@ -47,8 +48,10 @@ def _service_status(storage_health: dict[str, Any], key: str, fallback: str) -> 
     return fallback
 
 
-def module_map(storage_health: dict[str, Any] | None = None) -> list[dict[str, str]]:
+def module_map(storage_health: dict[str, Any] | None = None, settings: Settings | None = None) -> list[dict[str, str]]:
     storage_health = storage_health or local_store_health()
+    settings = settings or Settings.from_env()
+    telegram = telegram_status(settings)
     return [
         {"key": "coo", "label": "COO", "owner": "Python Orchestrator", "status": "registered"},
         {"key": "research_analyst", "label": "Research Analyst", "owner": "Local LLM", "status": "pending"},
@@ -73,6 +76,13 @@ def module_map(storage_health: dict[str, Any] | None = None) -> list[dict[str, s
         {"key": "agent_runtime", "label": "Agent Runtime", "owner": "Permission Gate", "status": "enforced"},
         {"key": "shadow_intelligence", "label": "Shadow Intelligence", "owner": "Research Analyst", "status": "shadow_ready"},
         {"key": "governance_forum", "label": "Governance Forum", "owner": "Fund Managers", "status": "local"},
+        {"key": "telegram_bot", "label": "Telegram Bot", "owner": "Fund Manager Interface", "status": str(telegram.get("status", "disabled"))},
+        {
+            "key": "live_bridge",
+            "label": "Secure Live Bridge",
+            "owner": "qadam.trade API",
+            "status": "read_only_ready" if settings.live_bridge_enabled else "disabled",
+        },
         {"key": "ingestion_spine", "label": "Test Ingestion Spine", "owner": "World Monitor Adapters", "status": "test_data_ready"},
         {"key": "gdelt_adapter", "label": "GDELT Adapter", "owner": "Conflict Pipeline", "status": "sample_ready"},
         {"key": "oref_adapter", "label": "Oref Adapter", "owner": "Conflict Pipeline", "status": "sample_ready"},
@@ -121,7 +131,7 @@ def build_system_health(
         "unresolved_sources": [source.key for source in unresolved_sources()],
         "heartbeats": [heartbeat.__dict__ for heartbeat in registry_heartbeats()],
         "fund_managers": founding_fund_managers(settings),
-        "modules": module_map(storage_health),
+        "modules": module_map(storage_health, settings),
         "local_stores": storage_health,
         "knowledge_graph": knowledge_health,
         "resource_registry": resource_registry_summary(),
@@ -130,6 +140,7 @@ def build_system_health(
         "agent_runtime": runtime_health,
         "shadow_intelligence": shadow_intelligence_summary(settings),
         "governance_forum": governance_health,
+        "telegram_communications": telegram_status(settings),
         "ingestion_spine": ingestion_spine_summary(settings),
         "source_heartbeat": source_heartbeat_summary(settings),
         "adapters": {

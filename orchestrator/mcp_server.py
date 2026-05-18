@@ -43,12 +43,23 @@ from orchestrator.ingestion import ingestion_spine_summary
 from orchestrator.ingestion import run_test_ingestion as run_test_ingestion_spine
 from orchestrator.intelligence import (
     gemini_credential_probe,
+    local_research_analyst_status as local_research_analyst_status_once,
     lm_studio_models_probe,
     provider_status as intelligence_provider_status,
+    run_local_research_analyst_inference as run_local_research_analyst_inference_once,
     run_research_shadow_triage_queue as run_research_shadow_triage_queue_once,
     run_shadow_intelligence_sample as run_shadow_intelligence_sample_once,
     shadow_intelligence_summary,
 )
+from orchestrator.historical_backfill import build_historical_backfill_plan, run_historical_backfill
+from orchestrator.local_store import local_store_health
+from orchestrator.phase1_live_adapters import (
+    fetch_phase1_live_adapter_live_sync,
+    fetch_phase1_live_adapter_sample,
+    phase1_live_adapter_registry,
+    phase1_live_adapter_status as phase1_live_adapter_status_once,
+)
+from orchestrator.postgres_store import schema_state
 from orchestrator.quantum import quantum_providers
 from orchestrator.resource_registry import (
     resource_detail as registry_resource_detail,
@@ -63,6 +74,8 @@ from orchestrator.secrets import secret_statuses, validate_secret_file
 from orchestrator.source_health import run_source_heartbeat as run_source_heartbeat_once
 from orchestrator.source_health import source_heartbeat_summary
 from orchestrator.system_state import build_system_health, founding_fund_managers, module_map
+from orchestrator.telegram_comms import ensure_d8a_telegram_dry_run, telegram_status
+from orchestrator.trust_scores import build_trust_score_seed
 from orchestrator.world_model import (
     world_model_claim_detail as registry_world_model_claim_detail,
 )
@@ -203,6 +216,7 @@ def create_governance_comment(
     target_key: str,
     body: str,
     tags: list[str] | None = None,
+    status: str = "suggestion",
 ) -> dict[str, object]:
     store = GovernanceStore()
     comment = store.add_comment(
@@ -212,6 +226,7 @@ def create_governance_comment(
         target_key=target_key,
         body=body,
         tags=tuple(tags or ()),
+        status=status,
     )
     return comment.to_dict()
 
@@ -230,6 +245,55 @@ def run_source_heartbeat() -> dict[str, object]:
 
 def run_test_ingestion(limit: int = 5, tier: int | None = None, pipeline: str | None = None) -> dict[str, object]:
     return run_test_ingestion_spine(limit=limit, tier=tier, pipeline=pipeline)
+
+
+def phase1_live_adapter_registry_status() -> dict[str, object]:
+    return phase1_live_adapter_registry(Settings.from_env())
+
+
+def phase1_live_adapter_status(source_key: str) -> dict[str, object]:
+    return phase1_live_adapter_status_once(source_key, Settings.from_env())
+
+
+def phase1_live_adapter_sample(source_key: str) -> dict[str, object]:
+    return fetch_phase1_live_adapter_sample(source_key)
+
+
+def phase1_live_adapter_live_read_only(source_key: str) -> dict[str, object]:
+    return fetch_phase1_live_adapter_live_sync(source_key)
+
+
+def historical_backfill_plan() -> dict[str, object]:
+    return build_historical_backfill_plan(Settings.from_env())
+
+
+def run_historical_backfill_sample(source_keys: list[str] | None = None) -> dict[str, object]:
+    return run_historical_backfill(source_keys=tuple(source_keys or ()), settings=Settings.from_env())
+
+
+def trust_score_seed_status() -> dict[str, object]:
+    return build_trust_score_seed(Settings.from_env())
+
+
+def postgres_timescale_ingestion_status() -> dict[str, object]:
+    settings = Settings.from_env()
+    stores = local_store_health(settings)
+    postgres_online = "postgres" not in stores["summary"]["offline_services"]
+    payload: dict[str, object] = {
+        "status": "online" if postgres_online else "offline",
+        "database_url_configured": bool(settings.database_url),
+        "contract_status": "ready" if postgres_online else "ready_waiting_for_local_service",
+        "boundary": "Durable ingestion status is read-only. It cannot create signals or orders.",
+    }
+    if postgres_online:
+        import asyncio
+
+        try:
+            payload["schema"] = asyncio.run(schema_state(settings))
+        except Exception as exc:  # noqa: BLE001 - MCP status should report degraded database details
+            payload["status"] = "degraded"
+            payload["schema_error"] = str(exc)
+    return payload
 
 
 def shadow_intelligence_status() -> dict[str, object]:
@@ -265,6 +329,26 @@ def run_shadow_intelligence_sample() -> dict[str, object]:
 
 def run_research_shadow_triage_queue(limit: int = 10) -> dict[str, object]:
     return run_research_shadow_triage_queue_once(limit=limit)
+
+
+def local_research_analyst_status() -> dict[str, object]:
+    return local_research_analyst_status_once(Settings.from_env())
+
+
+def run_local_research_analyst_inference(limit: int = 5, live: bool = False) -> dict[str, object]:
+    return run_local_research_analyst_inference_once(
+        limit=limit,
+        live=live,
+        settings=Settings.from_env(),
+    )
+
+
+def telegram_communications_status() -> dict[str, object]:
+    return telegram_status(Settings.from_env())
+
+
+def queue_telegram_dry_run_samples() -> dict[str, object]:
+    return ensure_d8a_telegram_dry_run(Settings.from_env())
 
 
 def gdelt_status() -> dict[str, object]:
@@ -420,6 +504,14 @@ def build_server():
     mcp.tool()(source_heartbeat_status)
     mcp.tool()(run_source_heartbeat)
     mcp.tool()(run_test_ingestion)
+    mcp.tool()(phase1_live_adapter_registry_status)
+    mcp.tool()(phase1_live_adapter_status)
+    mcp.tool()(phase1_live_adapter_sample)
+    mcp.tool()(phase1_live_adapter_live_read_only)
+    mcp.tool()(historical_backfill_plan)
+    mcp.tool()(run_historical_backfill_sample)
+    mcp.tool()(trust_score_seed_status)
+    mcp.tool()(postgres_timescale_ingestion_status)
     mcp.tool()(shadow_intelligence_status)
     mcp.tool()(shadow_intelligence_provider_status)
     mcp.tool()(shadow_intelligence_provider_probes)
@@ -427,6 +519,10 @@ def build_server():
     mcp.tool()(gemini_credential_status)
     mcp.tool()(run_shadow_intelligence_sample)
     mcp.tool()(run_research_shadow_triage_queue)
+    mcp.tool()(local_research_analyst_status)
+    mcp.tool()(run_local_research_analyst_inference)
+    mcp.tool()(telegram_communications_status)
+    mcp.tool()(queue_telegram_dry_run_samples)
     mcp.tool()(gdelt_status)
     mcp.tool()(gdelt_sample)
     mcp.tool()(gdelt_live_read_only)

@@ -2,13 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Fund Manager Interface Output",
   "type": "object",
-  "required": ["agent_key", "status", "summary", "visible_to", "actions"],
+  "required": ["agent_key", "status", "summary", "visible_to", "actions", "execution_allowed", "paper_order_allowed", "broker_write_allowed", "boundary"],
   "properties": {
     "agent_key": { "const": "fund_manager_interface" },
     "status": { "type": "string" },
     "summary": { "type": "string" },
     "visible_to": { "type": "array", "items": { "type": "string" } },
-    "actions": { "type": "array", "items": { "type": "string" } }
+    "actions": { "type": "array", "items": { "type": "string" } },
+    "execution_allowed": { "type": "boolean", "const": false },
+    "paper_order_allowed": { "type": "boolean", "const": false },
+    "broker_write_allowed": { "type": "boolean", "const": false },
+    "boundary": { "type": "string" }
   },
   "additionalProperties": true
 }

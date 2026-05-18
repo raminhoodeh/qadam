@@ -3,5 +3,9 @@
   "status": "blocked",
   "decision": "block",
   "reason": "Execution venue write path is disabled in foundation mode.",
-  "blocked": true
+  "blocked": true,
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Risk Agent blocks in Phase 1/2 because no execution adapter or policy gate is active."
 }

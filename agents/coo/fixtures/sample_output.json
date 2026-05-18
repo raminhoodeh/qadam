@@ -3,5 +3,9 @@
   "status": "ok",
   "summary": "Foundation checks completed with degraded local stores accepted.",
   "evidence_refs": ["system_health", "source_heartbeat_status"],
-  "next_actions": ["Keep execution disabled", "Continue runtime permission enforcement"]
+  "next_actions": ["Keep execution disabled", "Continue runtime permission enforcement"],
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "COO coordinates checks and routing only. No broker write path exists."
 }

@@ -154,6 +154,12 @@ Implemented state:
 - RSS is implemented as the first narrative read-only adapter.
 - `scripts/check_rss_adapter.py` checks sample mode and optional live read-only mode with keyword filtering.
 - RSS feed failures, HTML responses, or XML parse failures are represented as degraded or partial source state with archived request metadata.
+- `orchestrator/phase1_live_adapters.py` adds generic read-only adapter contracts for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- `scripts/check_phase1_live_adapters.py` validates those 14 adapter contracts in sample mode without live network calls.
+- The generic adapter layer masks credential status, redacts Telegram bot-token URL paths in archived request metadata, writes raw payloads, normalizes sample/live records, and cannot create signals or orders.
+- `orchestrator/historical_backfill.py` and `scripts/check_historical_backfills.py` define the credential-aware backfill plan and local sample-runner before large pulls are attempted.
+- `orchestrator/trust_scores.py` and `scripts/check_trust_score_seed.py` seed source Trust Scores across all 35 sources while marking real-data scoring as incomplete.
+- `scripts/check_postgres_timescale_ingestion.py` verifies the durable-ingestion contract and reports `ready_waiting_for_local_service` until local Postgres/Timescale is running.
 
 ## Build Slice 3 - Source Registry And Heartbeats
 
@@ -169,6 +175,7 @@ Implemented state:
 
 - `orchestrator/source_health.py` produces source heartbeat runs and `data/runtime/data_environment_map.json`.
 - `scripts/check_source_heartbeat.py` validates all 35 source readiness records.
+- `scripts/check_phase1_data_spine.py` validates the full Phase 1 source contract across registry count, 5-pipeline coverage, promoted adapters, heartbeat-map consistency, safe credential-status shape, and deterministic 35-source ingestion.
 - `scripts/run_source_heartbeat.py` can run once or on an interval for local scheduler use.
 - System health includes `source_heartbeat` summary, including promoted adapters, deferred sources, and missing credential source count.
 - The cockpit System Map shows source heartbeat status and a Source Heartbeat registry card.
@@ -177,7 +184,7 @@ Exit checks:
 
 - Registry count remains 35.
 - Pipeline counts remain conflict 5, physical 7, macro 6, market 9, social 8.
-- TradingView is treated as MCP read-only tooling now and paid-account webhook alerts later; Qadam does not expect a TradingView retail data API key for direct pulls.
+- TradingView is treated as MCP read-only tooling now; the D7 local alert contract can store observed paid-alert fixtures with duplicate protection and no execution path. A real public TradingView webhook waits for the secure bridge. Qadam does not expect a TradingView retail data API key for direct pulls.
 - Cockpit can show all pipeline groups from the Orchestrator API.
 - A simulated degraded source appears as degraded in health output.
 
@@ -304,8 +311,10 @@ Implemented state:
 - `skills/` contains 7 reusable Qadam skill bundles with `SKILL.md` and `skill.json`.
 - `orchestrator/agent_registry.py` exposes agent and skill registry summaries.
 - `scripts/check_agent_manifests.py` validates counts, grants, forbidden actions, output schemas, and raw-secret patterns.
-- `orchestrator/agent_runtime.py` enforces runtime tool grants, validates sample outputs, blocks broker-write tools, and writes a local Research Analyst shadow triage queue.
+- Agent sample output schemas require explicit `execution_allowed=false`, `paper_order_allowed=false`, `broker_write_allowed=false`, and a boundary statement.
+- `orchestrator/agent_runtime.py` enforces runtime tool grants, validates sample outputs, blocks broker-write and undeclared tools, and writes a local Research Analyst shadow triage queue.
 - `scripts/check_agent_runtime.py` verifies the runtime enforcement path.
+- `scripts/check_phase1_agent_os.py` validates the combined Phase 1E/1F gate across manifests, skills, tool grants, non-execution flags, and fail-closed behavior.
 - System health and cockpit fallback data include `agent_os`.
 - System health and cockpit fallback data include `agent_runtime`.
 - Shadow intelligence contracts now sit after this foundation slice: Evidence Trail, Proposed Signal, deterministic triage, provider status, and no execution authority.

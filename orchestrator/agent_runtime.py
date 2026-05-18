@@ -22,6 +22,7 @@ from orchestrator.event_log import EventLog
 
 AGENT_RUNTIME_SCHEMA_VERSION = 1
 BROKER_WRITE_TOOLS = frozenset({"place_order", "cancel_order", "close_position"})
+UNDECLARED_TOOL_PROBE = "__undeclared_phase1_probe__"
 
 
 @dataclass(frozen=True)
@@ -142,6 +143,40 @@ def validate_all_sample_outputs() -> dict[str, Any]:
     }
 
 
+def agent_authority_matrix() -> dict[str, Any]:
+    broker_checks = [
+        authorize_tool_call(agent_key, tool_name)
+        for agent_key in EXPECTED_AGENT_KEYS
+        for tool_name in sorted(BROKER_WRITE_TOOLS)
+    ]
+    undeclared_checks = [
+        authorize_tool_call(agent_key, UNDECLARED_TOOL_PROBE)
+        for agent_key in EXPECTED_AGENT_KEYS
+    ]
+    broker_write_failures = [
+        check.to_dict()
+        for check in broker_checks
+        if check.allowed or check.reason != "broker_write_tool_blocked"
+    ]
+    undeclared_failures = [
+        check.to_dict()
+        for check in undeclared_checks
+        if check.allowed or check.reason != "undeclared_tool"
+    ]
+    return {
+        "status": "ok" if not broker_write_failures and not undeclared_failures else "error",
+        "agent_count": len(EXPECTED_AGENT_KEYS),
+        "broker_write_tool_count": len(BROKER_WRITE_TOOLS),
+        "broker_write_block_count": len(broker_checks) - len(broker_write_failures),
+        "expected_broker_write_block_count": len(EXPECTED_AGENT_KEYS) * len(BROKER_WRITE_TOOLS),
+        "undeclared_tool_block_count": len(undeclared_checks) - len(undeclared_failures),
+        "expected_undeclared_tool_block_count": len(EXPECTED_AGENT_KEYS),
+        "broker_write_failures": broker_write_failures,
+        "undeclared_tool_failures": undeclared_failures,
+        "boundary": "Every agent must fail closed for broker-write tools and undeclared tools.",
+    }
+
+
 def _queue_path(settings: Settings | None = None) -> Path:
     settings = settings or Settings.from_env()
     return Path(settings.runtime_dir) / "research_triage_queue.jsonl"
@@ -216,6 +251,7 @@ def agent_runtime_summary(settings: Settings | None = None) -> dict[str, Any]:
         authorize_tool_call("strategy_lead", "place_order"),
     )
     sample_outputs = validate_all_sample_outputs()
+    authority_matrix = agent_authority_matrix()
     queue = shadow_triage_queue_summary(settings)
     expected_blocks = sum(1 for check in checks if not check.allowed)
     errors: list[str] = []
@@ -229,17 +265,24 @@ def agent_runtime_summary(settings: Settings | None = None) -> dict[str, Any]:
         errors.append("strategy_lead_place_order_should_block")
     if sample_outputs["status"] != "ok":
         errors.extend(f"sample_output:{error}" for error in sample_outputs["errors"])
+    if authority_matrix["status"] != "ok":
+        errors.append("authority_matrix_failed")
 
     return {
         "status": "ok" if not errors else "error",
         "schema_version": AGENT_RUNTIME_SCHEMA_VERSION,
         "authorization_check_count": len(checks),
         "expected_block_count": expected_blocks,
+        "broker_write_block_count": authority_matrix["broker_write_block_count"],
+        "expected_broker_write_block_count": authority_matrix["expected_broker_write_block_count"],
+        "undeclared_tool_block_count": authority_matrix["undeclared_tool_block_count"],
+        "expected_undeclared_tool_block_count": authority_matrix["expected_undeclared_tool_block_count"],
         "sample_output_count": sample_outputs["sample_output_count"],
         "shadow_queue_status": queue["status"],
         "shadow_queue_packet_count": queue["packet_count"],
         "errors": errors,
         "checks": [check.to_dict() for check in checks],
+        "authority_matrix": authority_matrix,
         "queue": queue,
         "boundary": "Runtime grants are enforced before tool use. Shadow triage has no execution authority.",
     }

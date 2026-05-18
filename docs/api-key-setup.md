@@ -2,6 +2,10 @@
 
 Qadam is a public repository and a local-first system. Real API keys belong only in local runtime storage, never in Git, screenshots, docs, or chat.
 
+For the full provider inventory, including all 35 World Monitor data sources, optional `world-monitor/` reference providers, model keys, quantum keys, broker rails, TradingView alert placeholders, and unresolved provider choices, use `docs/api-specs.md`.
+
+For the step-by-step acquisition order, cost posture, provider links, and validation command for each key, use `docs/qadam-api-key-acquisition-plan.md`.
+
 ## Local Secret File
 
 Create one local secret file:
@@ -31,7 +35,14 @@ IBM_QUANTUM_TOKEN=
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_BOT_USERNAME=
+TELEGRAM_DEFAULT_CHAT_ID=
+QADAM_TELEGRAM_ENABLED=false
+QADAM_TELEGRAM_DRY_RUN=true
 ```
+
+The larger placeholder ledger is in `docs/api-specs.md`. Do not copy unused keys into runtime storage unless you are actively configuring that provider.
 
 If a key is ever pasted into a chat, committed, or shown publicly, rotate it at the provider before using it for production or live trading.
 
@@ -55,13 +66,37 @@ Use TradingView in two separate ways:
 | Use | Status | Qadam treatment |
 | --- | --- | --- |
 | TradingView MCP | Now | Read-only market and technical-analysis tooling through Codex/MCP. No TradingView login or API key expected. |
-| TradingView paid-account alerts | Later | Webhook alert source after Qadam has a secure authenticated receiver, Event Log writes, replay tests, and no execution path. |
+| TradingView paid-account alerts | Local D7 contract now; public webhook later | Qadam can store and display observed alert fixtures with duplicate protection and no execution path. A real TradingView webhook URL waits for the secure bridge. |
 
 Setup command for the MCP tool after installing `uv`:
 
 ```bash
 codex mcp add tradingview -- uvx --from tradingview-mcp-server tradingview-mcp
 ```
+
+## Telegram Bot
+
+Telegram is Qadam's founding-member communications rail. It is not a trading interface.
+
+Required later for Phase D8A/T1:
+
+| Variable | Purpose |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | BotFather token for the Qadam Telegram bot. Store locally only. |
+| `TELEGRAM_BOT_USERNAME` | Human-readable bot username for diagnostics. |
+| `TELEGRAM_DEFAULT_CHAT_ID` | Optional private group/chat target for first test delivery. |
+| `QADAM_TELEGRAM_ENABLED=false` | Global send gate. Defaults disabled. |
+| `QADAM_TELEGRAM_DRY_RUN=true` | Writes outbox messages without sending. Defaults dry-run. |
+
+Setup path:
+
+1. Create the bot in Telegram through BotFather.
+2. Store the token only in `data/runtime/qadam-secrets.env`.
+3. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
+4. Verify the dashboard shows Telegram as disabled/dry-run.
+5. Send one explicit private test message only after the local checks pass.
+
+Never commit the bot token or chat IDs. If either appears in chat, Git, screenshots, or public dashboard output, rotate the token and replace the chat registry before using Telegram for real delivery.
 
 ## Quantum Keys
 

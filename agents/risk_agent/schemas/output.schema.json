@@ -2,13 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Risk Agent Output",
   "type": "object",
-  "required": ["agent_key", "status", "decision", "reason", "blocked"],
+  "required": ["agent_key", "status", "decision", "reason", "blocked", "execution_allowed", "paper_order_allowed", "broker_write_allowed", "boundary"],
   "properties": {
     "agent_key": { "const": "risk_agent" },
     "status": { "type": "string" },
     "decision": { "type": "string" },
     "reason": { "type": "string" },
-    "blocked": { "type": "boolean" }
+    "blocked": { "type": "boolean" },
+    "execution_allowed": { "type": "boolean", "const": false },
+    "paper_order_allowed": { "type": "boolean", "const": false },
+    "broker_write_allowed": { "type": "boolean", "const": false },
+    "boundary": { "type": "string" }
   },
   "additionalProperties": true
 }

@@ -34,6 +34,7 @@ def main() -> int:
     print(f"local_mode={local['mode']}")
     print(f"local_probe_status={local['probe_status']}")
     print(f"local_model_available={local['model_available']}")
+    print(f"local_resolved_model={local.get('resolved_model', local['model'])}")
     print(f"local_available_model_count={local['available_model_count']}")
 
     if args.local_live and local["probe_status"] != "ok":

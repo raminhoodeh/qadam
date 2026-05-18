@@ -2,6 +2,7 @@
 
 Source of truth: `specs/qadam-specs.md`.
 Detailed endpoint companion: `specs/Qadam - World Monitor Integration Reference.md`.
+Credential and placeholder companion: `docs/api-specs.md`.
 
 ## Scan Result
 

@@ -1,0 +1,357 @@
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@500,600,400,700,300,200&display=swap');
+
+:root {
+    --bg: #050505;
+    --paper: #0b0c0b;
+    --ink: #f6f3ea;
+    --muted: rgba(246, 243, 234, 0.72);
+    --faint: rgba(246, 243, 234, 0.48);
+    --line: rgba(246, 243, 234, 0.16);
+    --line-strong: rgba(246, 243, 234, 0.32);
+    --gold: #d5b875;
+    --green: #8ebf9a;
+    --danger: #d88a78;
+    --font-main: 'General Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-main);
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        linear-gradient(180deg, rgba(213, 184, 117, 0.08), transparent 320px),
+        radial-gradient(circle at 50% -10%, rgba(142, 191, 154, 0.16), transparent 38%),
+        var(--bg);
+    color: var(--ink);
+    letter-spacing: 0;
+}
+
+a {
+    color: inherit;
+}
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px clamp(18px, 4vw, 54px);
+    border-bottom: 1px solid rgba(246, 243, 234, 0.1);
+    background: rgba(5, 5, 5, 0.82);
+    backdrop-filter: blur(18px);
+}
+
+.logo-link {
+    display: inline-flex;
+    align-items: center;
+}
+
+.logo-link img {
+    width: auto;
+    height: 34px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgba(246, 243, 234, 0.18);
+    border-radius: 999px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.nav-link.secondary {
+    color: var(--muted);
+}
+
+.page-shell {
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 46px clamp(18px, 5vw, 44px) 80px;
+}
+
+.hero {
+    padding: 28px 0 36px;
+    border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+    margin: 0 0 18px;
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+h1 {
+    max-width: 760px;
+    font-size: clamp(42px, 9vw, 82px);
+    line-height: 0.98;
+}
+
+.lede {
+    max-width: 720px;
+    margin: 24px 0 0;
+    color: var(--muted);
+    font-size: clamp(18px, 4vw, 24px);
+    line-height: 1.45;
+}
+
+.article {
+    padding-top: 20px;
+}
+
+.article section {
+    padding: 34px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.article h2 {
+    margin-bottom: 18px;
+    color: var(--ink);
+    font-size: clamp(25px, 6vw, 40px);
+    line-height: 1.08;
+}
+
+.article h3 {
+    margin: 28px 0 12px;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+p,
+li {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.74;
+}
+
+p {
+    margin: 0 0 16px;
+}
+
+strong {
+    color: var(--ink);
+    font-weight: 650;
+}
+
+ul,
+ol {
+    margin: 14px 0 0;
+    padding-left: 22px;
+}
+
+li {
+    margin: 9px 0;
+}
+
+.quote-line {
+    margin-top: 18px;
+    color: var(--ink);
+    font-size: 19px;
+}
+
+.compact-list li {
+    margin: 7px 0;
+}
+
+.system-diagram {
+    margin: 24px 0 8px;
+    padding: 18px;
+    border: 1px solid rgba(213, 184, 117, 0.26);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+}
+
+.diagram-title {
+    margin: 0 0 16px;
+    color: var(--faint);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.flow {
+    display: grid;
+    gap: 10px;
+}
+
+.flow-card {
+    position: relative;
+    padding: 16px 16px 15px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(5, 5, 5, 0.6);
+}
+
+.flow-card.primary {
+    border-color: rgba(213, 184, 117, 0.42);
+}
+
+.flow-card.quant {
+    border-style: dashed;
+    border-color: rgba(142, 191, 154, 0.52);
+}
+
+.flow-card.risk {
+    border-color: rgba(216, 138, 120, 0.38);
+}
+
+.flow-kicker {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.flow-name {
+    display: block;
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.flow-detail {
+    display: block;
+    margin-top: 6px;
+    color: var(--faint);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.arrow {
+    color: var(--line-strong);
+    font-size: 22px;
+    line-height: 1;
+    text-align: center;
+}
+
+.side-input {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.side-label {
+    margin: 0;
+    color: var(--faint);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.return-loop {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px dashed rgba(246, 243, 234, 0.22);
+    border-radius: 14px;
+    color: var(--faint);
+    font-size: 13px;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.final-line {
+    color: var(--ink);
+    font-size: 22px;
+    line-height: 1.35;
+}
+
+@media (max-width: 620px) {
+    .site-header {
+        padding: 12px 16px;
+    }
+
+    .logo-link img {
+        height: 27px;
+    }
+
+    .nav-links {
+        gap: 7px;
+    }
+
+    .nav-link {
+        min-height: 36px;
+        padding: 0 12px;
+        font-size: 12px;
+    }
+
+    .page-shell {
+        padding-top: 28px;
+    }
+
+    .hero {
+        padding-top: 18px;
+    }
+
+    .article section {
+        padding: 28px 0;
+    }
+
+    p,
+    li {
+        font-size: 15px;
+        line-height: 1.72;
+    }
+
+    .system-diagram {
+        margin-left: -4px;
+        margin-right: -4px;
+        padding: 12px;
+        border-radius: 18px;
+    }
+
+    .flow-card {
+        padding: 14px;
+        border-radius: 14px;
+    }
+
+    .flow-name {
+        font-size: 16px;
+    }
+
+    .flow-detail {
+        font-size: 12.5px;
+    }
+}

@@ -14,15 +14,26 @@ fi
 "$PYTHON_BIN" scripts/check_registries.py
 "$PYTHON_BIN" scripts/check_agent_manifests.py
 "$PYTHON_BIN" scripts/check_agent_runtime.py
+"$PYTHON_BIN" scripts/check_phase1_agent_os.py
 "$PYTHON_BIN" scripts/check_shadow_intelligence.py
 "$PYTHON_BIN" scripts/check_llm_provider_probes.py
+"$PYTHON_BIN" scripts/check_local_research_analyst.py
+"$PYTHON_BIN" scripts/check_trade_intent.py
+"$PYTHON_BIN" scripts/check_paper_account.py
+"$PYTHON_BIN" scripts/check_tradingview_alerts.py
 "$PYTHON_BIN" scripts/check_chroma_store.py
 "$PYTHON_BIN" scripts/check_source_heartbeat.py
+"$PYTHON_BIN" scripts/check_phase1_data_spine.py
+"$PYTHON_BIN" scripts/check_phase1_live_adapters.py
+"$PYTHON_BIN" scripts/check_historical_backfills.py
+"$PYTHON_BIN" scripts/check_trust_score_seed.py
+"$PYTHON_BIN" scripts/check_postgres_timescale_ingestion.py
 "$PYTHON_BIN" scripts/check_gdelt_adapter.py
 "$PYTHON_BIN" scripts/check_oref_adapter.py
 "$PYTHON_BIN" scripts/check_nasa_firms_adapter.py
 "$PYTHON_BIN" scripts/check_fred_adapter.py
 "$PYTHON_BIN" scripts/check_rss_adapter.py
+"$PYTHON_BIN" scripts/check_cockpit_status.py
 
 if [[ "${QADAM_START_ORCHESTRATOR:-0}" == "1" ]]; then
   "$PYTHON_BIN" -m orchestrator.main

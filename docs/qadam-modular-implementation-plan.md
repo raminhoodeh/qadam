@@ -52,6 +52,7 @@ Build Qadam as replaceable modules around stable contracts.
 | Knowledge Plane | ChromaDB Knowledge Graph | Catalyst memory, embeddings, nearest-neighbour recall | Phase 0 shell, Phase 6 live |
 | Cockpit Plane | Next.js + Supabase Auth | Login, System Map, health, signals, postmortems, settings | Phase 0 shell, Phase 5 functional |
 | Fund Manager Forum | Cockpit + Event Log | Private suggestions and governance comments from Ramin, Troy, Akber, Anas, and Ion | Phase 0 stub, Phase 5 functional |
+| Telegram Bot Communications | Local notifier + Telegram Bot API | Outbound-only member alerts, insight digests, trade lifecycle updates, and delivery status | Phase 5 / Dashboard D8A |
 | Live Ingress Plane | World Monitor source adapters | 35 live/live-adjacent feeds across 5 pipelines | Phase 1 |
 | Resource Plane | Resource Registry | Strategy references, papers, OSS stacks, product benchmarks, provenance | Phase 0 |
 | World-Model Plane | How The World Works corpus | Private foundational lens, esoteric edge, hidden-incentive hypotheses, narrative lenses, scenario trees | Phase 0 seed, Phase 2 reasoning |
@@ -170,6 +171,13 @@ Current implementation start:
 - NASA FIRMS now has the first physical read-only adapter path, including bbox-first area requests, credential-gated live mode, high-confidence thermal anomaly filtering, raw archive, and degraded-state handling.
 - FRED now has the first macro read-only adapter path, including rate/dollar/volatility/credit/crude series, public CSV fallback, sigma calculation, raw archive, and degraded-state handling.
 - RSS now has the first narrative read-only adapter path, including feed validation, keyword filtering, raw archive, normalized headline events, and degraded-state handling.
+- A generic Phase 1 read-only adapter promotion layer now covers ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- The generic layer provides sample events, masked credential status, raw archive writes, normalized events, fail-closed live fetches, and no signal/order authority.
+- Phase 1 promoted adapter coverage is now 19 sources: the five dedicated adapters plus 14 generic live-adapter contracts.
+- Historical backfill planning and a local sample-runner exist for 12 priority sources and report ready versus blocked jobs without pulling large datasets.
+- Trust Score seed exists for all 35 sources, with 22 sources above 0.5 and three physical/logistics sources meeting the current seed threshold; real-data scoring remains pending.
+- Postgres/Timescale durable ingestion has a non-destructive status check and remains `ready_waiting_for_local_service` until the local database is running.
+- `scripts/check_phase1_data_spine.py` now validates the whole Phase 1 spine: all 35 sources, all 5 pipelines, promoted adapter coverage, heartbeat-map consistency, safe credential-status shape, and full deterministic ingestion.
 - Local Python 3.12 dependencies are bootstrapped in `.venv`.
 - Embedded Chroma initializes the empty Knowledge Graph locally.
 - Postgres/Timescale durable writes are coded and waiting on a Docker-compatible runtime.
@@ -208,7 +216,7 @@ TradingView boundary:
 
 - Paid TradingView accounts are useful for charting and alerts, but they do not provide a normal retail API key for Qadam data ingestion.
 - TradingView MCP is registered as read-only market/technical-analysis tooling and does not require TradingView login credentials.
-- TradingView alert webhooks become a source adapter only after Qadam has an authenticated webhook receiver, Event Log writes, replay tests, and no execution path.
+- The D7 local TradingView alert contract can already store observed alert fixtures, deduplicate them, write safe Event Log entries, and show them in the cockpit with no execution path. Public TradingView alert webhooks become a source adapter only after Qadam has an authenticated webhook receiver, replay tests, and no execution path.
 8. Tier 4 deferred/fallback adapters.
 9. Historical backfill where licensing allows.
 10. Initial Trust Score table.
@@ -235,7 +243,9 @@ Current implementation start:
 - Agent registry, skill bundles, manifest validation, explicit tool grants, and cockpit/system-health status exist.
 - Eight named agents validate locally.
 - Seven reusable skill bundles validate locally.
-- Current validation reports 121 tool grants and 13 secret-name grants, all names only.
+- Current validation reports 130 tool grants and 13 secret-name grants, all names only.
+- Every agent sample output now has explicit non-execution flags and a boundary statement.
+- `scripts/check_phase1_agent_os.py` validates the combined Phase 1E/1F Agent OS gate.
 
 Reference pattern:
 
@@ -285,7 +295,9 @@ Current implementation state:
 - Research Analyst can use source tools but is blocked from execution venue tools.
 - Risk Agent can inspect execution venues but cannot place orders.
 - Strategy Lead is hard-blocked from broker-write tools.
+- Every agent is hard-blocked from broker-write tools and undeclared tools.
 - All 8 agents have sample output fixtures that validate against their output schemas.
+- All 8 sample output fixtures explicitly state `execution_allowed=false`, `paper_order_allowed=false`, and `broker_write_allowed=false`.
 - Research Analyst shadow triage queue writes local-only non-executable packets.
 
 ### Phase 1F Gate
@@ -295,6 +307,8 @@ Phase 1F is done when:
 - Allowed tool calls pass.
 - Missing-grant tool calls block.
 - Broker-write tools block.
+- Undeclared tools block.
+- Sample outputs carry explicit non-execution flags.
 - Sample outputs validate.
 - Shadow triage queue exists and is clearly non-executable.
 
@@ -448,7 +462,7 @@ Trading state: paper integration testing.
 | Execution adapter status | Read-only venue health, permission, position, balance, and limit checks | Venue cannot write until read-only checks pass |
 | Broker adapters | Alpaca paper, pmxt/Polyrouter read-only then guarded; PriveX-style perps remain `live_blocked` unless separately approved | Paper order lifecycle logged |
 | Position monitor | Open position state and exits | State transitions are replayable |
-| Telegram notifier | Human-in-loop alerts | Delivery/retry/fallback logged |
+| Telegram notifier | Human-in-loop alerts for trades, insights, system warnings, and postmortems | Delivery/retry/fallback logged; no execution authority |
 | Signal Review UI | Review proposed signals with evidence | No direct broker action from UI |
 | Cockpit dashboard | Functional System Map, health, uptime, source status | Kill-switch panel renders first |
 
@@ -461,7 +475,7 @@ Trading state: paper integration testing.
 5. Alpaca paper adapter.
 6. Prediction-market adapter in read-only mode.
 7. PriveX-style adapter research note and disabled placeholder if useful.
-8. Telegram alerting.
+8. Telegram alerting in dry-run mode, then one explicit private test send.
 9. Signal Review UI.
 10. Position monitor.
 11. Paper trade drill.
@@ -473,7 +487,8 @@ Phase 5 is done when:
 - At least one paper trade can open and close with complete Event Log trace.
 - Risk Agent blocks oversize, stale, low-evidence, and degraded-state trades.
 - Kill-switches stop new actions.
-- Telegram alerts work for critical events.
+- Telegram alerts work for critical events and match cockpit state exactly.
+- Telegram has no command path for placing, approving, rejecting, modifying, closing, or resizing trades.
 - Cockpit shows health, uptime, module map, source status, and resource provenance.
 - Phase 5 test trades do not count toward the clean Phase 7 proof.
 
@@ -575,7 +590,7 @@ Live cockpit sprint decision: the dashboard's main view is the system map. Each 
 | Phase 2 | Hidden/debug shadow signals, evidence trail previews |
 | Phase 3 | Quantum job status and fallback visibility |
 | Phase 4 | Manifested Strategy review and approval record |
-| Phase 5 | Functional Dashboard/System Map, Signal Review, comments/forum, kill-switches, Telegram state |
+| Phase 5 | Functional Dashboard/System Map, Signal Review, comments/forum, kill-switches, Telegram state and Communications panel |
 | Phase 6 | Trade Journal, Postmortems, Knowledge Graph stats, Architect summaries |
 | Phase 7 | Demo proof clock, maturity benchmark, live-promotion review |
 

@@ -3,5 +3,9 @@
   "status": "blocked",
   "venue_key": "alpaca_paper",
   "ready": false,
-  "reason": "Paper venue is registered but order submission is not implemented."
+  "reason": "Paper venue is registered but order submission is not implemented.",
+  "execution_allowed": false,
+  "paper_order_allowed": false,
+  "broker_write_allowed": false,
+  "boundary": "Execution Auditor can inspect venue readiness only. No order can be submitted."
 }
