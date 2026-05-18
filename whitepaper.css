@@ -189,6 +189,79 @@ li {
     margin: 7px 0;
 }
 
+.guide-shell {
+    width: min(100%, 1040px);
+}
+
+.guide-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 18px;
+}
+
+.guide-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.guide-card,
+.guide-table div {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.guide-card {
+    padding: 16px;
+}
+
+.guide-card span,
+.guide-table strong {
+    color: var(--gold);
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.guide-card h3 {
+    margin: 0 0 9px;
+}
+
+.guide-card p,
+.guide-card li {
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.guide-card ul {
+    margin-top: 8px;
+}
+
+.guide-table {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.guide-table div {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 190px minmax(0, 1fr);
+    padding: 14px 16px;
+}
+
+.guide-table strong {
+    margin: 0;
+}
+
+.guide-table span {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
 .system-diagram {
     margin: 24px 0 8px;
     padding: 18px;
@@ -218,6 +291,10 @@ li {
     border: 1px solid var(--line);
     border-radius: 16px;
     background: rgba(5, 5, 5, 0.6);
+}
+
+.compact-diagram {
+    max-width: 720px;
 }
 
 .flow-card.primary {
@@ -327,6 +404,15 @@ li {
 
     .article section {
         padding: 28px 0;
+    }
+
+    .guide-grid,
+    .guide-grid.two {
+        grid-template-columns: 1fr;
+    }
+
+    .guide-table div {
+        grid-template-columns: 1fr;
     }
 
     p,

@@ -1,0 +1,2384 @@
+{
+  "boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
+  "capital": {
+    "account_scope": "first_release_gbp_1000_trial",
+    "boundary": "D6 local mirror only. No broker connection, no orders, no live capital.",
+    "broker": "local_mirror_pending_alpaca_readonly",
+    "cash_gbp": 1000.0,
+    "closed_trade_count": 0,
+    "closed_trades": [],
+    "connection_status": "local_mirror_not_broker_connected",
+    "current_balance_gbp": 1000.0,
+    "drawdown_pct": 0,
+    "equity_curve": [
+      {
+        "drawdown_pct": 0,
+        "equity_gbp": 1000.0,
+        "observed_at": "2026-05-16T19:33:24.051004+00:00"
+      }
+    ],
+    "equity_gbp": 1000.0,
+    "live_capital_enabled": false,
+    "maturity_closed_trade_count": 0,
+    "maturity_closed_trade_target": 100,
+    "max_drawdown_pct": 0,
+    "mirror_status": "ok",
+    "observed_at": "2026-05-16T19:33:24.051004+00:00",
+    "open_position_count": 0,
+    "open_positions": [],
+    "peak_equity_gbp": 1000.0,
+    "postmortem_complete_count": 0,
+    "postmortem_due_count": 0,
+    "postmortems_complete": [],
+    "postmortems_due": [],
+    "realized_pnl_gbp": 0,
+    "starting_balance_gbp": 1000.0,
+    "timeline_status": "initialized_no_trades",
+    "unrealized_pnl_gbp": 0,
+    "write_authority": false
+  },
+  "cognition": {
+    "analysis_timeline": [
+      "source observation",
+      "research analyst shadow packet",
+      "local research assessment",
+      "deterministic triage",
+      "strategy review pending",
+      "signal integrity gate blocked",
+      "trade layer not reached"
+    ],
+    "blocked_reasons": [
+      "shadow_only_no_signal_integrity_gate",
+      "no_risk_agent_approval",
+      "no_trade_candidate_store",
+      "no_broker_write_authority"
+    ],
+    "boundary": "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist.",
+    "current_focus": [
+      "reviewing shadow-only hypotheses",
+      "local Research Analyst focus: macro_watchlist"
+    ],
+    "evidence_packets": [
+      {
+        "average_trust_score": 0.56,
+        "created_at": "2026-05-18T07:53:33.223145+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:20b1d76b-aad1-4562-b9e9-a12ebfac5a23",
+            "observed_at": "2026-05-17T07:46:28.598362+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+            "trust_score": 0.56
+          }
+        ],
+        "min_trust_score": 0.56,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "bc210659-45b5-4e43-9fc4-4ca31b4860f0",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "b25f2f06-e329-4fe3-bb65-9b341737ef5b"
+      },
+      {
+        "average_trust_score": 0.56,
+        "created_at": "2026-05-18T07:53:33.223161+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:0336025d-ba35-40f9-92dc-e6c13faa35ef",
+            "observed_at": "2026-05-17T10:50:38.440459+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+            "trust_score": 0.56
+          }
+        ],
+        "min_trust_score": 0.56,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "cbfdc227-483d-4208-af85-ece86ef281f5",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "6dcad8ff-b975-4aa5-8470-5a9efc4b5851"
+      },
+      {
+        "average_trust_score": 0.56,
+        "created_at": "2026-05-18T07:53:33.223171+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:7b867c46-ad5c-43b8-89e3-3d8ae7d6ae2c",
+            "observed_at": "2026-05-17T11:15:15.156827+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+            "trust_score": 0.56
+          }
+        ],
+        "min_trust_score": 0.56,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "24e64d8b-6aa9-4809-8043-d5cd593eecbe",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "bf550f3e-5682-4432-a38f-f863fb6f702b"
+      },
+      {
+        "average_trust_score": 0.56,
+        "created_at": "2026-05-18T07:53:33.223181+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:bde1a9ba-00d4-4df0-9488-48c52cf7858c",
+            "observed_at": "2026-05-17T11:31:47.426084+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+            "trust_score": 0.56
+          }
+        ],
+        "min_trust_score": 0.56,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "045cfe88-d670-4306-9f5d-f5f68f8a8ba3",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "ecd80435-78b0-48b9-a224-c4cdac010037"
+      },
+      {
+        "average_trust_score": 0.56,
+        "created_at": "2026-05-18T07:53:33.223190+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:d6514ce8-22b1-4ea6-bdad-107eeb9cdfc3",
+            "observed_at": "2026-05-18T07:53:32.989597+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+            "trust_score": 0.56
+          }
+        ],
+        "min_trust_score": 0.56,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "66ec30d5-431c-4807-a577-d68c1bda7994",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "d5cc0494-c193-415c-8b18-d38e230f4eef"
+      }
+    ],
+    "hypotheses": [
+      {
+        "blocked_reason": "shadow_only_no_signal_integrity_gate",
+        "confidence": 0.427,
+        "created_at": "2026-05-18T07:53:33.223153+00:00",
+        "evidence_packet_id": "bc210659-45b5-4e43-9fc4-4ca31b4860f0",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "macro_watchlist",
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "bc210659-45b5-4e43-9fc4-4ca31b4860f0",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "title": "Shadow watch: macro_watchlist"
+      },
+      {
+        "blocked_reason": "shadow_only_no_signal_integrity_gate",
+        "confidence": 0.427,
+        "created_at": "2026-05-18T07:53:33.223166+00:00",
+        "evidence_packet_id": "cbfdc227-483d-4208-af85-ece86ef281f5",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "macro_watchlist",
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "cbfdc227-483d-4208-af85-ece86ef281f5",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "title": "Shadow watch: macro_watchlist"
+      },
+      {
+        "blocked_reason": "shadow_only_no_signal_integrity_gate",
+        "confidence": 0.427,
+        "created_at": "2026-05-18T07:53:33.223176+00:00",
+        "evidence_packet_id": "24e64d8b-6aa9-4809-8043-d5cd593eecbe",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "macro_watchlist",
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "24e64d8b-6aa9-4809-8043-d5cd593eecbe",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "title": "Shadow watch: macro_watchlist"
+      },
+      {
+        "blocked_reason": "shadow_only_no_signal_integrity_gate",
+        "confidence": 0.427,
+        "created_at": "2026-05-18T07:53:33.223185+00:00",
+        "evidence_packet_id": "045cfe88-d670-4306-9f5d-f5f68f8a8ba3",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "macro_watchlist",
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "045cfe88-d670-4306-9f5d-f5f68f8a8ba3",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "title": "Shadow watch: macro_watchlist"
+      },
+      {
+        "blocked_reason": "shadow_only_no_signal_integrity_gate",
+        "confidence": 0.427,
+        "created_at": "2026-05-18T07:53:33.223194+00:00",
+        "evidence_packet_id": "66ec30d5-431c-4807-a577-d68c1bda7994",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "macro_watchlist",
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "66ec30d5-431c-4807-a577-d68c1bda7994",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "title": "Shadow watch: macro_watchlist"
+      }
+    ],
+    "local_research_assessments": [
+      {
+        "anomalies": [
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation."
+        ],
+        "assessment_id": "d60496da-ba5b-42b7-8390-224cc968400a",
+        "confidence": 0.4,
+        "created_at": "2026-05-17T11:15:15.508141+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "signal_integrity_gate",
+          "risk_agent_review",
+          "market_price_confirmation"
+        ],
+        "mode": "dry_contract",
+        "model": "gemma-4-e4b",
+        "next_questions": [
+          "Which independent source can corroborate this observation?",
+          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
+          "Which stale-data or missing-credential condition could invalidate the packet?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
+        "watch_focus": "macro_watchlist"
+      },
+      {
+        "anomalies": [
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation."
+        ],
+        "assessment_id": "daa62674-a595-49a6-ab4d-73d34da34c23",
+        "confidence": 0.4,
+        "created_at": "2026-05-17T11:31:47.733786+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "signal_integrity_gate",
+          "risk_agent_review",
+          "market_price_confirmation"
+        ],
+        "mode": "dry_contract",
+        "model": "gemma-4-e4b",
+        "next_questions": [
+          "Which independent source can corroborate this observation?",
+          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
+          "Which stale-data or missing-credential condition could invalidate the packet?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
+        "watch_focus": "macro_watchlist"
+      },
+      {
+        "anomalies": [
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation.",
+          "Sample shadow triage packet for runtime enforcement validation."
+        ],
+        "assessment_id": "ca4a0f45-12cc-4098-a31b-cecf9b562b71",
+        "confidence": 0.4,
+        "created_at": "2026-05-18T07:53:33.310803+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "signal_integrity_gate",
+          "risk_agent_review",
+          "market_price_confirmation"
+        ],
+        "mode": "dry_contract",
+        "model": "gemma-4-e4b",
+        "next_questions": [
+          "Which independent source can corroborate this observation?",
+          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
+          "Which stale-data or missing-credential condition could invalidate the packet?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
+        "watch_focus": "macro_watchlist"
+      }
+    ],
+    "model_activity": [
+      {
+        "authority": "non_executable",
+        "current_task": "local shadow assessment",
+        "model": "gemma-4-e4b",
+        "provider": "lm_studio",
+        "role": "Research Analyst",
+        "status": "shadow_only"
+      },
+      {
+        "authority": "non_executable",
+        "current_task": "scenario challenge after local triage",
+        "model": "configured_frontier_model",
+        "provider": "gemini",
+        "role": "Strategy Lead",
+        "status": "not_called"
+      },
+      {
+        "authority": "non_executable",
+        "current_task": "no real-time role",
+        "model": "weekly_oracle",
+        "provider": "quantum_or_classical",
+        "role": "Head of Quant",
+        "status": "deferred"
+      }
+    ],
+    "shadow_packets": [
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-17T07:46:28.598362+00:00",
+        "packet_id": "20b1d76b-aad1-4562-b9e9-a12ebfac5a23",
+        "source_event_refs": [
+          "sample:nasa_firms:physical_anomaly",
+          "sample:fred:macro_context"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "uncertainty": "medium"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-17T10:50:38.440459+00:00",
+        "packet_id": "0336025d-ba35-40f9-92dc-e6c13faa35ef",
+        "source_event_refs": [
+          "sample:nasa_firms:physical_anomaly",
+          "sample:fred:macro_context"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "uncertainty": "medium"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-17T11:15:15.156827+00:00",
+        "packet_id": "7b867c46-ad5c-43b8-89e3-3d8ae7d6ae2c",
+        "source_event_refs": [
+          "sample:nasa_firms:physical_anomaly",
+          "sample:fred:macro_context"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "uncertainty": "medium"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-17T11:31:47.426084+00:00",
+        "packet_id": "bde1a9ba-00d4-4df0-9488-48c52cf7858c",
+        "source_event_refs": [
+          "sample:nasa_firms:physical_anomaly",
+          "sample:fred:macro_context"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "uncertainty": "medium"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-18T07:53:32.989597+00:00",
+        "packet_id": "d6514ce8-22b1-4ea6-bdad-107eeb9cdfc3",
+        "source_event_refs": [
+          "sample:nasa_firms:physical_anomaly",
+          "sample:fred:macro_context"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "uncertainty": "medium"
+      }
+    ],
+    "status": "shadow_ready"
+  },
+  "communications": {
+    "boundary": "Communications are notify-only. The browser and Telegram rail cannot create broker actions or hidden approvals.",
+    "telegram": {
+      "active_message_classes": [
+        "blocked_trade",
+        "insight_digest",
+        "source_degraded",
+        "trade_candidate"
+      ],
+      "bot_configured": false,
+      "bot_username_configured": false,
+      "boundary": "Telegram is outbound-only member communication. It cannot place, approve, reject, modify, close, or resize trades.",
+      "default_chat_configured": false,
+      "dry_run_message_count": 4,
+      "failed_count": 0,
+      "failed_member_count": 0,
+      "last_digest_title": "Insight digest: shadow research queue",
+      "last_failure_reason": "",
+      "last_sent_time": null,
+      "member_count": 5,
+      "mode": "dry_run",
+      "pending_member_count": 5,
+      "pending_queue_count": 4,
+      "recent_messages": [
+        {
+          "created_at": "2026-05-17T05:45:22.426061+00:00",
+          "message_class": "source_degraded",
+          "message_id": "d8a-sample-system-warning",
+          "mode": "dry_run",
+          "send_allowed": false,
+          "status": "queued",
+          "target_ref": "system:source_health",
+          "title": "System warning: credentials pending"
+        },
+        {
+          "created_at": "2026-05-17T05:45:22.425921+00:00",
+          "message_class": "insight_digest",
+          "message_id": "d8a-sample-insight-digest",
+          "mode": "dry_run",
+          "send_allowed": false,
+          "status": "queued",
+          "target_ref": "cognition:shadow_intelligence",
+          "title": "Insight digest: shadow research queue"
+        },
+        {
+          "created_at": "2026-05-17T05:45:22.425747+00:00",
+          "message_class": "blocked_trade",
+          "message_id": "d8a-sample-blocked-trade",
+          "mode": "dry_run",
+          "send_allowed": false,
+          "status": "queued",
+          "target_ref": "trade_intent:d5-sample-blocked-semiconductor",
+          "title": "Blocked: Semiconductor basket watch"
+        },
+        {
+          "created_at": "2026-05-17T05:45:22.424069+00:00",
+          "message_class": "trade_candidate",
+          "message_id": "d8a-sample-trade-candidate",
+          "mode": "dry_run",
+          "send_allowed": false,
+          "status": "queued",
+          "target_ref": "trade_intent:d5-sample-candidate-crude-oil",
+          "title": "Candidate: USO options watch"
+        }
+      ],
+      "retried_count": 0,
+      "schema_version": 1,
+      "send_gate": "disabled",
+      "sent_count": 0,
+      "status": "dry_run",
+      "suppressed_count": 0,
+      "verified_member_count": 0
+    }
+  },
+  "d0_shell": {
+    "live_orchestrator_exposed": false,
+    "routing": [
+      "/login/",
+      "/sign-up/",
+      "/dashboard/"
+    ],
+    "status": "frozen",
+    "surface": "qadam.trade static Supabase-authenticated shell"
+  },
+  "d1_snapshot": {
+    "browser_authority": "read_only",
+    "generated_at": "2026-05-18T07:53:34.492303+00:00",
+    "landing_copy": "landing-page-repo/status/cockpit-status.json",
+    "local_orchestrator_exposed": false,
+    "phase": "D1",
+    "public_safe": true,
+    "read_only": true,
+    "runtime_copy": "data/runtime/cockpit-status.json",
+    "sanitizer_rules": [
+      "no_tokens",
+      "no_secret_names",
+      "no_allowlist_emails",
+      "no_local_absolute_paths",
+      "no_raw_payloads",
+      "no_browser_to_broker_authority"
+    ],
+    "source_of_truth": "local_qadam_runtime_export",
+    "status": "public_safe_snapshot_ready"
+  },
+  "decision_philosophy": {
+    "active_lenses": [
+      {
+        "actors": [
+          "media",
+          "institutions",
+          "markets",
+          "retail_public"
+        ],
+        "claim": "Belief systems and mass narratives can function as coordination technology, shaping attention, fear, risk appetite, and institutional permission.",
+        "claim_type": "narrative_control",
+        "corroboration_status": "foundational_prior",
+        "evidence_boundary": "Private prior only; cannot affect signal confidence without live-source corroboration.",
+        "key": "narrative_coordination_as_market_force",
+        "live_sources_to_check": [
+          "gdelt",
+          "rss",
+          "x",
+          "reddit",
+          "telegram"
+        ],
+        "market_channels": [
+          "prediction_markets",
+          "defence",
+          "semiconductors",
+          "crude_oil"
+        ],
+        "mechanism": "Narratives compress complex power relationships into emotionally legible stories that can move behaviour before hard data arrives.",
+        "observable_signatures": [
+          "synchronized language shifts across news and social feeds",
+          "market repricing before official data confirms the story",
+          "gap between physical-world indicators and public narrative intensity"
+        ]
+      },
+      {
+        "actors": [
+          "governments",
+          "central_banks",
+          "regulators",
+          "large_media"
+        ],
+        "claim": "Institutions may frame self-preservation as public necessity, creating blind spots in official explanations during stress events.",
+        "claim_type": "institutional_incentive",
+        "corroboration_status": "foundational_prior",
+        "evidence_boundary": "Private prior only; cannot affect signal confidence without live-source corroboration.",
+        "key": "institutional_self_preservation_blind_spot",
+        "live_sources_to_check": [
+          "fred",
+          "ecb",
+          "bis",
+          "sec_edgar",
+          "gdelt",
+          "nasa_firms"
+        ],
+        "market_channels": [
+          "rates",
+          "equities",
+          "prediction_markets",
+          "crude_oil"
+        ],
+        "mechanism": "Organizations protect legitimacy, funding, and continuity; official accounts can lag or soften inconvenient operational reality.",
+        "observable_signatures": [
+          "policy language shifts after market stress",
+          "official statements contradicting flow or satellite evidence",
+          "delayed acknowledgement of operational constraints"
+        ]
+      },
+      {
+        "actors": [
+          "united_states",
+          "china",
+          "gulf_states",
+          "brics",
+          "banks",
+          "military_alliances"
+        ],
+        "claim": "The visible political order sits on deeper flows of energy access, security guarantees, dollar liquidity, shipping routes, and institutional control.",
+        "claim_type": "power_hierarchy",
+        "corroboration_status": "foundational_prior",
+        "evidence_boundary": "Private prior only; cannot affect signal confidence without live-source corroboration.",
+        "key": "hierarchical_power_flows_through_energy_security_and_money",
+        "live_sources_to_check": [
+          "fred",
+          "bis",
+          "un_comtrade",
+          "ais_maritime",
+          "nasa_firms",
+          "conflict_tracker"
+        ],
+        "market_channels": [
+          "crude_oil",
+          "silver",
+          "defence",
+          "semiconductors",
+          "fx"
+        ],
+        "mechanism": "Financial, military, and energy systems reinforce one another; stress in one layer can reveal who depends on whom.",
+        "observable_signatures": [
+          "reserve-flow changes",
+          "shipping or chokepoint disruption",
+          "defence posture changes",
+          "commodity stockpile behaviour"
+        ]
+      },
+      {
+        "actors": [
+          "united_states",
+          "china",
+          "taiwan",
+          "iran",
+          "gulf_states",
+          "chipmakers",
+          "stablecoin_issuers"
+        ],
+        "claim": "A US-China bargain could trade financial-market access, Treasury/stablecoin demand, chip constraints, energy access, Taiwan posture, and Iran pressure into one macro settlement.",
+        "claim_type": "geopolitical_scenario",
+        "corroboration_status": "foundational_prior",
+        "evidence_boundary": "Private prior only; cannot affect signal confidence without live-source corroboration.",
+        "key": "us_china_grand_bargain_scenario",
+        "live_sources_to_check": [
+          "sec_edgar",
+          "fred",
+          "un_comtrade",
+          "gdelt",
+          "conflict_tracker",
+          "space_track_celestrak"
+        ],
+        "market_channels": [
+          "semiconductors",
+          "defence",
+          "crude_oil",
+          "prediction_markets",
+          "rates"
+        ],
+        "mechanism": "Great-power bargaining can bundle apparently separate files when each side needs monetary, energy, technology, and security concessions.",
+        "observable_signatures": [
+          "stablecoin or Treasury-demand policy changes",
+          "semiconductor export-control adjustments",
+          "Taiwan military posture changes",
+          "Iran or Gulf-energy diplomatic shifts",
+          "China market-opening signals"
+        ]
+      },
+      {
+        "actors": [
+          "political_elites",
+          "financial_elites",
+          "security_networks",
+          "private_capital"
+        ],
+        "claim": "Informal elite networks, private incentives, and ritualized trust systems can coordinate outcomes before formal institutions disclose them.",
+        "claim_type": "hidden_coordination",
+        "corroboration_status": "foundational_prior",
+        "evidence_boundary": "Private prior only; cannot affect signal confidence without live-source corroboration.",
+        "key": "shadow_networks_as_coordination_risk",
+        "live_sources_to_check": [
+          "sec_edgar",
+          "stock_act",
+          "unusual_whales",
+          "gdelt",
+          "patents",
+          "github"
+        ],
+        "market_channels": [
+          "defence",
+          "semiconductors",
+          "prediction_markets",
+          "equities"
+        ],
+        "mechanism": "Small trusted networks can create early alignment, while public institutions later formalize or rationalize the decision path.",
+        "observable_signatures": [
+          "unusual cross-sector timing",
+          "policy leaks followed by market positioning",
+          "repeated actor overlap across apparently separate events"
+        ]
+      }
+    ],
+    "boundary": "World-model claims are private priors, not factual evidence or trade triggers.",
+    "claim_count": 5,
+    "corpus": "how-the-world-works",
+    "corpus_file_count": 4,
+    "decision_chain": [
+      "private worldview prior",
+      "observable signatures",
+      "live-source corroboration",
+      "Akber 6-stage filter",
+      "Signal Integrity Gate",
+      "Risk Agent",
+      "paper trade or postmortem"
+    ],
+    "default_decision_context": [
+      "power hierarchy",
+      "narrative asymmetry",
+      "institutional incentive",
+      "US-China grand-bargain scenario",
+      "hidden coordination risk"
+    ],
+    "foundational_prior_count": 5,
+    "role": "private_worldview_prior",
+    "status": "ok",
+    "trading_philosophy": "Qadam starts from a power-map worldview: energy, security, money, institutional incentives, narrative control, and hidden coordination shape what markets price late. The worldview powers questions and scenario generation, but live evidence, the Akber filter, Signal Integrity Gate, and Risk Agent decide whether anything can move toward a trade."
+  },
+  "execution_venues": [
+    {
+      "account_scope": "paper",
+      "first_release_allowed": true,
+      "key": "alpaca_paper",
+      "kill_switch_status": "armed",
+      "mode": "disabled",
+      "name": "Alpaca Paper Account",
+      "read_health": "not_started",
+      "write_health": "blocked_foundation_phase"
+    },
+    {
+      "account_scope": "paper_or_read_only_first",
+      "first_release_allowed": true,
+      "key": "prediction_market_router",
+      "kill_switch_status": "armed",
+      "mode": "disabled",
+      "name": "Prediction Market Router",
+      "read_health": "not_started",
+      "write_health": "blocked_foundation_phase"
+    },
+    {
+      "account_scope": "delegated_subaccount_required",
+      "first_release_allowed": false,
+      "key": "privex_base",
+      "kill_switch_status": "armed",
+      "mode": "live_blocked",
+      "name": "PriveX Base Perps",
+      "read_health": "not_started",
+      "write_health": "blocked_first_release"
+    },
+    {
+      "account_scope": "delegated_subaccount_required",
+      "first_release_allowed": false,
+      "key": "privex_coti",
+      "kill_switch_status": "armed",
+      "mode": "live_blocked",
+      "name": "PriveX COTI Perps",
+      "read_health": "not_started",
+      "write_health": "blocked_first_release"
+    }
+  ],
+  "forbidden_actions": [
+    {
+      "key": "live_capital",
+      "reason": "first_release_paper_mode_only",
+      "status": "blocked"
+    },
+    {
+      "key": "browser_to_broker",
+      "reason": "no_direct_ui_to_broker_path",
+      "status": "blocked"
+    },
+    {
+      "key": "llm_to_broker",
+      "reason": "no_llm_to_broker_path",
+      "status": "blocked"
+    },
+    {
+      "key": "broker_write",
+      "reason": "execution_venues_disabled_until_phase_5_gates",
+      "status": "blocked"
+    },
+    {
+      "key": "tradingview_alert_execution",
+      "reason": "future_alerts_can_only_write_observed_signal_events",
+      "status": "blocked"
+    },
+    {
+      "key": "quantum_realtime_trading",
+      "reason": "quantum_is_weekly_oracle_not_execution_engine",
+      "status": "blocked"
+    }
+  ],
+  "fund_manager_notes": {
+    "accepted_count": 0,
+    "allowed_statuses": [
+      "accepted",
+      "implemented",
+      "rejected",
+      "suggestion"
+    ],
+    "allowed_target_types": [
+      "module",
+      "postmortem",
+      "resource",
+      "signal",
+      "source",
+      "strategy",
+      "system",
+      "trade_candidate",
+      "world_model"
+    ],
+    "boundary": "Fund Manager comments are governance notes only. They cannot approve trades, place orders, or expose local secrets.",
+    "browser_write_scope": "comments_only",
+    "comment_count": 1,
+    "event_log_export_count": 0,
+    "implemented_count": 0,
+    "local_event_log_export": "accepted_or_implemented_only",
+    "recent_comments": [
+      {
+        "author_label": "founding_fund_manager",
+        "body": "D8 sample: verify the Fund Manager forum can link a suggestion to the trade layer.",
+        "comment_id": "fbd3e624-df1f-43f7-b70d-2578e2cec562",
+        "created_at": "2026-05-17T05:35:05.906699+00:00",
+        "status": "suggestion",
+        "tags": [
+          "d8",
+          "forum",
+          "trade_layer"
+        ],
+        "target_key": "trade_layer",
+        "target_type": "module",
+        "visibility": "founding_fund_managers"
+      }
+    ],
+    "rejected_count": 0,
+    "schema_version": 1,
+    "status": "ok",
+    "suggestion_count": 1,
+    "supabase_table": "fund_manager_comments",
+    "visibility": "founding_fund_managers"
+  },
+  "generated_at": "2026-05-18T07:53:34.492303+00:00",
+  "live_bridge": {
+    "allowed_methods": [
+      "GET",
+      "HEAD"
+    ],
+    "authentication": "supabase_founding_fund_manager_required",
+    "boundary": "D9 bridge serves the public-safe cockpit status snapshot only. It cannot run shell commands, read secrets, expose the local orchestrator, approve trades, or send broker orders.",
+    "broker_write_route": false,
+    "browser_authority": "read_only",
+    "cache_policy": {
+      "max_age_seconds": 15,
+      "mode": "no_store_live_with_static_fallback",
+      "stale_after_seconds": 60
+    },
+    "endpoint": "/api/cockpit-status",
+    "forbidden_methods": [
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE"
+    ],
+    "generated_at": "2026-05-18T07:53:34.492303+00:00",
+    "health_checks": [
+      "auth_required",
+      "rate_limit_enforced",
+      "method_block_enforced",
+      "snapshot_fallback_available",
+      "broker_write_route_absent"
+    ],
+    "local_orchestrator_exposed": false,
+    "phase": "D9",
+    "publisher": {
+      "payload_source": "public_safe_cockpit_status",
+      "signature_algorithm": "sha256_digest",
+      "signature_configured": false,
+      "signature_file": "status/cockpit-status.signature.json",
+      "status": "local_digest_until_signing_secret_configured"
+    },
+    "rate_limit_per_minute": 60,
+    "read_only": true,
+    "schema_version": 1,
+    "static_fallback": "/status/cockpit-status.json",
+    "status": "read_only_ready",
+    "write_authority": false
+  },
+  "mode": "paper",
+  "modules": [
+    {
+      "authority": "read_only",
+      "current_process": "supervising local modules",
+      "key": "coo",
+      "label": "COO",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Python Orchestrator",
+      "raw_status": "registered",
+      "status": "online"
+    },
+    {
+      "authority": "non_executable",
+      "current_process": "waiting for local LLM readiness",
+      "key": "research_analyst",
+      "label": "Research Analyst",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Local LLM",
+      "raw_status": "pending",
+      "status": "pending"
+    },
+    {
+      "authority": "non_executable",
+      "current_process": "waiting for frontier model probe",
+      "key": "strategy_lead",
+      "label": "Strategy Lead",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Frontier LLM",
+      "raw_status": "pending",
+      "status": "pending"
+    },
+    {
+      "authority": "non_executable",
+      "current_process": "deferred weekly oracle",
+      "key": "head_of_quant",
+      "label": "Head of Quant",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Quantum Compute",
+      "raw_status": "registered",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "recording local audit trail",
+      "key": "event_log",
+      "label": "Event Log",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "Postgres/Timescale",
+      "raw_status": "jsonl_fallback",
+      "status": "local_only"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "holding local memory shell",
+      "key": "knowledge_graph",
+      "label": "Knowledge Graph",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "ChromaDB",
+      "raw_status": "registered",
+      "status": "online"
+    },
+    {
+      "authority": "write_blocked",
+      "current_process": "execution disabled in foundation mode",
+      "key": "execution_registry",
+      "label": "Execution Registry",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Risk Agent",
+      "raw_status": "disabled",
+      "status": "blocked"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "registered",
+      "key": "resource_registry",
+      "label": "Resource Registry",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Reference Provenance",
+      "raw_status": "registered",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "foundational prior",
+      "key": "world_model",
+      "label": "World-Model Lens",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "Private Corpus",
+      "raw_status": "foundational_prior",
+      "status": "local_only"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "manifest permissions available",
+      "key": "agent_os",
+      "label": "Agent OS",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Manifest Registry",
+      "raw_status": "manifest_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "broker-write tools blocked",
+      "key": "agent_runtime",
+      "label": "Agent Runtime",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Permission Gate",
+      "raw_status": "enforced",
+      "status": "online"
+    },
+    {
+      "authority": "non_executable",
+      "current_process": "shadow-only review packets available",
+      "key": "shadow_intelligence",
+      "label": "Shadow Intelligence",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Research Analyst",
+      "raw_status": "shadow_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "local",
+      "key": "governance_forum",
+      "label": "Governance Forum",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "Fund Managers",
+      "raw_status": "local",
+      "status": "local_only"
+    },
+    {
+      "authority": "notify_only",
+      "current_process": "outbound dry-run member communications",
+      "key": "telegram_bot",
+      "label": "Telegram Bot",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "Fund Manager Interface",
+      "raw_status": "dry_run",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "serving authenticated public-safe status snapshots",
+      "key": "live_bridge",
+      "label": "Secure Live Bridge",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "qadam.trade API",
+      "raw_status": "read_only_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "test data ready",
+      "key": "ingestion_spine",
+      "label": "Test Ingestion Spine",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": true,
+      "owner": "World Monitor Adapters",
+      "raw_status": "test_data_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "sample ready",
+      "key": "gdelt_adapter",
+      "label": "GDELT Adapter",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Conflict Pipeline",
+      "raw_status": "sample_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "sample ready",
+      "key": "oref_adapter",
+      "label": "Oref Adapter",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Conflict Pipeline",
+      "raw_status": "sample_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "credential gated",
+      "key": "nasa_firms_adapter",
+      "label": "NASA FIRMS Adapter",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Physical Pipeline",
+      "raw_status": "credential_gated",
+      "status": "degraded"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "sample ready",
+      "key": "fred_adapter",
+      "label": "FRED Adapter",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Macro Pipeline",
+      "raw_status": "sample_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "sample ready",
+      "key": "rss_adapter",
+      "label": "RSS Adapter",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "Narrative Pipeline",
+      "raw_status": "sample_ready",
+      "status": "online"
+    },
+    {
+      "authority": "read_only",
+      "current_process": "static live shell frozen",
+      "key": "cockpit",
+      "label": "Cockpit",
+      "last_heartbeat": "2026-05-18T07:53:34.492303+00:00",
+      "local_only": false,
+      "owner": "qadam.trade",
+      "raw_status": "shell",
+      "status": "online"
+    }
+  ],
+  "process_console": [
+    {
+      "component": "historical_backfill",
+      "message": "historical_backfill: historical_backfill_sample_recorded (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.124711+00:00"
+    },
+    {
+      "component": "historical_backfill",
+      "message": "historical_backfill: historical_backfill_sample_recorded (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.124769+00:00"
+    },
+    {
+      "component": "historical_backfill",
+      "message": "historical_backfill: historical_backfill_sample_recorded (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.124826+00:00"
+    },
+    {
+      "component": "gdelt_adapter",
+      "message": "gdelt_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.252595+00:00"
+    },
+    {
+      "component": "oref_adapter",
+      "message": "oref_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.296885+00:00"
+    },
+    {
+      "component": "nasa_firms_adapter",
+      "message": "nasa_firms_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.344988+00:00"
+    },
+    {
+      "component": "fred_adapter",
+      "message": "fred_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.388731+00:00"
+    },
+    {
+      "component": "rss_adapter",
+      "message": "rss_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-18T07:53:34.430691+00:00"
+    }
+  ],
+  "schema_version": 1,
+  "source_heartbeat_history": [
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-17T11:31:48.330981+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-17T16:29:47.084551+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-18T04:50:39.163681+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-18T07:53:33.969236+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 10,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 12
+      },
+      "checked_at": "2026-05-18T07:53:34.017270+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 14,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    }
+  ],
+  "source_pipeline_summary": [
+    {
+      "adapter_ready_count": 3,
+      "degraded_count": 1,
+      "local_only_count": 0,
+      "missing_credential_count": 1,
+      "online_count": 2,
+      "pending_count": 2,
+      "pipeline": "conflict",
+      "source_count": 5
+    },
+    {
+      "adapter_ready_count": 4,
+      "degraded_count": 1,
+      "local_only_count": 0,
+      "missing_credential_count": 1,
+      "online_count": 3,
+      "pending_count": 2,
+      "pipeline": "macro",
+      "source_count": 6
+    },
+    {
+      "adapter_ready_count": 5,
+      "degraded_count": 4,
+      "local_only_count": 1,
+      "missing_credential_count": 5,
+      "online_count": 3,
+      "pending_count": 2,
+      "pipeline": "market",
+      "source_count": 10
+    },
+    {
+      "adapter_ready_count": 3,
+      "degraded_count": 2,
+      "local_only_count": 0,
+      "missing_credential_count": 3,
+      "online_count": 1,
+      "pending_count": 4,
+      "pipeline": "physical",
+      "source_count": 7
+    },
+    {
+      "adapter_ready_count": 5,
+      "degraded_count": 4,
+      "local_only_count": 0,
+      "missing_credential_count": 4,
+      "online_count": 2,
+      "pending_count": 2,
+      "pipeline": "social",
+      "source_count": 8
+    }
+  ],
+  "trade_layer": {
+    "blocked": [
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached",
+          "catalyst_identification": "failed_no_dated_catalyst",
+          "low_volatility": "not_checked",
+          "obv_volume": "not_reached",
+          "options_distribution_gap": "missing",
+          "technical_setup": "not_reached"
+        },
+        "blocked_reason": "insufficient_independent_corroboration",
+        "boundary": "D5 local test record only. Not an order, not advice, and no broker route exists.",
+        "catalyst": "Semiconductor export-control narrative without enough dated corroboration.",
+        "created_at": "2026-05-16T19:11:01.631306+00:00",
+        "direction": "long_semiconductor_volatility",
+        "evidence_summary": "One narrative input exists, but there is no dated catalyst, no options distribution gap, and no volume confirmation.",
+        "execution_allowed": false,
+        "holding_window": "none",
+        "instrument": "Semiconductor basket watch",
+        "intent_id": "d5-sample-blocked-semiconductor",
+        "invalidation": "Blocked until dated catalyst, second source, and volume confirmation exist.",
+        "market_implied_probability": null,
+        "paper_order_allowed": false,
+        "price_gap": "unknown_no_options_gap",
+        "probability_estimate": 0.38,
+        "proposed_entry": "none",
+        "risk_checks": {
+          "broker_heartbeat": "blocked_no_broker_write",
+          "event_log": "available",
+          "hard_caps": "not_reviewed",
+          "kill_switch": "no_execution_path",
+          "signal_approval": "not_reached"
+        },
+        "risk_size_gbp": 0,
+        "risk_size_pct": 0,
+        "risk_state": "blocked_before_risk_agent",
+        "source_signal_id": "d5-local-fixture",
+        "source_type": "d5_contract_fixture",
+        "status": "blocked",
+        "strategy": "Akber 6-step catalyst-volatility",
+        "tags": [
+          "d5_fixture",
+          "paper_mode",
+          "blocked"
+        ],
+        "updated_at": "2026-05-16T19:11:01.631306+00:00",
+        "venue": "paper_options_watchlist"
+      }
+    ],
+    "boundary": "D5 trade intent is local and non-executing. No broker order path exists.",
+    "candidates": [
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached",
+          "catalyst_identification": "shadow_evidence_exists",
+          "low_volatility": "pending_iv_check",
+          "obv_volume": "pending_volume_confirmation",
+          "options_distribution_gap": "pending_black_scholes_gap",
+          "technical_setup": "pending_entry_zone"
+        },
+        "blocked_reason": "",
+        "boundary": "D5 local test record only. Not an order, not advice, and no broker route exists.",
+        "catalyst": "Energy transport disruption shadow hypothesis from physical and conflict source queues.",
+        "created_at": "2026-05-16T19:11:01.629932+00:00",
+        "direction": "long_volatility",
+        "evidence_summary": "Shadow evidence exists, but Signal Integrity Gate, Strategy Lead review, and Risk Agent sizing are not complete.",
+        "execution_allowed": false,
+        "holding_window": "7-14 days after verified catalyst",
+        "instrument": "USO options watch",
+        "intent_id": "d5-sample-candidate-crude-oil",
+        "invalidation": "Discard if a second independent source does not confirm the catalyst or crude volatility expands before entry.",
+        "market_implied_probability": 0.47,
+        "paper_order_allowed": false,
+        "price_gap": "+7pp estimated edge pending Black-Scholes Gap report",
+        "probability_estimate": 0.54,
+        "proposed_entry": "Wait for IV percentile below 20 and structural break above prior-week range.",
+        "risk_checks": {
+          "broker_heartbeat": "blocked_no_broker_write",
+          "event_log": "available",
+          "hard_caps": "not_reviewed",
+          "kill_switch": "no_execution_path",
+          "signal_approval": "not_reached"
+        },
+        "risk_size_gbp": 0,
+        "risk_size_pct": 0,
+        "risk_state": "not_reviewed_by_risk_agent",
+        "source_signal_id": "d5-local-fixture",
+        "source_type": "d5_contract_fixture",
+        "status": "candidate",
+        "strategy": "Akber 6-step catalyst-volatility",
+        "tags": [
+          "d5_fixture",
+          "paper_mode",
+          "candidate"
+        ],
+        "updated_at": "2026-05-16T19:11:01.629932+00:00",
+        "venue": "paper_options_watchlist"
+      }
+    ],
+    "closed_trades": [],
+    "open_positions": [],
+    "postmortems_complete": [],
+    "postmortems_due": [],
+    "staged_orders": [],
+    "store_status": "ok",
+    "submitted_orders": [],
+    "summary": {
+      "blocked_count": 1,
+      "boundary": "Local trade intent store only. No broker order path exists in D5.",
+      "candidate_count": 1,
+      "closed_trade_count": 0,
+      "execution_allowed_count": 0,
+      "intent_count": 2,
+      "observed_signal_count": 1,
+      "open_position_count": 0,
+      "paper_order_allowed_count": 0,
+      "postmortem_due_count": 0,
+      "schema_version": 1,
+      "staged_order_count": 0,
+      "status": "ok",
+      "submitted_order_count": 0
+    },
+    "watching": [
+      {
+        "alert_id": "d7-sample-tradingview-crude-volatility",
+        "boundary": "D7 observed TradingView alert only. It can enter the Event Log, but it cannot create a trade candidate, paper order, or broker action.",
+        "chart_context": "D7 local fixture for TradingView paid-account alert ingestion. It is an observed chart event, not a trade candidate.",
+        "direction": "watch_long_volatility",
+        "execution_allowed": false,
+        "indicator_state": {
+          "akber_stage": "technical_confirmation_only",
+          "macd": "pending_cross",
+          "rsi": "recovering",
+          "volume": "needs_confirmation"
+        },
+        "instrument": "TVC:USOIL",
+        "observed_at": "2026-05-16T00:00:00+00:00",
+        "paper_order_allowed": false,
+        "price": 82.5,
+        "received_at": "2026-05-16T19:56:03.251559+00:00",
+        "setup_type": "volatility_compression_watch",
+        "source": "tradingview_alerts",
+        "source_type": "tradingview_paid_alert",
+        "status": "observed_signal",
+        "symbol": "TVC:USOIL",
+        "timeframe": "1D",
+        "trade_candidate_created": false,
+        "trigger": "Daily close near prior-week range with crude volatility compression."
+      }
+    ]
+  },
+  "tradingview_alerts": {
+    "alert_count": 1,
+    "boundary": "TradingView alerts are observed signals only. D7 has no execution route.",
+    "duplicate_protection": "dedupe_key_sha256",
+    "execution_allowed_count": 0,
+    "latest_observed_at": "2026-05-16T00:00:00+00:00",
+    "observed_signals": [
+      {
+        "alert_id": "d7-sample-tradingview-crude-volatility",
+        "boundary": "D7 observed TradingView alert only. It can enter the Event Log, but it cannot create a trade candidate, paper order, or broker action.",
+        "chart_context": "D7 local fixture for TradingView paid-account alert ingestion. It is an observed chart event, not a trade candidate.",
+        "direction": "watch_long_volatility",
+        "execution_allowed": false,
+        "indicator_state": {
+          "akber_stage": "technical_confirmation_only",
+          "macd": "pending_cross",
+          "rsi": "recovering",
+          "volume": "needs_confirmation"
+        },
+        "instrument": "TVC:USOIL",
+        "observed_at": "2026-05-16T00:00:00+00:00",
+        "paper_order_allowed": false,
+        "price": 82.5,
+        "received_at": "2026-05-16T19:56:03.251559+00:00",
+        "setup_type": "volatility_compression_watch",
+        "source": "tradingview_alerts",
+        "source_type": "tradingview_paid_alert",
+        "status": "observed_signal",
+        "symbol": "TVC:USOIL",
+        "timeframe": "1D",
+        "trade_candidate_created": false,
+        "trigger": "Daily close near prior-week range with crude volatility compression."
+      }
+    ],
+    "paper_order_allowed_count": 0,
+    "receiver_status": "local_contract_only",
+    "status": "ok",
+    "trade_candidate_created_count": 0
+  },
+  "watching": [
+    {
+      "auth_class": "credential_required",
+      "cadence": "hourly",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "conflict",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_port",
+      "source_key": "acled",
+      "source_name": "ACLED API",
+      "status": "degraded",
+      "tier": 1,
+      "trust_score": 0.86
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "daily",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "conflict",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "ucdp",
+      "source_name": "UCDP API",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "15 minutes",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "conflict",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "adapter_live_optional",
+      "source_key": "gdelt",
+      "source_name": "GDELT Project API",
+      "status": "online",
+      "tier": 2,
+      "trust_score": 0.65
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "5 seconds in spec",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "conflict",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "adapter_live_optional",
+      "source_key": "oref",
+      "source_name": "Oref API",
+      "status": "online",
+      "tier": 1,
+      "trust_score": 0.95
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "derived",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 0,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "conflict",
+      "promoted_adapter": false,
+      "raw_status": "derived",
+      "readiness": "derived signal",
+      "registry_status": "derived",
+      "source_key": "conflict_tracker",
+      "source_name": "Conflict Tracker",
+      "status": "pending",
+      "tier": 1,
+      "trust_score": null
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "3 hours",
+      "can_influence_signals": false,
+      "credential_status": "configured",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "adapter_live_requires_key",
+      "source_key": "nasa_firms",
+      "source_name": "NASA FIRMS",
+      "status": "online",
+      "tier": 1,
+      "trust_score": 0.88
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "5 minutes",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_port",
+      "source_key": "wingbits",
+      "source_name": "Wingbits ADS-B",
+      "status": "degraded",
+      "tier": 2,
+      "trust_score": 0.73
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "15 minutes",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 2,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "needs_choice",
+      "source_key": "ais_maritime",
+      "source_name": "AIS Maritime",
+      "status": "degraded",
+      "tier": 2,
+      "trust_score": 0.79
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "daily",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "arcgis_usace",
+      "source_name": "ArcGIS / USACE Geospatial",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "account_required",
+      "cadence": "6 hours",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "needs_clarity",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": false,
+      "raw_status": "deferred",
+      "readiness": "deferred",
+      "registry_status": "needs_clarity",
+      "source_key": "space_track_celestrak",
+      "source_name": "Space-Track / CelesTrak TLEs",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "30 minutes",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "gps_jamming",
+      "source_name": "GPS Jamming Monitors",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "30 minutes",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "physical",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "internet_outage",
+      "source_name": "Internet Outage / IODA",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "6 hours or daily",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 2,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "macro",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "adapter_live_optional",
+      "source_key": "fred",
+      "source_name": "FRED API",
+      "status": "online",
+      "tier": 2,
+      "trust_score": 0.9
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "daily or event-driven",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "macro",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "ready_to_build",
+      "source_key": "bls",
+      "source_name": "BLS API",
+      "status": "online",
+      "tier": 3,
+      "trust_score": 0.88
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "weekly",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "macro",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "bis",
+      "source_name": "BIS Statistics",
+      "status": "pending",
+      "tier": 3,
+      "trust_score": null
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "daily",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "macro",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "ready_to_build",
+      "source_key": "ecb",
+      "source_name": "ECB Data Portal",
+      "status": "online",
+      "tier": 3,
+      "trust_score": 0.86
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "weekly",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "macro",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_build",
+      "source_key": "un_comtrade",
+      "source_name": "UN Comtrade API",
+      "status": "degraded",
+      "tier": 3,
+      "trust_score": 0.81
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "weekly or event-driven",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": "needs_clarity",
+      "endpoint_count": 2,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "macro",
+      "promoted_adapter": false,
+      "raw_status": "deferred",
+      "readiness": "deferred",
+      "registry_status": "needs_clarity",
+      "source_key": "usgs",
+      "source_name": "USGS",
+      "status": "pending",
+      "tier": 3,
+      "trust_score": null
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "5 minutes during market hours",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "needs_new_adapter",
+      "source_key": "unusual_whales",
+      "source_name": "UnusualWhales",
+      "status": "degraded",
+      "tier": 1,
+      "trust_score": 0.71
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "5 minutes",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "needs_new_adapter",
+      "source_key": "polymarket",
+      "source_name": "Polymarket",
+      "status": "online",
+      "tier": 1,
+      "trust_score": 0.74
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "5 minutes",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "needs_new_adapter",
+      "source_key": "kalshi",
+      "source_name": "Kalshi",
+      "status": "online",
+      "tier": 1,
+      "trust_score": 0.76
+    },
+    {
+      "auth_class": "public_or_none",
+      "cadence": "15 minutes",
+      "can_influence_signals": false,
+      "credential_status": "not_required",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "hyperliquid",
+      "source_name": "Hyperliquid Perps",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "real-time stream plus REST fallback",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 2,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "needs_new_adapter",
+      "source_key": "alpaca",
+      "source_name": "Alpaca Markets API",
+      "status": "degraded",
+      "tier": 1,
+      "trust_score": 0.82
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "varies",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": false,
+      "raw_status": "fallback_only",
+      "readiness": "fallback only",
+      "registry_status": "fallback",
+      "source_key": "rapidapi",
+      "source_name": "RapidAPI Hub",
+      "status": "pending",
+      "tier": 3,
+      "trust_score": null
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "15 minutes",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": false,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_build",
+      "source_key": "coinglass",
+      "source_name": "Coinglass",
+      "status": "degraded",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "10 minutes",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": false,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_build",
+      "source_key": "chainlink",
+      "source_name": "Chainlink Price Feeds",
+      "status": "degraded",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "account_required",
+      "cadence": "real-time",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": false,
+      "raw_status": "local_bridge_required",
+      "readiness": "local bridge required",
+      "registry_status": "local_bridge",
+      "source_key": "bookmap",
+      "source_name": "Bookmap / Order Flow",
+      "status": "local_only",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "5 minutes",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 3,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "adapter_live_optional",
+      "source_key": "rss",
+      "source_name": "RSS / Atom Feeds",
+      "status": "online",
+      "tier": 2,
+      "trust_score": 0.78
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "real-time or polling",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_port",
+      "source_key": "telegram",
+      "source_name": "Telegram APIs / Scrapers",
+      "status": "degraded",
+      "tier": 3,
+      "trust_score": 0.55
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "15 minutes",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_build",
+      "source_key": "twitter_x",
+      "source_name": "Twitter / X API v2",
+      "status": "degraded",
+      "tier": 2,
+      "trust_score": 0.52
+    },
+    {
+      "auth_class": "credential_required",
+      "cadence": "30 minutes",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": true,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_build",
+      "source_key": "reddit",
+      "source_name": "Reddit API",
+      "status": "degraded",
+      "tier": 3,
+      "trust_score": 0.46
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "30 minutes",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 2,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": true,
+      "raw_status": "live_optional",
+      "readiness": "adapter ready",
+      "registry_status": "ready_to_build",
+      "source_key": "sec_edgar",
+      "source_name": "SEC EDGAR API",
+      "status": "online",
+      "tier": 3,
+      "trust_score": 0.84
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "daily or event-driven",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": "needs_clarity",
+      "endpoint_count": 0,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": false,
+      "raw_status": "deferred",
+      "readiness": "deferred",
+      "registry_status": "needs_clarity",
+      "source_key": "stock_act",
+      "source_name": "STOCK Act Filings",
+      "status": "pending",
+      "tier": 3,
+      "trust_score": null
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "weekly",
+      "can_influence_signals": false,
+      "credential_status": "unknown",
+      "degraded_reason": null,
+      "endpoint_count": 2,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": false,
+      "raw_status": "ready_to_build",
+      "readiness": "ready to build",
+      "registry_status": "ready_to_build",
+      "source_key": "patents",
+      "source_name": "Patent Filings",
+      "status": "pending",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "review_required",
+      "cadence": "daily",
+      "can_influence_signals": false,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
+      "endpoint_count": 1,
+      "influence_boundary": "blocked_until_signal_integrity_gate",
+      "last_heartbeat": "2026-05-18T07:53:34.492304+00:00",
+      "last_payload_time": null,
+      "latency_ms": null,
+      "pipeline": "social",
+      "promoted_adapter": false,
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
+      "registry_status": "ready_to_build",
+      "source_key": "github",
+      "source_name": "GitHub API",
+      "status": "degraded",
+      "tier": 4,
+      "trust_score": null
+    },
+    {
+      "auth_class": "account_required",
+      "cadence": "event-driven from paid TradingView alerts",
+      "can_influence_signals": false,
+      "credential_status": "receiver_pending",
+      "degraded_reason": null,
+      "endpoint_count": 0,
+      "influence_boundary": "observed_signal_only_no_execution_path",
+      "last_heartbeat": "2026-05-16T00:00:00+00:00",
+      "last_payload_time": "2026-05-16T00:00:00+00:00",
+      "latency_ms": null,
+      "pipeline": "market",
+      "promoted_adapter": true,
+      "raw_status": "ok",
+      "readiness": "observed alert source",
+      "registry_status": "d7_local_contract",
+      "source_key": "tradingview_paid_alerts",
+      "source_name": "TradingView Paid Alerts",
+      "status": "online",
+      "tier": 2,
+      "trust_score": null
+    }
+  ]
+}
