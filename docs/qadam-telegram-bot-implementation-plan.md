@@ -193,12 +193,16 @@ Exit gate:
 
 Status: implemented for D8A as a local dry-run contract. The public status key is `communications.telegram`; it exposes mode, send gate, member counts, queue counts, message classes, recent message metadata, and an outbound-only boundary.
 
+Current local state as of 2026-05-18: bot token and bot username are configured in the ignored local secret file, while `TELEGRAM_DEFAULT_CHAT_ID` is still pending. The send gate remains disabled and dry-run remains enabled.
+
 ### Phase T1 - BotFather Setup And Local Secret
 
 Build:
 
 - Create bot through BotFather.
 - Store `TELEGRAM_BOT_TOKEN` locally.
+- Store `TELEGRAM_BOT_USERNAME` locally for diagnostics.
+- Add `TELEGRAM_DEFAULT_CHAT_ID` only after the target chat has messaged the bot or the bot has been added to the private test group.
 - Add `.env.example` placeholders only.
 - Add `scripts/check_telegram_config.py`.
 

@@ -39,7 +39,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://api.acleddata.com/acled/read",),
         "hourly",
         "500 requests/day free tier; budget 24/day",
-        ("ACLED_EMAIL", "ACLED_PASSWORD", "ACLED_ACCESS_TOKEN"),
+        ("ACLED_EMAIL", "ACLED_PASSWORD", "ACLED_ACCESS_TOKEN", "ACLED_REFRESH_TOKEN"),
         "ready_to_port",
         "World Monitor has token management patterns.",
     ),

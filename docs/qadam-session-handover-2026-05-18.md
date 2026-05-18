@@ -52,16 +52,24 @@ Important verified numbers from the last completed run:
 - `source_count=35`
 - `pipeline_count=5`
 - `promoted_adapter_count=19`
-- `missing_credential_source_count=14`
+- `missing_credential_source_count=11`
 - `deferred_count=3`
 - `trust_score_above_half_count=22`
 - `physical_logistics_latency_pass_count=3`
 - `historical_backfill_plan_count=12`
-- `historical_backfill_run_recorded_count=6`
-- `historical_backfill_run_blocked_count=6`
+- `historical_backfill_run_recorded_count=8`
+- `historical_backfill_run_blocked_count=4`
 - `paper_account_current_balance_gbp=1000.0`
 - `live_capital_enabled=False`
 - `postgres_timescale_status=offline`
+
+Local credential status as of 2026-05-18:
+
+- Stored locally in `data/runtime/qadam-secrets.env` with strict local permissions: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and local LM Studio settings.
+- Still missing or not usable locally: Kalshi credentials, Telegram default chat ID, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
+- Telegram remains dry-run and disabled for sends until a default chat ID and explicit send approval exist.
+- ACLED token refresh is now a tracked credential requirement, but automatic refresh still needs implementation and a live read-only check.
+- Kalshi is blocked by current location/account availability and should remain deferred until eligibility is resolved.
 
 ## Key Boundary
 
@@ -78,9 +86,9 @@ What is real:
 
 What still needs work:
 
-- Add missing provider credentials locally.
 - Start Postgres/Timescale locally.
-- Run true live adapter checks source by source.
+- Run true live adapter checks source by source for the newly configured local keys.
+- Add remaining provider credentials only when each source is needed.
 - Run true historical backfills.
 - Replace Trust Score priors with real observation/backtest scores.
 - Promote paper broker read-only checks before any execution work.
@@ -116,37 +124,30 @@ cd /Users/raminhoodeh/Desktop/qadam
 ./scripts/check_postgres_timescale_ingestion.py --require-live
 ```
 
-2. Add Batch A API keys from `docs/qadam-api-key-acquisition-plan.md`:
-
-- `NASA_FIRMS_API_KEY`
-- `ALPACA_API_KEY`
-- `ALPACA_API_SECRET`
-- `ALPACA_PAPER=true`
-- `KALSHI_API_KEY`
-- `KALSHI_API_SECRET`
-- `ACLED_ACCESS_TOKEN` or `ACLED_EMAIL` plus `ACLED_PASSWORD`
-- `FRED_API_KEY`
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_BOT_USERNAME`
-- `TELEGRAM_DEFAULT_CHAT_ID`
-
-3. Validate after each key:
+2. Validate the locally configured Batch A keys without exposing values:
 
 ```bash
 ./start_qadam.sh
 ```
 
-4. Run source-specific checks:
+3. Run source-specific checks only after approving live provider calls:
 
 ```bash
 ./scripts/check_nasa_firms_adapter.py --live
 ./scripts/check_phase1_live_adapters.py --live --source=alpaca
-./scripts/check_phase1_live_adapters.py --live --source=kalshi
 ./scripts/check_phase1_live_adapters.py --live --source=acled
 ./scripts/check_fred_adapter.py --live
 ```
 
-5. Refresh and deploy the cockpit only after checks pass:
+4. Keep Kalshi deferred until credentials and location eligibility are available:
+
+```bash
+./scripts/check_phase1_live_adapters.py --live --source=kalshi
+```
+
+5. Add `TELEGRAM_DEFAULT_CHAT_ID` only after the bot has received a first message from the target chat. Keep `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true` until explicit send testing is approved.
+
+6. Refresh and deploy the cockpit only after checks pass:
 
 ```bash
 cd /Users/raminhoodeh/Desktop/qadam/landing-page-repo

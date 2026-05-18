@@ -28,6 +28,7 @@ KALSHI_API_SECRET=
 ACLED_EMAIL=
 ACLED_PASSWORD=
 ACLED_ACCESS_TOKEN=
+ACLED_REFRESH_TOKEN=
 UNUSUAL_WHALES_API_KEY=
 FRED_API_KEY=
 QCTRL_API_KEY=
@@ -53,7 +54,7 @@ If a key is ever pasted into a chat, committed, or shown publicly, rotate it at 
 | 1 | NASA FIRMS | `NASA_FIRMS_API_KEY` | Enables Phase 1D physical anomaly monitoring for ports, oil corridors, and chokepoints. | Request a free FIRMS MAP_KEY from the official FIRMS API page. |
 | 2 | Alpaca Paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Required for the £1000 paper-account proof rail once the execution adapter is built. | Create/sign in to Alpaca, open Paper Trading, generate paper API keys, and use the paper endpoint. |
 | 3 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Required for prediction-market monitoring and later guarded execution. | Create an API key from Kalshi account settings. Store the private key immediately because it cannot be retrieved later. |
-| 4 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, later `ACLED_ACCESS_TOKEN` | High-value conflict and geopolitical event source. | Create a myACLED account, then request an API auth token with your credentials. |
+| 4 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | High-value conflict and geopolitical event source. | Create a myACLED account, then request API auth and refresh tokens. Prefer token refresh automation over repeated password use. |
 | 5 | Unusual Whales | `UNUSUAL_WHALES_API_KEY` | Options flow, dark pool, congressional trading, and volatility context. | Subscribe/request API access, then create/copy the API token from the API dashboard. |
 | 6 | FRED | `FRED_API_KEY` | Better official macro API access. | Log into a FRED account and request a distinct API key for Qadam. Qadam can still use public CSV fallback without it. |
 
@@ -92,9 +93,10 @@ Setup path:
 
 1. Create the bot in Telegram through BotFather.
 2. Store the token only in `data/runtime/qadam-secrets.env`.
-3. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
-4. Verify the dashboard shows Telegram as disabled/dry-run.
-5. Send one explicit private test message only after the local checks pass.
+3. Send one message to the bot or add it to the intended private test group, then capture `TELEGRAM_DEFAULT_CHAT_ID` locally.
+4. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
+5. Verify the dashboard shows Telegram as disabled/dry-run.
+6. Send one explicit private test message only after the local checks pass.
 
 Never commit the bot token or chat IDs. If either appears in chat, Git, screenshots, or public dashboard output, rotate the token and replace the chat registry before using Telegram for real delivery.
 
@@ -111,6 +113,8 @@ Qadam does not need quantum hardware to complete Phase 1D. Keep these as readine
 ## Current Phase 1D State
 
 NASA FIRMS is now the first physical pipeline adapter promoted into Qadam. Without `NASA_FIRMS_API_KEY`, the adapter is healthy in sample mode and marked `unavailable_missing_credentials` for live mode. With the key configured, `scripts/check_nasa_firms_adapter.py --live` can make a read-only FIRMS area CSV request and archive the sanitized result locally.
+
+As of 2026-05-18, NASA FIRMS, Alpaca paper, ACLED, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and LM Studio settings are configured in the local ignored secret file. Kalshi and Telegram default chat ID remain pending.
 
 Official references:
 

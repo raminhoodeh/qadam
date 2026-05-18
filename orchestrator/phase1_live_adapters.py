@@ -47,7 +47,11 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         sample_summary="ACLED conflict event near an energy or defence-relevant region.",
         primary_endpoint="https://api.acleddata.com/acled/read",
         required_any_secret_groups=(("ACLED_ACCESS_TOKEN",), ("ACLED_EMAIL", "ACLED_PASSWORD")),
-        notes="Credential-gated ACLED read path. Token preferred; email/password remains supported as a local-only fallback.",
+        notes=(
+            "Credential-gated ACLED read path. Token preferred; email/password remains "
+            "supported as a local-only fallback. ACLED_REFRESH_TOKEN is tracked for "
+            "future automatic token renewal."
+        ),
     ),
     "unusual_whales": Phase1AdapterConfig(
         key="unusual_whales",

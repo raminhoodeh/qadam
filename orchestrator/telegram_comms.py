@@ -18,6 +18,7 @@ from uuid import uuid4
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.intelligence import shadow_intelligence_summary
+from orchestrator.secrets import secret_status
 from orchestrator.trade_intent import TradeIntentStore, ensure_d5_sample_trade_intents
 
 TELEGRAM_COMMUNICATIONS_SCHEMA_VERSION = 1
@@ -338,6 +339,9 @@ class TelegramCommunicationsStore:
     def public_status(self) -> dict[str, Any]:
         members = self.ensure_member_registry()
         outbox = self.read_outbox()
+        bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
+        bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
+        default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
         counts = Counter(message.status for message in outbox)
         verified_members = [
             member for member in members if member.status == "verified" and bool(member.chat_id)
@@ -354,7 +358,7 @@ class TelegramCommunicationsStore:
             status = "dry_run"
         elif not self.settings.telegram_enabled:
             status = "disabled"
-        elif not self.settings.telegram_bot_configured:
+        elif not bot_configured:
             status = "degraded"
         else:
             status = "configured"
@@ -363,9 +367,9 @@ class TelegramCommunicationsStore:
             "schema_version": TELEGRAM_COMMUNICATIONS_SCHEMA_VERSION,
             "mode": "dry_run" if self.settings.telegram_dry_run else "live_send",
             "send_gate": "enabled" if self.settings.telegram_enabled else "disabled",
-            "bot_configured": self.settings.telegram_bot_configured,
-            "bot_username_configured": self.settings.telegram_bot_username_configured,
-            "default_chat_configured": self.settings.telegram_default_chat_configured,
+            "bot_configured": bot_configured,
+            "bot_username_configured": bot_username_configured,
+            "default_chat_configured": default_chat_configured,
             "member_count": len(members),
             "verified_member_count": len(verified_members),
             "pending_member_count": len(pending_members),

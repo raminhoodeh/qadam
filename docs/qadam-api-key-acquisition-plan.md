@@ -42,6 +42,25 @@ Use four passes:
 
 Do not buy all providers upfront. The first useful version of Qadam should work with free/public data, Alpaca paper, Kalshi/Polymarket public market data, NASA FIRMS, FRED, BLS, SEC EDGAR, RSS, GDELT, Oref, and the local LLM.
 
+## 2A. Current Local Credential State
+
+As of 2026-05-18, the local MacBook secret file has configured values for these providers, with no values committed or documented:
+
+- NASA FIRMS.
+- Alpaca paper.
+- ACLED email/password, access token, and refresh token.
+- FRED.
+- Q-CTRL.
+- Telegram bot token and bot username.
+- Gemini/Google model keys and local LM Studio settings.
+
+Still pending:
+
+- Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
+- Telegram still needs `TELEGRAM_DEFAULT_CHAT_ID` before any real delivery target is configured.
+- ACLED token refresh automation needs implementation before relying on the access token long-term.
+- UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials.
+
 ## 3. Batch A - Get These First
 
 These are the highest-value keys for Phase 1 and the first paper proof.
@@ -51,7 +70,7 @@ These are the highest-value keys for Phase 1 and the first paper proof.
 | 1 | NASA FIRMS | Free | `NASA_FIRMS_API_KEY` | Request a FIRMS MAP_KEY from NASA. | `./scripts/check_nasa_firms_adapter.py --live` |
 | 2 | Alpaca Paper | Free to start | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Create an Alpaca account, open Paper Trading, generate paper API keys. Use paper keys only. | `./scripts/check_phase1_live_adapters.py --live --source=alpaca` |
 | 3 | Kalshi | Usually free key; trading fees later | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Create a Kalshi account, generate API credentials, keep read-only/paper posture until execution policy exists. | `./scripts/check_phase1_live_adapters.py --live --source=kalshi` |
-| 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN` or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Prefer token over password storage. | `./scripts/check_phase1_live_adapters.py --live --source=acled` |
+| 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Prefer token plus refresh-token automation over repeated password use. | `./scripts/check_phase1_live_adapters.py --live --source=acled` |
 | 5 | FRED | Free | `FRED_API_KEY` | Create a FRED API key. Qadam has CSV fallback, but a key improves reliability. | `./scripts/check_fred_adapter.py --live` |
 | 6 | Telegram Bot | Free | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID` | Create a bot with BotFather. Keep `QADAM_TELEGRAM_DRY_RUN=true` first. | `./scripts/check_telegram_config.py && ./scripts/check_telegram_outbox.py` |
 
@@ -63,6 +82,8 @@ Minimum useful outcome after Batch A:
 - Macro data can be read.
 - Telegram can be dry-run without sending.
 - All credentials remain local.
+
+Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, and the Telegram bot token are locally configured. Kalshi and Telegram default chat ID remain the two practical gaps.
 
 ## 4. Batch B - Add Confirmation Feeds
 

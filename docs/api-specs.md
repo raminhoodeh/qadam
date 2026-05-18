@@ -43,6 +43,13 @@ Not yet proven live:
 - Any public source still needs live latency, provider-response, replay, and rate-limit checks before it can count as a mature feed.
 - No adapter may promote signal confidence or create paper/live orders by itself.
 
+Current local credential snapshot as of 2026-05-18:
+
+- Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username, Gemini/Google model keys, and LM Studio settings.
+- Pending or deferred: Kalshi credentials, Telegram default chat ID, UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket.
+- ACLED refresh-token automation is required before treating ACLED as durable live infrastructure.
+- Telegram remains outbound-only, dry-run, and send-disabled until a chat ID and explicit send-test approval exist.
+
 ## 2. API Onboarding Batches
 
 The full inventory is large. Qadam should add keys in batches so the system remains testable.
@@ -54,13 +61,13 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Provider | Placeholders | Why It Matters |
 | --- | --- | --- |
 | NASA FIRMS | `NASA_FIRMS_API_KEY` | Thermal anomalies near refineries, ports, logistics corridors, military zones, and commodity infrastructure. |
-| ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN` | Conflict and protest event data for escalation monitoring. |
+| ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | Conflict and protest event data for escalation monitoring. |
 | UnusualWhales | `UNUSUAL_WHALES_API_KEY` | Options flow, dark pool, gamma, congressional trading, and institutional confirmation. |
 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Prediction-market monitoring and later guarded paper/live venue path. |
 | Alpaca paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account mirror and eventual £1000 autonomous test execution. |
 | Gemini | `GEMINI_API_KEY` | Frontier LLM Strategy Lead / deep research packets. |
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Founding Fund Manager cockpit auth. |
-| Telegram bot | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_DEFAULT_CHAT_ID` | Outbound member communications, alerts, and delivery status. |
+| Telegram bot | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID` | Outbound member communications, alerts, and delivery status. |
 
 ### Batch B - Market, Macro, And Social Confirmation
 
@@ -108,7 +115,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 
 | # | Source | Pipeline | Tier | Credential Placeholders | Endpoint / Access Pattern | Qadam Use |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | ACLED API | Conflict | 1 | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN` | `https://api.acleddata.com/acled/read` | Political violence, protests, port-region escalation, and corridor risk. |
+| 1 | ACLED API | Conflict | 1 | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | `https://api.acleddata.com/acled/read` | Political violence, protests, port-region escalation, and corridor risk. |
 | 2 | UCDP API | Conflict | 4 | `UCDP_ACCESS_TOKEN` optional/reference | `https://ucdpapi.pcr.uu.se/api/gedevents/23.1` | Historical conflict base rates and longer-cycle geopolitical context. |
 | 3 | GDELT Project API | Conflict | 2 | none | `https://api.gdeltproject.org/api/v2/doc/doc` | News tone, narrative velocity, global event extraction, and cross-language tension maps. |
 | 4 | Oref API | Conflict | 1 | `OREF_PROXY_AUTH` optional | `https://www.oref.org.il/WarningMessages/alert/alerts.json` | Israeli Home Front Command alerts; high-trust regional instability signal. |
@@ -249,6 +256,7 @@ IBKR_PAPER=true
 ACLED_EMAIL=
 ACLED_PASSWORD=
 ACLED_ACCESS_TOKEN=
+ACLED_REFRESH_TOKEN=
 UCDP_ACCESS_TOKEN=
 OREF_PROXY_AUTH=
 
