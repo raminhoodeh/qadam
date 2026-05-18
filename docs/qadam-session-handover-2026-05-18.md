@@ -89,6 +89,7 @@ What is real:
 What still needs work:
 
 - Start Postgres/Timescale locally.
+- Dedicated bootstrap now exists at `scripts/start_postgres_timescale_ingestion.sh`, but the current Mac session has no Docker-compatible CLI available, so it exits with `postgres_timescale_runtime_status=missing`.
 - Run true live adapter checks source by source for the newly configured local keys.
 - Add remaining provider credentials only when each source is needed.
 - Run true historical backfills.
@@ -122,8 +123,9 @@ If a key is ever exposed in chat or a screenshot, rotate it at the provider befo
 
 ```bash
 cd /Users/raminhoodeh/Desktop/qadam
-./scripts/start_local_stores.sh
+./scripts/start_postgres_timescale_ingestion.sh
 ./scripts/check_postgres_timescale_ingestion.py --require-live
+./scripts/check_postgres_timescale_replay.py --require-full-source-coverage
 ```
 
 2. Validate the locally configured Batch A keys without exposing values:

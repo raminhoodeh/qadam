@@ -173,5 +173,5 @@ The acquisition phase is complete when:
 - At least one macro source, one conflict source, one prediction-market source, one paper-account source, and one physical/logistics source are live.
 - At least two physical/logistics sources pass live trust/latency checks.
 - At least 20 sources have Trust Score above 0.5 using real observations, not only priors.
-- Postgres/Timescale durable ingestion is running with `--require-live`.
+- Postgres/Timescale durable ingestion is running through `scripts/start_postgres_timescale_ingestion.sh`, and replay coverage passes with `scripts/check_postgres_timescale_replay.py --require-full-source-coverage`.
 - No key has been committed, pasted, or exposed.

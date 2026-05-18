@@ -270,6 +270,7 @@ Current local store state:
 - Until Docker is running, Postgres falls back to local JSONL Event Log and Chroma remains an empty Knowledge Graph shell.
 - `scripts/bootstrap_runtime.sh` creates a local `.venv` using Python 3.12 and installs Qadam dependencies.
 - `scripts/start_local_stores.sh` starts local container services, applies migrations, and seeds durable registry tables when Docker/OrbStack/Podman/Colima is available.
+- `scripts/start_postgres_timescale_ingestion.sh` is the Postgres-only durable-ingestion bootstrap: it starts the Timescale service, waits for readiness, applies migrations, seeds reference/world-model data, writes all 35 deterministic source observations, and verifies replay coverage.
 - `orchestrator/chroma_store.py` initializes an embedded local Chroma Knowledge Graph even before the Chroma server container is running.
 - `scripts/check_chroma_store.py` verifies the embedded Knowledge Graph.
 - Postgres/Timescale is the only remaining durable-store service that requires a Docker-compatible runtime on this Mac.
@@ -299,6 +300,7 @@ Current ingestion state:
 - `migrations/0003_source_observation.sql` defines the future durable Timescale table.
 - `orchestrator/postgres_store.py` can seed durable reference/world-model tables and write test observations into Postgres once the database is running.
 - `scripts/run_test_ingestion_durable.py --all` writes all 35 deterministic observations into Timescale once migrations are applied.
+- `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` verifies replay coverage from durable observations without writing new rows.
 - Individual live adapters should replace test observations one at a time after their credentials, rate limits, and failure modes are clear.
 - The data environment map currently distinguishes promoted adapters, derived sources, deferred sources, missing-credential sources, local bridges, fallback-only sources, and ready-to-build/ready-to-port sources.
 - The GDELT live path is read-only and degrades cleanly on network/API failure while preserving the raw attempt locally.
@@ -352,9 +354,9 @@ Durable-mode commands:
 
 1. Run `scripts/bootstrap_runtime.sh`.
 2. Install or open a Docker-compatible runtime: Docker Desktop, OrbStack, Podman, or Colima.
-3. Run `scripts/start_local_stores.sh`.
-4. Run `scripts/check_durable_stores.py`.
-5. Run `scripts/run_test_ingestion_durable.py --all`.
+3. Run `scripts/start_postgres_timescale_ingestion.sh`.
+4. Run `scripts/check_postgres_timescale_replay.py --require-full-source-coverage`.
+5. Use `scripts/start_local_stores.sh` later when Chroma server mode is needed as well.
 
 Current quantum credential state:
 

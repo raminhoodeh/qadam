@@ -239,6 +239,9 @@ Current implementation start:
 - Embedded Chroma Knowledge Graph initialization exists in `orchestrator/chroma_store.py`.
 - Durable Postgres seed/write helpers exist in `orchestrator/postgres_store.py`.
 - `scripts/start_local_stores.sh` is ready to start services, migrate, and seed once Docker/OrbStack/Podman/Colima is available.
+- `scripts/start_postgres_timescale_ingestion.sh` now exists as the dedicated Postgres/Timescale durable-ingestion bootstrap. It starts only the Timescale-backed Postgres service, waits for connectivity, applies migrations, seeds durable reference/world-model data, writes all 35 deterministic source observations, runs the live-required ingestion contract, and verifies replay coverage.
+- `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` verifies that durable observations can be replayed across the full 35-source registry without writing new rows.
+- Current local blocker as of 2026-05-19: no Docker-compatible CLI is available on the Mac, so the bootstrap exits explicitly with `postgres_timescale_runtime_status=missing` instead of falsely claiming durable ingestion is live.
 - A read-only Phase 1 live adapter promotion layer now exists for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
 - These 14 adapter contracts join the already promoted GDELT, Oref, NASA FIRMS, FRED, and RSS adapters, taking promoted adapter coverage to 19 sources.
 - The new adapter layer has sample mode, masked credential status, raw payload archival, normalized events, degraded-state handling, and fail-closed live fetches.
@@ -249,7 +252,7 @@ Current implementation start:
 - Live fetch success is not claimed until each provider credential, account scope, rate limit, and provider terms are configured locally.
 - Historical backfill planning and a local sample-runner now exist for 12 priority sources, distinguishing ready read-only jobs from blocked missing-credential jobs before any large provider pull is attempted.
 - Trust Score seed now covers all 35 sources, with 22 sources above 0.5 and three physical/logistics sources passing the current seed threshold; these are still priors until backtests/live observations replace them.
-- Postgres/Timescale durable ingestion has a contract check that passes as `ready_waiting_for_local_service` when local Postgres is offline and can be tightened with `--require-live` once Docker/OrbStack/Podman/Colima is running.
+- Postgres/Timescale durable ingestion has a contract check that passes as `ready_waiting_for_local_service` when local Postgres is offline and can be tightened with `--require-live` once Docker/OrbStack/Podman/Colima is running. The dedicated bootstrap is now implemented; the remaining action is installing/opening a compatible runtime and rerunning it.
 - API onboarding is now an explicit Phase 1 workstream: `docs/api-specs.md` defines Batch A-D credential placeholders, canonical 35-source requirements, platform/model/broker/notification keys, optional upstream `world-monitor/` providers, and open source-provider decisions.
 - As of 2026-05-18, the local ignored secret file has credentials for NASA FIRMS, Alpaca paper, ACLED, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings. Kalshi, UnusualWhales, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket remain pending or deferred; BLS and ECB currently work in public read-only mode but should still receive explicit provider configuration where available.
 - ACLED now has access-token and refresh-token material stored locally, but automatic token renewal and entitlement verification still need to be implemented before ACLED counts as durable live infrastructure.
@@ -593,20 +596,22 @@ Phase 0 foundation is substantially implemented, and Phase 1 has started with te
 
 The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts and provider-safe probes have started. Dashboard Plan D0-D7 is implemented locally, with the protected D8B User Guide now added. The next practical batch is D8 Fund Manager forum groundwork, D8A Telegram communications groundwork, plus controlled model readiness:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts and provider-safe probes have started. Dashboard Plan D0-D7 is implemented locally, with the protected D8B User Guide now added. The next practical batch is durable Postgres/Timescale activation, then D8 Fund Manager forum groundwork, D8A Telegram communications groundwork, plus controlled model readiness:
 
-1. Keep the D6 paper mirror read-only: £1000 starting/current balance, zero P&L until read-only broker data exists, no live capital, and no write authority.
-2. Keep the D7 TradingView alert source observed-only: duplicate protected, Event Log backed, and unable to create trade candidates or orders.
-3. Register TradingView MCP as read-only market/technical-analysis tooling when Codex CLI access is available; no TradingView retail data API key is expected.
-4. Use `docs/api-specs.md` as the credential onboarding ledger; add keys gradually to `data/runtime/qadam-secrets.env`, never to Git.
-5. Promote Batch A API credentials one at a time, starting with read-only checks and explicit degraded states for missing keys.
-6. Keep `scripts/check_phase1_data_spine.py` and `scripts/check_phase1_agent_os.py` green before adding new intelligence, source, broker, or notification behavior.
-7. Build D8 Fund Manager comments around module, source, signal, trade candidate, and postmortem references.
-8. Build D8A Telegram Bot Communications in dry-run mode: local member registry, outbox, message templates, cockpit status, and dashboard Communications panel.
-9. Create the Telegram bot through BotFather only when ready to test delivery; store the token locally and never commit it.
-10. Start the LM Studio local server and run the local `/models` readiness check against `gemma-4-e4b`.
-11. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
-12. Run the Gemini model-list credential probe without text generation.
-13. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
+1. Install or open a Docker-compatible runtime on the Mac: Docker Desktop, OrbStack, Podman, or Colima.
+2. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
+3. Run `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` and require all 35 sources to be replayable from `source_observation`.
+4. Keep the D6 paper mirror read-only: £1000 starting/current balance, zero P&L until read-only broker data exists, no live capital, and no write authority.
+5. Keep the D7 TradingView alert source observed-only: duplicate protected, Event Log backed, and unable to create trade candidates or orders.
+6. Register TradingView MCP as read-only market/technical-analysis tooling when Codex CLI access is available; no TradingView retail data API key is expected.
+7. Use `docs/api-specs.md` as the credential onboarding ledger; add keys gradually to `data/runtime/qadam-secrets.env`, never to Git.
+8. Promote Batch A API credentials one at a time, starting with read-only checks and explicit degraded states for missing keys.
+9. Keep `scripts/check_phase1_data_spine.py` and `scripts/check_phase1_agent_os.py` green before adding new intelligence, source, broker, or notification behavior.
+10. Build D8 Fund Manager comments around module, source, signal, trade candidate, and postmortem references.
+11. Build D8A Telegram Bot Communications in dry-run mode: local member registry, outbox, message templates, cockpit status, and dashboard Communications panel.
+12. Start the LM Studio local server and run the local `/models` readiness check against `gemma-4-e4b`.
+13. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
+14. Run the Gemini model-list credential probe without text generation.
+15. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.

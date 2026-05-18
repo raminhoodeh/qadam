@@ -36,7 +36,7 @@ Implemented locally:
 - `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
 - Historical backfill planning and local sample-run records exist for ACLED, GDELT, NASA FIRMS, FRED, RSS, Polymarket, Kalshi, Alpaca, BLS, ECB, UN Comtrade, and SEC EDGAR.
 - Trust Score seed covers all 35 sources, but scores are priors until replaced by backtests and live observations.
-- Postgres/Timescale durable ingestion is coded as a local contract and is live only when the local database service is running.
+- Postgres/Timescale durable ingestion is coded as a local contract and is live only when the local database service is running. Use `scripts/start_postgres_timescale_ingestion.sh` for the Postgres-only bootstrap and `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` to verify replayable 35-source coverage.
 
 Not yet proven live:
 
