@@ -20,7 +20,7 @@
 
 body, html {
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     background-color: var(--black);
     font-family: var(--font-main);
     color: var(--white);
@@ -280,6 +280,102 @@ body, html {
     margin-top: -16px;
 }
 
+.trading-universe-section {
+    position: relative;
+    z-index: 2;
+    padding: 96px 120px 112px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.72) 20%, rgba(0, 0, 0, 0.88));
+}
+
+.trading-universe-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.section-kicker {
+    color: var(--white-60);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+}
+
+.trading-universe-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.65fr);
+    gap: 42px;
+    align-items: end;
+    margin-bottom: 34px;
+}
+
+.trading-universe-copy h2 {
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.14;
+    max-width: 720px;
+}
+
+.trading-universe-copy p {
+    color: var(--white-70);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.universe-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.universe-item {
+    min-height: 260px;
+    padding: 26px 22px;
+    border-right: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.universe-item:last-child {
+    border-right: 0;
+}
+
+.universe-index {
+    display: block;
+    color: var(--white-60);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 56px;
+}
+
+.universe-item h3 {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 12px;
+}
+
+.universe-item p {
+    color: var(--white-70);
+    font-size: 13px;
+    line-height: 1.58;
+}
+
+.universe-link {
+    display: inline-flex;
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+    padding-bottom: 4px;
+}
+
+.universe-link:hover {
+    border-bottom-color: var(--white);
+}
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
     .navbar {
@@ -288,6 +384,26 @@ body, html {
     .nav-right {
         display: flex;
         gap: 8px;
+    }
+    .trading-universe-section {
+        padding: 82px 40px 96px;
+    }
+    .trading-universe-copy {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .universe-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .universe-item {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .universe-item:nth-child(2n) {
+        border-right: 0;
+    }
+    .universe-item:last-child {
+        grid-column: span 2;
+        border-bottom: 0;
     }
 }
 
@@ -313,5 +429,28 @@ body, html {
     .liquid-glass-btn--hero {
         padding: 16px 36px;
         font-size: 16px;
+    }
+    .trading-universe-section {
+        padding: 72px 20px 84px;
+    }
+    .trading-universe-copy h2 {
+        font-size: 30px;
+    }
+    .universe-grid {
+        grid-template-columns: 1fr;
+    }
+    .universe-item,
+    .universe-item:nth-child(2n),
+    .universe-item:last-child {
+        min-height: auto;
+        grid-column: auto;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .universe-item:last-child {
+        border-bottom: 0;
+    }
+    .universe-index {
+        margin-bottom: 28px;
     }
 }
