@@ -249,7 +249,7 @@ Current implementation start:
 - `scripts/check_supplied_credentials.py` is now the supplied-credential validation gate for NASA FIRMS, FRED, ACLED, Alpaca paper, Telegram, Gemini, LM Studio, plus explicit Kalshi deferred and UnusualWhales missing states.
 - `scripts/refresh_acled_token.py --write --validate-read` is now the ACLED token refresh automation. It uses the refresh-token grant first, falls back to local email/password only when needed, atomically updates `data/runtime/qadam-secrets.env`, and writes a redacted local refresh report.
 - Current live read-only validation on 2026-05-18: live sources are NASA FIRMS, FRED, RSS, Polymarket, Alpaca paper account mirror, BLS public sample, ECB public exchange-rate series, SEC EDGAR public filing metadata, and Telegram bot status. Degraded but explicit sources are GDELT, Oref, and ACLED. Missing/deferred credential sources are UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter.
-- Current supplied-credential validation on 2026-05-19: NASA FIRMS, FRED, Alpaca paper, Telegram, and Gemini are live; ACLED is configured but degraded with provider HTTP 403; LM Studio is configured but degraded because the local model server is not reachable; Kalshi is intentionally deferred due to location/account availability; UnusualWhales remains the useful missing Batch A key.
+- Current supplied-credential validation on 2026-05-19: NASA FIRMS, FRED, Alpaca paper, Telegram, Gemini, and LM Studio are live; ACLED is configured but degraded with provider HTTP 403; Kalshi is intentionally deferred due to location/account availability; UnusualWhales remains the useful missing Batch A key.
 - ACLED now uses the current documented endpoint pattern `https://acleddata.com/api/acled/read` rather than the legacy `api.acleddata.com` hostname. Token freshness is automated and a 2026-05-19 refresh run succeeded with the refresh-token grant, updating the ignored local secret file. The post-refresh ACLED read validation still returned HTTP 403, so the remaining blocker is entitlement or account scope, not local token plumbing.
 - ECB now validates against a concrete public data-series endpoint instead of an incomplete base URL.
 - Live fetch success is not claimed until each provider credential, account scope, rate limit, and provider terms are configured locally.
@@ -377,6 +377,8 @@ Current implementation start:
 - The Research Analyst shadow triage runner consumes queued packets and writes non-executable shadow signals.
 - Local Research Analyst inference contract exists: `scripts/check_local_research_analyst.py` validates a dry shadow assessment by default, and `--live` calls LM Studio `/chat/completions` only when the local server is reachable.
 - Local Research Analyst outputs are stored in `data/runtime/local_research_assessments.jsonl` as shadow-only compression records with `execution_allowed=false` and `paper_order_allowed=false`.
+- `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` now runs the first deeper Phase 2 loop: live read-only observations from available sources are queued into Research Analyst shadow packets, deterministic shadow triage writes non-executable signals, local Gemma compresses the queue, and a Strategy Lead shadow handoff packet is written with broker/risk execution blocked.
+- Current 2026-05-19 live Phase 2 cycle result: live read-only observations from FRED, RSS, Polymarket, Alpaca, and Telegram produced eight queued Research Analyst packets, five shadow signals, one live local Gemma assessment, and one Strategy Lead shadow handoff packet. NASA FIRMS was live but had zero current events in the queried window. All outputs remained `execution_allowed=false` and `paper_order_allowed=false`.
 - The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries without prompts, raw model text, local paths, or secrets.
 - `scripts/check_shadow_intelligence.py` is wired into `start_qadam.sh`.
 - `scripts/check_local_research_analyst.py` is wired into `start_qadam.sh` in dry-contract mode.
@@ -390,6 +392,7 @@ Build:
 - Gemma local triage.
 - Local Research Analyst shadow assessment store and live LM Studio inference runner.
 - Gemini research packets.
+- Strategy Lead shadow handoff packet store.
 - Akber 6-Step Filter.
 - Prediction-market probability gap.
 - Options / Black-Scholes gap report.
@@ -402,6 +405,7 @@ Exit gate:
 
 - Layer A produces Proposed Signals.
 - Local Research Analyst can compress queued packets through LM Studio in shadow mode when the local server is running.
+- Strategy Lead can receive queued shadow handoff packets, but cannot call broker-write tools or approve risk.
 - Every signal has evidence, assumptions, invalidation, transaction-cost assumptions, source Trust Scores, and pricing gap.
 - World-model lens is present as private reasoning provenance, not factual evidence.
 - No execution is possible.
@@ -614,6 +618,7 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 11. Build D8A Telegram Bot Communications in dry-run mode: local member registry, outbox, message templates, cockpit status, and dashboard Communications panel.
 12. Start the LM Studio local server and run the local `/models` readiness check against `gemma-4-e4b`.
 13. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
+13A. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` to feed available live read-only observations through Research Analyst and Strategy Lead shadow workflows.
 14. Run the Gemini model-list credential probe without text generation.
 15. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 

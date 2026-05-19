@@ -48,8 +48,8 @@ Not yet proven live:
 
 Current supplied-credential snapshot as of 2026-05-19:
 
-- Live in read-only credential validation: NASA FIRMS, FRED, Alpaca paper account mirror, Telegram bot status, and Gemini model-list access.
-- Degraded in read-only credential validation: ACLED and LM Studio. ACLED is locally configured and refresh automation succeeded on 2026-05-19, but the post-refresh read endpoint still returned HTTP 403, so ACLED needs entitlement/account-scope confirmation before it can count as durable live; LM Studio is locally configured but the local server/model is not reachable in the current run.
+- Live in read-only credential validation: NASA FIRMS, FRED, Alpaca paper account mirror, Telegram bot status, Gemini model-list access, and LM Studio Gemma 4 E4B model-list access.
+- Degraded in read-only credential validation: ACLED. ACLED is locally configured and refresh automation succeeded on 2026-05-19, but the post-refresh read endpoint still returned HTTP 403, so ACLED needs entitlement/account-scope confirmation before it can count as durable live.
 - Missing or deferred from this credential batch: UnusualWhales remains a useful missing Batch A key; Kalshi remains deferred due to current location/account eligibility.
 - Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings.
 - ACLED refresh-token automation exists, but ACLED remains degraded until the refreshed token is accepted by the data-read endpoint or entitlement/account-scope is confirmed.

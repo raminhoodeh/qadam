@@ -26,6 +26,7 @@ from orchestrator.intelligence import (
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
+from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
 from orchestrator.telegram_comms import telegram_status
 from orchestrator.trade_intent import TradeIntentStore, trade_intent_summary
@@ -509,6 +510,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     summary = shadow_intelligence_summary(settings)
     store = ShadowSignalStore(settings=settings)
     local_research_store = LocalResearchAssessmentStore(settings=settings)
+    strategy_lead_store = StrategyLeadShadowStore(settings=settings)
     try:
         signals = list(store.read())[-5:]
     except Exception:
@@ -517,6 +519,10 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         local_assessments = list(local_research_store.read())[-3:]
     except Exception:
         local_assessments = []
+    try:
+        strategy_packets = list(strategy_lead_store.read())[-3:]
+    except Exception:
+        strategy_packets = []
 
     evidence_packets = [_safe_evidence_packet(signal) for signal in signals]
     hypotheses = [
@@ -573,10 +579,14 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         {
             "role": "Strategy Lead",
             "provider": "gemini",
-            "status": provider_status.get("frontier_llm", {}).get("probe_status", "not_called"),
+            "status": "queued_shadow_review"
+            if strategy_packets
+            else provider_status.get("frontier_llm", {}).get("probe_status", "not_called"),
             "model": "configured_frontier_model",
             "authority": "non_executable",
-            "current_task": "scenario challenge after local triage",
+            "current_task": "shadow handoff queued"
+            if strategy_packets
+            else "scenario challenge after local triage",
         },
         {
             "role": "Head of Quant",
@@ -610,6 +620,21 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
                 "created_at": assessment.get("created_at"),
             }
             for assessment in local_assessments
+        ],
+        "strategy_lead_packets": [
+            {
+                "packet_id": packet.get("packet_id"),
+                "status": packet.get("status", "queued_shadow_only"),
+                "source_assessment_id": packet.get("source_assessment_id"),
+                "watch_focus": packet.get("watch_focus"),
+                "missing_correlations": packet.get("missing_correlations", []),
+                "blocked_by": packet.get("blocked_by", []),
+                "worldview_lens_status": packet.get("worldview_lens_status"),
+                "execution_allowed": bool(packet.get("execution_allowed")),
+                "paper_order_allowed": bool(packet.get("paper_order_allowed")),
+                "created_at": packet.get("created_at"),
+            }
+            for packet in strategy_packets
         ],
         "hypotheses": hypotheses,
         "evidence_packets": evidence_packets,
