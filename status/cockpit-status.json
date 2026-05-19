@@ -52,120 +52,28 @@
       "local research assessment",
       "paper account mirror context",
       "deterministic triage",
+      "signal integrity review",
       "strategy review pending",
       "signal integrity gate blocked",
       "trade layer not reached"
     ],
     "blocked_reasons": [
-      "shadow_only_no_signal_integrity_gate",
+      "shadow_only_pending_signal_integrity_gate",
+      "signal_integrity_gate_hold_or_block",
       "no_risk_agent_approval",
       "no_trade_candidate_store",
       "no_broker_write_authority",
-      "paper_account_context_read_only"
+      "paper_account_context_read_only",
+      "signal_integrity_gate_requires_risk_agent"
     ],
-    "boundary": "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist.",
+    "boundary": "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, but Risk Agent and execution policy still do not exist.",
     "current_focus": [
       "reviewing shadow-only hypotheses",
-      "local Research Analyst focus: crude_oil_or_energy_transport",
-      "checking paper account context without order authority: alpaca_paper_readonly_connected"
+      "local Research Analyst focus: Energy commodity flows (US reserves, Russia sanctions impact); Tech sector consolidation (M&A); Macroeconomic policy shi",
+      "checking paper account context without order authority: alpaca_paper_readonly_connected",
+      "Signal Integrity Gate: 5 recent reviews, 5 held"
     ],
     "evidence_packets": [
-      {
-        "average_trust_score": 0.68,
-        "created_at": "2026-05-19T16:37:32.008512+00:00",
-        "items": [
-          {
-            "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:93d2919a-40fb-4935-8f1c-e06fc200ab92",
-            "observed_at": "2026-05-19T16:37:31.247742+00:00",
-            "source": "agent_runtime.research_triage_queue",
-            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:a9fd897e-15e7-4a9a-8618-4153d3eda6d4",
-            "trust_score": 0.68
-          }
-        ],
-        "min_trust_score": 0.68,
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "dff6c858-ebb9-4b7b-b7f7-62d5ea04fa2a",
-        "source_count": 1,
-        "sources": [
-          "agent_runtime.research_triage_queue"
-        ],
-        "trail_id": "1696466b-cf19-43b2-bd3c-59ed36c1c872"
-      },
-      {
-        "average_trust_score": 0.68,
-        "created_at": "2026-05-19T16:46:42.128576+00:00",
-        "items": [
-          {
-            "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:93d2919a-40fb-4935-8f1c-e06fc200ab92",
-            "observed_at": "2026-05-19T16:37:31.247742+00:00",
-            "source": "agent_runtime.research_triage_queue",
-            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:a9fd897e-15e7-4a9a-8618-4153d3eda6d4",
-            "trust_score": 0.68
-          }
-        ],
-        "min_trust_score": 0.68,
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "d56142cd-556e-4fad-89bd-bb07c2d942ca",
-        "source_count": 1,
-        "sources": [
-          "agent_runtime.research_triage_queue"
-        ],
-        "trail_id": "3a19835a-b1e6-41e9-b35e-bb94fb95d6ef"
-      },
-      {
-        "average_trust_score": 0.68,
-        "created_at": "2026-05-19T16:46:42.128601+00:00",
-        "items": [
-          {
-            "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:fb05fc87-e129-4b07-9614-675a8980eee2",
-            "observed_at": "2026-05-19T16:46:42.123776+00:00",
-            "source": "agent_runtime.research_triage_queue",
-            "summary": "DGS10 10-Year Treasury Yield latest 4.45 on 2026-05-19; delta +0.05 (+1.14%), +2.54 sigma Source refs: macro.fred:5b3c1f0a-412a-47b7-bbbe-eebc1ca2b1af",
-            "trust_score": 0.68
-          }
-        ],
-        "min_trust_score": 0.68,
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "6e347e86-5dce-4c65-ab70-27df186b8c2e",
-        "source_count": 1,
-        "sources": [
-          "agent_runtime.research_triage_queue"
-        ],
-        "trail_id": "7eb4861a-5e4b-4016-a95c-db417d506f74"
-      },
-      {
-        "average_trust_score": 0.68,
-        "created_at": "2026-05-19T16:46:42.128616+00:00",
-        "items": [
-          {
-            "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:c27eb1a4-b9ef-45e5-add4-9cfc5ff17e75",
-            "observed_at": "2026-05-19T16:46:42.125750+00:00",
-            "source": "agent_runtime.research_triage_queue",
-            "summary": "DCOILWTICO WTI Crude Oil latest 81.6 on 2026-05-19; delta +1.5 (+1.87%), +2.68 sigma Source refs: macro.fred:f13cb239-36ec-451d-ad68-d0077b87dae3",
-            "trust_score": 0.68
-          }
-        ],
-        "min_trust_score": 0.68,
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "933b1132-bff4-411a-82bd-0f4943c1adf4",
-        "source_count": 1,
-        "sources": [
-          "agent_runtime.research_triage_queue"
-        ],
-        "trail_id": "a0076932-a0d5-4ad3-9648-48ebf52b9d28"
-      },
       {
         "average_trust_score": 0.68,
         "created_at": "2026-05-19T16:46:42.128630+00:00",
@@ -189,83 +97,107 @@
           "agent_runtime.research_triage_queue"
         ],
         "trail_id": "ee5cee59-c58d-4a3c-b1a3-42ab75b35bf2"
+      },
+      {
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T18:25:45.482833+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:befb7c5e-cdeb-454f-bba2-408d1f7f8707",
+            "observed_at": "2026-05-19T18:25:43.811997+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:21c80635-6c7f-4b24-b846-5ee9a4499d41",
+            "trust_score": 0.68
+          }
+        ],
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "8b68effd-01c6-49da-ad7d-33a37c8061a1"
+      },
+      {
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T18:25:45.482881+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:9a3dcb1d-b36c-41f8-9e1f-b8bb5f8bd9cc",
+            "observed_at": "2026-05-19T18:25:43.817021+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "US extends sanctions waiver on Russian oil to aid vulnerable countries - Reuters Source refs: social.rss:27da6769-4797-4be2-9295-bfdee2d66bd9",
+            "trust_score": 0.68
+          }
+        ],
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "d224885f-b25f-40ac-98d8-9e539ac44ce9"
+      },
+      {
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T18:25:45.482908+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:8c755253-718f-4423-95ee-02bec599c2e8",
+            "observed_at": "2026-05-19T18:25:43.819974+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Analog Devices in talks to buy Empower Semiconductor for $1.5 billion, Bloomberg News reports - Reuters Source refs: social.rss:52fdd7f6-e283-4e8c-8d58-83d751c2f26a",
+            "trust_score": 0.68
+          }
+        ],
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "87b7171a-b86d-481f-accf-99f7fd022e42"
+      },
+      {
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T18:25:45.482944+00:00",
+        "items": [
+          {
+            "event_type": "research_shadow_triage_packet",
+            "evidence_id": "shadow_triage_packet:5c71402f-767f-455a-8cc1-b4df0929563b",
+            "observed_at": "2026-05-19T18:25:45.001513+00:00",
+            "source": "agent_runtime.research_triage_queue",
+            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:b87d9b53-2beb-44c8-9c9c-e1bb13bc4074",
+            "trust_score": 0.68
+          }
+        ],
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "source_count": 1,
+        "sources": [
+          "agent_runtime.research_triage_queue"
+        ],
+        "trail_id": "a8b2bae5-de52-4a10-a4fd-fd17aa46c940"
       }
     ],
     "hypotheses": [
       {
-        "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.442,
-        "created_at": "2026-05-19T16:37:32.008527+00:00",
-        "evidence_packet_id": "dff6c858-ebb9-4b7b-b7f7-62d5ea04fa2a",
-        "evidence_source_count": 1,
-        "execution_allowed": false,
-        "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "macro_watchlist",
-        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "dff6c858-ebb9-4b7b-b7f7-62d5ea04fa2a",
-        "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:a9fd897e-15e7-4a9a-8618-4153d3eda6d4",
-        "title": "Shadow watch: macro_watchlist"
-      },
-      {
-        "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.442,
-        "created_at": "2026-05-19T16:46:42.128586+00:00",
-        "evidence_packet_id": "d56142cd-556e-4fad-89bd-bb07c2d942ca",
-        "evidence_source_count": 1,
-        "execution_allowed": false,
-        "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "macro_watchlist",
-        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "d56142cd-556e-4fad-89bd-bb07c2d942ca",
-        "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:a9fd897e-15e7-4a9a-8618-4153d3eda6d4",
-        "title": "Shadow watch: macro_watchlist"
-      },
-      {
-        "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.442,
-        "created_at": "2026-05-19T16:46:42.128608+00:00",
-        "evidence_packet_id": "6e347e86-5dce-4c65-ab70-27df186b8c2e",
-        "evidence_source_count": 1,
-        "execution_allowed": false,
-        "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "macro_watchlist",
-        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "6e347e86-5dce-4c65-ab70-27df186b8c2e",
-        "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: DGS10 10-Year Treasury Yield latest 4.45 on 2026-05-19; delta +0.05 (+1.14%), +2.54 sigma Source refs: macro.fred:5b3c1f0a-412a-47b7-bbbe-eebc1ca2b1af",
-        "title": "Shadow watch: macro_watchlist"
-      },
-      {
-        "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.596,
-        "created_at": "2026-05-19T16:46:42.128622+00:00",
-        "evidence_packet_id": "933b1132-bff4-411a-82bd-0f4943c1adf4",
-        "evidence_source_count": 1,
-        "execution_allowed": false,
-        "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "crude_oil_or_energy_transport",
-        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
-        "missing_correlations": [
-          "second_independent_source"
-        ],
-        "signal_id": "933b1132-bff4-411a-82bd-0f4943c1adf4",
-        "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: DCOILWTICO WTI Crude Oil latest 81.6 on 2026-05-19; delta +1.5 (+1.87%), +2.68 sigma Source refs: macro.fred:f13cb239-36ec-451d-ad68-d0077b87dae3",
-        "title": "Shadow watch: crude_oil_or_energy_transport"
-      },
-      {
-        "blocked_reason": "shadow_only_no_signal_integrity_gate",
+        "blocked_reason": "signal_integrity_gate_hold_or_block",
         "confidence": 0.442,
         "created_at": "2026-05-19T16:46:42.128637+00:00",
         "evidence_packet_id": "1dc991b4-bed9-4d6f-a134-0b42f8a0f6e2",
@@ -273,6 +205,8 @@
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
         "instrument_focus": "macro_watchlist",
+        "integrity_review_status": "blocked",
+        "integrity_score": 0.353,
         "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
         "missing_correlations": [
           "second_independent_source"
@@ -281,40 +215,89 @@
         "status": "shadow_only",
         "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:90cd64a7-fb17-4509-93cc-c95220f4f067",
         "title": "Shadow watch: macro_watchlist"
+      },
+      {
+        "blocked_reason": "signal_integrity_gate_hold_or_block",
+        "confidence": 0.519,
+        "created_at": "2026-05-19T18:25:45.482854+00:00",
+        "evidence_packet_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "crude_oil_or_energy_transport",
+        "integrity_review_status": "hold_for_corroboration",
+        "integrity_score": 0.368,
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:21c80635-6c7f-4b24-b846-5ee9a4499d41",
+        "title": "Shadow watch: crude_oil_or_energy_transport"
+      },
+      {
+        "blocked_reason": "signal_integrity_gate_hold_or_block",
+        "confidence": 0.519,
+        "created_at": "2026-05-19T18:25:45.482891+00:00",
+        "evidence_packet_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "crude_oil_or_energy_transport",
+        "integrity_review_status": "hold_for_corroboration",
+        "integrity_score": 0.368,
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: US extends sanctions waiver on Russian oil to aid vulnerable countries - Reuters Source refs: social.rss:27da6769-4797-4be2-9295-bfdee2d66bd9",
+        "title": "Shadow watch: crude_oil_or_energy_transport"
+      },
+      {
+        "blocked_reason": "signal_integrity_gate_hold_or_block",
+        "confidence": 0.526,
+        "created_at": "2026-05-19T18:25:45.482919+00:00",
+        "evidence_packet_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "semiconductors",
+        "integrity_review_status": "hold_for_corroboration",
+        "integrity_score": 0.37,
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Analog Devices in talks to buy Empower Semiconductor for $1.5 billion, Bloomberg News reports - Reuters Source refs: social.rss:52fdd7f6-e283-4e8c-8d58-83d751c2f26a",
+        "title": "Shadow watch: semiconductors"
+      },
+      {
+        "blocked_reason": "signal_integrity_gate_hold_or_block",
+        "confidence": 0.442,
+        "created_at": "2026-05-19T18:25:45.482955+00:00",
+        "evidence_packet_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "evidence_source_count": 1,
+        "execution_allowed": false,
+        "generated_by": "deterministic_keyword_anomaly_fallback",
+        "instrument_focus": "macro_watchlist",
+        "integrity_review_status": "blocked",
+        "integrity_score": 0.353,
+        "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "signal_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "status": "shadow_only",
+        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:b87d9b53-2beb-44c8-9c9c-e1bb13bc4074",
+        "title": "Shadow watch: macro_watchlist"
       }
     ],
     "local_research_assessments": [
-      {
-        "anomalies": [
-          "DGS10 10-Year Treasury Yield latest 4.45 on 2026-05-19; delta +0.05 (+1.14%), +2.54 sigma",
-          "DCOILWTICO WTI Crude Oil latest 81.6 on 2026-05-19; delta +1.5 (+1.87%), +2.68 sigma",
-          "Alpaca paper account and market-data read-only mirror candidate.",
-          "paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%"
-        ],
-        "assessment_id": "8c5b5483-1ae2-4811-8d7f-a801ea699429",
-        "confidence": 0.598,
-        "created_at": "2026-05-19T16:34:20.913193+00:00",
-        "escalation_recommendation": "hold_shadow",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
-        ],
-        "mode": "dry_contract",
-        "model": "gemma-4-e4b",
-        "next_questions": [
-          "Which independent source can corroborate this observation?",
-          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
-          "Which stale-data or missing-credential condition could invalidate the packet?",
-          "Does the read-only paper account state change review priority without creating an order?"
-        ],
-        "paper_order_allowed": false,
-        "provider": "lm_studio",
-        "status": "shadow_only",
-        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: crude_oil_or_energy_transport. No execution path is available.",
-        "watch_focus": "crude_oil_or_energy_transport"
-      },
       {
         "anomalies": [
           "Record oil draw from US emergency reserve drives total volumes to two-year low",
@@ -372,16 +355,43 @@
         "status": "shadow_only",
         "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: crude_oil_or_energy_transport. No execution path is available.",
         "watch_focus": "crude_oil_or_energy_transport"
+      },
+      {
+        "anomalies": [
+          "Record oil draw from US emergency reserve drives total volumes to two-year low",
+          "US extends sanctions waiver on Russian oil to aid vulnerable countries"
+        ],
+        "assessment_id": "84e2dd00-930d-49e7-b7c7-8a4c20114db9",
+        "confidence": 0.75,
+        "created_at": "2026-05-19T18:26:01.625748+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Direct correlation between record oil draws and the impact of extended sanctions waivers on global price stability.",
+          "How Analog Devices' potential acquisition of Empower Semiconductor affects market sentiment in specialized semiconductor sectors."
+        ],
+        "mode": "live_local_llm",
+        "model": "google/gemma-4-e4b",
+        "next_questions": [
+          "What is the projected timeline for US energy reserve depletion given current draw rates?",
+          "Does the extension of Russian oil sanctions waivers signal a long-term shift in global energy trade architecture or short-term humanitarian aid?",
+          "How will the reported M&A activity be priced into the respective semiconductor stocks?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Global commodity and geopolitical flows show mixed signals: US oil reserves are at a two-year low, while sanctions waivers on Russian oil suggest continued global energy market fluidity. Corporate M&A activity is noted (Analog/Empower), alongside several sports betting events (NCAAB, NBA) that provide medium-certainty narrative context. Paper context: paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%.",
+        "watch_focus": "Energy commodity flows (US reserves, Russia sanctions impact); Tech sector consolidation (M&A); Macroeconomic policy shi"
       }
     ],
     "model_activity": [
       {
         "authority": "non_executable",
         "current_task": "local shadow assessment",
-        "model": "gemma-4-e4b",
+        "model": "google/gemma-4-e4b",
         "provider": "lm_studio",
         "role": "Research Analyst",
-        "status": "shadow_only"
+        "status": "ok"
       },
       {
         "authority": "non_executable",
@@ -435,113 +445,268 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T16:37:31.247742+00:00",
-        "packet_id": "93d2919a-40fb-4935-8f1c-e06fc200ab92",
+        "created_at": "2026-05-19T18:25:44.313198+00:00",
+        "packet_id": "2a5851ec-0682-4b4b-a8e6-f2f4cae280b4",
         "source_event_refs": [
-          "market.alpaca:a9fd897e-15e7-4a9a-8618-4153d3eda6d4"
+          "market.polymarket:ed54b597-a115-4090-ac3c-fe42a59ab155"
         ],
         "status": "queued_shadow_only",
-        "summary": "Alpaca paper account and market-data read-only mirror candidate.",
-        "uncertainty": "bounded"
-      },
-      {
-        "agent_key": "research_analyst",
-        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T16:37:32.006802+00:00",
-        "packet_id": "1343c8df-af37-409c-af94-900419f4909d",
-        "source_event_refs": [
-          "social.telegram:7356d26d-104b-4c31-b4b6-a3946f97b7c5"
-        ],
-        "status": "queued_shadow_only",
-        "summary": "Telegram channel or bot update captured as narrative context only.",
+        "summary": "NCAAB: Arizona State Sun Devils vs. Nevada Wolf Pack 2023-03-15",
         "uncertainty": "medium"
       },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T16:46:42.123776+00:00",
-        "packet_id": "fb05fc87-e129-4b07-9614-675a8980eee2",
+        "created_at": "2026-05-19T18:25:44.315858+00:00",
+        "packet_id": "c73eee45-e078-4201-a35c-8f4fab7d3f7d",
         "source_event_refs": [
-          "macro.fred:5b3c1f0a-412a-47b7-bbbe-eebc1ca2b1af"
+          "market.polymarket:4fe5a12a-f2cb-4839-93ea-6a5986bc8d59"
         ],
         "status": "queued_shadow_only",
-        "summary": "DGS10 10-Year Treasury Yield latest 4.45 on 2026-05-19; delta +0.05 (+1.14%), +2.54 sigma",
-        "uncertainty": "bounded"
+        "summary": "NCAAB: Tennessee Volunteers vs. Duke Blue Devils 2023-03-18",
+        "uncertainty": "medium"
       },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T16:46:42.125750+00:00",
-        "packet_id": "c27eb1a4-b9ef-45e5-add4-9cfc5ff17e75",
+        "created_at": "2026-05-19T18:25:44.317788+00:00",
+        "packet_id": "88739ca0-c0bd-4ee2-adce-781228fe36e8",
         "source_event_refs": [
-          "macro.fred:f13cb239-36ec-451d-ad68-d0077b87dae3"
+          "market.polymarket:fa04d9f9-fdc0-4f20-9929-7d0f007cffcd"
         ],
         "status": "queued_shadow_only",
-        "summary": "DCOILWTICO WTI Crude Oil latest 81.6 on 2026-05-19; delta +1.5 (+1.87%), +2.68 sigma",
-        "uncertainty": "bounded"
+        "summary": "NBA: LA Clippers vs. Orlando Magic 2023-03-18",
+        "uncertainty": "medium"
       },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T16:46:42.127693+00:00",
-        "packet_id": "1ff1712d-0f72-49f6-b5fd-803ecda23078",
+        "created_at": "2026-05-19T18:25:45.001513+00:00",
+        "packet_id": "5c71402f-767f-455a-8cc1-b4df0929563b",
         "source_event_refs": [
-          "market.alpaca:90cd64a7-fb17-4509-93cc-c95220f4f067"
+          "market.alpaca:b87d9b53-2beb-44c8-9c9c-e1bb13bc4074"
         ],
         "status": "queued_shadow_only",
         "summary": "Alpaca paper account and market-data read-only mirror candidate.",
         "uncertainty": "bounded"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-19T18:25:45.481196+00:00",
+        "packet_id": "7a53a7da-4411-407e-98b8-982781b700c2",
+        "source_event_refs": [
+          "social.telegram:10ac892a-e9c4-4fe9-b6cd-70084b384c68"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "Telegram channel or bot update captured as narrative context only.",
+        "uncertainty": "medium"
+      }
+    ],
+    "signal_integrity": {
+      "boundary": "Signal Integrity Gate reviews are non-executable. They can block or hold, but cannot create candidates or orders.",
+      "by_status": {
+        "blocked": 8,
+        "hold_for_corroboration": 5
+      },
+      "execution_allowed_count": 0,
+      "paper_order_allowed_count": 0,
+      "review_count": 13,
+      "schema_version": 1,
+      "status": "ok",
+      "trade_candidate_created_count": 0
+    },
+    "signal_integrity_reviews": [
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached_risk_agent_absent",
+          "catalyst_identification": "pass",
+          "low_volatility": "missing_volatility_context",
+          "obv_volume": "missing_volume_confirmation",
+          "options_distribution_gap": "missing_pricing_gap",
+          "technical_setup": "missing_market_price_confirmation"
+        },
+        "average_trust_score": 0.68,
+        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
+        "evidence_item_count": 1,
+        "execution_allowed": false,
+        "failure_reasons": [
+          "second_independent_source_required",
+          "signal_confidence_below_gate",
+          "second_independent_source"
+        ],
+        "instrument_focus": "macro_watchlist",
+        "integrity_score": 0.353,
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "paper_order_allowed": false,
+        "required_next_steps": [
+          "Add a second independent source before any Strategy or Risk review.",
+          "Keep Risk Agent and broker-write routes blocked until later phases."
+        ],
+        "review_id": "24794ed7-d996-4b82-85c4-05df852f32cf",
+        "reviewed_at": "2026-05-19T18:25:45.502227+00:00",
+        "signal_confidence": 0.442,
+        "source_count": 1,
+        "source_signal_id": "1dc991b4-bed9-4d6f-a134-0b42f8a0f6e2",
+        "status": "blocked",
+        "trade_candidate_created": false,
+        "worldview_prior_status": "private_prior_only_not_evidence"
+      },
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached_risk_agent_absent",
+          "catalyst_identification": "pass",
+          "low_volatility": "missing_volatility_context",
+          "obv_volume": "missing_volume_confirmation",
+          "options_distribution_gap": "missing_pricing_gap",
+          "technical_setup": "missing_market_price_confirmation"
+        },
+        "average_trust_score": 0.68,
+        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
+        "evidence_item_count": 1,
+        "execution_allowed": false,
+        "failure_reasons": [
+          "second_independent_source_required",
+          "second_independent_source"
+        ],
+        "instrument_focus": "crude_oil_or_energy_transport",
+        "integrity_score": 0.368,
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "paper_order_allowed": false,
+        "required_next_steps": [
+          "Add a second independent source before any Strategy or Risk review.",
+          "Keep Risk Agent and broker-write routes blocked until later phases."
+        ],
+        "review_id": "2fabbcfd-0d25-4d0e-9a92-ad1ab9d5de64",
+        "reviewed_at": "2026-05-19T18:25:45.502240+00:00",
+        "signal_confidence": 0.519,
+        "source_count": 1,
+        "source_signal_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "status": "hold_for_corroboration",
+        "trade_candidate_created": false,
+        "worldview_prior_status": "private_prior_only_not_evidence"
+      },
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached_risk_agent_absent",
+          "catalyst_identification": "pass",
+          "low_volatility": "missing_volatility_context",
+          "obv_volume": "missing_volume_confirmation",
+          "options_distribution_gap": "missing_pricing_gap",
+          "technical_setup": "missing_market_price_confirmation"
+        },
+        "average_trust_score": 0.68,
+        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
+        "evidence_item_count": 1,
+        "execution_allowed": false,
+        "failure_reasons": [
+          "second_independent_source_required",
+          "second_independent_source"
+        ],
+        "instrument_focus": "crude_oil_or_energy_transport",
+        "integrity_score": 0.368,
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "paper_order_allowed": false,
+        "required_next_steps": [
+          "Add a second independent source before any Strategy or Risk review.",
+          "Keep Risk Agent and broker-write routes blocked until later phases."
+        ],
+        "review_id": "48a327b8-b201-47ee-81c8-64ce6656f18a",
+        "reviewed_at": "2026-05-19T18:25:45.502252+00:00",
+        "signal_confidence": 0.519,
+        "source_count": 1,
+        "source_signal_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "status": "hold_for_corroboration",
+        "trade_candidate_created": false,
+        "worldview_prior_status": "private_prior_only_not_evidence"
+      },
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached_risk_agent_absent",
+          "catalyst_identification": "pass",
+          "low_volatility": "missing_volatility_context",
+          "obv_volume": "missing_volume_confirmation",
+          "options_distribution_gap": "missing_pricing_gap",
+          "technical_setup": "missing_market_price_confirmation"
+        },
+        "average_trust_score": 0.68,
+        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
+        "evidence_item_count": 1,
+        "execution_allowed": false,
+        "failure_reasons": [
+          "second_independent_source_required",
+          "second_independent_source"
+        ],
+        "instrument_focus": "semiconductors",
+        "integrity_score": 0.37,
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "paper_order_allowed": false,
+        "required_next_steps": [
+          "Add a second independent source before any Strategy or Risk review.",
+          "Keep Risk Agent and broker-write routes blocked until later phases."
+        ],
+        "review_id": "d524bf79-5eec-4f05-9799-9735846e88d0",
+        "reviewed_at": "2026-05-19T18:25:45.502264+00:00",
+        "signal_confidence": 0.526,
+        "source_count": 1,
+        "source_signal_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "status": "hold_for_corroboration",
+        "trade_candidate_created": false,
+        "worldview_prior_status": "private_prior_only_not_evidence"
+      },
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached_risk_agent_absent",
+          "catalyst_identification": "pass",
+          "low_volatility": "missing_volatility_context",
+          "obv_volume": "missing_volume_confirmation",
+          "options_distribution_gap": "missing_pricing_gap",
+          "technical_setup": "missing_market_price_confirmation"
+        },
+        "average_trust_score": 0.68,
+        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
+        "evidence_item_count": 1,
+        "execution_allowed": false,
+        "failure_reasons": [
+          "second_independent_source_required",
+          "signal_confidence_below_gate",
+          "second_independent_source"
+        ],
+        "instrument_focus": "macro_watchlist",
+        "integrity_score": 0.353,
+        "min_trust_score": 0.68,
+        "missing_correlations": [
+          "second_independent_source"
+        ],
+        "paper_order_allowed": false,
+        "required_next_steps": [
+          "Add a second independent source before any Strategy or Risk review.",
+          "Keep Risk Agent and broker-write routes blocked until later phases."
+        ],
+        "review_id": "bdfcdf7e-a22f-4019-a39d-0de5ca149e44",
+        "reviewed_at": "2026-05-19T18:25:45.502275+00:00",
+        "signal_confidence": 0.442,
+        "source_count": 1,
+        "source_signal_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "status": "blocked",
+        "trade_candidate_created": false,
+        "worldview_prior_status": "private_prior_only_not_evidence"
       }
     ],
     "status": "shadow_ready",
     "strategy_lead_packets": [
-      {
-        "blocked_by": [
-          "signal_integrity_gate_missing",
-          "risk_agent_missing",
-          "execution_policy_missing",
-          "broker_write_route_absent",
-          "paper_account_context_read_only"
-        ],
-        "created_at": "2026-05-19T16:34:20.926697+00:00",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
-        ],
-        "packet_id": "461b587e-348a-4109-b61e-278c9a0bd084",
-        "paper_account_context": {
-          "account_scope": "first_release_gbp_1000_trial",
-          "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
-          "broker": "alpaca_paper_readonly",
-          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
-          "closed_trade_count": 0,
-          "connection_status": "alpaca_paper_readonly_connected",
-          "current_balance_gbp": 100000.0,
-          "drawdown_pct": 0.0,
-          "execution_allowed": false,
-          "live_capital_enabled": false,
-          "maturity_closed_trade_count": 0,
-          "maturity_closed_trade_target": 100,
-          "mode": "paper",
-          "open_order_count": 0,
-          "open_position_count": 0,
-          "order_count": 0,
-          "paper_order_allowed": false,
-          "realized_pnl_gbp": 0.0,
-          "status": "ok",
-          "timeline_status": "alpaca_paper_readonly_mirrored",
-          "trial_allocation_gbp": 1000.0,
-          "unrealized_pnl_gbp": 0,
-          "write_authority": false
-        },
-        "paper_order_allowed": false,
-        "source_assessment_id": "8c5b5483-1ae2-4811-8d7f-a801ea699429",
-        "status": "queued_shadow_only",
-        "watch_focus": "crude_oil_or_energy_transport",
-        "worldview_lens_status": "private_prior_only_not_evidence"
-      },
       {
         "blocked_by": [
           "signal_integrity_gate_missing",
@@ -633,6 +798,52 @@
         "source_assessment_id": "1c4a1cc0-edca-422c-8339-ac7c59216e6d",
         "status": "queued_shadow_only",
         "watch_focus": "crude_oil_or_energy_transport",
+        "worldview_lens_status": "private_prior_only_not_evidence"
+      },
+      {
+        "blocked_by": [
+          "signal_integrity_gate_missing",
+          "risk_agent_missing",
+          "execution_policy_missing",
+          "broker_write_route_absent",
+          "paper_account_context_read_only"
+        ],
+        "created_at": "2026-05-19T18:26:01.641708+00:00",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Direct correlation between record oil draws and the impact of extended sanctions waivers on global price stability.",
+          "How Analog Devices' potential acquisition of Empower Semiconductor affects market sentiment in specialized semiconductor sectors."
+        ],
+        "packet_id": "7ba47656-4839-4b7f-a6c8-1c29c07e80be",
+        "paper_account_context": {
+          "account_scope": "first_release_gbp_1000_trial",
+          "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
+          "broker": "alpaca_paper_readonly",
+          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
+          "closed_trade_count": 0,
+          "connection_status": "alpaca_paper_readonly_connected",
+          "current_balance_gbp": 100000.0,
+          "drawdown_pct": 0.0,
+          "execution_allowed": false,
+          "live_capital_enabled": false,
+          "maturity_closed_trade_count": 0,
+          "maturity_closed_trade_target": 100,
+          "mode": "paper",
+          "open_order_count": 0,
+          "open_position_count": 0,
+          "order_count": 0,
+          "paper_order_allowed": false,
+          "realized_pnl_gbp": 0.0,
+          "status": "ok",
+          "timeline_status": "alpaca_paper_readonly_mirrored",
+          "trial_allocation_gbp": 1000.0,
+          "unrealized_pnl_gbp": 0,
+          "write_authority": false
+        },
+        "paper_order_allowed": false,
+        "source_assessment_id": "84e2dd00-930d-49e7-b7c7-8a4c20114db9",
+        "status": "queued_shadow_only",
+        "watch_focus": "Energy commodity flows (US reserves, Russia sanctions impact); Tech sector consolidation (M&A); Macroeconomic policy shi",
         "worldview_lens_status": "private_prior_only_not_evidence"
       }
     ]
@@ -729,7 +940,7 @@
   },
   "d1_snapshot": {
     "browser_authority": "read_only",
-    "generated_at": "2026-05-19T16:51:15.292333+00:00",
+    "generated_at": "2026-05-19T18:49:55.774161+00:00",
     "landing_copy": "landing-page-repo/status/cockpit-status.json",
     "local_orchestrator_exposed": false,
     "phase": "D1",
@@ -1072,7 +1283,7 @@
     "supabase_table": "fund_manager_comments",
     "visibility": "founding_fund_managers"
   },
-  "generated_at": "2026-05-19T16:51:15.292333+00:00",
+  "generated_at": "2026-05-19T18:49:55.774161+00:00",
   "live_bridge": {
     "allowed_methods": [
       "GET",
@@ -1094,7 +1305,7 @@
       "PATCH",
       "DELETE"
     ],
-    "generated_at": "2026-05-19T16:51:15.292333+00:00",
+    "generated_at": "2026-05-19T18:49:55.774161+00:00",
     "health_checks": [
       "auth_required",
       "rate_limit_enforced",
@@ -1125,7 +1336,7 @@
       "current_process": "supervising local modules",
       "key": "coo",
       "label": "COO",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Python Orchestrator",
       "raw_status": "registered",
@@ -1136,7 +1347,7 @@
       "current_process": "waiting for local LLM readiness",
       "key": "research_analyst",
       "label": "Research Analyst",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Local LLM",
       "raw_status": "pending",
@@ -1147,7 +1358,7 @@
       "current_process": "waiting for frontier model probe",
       "key": "strategy_lead",
       "label": "Strategy Lead",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Frontier LLM",
       "raw_status": "pending",
@@ -1158,7 +1369,7 @@
       "current_process": "deferred weekly oracle",
       "key": "head_of_quant",
       "label": "Head of Quant",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Quantum Compute",
       "raw_status": "registered",
@@ -1169,7 +1380,7 @@
       "current_process": "recording local audit trail",
       "key": "event_log",
       "label": "Event Log",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "Postgres/Timescale",
       "raw_status": "jsonl_fallback",
@@ -1180,7 +1391,7 @@
       "current_process": "holding local memory shell",
       "key": "knowledge_graph",
       "label": "Knowledge Graph",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "ChromaDB",
       "raw_status": "not_running",
@@ -1191,7 +1402,7 @@
       "current_process": "execution disabled in foundation mode",
       "key": "execution_registry",
       "label": "Execution Registry",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Risk Agent",
       "raw_status": "disabled",
@@ -1202,7 +1413,7 @@
       "current_process": "registered",
       "key": "resource_registry",
       "label": "Resource Registry",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Reference Provenance",
       "raw_status": "registered",
@@ -1213,7 +1424,7 @@
       "current_process": "foundational prior",
       "key": "world_model",
       "label": "World-Model Lens",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "Private Corpus",
       "raw_status": "foundational_prior",
@@ -1224,7 +1435,7 @@
       "current_process": "manifest permissions available",
       "key": "agent_os",
       "label": "Agent OS",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Manifest Registry",
       "raw_status": "manifest_ready",
@@ -1235,7 +1446,7 @@
       "current_process": "broker-write tools blocked",
       "key": "agent_runtime",
       "label": "Agent Runtime",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Permission Gate",
       "raw_status": "enforced",
@@ -1246,9 +1457,20 @@
       "current_process": "shadow-only review packets available",
       "key": "shadow_intelligence",
       "label": "Shadow Intelligence",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Research Analyst",
+      "raw_status": "shadow_ready",
+      "status": "online"
+    },
+    {
+      "authority": "non_executable",
+      "current_process": "auditing shadow signals without trade authority",
+      "key": "signal_integrity_gate",
+      "label": "Signal Integrity Gate",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "local_only": false,
+      "owner": "Signal Auditor",
       "raw_status": "shadow_ready",
       "status": "online"
     },
@@ -1257,7 +1479,7 @@
       "current_process": "local",
       "key": "governance_forum",
       "label": "Governance Forum",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "Fund Managers",
       "raw_status": "local",
@@ -1268,7 +1490,7 @@
       "current_process": "outbound dry-run member communications",
       "key": "telegram_bot",
       "label": "Telegram Bot",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "Fund Manager Interface",
       "raw_status": "dry_run",
@@ -1279,7 +1501,7 @@
       "current_process": "serving authenticated public-safe status snapshots",
       "key": "live_bridge",
       "label": "Secure Live Bridge",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "qadam.trade API",
       "raw_status": "read_only_ready",
@@ -1290,7 +1512,7 @@
       "current_process": "test data ready",
       "key": "ingestion_spine",
       "label": "Test Ingestion Spine",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": true,
       "owner": "World Monitor Adapters",
       "raw_status": "test_data_ready",
@@ -1301,7 +1523,7 @@
       "current_process": "sample ready",
       "key": "gdelt_adapter",
       "label": "GDELT Adapter",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1312,7 +1534,7 @@
       "current_process": "sample ready",
       "key": "oref_adapter",
       "label": "Oref Adapter",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1323,7 +1545,7 @@
       "current_process": "credential gated",
       "key": "nasa_firms_adapter",
       "label": "NASA FIRMS Adapter",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Physical Pipeline",
       "raw_status": "credential_gated",
@@ -1334,7 +1556,7 @@
       "current_process": "sample ready",
       "key": "fred_adapter",
       "label": "FRED Adapter",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Macro Pipeline",
       "raw_status": "sample_ready",
@@ -1345,7 +1567,7 @@
       "current_process": "sample ready",
       "key": "rss_adapter",
       "label": "RSS Adapter",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "Narrative Pipeline",
       "raw_status": "sample_ready",
@@ -1356,7 +1578,7 @@
       "current_process": "static live shell frozen",
       "key": "cockpit",
       "label": "Cockpit",
-      "last_heartbeat": "2026-05-19T16:51:15.292333+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
       "local_only": false,
       "owner": "qadam.trade",
       "raw_status": "shell",
@@ -1365,52 +1587,52 @@
   ],
   "process_console": [
     {
-      "component": "agent_runtime",
-      "message": "agent_runtime: agent_shadow_triage_packet_queued (info)",
+      "component": "signal_integrity",
+      "message": "signal_integrity: signal_integrity_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.123981+00:00"
+      "timestamp": "2026-05-19T18:25:45.511455+00:00"
     },
     {
-      "component": "agent_runtime",
-      "message": "agent_runtime: agent_shadow_triage_packet_queued (info)",
+      "component": "signal_integrity",
+      "message": "signal_integrity: signal_integrity_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.125816+00:00"
+      "timestamp": "2026-05-19T18:25:45.511749+00:00"
     },
     {
-      "component": "phase1_live_adapter",
-      "message": "phase1_live_adapter: source_adapter_fetch_completed (info)",
+      "component": "signal_integrity",
+      "message": "signal_integrity: signal_integrity_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.126201+00:00"
+      "timestamp": "2026-05-19T18:25:45.511930+00:00"
     },
     {
-      "component": "agent_runtime",
-      "message": "agent_runtime: agent_shadow_triage_packet_queued (info)",
+      "component": "signal_integrity",
+      "message": "signal_integrity: signal_integrity_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.127746+00:00"
+      "timestamp": "2026-05-19T18:25:45.512157+00:00"
     },
     {
-      "component": "intelligence",
-      "message": "intelligence: research_shadow_triage_queue_processed (info)",
+      "component": "signal_integrity",
+      "message": "signal_integrity: signal_integrity_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.129627+00:00"
+      "timestamp": "2026-05-19T18:25:45.512329+00:00"
     },
     {
       "component": "intelligence",
       "message": "intelligence: local_research_assessment_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.145422+00:00"
+      "timestamp": "2026-05-19T18:26:01.627144+00:00"
     },
     {
       "component": "strategy_lead",
       "message": "strategy_lead: strategy_lead_shadow_packet_queued (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.159204+00:00"
+      "timestamp": "2026-05-19T18:26:01.642634+00:00"
     },
     {
       "component": "intelligence",
       "message": "intelligence: phase2_shadow_cycle_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T16:46:42.159810+00:00"
+      "timestamp": "2026-05-19T18:26:01.644352+00:00"
     }
   ],
   "schema_version": 1,
@@ -1784,7 +2006,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1806,7 +2028,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1828,7 +2050,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1850,7 +2072,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1872,7 +2094,7 @@
       "degraded_reason": null,
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1894,7 +2116,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1916,7 +2138,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1938,7 +2160,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1960,7 +2182,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1982,7 +2204,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2004,7 +2226,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2026,7 +2248,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2048,7 +2270,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2070,7 +2292,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2092,7 +2314,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2114,7 +2336,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2136,7 +2358,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2158,7 +2380,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2180,7 +2402,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2202,7 +2424,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2224,7 +2446,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2246,7 +2468,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2268,7 +2490,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2290,7 +2512,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2312,7 +2534,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2334,7 +2556,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2356,7 +2578,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2378,7 +2600,7 @@
       "degraded_reason": null,
       "endpoint_count": 3,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2400,7 +2622,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2422,7 +2644,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2444,7 +2666,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2466,7 +2688,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2488,7 +2710,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2510,7 +2732,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2532,7 +2754,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T16:51:15.292335+00:00",
+      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
