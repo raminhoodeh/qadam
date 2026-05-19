@@ -1590,6 +1590,7 @@ function renderCapital(status) {
     const safeMaturityPct = Number.isFinite(maturityPct) ? Math.min(100, Math.max(0, maturityPct)) : 0;
     const openPositions = asArray(capital.open_positions);
     const closedTrades = asArray(capital.closed_trades);
+    const orders = asArray(capital.orders);
     const postmortemsDue = asArray(capital.postmortems_due);
     const postmortemsComplete = asArray(capital.postmortems_complete);
     const equityCurve = asArray(capital.equity_curve);
@@ -1613,6 +1614,16 @@ function renderCapital(status) {
             </li>
         `).join("")
         : `<li><strong>No closed trades</strong><span>The mature benchmark remains ${maturityCount}/${maturityTarget} closed proof trades.</span></li>`;
+
+    const orderRows = orders.length
+        ? orders.map((order) => `
+            <li>
+                <strong>${htmlText(order.instrument, "Mirrored paper order")}</strong>
+                <span>${htmlText(order.status, "unknown")} · ${htmlText(order.direction, "unknown")} · ${htmlText(order.order_type, "order")}</span>
+                <small>${htmlText(order.quantity, "0")} units · notional ${formatMoney(order.notional_gbp)} · ${htmlText(order.boundary, "Read-only mirrored order.")}</small>
+            </li>
+        `).join("")
+        : `<li><strong>No mirrored paper orders</strong><span>Alpaca returned no recent paper orders on the read-only mirror.</span></li>`;
 
     const curveRows = equityCurve.length
         ? equityCurve.slice(-5).map((point) => `
@@ -1660,6 +1671,7 @@ function renderCapital(status) {
                 ${renderMetric("Peak equity", formatMoney(capital.peak_equity_gbp))}
                 ${renderMetric("Max drawdown", formatPercent(capital.max_drawdown_pct))}
                 ${renderMetric("Open positions", capital.open_position_count || openPositions.length)}
+                ${renderMetric("Orders", capital.order_count || orders.length)}
                 ${renderMetric("Closed trades", capital.closed_trade_count || closedTrades.length)}
                 ${renderMetric("Postmortems due", capital.postmortem_due_count || postmortemsDue.length)}
                 ${renderMetric("Postmortems complete", capital.postmortem_complete_count || postmortemsComplete.length)}
@@ -1681,6 +1693,10 @@ function renderCapital(status) {
                 <p class="label">Closed trades</p>
                 <ul class="status-list paper-list">${closedRows}</ul>
             </div>
+        </section>
+        <section class="paper-account-section">
+            <p class="label">Mirrored paper orders</p>
+            <ul class="status-list paper-list">${orderRows}</ul>
         </section>
         <section class="paper-account-section">
             <p class="label">Equity timeline</p>

@@ -2,38 +2,46 @@
   "boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
   "capital": {
     "account_scope": "first_release_gbp_1000_trial",
-    "boundary": "D6 local mirror only. No broker connection, no orders, no live capital.",
-    "broker": "local_mirror_pending_alpaca_readonly",
-    "cash_gbp": 1000.0,
+    "boundary": "Alpaca paper mirror is read-only: balance, positions, orders, and P&L only. No broker write path, no live capital, no order placement.",
+    "broker": "alpaca_paper_readonly",
+    "cash_gbp": 100000.0,
     "closed_trade_count": 0,
     "closed_trades": [],
-    "connection_status": "local_mirror_not_broker_connected",
-    "current_balance_gbp": 1000.0,
-    "drawdown_pct": 0,
+    "connection_status": "alpaca_paper_readonly_connected",
+    "current_balance_gbp": 100000.0,
+    "drawdown_pct": 0.0,
     "equity_curve": [
       {
         "drawdown_pct": 0,
         "equity_gbp": 1000.0,
         "observed_at": "2026-05-16T19:33:24.051004+00:00"
+      },
+      {
+        "drawdown_pct": 0.0,
+        "equity_gbp": 100000.0,
+        "observed_at": "2026-05-19T13:02:57.721947+00:00"
       }
     ],
-    "equity_gbp": 1000.0,
+    "equity_gbp": 100000.0,
     "live_capital_enabled": false,
     "maturity_closed_trade_count": 0,
     "maturity_closed_trade_target": 100,
-    "max_drawdown_pct": 0,
+    "max_drawdown_pct": 0.0,
     "mirror_status": "ok",
-    "observed_at": "2026-05-16T19:33:24.051004+00:00",
+    "observed_at": "2026-05-19T13:02:57.721947+00:00",
+    "open_order_count": 0,
     "open_position_count": 0,
     "open_positions": [],
-    "peak_equity_gbp": 1000.0,
+    "order_count": 0,
+    "orders": [],
+    "peak_equity_gbp": 100000.0,
     "postmortem_complete_count": 0,
     "postmortem_due_count": 0,
     "postmortems_complete": [],
     "postmortems_due": [],
-    "realized_pnl_gbp": 0,
+    "realized_pnl_gbp": 0.0,
     "starting_balance_gbp": 1000.0,
-    "timeline_status": "initialized_no_trades",
+    "timeline_status": "alpaca_paper_readonly_mirrored",
     "unrealized_pnl_gbp": 0,
     "write_authority": false
   },
@@ -56,136 +64,136 @@
     "boundary": "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist.",
     "current_focus": [
       "reviewing shadow-only hypotheses",
-      "local Research Analyst focus: macro_watchlist"
+      "local Research Analyst focus: The divergence between rising Treasury yields (suggesting potential economic strength or inflation concerns) and the acu"
     ],
     "evidence_packets": [
       {
-        "average_trust_score": 0.56,
-        "created_at": "2026-05-18T10:56:03.402484+00:00",
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T09:21:03.835974+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:7b867c46-ad5c-43b8-89e3-3d8ae7d6ae2c",
-            "observed_at": "2026-05-17T11:15:15.156827+00:00",
+            "evidence_id": "shadow_triage_packet:efe42146-56b2-4b31-b8d7-7acf4bf5272d",
+            "observed_at": "2026-05-19T09:20:50.818834+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-            "trust_score": 0.56
+            "summary": "DGS10 10-Year Treasury Yield latest 4.59 on 2026-05-15; delta +0.12 (+2.68%), +3.46 sigma Source refs: macro.fred:8c77a0ee-9e8f-4e79-b96e-c4736e4a8bec",
+            "trust_score": 0.68
           }
         ],
-        "min_trust_score": 0.56,
+        "min_trust_score": 0.68,
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "74751415-3431-4cf5-b642-efde1810ca3e",
+        "signal_id": "72d25074-12ce-4f1e-bbe2-8a59aa04e9a7",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "1e374410-ef85-4906-b3eb-44fadafcd9a9"
+        "trail_id": "28bb047b-cbe9-4501-9bb2-91219d82821e"
       },
       {
-        "average_trust_score": 0.56,
-        "created_at": "2026-05-18T10:56:03.402500+00:00",
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T09:21:03.836041+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:bde1a9ba-00d4-4df0-9488-48c52cf7858c",
-            "observed_at": "2026-05-17T11:31:47.426084+00:00",
+            "evidence_id": "shadow_triage_packet:060e5e2c-5f5b-4e5e-91ba-f855ac2ab2d1",
+            "observed_at": "2026-05-19T09:20:50.822417+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-            "trust_score": 0.56
+            "summary": "DCOILWTICO WTI Crude Oil latest 101.56 on 2026-05-11; delta +2.69 (+2.72%), +0.36 sigma Source refs: macro.fred:2aa62de4-92e4-4bf3-9b4a-de630865ff2b",
+            "trust_score": 0.68
           }
         ],
-        "min_trust_score": 0.56,
+        "min_trust_score": 0.68,
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "1be93ec3-121d-442c-80db-85906df769d1",
+        "signal_id": "40a2adc9-08b9-4a6c-9782-a72fe8aa3ee7",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "5bbd667e-d85a-466c-a9c8-a3c77d4b8998"
+        "trail_id": "a4a8f6cb-b636-47fb-abd6-6195e39e8b4c"
       },
       {
-        "average_trust_score": 0.56,
-        "created_at": "2026-05-18T10:56:03.402511+00:00",
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T09:21:03.836073+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:d6514ce8-22b1-4ea6-bdad-107eeb9cdfc3",
-            "observed_at": "2026-05-18T07:53:32.989597+00:00",
+            "evidence_id": "shadow_triage_packet:2769f632-3fda-4f79-812b-0af901e05b76",
+            "observed_at": "2026-05-19T09:21:00.046684+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-            "trust_score": 0.56
+            "summary": "IEA chief warns commercial oil inventories are depleting rapidly, only weeks left - Reuters Source refs: social.rss:b2ece81f-a9c3-4012-b9e0-f662a28640ab",
+            "trust_score": 0.68
           }
         ],
-        "min_trust_score": 0.56,
+        "min_trust_score": 0.68,
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "bb233d2a-90ee-4e26-9448-5e48490a4d98",
+        "signal_id": "45056e3d-ceb8-4c6f-9484-e7f3e2a52dc1",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "d83350ba-3b2c-4a64-b341-0ea3cf4c5d0f"
+        "trail_id": "a2e56249-38e0-41d6-bbad-df9b9842eb3c"
       },
       {
-        "average_trust_score": 0.56,
-        "created_at": "2026-05-18T10:56:03.402521+00:00",
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T09:21:03.836102+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:89344698-24b3-42c5-a651-115eb015ece4",
-            "observed_at": "2026-05-18T08:56:49.939131+00:00",
+            "evidence_id": "shadow_triage_packet:10a8df01-fa64-40c8-9195-793879944075",
+            "observed_at": "2026-05-19T09:21:00.050363+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-            "trust_score": 0.56
+            "summary": "Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:a8b34ec7-25af-4693-bf1c-ba3966f81ca0",
+            "trust_score": 0.68
           }
         ],
-        "min_trust_score": 0.56,
+        "min_trust_score": 0.68,
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "608a063d-0555-49c5-aba1-0ca276e5280e",
+        "signal_id": "4c959ede-57e6-4640-bd87-4ddd8395ddef",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "288b5741-1ae3-4359-8879-5540e406bc71"
+        "trail_id": "830a62f9-6050-4627-85d8-c6dc3beb216a"
       },
       {
-        "average_trust_score": 0.56,
-        "created_at": "2026-05-18T10:56:03.402530+00:00",
+        "average_trust_score": 0.68,
+        "created_at": "2026-05-19T09:21:03.836140+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:f58b071d-6a33-43d1-8c53-909e5d69035b",
-            "observed_at": "2026-05-18T10:56:03.165279+00:00",
+            "evidence_id": "shadow_triage_packet:707e330a-e556-41c3-9ac2-a2f5a59a2699",
+            "observed_at": "2026-05-19T09:21:03.121447+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-            "trust_score": 0.56
+            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:306a7c33-7e30-4a38-9b9d-cec31fecfed0",
+            "trust_score": 0.68
           }
         ],
-        "min_trust_score": 0.56,
+        "min_trust_score": 0.68,
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "32201750-140a-43f1-874a-a3b45958b294",
+        "signal_id": "bf325db7-5d75-45d1-af7c-71de49345d24",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "125a8d44-16f9-4447-95dd-8c3c37143eab"
+        "trail_id": "c7cc8dce-0254-4f54-a5d9-eeedabd33617"
       }
     ],
     "hypotheses": [
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.427,
-        "created_at": "2026-05-18T10:56:03.402492+00:00",
-        "evidence_packet_id": "74751415-3431-4cf5-b642-efde1810ca3e",
+        "confidence": 0.442,
+        "created_at": "2026-05-19T09:21:03.836007+00:00",
+        "evidence_packet_id": "72d25074-12ce-4f1e-bbe2-8a59aa04e9a7",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -194,70 +202,70 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "74751415-3431-4cf5-b642-efde1810ca3e",
+        "signal_id": "72d25074-12ce-4f1e-bbe2-8a59aa04e9a7",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "thesis": "Deterministic triage flagged this observation for review: DGS10 10-Year Treasury Yield latest 4.59 on 2026-05-15; delta +0.12 (+2.68%), +3.46 sigma Source refs: macro.fred:8c77a0ee-9e8f-4e79-b96e-c4736e4a8bec",
         "title": "Shadow watch: macro_watchlist"
       },
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.427,
-        "created_at": "2026-05-18T10:56:03.402505+00:00",
-        "evidence_packet_id": "1be93ec3-121d-442c-80db-85906df769d1",
+        "confidence": 0.596,
+        "created_at": "2026-05-19T09:21:03.836055+00:00",
+        "evidence_packet_id": "40a2adc9-08b9-4a6c-9782-a72fe8aa3ee7",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "macro_watchlist",
+        "instrument_focus": "crude_oil_or_energy_transport",
         "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "1be93ec3-121d-442c-80db-85906df769d1",
+        "signal_id": "40a2adc9-08b9-4a6c-9782-a72fe8aa3ee7",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-        "title": "Shadow watch: macro_watchlist"
+        "thesis": "Deterministic triage flagged this observation for review: DCOILWTICO WTI Crude Oil latest 101.56 on 2026-05-11; delta +2.69 (+2.72%), +0.36 sigma Source refs: macro.fred:2aa62de4-92e4-4bf3-9b4a-de630865ff2b",
+        "title": "Shadow watch: crude_oil_or_energy_transport"
       },
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.427,
-        "created_at": "2026-05-18T10:56:03.402515+00:00",
-        "evidence_packet_id": "bb233d2a-90ee-4e26-9448-5e48490a4d98",
+        "confidence": 0.519,
+        "created_at": "2026-05-19T09:21:03.836083+00:00",
+        "evidence_packet_id": "45056e3d-ceb8-4c6f-9484-e7f3e2a52dc1",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "macro_watchlist",
+        "instrument_focus": "crude_oil_or_energy_transport",
         "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "bb233d2a-90ee-4e26-9448-5e48490a4d98",
+        "signal_id": "45056e3d-ceb8-4c6f-9484-e7f3e2a52dc1",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-        "title": "Shadow watch: macro_watchlist"
+        "thesis": "Deterministic triage flagged this observation for review: IEA chief warns commercial oil inventories are depleting rapidly, only weeks left - Reuters Source refs: social.rss:b2ece81f-a9c3-4012-b9e0-f662a28640ab",
+        "title": "Shadow watch: crude_oil_or_energy_transport"
       },
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.427,
-        "created_at": "2026-05-18T10:56:03.402525+00:00",
-        "evidence_packet_id": "608a063d-0555-49c5-aba1-0ca276e5280e",
+        "confidence": 0.519,
+        "created_at": "2026-05-19T09:21:03.836113+00:00",
+        "evidence_packet_id": "4c959ede-57e6-4640-bd87-4ddd8395ddef",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "macro_watchlist",
+        "instrument_focus": "crude_oil_or_energy_transport",
         "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "608a063d-0555-49c5-aba1-0ca276e5280e",
+        "signal_id": "4c959ede-57e6-4640-bd87-4ddd8395ddef",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
-        "title": "Shadow watch: macro_watchlist"
+        "thesis": "Deterministic triage flagged this observation for review: Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:a8b34ec7-25af-4693-bf1c-ba3966f81ca0",
+        "title": "Shadow watch: crude_oil_or_energy_transport"
       },
       {
         "blocked_reason": "shadow_only_no_signal_integrity_gate",
-        "confidence": 0.427,
-        "created_at": "2026-05-18T10:56:03.402534+00:00",
-        "evidence_packet_id": "32201750-140a-43f1-874a-a3b45958b294",
+        "confidence": 0.442,
+        "created_at": "2026-05-19T09:21:03.836154+00:00",
+        "evidence_packet_id": "bf325db7-5d75-45d1-af7c-71de49345d24",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -266,22 +274,22 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "32201750-140a-43f1-874a-a3b45958b294",
+        "signal_id": "bf325db7-5d75-45d1-af7c-71de49345d24",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Sample shadow triage packet for runtime enforcement validation. Source refs: sample:nasa_firms:physical_anomaly, sample:fred:macro_context",
+        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:306a7c33-7e30-4a38-9b9d-cec31fecfed0",
         "title": "Shadow watch: macro_watchlist"
       }
     ],
     "local_research_assessments": [
       {
         "anomalies": [
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation."
+          "Polymarket public market quote available for a geopolitical or macro question.",
+          "Alpaca paper account and market-data read-only mirror candidate.",
+          "Telegram channel or bot update captured as narrative context only."
         ],
-        "assessment_id": "ca4a0f45-12cc-4098-a31b-cecf9b562b71",
-        "confidence": 0.4,
-        "created_at": "2026-05-18T07:53:33.310803+00:00",
+        "assessment_id": "fadcf067-2cb9-4d1f-8fe4-3be37ceccffa",
+        "confidence": 0.82,
+        "created_at": "2026-05-19T09:15:04.960392+00:00",
         "escalation_recommendation": "hold_shadow",
         "execution_allowed": false,
         "missing_correlations": [
@@ -299,84 +307,80 @@
         "paper_order_allowed": false,
         "provider": "lm_studio",
         "status": "shadow_only",
-        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
-        "watch_focus": "macro_watchlist"
+        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: crude_oil_or_energy_transport. No execution path is available.",
+        "watch_focus": "crude_oil_or_energy_transport"
       },
       {
         "anomalies": [
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation."
+          "Oil price sensitivity to specific shipping corridor risks.",
+          "Simultaneous monitoring of export control negotiations and public market sentiment."
         ],
-        "assessment_id": "beb973b4-1d63-405e-9c9b-2e4c7b0b7e3d",
-        "confidence": 0.4,
-        "created_at": "2026-05-18T08:56:50.263400+00:00",
+        "assessment_id": "2a506651-d591-45b7-8664-6997c2551a59",
+        "confidence": 0.85,
+        "created_at": "2026-05-19T09:17:01.942238+00:00",
         "escalation_recommendation": "hold_shadow",
         "execution_allowed": false,
         "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
+          "Direct correlation between energy supply risk escalation and chipmaker investment cycles.",
+          "Impact of geopolitical instability on the pricing mechanisms observed in Polymarket quotes."
         ],
-        "mode": "dry_contract",
-        "model": "gemma-4-e4b",
+        "mode": "live_local_llm",
+        "model": "google/gemma-4-e4b",
         "next_questions": [
-          "Which independent source can corroborate this observation?",
-          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
-          "Which stale-data or missing-credential condition could invalidate the packet?"
+          "How are major commodity indices reacting to the specific shipping corridor risks?",
+          "What is the current consensus view (or divergence) among key industry players regarding the feasibility of new export control negotiations?",
+          "Are there any leading indicators correlating macro-level geopolitical risk with public market volatility?"
         ],
         "paper_order_allowed": false,
         "provider": "lm_studio",
         "status": "shadow_only",
-        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
-        "watch_focus": "macro_watchlist"
+        "summary": "Multiple distinct geopolitical and market risk signals are queued, covering energy supply chain risks (shipping/oil), technology export controls (chipmakers), general macro sentiment via public markets, and platform data availability updates. The overall theme is heightened global tension and regulatory uncertainty.",
+        "watch_focus": "Geopolitical choke points (energy/trade routes) and technological policy shifts (export controls)."
       },
       {
         "anomalies": [
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation.",
-          "Sample shadow triage packet for runtime enforcement validation."
+          "IEA warning regarding rapid depletion of commercial oil inventories, suggesting immediate supply constraint risk.",
+          "Record US emergency reserve draws coinciding with high WTI price movement, indicating sustained demand pressure."
         ],
-        "assessment_id": "dce4be91-6a9a-428e-9d3c-cba2a15dd4dd",
-        "confidence": 0.4,
-        "created_at": "2026-05-18T10:56:03.498426+00:00",
-        "escalation_recommendation": "hold_shadow",
+        "assessment_id": "1cb7b21b-9b25-4d44-8f06-427a0c5b2758",
+        "confidence": 0.85,
+        "created_at": "2026-05-19T09:21:20.398406+00:00",
+        "escalation_recommendation": "escalate_to_strategy_lead_shadow",
         "execution_allowed": false,
         "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
+          "Correlation between the magnitude of the Treasury yield increase (+2.68%) and current global industrial production forecasts (e.g., PMI data) is needed to assess if rate hikes are driven by cyclical strength or inflation expectations.",
+          "A direct correlation analysis between oil inventory depletion rates and expected future geopolitical stability indices would clarify risk premium components."
         ],
-        "mode": "dry_contract",
-        "model": "gemma-4-e4b",
+        "mode": "live_local_llm",
+        "model": "google/gemma-4-e4b",
         "next_questions": [
-          "Which independent source can corroborate this observation?",
-          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
-          "Which stale-data or missing-credential condition could invalidate the packet?"
+          "How will the Treasury yield movement impact sector-specific financing costs, particularly for energy infrastructure?",
+          "Are the reported oil draw volumes sustainable given current global demand forecasts, or do they signal a temporary spike in speculative activity?",
+          "What is the market's immediate reaction to the combination of high yields and supply-constrained commodities?"
         ],
         "paper_order_allowed": false,
         "provider": "lm_studio",
         "status": "shadow_only",
-        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: macro_watchlist. No execution path is available.",
-        "watch_focus": "macro_watchlist"
+        "summary": "The shadow packets highlight significant recent movements in key macro assets and commodity markets. Specifically, the 10-Year Treasury Yield increased by +2.68% (to 4.59), indicating rising yields/bond pressure. Crude oil prices show a notable increase of +2.72% (to 101.56). Concurrently, external reports suggest tightening supply conditions for commercial oil inventories and record draws from US emergency reserves, reinforcing upward price pressure on energy commodities.",
+        "watch_focus": "The divergence between rising Treasury yields (suggesting potential economic strength or inflation concerns) and the acu"
       }
     ],
     "model_activity": [
       {
         "authority": "non_executable",
         "current_task": "local shadow assessment",
-        "model": "gemma-4-e4b",
+        "model": "google/gemma-4-e4b",
         "provider": "lm_studio",
         "role": "Research Analyst",
-        "status": "shadow_only"
+        "status": "ok"
       },
       {
         "authority": "non_executable",
-        "current_task": "scenario challenge after local triage",
+        "current_task": "shadow handoff queued",
         "model": "configured_frontier_model",
         "provider": "gemini",
         "role": "Strategy Lead",
-        "status": "not_called"
+        "status": "queued_shadow_review"
       },
       {
         "authority": "non_executable",
@@ -391,70 +395,129 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-17T11:15:15.156827+00:00",
-        "packet_id": "7b867c46-ad5c-43b8-89e3-3d8ae7d6ae2c",
+        "created_at": "2026-05-19T09:21:00.050363+00:00",
+        "packet_id": "10a8df01-fa64-40c8-9195-793879944075",
         "source_event_refs": [
-          "sample:nasa_firms:physical_anomaly",
-          "sample:fred:macro_context"
+          "social.rss:a8b34ec7-25af-4693-bf1c-ba3966f81ca0"
         ],
         "status": "queued_shadow_only",
-        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "summary": "Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters",
+        "uncertainty": "bounded"
+      },
+      {
+        "agent_key": "research_analyst",
+        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
+        "created_at": "2026-05-19T09:21:00.908276+00:00",
+        "packet_id": "0f6e8fbf-71fa-4ef2-8822-1e26dea6e4ac",
+        "source_event_refs": [
+          "market.polymarket:b110073c-dbe7-401f-a0d2-00cb2accc0f3"
+        ],
+        "status": "queued_shadow_only",
+        "summary": "NCAAB: Arizona State Sun Devils vs. Nevada Wolf Pack 2023-03-15",
         "uncertainty": "medium"
       },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-17T11:31:47.426084+00:00",
-        "packet_id": "bde1a9ba-00d4-4df0-9488-48c52cf7858c",
+        "created_at": "2026-05-19T09:21:00.910241+00:00",
+        "packet_id": "6c55807a-6eb4-4f54-902c-2c9435b67a4f",
         "source_event_refs": [
-          "sample:nasa_firms:physical_anomaly",
-          "sample:fred:macro_context"
+          "market.polymarket:803cbc55-c719-4b96-a0f6-4c69f043d66c"
         ],
         "status": "queued_shadow_only",
-        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "summary": "NCAAB: Tennessee Volunteers vs. Duke Blue Devils 2023-03-18",
         "uncertainty": "medium"
       },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-18T07:53:32.989597+00:00",
-        "packet_id": "d6514ce8-22b1-4ea6-bdad-107eeb9cdfc3",
+        "created_at": "2026-05-19T09:21:03.121447+00:00",
+        "packet_id": "707e330a-e556-41c3-9ac2-a2f5a59a2699",
         "source_event_refs": [
-          "sample:nasa_firms:physical_anomaly",
-          "sample:fred:macro_context"
+          "market.alpaca:306a7c33-7e30-4a38-9b9d-cec31fecfed0"
         ],
         "status": "queued_shadow_only",
-        "summary": "Sample shadow triage packet for runtime enforcement validation.",
-        "uncertainty": "medium"
+        "summary": "Alpaca paper account and market-data read-only mirror candidate.",
+        "uncertainty": "bounded"
       },
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-18T08:56:49.939131+00:00",
-        "packet_id": "89344698-24b3-42c5-a651-115eb015ece4",
+        "created_at": "2026-05-19T09:21:03.834436+00:00",
+        "packet_id": "688c574f-e1b4-4581-8d18-604a52c36130",
         "source_event_refs": [
-          "sample:nasa_firms:physical_anomaly",
-          "sample:fred:macro_context"
+          "social.telegram:d27f70f3-6453-4012-a845-d47168e1bf98"
         ],
         "status": "queued_shadow_only",
-        "summary": "Sample shadow triage packet for runtime enforcement validation.",
-        "uncertainty": "medium"
-      },
-      {
-        "agent_key": "research_analyst",
-        "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-18T10:56:03.165279+00:00",
-        "packet_id": "f58b071d-6a33-43d1-8c53-909e5d69035b",
-        "source_event_refs": [
-          "sample:nasa_firms:physical_anomaly",
-          "sample:fred:macro_context"
-        ],
-        "status": "queued_shadow_only",
-        "summary": "Sample shadow triage packet for runtime enforcement validation.",
+        "summary": "Telegram channel or bot update captured as narrative context only.",
         "uncertainty": "medium"
       }
     ],
-    "status": "shadow_ready"
+    "status": "shadow_ready",
+    "strategy_lead_packets": [
+      {
+        "blocked_by": [
+          "signal_integrity_gate_missing",
+          "risk_agent_missing",
+          "execution_policy_missing",
+          "broker_write_route_absent"
+        ],
+        "created_at": "2026-05-19T09:02:23.970653+00:00",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Correlation between the rate of US reserve draws and immediate inflation expectations.",
+          "Impact of geopolitical stability on oil price volatility beyond current inventory metrics.",
+          "How central bank policy adjustments might account for sustained high energy input costs."
+        ],
+        "packet_id": "2cd9da5f-9c8e-4e24-a38d-c6a30e1cba5c",
+        "paper_order_allowed": false,
+        "source_assessment_id": "7e91b112-534c-4f15-be0e-56bbda535053",
+        "status": "queued_shadow_only",
+        "watch_focus": "The divergence between rising yields (DGS10) and spiking oil prices (WTI), coupled with physical inventory depletion war",
+        "worldview_lens_status": "private_prior_only_not_evidence"
+      },
+      {
+        "blocked_by": [
+          "signal_integrity_gate_missing",
+          "risk_agent_missing",
+          "execution_policy_missing",
+          "broker_write_route_absent"
+        ],
+        "created_at": "2026-05-19T09:15:04.973154+00:00",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "signal_integrity_gate",
+          "risk_agent_review",
+          "market_price_confirmation"
+        ],
+        "packet_id": "8fa0e278-cd25-4710-8011-ce5051e295d7",
+        "paper_order_allowed": false,
+        "source_assessment_id": "fadcf067-2cb9-4d1f-8fe4-3be37ceccffa",
+        "status": "queued_shadow_only",
+        "watch_focus": "crude_oil_or_energy_transport",
+        "worldview_lens_status": "private_prior_only_not_evidence"
+      },
+      {
+        "blocked_by": [
+          "signal_integrity_gate_missing",
+          "risk_agent_missing",
+          "execution_policy_missing",
+          "broker_write_route_absent"
+        ],
+        "created_at": "2026-05-19T09:21:20.413910+00:00",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Correlation between the magnitude of the Treasury yield increase (+2.68%) and current global industrial production forecasts (e.g., PMI data) is needed to assess if rate hikes are driven by cyclical strength or inflation expectations.",
+          "A direct correlation analysis between oil inventory depletion rates and expected future geopolitical stability indices would clarify risk premium components."
+        ],
+        "packet_id": "bd402d6e-02e4-4a38-b59d-c4a3c1f41431",
+        "paper_order_allowed": false,
+        "source_assessment_id": "1cb7b21b-9b25-4d44-8f06-427a0c5b2758",
+        "status": "queued_shadow_only",
+        "watch_focus": "The divergence between rising Treasury yields (suggesting potential economic strength or inflation concerns) and the acu",
+        "worldview_lens_status": "private_prior_only_not_evidence"
+      }
+    ]
   },
   "communications": {
     "boundary": "Communications are notify-only. The browser and Telegram rail cannot create broker actions or hidden approvals.",
@@ -468,10 +531,16 @@
       "bot_configured": true,
       "bot_username_configured": true,
       "boundary": "Telegram is outbound-only member communication. It cannot place, approve, reject, modify, close, or resize trades.",
-      "default_chat_configured": false,
+      "default_chat_configured": true,
+      "delivery_target_count": 2,
+      "delivery_target_modes": [
+        "private_default",
+        "group"
+      ],
       "dry_run_message_count": 4,
       "failed_count": 0,
       "failed_member_count": 0,
+      "group_chat_configured": true,
       "last_digest_title": "Insight digest: shadow research queue",
       "last_failure_reason": "",
       "last_sent_time": null,
@@ -542,7 +611,7 @@
   },
   "d1_snapshot": {
     "browser_authority": "read_only",
-    "generated_at": "2026-05-18T10:56:04.690159+00:00",
+    "generated_at": "2026-05-19T15:12:12.663657+00:00",
     "landing_copy": "landing-page-repo/status/cockpit-status.json",
     "local_orchestrator_exposed": false,
     "phase": "D1",
@@ -885,7 +954,7 @@
     "supabase_table": "fund_manager_comments",
     "visibility": "founding_fund_managers"
   },
-  "generated_at": "2026-05-18T10:56:04.690159+00:00",
+  "generated_at": "2026-05-19T15:12:12.663657+00:00",
   "live_bridge": {
     "allowed_methods": [
       "GET",
@@ -907,7 +976,7 @@
       "PATCH",
       "DELETE"
     ],
-    "generated_at": "2026-05-18T10:56:04.690159+00:00",
+    "generated_at": "2026-05-19T15:12:12.663657+00:00",
     "health_checks": [
       "auth_required",
       "rate_limit_enforced",
@@ -938,7 +1007,7 @@
       "current_process": "supervising local modules",
       "key": "coo",
       "label": "COO",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Python Orchestrator",
       "raw_status": "registered",
@@ -949,7 +1018,7 @@
       "current_process": "waiting for local LLM readiness",
       "key": "research_analyst",
       "label": "Research Analyst",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Local LLM",
       "raw_status": "pending",
@@ -960,7 +1029,7 @@
       "current_process": "waiting for frontier model probe",
       "key": "strategy_lead",
       "label": "Strategy Lead",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Frontier LLM",
       "raw_status": "pending",
@@ -971,7 +1040,7 @@
       "current_process": "deferred weekly oracle",
       "key": "head_of_quant",
       "label": "Head of Quant",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Quantum Compute",
       "raw_status": "registered",
@@ -982,7 +1051,7 @@
       "current_process": "recording local audit trail",
       "key": "event_log",
       "label": "Event Log",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "Postgres/Timescale",
       "raw_status": "jsonl_fallback",
@@ -993,18 +1062,18 @@
       "current_process": "holding local memory shell",
       "key": "knowledge_graph",
       "label": "Knowledge Graph",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "ChromaDB",
-      "raw_status": "registered",
-      "status": "online"
+      "raw_status": "not_running",
+      "status": "degraded"
     },
     {
       "authority": "write_blocked",
       "current_process": "execution disabled in foundation mode",
       "key": "execution_registry",
       "label": "Execution Registry",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Risk Agent",
       "raw_status": "disabled",
@@ -1015,7 +1084,7 @@
       "current_process": "registered",
       "key": "resource_registry",
       "label": "Resource Registry",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Reference Provenance",
       "raw_status": "registered",
@@ -1026,7 +1095,7 @@
       "current_process": "foundational prior",
       "key": "world_model",
       "label": "World-Model Lens",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "Private Corpus",
       "raw_status": "foundational_prior",
@@ -1037,7 +1106,7 @@
       "current_process": "manifest permissions available",
       "key": "agent_os",
       "label": "Agent OS",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Manifest Registry",
       "raw_status": "manifest_ready",
@@ -1048,7 +1117,7 @@
       "current_process": "broker-write tools blocked",
       "key": "agent_runtime",
       "label": "Agent Runtime",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Permission Gate",
       "raw_status": "enforced",
@@ -1059,7 +1128,7 @@
       "current_process": "shadow-only review packets available",
       "key": "shadow_intelligence",
       "label": "Shadow Intelligence",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Research Analyst",
       "raw_status": "shadow_ready",
@@ -1070,7 +1139,7 @@
       "current_process": "local",
       "key": "governance_forum",
       "label": "Governance Forum",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "Fund Managers",
       "raw_status": "local",
@@ -1081,7 +1150,7 @@
       "current_process": "outbound dry-run member communications",
       "key": "telegram_bot",
       "label": "Telegram Bot",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "Fund Manager Interface",
       "raw_status": "dry_run",
@@ -1092,7 +1161,7 @@
       "current_process": "serving authenticated public-safe status snapshots",
       "key": "live_bridge",
       "label": "Secure Live Bridge",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "qadam.trade API",
       "raw_status": "read_only_ready",
@@ -1103,7 +1172,7 @@
       "current_process": "test data ready",
       "key": "ingestion_spine",
       "label": "Test Ingestion Spine",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": true,
       "owner": "World Monitor Adapters",
       "raw_status": "test_data_ready",
@@ -1114,7 +1183,7 @@
       "current_process": "sample ready",
       "key": "gdelt_adapter",
       "label": "GDELT Adapter",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1125,7 +1194,7 @@
       "current_process": "sample ready",
       "key": "oref_adapter",
       "label": "Oref Adapter",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1136,7 +1205,7 @@
       "current_process": "credential gated",
       "key": "nasa_firms_adapter",
       "label": "NASA FIRMS Adapter",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Physical Pipeline",
       "raw_status": "credential_gated",
@@ -1147,7 +1216,7 @@
       "current_process": "sample ready",
       "key": "fred_adapter",
       "label": "FRED Adapter",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Macro Pipeline",
       "raw_status": "sample_ready",
@@ -1158,7 +1227,7 @@
       "current_process": "sample ready",
       "key": "rss_adapter",
       "label": "RSS Adapter",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "Narrative Pipeline",
       "raw_status": "sample_ready",
@@ -1169,7 +1238,7 @@
       "current_process": "static live shell frozen",
       "key": "cockpit",
       "label": "Cockpit",
-      "last_heartbeat": "2026-05-18T10:56:04.690159+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663657+00:00",
       "local_only": false,
       "owner": "qadam.trade",
       "raw_status": "shell",
@@ -1178,52 +1247,52 @@
   ],
   "process_console": [
     {
-      "component": "historical_backfill",
-      "message": "historical_backfill: historical_backfill_sample_recorded (info)",
+      "component": "paper_account",
+      "message": "paper_account: paper_account_snapshot_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.309586+00:00"
+      "timestamp": "2026-05-19T13:02:57.724624+00:00"
     },
     {
-      "component": "historical_backfill",
-      "message": "historical_backfill: historical_backfill_sample_recorded (info)",
+      "component": "paper_account",
+      "message": "paper_account: alpaca_paper_account_mirror_synced (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.309640+00:00"
-    },
-    {
-      "component": "historical_backfill",
-      "message": "historical_backfill: historical_backfill_sample_recorded (info)",
-      "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.309701+00:00"
-    },
-    {
-      "component": "gdelt_adapter",
-      "message": "gdelt_adapter: source_adapter_fetch_completed (info)",
-      "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.435995+00:00"
-    },
-    {
-      "component": "oref_adapter",
-      "message": "oref_adapter: source_adapter_fetch_completed (info)",
-      "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.478553+00:00"
+      "timestamp": "2026-05-19T13:02:57.730668+00:00"
     },
     {
       "component": "nasa_firms_adapter",
       "message": "nasa_firms_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.522465+00:00"
+      "timestamp": "2026-05-19T13:06:28.938335+00:00"
     },
     {
       "component": "fred_adapter",
       "message": "fred_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.566267+00:00"
+      "timestamp": "2026-05-19T13:06:30.983280+00:00"
     },
     {
-      "component": "rss_adapter",
-      "message": "rss_adapter: source_adapter_fetch_completed (info)",
+      "component": "phase1_live_adapter",
+      "message": "phase1_live_adapter: source_adapter_fetch_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-18T10:56:04.611062+00:00"
+      "timestamp": "2026-05-19T13:06:32.344810+00:00"
+    },
+    {
+      "component": "phase1_live_adapter",
+      "message": "phase1_live_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-19T13:06:33.172429+00:00"
+    },
+    {
+      "component": "phase1_live_adapter",
+      "message": "phase1_live_adapter: source_adapter_fetch_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-19T13:06:33.850257+00:00"
+    },
+    {
+      "component": "credential_validation",
+      "message": "credential_validation: supplied_credentials_validation_completed (info)",
+      "severity": "info",
+      "timestamp": "2026-05-19T13:06:35.240829+00:00"
     }
   ],
   "schema_version": 1,
@@ -1240,58 +1309,12 @@
         "deferred": 3,
         "derived": 1,
         "fallback_only": 1,
-        "live_optional": 10,
-        "local_bridge_required": 1,
-        "ready_to_build": 7,
-        "unavailable_missing_credentials": 12
-      },
-      "checked_at": "2026-05-18T08:56:50.881478+00:00",
-      "deferred_count": 3,
-      "missing_credential_source_count": 14,
-      "promoted_adapter_count": 19,
-      "source_count": 35
-    },
-    {
-      "by_pipeline": {
-        "conflict": 5,
-        "macro": 6,
-        "market": 9,
-        "physical": 7,
-        "social": 8
-      },
-      "by_runtime_status": {
-        "deferred": 3,
-        "derived": 1,
-        "fallback_only": 1,
-        "live_optional": 10,
-        "local_bridge_required": 1,
-        "ready_to_build": 7,
-        "unavailable_missing_credentials": 12
-      },
-      "checked_at": "2026-05-18T08:56:50.931049+00:00",
-      "deferred_count": 3,
-      "missing_credential_source_count": 14,
-      "promoted_adapter_count": 19,
-      "source_count": 35
-    },
-    {
-      "by_pipeline": {
-        "conflict": 5,
-        "macro": 6,
-        "market": 9,
-        "physical": 7,
-        "social": 8
-      },
-      "by_runtime_status": {
-        "deferred": 3,
-        "derived": 1,
-        "fallback_only": 1,
         "live_optional": 13,
         "local_bridge_required": 1,
         "ready_to_build": 7,
         "unavailable_missing_credentials": 9
       },
-      "checked_at": "2026-05-18T10:55:50.502085+00:00",
+      "checked_at": "2026-05-18T13:33:26.249878+00:00",
       "deferred_count": 3,
       "missing_credential_source_count": 11,
       "promoted_adapter_count": 19,
@@ -1309,14 +1332,14 @@
         "deferred": 3,
         "derived": 1,
         "fallback_only": 1,
-        "live_optional": 13,
+        "live_optional": 12,
         "local_bridge_required": 1,
         "ready_to_build": 7,
-        "unavailable_missing_credentials": 9
+        "unavailable_missing_credentials": 10
       },
-      "checked_at": "2026-05-18T10:56:04.150351+00:00",
+      "checked_at": "2026-05-18T21:13:19.588825+00:00",
       "deferred_count": 3,
-      "missing_credential_source_count": 11,
+      "missing_credential_source_count": 12,
       "promoted_adapter_count": 19,
       "source_count": 35
     },
@@ -1332,14 +1355,60 @@
         "deferred": 3,
         "derived": 1,
         "fallback_only": 1,
-        "live_optional": 13,
+        "live_optional": 12,
         "local_bridge_required": 1,
         "ready_to_build": 7,
-        "unavailable_missing_credentials": 9
+        "unavailable_missing_credentials": 10
       },
-      "checked_at": "2026-05-18T10:56:04.199055+00:00",
+      "checked_at": "2026-05-18T21:13:19.636345+00:00",
       "deferred_count": 3,
-      "missing_credential_source_count": 11,
+      "missing_credential_source_count": 12,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 12,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 10
+      },
+      "checked_at": "2026-05-18T21:48:10.478162+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 12,
+      "promoted_adapter_count": 19,
+      "source_count": 35
+    },
+    {
+      "by_pipeline": {
+        "conflict": 5,
+        "macro": 6,
+        "market": 9,
+        "physical": 7,
+        "social": 8
+      },
+      "by_runtime_status": {
+        "deferred": 3,
+        "derived": 1,
+        "fallback_only": 1,
+        "live_optional": 12,
+        "local_bridge_required": 1,
+        "ready_to_build": 7,
+        "unavailable_missing_credentials": 10
+      },
+      "checked_at": "2026-05-18T21:48:10.527878+00:00",
+      "deferred_count": 3,
+      "missing_credential_source_count": 12,
       "promoted_adapter_count": 19,
       "source_count": 35
     }
@@ -1367,10 +1436,10 @@
     },
     {
       "adapter_ready_count": 5,
-      "degraded_count": 3,
+      "degraded_count": 4,
       "local_only_count": 1,
-      "missing_credential_count": 4,
-      "online_count": 4,
+      "missing_credential_count": 5,
+      "online_count": 3,
       "pending_count": 2,
       "pipeline": "market",
       "source_count": 10
@@ -1497,6 +1566,7 @@
       }
     ],
     "closed_trades": [],
+    "mirrored_orders": [],
     "open_positions": [],
     "postmortems_complete": [],
     "postmortems_due": [],
@@ -1596,7 +1666,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1618,7 +1688,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1640,7 +1710,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1662,7 +1732,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1684,7 +1754,7 @@
       "degraded_reason": null,
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -1706,7 +1776,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1728,7 +1798,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1750,7 +1820,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1772,7 +1842,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1794,7 +1864,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1816,7 +1886,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1838,7 +1908,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -1860,7 +1930,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1882,7 +1952,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1904,7 +1974,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1926,7 +1996,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1948,7 +2018,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1970,7 +2040,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -1992,7 +2062,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2014,7 +2084,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2032,21 +2102,21 @@
       "auth_class": "credential_required",
       "cadence": "5 minutes",
       "can_influence_signals": false,
-      "credential_status": "unknown",
-      "degraded_reason": null,
+      "credential_status": "missing",
+      "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
       "promoted_adapter": true,
-      "raw_status": "live_optional",
-      "readiness": "adapter ready",
+      "raw_status": "unavailable_missing_credentials",
+      "readiness": "credential required",
       "registry_status": "needs_new_adapter",
       "source_key": "kalshi",
       "source_name": "Kalshi",
-      "status": "online",
+      "status": "degraded",
       "tier": 1,
       "trust_score": 0.76
     },
@@ -2058,7 +2128,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2080,7 +2150,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2102,7 +2172,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2124,7 +2194,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2146,7 +2216,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2168,7 +2238,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2190,7 +2260,7 @@
       "degraded_reason": null,
       "endpoint_count": 3,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2212,7 +2282,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2234,7 +2304,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2256,7 +2326,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2278,7 +2348,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2300,7 +2370,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2322,7 +2392,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2344,7 +2414,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-18T10:56:04.690160+00:00",
+      "last_heartbeat": "2026-05-19T15:12:12.663659+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
