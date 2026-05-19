@@ -58,7 +58,7 @@ Still pending:
 
 - Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
 - Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
-- ACLED token refresh automation needs implementation before relying on the access token long-term.
+- ACLED token refresh automation now exists in `scripts/refresh_acled_token.py`. A 2026-05-19 refresh run succeeded with the refresh-token grant, but the ACLED read endpoint still returned HTTP 403, so ACLED still needs provider entitlement/account-scope confirmation before it counts as durable live.
 - UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials.
 
 ## 3. Batch A - Get These First
@@ -70,7 +70,7 @@ These are the highest-value keys for Phase 1 and the first paper proof.
 | 1 | NASA FIRMS | Free | `NASA_FIRMS_API_KEY` | Request a FIRMS MAP_KEY from NASA. | `./scripts/check_nasa_firms_adapter.py --live` |
 | 2 | Alpaca Paper | Free to start | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Create an Alpaca account, open Paper Trading, generate paper API keys. Use paper keys only. | `./scripts/check_phase1_live_source_hardening.py --live` |
 | 3 | Kalshi | Usually free key; trading fees later | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Create a Kalshi account, generate API credentials, keep read-only/paper posture until execution policy exists. Current setup remains region/account gated. | `./scripts/check_phase1_live_source_hardening.py --live` |
-| 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Prefer token plus refresh-token automation over repeated password use. Current endpoint is `https://acleddata.com/api/acled/read`. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Use `./scripts/refresh_acled_token.py --write --validate-read` to refresh local ignored tokens before live source checks. Current endpoint is `https://acleddata.com/api/acled/read`. | `./scripts/refresh_acled_token.py --write --validate-read && ./scripts/check_phase1_live_source_hardening.py --live` |
 | 5 | FRED | Free | `FRED_API_KEY` | Create a FRED API key. Qadam has CSV fallback, but a key improves reliability. | `./scripts/check_fred_adapter.py --live` |
 | 6 | Telegram Bot | Free | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Create a bot with BotFather. Keep `QADAM_TELEGRAM_DRY_RUN=true` first. | `./scripts/check_telegram_config.py && ./scripts/check_telegram_outbox.py` |
 

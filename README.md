@@ -292,6 +292,7 @@ Current ingestion state:
 - `scripts/check_source_heartbeat.py` verifies all 35 source readiness states, promoted adapter count, missing credential map, and local heartbeat store.
 - `scripts/check_phase1_data_spine.py` verifies the whole Phase 1 source contract: 35 sources, 5 pipelines, promoted adapters, heartbeat-map consistency, safe credential-status shape, and full deterministic ingestion.
 - `scripts/check_supplied_credentials.py` validates the currently supplied credentials and local model settings in one read-only pass: NASA FIRMS, FRED, ACLED, Alpaca paper, Telegram, Gemini, LM Studio, plus Kalshi deferred and UnusualWhales missing.
+- `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file and writes a redacted local report; it cannot create signals or orders.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
 - `scripts/check_oref_adapter.py` verifies the Oref sample path and can run a live read-only check with `--live`.
 - `scripts/check_nasa_firms_adapter.py` verifies the NASA FIRMS sample path and can run a live read-only area CSV check with `--live` when `NASA_FIRMS_API_KEY` is configured.

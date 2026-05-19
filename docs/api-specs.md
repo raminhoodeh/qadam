@@ -35,6 +35,7 @@ Implemented locally:
 - Every promoted adapter has sample mode, masked credential status, raw payload archival, normalized event output, degraded-state handling, and no signal/order authority.
 - `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
 - `scripts/check_supplied_credentials.py` validates the currently supplied Batch A credentials and local model settings in one read-only pass, writing the ignored local report `data/runtime/supplied_credential_validation.json`.
+- `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file, appends the ignored local report `data/runtime/acled_token_refresh.jsonl`, and keeps token values out of stdout, docs, Event Log payloads, and Git.
 - Historical backfill planning and local sample-run records exist for ACLED, GDELT, NASA FIRMS, FRED, RSS, Polymarket, Kalshi, Alpaca, BLS, ECB, UN Comtrade, and SEC EDGAR.
 - Trust Score seed covers all 35 sources, but scores are priors until replaced by backtests and live observations.
 - Postgres/Timescale durable ingestion is coded as a local contract and is live only when the local database service is running. Use `scripts/start_postgres_timescale_ingestion.sh` for the Postgres-only bootstrap and `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` to verify replayable 35-source coverage.
@@ -48,10 +49,10 @@ Not yet proven live:
 Current supplied-credential snapshot as of 2026-05-19:
 
 - Live in read-only credential validation: NASA FIRMS, FRED, Alpaca paper account mirror, Telegram bot status, and Gemini model-list access.
-- Degraded in read-only credential validation: ACLED and LM Studio. ACLED is locally configured but returns provider HTTP 403; LM Studio is locally configured but the local server/model is not reachable in the current run.
+- Degraded in read-only credential validation: ACLED and LM Studio. ACLED is locally configured and refresh automation succeeded on 2026-05-19, but the post-refresh read endpoint still returned HTTP 403, so ACLED needs entitlement/account-scope confirmation before it can count as durable live; LM Studio is locally configured but the local server/model is not reachable in the current run.
 - Missing or deferred from this credential batch: UnusualWhales remains a useful missing Batch A key; Kalshi remains deferred due to current location/account eligibility.
 - Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings.
-- ACLED refresh-token automation is required before treating ACLED as durable live infrastructure.
+- ACLED refresh-token automation exists, but ACLED remains degraded until the refreshed token is accepted by the data-read endpoint or entitlement/account-scope is confirmed.
 - Telegram remains outbound-only and cannot trigger execution.
 
 ## 2. API Onboarding Batches
@@ -261,6 +262,10 @@ ACLED_EMAIL=
 ACLED_PASSWORD=
 ACLED_ACCESS_TOKEN=
 ACLED_REFRESH_TOKEN=
+ACLED_TOKEN_TYPE=
+ACLED_TOKEN_EXPIRES_IN=
+ACLED_TOKEN_EXPIRES_AT=
+ACLED_TOKEN_REFRESHED_AT=
 UCDP_ACCESS_TOKEN=
 OREF_PROXY_AUTH=
 

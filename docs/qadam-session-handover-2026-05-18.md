@@ -71,7 +71,7 @@ Local credential status as of 2026-05-18:
 - Phase 1 live source hardening now exists as `scripts/check_phase1_live_source_hardening.py`. It writes the ignored local report `data/runtime/phase1_live_source_validation.json` and keeps each promoted source explicitly marked as `live`, `degraded`, `missing_credentials`, or `sample_ready`.
 - Current live read-only validation: NASA FIRMS, FRED, RSS, Polymarket, Alpaca, BLS, ECB, SEC EDGAR, and Telegram are live; GDELT, Oref, and ACLED are degraded; UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter remain missing or deferred.
 - Supplied credential validation now exists as `scripts/check_supplied_credentials.py`. Current 2026-05-19 result: NASA FIRMS, FRED, Alpaca paper, Telegram, and Gemini are live; ACLED is configured but degraded with provider HTTP 403; LM Studio is configured but not reachable; Kalshi remains deferred; UnusualWhales remains the useful missing Batch A key.
-- ACLED token refresh is now a tracked credential requirement, but automatic refresh and account-scope confirmation still need implementation before ACLED counts as durable live infrastructure.
+- ACLED token refresh automation now exists as `scripts/refresh_acled_token.py --write --validate-read`. It writes only to the ignored local secret file and ignored local refresh reports. A 2026-05-19 run successfully refreshed token material with the refresh-token grant, but the post-refresh read validation still returned HTTP 403, so ACLED needs provider entitlement/account-scope confirmation before it counts as durable live infrastructure.
 - Kalshi is blocked by current location/account availability and should remain deferred until eligibility is resolved.
 
 ## Key Boundary
