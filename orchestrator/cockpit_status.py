@@ -25,6 +25,7 @@ from orchestrator.intelligence import (
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
+from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
@@ -121,7 +122,7 @@ def _module_authority(module_key: str, raw_status: str) -> str:
         return "notify_only"
     if module_key == "live_bridge":
         return "read_only"
-    if module_key in {"research_analyst", "strategy_lead", "head_of_quant", "shadow_intelligence"}:
+    if module_key in {"research_analyst", "strategy_lead", "head_of_quant", "shadow_intelligence", "signal_integrity_gate"}:
         return "non_executable"
     if raw_status in {"disabled", "live_blocked"}:
         return "blocked"
@@ -140,6 +141,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "agent_os": "manifest permissions available",
         "agent_runtime": "broker-write tools blocked",
         "shadow_intelligence": "shadow-only review packets available",
+        "signal_integrity_gate": "auditing shadow signals without trade authority",
         "telegram_bot": "outbound dry-run member communications",
         "live_bridge": "serving authenticated public-safe status snapshots",
         "cockpit": "static live shell frozen",
@@ -506,12 +508,46 @@ def _safe_shadow_packets(settings: Settings) -> list[dict[str, Any]]:
     ]
 
 
+def _safe_signal_integrity_reviews(settings: Settings) -> list[dict[str, Any]]:
+    try:
+        reviews = list(SignalIntegrityReviewStore(settings=settings).read(limit=5))
+    except Exception:
+        reviews = []
+    return [
+        {
+            "review_id": review.get("review_id"),
+            "source_signal_id": review.get("source_signal_id"),
+            "status": review.get("status"),
+            "instrument_focus": review.get("instrument_focus"),
+            "integrity_score": review.get("integrity_score"),
+            "source_count": review.get("source_count"),
+            "evidence_item_count": review.get("evidence_item_count"),
+            "average_trust_score": review.get("average_trust_score"),
+            "min_trust_score": review.get("min_trust_score"),
+            "signal_confidence": review.get("signal_confidence"),
+            "missing_correlations": review.get("missing_correlations", []),
+            "akber_filter": review.get("akber_filter", {}),
+            "failure_reasons": review.get("failure_reasons", []),
+            "required_next_steps": review.get("required_next_steps", []),
+            "worldview_prior_status": review.get("worldview_prior_status"),
+            "execution_allowed": bool(review.get("execution_allowed")),
+            "paper_order_allowed": bool(review.get("paper_order_allowed")),
+            "trade_candidate_created": bool(review.get("trade_candidate_created")),
+            "reviewed_at": review.get("reviewed_at"),
+            "boundary": review.get("boundary"),
+        }
+        for review in reviews
+    ]
+
+
 def _build_cognition(settings: Settings) -> dict[str, Any]:
     summary = shadow_intelligence_summary(settings)
     store = ShadowSignalStore(settings=settings)
     local_research_store = LocalResearchAssessmentStore(settings=settings)
     strategy_lead_store = StrategyLeadShadowStore(settings=settings)
     paper_context = paper_account_shadow_context(settings)
+    signal_integrity = signal_integrity_summary(settings)
+    signal_reviews = _safe_signal_integrity_reviews(settings)
     try:
         signals = list(store.read())[-5:]
     except Exception:
@@ -526,6 +562,20 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         strategy_packets = []
 
     evidence_packets = [_safe_evidence_packet(signal) for signal in signals]
+    latest_review_by_signal = {
+        str(review.get("source_signal_id")): review
+        for review in signal_reviews
+        if review.get("source_signal_id")
+    }
+
+    def _hypothesis_blocked_reason(signal_id: Any) -> str:
+        review = latest_review_by_signal.get(str(signal_id))
+        if not review:
+            return "shadow_only_pending_signal_integrity_gate"
+        if review.get("status") == "passed_to_risk_shadow":
+            return "signal_integrity_gate_requires_risk_agent"
+        return "signal_integrity_gate_hold_or_block"
+
     hypotheses = [
         {
             "signal_id": signal.get("signal_id"),
@@ -535,7 +585,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "confidence": signal.get("confidence"),
             "status": signal.get("status", "shadow_only"),
             "execution_allowed": bool(signal.get("execution_allowed")),
-            "blocked_reason": "shadow_only_no_signal_integrity_gate",
+            "blocked_reason": _hypothesis_blocked_reason(signal.get("signal_id")),
             "invalidation": signal.get("invalidation"),
             "generated_by": signal.get("generated_by"),
             "evidence_packet_id": signal.get("signal_id"),
@@ -545,6 +595,22 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "missing_correlations": evidence_packets[index].get("missing_correlations", [])
             if index < len(evidence_packets)
             else [],
+            "integrity_review_status": next(
+                (
+                    review.get("status")
+                    for review in reversed(signal_reviews)
+                    if review.get("source_signal_id") == signal.get("signal_id")
+                ),
+                "not_reviewed",
+            ),
+            "integrity_score": next(
+                (
+                    review.get("integrity_score")
+                    for review in reversed(signal_reviews)
+                    if review.get("source_signal_id") == signal.get("signal_id")
+                ),
+                None,
+            ),
             "created_at": signal.get("created_at"),
         }
         for index, signal in enumerate(signals)
@@ -561,6 +627,11 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         current_focus.append(
             "checking paper account context without order authority: "
             f"{paper_context.get('connection_status', 'unknown')}"
+        )
+    if signal_reviews:
+        current_focus.append(
+            f"Signal Integrity Gate: {len(signal_reviews)} recent reviews, "
+            f"{signal_integrity.get('by_status', {}).get('hold_for_corroboration', 0)} held"
         )
     if not current_focus:
         current_focus.append("waiting for source heartbeat and shadow triage inputs")
@@ -607,6 +678,17 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "status": summary.get("status", "shadow_ready"),
         "current_focus": current_focus,
         "paper_account_context": paper_context,
+        "signal_integrity": {
+            "status": signal_integrity.get("status", "ok"),
+            "schema_version": signal_integrity.get("schema_version"),
+            "review_count": signal_integrity.get("review_count", 0),
+            "by_status": signal_integrity.get("by_status", {}),
+            "execution_allowed_count": signal_integrity.get("execution_allowed_count", 0),
+            "paper_order_allowed_count": signal_integrity.get("paper_order_allowed_count", 0),
+            "trade_candidate_created_count": signal_integrity.get("trade_candidate_created_count", 0),
+            "boundary": signal_integrity.get("boundary"),
+        },
+        "signal_integrity_reviews": signal_reviews,
         "shadow_packets": _safe_shadow_packets(settings),
         "local_research_assessments": [
             {
@@ -653,18 +735,24 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "local research assessment",
             "paper account mirror context",
             "deterministic triage",
+            "signal integrity review",
             "strategy review pending",
             "signal integrity gate blocked",
             "trade layer not reached",
         ],
         "blocked_reasons": [
-            "shadow_only_no_signal_integrity_gate",
+            "shadow_only_pending_signal_integrity_gate",
+            "signal_integrity_gate_hold_or_block",
             "no_risk_agent_approval",
             "no_trade_candidate_store",
             "no_broker_write_authority",
             "paper_account_context_read_only",
+            "signal_integrity_gate_requires_risk_agent",
         ],
-        "boundary": "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist.",
+        "boundary": (
+            "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, "
+            "but Risk Agent and execution policy still do not exist."
+        ),
     }
 
 

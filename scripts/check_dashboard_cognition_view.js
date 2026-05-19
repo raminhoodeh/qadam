@@ -45,6 +45,8 @@ const REQUIRED_HYPOTHESIS_FIELDS = [
     "evidence_source_count",
     "execution_allowed",
     "generated_by",
+    "integrity_review_status",
+    "integrity_score",
     "instrument_focus",
     "invalidation",
     "missing_correlations",
@@ -92,7 +94,49 @@ const REQUIRED_PAPER_CONTEXT_FIELDS = [
     "write_authority"
 ];
 
+const REQUIRED_SIGNAL_INTEGRITY_FIELDS = [
+    "boundary",
+    "by_status",
+    "execution_allowed_count",
+    "paper_order_allowed_count",
+    "review_count",
+    "schema_version",
+    "status",
+    "trade_candidate_created_count"
+];
+
+const REQUIRED_SIGNAL_REVIEW_FIELDS = [
+    "akber_filter",
+    "average_trust_score",
+    "boundary",
+    "evidence_item_count",
+    "execution_allowed",
+    "failure_reasons",
+    "instrument_focus",
+    "integrity_score",
+    "min_trust_score",
+    "missing_correlations",
+    "paper_order_allowed",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "signal_confidence",
+    "source_count",
+    "source_signal_id",
+    "status",
+    "trade_candidate_created",
+    "worldview_prior_status"
+];
+
 const REQUIRED_MODEL_ROLES = new Set(["Research Analyst", "Strategy Lead", "Head of Quant"]);
+const REQUIRED_AKBER_STAGES = new Set([
+    "low_volatility",
+    "options_distribution_gap",
+    "catalyst_identification",
+    "technical_setup",
+    "obv_volume",
+    "approval_policy"
+]);
 
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
@@ -114,6 +158,10 @@ async function main() {
     const timeline = Array.isArray(cognition.analysis_timeline) ? cognition.analysis_timeline : [];
     const blockedReasons = Array.isArray(cognition.blocked_reasons) ? cognition.blocked_reasons : [];
     const paperContext = cognition.paper_account_context || {};
+    const signalIntegrity = cognition.signal_integrity || {};
+    const signalReviews = Array.isArray(cognition.signal_integrity_reviews)
+        ? cognition.signal_integrity_reviews
+        : [];
 
     assert(cognition.status, "cognition status is missing");
     assert(Array.isArray(cognition.current_focus) && cognition.current_focus.length, "current focus is missing");
@@ -121,19 +169,22 @@ async function main() {
     assert(localResearch.length > 0, "local Research Analyst assessments are missing");
     assert(hypotheses.length > 0, "hypotheses are missing");
     assert(evidencePackets.length > 0, "evidence packets are missing");
+    assert(signalReviews.length > 0, "signal integrity reviews are missing");
     assert(modelActivity.length >= REQUIRED_MODEL_ROLES.size, "model activity is incomplete");
     assert(timeline.includes("trade layer not reached"), "analysis timeline does not show the trade boundary");
     assert(timeline.includes("paper account mirror context"), "analysis timeline does not include paper account context");
-    assert(
-        blockedReasons.includes("shadow_only_no_signal_integrity_gate"),
-        "blocked reasons do not include signal integrity gate"
-    );
+    assert(timeline.includes("signal integrity review"), "analysis timeline does not include signal integrity review");
     assert(
         blockedReasons.includes("paper_account_context_read_only"),
         "blocked reasons do not include paper account read-only context"
     );
     assert(
-        /shadow-only until Signal Integrity Gate and Risk Agent exist/i.test(cognition.boundary || ""),
+        blockedReasons.includes("signal_integrity_gate_requires_risk_agent"),
+        "blocked reasons do not include the risk agent gate"
+    );
+    assert(
+        /Signal Integrity Gate can block or hold signals/i.test(cognition.boundary || "")
+            && /Risk Agent and execution policy still do not exist/i.test(cognition.boundary || ""),
         "cognition boundary is weak or missing"
     );
 
@@ -153,6 +204,33 @@ async function main() {
     assert(paperContext.write_authority === false, "paper account context exposes write authority");
     assert(paperContext.live_capital_enabled === false, "paper account context enables live capital");
     assert(/read-only/i.test(paperContext.boundary || ""), "paper account context boundary is weak");
+
+    const missingSignalIntegrity = missingFields(signalIntegrity, REQUIRED_SIGNAL_INTEGRITY_FIELDS);
+    assert(
+        !missingSignalIntegrity.length,
+        `signal integrity summary missing fields: ${missingSignalIntegrity.join(", ")}`
+    );
+    assert(signalIntegrity.status === "ok", "signal integrity summary is not ok");
+    assert(signalIntegrity.execution_allowed_count === 0, "signal integrity allows execution");
+    assert(signalIntegrity.paper_order_allowed_count === 0, "signal integrity allows paper orders");
+    assert(signalIntegrity.trade_candidate_created_count === 0, "signal integrity creates trade candidates");
+    assert(
+        /cannot create candidates or orders/i.test(signalIntegrity.boundary || ""),
+        "signal integrity boundary is weak"
+    );
+
+    for (const review of signalReviews) {
+        const missing = missingFields(review, REQUIRED_SIGNAL_REVIEW_FIELDS);
+        assert(!missing.length, `${review.review_id || "signal integrity review"} missing fields: ${missing.join(", ")}`);
+        assert(review.execution_allowed === false, `${review.review_id} allows execution`);
+        assert(review.paper_order_allowed === false, `${review.review_id} allows paper order`);
+        assert(review.trade_candidate_created === false, `${review.review_id} creates a trade candidate`);
+        assert(review.integrity_score >= 0 && review.integrity_score <= 1, `${review.review_id} has invalid score`);
+        assert(/cannot approve/i.test(review.boundary || ""), `${review.review_id} has weak boundary`);
+        for (const stage of REQUIRED_AKBER_STAGES) {
+            assert(hasOwn(review.akber_filter || {}, stage), `${review.review_id} missing Akber stage: ${stage}`);
+        }
+    }
 
     for (const packet of shadowPackets) {
         const missing = missingFields(packet, REQUIRED_SHADOW_PACKET_FIELDS);
@@ -187,7 +265,11 @@ async function main() {
         assert(!missing.length, `${hypothesis.signal_id || "hypothesis"} missing fields: ${missing.join(", ")}`);
         assert(hypothesis.execution_allowed === false, `${hypothesis.signal_id} allows execution`);
         assert(
-            hypothesis.blocked_reason === "shadow_only_no_signal_integrity_gate",
+            [
+                "shadow_only_pending_signal_integrity_gate",
+                "signal_integrity_gate_hold_or_block",
+                "signal_integrity_gate_requires_risk_agent"
+            ].includes(hypothesis.blocked_reason),
             `${hypothesis.signal_id} has an unexpected block reason`
         );
         assert(
@@ -214,10 +296,19 @@ async function main() {
     assertIncludes(rendered, "[data-cognition]", "Local Research Analyst");
     assertIncludes(rendered, "[data-cognition]", "Hypotheses and evidence");
     assertIncludes(rendered, "[data-cognition]", "Evidence packet index");
+    assertIncludes(rendered, "[data-cognition]", "Signal Integrity Gate");
+    assertIncludes(rendered, "[data-cognition]", "Akber filter");
+    assertIncludes(rendered, "[data-cognition]", "Failure reasons");
+    assertIncludes(rendered, "[data-cognition]", "Required next steps");
+    assertIncludes(rendered, "[data-cognition]", "Candidates created");
     assertIncludes(rendered, "[data-cognition]", "Missing corroboration");
     assertIncludes(rendered, "[data-cognition]", "research shadow triage packet");
     assertIncludes(rendered, "[data-cognition]", "trade layer not reached");
-    assertIncludes(rendered, "[data-cognition]", "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist.");
+    assertIncludes(
+        rendered,
+        "[data-cognition]",
+        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, but Risk Agent and execution policy still do not exist."
+    );
 
     const emptyStatus = {
         ...status,
@@ -230,9 +321,11 @@ async function main() {
             evidence_packets: [],
             model_activity: [],
             paper_account_context: {},
+            signal_integrity: {},
+            signal_integrity_reviews: [],
             analysis_timeline: [],
             blocked_reasons: [],
-            boundary: "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist."
+            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, but Risk Agent and execution policy still do not exist."
         }
     };
     const emptyRendered = await renderWithStatus(emptyStatus);
@@ -243,6 +336,8 @@ async function main() {
     assertIncludes(emptyRendered, "[data-cognition]", "No hypotheses yet");
     assertIncludes(emptyRendered, "[data-cognition]", "No evidence packets");
     assertIncludes(emptyRendered, "[data-cognition]", "Paper account context");
+    assertIncludes(emptyRendered, "[data-cognition]", "Signal Integrity Gate");
+    assertIncludes(emptyRendered, "[data-cognition]", "No Signal Integrity reviews yet");
     assertIncludes(emptyRendered, "[data-cognition]", "trade layer not reached");
 
     console.log("Dashboard cognition view contract OK");

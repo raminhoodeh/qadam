@@ -42,6 +42,18 @@ def main() -> int:
     print(f"phase2_shadow_cycle_source_count={report['source_count']}")
     print(f"phase2_shadow_cycle_queued_packet_count={report['queued_packet_count']}")
     print(f"phase2_shadow_cycle_shadow_signal_count={report['shadow_signal_count']}")
+    print(f"phase2_shadow_cycle_signal_integrity_status={report['signal_integrity_status']}")
+    print(f"phase2_shadow_cycle_signal_integrity_review_count={report['signal_integrity_review_count']}")
+    print(f"phase2_shadow_cycle_signal_integrity_blocked_count={report['signal_integrity_blocked_count']}")
+    print(f"phase2_shadow_cycle_signal_integrity_hold_count={report['signal_integrity_hold_count']}")
+    print(
+        "phase2_shadow_cycle_signal_integrity_passed_to_risk_shadow_count="
+        f"{report['signal_integrity_passed_to_risk_shadow_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_signal_integrity_trade_candidate_created_count="
+        f"{report['signal_integrity_trade_candidate_created_count']}"
+    )
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
     print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
@@ -75,6 +87,8 @@ def main() -> int:
     if report["strategy_lead_execution_allowed"] or report["strategy_lead_paper_order_allowed"]:
         return 1
     if report["paper_account_write_authority"] or report["paper_account_live_capital_enabled"]:
+        return 1
+    if report["signal_integrity_trade_candidate_created_count"] != 0:
         return 1
     return 0
 

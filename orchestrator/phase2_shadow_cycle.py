@@ -30,6 +30,7 @@ from orchestrator.intelligence import (
     run_research_shadow_triage_queue,
 )
 from orchestrator.paper_account import paper_account_shadow_context
+from orchestrator.signal_integrity import run_signal_integrity_gate
 from orchestrator.phase1_live_adapters import (
     fetch_phase1_live_adapter_live_sync,
     fetch_phase1_live_adapter_sample,
@@ -196,6 +197,7 @@ def run_phase2_shadow_cycle(
 
     paper_context = paper_account_shadow_context(settings)
     triage_result = run_research_shadow_triage_queue(limit=research_limit, settings=settings, event_log=event_log)
+    integrity_result = run_signal_integrity_gate(limit=research_limit, settings=settings, event_log=event_log)
     local_result = run_local_research_analyst_inference(
         limit=research_limit,
         live=live_local_llm,
@@ -222,6 +224,12 @@ def run_phase2_shadow_cycle(
         "source_results": [result.to_dict() for result in source_results],
         "queued_packet_count": queued_packet_count,
         "shadow_signal_count": triage_result.get("shadow_signal_count", 0),
+        "signal_integrity_status": integrity_result.get("status"),
+        "signal_integrity_review_count": integrity_result.get("review_count", 0),
+        "signal_integrity_blocked_count": integrity_result.get("blocked_count", 0),
+        "signal_integrity_hold_count": integrity_result.get("hold_count", 0),
+        "signal_integrity_passed_to_risk_shadow_count": integrity_result.get("passed_to_risk_shadow_count", 0),
+        "signal_integrity_trade_candidate_created_count": integrity_result.get("trade_candidate_created_count", 0),
         "local_research_status": local_result.get("status"),
         "local_research_mode": local_result.get("mode"),
         "local_research_assessment_id": assessment.get("assessment_id") if assessment else None,
@@ -241,8 +249,8 @@ def run_phase2_shadow_cycle(
         "strategy_lead_store": strategy_store.health(),
         "boundary": (
             "Phase 2 shadow cycle feeds observations into Research Analyst and "
-            "Strategy Lead queues only. Signal Integrity Gate and Risk Agent are "
-            "absent, so execution and paper orders remain impossible."
+            "Strategy Lead queues only. Signal Integrity Gate can block or hold "
+            "shadow signals, but Risk Agent is absent, so execution and paper orders remain impossible."
         ),
     }
     report_path = _write_report(settings, report)
@@ -254,6 +262,7 @@ def run_phase2_shadow_cycle(
             "mode": report["mode"],
             "queued_packet_count": queued_packet_count,
             "shadow_signal_count": report["shadow_signal_count"],
+            "signal_integrity_review_count": report["signal_integrity_review_count"],
             "strategy_lead_packet_id": strategy_packet.packet_id,
             "execution_allowed": False,
             "paper_order_allowed": False,

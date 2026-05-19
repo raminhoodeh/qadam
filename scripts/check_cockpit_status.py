@@ -83,6 +83,8 @@ HYPOTHESIS_REQUIRED_FIELDS = {
     "evidence_source_count",
     "execution_allowed",
     "generated_by",
+    "integrity_review_status",
+    "integrity_score",
     "instrument_focus",
     "invalidation",
     "missing_correlations",
@@ -102,6 +104,40 @@ EVIDENCE_PACKET_REQUIRED_FIELDS = {
     "source_count",
     "sources",
     "trail_id",
+}
+
+SIGNAL_INTEGRITY_REQUIRED_FIELDS = {
+    "boundary",
+    "by_status",
+    "execution_allowed_count",
+    "paper_order_allowed_count",
+    "review_count",
+    "schema_version",
+    "status",
+    "trade_candidate_created_count",
+}
+
+SIGNAL_INTEGRITY_REVIEW_REQUIRED_FIELDS = {
+    "akber_filter",
+    "average_trust_score",
+    "boundary",
+    "evidence_item_count",
+    "execution_allowed",
+    "failure_reasons",
+    "instrument_focus",
+    "integrity_score",
+    "min_trust_score",
+    "missing_correlations",
+    "paper_order_allowed",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "signal_confidence",
+    "source_count",
+    "source_signal_id",
+    "status",
+    "trade_candidate_created",
+    "worldview_prior_status",
 }
 
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
@@ -460,6 +496,8 @@ def main() -> int:
         "cockpit_status_paper_context_connection_status="
         f"{payload['cognition'].get('paper_account_context', {}).get('connection_status')}"
     )
+    print(f"cockpit_status_signal_integrity_status={payload['cognition'].get('signal_integrity', {}).get('status')}")
+    print(f"cockpit_status_signal_integrity_review_count={len(payload['cognition'].get('signal_integrity_reviews', []))}")
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -890,6 +928,52 @@ def main() -> int:
     if "read-only" not in paper_context.get("boundary", ""):
         print("cockpit_status_paper_context_boundary_weak=true")
         return 1
+    signal_integrity = cognition.get("signal_integrity", {})
+    missing_signal_integrity_fields = sorted(SIGNAL_INTEGRITY_REQUIRED_FIELDS - set(signal_integrity))
+    if missing_signal_integrity_fields:
+        print("cockpit_status_signal_integrity_fields_missing=" + ",".join(missing_signal_integrity_fields))
+        return 1
+    if signal_integrity.get("status") != "ok":
+        print("cockpit_status_signal_integrity_not_ok=true")
+        return 1
+    if signal_integrity.get("execution_allowed_count") != 0:
+        print("cockpit_status_signal_integrity_execution_allowed=true")
+        return 1
+    if signal_integrity.get("paper_order_allowed_count") != 0:
+        print("cockpit_status_signal_integrity_paper_order_allowed=true")
+        return 1
+    if signal_integrity.get("trade_candidate_created_count") != 0:
+        print("cockpit_status_signal_integrity_created_trade_candidate=true")
+        return 1
+    if "cannot create candidates or orders" not in signal_integrity.get("boundary", ""):
+        print("cockpit_status_signal_integrity_boundary_weak=true")
+        return 1
+    if not isinstance(cognition.get("signal_integrity_reviews"), list):
+        print("cockpit_status_signal_integrity_reviews_missing=true")
+        return 1
+    if not cognition.get("signal_integrity_reviews"):
+        print("cockpit_status_signal_integrity_reviews_empty=true")
+        return 1
+    for review in cognition.get("signal_integrity_reviews", []):
+        missing_fields = sorted(SIGNAL_INTEGRITY_REVIEW_REQUIRED_FIELDS - set(review))
+        if missing_fields:
+            print(
+                "cockpit_status_signal_integrity_review_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        if review.get("execution_allowed") is not False:
+            print("cockpit_status_signal_integrity_review_execution_allowed=true")
+            return 1
+        if review.get("paper_order_allowed") is not False:
+            print("cockpit_status_signal_integrity_review_paper_order_allowed=true")
+            return 1
+        if review.get("trade_candidate_created") is not False:
+            print("cockpit_status_signal_integrity_review_created_trade_candidate=true")
+            return 1
+        if "cannot approve" not in review.get("boundary", ""):
+            print("cockpit_status_signal_integrity_review_boundary_weak=true")
+            return 1
     if not isinstance(cognition.get("shadow_packets"), list):
         print("cockpit_status_shadow_packets_missing=true")
         return 1
@@ -939,14 +1023,23 @@ def main() -> int:
     if "paper account mirror context" not in cognition.get("analysis_timeline", []):
         print("cockpit_status_analysis_timeline_paper_context_missing=true")
         return 1
+    if "signal integrity review" not in cognition.get("analysis_timeline", []):
+        print("cockpit_status_analysis_timeline_signal_integrity_missing=true")
+        return 1
     if not cognition.get("blocked_reasons"):
         print("cockpit_status_blocked_reasons_missing=true")
         return 1
-    if "shadow_only_no_signal_integrity_gate" not in cognition.get("blocked_reasons", []):
-        print("cockpit_status_signal_integrity_block_missing=true")
+    if "shadow_only_pending_signal_integrity_gate" not in cognition.get("blocked_reasons", []):
+        print("cockpit_status_signal_integrity_pending_block_missing=true")
+        return 1
+    if "signal_integrity_gate_hold_or_block" not in cognition.get("blocked_reasons", []):
+        print("cockpit_status_signal_integrity_hold_block_missing=true")
         return 1
     if "paper_account_context_read_only" not in cognition.get("blocked_reasons", []):
         print("cockpit_status_paper_context_block_missing=true")
+        return 1
+    if "signal_integrity_gate_requires_risk_agent" not in cognition.get("blocked_reasons", []):
+        print("cockpit_status_signal_integrity_risk_block_missing=true")
         return 1
     for packet in cognition.get("strategy_lead_packets", []):
         strategy_context = packet.get("paper_account_context", {})
@@ -1054,7 +1147,11 @@ def main() -> int:
         if not hypothesis.get("blocked_reason"):
             print("cockpit_status_shadow_hypothesis_block_missing=true")
             return 1
-        if hypothesis.get("blocked_reason") != "shadow_only_no_signal_integrity_gate":
+        if hypothesis.get("blocked_reason") not in {
+            "shadow_only_pending_signal_integrity_gate",
+            "signal_integrity_gate_hold_or_block",
+            "signal_integrity_gate_requires_risk_agent",
+        }:
             print("cockpit_status_shadow_hypothesis_wrong_block=true")
             return 1
         if hypothesis.get("evidence_packet_id") != hypothesis.get("signal_id"):

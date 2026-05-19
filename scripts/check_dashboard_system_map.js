@@ -67,6 +67,7 @@ async function main() {
         "Secure Live Bridge",
         "Research Analyst",
         "Strategy Lead",
+        "Signal Integrity Gate",
         "Risk Agent",
         "Trade Layer",
         "Paper Account Mirror",

@@ -325,6 +325,9 @@ Current implementation start:
 - Gemini and LM Studio readiness are reported without inference calls.
 - LM Studio `/models` and Gemini model-list credential probes exist as safe optional checks.
 - Research Analyst queued packets can be converted into non-executable shadow signals.
+- Local Research Analyst can run through LM Studio/Gemma in shadow mode when the local server is available.
+- Read-only paper-account context is now attached to the Phase 2 shadow workflow.
+- The first Signal Integrity Gate exists in `orchestrator/signal_integrity.py`; it reviews recent shadow signals, applies Akber 6-stage filter state, and can only block, hold, or mark a signal ready for future risk-shadow review.
 - Shadow Signal store is local-only and all generated signals have `execution_allowed=false`.
 - Cockpit can show Shadow Intelligence status.
 
@@ -649,13 +652,14 @@ These apply from Phase 0 onward.
 - Any signal without invalidation is blocked.
 - Any signal without transaction-cost assumptions is blocked.
 - Any proposed trade above cap is blocked.
+- Signal Integrity Gate never creates a trade candidate, paper order, risk approval, or broker action.
 
 ## Recommended Next Implementation Batch
 
-The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts plus safe provider probes have started. The next batch should add controlled model calls and debug rendering.
+The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts, safe provider probes, controlled local model calls, read-only paper-account context, dashboard rendering, and the first Signal Integrity Gate have started. The next batch should harden durable replay and begin Risk Agent / policy-router design without creating any order route.
 
 1. Start LM Studio and verify `gemma-4-e4b` through the `/models` readiness probe.
 2. Run Gemini model-list credential validation without text generation.
-3. Add the first local Research Analyst inference call over queued packets.
-4. Evidence Trail debug renderer.
-5. Cockpit-hidden debug view for shadow outputs.
+3. Keep running `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` when LM Studio is available.
+4. Keep `scripts/check_signal_integrity_gate.py` green and review why signals are blocked or held.
+5. Design the Risk Agent contract and policy router as read-only validation first.
