@@ -246,7 +246,9 @@ Current implementation start:
 - These 14 adapter contracts join the already promoted GDELT, Oref, NASA FIRMS, FRED, and RSS adapters, taking promoted adapter coverage to 19 sources.
 - The new adapter layer has sample mode, masked credential status, raw payload archival, normalized events, degraded-state handling, and fail-closed live fetches.
 - `scripts/check_phase1_live_source_hardening.py` is now the Phase 1 live-source hardening gate. It validates each of the 19 promoted sources one by one, writes `data/runtime/phase1_live_source_validation.json`, appends a local history file, and classifies every source as `live`, `degraded`, `missing_credentials`, or `sample_ready`.
+- `scripts/check_supplied_credentials.py` is now the supplied-credential validation gate for NASA FIRMS, FRED, ACLED, Alpaca paper, Telegram, Gemini, LM Studio, plus explicit Kalshi deferred and UnusualWhales missing states.
 - Current live read-only validation on 2026-05-18: live sources are NASA FIRMS, FRED, RSS, Polymarket, Alpaca paper account mirror, BLS public sample, ECB public exchange-rate series, SEC EDGAR public filing metadata, and Telegram bot status. Degraded but explicit sources are GDELT, Oref, and ACLED. Missing/deferred credential sources are UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter.
+- Current supplied-credential validation on 2026-05-19: NASA FIRMS, FRED, Alpaca paper, Telegram, and Gemini are live; ACLED is configured but degraded with provider HTTP 403; LM Studio is configured but degraded because the local model server is not reachable; Kalshi is intentionally deferred due to location/account availability; UnusualWhales remains the useful missing Batch A key.
 - ACLED now uses the current documented endpoint pattern `https://acleddata.com/api/acled/read` rather than the legacy `api.acleddata.com` hostname. The local live check is still degraded with HTTP 403, so ACLED remains blocked on token freshness, entitlement, or account-scope confirmation before it can count as durable live infrastructure.
 - ECB now validates against a concrete public data-series endpoint instead of an incomplete base URL.
 - Live fetch success is not claimed until each provider credential, account scope, rate limit, and provider terms are configured locally.
@@ -605,7 +607,7 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 5. Keep the D7 TradingView alert source observed-only: duplicate protected, Event Log backed, and unable to create trade candidates or orders.
 6. Register TradingView MCP as read-only market/technical-analysis tooling when Codex CLI access is available; no TradingView retail data API key is expected.
 7. Use `docs/api-specs.md` as the credential onboarding ledger; add keys gradually to `data/runtime/qadam-secrets.env`, never to Git.
-8. Promote Batch A API credentials one at a time, starting with read-only checks and explicit degraded states for missing keys.
+8. Rerun `scripts/check_supplied_credentials.py` after starting LM Studio or refreshing ACLED. Keep Kalshi deferred and UnusualWhales missing until those external conditions change.
 9. Keep `scripts/check_phase1_data_spine.py` and `scripts/check_phase1_agent_os.py` green before adding new intelligence, source, broker, or notification behavior.
 10. Build D8 Fund Manager comments around module, source, signal, trade candidate, and postmortem references.
 11. Build D8A Telegram Bot Communications in dry-run mode: local member registry, outbox, message templates, cockpit status, and dashboard Communications panel.

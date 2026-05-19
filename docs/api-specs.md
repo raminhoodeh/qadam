@@ -34,6 +34,7 @@ Implemented locally:
 - Adapter coverage: 19 promoted source contracts out of the 35-source registry.
 - Every promoted adapter has sample mode, masked credential status, raw payload archival, normalized event output, degraded-state handling, and no signal/order authority.
 - `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
+- `scripts/check_supplied_credentials.py` validates the currently supplied Batch A credentials and local model settings in one read-only pass, writing the ignored local report `data/runtime/supplied_credential_validation.json`.
 - Historical backfill planning and local sample-run records exist for ACLED, GDELT, NASA FIRMS, FRED, RSS, Polymarket, Kalshi, Alpaca, BLS, ECB, UN Comtrade, and SEC EDGAR.
 - Trust Score seed covers all 35 sources, but scores are priors until replaced by backtests and live observations.
 - Postgres/Timescale durable ingestion is coded as a local contract and is live only when the local database service is running. Use `scripts/start_postgres_timescale_ingestion.sh` for the Postgres-only bootstrap and `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` to verify replayable 35-source coverage.
@@ -44,11 +45,11 @@ Not yet proven live:
 - Any public or configured source that fails a read-only live check is kept as `degraded` with the provider error class preserved locally.
 - No adapter may promote signal confidence or create paper/live orders by itself.
 
-Current local live-readiness snapshot as of 2026-05-18:
+Current supplied-credential snapshot as of 2026-05-19:
 
-- Live in read-only validation: NASA FIRMS, FRED, RSS, Polymarket, Alpaca paper account mirror, BLS public sample, ECB public exchange-rate series, SEC EDGAR public filing metadata, and Telegram bot status.
-- Degraded in read-only validation: GDELT, Oref, and ACLED. ACLED has local credentials but currently fails live validation with HTTP 403, so token refresh, entitlement, or account-scope confirmation is still required.
-- Missing or deferred credentials: UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter.
+- Live in read-only credential validation: NASA FIRMS, FRED, Alpaca paper account mirror, Telegram bot status, and Gemini model-list access.
+- Degraded in read-only credential validation: ACLED and LM Studio. ACLED is locally configured but returns provider HTTP 403; LM Studio is locally configured but the local server/model is not reachable in the current run.
+- Missing or deferred from this credential batch: UnusualWhales remains a useful missing Batch A key; Kalshi remains deferred due to current location/account eligibility.
 - Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings.
 - ACLED refresh-token automation is required before treating ACLED as durable live infrastructure.
 - Telegram remains outbound-only and cannot trigger execution.
