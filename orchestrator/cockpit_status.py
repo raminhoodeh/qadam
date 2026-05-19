@@ -694,6 +694,26 @@ def _safe_closed_trade(trade: Any) -> dict[str, Any]:
     }
 
 
+def _safe_paper_order(order: Any) -> dict[str, Any]:
+    return {
+        "order_id": order.order_id,
+        "status": order.status,
+        "instrument": order.instrument,
+        "direction": order.direction,
+        "quantity": order.quantity,
+        "notional_gbp": order.notional_gbp,
+        "order_type": order.order_type,
+        "limit_price": order.limit_price,
+        "submitted_at": order.submitted_at,
+        "filled_at": order.filled_at,
+        "filled_quantity": order.filled_quantity,
+        "filled_avg_price": order.filled_avg_price,
+        "execution_allowed": order.execution_allowed,
+        "paper_order_allowed": order.paper_order_allowed,
+        "boundary": order.boundary,
+    }
+
+
 def _safe_tradingview_alert(alert: Any) -> dict[str, Any]:
     return {
         "alert_id": alert.alert_id,
@@ -857,6 +877,7 @@ def _capital(settings: Settings) -> dict[str, Any]:
     latest = store.latest_snapshot()
     positions = [_safe_paper_position(position) for position in store.read_positions()]
     closed_trades = [_safe_closed_trade(trade) for trade in store.read_closed_trades()]
+    orders = [_safe_paper_order(order) for order in store.read_orders()]
     postmortems_due = [
         trade for trade in closed_trades if trade.get("postmortem_status") == "postmortem_due"
     ]
@@ -888,8 +909,11 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "timeline_status": "not_initialized",
             "maturity_closed_trade_target": 100,
             "maturity_closed_trade_count": 0,
+            "order_count": 0,
+            "open_order_count": 0,
             "open_positions": [],
             "closed_trades": [],
+            "orders": [],
             "postmortems_due": [],
             "postmortems_complete": [],
             "equity_curve": [],
@@ -917,10 +941,13 @@ def _capital(settings: Settings) -> dict[str, Any]:
         "maturity_closed_trade_count": latest.maturity_closed_trade_count,
         "open_position_count": len(positions),
         "closed_trade_count": len(closed_trades),
+        "order_count": len(orders),
+        "open_order_count": sum(1 for order in orders if order.get("status") in {"new", "accepted", "partially_filled"}),
         "postmortem_due_count": len(postmortems_due),
         "postmortem_complete_count": len(postmortems_complete),
         "open_positions": positions,
         "closed_trades": closed_trades,
+        "orders": orders,
         "postmortems_due": postmortems_due,
         "postmortems_complete": postmortems_complete,
         "equity_curve": equity_curve,
@@ -972,9 +999,11 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         paper_store = PaperAccountMirrorStore(settings=settings)
         paper_positions = paper_store.read_positions()
         paper_closed_trades = paper_store.read_closed_trades()
+        paper_orders = paper_store.read_orders()
     except Exception:
         paper_positions = ()
         paper_closed_trades = ()
+        paper_orders = ()
     try:
         tradingview_alerts = TradingViewAlertStore(settings=settings).read_alerts(limit=10)
     except Exception:
@@ -988,6 +1017,7 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         "blocked": [],
         "staged_orders": [],
         "submitted_orders": [],
+        "mirrored_orders": [],
         "open_positions": [],
         "closed_trades": [],
         "postmortems_due": [],
@@ -1022,6 +1052,10 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
     trade_layer["closed_trades"].extend(
         _safe_closed_trade(trade) | {"source": "paper_account_mirror"}
         for trade in paper_closed_trades
+    )
+    trade_layer["mirrored_orders"].extend(
+        _safe_paper_order(order) | {"source": "paper_account_mirror"}
+        for order in paper_orders
     )
     trade_layer["postmortems_due"].extend(
         _safe_closed_trade(trade) | {"source": "paper_account_mirror"}

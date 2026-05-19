@@ -8,6 +8,7 @@ progress appear once read-only broker data is connected.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,9 +17,19 @@ from uuid import uuid4
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.secrets import secret_status, secret_value
 
 PAPER_ACCOUNT_SCHEMA_VERSION = 1
 MATURITY_CLOSED_TRADE_TARGET = 100
+ALPACA_PAPER_BASE_URL = "https://paper-api.alpaca.markets/v2"
+ALPACA_READONLY_PATHS = frozenset(
+    {
+        "/account",
+        "/positions",
+        "/orders",
+        "/account/portfolio/history",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -96,8 +107,51 @@ class ClosedPaperTrade:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class PaperOrder:
+    schema_version: int
+    order_id: str
+    status: str
+    instrument: str
+    direction: str
+    quantity: float | None
+    notional_gbp: float | None
+    order_type: str | None
+    limit_price: float | None
+    submitted_at: str | None
+    filled_at: str | None
+    filled_quantity: float | None
+    filled_avg_price: float | None
+    execution_allowed: bool
+    paper_order_allowed: bool
+    boundary: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None or value == "":
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _optional_float(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    return _float(value)
+
+
+def _safe_id(prefix: str, value: Any) -> str:
+    text = str(value or "").strip()
+    return text if text else f"{prefix}:{uuid4()}"
 
 
 def validate_snapshot(snapshot: PaperAccountSnapshot) -> None:
@@ -133,6 +187,15 @@ def validate_closed_trade(trade: ClosedPaperTrade) -> None:
         raise ValueError(f"invalid postmortem status: {trade.postmortem_status}")
 
 
+def validate_order(order: PaperOrder) -> None:
+    if order.schema_version != PAPER_ACCOUNT_SCHEMA_VERSION:
+        raise ValueError("paper order schema version mismatch")
+    if order.execution_allowed:
+        raise ValueError("paper order mirror cannot expose execution authority")
+    if order.paper_order_allowed:
+        raise ValueError("paper order mirror cannot expose paper order authority")
+
+
 class PaperAccountMirrorStore:
     def __init__(self, root: str | Path | None = None, settings: Settings | None = None) -> None:
         self.settings = settings or Settings.from_env()
@@ -140,6 +203,7 @@ class PaperAccountMirrorStore:
         self.snapshots_path = base / "paper_account_snapshots.jsonl"
         self.positions_path = base / "paper_positions.jsonl"
         self.closed_trades_path = base / "paper_closed_trades.jsonl"
+        self.orders_path = base / "paper_orders.jsonl"
         base.mkdir(parents=True, exist_ok=True)
 
     def write_snapshot(self, snapshot: PaperAccountSnapshot, *, log_event: bool = True) -> PaperAccountSnapshot:
@@ -182,6 +246,27 @@ class PaperAccountMirrorStore:
             validate_closed_trade(trade)
         return tuple(trades)
 
+    def read_orders(self) -> tuple[PaperOrder, ...]:
+        orders = self._read_jsonl(self.orders_path, PaperOrder)
+        for order in orders:
+            validate_order(order)
+        return tuple(orders)
+
+    def replace_positions(self, positions: tuple[PaperPosition, ...]) -> None:
+        for position in positions:
+            validate_position(position)
+        self._replace_jsonl(self.positions_path, tuple(position.to_dict() for position in positions))
+
+    def replace_closed_trades(self, trades: tuple[ClosedPaperTrade, ...]) -> None:
+        for trade in trades:
+            validate_closed_trade(trade)
+        self._replace_jsonl(self.closed_trades_path, tuple(trade.to_dict() for trade in trades))
+
+    def replace_orders(self, orders: tuple[PaperOrder, ...]) -> None:
+        for order in orders:
+            validate_order(order)
+        self._replace_jsonl(self.orders_path, tuple(order.to_dict() for order in orders))
+
     def latest_snapshot(self) -> PaperAccountSnapshot | None:
         snapshots = self.read_snapshots()
         return snapshots[-1] if snapshots else None
@@ -191,6 +276,7 @@ class PaperAccountMirrorStore:
             snapshots = self.read_snapshots()
             positions = self.read_positions()
             closed_trades = self.read_closed_trades()
+            orders = self.read_orders()
         except Exception as exc:  # noqa: BLE001 - health should report the failure
             return {
                 "status": "degraded",
@@ -203,6 +289,8 @@ class PaperAccountMirrorStore:
             "snapshot_count": len(snapshots),
             "open_position_count": len(positions),
             "closed_trade_count": len(closed_trades),
+            "order_count": len(orders),
+            "open_order_count": sum(1 for order in orders if order.status in {"new", "accepted", "partially_filled"}),
             "postmortem_due_count": sum(
                 1 for trade in closed_trades if trade.postmortem_status == "postmortem_due"
             ),
@@ -227,6 +315,13 @@ class PaperAccountMirrorStore:
                 except (TypeError, json.JSONDecodeError) as exc:
                     raise ValueError(f"invalid paper account line {line_number} in {path.name}") from exc
         return records
+
+    def _replace_jsonl(self, path: Path, records: tuple[dict[str, Any], ...]) -> None:
+        tmp_path = path.with_name(f".{path.name}.tmp")
+        with tmp_path.open("w", encoding="utf-8") as handle:
+            for record in records:
+                handle.write(json.dumps(record, sort_keys=True) + "\n")
+        os.replace(tmp_path, path)
 
 
 def initial_paper_account_snapshot(settings: Settings | None = None) -> PaperAccountSnapshot:
@@ -279,6 +374,7 @@ def ensure_d6_paper_account_mirror(settings: Settings | None = None) -> dict[str
         "snapshot_count": health["snapshot_count"],
         "open_position_count": health["open_position_count"],
         "closed_trade_count": health["closed_trade_count"],
+        "order_count": health.get("order_count", 0),
         "current_balance_gbp": latest.current_balance_gbp if latest else None,
         "realized_pnl_gbp": latest.realized_pnl_gbp if latest else None,
         "unrealized_pnl_gbp": latest.unrealized_pnl_gbp if latest else None,
@@ -300,6 +396,8 @@ def paper_account_summary(settings: Settings | None = None) -> dict[str, Any]:
         "snapshot_count": health.get("snapshot_count", 0),
         "open_position_count": health.get("open_position_count", 0),
         "closed_trade_count": health.get("closed_trade_count", 0),
+        "order_count": health.get("order_count", 0),
+        "open_order_count": health.get("open_order_count", 0),
         "postmortem_due_count": health.get("postmortem_due_count", 0),
         "postmortem_complete_count": health.get("postmortem_complete_count", 0),
         "current_balance_gbp": latest.current_balance_gbp if latest else settings.trial_balance_gbp,
@@ -308,3 +406,245 @@ def paper_account_summary(settings: Settings | None = None) -> dict[str, Any]:
         "write_authority": latest.write_authority if latest else False,
         "boundary": health.get("boundary", "No paper account mirror snapshot is available."),
     }
+
+
+def alpaca_paper_mirror_status(settings: Settings | None = None) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    key_ready = secret_status("ALPACA_API_KEY", settings).configured
+    secret_ready = secret_status("ALPACA_API_SECRET", settings).configured
+    paper_flag = (secret_value("ALPACA_PAPER", settings) or "true").strip().lower()
+    return {
+        "status": "configured" if key_ready and secret_ready else "missing_credentials",
+        "api_key_configured": key_ready,
+        "api_secret_configured": secret_ready,
+        "paper_mode": paper_flag != "false",
+        "base_url": secret_value("ALPACA_ENDPOINT", settings)
+        or secret_value("ALPACA_BASE_URL", settings)
+        or ALPACA_PAPER_BASE_URL,
+        "readonly_paths": sorted(ALPACA_READONLY_PATHS),
+        "write_authority": False,
+        "boundary": "Alpaca paper mirror is GET-only. No broker-write route exists.",
+    }
+
+
+class AlpacaReadOnlyPaperMirror:
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        store: PaperAccountMirrorStore | None = None,
+        event_log: EventLog | None = None,
+    ) -> None:
+        self.settings = settings or Settings.from_env()
+        self.store = store or PaperAccountMirrorStore(settings=self.settings)
+        self.event_log = event_log or EventLog(echo=False)
+        self.base_url = (
+            secret_value("ALPACA_ENDPOINT", self.settings)
+            or secret_value("ALPACA_BASE_URL", self.settings)
+            or ALPACA_PAPER_BASE_URL
+        ).rstrip("/")
+        self.fx_to_gbp = _float(os.getenv("ALPACA_TO_GBP_RATE"), 1.0)
+
+    def _headers(self) -> dict[str, str]:
+        api_key = secret_value("ALPACA_API_KEY", self.settings)
+        api_secret = secret_value("ALPACA_API_SECRET", self.settings)
+        if not api_key or not api_secret:
+            raise PermissionError("missing Alpaca paper credentials")
+        return {
+            "APCA-API-KEY-ID": api_key,
+            "APCA-API-SECRET-KEY": api_secret,
+            "User-Agent": "Qadam/0.1 alpaca-readonly-paper-mirror",
+            "Accept": "application/json",
+        }
+
+    def _get(self, path: str, *, params: dict[str, Any] | None = None, timeout_seconds: float = 12.0) -> Any:
+        if path not in ALPACA_READONLY_PATHS:
+            raise PermissionError(f"Alpaca mirror refuses non-readonly path: {path}")
+        try:
+            import httpx
+        except ImportError as exc:
+            raise RuntimeError("httpx is required for Alpaca paper mirror") from exc
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+            response = client.get(f"{self.base_url}{path}", headers=self._headers(), params=params or {})
+            response.raise_for_status()
+            return response.json()
+
+    def fetch(self) -> dict[str, Any]:
+        account = self._get("/account")
+        positions = self._get("/positions")
+        orders = self._get("/orders", params={"status": "all", "limit": 100, "direction": "desc", "nested": "true"})
+        history = self._get(
+            "/account/portfolio/history",
+            params={"period": "1M", "timeframe": "1D", "intraday_reporting": "market_hours"},
+        )
+        return {
+            "account": account if isinstance(account, dict) else {},
+            "positions": positions if isinstance(positions, list) else [],
+            "orders": orders if isinstance(orders, list) else [],
+            "portfolio_history": history if isinstance(history, dict) else {},
+        }
+
+    def sync(self) -> dict[str, Any]:
+        payload = self.fetch()
+        account = payload["account"]
+        positions_payload = payload["positions"]
+        orders_payload = payload["orders"]
+        history = payload["portfolio_history"]
+
+        positions = tuple(self._position_from_alpaca(item) for item in positions_payload if isinstance(item, dict))
+        orders = tuple(self._order_from_alpaca(item) for item in orders_payload if isinstance(item, dict))
+        closed_trades = tuple(
+            self._closed_trade_from_order(item)
+            for item in orders_payload
+            if isinstance(item, dict) and item.get("status") == "filled"
+        )
+        latest_profit_loss = self._latest_profit_loss(history)
+        unrealized = round(sum(position.unrealized_pnl_gbp for position in positions), 2)
+        realized = round(latest_profit_loss - unrealized, 2) if latest_profit_loss is not None else 0.0
+        equity = self._money(account.get("equity") or account.get("portfolio_value"))
+        cash = self._money(account.get("cash"))
+        last_equity = self._money(account.get("last_equity") or equity)
+        peak_equity = max(equity, last_equity, float(self.settings.trial_balance_gbp))
+        drawdown_pct = round(max(0.0, (peak_equity - equity) / peak_equity * 100), 3) if peak_equity else 0.0
+        snapshot = PaperAccountSnapshot(
+            schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
+            snapshot_id=str(uuid4()),
+            account_scope="first_release_gbp_1000_trial",
+            mode="paper",
+            broker="alpaca_paper_readonly",
+            connection_status="alpaca_paper_readonly_connected",
+            starting_balance_gbp=float(self.settings.trial_balance_gbp),
+            current_balance_gbp=equity,
+            cash_gbp=cash,
+            equity_gbp=equity,
+            peak_equity_gbp=round(peak_equity, 2),
+            realized_pnl_gbp=realized,
+            unrealized_pnl_gbp=unrealized,
+            drawdown_pct=drawdown_pct,
+            max_drawdown_pct=drawdown_pct,
+            live_capital_enabled=False,
+            write_authority=False,
+            open_position_count=len(positions),
+            closed_trade_count=len(closed_trades),
+            postmortem_due_count=len(closed_trades),
+            postmortem_complete_count=0,
+            maturity_closed_trade_target=MATURITY_CLOSED_TRADE_TARGET,
+            maturity_closed_trade_count=len(closed_trades),
+            timeline_status="alpaca_paper_readonly_mirrored",
+            observed_at=_now(),
+            boundary=(
+                "Alpaca paper mirror is read-only: balance, positions, orders, and P&L only. "
+                "No broker write path, no live capital, no order placement."
+            ),
+        )
+        self.store.replace_positions(positions)
+        self.store.replace_orders(orders)
+        self.store.replace_closed_trades(closed_trades)
+        self.store.write_snapshot(snapshot)
+        self.event_log.write(
+            "alpaca_paper_account_mirror_synced",
+            "paper_account",
+            {
+                "snapshot_id": snapshot.snapshot_id,
+                "connection_status": snapshot.connection_status,
+                "open_position_count": len(positions),
+                "order_count": len(orders),
+                "closed_trade_count": len(closed_trades),
+                "write_authority": snapshot.write_authority,
+                "live_capital_enabled": snapshot.live_capital_enabled,
+                "execution_allowed": False,
+            },
+        )
+        report = {
+            "status": "ok",
+            "schema_version": PAPER_ACCOUNT_SCHEMA_VERSION,
+            "snapshot": snapshot.to_dict(),
+            "position_count": len(positions),
+            "order_count": len(orders),
+            "closed_trade_count": len(closed_trades),
+            "write_authority": False,
+            "live_capital_enabled": False,
+            "readonly_paths": sorted(ALPACA_READONLY_PATHS),
+            "boundary": snapshot.boundary,
+        }
+        self._write_report(report)
+        return report
+
+    def _money(self, value: Any) -> float:
+        return round(_float(value) * self.fx_to_gbp, 2)
+
+    def _position_from_alpaca(self, item: dict[str, Any]) -> PaperPosition:
+        qty = _float(item.get("qty"))
+        return PaperPosition(
+            schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
+            position_id=_safe_id("alpaca_position", item.get("asset_id") or item.get("symbol")),
+            status="open_position",
+            instrument=str(item.get("symbol") or "unknown"),
+            direction="long" if qty >= 0 else "short",
+            quantity=abs(qty),
+            entry_price=_optional_float(item.get("avg_entry_price")),
+            current_price=_optional_float(item.get("current_price")),
+            unrealized_pnl_gbp=self._money(item.get("unrealized_pl")),
+            risk_size_gbp=self._money(item.get("market_value")),
+            opened_at=None,
+            invalidation="Read-only broker mirror; invalidation belongs to a future approved trade intent.",
+            source_intent_id=None,
+            boundary="Mirrored Alpaca paper position only. Qadam cannot modify or close it.",
+        )
+
+    def _order_from_alpaca(self, item: dict[str, Any]) -> PaperOrder:
+        return PaperOrder(
+            schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
+            order_id=_safe_id("alpaca_order", item.get("id") or item.get("client_order_id")),
+            status=str(item.get("status") or "unknown"),
+            instrument=str(item.get("symbol") or "unknown"),
+            direction=str(item.get("side") or "unknown"),
+            quantity=_optional_float(item.get("qty")),
+            notional_gbp=self._money(item.get("notional")) if item.get("notional") is not None else None,
+            order_type=item.get("type"),
+            limit_price=_optional_float(item.get("limit_price")),
+            submitted_at=item.get("submitted_at"),
+            filled_at=item.get("filled_at"),
+            filled_quantity=_optional_float(item.get("filled_qty")),
+            filled_avg_price=_optional_float(item.get("filled_avg_price")),
+            execution_allowed=False,
+            paper_order_allowed=False,
+            boundary="Mirrored Alpaca paper order only. No order create, cancel, replace, or close route exists.",
+        )
+
+    def _closed_trade_from_order(self, item: dict[str, Any]) -> ClosedPaperTrade:
+        return ClosedPaperTrade(
+            schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
+            trade_id=_safe_id("alpaca_filled_order", item.get("id") or item.get("client_order_id")),
+            instrument=str(item.get("symbol") or "unknown"),
+            direction=str(item.get("side") or "unknown"),
+            entry_price=_optional_float(item.get("filled_avg_price")),
+            exit_price=None,
+            realized_pnl_gbp=0.0,
+            r_multiple=None,
+            close_reason="alpaca_filled_order_mirrored",
+            opened_at=item.get("submitted_at"),
+            closed_at=item.get("filled_at"),
+            postmortem_status="postmortem_due",
+            source_intent_id=None,
+            boundary="Filled Alpaca paper order mirrored for postmortem only. Qadam did not place this order.",
+        )
+
+    def _latest_profit_loss(self, history: dict[str, Any]) -> float | None:
+        values = history.get("profit_loss")
+        if not isinstance(values, list) or not values:
+            return None
+        return self._money(values[-1])
+
+    def _write_report(self, report: dict[str, Any]) -> Path:
+        output_path = Path(self.settings.runtime_dir) / "alpaca_paper_mirror.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+        history_path = Path(self.settings.runtime_dir) / "alpaca_paper_mirror.jsonl"
+        with history_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(report, sort_keys=True) + "\n")
+        return output_path
+
+
+def sync_alpaca_paper_account_readonly(settings: Settings | None = None) -> dict[str, Any]:
+    return AlpacaReadOnlyPaperMirror(settings=settings).sync()

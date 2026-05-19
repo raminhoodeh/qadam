@@ -713,37 +713,40 @@ Exit gate:
 
 Objective: show money and positions.
 
-Status: implemented and contract-checked locally as a read-only account mirror for the £1,000 trial account.
+Status: implemented and contract-checked locally as a read-only account mirror for the £1,000 trial allocation and the connected Alpaca paper account.
 
 Build:
 
-- `orchestrator/paper_account.py` defines the paper account snapshot, open-position snapshot, closed-trade snapshot, and maturity tracker contracts.
+- `orchestrator/paper_account.py` defines the paper account snapshot, open-position snapshot, order snapshot, closed-trade snapshot, and maturity tracker contracts.
 - `scripts/check_paper_account.py` initializes and validates the D6 mirror.
+- `scripts/check_alpaca_paper_mirror.py --live` refreshes the Alpaca paper account through GET-only endpoints for account, positions, orders, and portfolio history.
 - `orchestrator/cockpit_status.py` exports D6 account state into `capital` and joins open/closed/postmortem records into `trade_layer`.
-- `landing-page-repo/dashboard.js` renders the money panel from `capital`, including balance, realized/unrealized P&L, drawdown, read-only mirror status, open positions, closed trades, postmortems due, and equity timeline.
+- `landing-page-repo/dashboard.js` renders the money panel from `capital`, including balance, realized/unrealized P&L, drawdown, read-only mirror status, open positions, mirrored paper orders, closed trades, postmortems due, and equity timeline.
 - `landing-page-repo/auth.css` makes the paper account mirror mobile-readable.
 - The Money panel now exposes account scope, broker mirror state, connection status, observed time, timeline status, cash, equity, peak equity, max drawdown, postmortem counts, and the no-broker/no-live-capital boundary.
-- `scripts/check_paper_account.py` validates D6 snapshot fields, £1,000 starting/current/cash/equity parity, zero P&L, zero drawdown, no live capital, no write authority, 100-trade maturity target, count agreement, and no broker-write boundary.
-- `scripts/check_cockpit_status.py` validates the public `capital` contract, equity curve fields, paper position/closed trade schemas, count agreement, local-mirror connection state, and zero-authority controls.
+- `scripts/check_paper_account.py` validates D6 snapshot fields, local-mirror or Alpaca-read-only connection state, no live capital, no write authority, order authority disabled, 100-trade maturity target, count agreement, and no broker-write boundary.
+- `scripts/check_cockpit_status.py` validates the public `capital` contract, equity curve fields, paper position/order/closed trade schemas, count agreement, local-mirror or Alpaca-read-only connection state, and zero-authority controls.
 - `scripts/check_dashboard_money_panel.js` verifies the rendered Money panel shows the read-only mirror, account scope, broker/connection state, cash/equity/P&L/drawdown, maturity progress, open/closed trade empty states, equity timeline, and empty-equity fallback.
 
 Current D6 state:
 
 - Starting balance: £1,000.
-- Current balance: £1,000.
+- Current balance: mirrors the Alpaca paper account when the live read-only sync has run; the Qadam trial allocation remains £1,000 by policy.
 - Realized P&L: £0.
 - Unrealized P&L: £0.
 - Drawdown: 0%.
 - Open positions: 0.
 - Closed trades: 0.
 - Maturity progress: 0/100 closed proof trades.
-- Broker connection: local mirror only, not connected to a broker.
+- Broker connection: Alpaca paper mirror can be connected read-only; it still has no broker-write path.
 - Authority: read-only, no write path, no live capital.
 
 Exit gate:
 
 - Dashboard shows starting balance, current balance, P&L, drawdown, open positions, and closed trades from read-only data.
+- Dashboard shows mirrored paper orders when Alpaca returns them, without treating them as Qadam-created orders.
 - `scripts/check_paper_account.py` passes.
+- `scripts/check_alpaca_paper_mirror.py --live` passes when Alpaca credentials and network are available.
 - `scripts/check_cockpit_status.py` validates `mirror_status=ok`, `write_authority=false`, `live_capital_enabled=false`, and 100-trade maturity target.
 - A local D6 render check proves the panel renders the £1,000 paper mirror, zero P&L, zero drawdown, zero open/closed trades, 0/100 maturity progress, one equity snapshot, and the no-broker/no-live-capital boundary.
 - The dashboard does not invent P&L, open positions, closed trades, or postmortems.

@@ -154,6 +154,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Phase 1 test-data ingestion spine for typed source observations without live API calls.
 - Phase 1 data-spine acceptance gate for all 35 sources, all 5 pipelines, promoted adapter coverage, heartbeat consistency, and full deterministic ingestion.
 - Phase 1 read-only live adapter promotion layer for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- Alpaca paper-account mirror with GET-only balance, positions, orders, and P&L refresh through `scripts/check_alpaca_paper_mirror.py --live`.
 - Historical backfill planning and local sample-run contract for 12 priority sources, with credential-aware blocked/ready states.
 - Trust Score seed contract across all 35 sources: 22 sources currently score above 0.5 from priors/promoted adapters; real-data scoring remains pending.
 - Postgres/Timescale durable ingestion contract and status check; it passes as `ready_waiting_for_local_service` until local Postgres is running.
@@ -168,7 +169,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Phase 1E Agent OS manifests for 8 named Qadam agents and 7 reusable skill bundles.
 - Phase 1E/1F Agent OS acceptance gate for manifests, skills, runtime grants, broker-write blocks, undeclared-tool blocks, and explicit non-execution output flags.
 - Frozen D0 cockpit shell and D1 public-safe cockpit status contract.
-- D6 read-only paper account mirror for the £1000 trial balance, P&L, drawdown, positions, closed trades, postmortem counts, and 100-closed-trade maturity benchmark.
+- D6 read-only paper account mirror for the £1000 trial allocation, Alpaca paper balance/P&L/positions/orders, closed trades, postmortem counts, and 100-closed-trade maturity benchmark. The mirror cannot create, modify, cancel, close, or approve orders.
 - D7 local TradingView alert intake contract for observed chart signals, duplicate protection, Event Log writes, and cockpit visibility with no trade-candidate or order authority.
 - Startup and foundation checks.
 
@@ -292,6 +293,7 @@ Current ingestion state:
 - `scripts/check_source_heartbeat.py` verifies all 35 source readiness states, promoted adapter count, missing credential map, and local heartbeat store.
 - `scripts/check_phase1_data_spine.py` verifies the whole Phase 1 source contract: 35 sources, 5 pipelines, promoted adapters, heartbeat-map consistency, safe credential-status shape, and full deterministic ingestion.
 - `scripts/check_supplied_credentials.py` validates the currently supplied credentials and local model settings in one read-only pass: NASA FIRMS, FRED, ACLED, Alpaca paper, Telegram, Gemini, LM Studio, plus Kalshi deferred and UnusualWhales missing.
+- `scripts/check_alpaca_paper_mirror.py --live` refreshes the Alpaca paper-account mirror in read-only mode: account, positions, orders, and portfolio history only; no broker-write route exists.
 - `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file and writes a redacted local report; it cannot create signals or orders.
 - `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` feeds read-only observations into the Research Analyst queue, runs the local Gemma Research Analyst, and queues a Strategy Lead shadow handoff with no execution authority.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
@@ -342,7 +344,7 @@ Current dashboard status-contract state:
 - Dashboard Plan D4 is implemented locally: the Cognition panel renders current focus, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked-by-reason state from the public-safe snapshot.
 - Dashboard Plan D5 is implemented locally: `orchestrator/trade_intent.py` and `scripts/check_trade_intent.py` create a local Trade Intent Store and the cockpit renders one candidate and one blocked D5 test intent from that store.
 - Trade intent remains non-executing: `execution_allowed=false`, `paper_order_allowed=false`, no broker order path, no live capital, and no staged paper orders.
-- Dashboard Plan D6 is implemented locally: `orchestrator/paper_account.py` and `scripts/check_paper_account.py` create a read-only paper account mirror with £1000 starting/current balance, zero realized/unrealized P&L, zero drawdown, zero open positions, zero closed trades, and 0/100 maturity progress until real read-only broker data is connected.
+- Dashboard Plan D6 is implemented locally: `orchestrator/paper_account.py`, `scripts/check_paper_account.py`, and `scripts/check_alpaca_paper_mirror.py --live` maintain a read-only paper account mirror. It shows the £1000 trial allocation alongside Alpaca paper balance/P&L/positions/orders, while keeping `write_authority=false`, `live_capital_enabled=false`, and `paper_order_allowed=false`.
 - The cockpit money panel now renders those D6 mirror fields from the public-safe snapshot; it still has no broker write path, no live capital, and no ability to place orders.
 - Dashboard Plan D7 is implemented locally: `orchestrator/tradingview_alerts.py` and `scripts/check_tradingview_alerts.py` validate a TradingView paid-alert intake contract, block duplicate alerts, fail closed on receiver-key mismatch, and export observed signals to the cockpit with `execution_allowed=false`, `paper_order_allowed=false`, and `trade_candidate_created=false`.
 - The cockpit now shows TradingView alerts under Watching and as observed signals in the Trade Layer; they are not candidates, staged orders, submitted orders, or positions.

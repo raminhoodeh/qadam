@@ -12,9 +12,11 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.paper_account import (  # noqa: E402
+    ALPACA_READONLY_PATHS,
     MATURITY_CLOSED_TRADE_TARGET,
     PAPER_ACCOUNT_SCHEMA_VERSION,
     PaperAccountMirrorStore,
+    alpaca_paper_mirror_status,
     ensure_d6_paper_account_mirror,
     paper_account_summary,
 )
@@ -57,7 +59,9 @@ def main() -> int:
     snapshots = store.read_snapshots()
     positions = store.read_positions()
     closed_trades = store.read_closed_trades()
+    orders = store.read_orders()
     summary = paper_account_summary(settings)
+    alpaca_status = alpaca_paper_mirror_status(settings)
 
     print("paper_account_status=" + summary["status"])
     print(f"paper_account_created_snapshot={result['created_snapshot']}")
@@ -68,9 +72,12 @@ def main() -> int:
     print(f"paper_account_drawdown_pct={summary['drawdown_pct']}")
     print(f"paper_account_open_position_count={summary['open_position_count']}")
     print(f"paper_account_closed_trade_count={summary['closed_trade_count']}")
+    print(f"paper_account_order_count={summary['order_count']}")
+    print(f"paper_account_open_order_count={summary['open_order_count']}")
     print(f"paper_account_postmortem_due_count={summary['postmortem_due_count']}")
     print(f"paper_account_live_capital_enabled={summary['live_capital_enabled']}")
     print(f"paper_account_write_authority={summary['write_authority']}")
+    print("paper_account_alpaca_mirror_status=" + alpaca_status["status"])
     print("paper_account_boundary=" + summary["boundary"])
 
     if summary["status"] != "ok":
@@ -93,10 +100,13 @@ def main() -> int:
     if latest.account_scope != "first_release_gbp_1000_trial":
         print("paper_account_scope_mismatch=true")
         return 1
-    if latest.connection_status != "local_mirror_not_broker_connected":
+    if latest.connection_status not in {"local_mirror_not_broker_connected", "alpaca_paper_readonly_connected"}:
         print("paper_account_connection_status_mismatch=true")
         return 1
-    if "No broker connection" not in latest.boundary:
+    if not any(
+        phrase in latest.boundary
+        for phrase in ("No broker connection", "read-only", "No broker write path")
+    ):
         print("paper_account_snapshot_boundary_weak=true")
         return 1
     if "No broker write path exists" not in summary["boundary"]:
@@ -114,23 +124,33 @@ def main() -> int:
     if latest.maturity_closed_trade_target != MATURITY_CLOSED_TRADE_TARGET:
         print("paper_account_maturity_target_mismatch=true")
         return 1
-    if latest.current_balance_gbp != latest.starting_balance_gbp:
-        print("paper_account_current_balance_not_initial=true")
-        return 1
-    if latest.cash_gbp != latest.current_balance_gbp or latest.equity_gbp != latest.current_balance_gbp:
-        print("paper_account_cash_equity_mismatch=true")
-        return 1
-    if latest.realized_pnl_gbp != 0 or latest.unrealized_pnl_gbp != 0:
-        print("paper_account_pnl_not_zero=true")
-        return 1
-    if latest.drawdown_pct != 0 or latest.max_drawdown_pct != 0:
-        print("paper_account_drawdown_not_zero=true")
-        return 1
+    if latest.connection_status == "local_mirror_not_broker_connected":
+        if latest.current_balance_gbp != latest.starting_balance_gbp:
+            print("paper_account_current_balance_not_initial=true")
+            return 1
+        if latest.cash_gbp != latest.current_balance_gbp or latest.equity_gbp != latest.current_balance_gbp:
+            print("paper_account_cash_equity_mismatch=true")
+            return 1
+        if latest.realized_pnl_gbp != 0 or latest.unrealized_pnl_gbp != 0:
+            print("paper_account_pnl_not_zero=true")
+            return 1
+        if latest.drawdown_pct != 0 or latest.max_drawdown_pct != 0:
+            print("paper_account_drawdown_not_zero=true")
+            return 1
     if latest.open_position_count != len(positions):
         print("paper_account_open_position_count_mismatch=true")
         return 1
     if latest.closed_trade_count != len(closed_trades):
         print("paper_account_closed_trade_count_mismatch=true")
+        return 1
+    if summary["order_count"] != len(orders):
+        print("paper_account_order_count_mismatch=true")
+        return 1
+    if any(order.execution_allowed or order.paper_order_allowed for order in orders):
+        print("paper_account_order_authority_enabled=true")
+        return 1
+    if any(path.startswith(("/v2/orders", "/orders/")) for path in ALPACA_READONLY_PATHS):
+        print("paper_account_readonly_path_allows_order_mutation=true")
         return 1
     if latest.maturity_closed_trade_count != len(closed_trades):
         print("paper_account_maturity_count_mismatch=true")

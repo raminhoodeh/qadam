@@ -49,6 +49,7 @@ Not yet proven live:
 Current supplied-credential snapshot as of 2026-05-19:
 
 - Live in read-only credential validation: NASA FIRMS, FRED, Alpaca paper account mirror, Telegram bot status, Gemini model-list access, and LM Studio Gemma 4 E4B model-list access.
+- Alpaca paper mirror status: `scripts/check_alpaca_paper_mirror.py --live` uses only GET endpoints for `/account`, `/positions`, `/orders`, and `/account/portfolio/history`; it writes sanitized mirror state locally and exposes no broker-write route.
 - Degraded in read-only credential validation: ACLED. ACLED is locally configured and refresh automation succeeded on 2026-05-19, but the post-refresh read endpoint still returned HTTP 403, so ACLED needs entitlement/account-scope confirmation before it can count as durable live.
 - Missing or deferred from this credential batch: UnusualWhales remains a useful missing Batch A key; Kalshi remains deferred due to current location/account eligibility.
 - Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings.
@@ -241,6 +242,8 @@ VERCEL_TEAM_ID=
 ALPACA_API_KEY=
 ALPACA_API_SECRET=
 ALPACA_PAPER=true
+ALPACA_ENDPOINT=https://paper-api.alpaca.markets/v2
+ALPACA_TO_GBP_RATE=
 KALSHI_API_KEY=
 KALSHI_API_SECRET=
 

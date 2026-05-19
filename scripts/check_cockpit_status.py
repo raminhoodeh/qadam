@@ -190,8 +190,11 @@ CAPITAL_REQUIRED_FIELDS = {
     "max_drawdown_pct",
     "mirror_status",
     "observed_at",
+    "open_order_count",
     "open_position_count",
     "open_positions",
+    "order_count",
+    "orders",
     "peak_equity_gbp",
     "postmortem_complete_count",
     "postmortem_due_count",
@@ -236,6 +239,24 @@ CLOSED_PAPER_TRADE_REQUIRED_FIELDS = {
     "realized_pnl_gbp",
     "source_intent_id",
     "trade_id",
+}
+
+PAPER_ORDER_REQUIRED_FIELDS = {
+    "boundary",
+    "direction",
+    "execution_allowed",
+    "filled_at",
+    "filled_avg_price",
+    "filled_quantity",
+    "instrument",
+    "limit_price",
+    "notional_gbp",
+    "order_id",
+    "order_type",
+    "paper_order_allowed",
+    "quantity",
+    "status",
+    "submitted_at",
 }
 
 FUND_MANAGER_NOTES_REQUIRED_FIELDS = {
@@ -429,6 +450,7 @@ def main() -> int:
     print(f"cockpit_status_paper_current_balance_gbp={payload['capital'].get('current_balance_gbp')}")
     print(f"cockpit_status_paper_open_position_count={len(payload['capital'].get('open_positions', []))}")
     print(f"cockpit_status_paper_closed_trade_count={len(payload['capital'].get('closed_trades', []))}")
+    print(f"cockpit_status_paper_order_count={len(payload['capital'].get('orders', []))}")
     print(f"cockpit_status_paper_maturity_count={payload['capital'].get('maturity_closed_trade_count')}")
     print(f"cockpit_status_live_capital_enabled={payload['capital']['live_capital_enabled']}")
     print(f"cockpit_status_fund_manager_forum_status={payload['fund_manager_notes'].get('status')}")
@@ -672,30 +694,34 @@ def main() -> int:
     if capital.get("account_scope") != "first_release_gbp_1000_trial":
         print("cockpit_status_paper_account_scope_mismatch=true")
         return 1
-    if capital.get("connection_status") != "local_mirror_not_broker_connected":
+    if capital.get("connection_status") not in {"local_mirror_not_broker_connected", "alpaca_paper_readonly_connected"}:
         print("cockpit_status_paper_connection_status_mismatch=true")
         return 1
-    if "No broker connection" not in capital.get("boundary", ""):
+    if not any(
+        phrase in capital.get("boundary", "")
+        for phrase in ("No broker connection", "read-only", "No broker write path")
+    ):
         print("cockpit_status_paper_boundary_weak=true")
         return 1
     if capital.get("starting_balance_gbp") != 1000:
         print("cockpit_status_paper_starting_balance_mismatch=true")
         return 1
-    if capital.get("current_balance_gbp") != capital.get("starting_balance_gbp"):
-        print("cockpit_status_paper_current_balance_mismatch=true")
-        return 1
-    if capital.get("cash_gbp") != capital.get("current_balance_gbp"):
-        print("cockpit_status_paper_cash_mismatch=true")
-        return 1
-    if capital.get("equity_gbp") != capital.get("current_balance_gbp"):
-        print("cockpit_status_paper_equity_mismatch=true")
-        return 1
-    if capital.get("realized_pnl_gbp") != 0 or capital.get("unrealized_pnl_gbp") != 0:
-        print("cockpit_status_paper_pnl_not_zero=true")
-        return 1
-    if capital.get("drawdown_pct") != 0 or capital.get("max_drawdown_pct") != 0:
-        print("cockpit_status_paper_drawdown_not_zero=true")
-        return 1
+    if capital.get("connection_status") == "local_mirror_not_broker_connected":
+        if capital.get("current_balance_gbp") != capital.get("starting_balance_gbp"):
+            print("cockpit_status_paper_current_balance_mismatch=true")
+            return 1
+        if capital.get("cash_gbp") != capital.get("current_balance_gbp"):
+            print("cockpit_status_paper_cash_mismatch=true")
+            return 1
+        if capital.get("equity_gbp") != capital.get("current_balance_gbp"):
+            print("cockpit_status_paper_equity_mismatch=true")
+            return 1
+        if capital.get("realized_pnl_gbp") != 0 or capital.get("unrealized_pnl_gbp") != 0:
+            print("cockpit_status_paper_pnl_not_zero=true")
+            return 1
+        if capital.get("drawdown_pct") != 0 or capital.get("max_drawdown_pct") != 0:
+            print("cockpit_status_paper_drawdown_not_zero=true")
+            return 1
     if capital.get("maturity_closed_trade_target") != MATURITY_CLOSED_TRADE_TARGET:
         print("cockpit_status_paper_maturity_target_mismatch=true")
         return 1
@@ -704,6 +730,14 @@ def main() -> int:
         return 1
     if capital.get("closed_trade_count") != len(capital.get("closed_trades", [])):
         print("cockpit_status_paper_closed_trade_count_mismatch=true")
+        return 1
+    if capital.get("order_count") != len(capital.get("orders", [])):
+        print("cockpit_status_paper_order_count_mismatch=true")
+        return 1
+    if capital.get("open_order_count") != sum(
+        1 for order in capital.get("orders", []) if order.get("status") in {"new", "accepted", "partially_filled"}
+    ):
+        print("cockpit_status_paper_open_order_count_mismatch=true")
         return 1
     if capital.get("postmortem_due_count") != len(capital.get("postmortems_due", [])):
         print("cockpit_status_paper_postmortem_due_count_mismatch=true")
@@ -737,6 +771,14 @@ def main() -> int:
             return 1
         if trade.get("postmortem_status") not in {"postmortem_due", "postmortem_complete"}:
             print("cockpit_status_closed_paper_trade_postmortem_invalid=true")
+            return 1
+    for order in capital.get("orders", []):
+        missing_fields = sorted(PAPER_ORDER_REQUIRED_FIELDS - set(order))
+        if missing_fields:
+            print(f"cockpit_status_paper_order_fields_missing={order.get('order_id', 'unknown')}:{','.join(missing_fields)}")
+            return 1
+        if order.get("execution_allowed") is not False or order.get("paper_order_allowed") is not False:
+            print("cockpit_status_paper_order_authority_enabled=true")
             return 1
     if len(payload["watching"]) < 1:
         print("cockpit_status_no_sources=true")
