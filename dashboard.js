@@ -929,6 +929,7 @@ function renderCognition(status) {
     const focus = asArray(cognition.current_focus);
     const timeline = asArray(cognition.analysis_timeline);
     const blockedReasons = asArray(cognition.blocked_reasons);
+    const accountContext = cognition.paper_account_context || {};
     const philosophy = status.decision_philosophy || {};
     const evidenceBySignal = evidencePackets.reduce((acc, packet) => {
         if (packet.signal_id) acc[packet.signal_id] = packet;
@@ -937,6 +938,8 @@ function renderCognition(status) {
     const evidenceItemCount = sumNestedItems(evidencePackets, "items");
     const executableHypotheses = hypotheses.filter((hypothesis) => hypothesis.execution_allowed);
     const latestAssessment = localResearch[localResearch.length - 1] || {};
+    const accountPositions = asArray(accountContext.position_summaries);
+    const accountOrders = asArray(accountContext.order_summaries);
     const timelineHtml = timeline.length
         ? timeline.map((step) => `<li>${htmlText(step)}</li>`).join("")
         : `<li>${htmlText("trade layer not reached")}</li>`;
@@ -1098,6 +1101,45 @@ function renderCognition(status) {
         `).join("")
         : `<article class="cognition-card research-assessment-card"><h3>No local assessment yet</h3><p>The Research Analyst has not compressed the shadow queue.</p></article>`;
 
+    const paperContextHtml = `
+        <article class="cognition-card paper-context-card">
+            <div class="cognition-card-head">
+                ${renderStatusPill(accountContext.status || "pending")}
+                <p class="label">${htmlText(accountContext.connection_status, "paper mirror")}</p>
+            </div>
+            <h3>Paper account context</h3>
+            <p>${htmlText(accountContext.capital_policy, "The first-release policy allocation is GBP 1000; paper broker balance is context only.")}</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Trial policy", formatMoney(accountContext.trial_allocation_gbp))}
+                ${renderMetric("Broker mirror", formatMoney(accountContext.current_balance_gbp))}
+                ${renderMetric("Open positions", accountContext.open_position_count || 0)}
+                ${renderMetric("Orders", accountContext.order_count || 0)}
+                ${renderMetric("Drawdown", formatPercent(accountContext.drawdown_pct))}
+                ${renderMetric("Execution", accountContext.execution_allowed ? "Allowed" : "Blocked")}
+            </div>
+            <div class="tag-row">
+                ${renderInlineBadge(accountContext.write_authority ? "write enabled" : "read only", accountContext.write_authority ? "blocked" : "online")}
+                ${renderInlineBadge(accountContext.paper_order_allowed ? "paper order allowed" : "no paper order authority", accountContext.paper_order_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(accountContext.live_capital_enabled ? "live capital" : "live capital disabled", accountContext.live_capital_enabled ? "blocked" : "online")}
+                ${renderInlineBadge(`${accountContext.maturity_closed_trade_count || 0}/${accountContext.maturity_closed_trade_target || 100} proof trades`, "pending")}
+            </div>
+            <dl class="cognition-facts">
+                <div>
+                    <dt>Exposure</dt>
+                    <dd>${accountPositions.length ? accountPositions.map((position) => `${htmlText(position.instrument, "instrument")} ${htmlText(position.direction, "direction")} ${htmlText(position.quantity, "0")}`).join(", ") : "No open exposure mirrored."}</dd>
+                </div>
+                <div>
+                    <dt>Orders</dt>
+                    <dd>${accountOrders.length ? accountOrders.map((order) => `${htmlText(order.instrument, "instrument")} ${htmlText(order.direction, "direction")} ${htmlText(order.status, "status")}`).join(", ") : "No mirrored paper orders."}</dd>
+                </div>
+                <div>
+                    <dt>Boundary</dt>
+                    <dd>${htmlText(accountContext.boundary, "Read-only paper account context. No order authority.")}</dd>
+                </div>
+            </dl>
+        </article>
+    `;
+
     target.innerHTML = `
         ${renderPanelBrief({
             id: "cognition",
@@ -1129,6 +1171,10 @@ function renderCognition(status) {
         <section class="cognition-section">
             <p class="label">Current focus</p>
             <div class="focus-box">${renderTagList(focus, "No active focus")}</div>
+        </section>
+        <section class="cognition-section">
+            <p class="label">Paper account context</p>
+            <div class="hypothesis-stack">${paperContextHtml}</div>
         </section>
         <section class="cognition-section">
             <p class="label">Model activity</p>
