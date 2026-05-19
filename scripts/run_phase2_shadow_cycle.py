@@ -44,6 +44,13 @@ def main() -> int:
     print(f"phase2_shadow_cycle_shadow_signal_count={report['shadow_signal_count']}")
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
+    print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
+    print(f"phase2_shadow_cycle_paper_account_connection_status={report['paper_account_connection_status']}")
+    print(f"phase2_shadow_cycle_paper_account_current_balance_gbp={report['paper_account_current_balance_gbp']}")
+    print(f"phase2_shadow_cycle_paper_account_order_count={report['paper_account_order_count']}")
+    print(f"phase2_shadow_cycle_paper_account_open_position_count={report['paper_account_open_position_count']}")
+    print(f"phase2_shadow_cycle_paper_account_write_authority={report['paper_account_write_authority']}")
+    print(f"phase2_shadow_cycle_paper_account_live_capital_enabled={report['paper_account_live_capital_enabled']}")
     print(f"phase2_shadow_cycle_strategy_lead_status={report['strategy_lead_status']}")
     print(f"phase2_shadow_cycle_strategy_lead_execution_allowed={report['strategy_lead_execution_allowed']}")
     print(f"phase2_shadow_cycle_strategy_lead_paper_order_allowed={report['strategy_lead_paper_order_allowed']}")
@@ -66,6 +73,8 @@ def main() -> int:
     if report["status"] != "ok":
         return 1
     if report["strategy_lead_execution_allowed"] or report["strategy_lead_paper_order_allowed"]:
+        return 1
+    if report["paper_account_write_authority"] or report["paper_account_live_capital_enabled"]:
         return 1
     return 0
 

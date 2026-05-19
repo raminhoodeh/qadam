@@ -259,6 +259,32 @@ PAPER_ORDER_REQUIRED_FIELDS = {
     "submitted_at",
 }
 
+PAPER_ACCOUNT_CONTEXT_REQUIRED_FIELDS = {
+    "account_scope",
+    "boundary",
+    "broker",
+    "capital_policy",
+    "closed_trade_count",
+    "connection_status",
+    "current_balance_gbp",
+    "drawdown_pct",
+    "execution_allowed",
+    "live_capital_enabled",
+    "maturity_closed_trade_count",
+    "maturity_closed_trade_target",
+    "mode",
+    "open_order_count",
+    "open_position_count",
+    "order_count",
+    "paper_order_allowed",
+    "realized_pnl_gbp",
+    "status",
+    "timeline_status",
+    "trial_allocation_gbp",
+    "unrealized_pnl_gbp",
+    "write_authority",
+}
+
 FUND_MANAGER_NOTES_REQUIRED_FIELDS = {
     "allowed_statuses",
     "allowed_target_types",
@@ -429,6 +455,11 @@ def main() -> int:
     print(f"cockpit_status_shadow_packet_count={len(payload['cognition'].get('shadow_packets', []))}")
     print(f"cockpit_status_hypothesis_count={len(payload['cognition'].get('hypotheses', []))}")
     print(f"cockpit_status_evidence_packet_count={len(payload['cognition'].get('evidence_packets', []))}")
+    print(f"cockpit_status_paper_context_status={payload['cognition'].get('paper_account_context', {}).get('status')}")
+    print(
+        "cockpit_status_paper_context_connection_status="
+        f"{payload['cognition'].get('paper_account_context', {}).get('connection_status')}"
+    )
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -839,6 +870,26 @@ def main() -> int:
     if not cognition.get("current_focus"):
         print("cockpit_status_current_focus_missing=true")
         return 1
+    paper_context = cognition.get("paper_account_context", {})
+    missing_paper_context_fields = sorted(PAPER_ACCOUNT_CONTEXT_REQUIRED_FIELDS - set(paper_context))
+    if missing_paper_context_fields:
+        print("cockpit_status_paper_context_fields_missing=" + ",".join(missing_paper_context_fields))
+        return 1
+    if paper_context.get("execution_allowed") is not False:
+        print("cockpit_status_paper_context_execution_allowed=true")
+        return 1
+    if paper_context.get("paper_order_allowed") is not False:
+        print("cockpit_status_paper_context_paper_order_allowed=true")
+        return 1
+    if paper_context.get("write_authority") is not False:
+        print("cockpit_status_paper_context_write_authority_enabled=true")
+        return 1
+    if paper_context.get("live_capital_enabled") is not False:
+        print("cockpit_status_paper_context_live_capital_enabled=true")
+        return 1
+    if "read-only" not in paper_context.get("boundary", ""):
+        print("cockpit_status_paper_context_boundary_weak=true")
+        return 1
     if not isinstance(cognition.get("shadow_packets"), list):
         print("cockpit_status_shadow_packets_missing=true")
         return 1
@@ -885,12 +936,30 @@ def main() -> int:
     if "trade layer not reached" not in cognition.get("analysis_timeline", []):
         print("cockpit_status_analysis_timeline_trade_boundary_missing=true")
         return 1
+    if "paper account mirror context" not in cognition.get("analysis_timeline", []):
+        print("cockpit_status_analysis_timeline_paper_context_missing=true")
+        return 1
     if not cognition.get("blocked_reasons"):
         print("cockpit_status_blocked_reasons_missing=true")
         return 1
     if "shadow_only_no_signal_integrity_gate" not in cognition.get("blocked_reasons", []):
         print("cockpit_status_signal_integrity_block_missing=true")
         return 1
+    if "paper_account_context_read_only" not in cognition.get("blocked_reasons", []):
+        print("cockpit_status_paper_context_block_missing=true")
+        return 1
+    for packet in cognition.get("strategy_lead_packets", []):
+        strategy_context = packet.get("paper_account_context", {})
+        missing_strategy_context_fields = sorted(PAPER_ACCOUNT_CONTEXT_REQUIRED_FIELDS - set(strategy_context))
+        if missing_strategy_context_fields:
+            print(
+                "cockpit_status_strategy_paper_context_fields_missing="
+                f"{packet.get('packet_id', 'unknown')}:{','.join(missing_strategy_context_fields)}"
+            )
+            return 1
+        if strategy_context.get("execution_allowed") is not False or strategy_context.get("paper_order_allowed") is not False:
+            print("cockpit_status_strategy_paper_context_authority_enabled=true")
+            return 1
     if not isinstance(cognition.get("model_activity"), list) or not cognition["model_activity"]:
         print("cockpit_status_model_activity_missing=true")
         return 1

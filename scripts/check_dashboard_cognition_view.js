@@ -66,6 +66,32 @@ const REQUIRED_EVIDENCE_PACKET_FIELDS = [
     "trail_id"
 ];
 
+const REQUIRED_PAPER_CONTEXT_FIELDS = [
+    "account_scope",
+    "boundary",
+    "broker",
+    "capital_policy",
+    "closed_trade_count",
+    "connection_status",
+    "current_balance_gbp",
+    "drawdown_pct",
+    "execution_allowed",
+    "live_capital_enabled",
+    "maturity_closed_trade_count",
+    "maturity_closed_trade_target",
+    "mode",
+    "open_order_count",
+    "open_position_count",
+    "order_count",
+    "paper_order_allowed",
+    "realized_pnl_gbp",
+    "status",
+    "timeline_status",
+    "trial_allocation_gbp",
+    "unrealized_pnl_gbp",
+    "write_authority"
+];
+
 const REQUIRED_MODEL_ROLES = new Set(["Research Analyst", "Strategy Lead", "Head of Quant"]);
 
 function hasOwn(value, key) {
@@ -87,6 +113,7 @@ async function main() {
     const modelActivity = Array.isArray(cognition.model_activity) ? cognition.model_activity : [];
     const timeline = Array.isArray(cognition.analysis_timeline) ? cognition.analysis_timeline : [];
     const blockedReasons = Array.isArray(cognition.blocked_reasons) ? cognition.blocked_reasons : [];
+    const paperContext = cognition.paper_account_context || {};
 
     assert(cognition.status, "cognition status is missing");
     assert(Array.isArray(cognition.current_focus) && cognition.current_focus.length, "current focus is missing");
@@ -96,9 +123,14 @@ async function main() {
     assert(evidencePackets.length > 0, "evidence packets are missing");
     assert(modelActivity.length >= REQUIRED_MODEL_ROLES.size, "model activity is incomplete");
     assert(timeline.includes("trade layer not reached"), "analysis timeline does not show the trade boundary");
+    assert(timeline.includes("paper account mirror context"), "analysis timeline does not include paper account context");
     assert(
         blockedReasons.includes("shadow_only_no_signal_integrity_gate"),
         "blocked reasons do not include signal integrity gate"
+    );
+    assert(
+        blockedReasons.includes("paper_account_context_read_only"),
+        "blocked reasons do not include paper account read-only context"
     );
     assert(
         /shadow-only until Signal Integrity Gate and Risk Agent exist/i.test(cognition.boundary || ""),
@@ -113,6 +145,14 @@ async function main() {
         assert(model.authority === "non_executable", `${model.role} has executable authority`);
         assert(model.current_task, `${model.role} missing current task`);
     }
+
+    const missingPaperContext = missingFields(paperContext, REQUIRED_PAPER_CONTEXT_FIELDS);
+    assert(!missingPaperContext.length, `paper account context missing fields: ${missingPaperContext.join(", ")}`);
+    assert(paperContext.execution_allowed === false, "paper account context allows execution");
+    assert(paperContext.paper_order_allowed === false, "paper account context allows paper orders");
+    assert(paperContext.write_authority === false, "paper account context exposes write authority");
+    assert(paperContext.live_capital_enabled === false, "paper account context enables live capital");
+    assert(/read-only/i.test(paperContext.boundary || ""), "paper account context boundary is weak");
 
     for (const packet of shadowPackets) {
         const missing = missingFields(packet, REQUIRED_SHADOW_PACKET_FIELDS);
@@ -158,6 +198,10 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-cognition]", "Cognition state");
+    assertIncludes(rendered, "[data-cognition]", "Paper account context");
+    assertIncludes(rendered, "[data-cognition]", "Broker mirror");
+    assertIncludes(rendered, "[data-cognition]", "no paper order authority");
+    assertIncludes(rendered, "[data-cognition]", "read only");
     assertIncludes(rendered, "[data-cognition]", "shadow ready");
     assertIncludes(rendered, "[data-cognition]", "Hypothesis, not trade");
     assertIncludes(rendered, "[data-cognition]", "Execution blocked");
@@ -185,6 +229,7 @@ async function main() {
             hypotheses: [],
             evidence_packets: [],
             model_activity: [],
+            paper_account_context: {},
             analysis_timeline: [],
             blocked_reasons: [],
             boundary: "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist."
@@ -197,6 +242,7 @@ async function main() {
     assertIncludes(emptyRendered, "[data-cognition]", "No local assessment yet");
     assertIncludes(emptyRendered, "[data-cognition]", "No hypotheses yet");
     assertIncludes(emptyRendered, "[data-cognition]", "No evidence packets");
+    assertIncludes(emptyRendered, "[data-cognition]", "Paper account context");
     assertIncludes(emptyRendered, "[data-cognition]", "trade layer not reached");
 
     console.log("Dashboard cognition view contract OK");

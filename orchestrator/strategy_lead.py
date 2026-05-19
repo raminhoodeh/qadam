@@ -35,6 +35,7 @@ class StrategyLeadShadowPacket:
     blocked_by: tuple[str, ...]
     execution_allowed: bool
     paper_order_allowed: bool
+    paper_account_context: dict[str, Any]
     created_at: str
     boundary: str
 
@@ -61,8 +62,56 @@ def _safe_tuple(value: Any, *, fallback: tuple[str, ...] = ()) -> tuple[str, ...
     return fallback
 
 
-def build_strategy_lead_shadow_packet(assessment: dict[str, Any] | None) -> StrategyLeadShadowPacket:
+def _safe_paper_account_context(value: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "status": "not_available",
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "write_authority": False,
+            "live_capital_enabled": False,
+            "boundary": "No paper account context was supplied.",
+        }
+    allowed_fields = {
+        "account_scope",
+        "broker",
+        "boundary",
+        "capital_policy",
+        "closed_trade_count",
+        "connection_status",
+        "current_balance_gbp",
+        "drawdown_pct",
+        "execution_allowed",
+        "live_capital_enabled",
+        "maturity_closed_trade_count",
+        "maturity_closed_trade_target",
+        "mode",
+        "open_order_count",
+        "open_position_count",
+        "order_count",
+        "paper_order_allowed",
+        "realized_pnl_gbp",
+        "status",
+        "timeline_status",
+        "trial_allocation_gbp",
+        "unrealized_pnl_gbp",
+        "write_authority",
+    }
+    projected = {key: value.get(key) for key in sorted(allowed_fields) if key in value}
+    projected["execution_allowed"] = False
+    projected["paper_order_allowed"] = False
+    projected["write_authority"] = False
+    projected["live_capital_enabled"] = False
+    return projected
+
+
+def build_strategy_lead_shadow_packet(
+    assessment: dict[str, Any] | None,
+    *,
+    paper_account_context: dict[str, Any] | None = None,
+) -> StrategyLeadShadowPacket:
     assessment = assessment or {}
+    safe_paper_context = _safe_paper_account_context(paper_account_context)
     watch_focus = str(assessment.get("watch_focus") or "macro_watchlist")[:120]
     missing = _safe_tuple(
         assessment.get("missing_correlations"),
@@ -75,7 +124,7 @@ def build_strategy_lead_shadow_packet(assessment: dict[str, Any] | None) -> Stra
             "What invalidates this thesis before it becomes a proposed signal?",
             "What market price or probability gap would make this worth deeper review?",
         ),
-    )
+    ) + ("Does current paper exposure change review priority without creating an order?",)
     return StrategyLeadShadowPacket(
         schema_version=STRATEGY_LEAD_PACKET_SCHEMA_VERSION,
         packet_id=str(uuid4()),
@@ -92,13 +141,15 @@ def build_strategy_lead_shadow_packet(assessment: dict[str, Any] | None) -> Stra
             "risk_agent_missing",
             "execution_policy_missing",
             "broker_write_route_absent",
+            "paper_account_context_read_only",
         ),
         execution_allowed=False,
         paper_order_allowed=False,
+        paper_account_context=safe_paper_context,
         created_at=_now(),
         boundary=(
-            "Strategy Lead packet is a shadow handoff only. It cannot approve "
-            "signals, risk, paper orders, or live execution."
+            "Strategy Lead packet is a shadow handoff only. Paper account context is read-only; "
+            "it cannot approve signals, risk, paper orders, or live execution."
         ),
     )
 
@@ -166,8 +217,9 @@ def queue_strategy_lead_shadow_packet(
     settings: Settings | None = None,
     store: StrategyLeadShadowStore | None = None,
     event_log: EventLog | None = None,
+    paper_account_context: dict[str, Any] | None = None,
 ) -> StrategyLeadShadowPacket:
     settings = settings or Settings.from_env()
     store = store or StrategyLeadShadowStore(settings=settings)
-    packet = build_strategy_lead_shadow_packet(assessment)
+    packet = build_strategy_lead_shadow_packet(assessment, paper_account_context=paper_account_context)
     return store.write(packet, event_log=event_log)

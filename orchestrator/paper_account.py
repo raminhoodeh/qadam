@@ -408,6 +408,84 @@ def paper_account_summary(settings: Settings | None = None) -> dict[str, Any]:
     }
 
 
+def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, Any]:
+    """Return a public-safe account context for shadow intelligence only.
+
+    This deliberately excludes broker IDs and local file locations. It is safe
+    to feed into Research Analyst and Strategy Lead prompts because it carries
+    state, not authority.
+    """
+
+    settings = settings or Settings.from_env()
+    store = PaperAccountMirrorStore(settings=settings)
+    health = store.health()
+    latest = store.latest_snapshot()
+    positions = store.read_positions()
+    orders = store.read_orders()
+    closed_trades = store.read_closed_trades()
+    current_balance = latest.current_balance_gbp if latest else float(settings.trial_balance_gbp)
+    drawdown = latest.drawdown_pct if latest else 0.0
+    open_orders = tuple(order for order in orders if order.status in {"new", "accepted", "partially_filled"})
+    return {
+        "status": health.get("status", "not_initialized"),
+        "schema_version": PAPER_ACCOUNT_SCHEMA_VERSION,
+        "account_scope": latest.account_scope if latest else "first_release_gbp_1000_trial",
+        "mode": latest.mode if latest else "paper",
+        "broker": latest.broker if latest else "local_mirror_pending_alpaca_readonly",
+        "connection_status": latest.connection_status if latest else "local_mirror_not_broker_connected",
+        "trial_allocation_gbp": float(settings.trial_balance_gbp),
+        "current_balance_gbp": current_balance,
+        "cash_gbp": latest.cash_gbp if latest else float(settings.trial_balance_gbp),
+        "equity_gbp": latest.equity_gbp if latest else current_balance,
+        "realized_pnl_gbp": latest.realized_pnl_gbp if latest else 0.0,
+        "unrealized_pnl_gbp": latest.unrealized_pnl_gbp if latest else 0.0,
+        "drawdown_pct": drawdown,
+        "open_position_count": len(positions),
+        "order_count": len(orders),
+        "open_order_count": len(open_orders),
+        "closed_trade_count": len(closed_trades),
+        "maturity_closed_trade_target": MATURITY_CLOSED_TRADE_TARGET,
+        "maturity_closed_trade_count": latest.maturity_closed_trade_count if latest else len(closed_trades),
+        "timeline_status": latest.timeline_status if latest else "initialized_no_trades",
+        "observed_at": latest.observed_at if latest else None,
+        "position_summaries": [
+            {
+                "instrument": position.instrument,
+                "direction": position.direction,
+                "quantity": position.quantity,
+                "unrealized_pnl_gbp": position.unrealized_pnl_gbp,
+                "risk_size_gbp": position.risk_size_gbp,
+                "status": position.status,
+            }
+            for position in positions[:5]
+        ],
+        "order_summaries": [
+            {
+                "instrument": order.instrument,
+                "direction": order.direction,
+                "status": order.status,
+                "order_type": order.order_type,
+                "quantity": order.quantity,
+                "notional_gbp": order.notional_gbp,
+                "filled_quantity": order.filled_quantity,
+            }
+            for order in orders[:5]
+        ],
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "write_authority": False,
+        "live_capital_enabled": False,
+        "capital_policy": (
+            "The first-release policy allocation is GBP 1000 even if the connected "
+            "paper broker reports a larger simulated account balance."
+        ),
+        "boundary": (
+            "Paper account context is read-only state for shadow intelligence. It cannot "
+            "approve, create, cancel, replace, close, resize, or fund orders."
+        ),
+    }
+
+
 def alpaca_paper_mirror_status(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     key_ready = secret_status("ALPACA_API_KEY", settings).configured

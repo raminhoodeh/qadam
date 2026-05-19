@@ -29,6 +29,7 @@ from orchestrator.intelligence import (
     run_local_research_analyst_inference,
     run_research_shadow_triage_queue,
 )
+from orchestrator.paper_account import paper_account_shadow_context
 from orchestrator.phase1_live_adapters import (
     fetch_phase1_live_adapter_live_sync,
     fetch_phase1_live_adapter_sample,
@@ -193,12 +194,14 @@ def run_phase2_shadow_cycle(
             )
         )
 
+    paper_context = paper_account_shadow_context(settings)
     triage_result = run_research_shadow_triage_queue(limit=research_limit, settings=settings, event_log=event_log)
     local_result = run_local_research_analyst_inference(
         limit=research_limit,
         live=live_local_llm,
         settings=settings,
         event_log=event_log,
+        paper_account_context=paper_context,
     )
     assessment = local_result.get("assessment") if isinstance(local_result.get("assessment"), dict) else None
     strategy_store = StrategyLeadShadowStore(settings=settings)
@@ -207,6 +210,7 @@ def run_phase2_shadow_cycle(
         settings=settings,
         store=strategy_store,
         event_log=event_log,
+        paper_account_context=paper_context,
     )
 
     report = {
@@ -223,6 +227,13 @@ def run_phase2_shadow_cycle(
         "local_research_assessment_id": assessment.get("assessment_id") if assessment else None,
         "local_research_execution_allowed": bool(assessment.get("execution_allowed")) if assessment else False,
         "local_research_paper_order_allowed": bool(assessment.get("paper_order_allowed")) if assessment else False,
+        "paper_account_context_status": paper_context.get("status"),
+        "paper_account_connection_status": paper_context.get("connection_status"),
+        "paper_account_current_balance_gbp": paper_context.get("current_balance_gbp"),
+        "paper_account_order_count": paper_context.get("order_count"),
+        "paper_account_open_position_count": paper_context.get("open_position_count"),
+        "paper_account_write_authority": paper_context.get("write_authority"),
+        "paper_account_live_capital_enabled": paper_context.get("live_capital_enabled"),
         "strategy_lead_packet_id": strategy_packet.packet_id,
         "strategy_lead_status": strategy_packet.status,
         "strategy_lead_execution_allowed": strategy_packet.execution_allowed,

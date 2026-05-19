@@ -563,6 +563,66 @@ def _packet_projection(packet: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _paper_account_projection(paper_account_context: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(paper_account_context, dict):
+        return {
+            "status": "not_available",
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "write_authority": False,
+            "live_capital_enabled": False,
+            "boundary": "No paper account context was supplied.",
+        }
+    allowed_fields = {
+        "account_scope",
+        "broker",
+        "boundary",
+        "capital_policy",
+        "cash_gbp",
+        "closed_trade_count",
+        "connection_status",
+        "current_balance_gbp",
+        "drawdown_pct",
+        "equity_gbp",
+        "execution_allowed",
+        "live_capital_enabled",
+        "maturity_closed_trade_count",
+        "maturity_closed_trade_target",
+        "mode",
+        "open_order_count",
+        "open_position_count",
+        "order_count",
+        "order_summaries",
+        "paper_order_allowed",
+        "position_summaries",
+        "realized_pnl_gbp",
+        "status",
+        "timeline_status",
+        "trial_allocation_gbp",
+        "unrealized_pnl_gbp",
+        "write_authority",
+    }
+    projected = {key: paper_account_context.get(key) for key in sorted(allowed_fields) if key in paper_account_context}
+    projected["execution_allowed"] = False
+    projected["paper_order_allowed"] = False
+    projected["write_authority"] = False
+    projected["live_capital_enabled"] = False
+    return projected
+
+
+def _paper_account_digest(paper_account_context: dict[str, Any] | None) -> str:
+    context = _paper_account_projection(paper_account_context)
+    balance = context.get("current_balance_gbp", "unknown")
+    positions = context.get("open_position_count", 0)
+    orders = context.get("order_count", 0)
+    drawdown = context.get("drawdown_pct", 0)
+    connection = context.get("connection_status", "unknown")
+    return (
+        f"paper account mirror: {connection}, current balance GBP {balance}, "
+        f"{positions} open positions, {orders} mirrored orders, drawdown {drawdown}%"
+    )
+
+
 def _deterministic_local_research_assessment(
     packets: tuple[dict[str, Any], ...],
     *,
@@ -570,10 +630,12 @@ def _deterministic_local_research_assessment(
     model: str,
     mode: str,
     raw_response_status: str,
+    paper_account_context: dict[str, Any] | None = None,
 ) -> LocalResearchAssessment:
     summaries = " ".join(str(packet.get("summary", "")) for packet in packets)
     packet_ids = tuple(str(packet.get("packet_id", "unknown")) for packet in packets)
     focus = _instrument_focus(summaries)
+    paper_digest = _paper_account_digest(paper_account_context)
     confidence = round(min(0.82, 0.4 + _keyword_strength(summaries) * 0.45), 3)
     anomalies: tuple[str, ...] = ("no queued packets",)
     next_questions: tuple[str, ...] = ("wait for source heartbeat and shadow triage inputs",)
@@ -581,11 +643,12 @@ def _deterministic_local_research_assessment(
         anomalies = tuple(
             str(packet.get("summary", "shadow packet requires review"))[:180]
             for packet in packets[-3:]
-        )
+        ) + (paper_digest,)
         next_questions = (
             "Which independent source can corroborate this observation?",
             "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
             "Which stale-data or missing-credential condition could invalidate the packet?",
+            "Does the read-only paper account state change review priority without creating an order?",
         )
     missing_correlations = ("signal_integrity_gate", "risk_agent_review", "market_price_confirmation")
     if len(packets) < 2:
@@ -612,7 +675,10 @@ def _deterministic_local_research_assessment(
         execution_allowed=False,
         paper_order_allowed=False,
         created_at=_now(),
-        boundary="Local Research Analyst output is compression only. It cannot approve signals, risk, or orders.",
+        boundary=(
+            "Local Research Analyst output is compression only. Paper account context is read-only; "
+            "it cannot approve signals, risk, or orders."
+        ),
     )
 
 
@@ -623,8 +689,10 @@ def _assessment_from_model_payload(
     provider: str,
     model: str,
     raw_response_status: str,
+    paper_account_context: dict[str, Any] | None = None,
 ) -> LocalResearchAssessment:
     packet_ids = tuple(str(packet.get("packet_id", "unknown")) for packet in packets)
+    paper_digest = _paper_account_digest(paper_account_context)
     confidence_value = payload.get("confidence", 0.0)
     try:
         confidence = float(confidence_value)
@@ -642,7 +710,10 @@ def _assessment_from_model_payload(
         provider=provider,
         model=model,
         packet_ids=packet_ids,
-        summary=str(payload.get("summary", "Local model returned an empty summary."))[:1000],
+        summary=(
+            str(payload.get("summary", "Local model returned an empty summary.")).strip()
+            + f" Paper context: {paper_digest}."
+        )[:1000],
         watch_focus=str(payload.get("watch_focus", "macro_watchlist"))[:120],
         anomalies=_coerce_string_list(payload.get("anomalies"), fallback=("none_identified",)),
         missing_correlations=_coerce_string_list(
@@ -659,7 +730,10 @@ def _assessment_from_model_payload(
         execution_allowed=False,
         paper_order_allowed=False,
         created_at=_now(),
-        boundary="Local Research Analyst output is compression only. It cannot approve signals, risk, or orders.",
+        boundary=(
+            "Local Research Analyst output is compression only. Paper account context is read-only; "
+            "it cannot approve signals, risk, or orders."
+        ),
     )
 
 
@@ -731,6 +805,7 @@ def run_local_research_analyst_inference(
     settings: Settings | None = None,
     store: LocalResearchAssessmentStore | None = None,
     event_log: EventLog | None = None,
+    paper_account_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     store = store or LocalResearchAssessmentStore(settings=settings)
@@ -740,6 +815,7 @@ def run_local_research_analyst_inference(
     model = secret_value("LM_STUDIO_MODEL", settings) or ""
     packets = read_research_shadow_triage_queue(settings)
     selected = packets[-limit:] if limit > 0 else packets
+    safe_paper_context = _paper_account_projection(paper_account_context)
 
     if not live:
         assessment = _deterministic_local_research_assessment(
@@ -748,6 +824,7 @@ def run_local_research_analyst_inference(
             model=model,
             mode="dry_contract",
             raw_response_status="not_called",
+            paper_account_context=safe_paper_context,
         )
         store.write(assessment)
         event_log.write(
@@ -767,6 +844,7 @@ def run_local_research_analyst_inference(
             "packet_count": len(packets),
             "processed_packet_count": len(selected),
             "assessment": assessment.to_dict(),
+            "paper_account_context": safe_paper_context,
             "store": store.health(),
             "event_log": event_log.health(),
             "boundary": assessment.boundary,
@@ -789,6 +867,7 @@ def run_local_research_analyst_inference(
             "mode": "live_local_llm",
             "provider_status": provider_probe,
             "reason": "LM Studio local server is not reachable on the configured base URL.",
+            "paper_account_context": safe_paper_context,
             "store": store.health(),
             "event_log": event_log.health(),
             "boundary": "No model inference was run. Execution remains impossible.",
@@ -801,7 +880,8 @@ def run_local_research_analyst_inference(
         "must be { and the final character must be }. Do not wrap the JSON in Markdown. "
         "Do not include commentary before or after the JSON. Do not recommend orders, "
         "position sizes, approvals, or execution. Treat private world-view priors as "
-        "hypotheses only. Use exactly these keys: summary string, watch_focus string, "
+        "hypotheses only. Treat paper_account_context as read-only account state, "
+        "not spendable authority or an order instruction. Use exactly these keys: summary string, watch_focus string, "
         "anomalies array of strings, missing_correlations array of strings, "
         "next_questions array of strings, escalation_recommendation either hold_shadow "
         "or escalate_to_strategy_lead_shadow, confidence number from 0 to 1."
@@ -810,6 +890,7 @@ def run_local_research_analyst_inference(
         "mode": "paper_shadow_only",
         "execution_allowed": False,
         "paper_order_allowed": False,
+        "paper_account_context": safe_paper_context,
         "packets": [_packet_projection(packet) for packet in selected],
     }
     response = _http_json_post(
@@ -845,6 +926,7 @@ def run_local_research_analyst_inference(
             "reason": response["status"],
             "detail": response.get("reason") or response.get("body") or "no_detail",
             "http_status": response.get("http_status"),
+            "paper_account_context": safe_paper_context,
             "store": store.health(),
             "event_log": event_log.health(),
             "boundary": "Local model call failed. Execution remains impossible.",
@@ -864,6 +946,7 @@ def run_local_research_analyst_inference(
             provider=local_provider,
             model=resolved_model,
             raw_response_status="ok",
+            paper_account_context=safe_paper_context,
         )
     except Exception:
         assessment = _deterministic_local_research_assessment(
@@ -872,6 +955,7 @@ def run_local_research_analyst_inference(
             model=resolved_model,
             mode="live_local_llm_parse_fallback",
             raw_response_status="parse_fallback",
+            paper_account_context=safe_paper_context,
         )
 
     store.write(assessment)
@@ -894,6 +978,7 @@ def run_local_research_analyst_inference(
         "packet_count": len(packets),
         "processed_packet_count": len(selected),
         "assessment": assessment.to_dict(),
+        "paper_account_context": safe_paper_context,
         "store": store.health(),
         "event_log": event_log.health(),
         "boundary": assessment.boundary,

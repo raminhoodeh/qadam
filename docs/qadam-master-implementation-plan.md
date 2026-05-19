@@ -378,9 +378,10 @@ Current implementation start:
 - The Research Analyst shadow triage runner consumes queued packets and writes non-executable shadow signals.
 - Local Research Analyst inference contract exists: `scripts/check_local_research_analyst.py` validates a dry shadow assessment by default, and `--live` calls LM Studio `/chat/completions` only when the local server is reachable.
 - Local Research Analyst outputs are stored in `data/runtime/local_research_assessments.jsonl` as shadow-only compression records with `execution_allowed=false` and `paper_order_allowed=false`.
-- `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` now runs the first deeper Phase 2 loop: live read-only observations from available sources are queued into Research Analyst shadow packets, deterministic shadow triage writes non-executable signals, local Gemma compresses the queue, and a Strategy Lead shadow handoff packet is written with broker/risk execution blocked.
-- Current 2026-05-19 live Phase 2 cycle result: live read-only observations from FRED, RSS, Polymarket, Alpaca, and Telegram produced eight queued Research Analyst packets, five shadow signals, one live local Gemma assessment, and one Strategy Lead shadow handoff packet. NASA FIRMS was live but had zero current events in the queried window. All outputs remained `execution_allowed=false` and `paper_order_allowed=false`.
-- The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries without prompts, raw model text, local paths, or secrets.
+- `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` now runs the first deeper Phase 2 loop: live read-only observations from available sources are queued into Research Analyst shadow packets, deterministic shadow triage writes non-executable signals, local Gemma compresses the queue, the read-only Alpaca paper-account mirror is attached as account context, and a Strategy Lead shadow handoff packet is written with broker/risk execution blocked.
+- `scripts/check_phase2_paper_context.py` validates the paper-account context bridge in dry mode: the context reaches the Strategy Lead packet, stays sanitized, and keeps `execution_allowed=false`, `paper_order_allowed=false`, `write_authority=false`, and `live_capital_enabled=false`.
+- Current 2026-05-19 live Phase 2 cycle result: live read-only observations from FRED, RSS, Polymarket, Alpaca, and Telegram produced eleven queued Research Analyst packets, four shadow signals, one live local Gemma assessment, and one Strategy Lead shadow handoff packet. NASA FIRMS was live but had zero current events in the queried window. The Strategy Lead packet included read-only paper-account context: Alpaca paper mirror connected, current broker paper balance visible, zero open positions, zero mirrored orders, no write authority, and live capital disabled. All outputs remained `execution_allowed=false` and `paper_order_allowed=false`.
+- The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries and read-only paper-account context without prompts, raw model text, local paths, broker IDs, or secrets.
 - `scripts/check_shadow_intelligence.py` is wired into `start_qadam.sh`.
 - `scripts/check_local_research_analyst.py` is wired into `start_qadam.sh` in dry-contract mode.
 - System health, FastMCP-style tools, and cockpit registry cards expose Shadow Intelligence status.
@@ -604,7 +605,7 @@ Phase 0 foundation is substantially implemented, and Phase 1 has started with te
 
 The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts and provider-safe probes have started. Dashboard Plan D0-D7 is implemented locally, with the protected D8B User Guide now added. The next practical batch is durable Postgres/Timescale activation, then D8 Fund Manager forum groundwork, D8A Telegram communications groundwork, plus controlled model readiness:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, and read-only paper-account context are active. Dashboard Plan D0-D9 is implemented locally, with the protected D8B User Guide now added. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and start the Signal Integrity Gate / Risk Agent design without creating any order route:
 
 1. Install or open a Docker-compatible runtime on the Mac: Docker Desktop, OrbStack, Podman, or Colima.
 2. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
@@ -619,7 +620,7 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 11. Build D8A Telegram Bot Communications in dry-run mode: local member registry, outbox, message templates, cockpit status, and dashboard Communications panel.
 12. Start the LM Studio local server and run the local `/models` readiness check against `gemma-4-e4b`.
 13. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
-13A. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` to feed available live read-only observations through Research Analyst and Strategy Lead shadow workflows.
+13A. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` whenever LM Studio is running to feed available live read-only observations and paper-account context through Research Analyst and Strategy Lead shadow workflows.
 14. Run the Gemini model-list credential probe without text generation.
 15. Keep all outputs non-executable and hidden/debug-only until Signal Integrity Gate exists.
 

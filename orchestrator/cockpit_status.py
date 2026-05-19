@@ -24,7 +24,7 @@ from orchestrator.intelligence import (
     shadow_intelligence_summary,
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
-from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_summary
+from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
@@ -511,6 +511,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     store = ShadowSignalStore(settings=settings)
     local_research_store = LocalResearchAssessmentStore(settings=settings)
     strategy_lead_store = StrategyLeadShadowStore(settings=settings)
+    paper_context = paper_account_shadow_context(settings)
     try:
         signals = list(store.read())[-5:]
     except Exception:
@@ -556,6 +557,11 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         current_focus.append(
             f"local Research Analyst focus: {local_assessments[-1].get('watch_focus', 'shadow review')}"
         )
+    if paper_context.get("status") in {"ok", "not_initialized"}:
+        current_focus.append(
+            "checking paper account context without order authority: "
+            f"{paper_context.get('connection_status', 'unknown')}"
+        )
     if not current_focus:
         current_focus.append("waiting for source heartbeat and shadow triage inputs")
 
@@ -600,6 +606,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     return {
         "status": summary.get("status", "shadow_ready"),
         "current_focus": current_focus,
+        "paper_account_context": paper_context,
         "shadow_packets": _safe_shadow_packets(settings),
         "local_research_assessments": [
             {
@@ -630,6 +637,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
                 "missing_correlations": packet.get("missing_correlations", []),
                 "blocked_by": packet.get("blocked_by", []),
                 "worldview_lens_status": packet.get("worldview_lens_status"),
+                "paper_account_context": packet.get("paper_account_context") or paper_context,
                 "execution_allowed": bool(packet.get("execution_allowed")),
                 "paper_order_allowed": bool(packet.get("paper_order_allowed")),
                 "created_at": packet.get("created_at"),
@@ -643,6 +651,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "source observation",
             "research analyst shadow packet",
             "local research assessment",
+            "paper account mirror context",
             "deterministic triage",
             "strategy review pending",
             "signal integrity gate blocked",
@@ -653,6 +662,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "no_risk_agent_approval",
             "no_trade_candidate_store",
             "no_broker_write_authority",
+            "paper_account_context_read_only",
         ],
         "boundary": "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist.",
     }

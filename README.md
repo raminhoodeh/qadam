@@ -296,6 +296,7 @@ Current ingestion state:
 - `scripts/check_alpaca_paper_mirror.py --live` refreshes the Alpaca paper-account mirror in read-only mode: account, positions, orders, and portfolio history only; no broker-write route exists.
 - `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file and writes a redacted local report; it cannot create signals or orders.
 - `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` feeds read-only observations into the Research Analyst queue, runs the local Gemma Research Analyst, and queues a Strategy Lead shadow handoff with no execution authority.
+- `scripts/check_phase2_paper_context.py` validates that Phase 2 receives the paper-account mirror as read-only context and that neither the Research Analyst nor Strategy Lead can approve execution or paper orders.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
 - `scripts/check_oref_adapter.py` verifies the Oref sample path and can run a live read-only check with `--live`.
 - `scripts/check_nasa_firms_adapter.py` verifies the NASA FIRMS sample path and can run a live read-only area CSV check with `--live` when `NASA_FIRMS_API_KEY` is configured.
@@ -332,6 +333,7 @@ Current shadow intelligence state:
 - The Research Analyst shadow triage runner consumes queued packets and converts them into non-executable shadow signals.
 - `scripts/check_local_research_analyst.py` validates the local Research Analyst assessment contract in dry mode by default, and `--live` calls LM Studio only after the local server is running.
 - Local Research Analyst assessments are stored in `data/runtime/local_research_assessments.jsonl` as shadow-only compression records with no execution authority.
+- Phase 2 now feeds a sanitized paper-account context into the Local Research Analyst and Strategy Lead shadow workflow: Alpaca paper balance, P&L, positions, order counts, drawdown, maturity progress, and the £1000 policy allocation are visible as context only, with `execution_allowed=false`, `paper_order_allowed=false`, `write_authority=false`, and `live_capital_enabled=false`.
 - All shadow signals are marked non-executable with `execution_allowed=false`.
 
 Current dashboard status-contract state:
@@ -341,7 +343,7 @@ Current dashboard status-contract state:
 - `scripts/check_cockpit_status.py` validates that D0 is frozen, Qadam is in paper mode, live capital is disabled, module/source status exists, and the public snapshot contains no raw token-like values, allowlist emails, local absolute paths, secret lists, or broker authority.
 - `landing-page-repo/dashboard.js` now tries the authenticated `/api/cockpit-status` live bridge first, then falls back to `/status/cockpit-status.json`, and renders modules, source groups, cognition, forbidden actions, trade state, communications, paper-account fields, comments, and process console from the contract.
 - Dashboard Plan D3 is implemented locally: the Watching panel renders all 35 registered sources under 5 pipeline groups with readiness, credential state, adapter state, degraded reason, trust placeholder, and heartbeat time; D7 appends TradingView paid alerts as an observed market alert source.
-- Dashboard Plan D4 is implemented locally: the Cognition panel renders current focus, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked-by-reason state from the public-safe snapshot.
+- Dashboard Plan D4 is implemented locally: the Cognition panel renders current focus, read-only paper-account context, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked-by-reason state from the public-safe snapshot.
 - Dashboard Plan D5 is implemented locally: `orchestrator/trade_intent.py` and `scripts/check_trade_intent.py` create a local Trade Intent Store and the cockpit renders one candidate and one blocked D5 test intent from that store.
 - Trade intent remains non-executing: `execution_allowed=false`, `paper_order_allowed=false`, no broker order path, no live capital, and no staged paper orders.
 - Dashboard Plan D6 is implemented locally: `orchestrator/paper_account.py`, `scripts/check_paper_account.py`, and `scripts/check_alpaca_paper_mirror.py --live` maintain a read-only paper account mirror. It shows the £1000 trial allocation alongside Alpaca paper balance/P&L/positions/orders, while keeping `write_authority=false`, `live_capital_enabled=false`, and `paper_order_allowed=false`.
@@ -351,7 +353,7 @@ Current dashboard status-contract state:
 - The cockpit now exports `decision_philosophy` from the private `how-the-world-works/` corpus and renders Qadam's worldview lens in the system map, Private Edge panel, hypothesis cards, and each observed-signal/trade decision card while labelling it as a private prior, not evidence.
 - Dashboard Plan D8/D8A/D8B is implemented locally: the cockpit shows Fund Manager comments, Telegram dry-run Communications, and the protected User Guide.
 - Dashboard Plan D9 is implemented locally: the Secure Live Bridge contract, signed snapshot manifest, read-only authenticated API route, rate-limit boundary, write-method blocks, and static fallback are in place.
-- The cockpit cognition contract can now include sanitized local Research Analyst assessments: summary, watch focus, missing correlations, next questions, confidence, and shadow-only authority flags.
+- The cockpit cognition contract can now include sanitized local Research Analyst assessments and read-only paper-account context: summary, watch focus, missing correlations, next questions, confidence, paper mirror state, and shadow-only authority flags.
 - Telegram Bot planning now treats Telegram as an outbound-only member communications rail: trade lifecycle updates, insight digests, health warnings, delivery status, and dashboard visibility, with no execution authority.
 - The protected static cockpit now links to `/guide/`, a user guide explaining the dashboard panels, status labels, trade states, member permissions, daily operating routine, and red flags.
 
