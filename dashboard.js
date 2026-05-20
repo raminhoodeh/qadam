@@ -273,6 +273,12 @@ const FLOW_NODE_DETAILS = {
         output: "Disabled staging checks",
         authority: "No orders"
     },
+    broker_reconciliation: {
+        role: "Broker gate",
+        input: "Staged-order reviews",
+        output: "Broker echo checks",
+        authority: "Read-only; no submit"
+    },
     trade_layer: {
         role: "Paper desk",
         input: "Approved intents",
@@ -612,6 +618,17 @@ function renderFlowMap(status) {
             handoff: "staging blocked"
         },
         {
+            ...(findModule(status, "broker_reconciliation") || {
+                key: "broker_reconciliation",
+                label: "Broker Reconciliation",
+                owner: "Paper Order Gate",
+                status: "blocked",
+                current_process: "Read-only broker echo and reconciliation checks",
+                authority: "read_only_broker_reconciliation"
+            }),
+            handoff: "submit blocked"
+        },
+        {
             ...(findModule(status, "execution_registry") || {
                 key: "execution_registry",
                 label: "Execution Registry",
@@ -704,7 +721,7 @@ function renderFlowMap(status) {
             "Bounded modelling can inform a gate; risk decides whether an idea may continue.",
             "Only passed gates can become paper-trial state.",
             "blocked",
-            ["head_of_quant", "risk_agent", "execution_policy", "staged_order_contract", "execution_registry"]
+            ["head_of_quant", "risk_agent", "execution_policy", "staged_order_contract", "broker_reconciliation", "execution_registry"]
         ),
         makeLane(
             "Paper Trial",
@@ -1494,6 +1511,8 @@ function renderTrades(status) {
     const executionPolicyReviews = asArray(executionPolicy.reviews);
     const stagedPaperOrder = tradeLayer.staged_paper_order || status.staged_paper_order || {};
     const stagedPaperOrderReviews = asArray(stagedPaperOrder.reviews);
+    const brokerReconciliation = tradeLayer.broker_reconciliation || status.broker_reconciliation || {};
+    const brokerReconciliationReviews = asArray(brokerReconciliation.reviews);
     const summary = tradeLayer.summary || {};
     const philosophy = status.decision_philosophy || {};
     const worldviewBlock = renderDecisionWorldviewBlock(philosophy);
@@ -1790,6 +1809,65 @@ function renderTrades(status) {
         `;
     };
 
+    const renderBrokerReconciliationCard = (review) => {
+        const checkTags = Object.entries(review.reconciliation_checks || {}).map(([key, value]) => `${key}: ${value}`);
+        const brokerEcho = review.broker_echo || {};
+        const hypothetical = review.hypothetical_order || {};
+        return `
+            <article class="trade-intent-card ${statusClass(review.status || "blocked_before_broker_reconciliation")}">
+                <div class="cognition-card-head">
+                    ${renderStatusPill(review.status || "blocked_before_broker_reconciliation")}
+                    <p class="label">Broker reconciliation contract · ${htmlText(review.source_staged_paper_order_review_id, "staged review pending")}</p>
+                </div>
+                <h3>${htmlText(review.instrument, "Broker reconciliation review")}</h3>
+                <p>${htmlText(review.boundary, "Broker reconciliation is read-only and cannot submit paper orders.")}</p>
+                <div class="tag-row">
+                    ${renderInlineBadge(review.idempotency_key_allocated ? "idempotency allocated" : "idempotency not allocated", review.idempotency_key_allocated ? "blocked" : "online")}
+                    ${renderInlineBadge(review.event_log_prewrite_created ? "Event Log prewrite created" : "Event Log prewrite not created", review.event_log_prewrite_created ? "blocked" : "online")}
+                    ${renderInlineBadge(review.duplicate_order_guard_ready ? "duplicate guard ready" : "duplicate guard not ready", review.duplicate_order_guard_ready ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_echo_verified ? "broker echo verified" : "broker echo not verified", review.broker_echo_verified ? "blocked" : "online")}
+                    ${renderInlineBadge(review.paper_order_submit_allowed ? "paper submit allowed" : "paper submit blocked", review.paper_order_submit_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_write_allowed ? "broker write allowed" : "broker write blocked", review.broker_write_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.live_capital_enabled ? "live capital enabled" : "live capital disabled", review.live_capital_enabled ? "blocked" : "online")}
+                </div>
+                <div class="summary-strip compact">
+                    ${renderMetric("Venue", htmlText(review.selected_venue, "none"))}
+                    ${renderMetric("Mode", htmlText(review.venue_mode, "disabled"))}
+                    ${renderMetric("Account", htmlText(review.account_scope, "trial"))}
+                    ${renderMetric("Hypothetical", htmlText(hypothetical.status, "not created"))}
+                    ${renderMetric("Broker echo", htmlText(brokerEcho.status, "not requested"))}
+                    ${renderMetric("Reviewed", formatTime(review.reviewed_at))}
+                </div>
+                <section class="trade-check-section">
+                    <p class="label">Broker echo</p>
+                    <div class="tag-row">
+                        ${renderInlineBadge(`adapter: ${dashboardText(brokerEcho.adapter, "not selected")}`, "pending")}
+                        ${renderInlineBadge(`venue: ${dashboardText(brokerEcho.venue, "none")}`, "pending")}
+                        ${renderInlineBadge(`client id: ${dashboardText(brokerEcho.client_order_id, "not allocated")}`, "blocked")}
+                        ${renderInlineBadge(`external id: ${dashboardText(brokerEcho.external_order_id, "not created")}`, "blocked")}
+                        ${renderInlineBadge(`ack: ${dashboardText(brokerEcho.ack_status, "not available")}`, "blocked")}
+                        ${renderInlineBadge(`fill: ${dashboardText(brokerEcho.fill_status, "not available")}`, "blocked")}
+                    </div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Reconciliation checks</p>
+                    <div class="tag-row">${renderTagList(checkTags, "No broker reconciliation checks recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Blocked reasons</p>
+                    <div class="tag-row">${renderTagList(review.blocked_reasons, "No blocking reason recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Required next steps</p>
+                    <ul class="status-list">${asArray(review.required_next_steps).length
+                        ? asArray(review.required_next_steps).map((step) => `<li><strong>${htmlText(step)}</strong></li>`).join("")
+                        : "<li><strong>No next steps recorded</strong></li>"
+                    }</ul>
+                </section>
+            </article>
+        `;
+    };
+
     const observedSignals = asArray(tradeLayer.watching);
     const candidates = asArray(tradeLayer.candidates);
     const blocked = asArray(tradeLayer.blocked);
@@ -1891,6 +1969,28 @@ function renderTrades(status) {
             }</div>
         </section>
         <section class="trade-intent-section">
+            <p class="label">Read-only broker reconciliation</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", brokerReconciliation.status || "pending")}
+                ${renderMetric("Reviews", brokerReconciliation.review_count || 0)}
+                ${renderMetric("Blocked", brokerReconciliation.by_status?.blocked_before_broker_reconciliation || 0)}
+                ${renderMetric("Route closed", brokerReconciliation.by_status?.broker_route_closed || 0)}
+                ${renderMetric("Contract hold", brokerReconciliation.by_status?.reconciliation_contract_hold || 0)}
+                ${renderMetric("Idempotency", brokerReconciliation.idempotency_key_allocated_count || 0)}
+                ${renderMetric("Prewrite", brokerReconciliation.event_log_prewrite_created_count || 0)}
+                ${renderMetric("Duplicate guard", brokerReconciliation.duplicate_order_guard_ready_count || 0)}
+                ${renderMetric("Broker echo", brokerReconciliation.broker_echo_verified_count || 0)}
+                ${renderMetric("Submit", brokerReconciliation.paper_order_submit_allowed_count || 0)}
+                ${renderMetric("Broker writes", brokerReconciliation.broker_write_allowed_count || 0)}
+                ${renderMetric("Live capital", brokerReconciliation.live_capital_enabled_count || 0)}
+            </div>
+            <p class="mini">${htmlText(brokerReconciliation.boundary, "Broker reconciliation is read-only and cannot submit paper orders.")}</p>
+            <div class="trade-intent-stack">${brokerReconciliationReviews.length
+                ? brokerReconciliationReviews.map(renderBrokerReconciliationCard).join("")
+                : `<article class="trade-intent-card"><h3>No broker reconciliation reviews yet</h3><p>The broker gate has not reviewed any staged paper-order records.</p></article>`
+            }</div>
+        </section>
+        <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
                 ${renderMetric("Receiver", tradingView.receiver_status || "local contract only")}
@@ -1910,7 +2010,7 @@ function renderTrades(status) {
                 <li>Watching · observed signal only</li>
                 <li>Considering Trade · candidate, not order</li>
                 <li>Blocked · failed evidence, risk, policy, latency, or credential checks</li>
-                <li>Preparing Paper Trade · disabled until reconciliation and broker-adapter contracts exist</li>
+                <li>Preparing Paper Trade · disabled until broker reconciliation contracts pass</li>
                 <li>Postmortem · unavailable until closed paper trades exist</li>
             </ol>
         </section>
