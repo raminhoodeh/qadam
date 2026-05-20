@@ -25,6 +25,7 @@ from orchestrator.adapters import (
 from orchestrator.agent_runtime import create_shadow_triage_packet
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.execution_policy import run_execution_policy_router
 from orchestrator.intelligence import (
     run_local_research_analyst_inference,
     run_research_shadow_triage_queue,
@@ -200,6 +201,7 @@ def run_phase2_shadow_cycle(
     triage_result = run_research_shadow_triage_queue(limit=research_limit, settings=settings, event_log=event_log)
     integrity_result = run_signal_integrity_gate(limit=research_limit, settings=settings, event_log=event_log)
     risk_result = run_risk_policy_router(limit=research_limit, settings=settings, event_log=event_log)
+    execution_policy_result = run_execution_policy_router(limit=research_limit, settings=settings, event_log=event_log)
     local_result = run_local_research_analyst_inference(
         limit=research_limit,
         live=live_local_llm,
@@ -241,6 +243,19 @@ def run_phase2_shadow_cycle(
         "risk_agent_paper_order_allowed_count": risk_result.get("paper_order_allowed_count", 0),
         "risk_agent_order_created_count": risk_result.get("order_created_count", 0),
         "risk_agent_broker_write_allowed_count": risk_result.get("broker_write_allowed_count", 0),
+        "execution_policy_status": execution_policy_result.get("status"),
+        "execution_policy_review_count": execution_policy_result.get("review_count", 0),
+        "execution_policy_blocked_by_policy_count": execution_policy_result.get("blocked_by_policy_count", 0),
+        "execution_policy_kill_switch_hold_count": execution_policy_result.get("kill_switch_hold_count", 0),
+        "execution_policy_paper_order_shadow_ready_count": execution_policy_result.get("paper_order_shadow_ready_count", 0),
+        "execution_policy_execution_allowed_count": execution_policy_result.get("execution_allowed_count", 0),
+        "execution_policy_staged_paper_order_allowed_count": execution_policy_result.get(
+            "staged_paper_order_allowed_count",
+            0,
+        ),
+        "execution_policy_paper_order_created_count": execution_policy_result.get("paper_order_created_count", 0),
+        "execution_policy_broker_write_allowed_count": execution_policy_result.get("broker_write_allowed_count", 0),
+        "execution_policy_live_capital_enabled_count": execution_policy_result.get("live_capital_enabled_count", 0),
         "local_research_status": local_result.get("status"),
         "local_research_mode": local_result.get("mode"),
         "local_research_assessment_id": assessment.get("assessment_id") if assessment else None,
@@ -262,7 +277,8 @@ def run_phase2_shadow_cycle(
             "Phase 2 shadow cycle feeds observations into Research Analyst and "
             "Strategy Lead queues only. Signal Integrity Gate can block or hold "
             "shadow signals. Risk Agent policy review is read-only, so execution "
-            "and paper orders remain impossible."
+            "and paper orders remain impossible. Execution Policy and kill-switch "
+            "review is also read-only."
         ),
     }
     report_path = _write_report(settings, report)
@@ -276,6 +292,7 @@ def run_phase2_shadow_cycle(
             "shadow_signal_count": report["shadow_signal_count"],
             "signal_integrity_review_count": report["signal_integrity_review_count"],
             "risk_agent_review_count": report["risk_agent_review_count"],
+            "execution_policy_review_count": report["execution_policy_review_count"],
             "strategy_lead_packet_id": strategy_packet.packet_id,
             "execution_allowed": False,
             "paper_order_allowed": False,

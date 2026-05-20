@@ -64,7 +64,7 @@ The dashboard is successful only when it can answer these questions from system 
 | What worldview is shaping the question? | Private world-model lens, active priors, decision chain, and evidence boundary. | `how-the-world-works/`, world-model claim cards, status contract. |
 | What news or data changed its mind? | Evidence timeline showing which source event entered which hypothesis and whether it strengthened, weakened, or blocked a thesis. | Event Log and Evidence Packet store. |
 | What trade is Qadam considering? | Trade candidates with instrument, direction, venue, catalyst, confidence, risk, proposed entry, invalidation, and status. | Trade Candidate store. |
-| What trade is Qadam about to make? | Only items in `staged_paper_order` or `submitted_paper_order`; everything else is only an idea, hypothesis, or blocked candidate. | Risk Agent and broker adapter state. |
+| What trade is Qadam about to make? | Only items in `staged_paper_order` or `submitted_paper_order`; everything else is only an idea, hypothesis, blocked candidate, risk review, or execution-policy hold. | Risk Agent, Execution Policy, staged-order, and broker adapter state. |
 | What is Qadam forbidden from doing? | Live-capital disabled flag, broker-write authority status, stale-data blocks, missing credential blocks, and kill-switch state. | Policy Gate, Execution Venue Registry, Risk Agent. |
 | Is Qadam making money? | Starting balance, current paper balance, realized/unrealized P&L, drawdown, open positions, closed trades, and maturity count. | Paper broker/account mirror, Trade Journal. |
 | What is the timeline? | Source event -> hypothesis -> candidate -> risk decision -> order -> position -> exit -> postmortem. | Event Log joins across source, cognition, risk, and trade events. |
@@ -80,7 +80,7 @@ The dashboard must separate four different kinds of information:
 | Worldview prior | Qadam's private power-map lens says which hidden incentives, narratives, or strategic relationships may matter. | Show as decision context, never as proof. |
 | Interpretation | Qadam thinks the observation may matter. | Show as hypothesis, with evidence and missing corroboration. |
 | Trade intent | Qadam has a structured trade idea. | Show as candidate, blocked candidate, or risk review. |
-| Execution state | Qadam has permission to place, hold, or close a paper trade. | Show only when Risk Agent and broker state confirm it. |
+| Execution state | Qadam has permission to place, hold, or close a paper trade. | Show only when Risk Agent, Execution Policy, staged-order, and broker state confirm it. |
 
 This prevents the cockpit from exaggerating. A hypothesis is not a trade. A candidate is not an order. A blocked trade is not a failure; it is proof that the control system is working.
 
@@ -182,7 +182,7 @@ The dashboard should render from one sanitized status file:
     "model_activity": [],
     "analysis_timeline": [],
     "blocked_reasons": [],
-    "boundary": "Cognition is shadow-only until Signal Integrity Gate and Risk Agent exist."
+    "boundary": "Cognition is shadow-only until Signal Integrity Gate, Risk Agent, Execution Policy, staged-order, and broker contracts all pass."
   },
   "trade_layer": {
     "summary": {
@@ -692,20 +692,24 @@ Build:
 
 - `trade_candidates.jsonl` local store.
 - `risk_policy_reviews.jsonl` local Risk Agent policy-review store.
+- `execution_policy_reviews.jsonl` local Execution Policy / kill-switch review store.
 - Trade candidate schema.
 - Blocked trade schema.
 - Read-only Risk Agent review schema.
+- Read-only Execution Policy review schema.
 - Candidate status transitions.
 - Dashboard candidate and blocked-trade tables.
 - Public-safe cockpit export with `execution_allowed=false` and `paper_order_allowed=false` for D5 candidate/blocked records.
 - Public-safe cockpit export with Risk Agent policy-review status, policy score, blocked reasons, required next steps, account context, and explicit zero-authority flags.
+- Public-safe cockpit export with Execution Policy status, selected venue, venue mode, kill switches, execution checks, blocked reasons, required next steps, and explicit zero-authority flags.
 - D5 test records: one candidate and one blocked trade intent, both clearly marked as local test intent with no broker route.
 - The Trade Board now renders an explicit state ladder: observed signal, candidate, blocked trade, unavailable paper order states, and postmortem.
 - Observed TradingView alerts are labelled `Observed signal only`, `not a candidate`, `execution blocked`, and `no paper order`.
 - Candidate records are labelled `Candidate, not order`, with strategy, price gap, source signal, Akber filter, risk checks, tags, and no-broker-route boundary.
 - Blocked trades are rendered as first-class board items with blocked reason, failed/pending filter state, risk checks, and zero execution authority.
 - Risk Agent policy reviews are rendered as first-class board items with status, policy score, max-risk cap, account state, Signal Integrity reference, blocked reasons, required next steps, and badges for execution blocked, no paper order, no order created, and broker write blocked.
-- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
+- Execution Policy reviews are rendered as first-class board items with status, selected venue, venue mode, kill switches, execution checks, blocked reasons, required next steps, and badges for execution blocked, no staged paper order, no paper order created, broker write blocked, and live capital disabled.
+- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, Execution Policy and kill switches, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
 
 Exit gate:
 
@@ -713,9 +717,11 @@ Exit gate:
 - `scripts/check_trade_intent.py` validates the store, candidate count, blocked count, and zero execution authority.
 - `scripts/check_trade_intent.py` also validates D5 sample records, Akber filter fields, risk-check fields, zero risk size, no broker route boundary, and blocked-reason discipline.
 - `scripts/check_risk_agent_policy_router.py` validates the Risk Agent policy-review store, required checks, blocked/hold/readiness statuses, zero execution authority, zero paper-order authority, zero order creation, and zero broker-write authority.
-- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
+- `scripts/check_execution_policy_router.py` validates the Execution Policy review store, required kill switches, required execution checks, kill-switch holds, zero execution authority, zero staged-paper-order authority, zero paper-order creation, zero broker-write authority, and zero live-capital authority.
+- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, Execution Policy review fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
 - A local D5 render check proves the board renders 1 observed signal, 1 candidate, 1 blocked trade, and lifecycle states as `not connected yet`.
 - A local D5 render check proves the board also renders Risk Agent policy-review cards from the public-safe snapshot.
+- A local D5 render check proves the board also renders Execution Policy / kill-switch cards from the public-safe snapshot.
 - No broker order path exists yet.
 
 ### Phase D6 - Paper Account Mirror

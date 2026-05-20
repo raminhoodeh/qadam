@@ -16,6 +16,7 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.execution import execution_registry
+from orchestrator.execution_policy import ExecutionPolicyReviewStore, execution_policy_summary
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -117,7 +118,7 @@ def _dashboard_status(raw_status: str) -> str:
 
 
 def _module_authority(module_key: str, raw_status: str) -> str:
-    if module_key in {"execution_registry", "risk_agent", "trade_layer"}:
+    if module_key in {"execution_registry", "risk_agent", "execution_policy", "trade_layer"}:
         return "write_blocked"
     if module_key == "telegram_bot":
         return "notify_only"
@@ -144,6 +145,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "shadow_intelligence": "shadow-only review packets available",
         "signal_integrity_gate": "auditing shadow signals without trade authority",
         "risk_agent": "reviewing policy without order authority",
+        "execution_policy": "checking kill switches without order authority",
         "telegram_bot": "outbound dry-run member communications",
         "live_bridge": "serving authenticated public-safe status snapshots",
         "cockpit": "static live shell frozen",
@@ -575,6 +577,37 @@ def _safe_risk_policy_reviews(settings: Settings) -> list[dict[str, Any]]:
     ]
 
 
+def _safe_execution_policy_reviews(settings: Settings) -> list[dict[str, Any]]:
+    try:
+        reviews = list(ExecutionPolicyReviewStore(settings=settings).read(limit=5))
+    except Exception:
+        reviews = []
+    return [
+        {
+            "schema_version": review.get("schema_version"),
+            "review_id": review.get("review_id"),
+            "source_risk_review_id": review.get("source_risk_review_id"),
+            "status": review.get("status"),
+            "instrument": review.get("instrument"),
+            "selected_venue": review.get("selected_venue"),
+            "venue_mode": review.get("venue_mode"),
+            "policy_score": review.get("policy_score"),
+            "checks": review.get("checks", {}),
+            "kill_switches": review.get("kill_switches", {}),
+            "blocked_reasons": review.get("blocked_reasons", []),
+            "required_next_steps": review.get("required_next_steps", []),
+            "execution_allowed": bool(review.get("execution_allowed")),
+            "staged_paper_order_allowed": bool(review.get("staged_paper_order_allowed")),
+            "paper_order_created": bool(review.get("paper_order_created")),
+            "broker_write_allowed": bool(review.get("broker_write_allowed")),
+            "live_capital_enabled": bool(review.get("live_capital_enabled")),
+            "reviewed_at": review.get("reviewed_at"),
+            "boundary": review.get("boundary"),
+        }
+        for review in reviews
+    ]
+
+
 def _build_cognition(settings: Settings) -> dict[str, Any]:
     summary = shadow_intelligence_summary(settings)
     store = ShadowSignalStore(settings=settings)
@@ -783,10 +816,11 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "no_broker_write_authority",
             "paper_account_context_read_only",
             "signal_integrity_gate_requires_risk_agent",
+            "execution_policy_read_only",
         ],
         "boundary": (
             "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, "
-            "but Risk Agent and execution policy still do not exist."
+            "Risk Agent can only review policy, and Execution Policy kill-switch checks are read-only."
         ),
     }
 
@@ -1145,6 +1179,7 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
     trade_layer: dict[str, Any] = {
         "summary": trade_intent_summary(settings) if store_status == "ok" else {"status": store_status},
         "risk_agent": _risk_agent_status(settings),
+        "execution_policy": _execution_policy_status(settings),
         "store_status": store_status,
         "watching": [],
         "candidates": [],
@@ -1228,6 +1263,29 @@ def _risk_agent_status(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _execution_policy_status(settings: Settings) -> dict[str, Any]:
+    summary = execution_policy_summary(settings)
+    reviews = _safe_execution_policy_reviews(settings)
+    return {
+        "status": summary.get("status", "ok"),
+        "schema_version": summary.get("schema_version"),
+        "review_count": summary.get("review_count", 0),
+        "by_status": summary.get("by_status", {}),
+        "execution_allowed_count": summary.get("execution_allowed_count", 0),
+        "staged_paper_order_allowed_count": summary.get("staged_paper_order_allowed_count", 0),
+        "paper_order_created_count": summary.get("paper_order_created_count", 0),
+        "broker_write_allowed_count": summary.get("broker_write_allowed_count", 0),
+        "live_capital_enabled_count": summary.get("live_capital_enabled_count", 0),
+        "kill_switch_block_count": summary.get("kill_switch_block_count", 0),
+        "authority": "read_only_execution_policy",
+        "reviews": reviews,
+        "boundary": summary.get(
+            "boundary",
+            "Execution policy reviews are read-only and cannot stage paper orders or write to brokers.",
+        ),
+    }
+
+
 def _forbidden_actions() -> list[dict[str, str]]:
     return [
         {
@@ -1290,6 +1348,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "cognition": _build_cognition(settings),
         "tradingview_alerts": _tradingview_alerts(settings),
         "risk_agent": _risk_agent_status(settings),
+        "execution_policy": _execution_policy_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
@@ -1354,6 +1413,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "cognition",
         "tradingview_alerts",
         "risk_agent",
+        "execution_policy",
         "trade_layer",
         "communications",
         "forbidden_actions",

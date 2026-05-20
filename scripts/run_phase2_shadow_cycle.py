@@ -63,6 +63,22 @@ def main() -> int:
     print(f"phase2_shadow_cycle_risk_agent_paper_order_allowed_count={report['risk_agent_paper_order_allowed_count']}")
     print(f"phase2_shadow_cycle_risk_agent_order_created_count={report['risk_agent_order_created_count']}")
     print(f"phase2_shadow_cycle_risk_agent_broker_write_allowed_count={report['risk_agent_broker_write_allowed_count']}")
+    print(f"phase2_shadow_cycle_execution_policy_status={report['execution_policy_status']}")
+    print(f"phase2_shadow_cycle_execution_policy_review_count={report['execution_policy_review_count']}")
+    print(f"phase2_shadow_cycle_execution_policy_blocked_by_policy_count={report['execution_policy_blocked_by_policy_count']}")
+    print(f"phase2_shadow_cycle_execution_policy_kill_switch_hold_count={report['execution_policy_kill_switch_hold_count']}")
+    print(
+        "phase2_shadow_cycle_execution_policy_paper_order_shadow_ready_count="
+        f"{report['execution_policy_paper_order_shadow_ready_count']}"
+    )
+    print(f"phase2_shadow_cycle_execution_policy_execution_allowed_count={report['execution_policy_execution_allowed_count']}")
+    print(
+        "phase2_shadow_cycle_execution_policy_staged_paper_order_allowed_count="
+        f"{report['execution_policy_staged_paper_order_allowed_count']}"
+    )
+    print(f"phase2_shadow_cycle_execution_policy_paper_order_created_count={report['execution_policy_paper_order_created_count']}")
+    print(f"phase2_shadow_cycle_execution_policy_broker_write_allowed_count={report['execution_policy_broker_write_allowed_count']}")
+    print(f"phase2_shadow_cycle_execution_policy_live_capital_enabled_count={report['execution_policy_live_capital_enabled_count']}")
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
     print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
@@ -106,6 +122,16 @@ def main() -> int:
     if report["risk_agent_order_created_count"] != 0:
         return 1
     if report["risk_agent_broker_write_allowed_count"] != 0:
+        return 1
+    if report["execution_policy_execution_allowed_count"] != 0:
+        return 1
+    if report["execution_policy_staged_paper_order_allowed_count"] != 0:
+        return 1
+    if report["execution_policy_paper_order_created_count"] != 0:
+        return 1
+    if report["execution_policy_broker_write_allowed_count"] != 0:
+        return 1
+    if report["execution_policy_live_capital_enabled_count"] != 0:
         return 1
     return 0
 

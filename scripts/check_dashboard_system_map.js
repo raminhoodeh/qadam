@@ -69,6 +69,7 @@ async function main() {
         "Strategy Lead",
         "Signal Integrity Gate",
         "Risk Agent",
+        "Execution Policy",
         "Trade Layer",
         "Paper Account Mirror",
         "Postmortem Loop",

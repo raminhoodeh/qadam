@@ -128,6 +128,62 @@ const REQUIRED_RISK_POLICY_CHECKS = [
     "paper_order_authority"
 ];
 
+const REQUIRED_EXECUTION_POLICY_FIELDS = [
+    "authority",
+    "boundary",
+    "broker_write_allowed_count",
+    "by_status",
+    "execution_allowed_count",
+    "kill_switch_block_count",
+    "live_capital_enabled_count",
+    "paper_order_created_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "staged_paper_order_allowed_count",
+    "status"
+];
+
+const REQUIRED_EXECUTION_POLICY_REVIEW_FIELDS = [
+    "blocked_reasons",
+    "boundary",
+    "broker_write_allowed",
+    "checks",
+    "execution_allowed",
+    "instrument",
+    "kill_switches",
+    "live_capital_enabled",
+    "paper_order_created",
+    "policy_score",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "source_risk_review_id",
+    "staged_paper_order_allowed",
+    "status",
+    "venue_mode"
+];
+
+const REQUIRED_EXECUTION_POLICY_CHECKS = [
+    "broker_order_route",
+    "closed_trade_maturity",
+    "event_log",
+    "execution_policy_registry",
+    "global_kill_switch",
+    "live_capital",
+    "operating_mode",
+    "paper_order_contract",
+    "risk_agent",
+    "risk_agent_authority",
+    "strategy_kill_switch",
+    "venue_kill_switch",
+    "venue_registry"
+];
+
+const REQUIRED_EXECUTION_KILL_SWITCHES = ["data", "global", "model", "strategy", "venue"];
+
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -149,6 +205,8 @@ async function main() {
     const blocked = Array.isArray(tradeLayer.blocked) ? tradeLayer.blocked : [];
     const riskAgent = tradeLayer.risk_agent || status.risk_agent || {};
     const riskReviews = Array.isArray(riskAgent.reviews) ? riskAgent.reviews : [];
+    const executionPolicy = tradeLayer.execution_policy || status.execution_policy || {};
+    const executionPolicyReviews = Array.isArray(executionPolicy.reviews) ? executionPolicy.reviews : [];
 
     assert(tradeLayer.store_status === "ok", "trade intent store is not ok");
     assert(summary.status === "ok", "trade summary is not ok");
@@ -184,6 +242,32 @@ async function main() {
         assert(review.policy_score >= 0 && review.policy_score <= 1, `${review.review_id} has invalid policy score`);
         assert(REQUIRED_RISK_POLICY_CHECKS.every((field) => hasOwn(review.checks, field)), `${review.review_id} risk policy checks are incomplete`);
         assert(/cannot approve risk/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
+    }
+
+    const missingExecutionPolicy = missingFields(executionPolicy, REQUIRED_EXECUTION_POLICY_FIELDS);
+    assert(!missingExecutionPolicy.length, `execution policy missing fields: ${missingExecutionPolicy.join(", ")}`);
+    assert(executionPolicy.status === "ok", "execution policy is not ok");
+    assert(executionPolicy.authority === "read_only_execution_policy", "execution policy authority mismatch");
+    assert(executionPolicy.execution_allowed_count === 0, "execution policy allows execution");
+    assert(executionPolicy.staged_paper_order_allowed_count === 0, "execution policy allows staged paper orders");
+    assert(executionPolicy.paper_order_created_count === 0, "execution policy created paper orders");
+    assert(executionPolicy.broker_write_allowed_count === 0, "execution policy allows broker writes");
+    assert(executionPolicy.live_capital_enabled_count === 0, "execution policy enables live capital");
+    assert(/cannot stage paper orders/i.test(executionPolicy.boundary || ""), "execution policy boundary is weak");
+    assert(executionPolicyReviews.length >= 1, "execution policy reviews are missing");
+
+    for (const review of executionPolicyReviews) {
+        const missing = missingFields(review, REQUIRED_EXECUTION_POLICY_REVIEW_FIELDS);
+        assert(!missing.length, `${review.review_id || "execution policy review"} missing fields: ${missing.join(", ")}`);
+        assert(review.execution_allowed === false, `${review.review_id} allows execution`);
+        assert(review.staged_paper_order_allowed === false, `${review.review_id} allows staged paper order`);
+        assert(review.paper_order_created === false, `${review.review_id} created paper order`);
+        assert(review.broker_write_allowed === false, `${review.review_id} allows broker write`);
+        assert(review.live_capital_enabled === false, `${review.review_id} enables live capital`);
+        assert(review.policy_score >= 0 && review.policy_score <= 1, `${review.review_id} has invalid policy score`);
+        assert(REQUIRED_EXECUTION_POLICY_CHECKS.every((field) => hasOwn(review.checks, field)), `${review.review_id} execution checks are incomplete`);
+        assert(REQUIRED_EXECUTION_KILL_SWITCHES.every((field) => hasOwn(review.kill_switches, field)), `${review.review_id} kill switches are incomplete`);
+        assert(/cannot stage orders/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
     }
 
     for (const signal of observedSignals) {
@@ -237,6 +321,11 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "Policy score");
     assertIncludes(rendered, "[data-trade-layer]", "broker write blocked");
     assertIncludes(rendered, "[data-trade-layer]", "Required next steps");
+    assertIncludes(rendered, "[data-trade-layer]", "Execution Policy and kill switches");
+    assertIncludes(rendered, "[data-trade-layer]", "Kill switches");
+    assertIncludes(rendered, "[data-trade-layer]", "Execution checks");
+    assertIncludes(rendered, "[data-trade-layer]", "no staged paper order");
+    assertIncludes(rendered, "[data-trade-layer]", "live capital disabled");
     assertIncludes(rendered, "[data-trade-layer]", "No broker order path exists");
     assertIncludes(rendered, "[data-trade-layer]", "no broker route exists");
     assertIncludes(rendered, "[data-trade-layer]", "0 execution allowed");
@@ -271,6 +360,21 @@ async function main() {
                 reviews: [],
                 boundary: "Risk Agent policy router is read-only and cannot approve risk or create orders."
             },
+            execution_policy: {
+                status: "ok",
+                schema_version: 1,
+                review_count: 0,
+                by_status: {},
+                execution_allowed_count: 0,
+                staged_paper_order_allowed_count: 0,
+                paper_order_created_count: 0,
+                broker_write_allowed_count: 0,
+                live_capital_enabled_count: 0,
+                kill_switch_block_count: 0,
+                authority: "read_only_execution_policy",
+                reviews: [],
+                boundary: "Execution policy is read-only and cannot stage paper orders or write to brokers."
+            },
             store_status: "ok",
             watching: [],
             candidates: [],
@@ -289,6 +393,7 @@ async function main() {
     assertIncludes(emptyRendered, "[data-trade-layer]", "No candidates");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No blocked trades");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No Risk Agent reviews yet");
+    assertIncludes(emptyRendered, "[data-trade-layer]", "No execution policy reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "not connected yet");
 
     console.log("Dashboard trade board contract OK");

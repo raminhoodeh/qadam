@@ -17,6 +17,7 @@ from orchestrator.agent_runtime import agent_runtime_summary
 from orchestrator.chroma_store import knowledge_graph_health
 from orchestrator.config import Settings
 from orchestrator.execution import execution_registry
+from orchestrator.execution_policy import execution_policy_summary
 from orchestrator.governance import GovernanceStore
 from orchestrator.heartbeat import registry_heartbeats
 from orchestrator.ingestion import ingestion_spine_summary
@@ -79,6 +80,7 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
         {"key": "shadow_intelligence", "label": "Shadow Intelligence", "owner": "Research Analyst", "status": "shadow_ready"},
         {"key": "signal_integrity_gate", "label": "Signal Integrity Gate", "owner": "Signal Auditor", "status": "shadow_ready"},
         {"key": "risk_agent", "label": "Risk Agent", "owner": "Policy Router", "status": "read_only_ready"},
+        {"key": "execution_policy", "label": "Execution Policy", "owner": "Kill Switches", "status": "read_only_ready"},
         {"key": "governance_forum", "label": "Governance Forum", "owner": "Fund Managers", "status": "local"},
         {"key": "telegram_bot", "label": "Telegram Bot", "owner": "Fund Manager Interface", "status": str(telegram.get("status", "disabled"))},
         {
@@ -145,6 +147,7 @@ def build_system_health(
         "shadow_intelligence": shadow_intelligence_summary(settings),
         "signal_integrity": signal_integrity_summary(settings),
         "risk_agent": risk_agent_summary(settings),
+        "execution_policy": execution_policy_summary(settings),
         "governance_forum": governance_health,
         "telegram_communications": telegram_status(settings),
         "ingestion_spine": ingestion_spine_summary(settings),

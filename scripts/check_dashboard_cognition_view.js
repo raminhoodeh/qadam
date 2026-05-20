@@ -183,8 +183,12 @@ async function main() {
         "blocked reasons do not include the risk agent gate"
     );
     assert(
+        blockedReasons.includes("execution_policy_read_only"),
+        "blocked reasons do not include the execution-policy boundary"
+    );
+    assert(
         /Signal Integrity Gate can block or hold signals/i.test(cognition.boundary || "")
-            && /Risk Agent and execution policy still do not exist/i.test(cognition.boundary || ""),
+            && /Execution Policy kill-switch checks are read-only/i.test(cognition.boundary || ""),
         "cognition boundary is weak or missing"
     );
 
@@ -307,7 +311,7 @@ async function main() {
     assertIncludes(
         rendered,
         "[data-cognition]",
-        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, but Risk Agent and execution policy still do not exist."
+        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, and Execution Policy kill-switch checks are read-only."
     );
 
     const emptyStatus = {
@@ -325,7 +329,7 @@ async function main() {
             signal_integrity_reviews: [],
             analysis_timeline: [],
             blocked_reasons: [],
-            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, but Risk Agent and execution policy still do not exist."
+            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, and Execution Policy kill-switch checks are read-only."
         }
     };
     const emptyRendered = await renderWithStatus(emptyStatus);

@@ -190,6 +190,62 @@ RISK_POLICY_REQUIRED_CHECKS = {
     "paper_order_authority",
 }
 
+EXECUTION_POLICY_REQUIRED_FIELDS = {
+    "authority",
+    "boundary",
+    "broker_write_allowed_count",
+    "by_status",
+    "execution_allowed_count",
+    "kill_switch_block_count",
+    "live_capital_enabled_count",
+    "paper_order_created_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "staged_paper_order_allowed_count",
+    "status",
+}
+
+EXECUTION_POLICY_REVIEW_REQUIRED_FIELDS = {
+    "blocked_reasons",
+    "boundary",
+    "broker_write_allowed",
+    "checks",
+    "execution_allowed",
+    "instrument",
+    "kill_switches",
+    "live_capital_enabled",
+    "paper_order_created",
+    "policy_score",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "source_risk_review_id",
+    "staged_paper_order_allowed",
+    "status",
+    "venue_mode",
+}
+
+EXECUTION_POLICY_REQUIRED_CHECKS = {
+    "broker_order_route",
+    "closed_trade_maturity",
+    "event_log",
+    "execution_policy_registry",
+    "global_kill_switch",
+    "live_capital",
+    "operating_mode",
+    "paper_order_contract",
+    "risk_agent",
+    "risk_agent_authority",
+    "strategy_kill_switch",
+    "venue_kill_switch",
+    "venue_registry",
+}
+
+EXECUTION_POLICY_REQUIRED_KILL_SWITCHES = {"data", "global", "model", "strategy", "venue"}
+
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
 TRADE_INTENT_REQUIRED_FIELDS = {
@@ -550,6 +606,8 @@ def main() -> int:
     print(f"cockpit_status_signal_integrity_review_count={len(payload['cognition'].get('signal_integrity_reviews', []))}")
     print(f"cockpit_status_risk_agent_status={payload.get('risk_agent', {}).get('status')}")
     print(f"cockpit_status_risk_agent_review_count={payload.get('risk_agent', {}).get('review_count')}")
+    print(f"cockpit_status_execution_policy_status={payload.get('execution_policy', {}).get('status')}")
+    print(f"cockpit_status_execution_policy_review_count={payload.get('execution_policy', {}).get('review_count')}")
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -1177,6 +1235,82 @@ def main() -> int:
             return 1
         if "cannot approve risk" not in review.get("boundary", ""):
             print("cockpit_status_risk_policy_boundary_weak=true")
+            return 1
+
+    execution_policy = payload.get("execution_policy", {})
+    missing_execution_fields = sorted(EXECUTION_POLICY_REQUIRED_FIELDS - set(execution_policy))
+    if missing_execution_fields:
+        print("cockpit_status_execution_policy_fields_missing=" + ",".join(missing_execution_fields))
+        return 1
+    if execution_policy.get("status") != "ok":
+        print("cockpit_status_execution_policy_not_ok=true")
+        return 1
+    if execution_policy.get("authority") != "read_only_execution_policy":
+        print("cockpit_status_execution_policy_authority_mismatch=true")
+        return 1
+    if execution_policy.get("execution_allowed_count") != 0:
+        print("cockpit_status_execution_policy_execution_allowed_not_zero=true")
+        return 1
+    if execution_policy.get("staged_paper_order_allowed_count") != 0:
+        print("cockpit_status_execution_policy_staged_order_allowed_not_zero=true")
+        return 1
+    if execution_policy.get("paper_order_created_count") != 0:
+        print("cockpit_status_execution_policy_order_created_not_zero=true")
+        return 1
+    if execution_policy.get("broker_write_allowed_count") != 0:
+        print("cockpit_status_execution_policy_broker_write_allowed_not_zero=true")
+        return 1
+    if execution_policy.get("live_capital_enabled_count") != 0:
+        print("cockpit_status_execution_policy_live_capital_enabled_not_zero=true")
+        return 1
+    if "cannot stage paper orders" not in execution_policy.get("boundary", ""):
+        print("cockpit_status_execution_policy_boundary_weak=true")
+        return 1
+    if not isinstance(execution_policy.get("reviews"), list) or not execution_policy["reviews"]:
+        print("cockpit_status_execution_policy_reviews_missing=true")
+        return 1
+    for review in execution_policy.get("reviews", []):
+        missing_fields = sorted(EXECUTION_POLICY_REVIEW_REQUIRED_FIELDS - set(review))
+        if missing_fields:
+            print(
+                "cockpit_status_execution_policy_review_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        if review.get("execution_allowed") is not False:
+            print("cockpit_status_execution_policy_review_execution_allowed=true")
+            return 1
+        if review.get("staged_paper_order_allowed") is not False:
+            print("cockpit_status_execution_policy_review_staged_order_allowed=true")
+            return 1
+        if review.get("paper_order_created") is not False:
+            print("cockpit_status_execution_policy_review_order_created=true")
+            return 1
+        if review.get("broker_write_allowed") is not False:
+            print("cockpit_status_execution_policy_review_broker_write_allowed=true")
+            return 1
+        if review.get("live_capital_enabled") is not False:
+            print("cockpit_status_execution_policy_review_live_capital_enabled=true")
+            return 1
+        if not 0 <= float(review.get("policy_score", -1)) <= 1:
+            print("cockpit_status_execution_policy_score_bad=true")
+            return 1
+        missing_checks = sorted(EXECUTION_POLICY_REQUIRED_CHECKS - set(review.get("checks", {})))
+        if missing_checks:
+            print(
+                "cockpit_status_execution_policy_checks_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_checks)}"
+            )
+            return 1
+        missing_switches = sorted(EXECUTION_POLICY_REQUIRED_KILL_SWITCHES - set(review.get("kill_switches", {})))
+        if missing_switches:
+            print(
+                "cockpit_status_execution_policy_kill_switches_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_switches)}"
+            )
+            return 1
+        if "cannot stage orders" not in review.get("boundary", ""):
+            print("cockpit_status_execution_policy_review_boundary_weak=true")
             return 1
 
     tradingview = payload["tradingview_alerts"]
