@@ -584,6 +584,17 @@ function renderFlowMap(status) {
             handoff: "policy hold"
         },
         {
+            ...(findModule(status, "execution_policy") || {
+                key: "execution_policy",
+                label: "Execution Policy",
+                owner: "Kill Switches",
+                status: "blocked",
+                current_process: "Kill switches and staged orders are read-only",
+                authority: "read_only_execution_policy"
+            }),
+            handoff: "kill-switch hold"
+        },
+        {
             ...(findModule(status, "execution_registry") || {
                 key: "execution_registry",
                 label: "Execution Registry",
@@ -676,7 +687,7 @@ function renderFlowMap(status) {
             "Bounded modelling can inform a gate; risk decides whether an idea may continue.",
             "Only passed gates can become paper-trial state.",
             "blocked",
-            ["head_of_quant", "risk_agent", "execution_registry"]
+            ["head_of_quant", "risk_agent", "execution_policy", "execution_registry"]
         ),
         makeLane(
             "Paper Trial",
@@ -1462,6 +1473,8 @@ function renderTrades(status) {
     const tradingView = status.tradingview_alerts || {};
     const riskAgent = tradeLayer.risk_agent || status.risk_agent || {};
     const riskReviews = asArray(riskAgent.reviews);
+    const executionPolicy = tradeLayer.execution_policy || status.execution_policy || {};
+    const executionPolicyReviews = asArray(executionPolicy.reviews);
     const summary = tradeLayer.summary || {};
     const philosophy = status.decision_philosophy || {};
     const worldviewBlock = renderDecisionWorldviewBlock(philosophy);
@@ -1657,6 +1670,53 @@ function renderTrades(status) {
         `;
     };
 
+    const renderExecutionPolicyCard = (review) => {
+        const checkTags = Object.entries(review.checks || {}).map(([key, value]) => `${key}: ${value}`);
+        const killSwitchTags = Object.entries(review.kill_switches || {}).map(([key, value]) => `${key}: ${value}`);
+        return `
+            <article class="trade-intent-card ${statusClass(review.status || "blocked_by_policy")}">
+                <div class="cognition-card-head">
+                    ${renderStatusPill(review.status || "blocked_by_policy")}
+                    <p class="label">Execution Policy · ${htmlText(review.source_risk_review_id, "risk review pending")}</p>
+                </div>
+                <h3>${htmlText(review.instrument, "Execution policy review")}</h3>
+                <p>${htmlText(review.boundary, "Execution policy is read-only.")}</p>
+                <div class="tag-row">
+                    ${renderInlineBadge(review.execution_allowed ? "execution allowed" : "execution blocked", review.execution_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.staged_paper_order_allowed ? "staged order allowed" : "no staged paper order", review.staged_paper_order_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.paper_order_created ? "paper order created" : "no paper order created", review.paper_order_created ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_write_allowed ? "broker write allowed" : "broker write blocked", review.broker_write_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.live_capital_enabled ? "live capital enabled" : "live capital disabled", review.live_capital_enabled ? "blocked" : "online")}
+                </div>
+                <div class="summary-strip compact">
+                    ${renderMetric("Policy score", formatProbability(review.policy_score))}
+                    ${renderMetric("Venue", htmlText(review.selected_venue, "none"))}
+                    ${renderMetric("Venue mode", htmlText(review.venue_mode, "disabled"))}
+                    ${renderMetric("Reviewed", formatTime(review.reviewed_at))}
+                </div>
+                <section class="trade-check-section">
+                    <p class="label">Kill switches</p>
+                    <div class="tag-row">${renderTagList(killSwitchTags, "No kill switches recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Execution checks</p>
+                    <div class="tag-row">${renderTagList(checkTags, "No execution checks recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Blocked reasons</p>
+                    <div class="tag-row">${renderTagList(review.blocked_reasons, "No blocking reason recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Required next steps</p>
+                    <ul class="status-list">${asArray(review.required_next_steps).length
+                        ? asArray(review.required_next_steps).map((step) => `<li><strong>${htmlText(step)}</strong></li>`).join("")
+                        : "<li><strong>No next steps recorded</strong></li>"
+                    }</ul>
+                </section>
+            </article>
+        `;
+    };
+
     const observedSignals = asArray(tradeLayer.watching);
     const candidates = asArray(tradeLayer.candidates);
     const blocked = asArray(tradeLayer.blocked);
@@ -1720,6 +1780,25 @@ function renderTrades(status) {
             }</div>
         </section>
         <section class="trade-intent-section">
+            <p class="label">Execution Policy and kill switches</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", executionPolicy.status || "pending")}
+                ${renderMetric("Reviews", executionPolicy.review_count || 0)}
+                ${renderMetric("Policy blocks", executionPolicy.by_status?.blocked_by_policy || 0)}
+                ${renderMetric("Kill-switch holds", executionPolicy.by_status?.kill_switch_hold || 0)}
+                ${renderMetric("Shadow ready", executionPolicy.by_status?.paper_order_shadow_ready || 0)}
+                ${renderMetric("Staged orders", executionPolicy.staged_paper_order_allowed_count || 0)}
+                ${renderMetric("Orders created", executionPolicy.paper_order_created_count || 0)}
+                ${renderMetric("Broker writes", executionPolicy.broker_write_allowed_count || 0)}
+                ${renderMetric("Live capital", executionPolicy.live_capital_enabled_count || 0)}
+            </div>
+            <p class="mini">${htmlText(executionPolicy.boundary, "Execution policy is read-only and cannot stage paper orders or write to brokers.")}</p>
+            <div class="trade-intent-stack">${executionPolicyReviews.length
+                ? executionPolicyReviews.map(renderExecutionPolicyCard).join("")
+                : `<article class="trade-intent-card"><h3>No execution policy reviews yet</h3><p>The execution-policy layer has not reviewed any Risk Agent records.</p></article>`
+            }</div>
+        </section>
+        <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
                 ${renderMetric("Receiver", tradingView.receiver_status || "local contract only")}
@@ -1739,7 +1818,7 @@ function renderTrades(status) {
                 <li>Watching · observed signal only</li>
                 <li>Considering Trade · candidate, not order</li>
                 <li>Blocked · failed evidence, risk, policy, latency, or credential checks</li>
-                <li>Preparing Paper Trade · unavailable until Risk Agent and broker adapter exist</li>
+                <li>Preparing Paper Trade · unavailable until staged paper-order and broker-adapter contracts exist</li>
                 <li>Postmortem · unavailable until closed paper trades exist</li>
             </ol>
         </section>
