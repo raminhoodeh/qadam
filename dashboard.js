@@ -629,6 +629,17 @@ function renderFlowMap(status) {
             handoff: "submit blocked"
         },
         {
+            ...(findModule(status, "paper_submit_receipt") || {
+                key: "paper_submit_receipt",
+                label: "Paper Submit Receipt",
+                owner: "Paper Order Gate",
+                status: "blocked",
+                current_process: "Dry-run receipt checks without broker POST",
+                authority: "dry_run_receipt_only"
+            }),
+            handoff: "dry-run receipt only"
+        },
+        {
             ...(findModule(status, "execution_registry") || {
                 key: "execution_registry",
                 label: "Execution Registry",
@@ -721,7 +732,7 @@ function renderFlowMap(status) {
             "Bounded modelling can inform a gate; risk decides whether an idea may continue.",
             "Only passed gates can become paper-trial state.",
             "blocked",
-            ["head_of_quant", "risk_agent", "execution_policy", "staged_order_contract", "broker_reconciliation", "execution_registry"]
+            ["head_of_quant", "risk_agent", "execution_policy", "staged_order_contract", "broker_reconciliation", "paper_submit_receipt", "execution_registry"]
         ),
         makeLane(
             "Paper Trial",
@@ -1513,6 +1524,8 @@ function renderTrades(status) {
     const stagedPaperOrderReviews = asArray(stagedPaperOrder.reviews);
     const brokerReconciliation = tradeLayer.broker_reconciliation || status.broker_reconciliation || {};
     const brokerReconciliationReviews = asArray(brokerReconciliation.reviews);
+    const paperSubmitReceipt = tradeLayer.paper_submit_receipt || status.paper_submit_receipt || {};
+    const paperSubmitReceiptReviews = asArray(paperSubmitReceipt.reviews);
     const summary = tradeLayer.summary || {};
     const philosophy = status.decision_philosophy || {};
     const worldviewBlock = renderDecisionWorldviewBlock(philosophy);
@@ -1868,6 +1881,63 @@ function renderTrades(status) {
         `;
     };
 
+    const renderPaperSubmitReceiptCard = (review) => {
+        const checkTags = Object.entries(review.receipt_checks || {}).map(([key, value]) => `${key}: ${value}`);
+        const receipt = review.simulated_receipt || {};
+        const brokerEcho = review.broker_echo || {};
+        return `
+            <article class="trade-intent-card ${statusClass(review.status || "blocked_before_dry_run_submit")}">
+                <div class="cognition-card-head">
+                    ${renderStatusPill(review.status || "blocked_before_dry_run_submit")}
+                    <p class="label">Dry-run paper-submit receipt · ${htmlText(review.source_broker_reconciliation_review_id, "broker review pending")}</p>
+                </div>
+                <h3>${htmlText(review.instrument, "Paper-submit receipt review")}</h3>
+                <p>${htmlText(review.boundary, "Paper-submit receipt is dry-run only and cannot call brokers.")}</p>
+                <div class="tag-row">
+                    ${renderInlineBadge(review.dry_run_receipt_created ? "dry-run receipt created" : "dry-run receipt not created", review.dry_run_receipt_created ? "pending" : "online")}
+                    ${renderInlineBadge(review.paper_order_submitted ? "paper order submitted" : "paper order not submitted", review.paper_order_submitted ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_post_called ? "broker POST called" : "broker POST not called", review.broker_post_called ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_write_allowed ? "broker write allowed" : "broker write blocked", review.broker_write_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.live_capital_enabled ? "live capital enabled" : "live capital disabled", review.live_capital_enabled ? "blocked" : "online")}
+                </div>
+                <div class="summary-strip compact">
+                    ${renderMetric("Venue", htmlText(review.selected_venue, "none"))}
+                    ${renderMetric("Mode", htmlText(review.venue_mode, "disabled"))}
+                    ${renderMetric("Account", htmlText(review.account_scope, "trial"))}
+                    ${renderMetric("Receipt", htmlText(receipt.status, "not created"))}
+                    ${renderMetric("Broker echo", htmlText(brokerEcho.status, "not requested"))}
+                    ${renderMetric("Submitted", htmlText(review.submitted_at, "not submitted"))}
+                    ${renderMetric("Reviewed", formatTime(review.reviewed_at))}
+                </div>
+                <section class="trade-check-section">
+                    <p class="label">Simulated receipt</p>
+                    <div class="tag-row">
+                        ${renderInlineBadge(`mode: ${dashboardText(receipt.mode, "dry run only")}`, "pending")}
+                        ${renderInlineBadge(`adapter: ${dashboardText(receipt.adapter, "not selected")}`, "pending")}
+                        ${renderInlineBadge(`client id: ${dashboardText(receipt.client_order_id, "not allocated")}`, "blocked")}
+                        ${renderInlineBadge(`external id: ${dashboardText(receipt.external_order_id, "not created")}`, "blocked")}
+                        ${renderInlineBadge(receipt.broker_post_called ? "POST called" : "POST not called", receipt.broker_post_called ? "blocked" : "online")}
+                    </div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Receipt checks</p>
+                    <div class="tag-row">${renderTagList(checkTags, "No paper-submit receipt checks recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Blocked reasons</p>
+                    <div class="tag-row">${renderTagList(review.blocked_reasons, "No blocking reason recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Required next steps</p>
+                    <ul class="status-list">${asArray(review.required_next_steps).length
+                        ? asArray(review.required_next_steps).map((step) => `<li><strong>${htmlText(step)}</strong></li>`).join("")
+                        : "<li><strong>No next steps recorded</strong></li>"
+                    }</ul>
+                </section>
+            </article>
+        `;
+    };
+
     const observedSignals = asArray(tradeLayer.watching);
     const candidates = asArray(tradeLayer.candidates);
     const blocked = asArray(tradeLayer.blocked);
@@ -1991,6 +2061,26 @@ function renderTrades(status) {
             }</div>
         </section>
         <section class="trade-intent-section">
+            <p class="label">Dry-run paper-submit receipt</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", paperSubmitReceipt.status || "pending")}
+                ${renderMetric("Reviews", paperSubmitReceipt.review_count || 0)}
+                ${renderMetric("Blocked", paperSubmitReceipt.by_status?.blocked_before_dry_run_submit || 0)}
+                ${renderMetric("Dry-run blocked", paperSubmitReceipt.by_status?.dry_run_receipt_blocked || 0)}
+                ${renderMetric("Dry-run ready", paperSubmitReceipt.by_status?.dry_run_receipt_ready || 0)}
+                ${renderMetric("Receipts", paperSubmitReceipt.dry_run_receipt_created_count || 0)}
+                ${renderMetric("Submitted", paperSubmitReceipt.paper_order_submitted_count || 0)}
+                ${renderMetric("Broker POST", paperSubmitReceipt.broker_post_called_count || 0)}
+                ${renderMetric("Broker writes", paperSubmitReceipt.broker_write_allowed_count || 0)}
+                ${renderMetric("Live capital", paperSubmitReceipt.live_capital_enabled_count || 0)}
+            </div>
+            <p class="mini">${htmlText(paperSubmitReceipt.boundary, "Paper-submit receipt is dry-run only and cannot call brokers.")}</p>
+            <div class="trade-intent-stack">${paperSubmitReceiptReviews.length
+                ? paperSubmitReceiptReviews.map(renderPaperSubmitReceiptCard).join("")
+                : `<article class="trade-intent-card"><h3>No dry-run paper-submit reviews yet</h3><p>The dry-run receipt gate has not reviewed any broker reconciliation records.</p></article>`
+            }</div>
+        </section>
+        <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
                 ${renderMetric("Receiver", tradingView.receiver_status || "local contract only")}
@@ -2010,7 +2100,7 @@ function renderTrades(status) {
                 <li>Watching · observed signal only</li>
                 <li>Considering Trade · candidate, not order</li>
                 <li>Blocked · failed evidence, risk, policy, latency, or credential checks</li>
-                <li>Preparing Paper Trade · disabled until broker reconciliation contracts pass</li>
+                <li>Preparing Paper Trade · disabled until dry-run receipt and broker contracts pass</li>
                 <li>Postmortem · unavailable until closed paper trades exist</li>
             </ol>
         </section>
