@@ -17,6 +17,7 @@ fi
 "$PYTHON_BIN" scripts/check_phase1_agent_os.py
 "$PYTHON_BIN" scripts/check_shadow_intelligence.py
 "$PYTHON_BIN" scripts/check_signal_integrity_gate.py
+"$PYTHON_BIN" scripts/check_risk_agent_policy_router.py
 "$PYTHON_BIN" scripts/check_llm_provider_probes.py
 "$PYTHON_BIN" scripts/check_local_research_analyst.py
 "$PYTHON_BIN" scripts/check_trade_intent.py

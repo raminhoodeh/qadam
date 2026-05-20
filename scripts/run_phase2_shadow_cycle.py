@@ -54,6 +54,15 @@ def main() -> int:
         "phase2_shadow_cycle_signal_integrity_trade_candidate_created_count="
         f"{report['signal_integrity_trade_candidate_created_count']}"
     )
+    print(f"phase2_shadow_cycle_risk_agent_status={report['risk_agent_status']}")
+    print(f"phase2_shadow_cycle_risk_agent_review_count={report['risk_agent_review_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_blocked_count={report['risk_agent_blocked_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_policy_hold_count={report['risk_agent_policy_hold_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_shadow_ready_count={report['risk_agent_shadow_ready_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_execution_allowed_count={report['risk_agent_execution_allowed_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_paper_order_allowed_count={report['risk_agent_paper_order_allowed_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_order_created_count={report['risk_agent_order_created_count']}")
+    print(f"phase2_shadow_cycle_risk_agent_broker_write_allowed_count={report['risk_agent_broker_write_allowed_count']}")
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
     print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
@@ -89,6 +98,14 @@ def main() -> int:
     if report["paper_account_write_authority"] or report["paper_account_live_capital_enabled"]:
         return 1
     if report["signal_integrity_trade_candidate_created_count"] != 0:
+        return 1
+    if report["risk_agent_execution_allowed_count"] != 0:
+        return 1
+    if report["risk_agent_paper_order_allowed_count"] != 0:
+        return 1
+    if report["risk_agent_order_created_count"] != 0:
+        return 1
+    if report["risk_agent_broker_write_allowed_count"] != 0:
         return 1
     return 0
 

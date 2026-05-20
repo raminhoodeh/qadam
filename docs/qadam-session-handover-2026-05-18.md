@@ -46,6 +46,7 @@ Implemented foundations:
 - Trust Score seed across all 35 sources.
 - Phase 1 Agent OS with 8 named agents and explicit tool grants.
 - Dashboard phases D0-D7+ shell: system map, watching view, cognition view, trade intent board, paper account mirror, TradingView observed-alert contract, Telegram dry-run comms, Fund Manager forum, user guide.
+- Phase 2 Signal Integrity Gate plus read-only Risk Agent policy router: Qadam can now review shadow signals and trade intents through evidence and policy gates, but cannot approve risk, create paper orders, create broker orders, or write to brokers.
 
 Important verified numbers from the last completed run:
 
@@ -75,6 +76,8 @@ Local credential status as of 2026-05-18:
 - Alpaca paper-account mirroring now exists as `scripts/check_alpaca_paper_mirror.py --live`. It calls only GET endpoints for account, positions, orders, and portfolio history, writes sanitized local mirror state, and keeps broker writes, live capital, and paper-order authority disabled.
 - Phase 2 shadow cycle now exists as `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm`. A 2026-05-19 live run fed FRED, RSS, Polymarket, Alpaca, and Telegram observations into the Research Analyst queue, ran local Gemma in shadow mode, reviewed shadow signals through the first Signal Integrity Gate, and queued a Strategy Lead shadow handoff. It does not create signals with execution authority, risk approvals, trade candidates, paper orders, or broker actions.
 - Signal Integrity Gate now exists as `orchestrator/signal_integrity.py`, with `scripts/check_signal_integrity_gate.py` as its contract check. It can block, hold for corroboration, or mark a signal ready for future risk-shadow review, but it cannot approve risk or create orders.
+- Risk Agent policy router now exists as `orchestrator/risk_agent.py`, with `scripts/check_risk_agent_policy_router.py` as its contract check. It reviews Signal Integrity outputs and Trade Intent records against account mode, broker-write state, paper-order authority, kill-switch state, execution policy, source quality, Trust Score, invalidation, entry, and max-risk constraints. It can block, hold, or mark a record shadow-ready for later execution-policy review, but it cannot approve risk or create orders.
+- Current 2026-05-19 Phase 2 live path reached Risk Agent review: available read-only observations produced shadow packets, shadow signals, Signal Integrity reviews, Risk Agent policy reviews, and a Strategy Lead shadow handoff. Risk Agent authority counts remained zero for execution, paper orders, order creation, and broker writes.
 - Kalshi is blocked by current location/account availability and should remain deferred until eligibility is resolved.
 
 ## Key Boundary
@@ -98,7 +101,7 @@ What still needs work:
 - Add remaining provider credentials only when each source is needed.
 - Run true historical backfills.
 - Replace Trust Score priors with real observation/backtest scores.
-- Promote paper broker read-only checks before any execution work.
+- Build execution-policy and kill-switch contracts as read-only explanatory checks before any staged paper-order route exists.
 
 ## Secret Handling
 
@@ -171,7 +174,7 @@ Give Codex this handover file and say:
 ```text
 Continue Qadam from docs/qadam-session-handover-2026-05-18.md.
 Use docs/qadam-master-implementation-plan.md as the master plan and docs/qadam-api-key-acquisition-plan.md for API onboarding.
-Start with Postgres/Timescale live durable ingestion, then Batch A API keys, then live adapter checks.
+Start with execution-policy and kill-switch read-only contracts, keeping all Risk Agent outputs non-executable.
 Do not expose or commit secrets.
 ```
 

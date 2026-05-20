@@ -691,25 +691,31 @@ Status: implemented and contract-checked locally as a non-executing Trade Intent
 Build:
 
 - `trade_candidates.jsonl` local store.
+- `risk_policy_reviews.jsonl` local Risk Agent policy-review store.
 - Trade candidate schema.
 - Blocked trade schema.
+- Read-only Risk Agent review schema.
 - Candidate status transitions.
 - Dashboard candidate and blocked-trade tables.
 - Public-safe cockpit export with `execution_allowed=false` and `paper_order_allowed=false` for D5 candidate/blocked records.
+- Public-safe cockpit export with Risk Agent policy-review status, policy score, blocked reasons, required next steps, account context, and explicit zero-authority flags.
 - D5 test records: one candidate and one blocked trade intent, both clearly marked as local test intent with no broker route.
 - The Trade Board now renders an explicit state ladder: observed signal, candidate, blocked trade, unavailable paper order states, and postmortem.
 - Observed TradingView alerts are labelled `Observed signal only`, `not a candidate`, `execution blocked`, and `no paper order`.
 - Candidate records are labelled `Candidate, not order`, with strategy, price gap, source signal, Akber filter, risk checks, tags, and no-broker-route boundary.
 - Blocked trades are rendered as first-class board items with blocked reason, failed/pending filter state, risk checks, and zero execution authority.
-- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
+- Risk Agent policy reviews are rendered as first-class board items with status, policy score, max-risk cap, account state, Signal Integrity reference, blocked reasons, required next steps, and badges for execution blocked, no paper order, no order created, and broker write blocked.
+- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
 
 Exit gate:
 
 - Dashboard can show a candidate and a blocked trade from local data.
 - `scripts/check_trade_intent.py` validates the store, candidate count, blocked count, and zero execution authority.
 - `scripts/check_trade_intent.py` also validates D5 sample records, Akber filter fields, risk-check fields, zero risk size, no broker route boundary, and blocked-reason discipline.
-- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
+- `scripts/check_risk_agent_policy_router.py` validates the Risk Agent policy-review store, required checks, blocked/hold/readiness statuses, zero execution authority, zero paper-order authority, zero order creation, and zero broker-write authority.
+- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
 - A local D5 render check proves the board renders 1 observed signal, 1 candidate, 1 blocked trade, and lifecycle states as `not connected yet`.
+- A local D5 render check proves the board also renders Risk Agent policy-review cards from the public-safe snapshot.
 - No broker order path exists yet.
 
 ### Phase D6 - Paper Account Mirror

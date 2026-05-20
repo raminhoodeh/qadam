@@ -328,7 +328,9 @@ Current implementation start:
 - Local Research Analyst can run through LM Studio/Gemma in shadow mode when the local server is available.
 - Read-only paper-account context is now attached to the Phase 2 shadow workflow.
 - The first Signal Integrity Gate exists in `orchestrator/signal_integrity.py`; it reviews recent shadow signals, applies Akber 6-stage filter state, and can only block, hold, or mark a signal ready for future risk-shadow review.
+- The first Risk Agent policy router exists in `orchestrator/risk_agent.py`; it reviews Signal Integrity outputs and Trade Intent records, but can only block, hold, or mark a record shadow-ready for later execution-policy review.
 - Shadow Signal store is local-only and all generated signals have `execution_allowed=false`.
+- Risk Agent policy reviews are local-only and all generated reviews have `execution_allowed=false`, `paper_order_allowed=false`, `order_created=false`, and `broker_write_allowed=false`.
 - Cockpit can show Shadow Intelligence status.
 
 ### Phase 2 Modules
@@ -662,4 +664,4 @@ The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contract
 2. Run Gemini model-list credential validation without text generation.
 3. Keep running `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` when LM Studio is available.
 4. Keep `scripts/check_signal_integrity_gate.py` green and review why signals are blocked or held.
-5. Design the Risk Agent contract and policy router as read-only validation first.
+5. Keep the Risk Agent policy router read-only and add execution-policy and kill-switch contracts before any staged paper-order route exists.

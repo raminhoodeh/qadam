@@ -140,6 +140,56 @@ SIGNAL_INTEGRITY_REVIEW_REQUIRED_FIELDS = {
     "worldview_prior_status",
 }
 
+RISK_AGENT_REQUIRED_FIELDS = {
+    "authority",
+    "boundary",
+    "broker_write_allowed_count",
+    "by_status",
+    "execution_allowed_count",
+    "max_risk_pct_per_idea",
+    "order_created_count",
+    "paper_order_allowed_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "status",
+}
+
+RISK_POLICY_REVIEW_REQUIRED_FIELDS = {
+    "blocked_reasons",
+    "boundary",
+    "broker_write_allowed",
+    "checks",
+    "execution_allowed",
+    "instrument",
+    "max_risk_gbp",
+    "max_risk_pct",
+    "order_created",
+    "paper_account_status",
+    "paper_order_allowed",
+    "policy_score",
+    "proposed_risk_gbp",
+    "proposed_risk_pct",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "signal_integrity_status",
+    "source_ref",
+    "source_type",
+    "status",
+}
+
+RISK_POLICY_REQUIRED_CHECKS = {
+    "broker_order_route",
+    "broker_write",
+    "drawdown",
+    "execution_policy",
+    "kill_switch",
+    "live_capital",
+    "mode",
+    "paper_order_authority",
+}
+
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
 TRADE_INTENT_REQUIRED_FIELDS = {
@@ -498,6 +548,8 @@ def main() -> int:
     )
     print(f"cockpit_status_signal_integrity_status={payload['cognition'].get('signal_integrity', {}).get('status')}")
     print(f"cockpit_status_signal_integrity_review_count={len(payload['cognition'].get('signal_integrity_reviews', []))}")
+    print(f"cockpit_status_risk_agent_status={payload.get('risk_agent', {}).get('status')}")
+    print(f"cockpit_status_risk_agent_review_count={payload.get('risk_agent', {}).get('review_count')}")
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -1063,6 +1115,69 @@ def main() -> int:
     if any(model.get("authority") != "non_executable" for model in cognition.get("model_activity", [])):
         print("cockpit_status_model_activity_executable=true")
         return 1
+
+    risk_agent = payload.get("risk_agent", {})
+    missing_risk_agent_fields = sorted(RISK_AGENT_REQUIRED_FIELDS - set(risk_agent))
+    if missing_risk_agent_fields:
+        print("cockpit_status_risk_agent_fields_missing=" + ",".join(missing_risk_agent_fields))
+        return 1
+    if risk_agent.get("status") != "ok":
+        print("cockpit_status_risk_agent_not_ok=true")
+        return 1
+    if risk_agent.get("authority") != "read_only_policy_router":
+        print("cockpit_status_risk_agent_authority_mismatch=true")
+        return 1
+    if risk_agent.get("execution_allowed_count") != 0:
+        print("cockpit_status_risk_agent_execution_allowed_not_zero=true")
+        return 1
+    if risk_agent.get("paper_order_allowed_count") != 0:
+        print("cockpit_status_risk_agent_paper_order_allowed_not_zero=true")
+        return 1
+    if risk_agent.get("order_created_count") != 0:
+        print("cockpit_status_risk_agent_order_created_not_zero=true")
+        return 1
+    if risk_agent.get("broker_write_allowed_count") != 0:
+        print("cockpit_status_risk_agent_broker_write_allowed_not_zero=true")
+        return 1
+    if "cannot approve risk" not in risk_agent.get("boundary", ""):
+        print("cockpit_status_risk_agent_boundary_weak=true")
+        return 1
+    if not isinstance(risk_agent.get("reviews"), list) or not risk_agent["reviews"]:
+        print("cockpit_status_risk_agent_reviews_missing=true")
+        return 1
+    for review in risk_agent.get("reviews", []):
+        missing_fields = sorted(RISK_POLICY_REVIEW_REQUIRED_FIELDS - set(review))
+        if missing_fields:
+            print(
+                "cockpit_status_risk_policy_review_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        if review.get("execution_allowed") is not False:
+            print("cockpit_status_risk_policy_execution_allowed=true")
+            return 1
+        if review.get("paper_order_allowed") is not False:
+            print("cockpit_status_risk_policy_paper_order_allowed=true")
+            return 1
+        if review.get("order_created") is not False:
+            print("cockpit_status_risk_policy_order_created=true")
+            return 1
+        if review.get("broker_write_allowed") is not False:
+            print("cockpit_status_risk_policy_broker_write_allowed=true")
+            return 1
+        if not 0 <= float(review.get("policy_score", -1)) <= 1:
+            print("cockpit_status_risk_policy_score_bad=true")
+            return 1
+        missing_checks = sorted(RISK_POLICY_REQUIRED_CHECKS - set(review.get("checks", {})))
+        if missing_checks:
+            print(
+                "cockpit_status_risk_policy_checks_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_checks)}"
+            )
+            return 1
+        if "cannot approve risk" not in review.get("boundary", ""):
+            print("cockpit_status_risk_policy_boundary_weak=true")
+            return 1
 
     tradingview = payload["tradingview_alerts"]
     missing_tradingview_fields = sorted(TRADINGVIEW_SUMMARY_REQUIRED_FIELDS - set(tradingview))

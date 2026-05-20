@@ -25,6 +25,7 @@ from orchestrator.intelligence import (
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
+from orchestrator.risk_agent import RiskPolicyReviewStore, risk_agent_summary
 from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
 from orchestrator.strategy_lead import StrategyLeadShadowStore
@@ -142,6 +143,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "agent_runtime": "broker-write tools blocked",
         "shadow_intelligence": "shadow-only review packets available",
         "signal_integrity_gate": "auditing shadow signals without trade authority",
+        "risk_agent": "reviewing policy without order authority",
         "telegram_bot": "outbound dry-run member communications",
         "live_bridge": "serving authenticated public-safe status snapshots",
         "cockpit": "static live shell frozen",
@@ -533,6 +535,39 @@ def _safe_signal_integrity_reviews(settings: Settings) -> list[dict[str, Any]]:
             "execution_allowed": bool(review.get("execution_allowed")),
             "paper_order_allowed": bool(review.get("paper_order_allowed")),
             "trade_candidate_created": bool(review.get("trade_candidate_created")),
+            "reviewed_at": review.get("reviewed_at"),
+            "boundary": review.get("boundary"),
+        }
+        for review in reviews
+    ]
+
+
+def _safe_risk_policy_reviews(settings: Settings) -> list[dict[str, Any]]:
+    try:
+        reviews = list(RiskPolicyReviewStore(settings=settings).read(limit=5))
+    except Exception:
+        reviews = []
+    return [
+        {
+            "review_id": review.get("review_id"),
+            "source_type": review.get("source_type"),
+            "source_ref": review.get("source_ref"),
+            "status": review.get("status"),
+            "instrument": review.get("instrument"),
+            "policy_score": review.get("policy_score"),
+            "proposed_risk_gbp": review.get("proposed_risk_gbp"),
+            "proposed_risk_pct": review.get("proposed_risk_pct"),
+            "max_risk_gbp": review.get("max_risk_gbp"),
+            "max_risk_pct": review.get("max_risk_pct"),
+            "checks": review.get("checks", {}),
+            "blocked_reasons": review.get("blocked_reasons", []),
+            "required_next_steps": review.get("required_next_steps", []),
+            "paper_account_status": review.get("paper_account_status"),
+            "signal_integrity_status": review.get("signal_integrity_status"),
+            "execution_allowed": bool(review.get("execution_allowed")),
+            "paper_order_allowed": bool(review.get("paper_order_allowed")),
+            "order_created": bool(review.get("order_created")),
+            "broker_write_allowed": bool(review.get("broker_write_allowed")),
             "reviewed_at": review.get("reviewed_at"),
             "boundary": review.get("boundary"),
         }
@@ -1109,6 +1144,7 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
 
     trade_layer: dict[str, Any] = {
         "summary": trade_intent_summary(settings) if store_status == "ok" else {"status": store_status},
+        "risk_agent": _risk_agent_status(settings),
         "store_status": store_status,
         "watching": [],
         "candidates": [],
@@ -1168,6 +1204,28 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
     if isinstance(trade_layer["summary"], dict):
         trade_layer["summary"]["observed_signal_count"] = len(trade_layer["watching"])
     return trade_layer
+
+
+def _risk_agent_status(settings: Settings) -> dict[str, Any]:
+    summary = risk_agent_summary(settings)
+    reviews = _safe_risk_policy_reviews(settings)
+    return {
+        "status": summary.get("status", "ok"),
+        "schema_version": summary.get("schema_version"),
+        "review_count": summary.get("review_count", 0),
+        "by_status": summary.get("by_status", {}),
+        "execution_allowed_count": summary.get("execution_allowed_count", 0),
+        "paper_order_allowed_count": summary.get("paper_order_allowed_count", 0),
+        "order_created_count": summary.get("order_created_count", 0),
+        "broker_write_allowed_count": summary.get("broker_write_allowed_count", 0),
+        "max_risk_pct_per_idea": 1.0,
+        "authority": "read_only_policy_router",
+        "reviews": reviews,
+        "boundary": summary.get(
+            "boundary",
+            "Risk Agent policy reviews are read-only and cannot approve risk or create orders.",
+        ),
+    }
 
 
 def _forbidden_actions() -> list[dict[str, str]]:
@@ -1231,6 +1289,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "decision_philosophy": _decision_philosophy(),
         "cognition": _build_cognition(settings),
         "tradingview_alerts": _tradingview_alerts(settings),
+        "risk_agent": _risk_agent_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
@@ -1294,6 +1353,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "decision_philosophy",
         "cognition",
         "tradingview_alerts",
+        "risk_agent",
         "trade_layer",
         "communications",
         "forbidden_actions",

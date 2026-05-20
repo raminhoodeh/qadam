@@ -382,11 +382,14 @@ Current implementation start:
 - `scripts/check_phase2_paper_context.py` validates the paper-account context bridge in dry mode: the context reaches the Strategy Lead packet, stays sanitized, and keeps `execution_allowed=false`, `paper_order_allowed=false`, `write_authority=false`, and `live_capital_enabled=false`.
 - `orchestrator/signal_integrity.py` now implements the first Signal Integrity Gate contract. It audits recent shadow signals against source count, evidence count, trust score, missing corroboration, signal confidence, and Akber 6-stage filter state; it can return `blocked`, `hold_for_corroboration`, or `passed_to_risk_shadow`.
 - `scripts/check_signal_integrity_gate.py` validates that Signal Integrity reviews are replayable, public-safe, and non-executable: the gate cannot approve risk, create trade candidates, create paper orders, or access broker-write routes.
-- Current 2026-05-19 live Phase 2 cycle result: live read-only observations from FRED, RSS, Polymarket, Alpaca, and Telegram produced eleven queued Research Analyst packets, four shadow signals, one live local Gemma assessment, eight Signal Integrity reviews, and one Strategy Lead shadow handoff packet. NASA FIRMS was live but had zero current events in the queried window. The Strategy Lead packet included read-only paper-account context: Alpaca paper mirror connected, current broker paper balance visible, zero open positions, zero mirrored orders, no write authority, and live capital disabled. The Signal Integrity Gate returned four `blocked` and four `hold_for_corroboration` reviews in the cycle, zero `passed_to_risk_shadow`, zero trade candidates, zero paper orders, and zero execution approvals.
-- The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries, read-only paper-account context, and Signal Integrity review state without prompts, raw model text, local paths, broker IDs, or secrets.
+- `orchestrator/risk_agent.py` now implements the first Risk Agent policy-router contract as read-only validation. It reviews Signal Integrity outputs and Trade Intent records against account mode, broker-write state, paper-order authority, kill-switch state, execution policy, source quality, Trust Score, invalidation, entry, and max-risk constraints; it can return `blocked_before_risk`, `policy_hold`, or `risk_shadow_ready`.
+- `scripts/check_risk_agent_policy_router.py` validates that Risk Agent reviews are replayable, public-safe, and non-executable: the router cannot approve risk, create orders, create paper orders, or write to brokers.
+- Current 2026-05-19 live Phase 2 cycle result: live read-only observations from NASA FIRMS, FRED, RSS, Polymarket, Alpaca, and Telegram produced eleven queued Research Analyst packets, four shadow signals, one live local Gemma assessment, eight Signal Integrity reviews, ten Risk Agent policy reviews, and one Strategy Lead shadow handoff packet. NASA FIRMS was live but had zero current events in the queried window. The Strategy Lead packet included read-only paper-account context: Alpaca paper mirror connected, current broker paper balance visible, zero open positions, zero mirrored orders, no write authority, and live capital disabled. The Signal Integrity Gate returned blocked/hold reviews only, zero `passed_to_risk_shadow`, zero trade candidates, zero paper orders, and zero execution approvals. The Risk Agent returned the current reviews as `blocked_before_risk`, with zero risk approvals, zero paper orders, zero order creation, and zero broker-write authority.
+- The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries, read-only paper-account context, Signal Integrity review state, and Risk Agent policy-review state without prompts, raw model text, local paths, broker IDs, or secrets.
 - `scripts/check_shadow_intelligence.py` is wired into `start_qadam.sh`.
 - `scripts/check_local_research_analyst.py` is wired into `start_qadam.sh` in dry-contract mode.
 - `scripts/check_signal_integrity_gate.py` is wired into `start_qadam.sh`.
+- `scripts/check_risk_agent_policy_router.py` is wired into `start_qadam.sh`.
 - System health, FastMCP-style tools, and cockpit registry cards expose Shadow Intelligence status.
 - Every Phase 2 output remains non-executable.
 
@@ -404,6 +407,7 @@ Build:
 - Swarm simulation starter.
 - World-model lens applied to candidates as private prior and red-team prompt.
 - Signal Integrity Gate.
+- Read-only Risk Agent policy router.
 - Shadow signal store.
 
 Exit gate:
@@ -412,6 +416,7 @@ Exit gate:
 - Local Research Analyst can compress queued packets through LM Studio in shadow mode when the local server is running.
 - Strategy Lead can receive queued shadow handoff packets, but cannot call broker-write tools or approve risk.
 - Signal Integrity Gate can block, hold, or mark a signal ready for future risk-shadow review, but cannot create candidates, orders, or approvals.
+- Risk Agent can block or hold a reviewed shadow signal or trade intent, but cannot approve risk, create a paper order, create a broker order, or enable broker writes.
 - Every signal has evidence, assumptions, invalidation, transaction-cost assumptions, source Trust Scores, and pricing gap.
 - World-model lens is present as private reasoning provenance, not factual evidence.
 - No execution is possible.
@@ -609,7 +614,7 @@ Phase 0 foundation is substantially implemented, and Phase 1 has started with te
 
 The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, and the first Signal Integrity Gate are active. Dashboard Plan D0-D9 is implemented locally, with the protected D8B User Guide now added. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and design the Risk Agent / policy router without creating any order route:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, and the first read-only Risk Agent policy router are active. Dashboard Plan D0-D9 is implemented locally, with the protected D8B User Guide now added. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and design deterministic execution-policy and kill-switch contracts without creating any broker-write route:
 
 1. Install or open a Docker-compatible runtime on the Mac: Docker Desktop, OrbStack, Podman, or Colima.
 2. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
@@ -626,6 +631,7 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 13. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
 13A. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` whenever LM Studio is running to feed available live read-only observations and paper-account context through Research Analyst and Strategy Lead shadow workflows.
 14. Run the Gemini model-list credential probe without text generation.
-15. Keep all outputs non-executable after Signal Integrity review until Risk Agent, execution policy, kill-switches, and broker-order contracts exist.
+15. Keep all outputs non-executable after Signal Integrity and Risk Agent policy review until execution policy, kill-switches, paper-order contracts, and broker-order contracts exist.
+16. Build the execution-policy registry and kill-switch checks as read-only contracts first: they must explain why an order is impossible before they ever expose a staged paper-order route.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.
