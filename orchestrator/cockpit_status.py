@@ -29,6 +29,7 @@ from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_sh
 from orchestrator.risk_agent import RiskPolicyReviewStore, risk_agent_summary
 from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
+from orchestrator.staged_paper_order import StagedPaperOrderReviewStore, staged_paper_order_summary
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
 from orchestrator.telegram_comms import telegram_status
@@ -118,7 +119,7 @@ def _dashboard_status(raw_status: str) -> str:
 
 
 def _module_authority(module_key: str, raw_status: str) -> str:
-    if module_key in {"execution_registry", "risk_agent", "execution_policy", "trade_layer"}:
+    if module_key in {"execution_registry", "risk_agent", "execution_policy", "staged_order_contract", "trade_layer"}:
         return "write_blocked"
     if module_key == "telegram_bot":
         return "notify_only"
@@ -146,6 +147,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "signal_integrity_gate": "auditing shadow signals without trade authority",
         "risk_agent": "reviewing policy without order authority",
         "execution_policy": "checking kill switches without order authority",
+        "staged_order_contract": "describing disabled paper-order staging",
         "telegram_bot": "outbound dry-run member communications",
         "live_bridge": "serving authenticated public-safe status snapshots",
         "cockpit": "static live shell frozen",
@@ -608,6 +610,37 @@ def _safe_execution_policy_reviews(settings: Settings) -> list[dict[str, Any]]:
     ]
 
 
+def _safe_staged_paper_order_reviews(settings: Settings) -> list[dict[str, Any]]:
+    try:
+        reviews = list(StagedPaperOrderReviewStore(settings=settings).read(limit=5))
+    except Exception:
+        reviews = []
+    return [
+        {
+            "schema_version": review.get("schema_version"),
+            "review_id": review.get("review_id"),
+            "source_execution_policy_review_id": review.get("source_execution_policy_review_id"),
+            "status": review.get("status"),
+            "instrument": review.get("instrument"),
+            "selected_venue": review.get("selected_venue"),
+            "venue_mode": review.get("venue_mode"),
+            "account_scope": review.get("account_scope"),
+            "hypothetical_order": review.get("hypothetical_order", {}),
+            "reconciliation_checks": review.get("reconciliation_checks", {}),
+            "blocked_reasons": review.get("blocked_reasons", []),
+            "required_next_steps": review.get("required_next_steps", []),
+            "execution_allowed": bool(review.get("execution_allowed")),
+            "staged_paper_order_created": bool(review.get("staged_paper_order_created")),
+            "paper_order_submittable": bool(review.get("paper_order_submittable")),
+            "broker_write_allowed": bool(review.get("broker_write_allowed")),
+            "live_capital_enabled": bool(review.get("live_capital_enabled")),
+            "reviewed_at": review.get("reviewed_at"),
+            "boundary": review.get("boundary"),
+        }
+        for review in reviews
+    ]
+
+
 def _build_cognition(settings: Settings) -> dict[str, Any]:
     summary = shadow_intelligence_summary(settings)
     store = ShadowSignalStore(settings=settings)
@@ -804,6 +837,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "paper account mirror context",
             "deterministic triage",
             "signal integrity review",
+            "staged paper-order contract hold",
             "strategy review pending",
             "signal integrity gate blocked",
             "trade layer not reached",
@@ -817,10 +851,12 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "paper_account_context_read_only",
             "signal_integrity_gate_requires_risk_agent",
             "execution_policy_read_only",
+            "staged_paper_order_contract_disabled",
         ],
         "boundary": (
             "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, "
-            "Risk Agent can only review policy, and Execution Policy kill-switch checks are read-only."
+            "Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, "
+            "and staged paper-order checks cannot create orders."
         ),
     }
 
@@ -1180,6 +1216,7 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         "summary": trade_intent_summary(settings) if store_status == "ok" else {"status": store_status},
         "risk_agent": _risk_agent_status(settings),
         "execution_policy": _execution_policy_status(settings),
+        "staged_paper_order": _staged_paper_order_status(settings),
         "store_status": store_status,
         "watching": [],
         "candidates": [],
@@ -1286,6 +1323,29 @@ def _execution_policy_status(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _staged_paper_order_status(settings: Settings) -> dict[str, Any]:
+    summary = staged_paper_order_summary(settings)
+    reviews = _safe_staged_paper_order_reviews(settings)
+    return {
+        "status": summary.get("status", "ok"),
+        "schema_version": summary.get("schema_version"),
+        "review_count": summary.get("review_count", 0),
+        "by_status": summary.get("by_status", {}),
+        "execution_allowed_count": summary.get("execution_allowed_count", 0),
+        "staged_paper_order_created_count": summary.get("staged_paper_order_created_count", 0),
+        "paper_order_submittable_count": summary.get("paper_order_submittable_count", 0),
+        "broker_write_allowed_count": summary.get("broker_write_allowed_count", 0),
+        "live_capital_enabled_count": summary.get("live_capital_enabled_count", 0),
+        "reconciliation_ready_count": summary.get("reconciliation_ready_count", 0),
+        "authority": "disabled_staged_order_contract",
+        "reviews": reviews,
+        "boundary": summary.get(
+            "boundary",
+            "Staged paper-order reviews are disabled and read-only; they cannot create staged orders.",
+        ),
+    }
+
+
 def _forbidden_actions() -> list[dict[str, str]]:
     return [
         {
@@ -1307,6 +1367,11 @@ def _forbidden_actions() -> list[dict[str, str]]:
             "key": "broker_write",
             "status": "blocked",
             "reason": "execution_venues_disabled_until_phase_5_gates",
+        },
+        {
+            "key": "staged_paper_order_creation",
+            "status": "blocked",
+            "reason": "staged_order_contract_is_disabled_read_only",
         },
         {
             "key": "tradingview_alert_execution",
@@ -1349,6 +1414,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "tradingview_alerts": _tradingview_alerts(settings),
         "risk_agent": _risk_agent_status(settings),
         "execution_policy": _execution_policy_status(settings),
+        "staged_paper_order": _staged_paper_order_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
@@ -1414,6 +1480,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "tradingview_alerts",
         "risk_agent",
         "execution_policy",
+        "staged_paper_order",
         "trade_layer",
         "communications",
         "forbidden_actions",

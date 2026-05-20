@@ -709,7 +709,8 @@ Build:
 - Blocked trades are rendered as first-class board items with blocked reason, failed/pending filter state, risk checks, and zero execution authority.
 - Risk Agent policy reviews are rendered as first-class board items with status, policy score, max-risk cap, account state, Signal Integrity reference, blocked reasons, required next steps, and badges for execution blocked, no paper order, no order created, and broker write blocked.
 - Execution Policy reviews are rendered as first-class board items with status, selected venue, venue mode, kill switches, execution checks, blocked reasons, required next steps, and badges for execution blocked, no staged paper order, no paper order created, broker write blocked, and live capital disabled.
-- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, Execution Policy and kill switches, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
+- Disabled staged paper-order reviews are rendered as first-class board items with status, hypothetical order, reconciliation checks, blocked reasons, required next steps, and badges for execution blocked, no staged order created, paper order not submittable, broker write blocked, and live capital disabled.
+- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, Execution Policy and kill switches, disabled staged paper-order contract, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
 
 Exit gate:
 
@@ -718,10 +719,12 @@ Exit gate:
 - `scripts/check_trade_intent.py` also validates D5 sample records, Akber filter fields, risk-check fields, zero risk size, no broker route boundary, and blocked-reason discipline.
 - `scripts/check_risk_agent_policy_router.py` validates the Risk Agent policy-review store, required checks, blocked/hold/readiness statuses, zero execution authority, zero paper-order authority, zero order creation, and zero broker-write authority.
 - `scripts/check_execution_policy_router.py` validates the Execution Policy review store, required kill switches, required execution checks, kill-switch holds, zero execution authority, zero staged-paper-order authority, zero paper-order creation, zero broker-write authority, and zero live-capital authority.
-- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, Execution Policy review fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
+- `scripts/check_staged_paper_order_contract.py` validates the disabled staged paper-order review store, hypothetical-order contract, reconciliation checks, zero staged-order creation, zero paper-order submission, zero broker-write authority, and zero live-capital authority.
+- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, Execution Policy review fields, disabled staged paper-order review fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
 - A local D5 render check proves the board renders 1 observed signal, 1 candidate, 1 blocked trade, and lifecycle states as `not connected yet`.
 - A local D5 render check proves the board also renders Risk Agent policy-review cards from the public-safe snapshot.
 - A local D5 render check proves the board also renders Execution Policy / kill-switch cards from the public-safe snapshot.
+- A local D5 render check proves the board also renders disabled staged paper-order review cards from the public-safe snapshot.
 - No broker order path exists yet.
 
 ### Phase D6 - Paper Account Mirror

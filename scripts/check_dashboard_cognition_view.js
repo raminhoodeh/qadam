@@ -175,6 +175,10 @@ async function main() {
     assert(timeline.includes("paper account mirror context"), "analysis timeline does not include paper account context");
     assert(timeline.includes("signal integrity review"), "analysis timeline does not include signal integrity review");
     assert(
+        timeline.includes("staged paper-order contract hold"),
+        "analysis timeline does not include staged paper-order contract hold"
+    );
+    assert(
         blockedReasons.includes("paper_account_context_read_only"),
         "blocked reasons do not include paper account read-only context"
     );
@@ -187,8 +191,13 @@ async function main() {
         "blocked reasons do not include the execution-policy boundary"
     );
     assert(
+        blockedReasons.includes("staged_paper_order_contract_disabled"),
+        "blocked reasons do not include the staged paper-order boundary"
+    );
+    assert(
         /Signal Integrity Gate can block or hold signals/i.test(cognition.boundary || "")
-            && /Execution Policy kill-switch checks are read-only/i.test(cognition.boundary || ""),
+            && /Execution Policy kill-switch checks are read-only/i.test(cognition.boundary || "")
+            && /staged paper-order checks cannot create orders/i.test(cognition.boundary || ""),
         "cognition boundary is weak or missing"
     );
 
@@ -311,7 +320,7 @@ async function main() {
     assertIncludes(
         rendered,
         "[data-cognition]",
-        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, and Execution Policy kill-switch checks are read-only."
+        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, and staged paper-order checks cannot create orders."
     );
 
     const emptyStatus = {
@@ -329,7 +338,7 @@ async function main() {
             signal_integrity_reviews: [],
             analysis_timeline: [],
             blocked_reasons: [],
-            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, and Execution Policy kill-switch checks are read-only."
+            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, and staged paper-order checks cannot create orders."
         }
     };
     const emptyRendered = await renderWithStatus(emptyStatus);

@@ -660,10 +660,10 @@ These apply from Phase 0 onward.
 
 ## Recommended Next Implementation Batch
 
-The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts, safe provider probes, controlled local model calls, read-only paper-account context, dashboard rendering, and the first Signal Integrity Gate have started. The next batch should harden durable replay and begin Risk Agent / policy-router design without creating any order route.
+The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts, safe provider probes, controlled local model calls, read-only paper-account context, dashboard rendering, Signal Integrity Gate, Risk Agent policy router, Execution Policy / kill-switch router, and disabled staged paper-order contract have started. The next batch should harden durable replay and begin broker adapter / reconciliation design without creating any order route.
 
 1. Start LM Studio and verify `gemma-4-e4b` through the `/models` readiness probe.
 2. Run Gemini model-list credential validation without text generation.
 3. Keep running `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` when LM Studio is available.
 4. Keep `scripts/check_signal_integrity_gate.py` green and review why signals are blocked or held.
-5. Keep the Risk Agent and Execution Policy routers read-only and add a disabled staged-paper-order contract before any broker-order route exists.
+5. Keep the Risk Agent, Execution Policy, and disabled staged paper-order contract read-only while adding broker echo, idempotency, Event Log prewrite, duplicate-order guard, and reconciliation contracts before any broker-order route exists.

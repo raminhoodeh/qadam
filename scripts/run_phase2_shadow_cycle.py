@@ -79,6 +79,25 @@ def main() -> int:
     print(f"phase2_shadow_cycle_execution_policy_paper_order_created_count={report['execution_policy_paper_order_created_count']}")
     print(f"phase2_shadow_cycle_execution_policy_broker_write_allowed_count={report['execution_policy_broker_write_allowed_count']}")
     print(f"phase2_shadow_cycle_execution_policy_live_capital_enabled_count={report['execution_policy_live_capital_enabled_count']}")
+    print(f"phase2_shadow_cycle_staged_paper_order_status={report['staged_paper_order_status']}")
+    print(f"phase2_shadow_cycle_staged_paper_order_review_count={report['staged_paper_order_review_count']}")
+    print(
+        "phase2_shadow_cycle_staged_paper_order_blocked_before_staging_count="
+        f"{report['staged_paper_order_blocked_before_staging_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_staged_paper_order_reconciliation_hold_count="
+        f"{report['staged_paper_order_reconciliation_hold_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_staged_paper_order_disabled_contract_hold_count="
+        f"{report['staged_paper_order_disabled_contract_hold_count']}"
+    )
+    print(f"phase2_shadow_cycle_staged_paper_order_execution_allowed_count={report['staged_paper_order_execution_allowed_count']}")
+    print(f"phase2_shadow_cycle_staged_paper_order_created_count={report['staged_paper_order_created_count']}")
+    print(f"phase2_shadow_cycle_staged_paper_order_submittable_count={report['staged_paper_order_submittable_count']}")
+    print(f"phase2_shadow_cycle_staged_paper_order_broker_write_allowed_count={report['staged_paper_order_broker_write_allowed_count']}")
+    print(f"phase2_shadow_cycle_staged_paper_order_live_capital_enabled_count={report['staged_paper_order_live_capital_enabled_count']}")
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
     print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
@@ -132,6 +151,16 @@ def main() -> int:
     if report["execution_policy_broker_write_allowed_count"] != 0:
         return 1
     if report["execution_policy_live_capital_enabled_count"] != 0:
+        return 1
+    if report["staged_paper_order_execution_allowed_count"] != 0:
+        return 1
+    if report["staged_paper_order_created_count"] != 0:
+        return 1
+    if report["staged_paper_order_submittable_count"] != 0:
+        return 1
+    if report["staged_paper_order_broker_write_allowed_count"] != 0:
+        return 1
+    if report["staged_paper_order_live_capital_enabled_count"] != 0:
         return 1
     return 0
 

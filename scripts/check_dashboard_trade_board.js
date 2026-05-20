@@ -184,6 +184,73 @@ const REQUIRED_EXECUTION_POLICY_CHECKS = [
 
 const REQUIRED_EXECUTION_KILL_SWITCHES = ["data", "global", "model", "strategy", "venue"];
 
+const REQUIRED_STAGED_ORDER_FIELDS = [
+    "authority",
+    "boundary",
+    "broker_write_allowed_count",
+    "by_status",
+    "execution_allowed_count",
+    "live_capital_enabled_count",
+    "paper_order_submittable_count",
+    "reconciliation_ready_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "staged_paper_order_created_count",
+    "status"
+];
+
+const REQUIRED_STAGED_ORDER_REVIEW_FIELDS = [
+    "account_scope",
+    "blocked_reasons",
+    "boundary",
+    "broker_write_allowed",
+    "execution_allowed",
+    "hypothetical_order",
+    "instrument",
+    "live_capital_enabled",
+    "paper_order_submittable",
+    "reconciliation_checks",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "source_execution_policy_review_id",
+    "staged_paper_order_created",
+    "status",
+    "venue_mode"
+];
+
+const REQUIRED_HYPOTHETICAL_ORDER_FIELDS = [
+    "direction",
+    "event_log_ref",
+    "idempotency_key",
+    "instrument",
+    "invalidation",
+    "notional_gbp",
+    "order_type",
+    "quantity",
+    "risk_gbp",
+    "status",
+    "venue"
+];
+
+const REQUIRED_RECONCILIATION_CHECKS = [
+    "broker_route",
+    "duplicate_order_guard",
+    "event_log_prewrite",
+    "execution_policy",
+    "idempotency_key",
+    "live_capital",
+    "paper_account_mirror",
+    "paper_account_write_authority",
+    "post_submit_reconciliation",
+    "postmortem_link",
+    "pre_trade_snapshot",
+    "staging_contract"
+];
+
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -207,6 +274,8 @@ async function main() {
     const riskReviews = Array.isArray(riskAgent.reviews) ? riskAgent.reviews : [];
     const executionPolicy = tradeLayer.execution_policy || status.execution_policy || {};
     const executionPolicyReviews = Array.isArray(executionPolicy.reviews) ? executionPolicy.reviews : [];
+    const stagedPaperOrder = tradeLayer.staged_paper_order || status.staged_paper_order || {};
+    const stagedPaperOrderReviews = Array.isArray(stagedPaperOrder.reviews) ? stagedPaperOrder.reviews : [];
 
     assert(tradeLayer.store_status === "ok", "trade intent store is not ok");
     assert(summary.status === "ok", "trade summary is not ok");
@@ -270,6 +339,32 @@ async function main() {
         assert(/cannot stage orders/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
     }
 
+    const missingStagedOrder = missingFields(stagedPaperOrder, REQUIRED_STAGED_ORDER_FIELDS);
+    assert(!missingStagedOrder.length, `staged paper-order missing fields: ${missingStagedOrder.join(", ")}`);
+    assert(stagedPaperOrder.status === "ok", "staged paper-order contract is not ok");
+    assert(stagedPaperOrder.authority === "disabled_staged_order_contract", "staged paper-order authority mismatch");
+    assert(stagedPaperOrder.execution_allowed_count === 0, "staged paper-order allows execution");
+    assert(stagedPaperOrder.staged_paper_order_created_count === 0, "staged paper-order created staged orders");
+    assert(stagedPaperOrder.paper_order_submittable_count === 0, "staged paper-order is submittable");
+    assert(stagedPaperOrder.broker_write_allowed_count === 0, "staged paper-order allows broker writes");
+    assert(stagedPaperOrder.live_capital_enabled_count === 0, "staged paper-order enables live capital");
+    assert(/cannot create staged orders/i.test(stagedPaperOrder.boundary || ""), "staged paper-order boundary is weak");
+    assert(stagedPaperOrderReviews.length >= 1, "staged paper-order reviews are missing");
+
+    for (const review of stagedPaperOrderReviews) {
+        const missing = missingFields(review, REQUIRED_STAGED_ORDER_REVIEW_FIELDS);
+        assert(!missing.length, `${review.review_id || "staged order review"} missing fields: ${missing.join(", ")}`);
+        assert(review.execution_allowed === false, `${review.review_id} allows execution`);
+        assert(review.staged_paper_order_created === false, `${review.review_id} created staged order`);
+        assert(review.paper_order_submittable === false, `${review.review_id} is submittable`);
+        assert(review.broker_write_allowed === false, `${review.review_id} allows broker write`);
+        assert(review.live_capital_enabled === false, `${review.review_id} enables live capital`);
+        assert(REQUIRED_HYPOTHETICAL_ORDER_FIELDS.every((field) => hasOwn(review.hypothetical_order, field)), `${review.review_id} hypothetical order is incomplete`);
+        assert(review.hypothetical_order.status === "not_created", `${review.review_id} hypothetical order was created`);
+        assert(REQUIRED_RECONCILIATION_CHECKS.every((field) => hasOwn(review.reconciliation_checks, field)), `${review.review_id} reconciliation checks are incomplete`);
+        assert(/cannot create a staged order/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
+    }
+
     for (const signal of observedSignals) {
         if (signal.source_type !== "tradingview_paid_alert") continue;
         const missing = missingFields(signal, REQUIRED_OBSERVED_SIGNAL_FIELDS);
@@ -326,6 +421,11 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "Execution checks");
     assertIncludes(rendered, "[data-trade-layer]", "no staged paper order");
     assertIncludes(rendered, "[data-trade-layer]", "live capital disabled");
+    assertIncludes(rendered, "[data-trade-layer]", "Disabled staged paper-order contract");
+    assertIncludes(rendered, "[data-trade-layer]", "Hypothetical order");
+    assertIncludes(rendered, "[data-trade-layer]", "Reconciliation checks");
+    assertIncludes(rendered, "[data-trade-layer]", "no staged order created");
+    assertIncludes(rendered, "[data-trade-layer]", "paper order not submittable");
     assertIncludes(rendered, "[data-trade-layer]", "No broker order path exists");
     assertIncludes(rendered, "[data-trade-layer]", "no broker route exists");
     assertIncludes(rendered, "[data-trade-layer]", "0 execution allowed");
@@ -375,6 +475,21 @@ async function main() {
                 reviews: [],
                 boundary: "Execution policy is read-only and cannot stage paper orders or write to brokers."
             },
+            staged_paper_order: {
+                status: "ok",
+                schema_version: 1,
+                review_count: 0,
+                by_status: {},
+                execution_allowed_count: 0,
+                staged_paper_order_created_count: 0,
+                paper_order_submittable_count: 0,
+                broker_write_allowed_count: 0,
+                live_capital_enabled_count: 0,
+                reconciliation_ready_count: 0,
+                authority: "disabled_staged_order_contract",
+                reviews: [],
+                boundary: "Staged paper-order contract is disabled and read-only; it cannot create staged orders."
+            },
             store_status: "ok",
             watching: [],
             candidates: [],
@@ -394,6 +509,7 @@ async function main() {
     assertIncludes(emptyRendered, "[data-trade-layer]", "No blocked trades");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No Risk Agent reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No execution policy reviews yet");
+    assertIncludes(emptyRendered, "[data-trade-layer]", "No staged paper-order reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "not connected yet");
 
     console.log("Dashboard trade board contract OK");

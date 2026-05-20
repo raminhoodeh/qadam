@@ -246,6 +246,73 @@ EXECUTION_POLICY_REQUIRED_CHECKS = {
 
 EXECUTION_POLICY_REQUIRED_KILL_SWITCHES = {"data", "global", "model", "strategy", "venue"}
 
+STAGED_PAPER_ORDER_REQUIRED_FIELDS = {
+    "authority",
+    "boundary",
+    "broker_write_allowed_count",
+    "by_status",
+    "execution_allowed_count",
+    "live_capital_enabled_count",
+    "paper_order_submittable_count",
+    "reconciliation_ready_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "staged_paper_order_created_count",
+    "status",
+}
+
+STAGED_PAPER_ORDER_REVIEW_REQUIRED_FIELDS = {
+    "account_scope",
+    "blocked_reasons",
+    "boundary",
+    "broker_write_allowed",
+    "execution_allowed",
+    "hypothetical_order",
+    "instrument",
+    "live_capital_enabled",
+    "paper_order_submittable",
+    "reconciliation_checks",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "source_execution_policy_review_id",
+    "staged_paper_order_created",
+    "status",
+    "venue_mode",
+}
+
+STAGED_PAPER_ORDER_HYPOTHETICAL_REQUIRED_FIELDS = {
+    "direction",
+    "event_log_ref",
+    "idempotency_key",
+    "instrument",
+    "invalidation",
+    "notional_gbp",
+    "order_type",
+    "quantity",
+    "risk_gbp",
+    "status",
+    "venue",
+}
+
+STAGED_PAPER_ORDER_RECONCILIATION_REQUIRED_CHECKS = {
+    "broker_route",
+    "duplicate_order_guard",
+    "event_log_prewrite",
+    "execution_policy",
+    "idempotency_key",
+    "live_capital",
+    "paper_account_mirror",
+    "paper_account_write_authority",
+    "post_submit_reconciliation",
+    "postmortem_link",
+    "pre_trade_snapshot",
+    "staging_contract",
+}
+
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
 TRADE_INTENT_REQUIRED_FIELDS = {
@@ -608,6 +675,8 @@ def main() -> int:
     print(f"cockpit_status_risk_agent_review_count={payload.get('risk_agent', {}).get('review_count')}")
     print(f"cockpit_status_execution_policy_status={payload.get('execution_policy', {}).get('status')}")
     print(f"cockpit_status_execution_policy_review_count={payload.get('execution_policy', {}).get('review_count')}")
+    print(f"cockpit_status_staged_paper_order_status={payload.get('staged_paper_order', {}).get('status')}")
+    print(f"cockpit_status_staged_paper_order_review_count={payload.get('staged_paper_order', {}).get('review_count')}")
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -1311,6 +1380,86 @@ def main() -> int:
             return 1
         if "cannot stage orders" not in review.get("boundary", ""):
             print("cockpit_status_execution_policy_review_boundary_weak=true")
+            return 1
+
+    staged_order = payload.get("staged_paper_order", {})
+    missing_staged_order_fields = sorted(STAGED_PAPER_ORDER_REQUIRED_FIELDS - set(staged_order))
+    if missing_staged_order_fields:
+        print("cockpit_status_staged_paper_order_fields_missing=" + ",".join(missing_staged_order_fields))
+        return 1
+    if staged_order.get("status") != "ok":
+        print("cockpit_status_staged_paper_order_not_ok=true")
+        return 1
+    if staged_order.get("authority") != "disabled_staged_order_contract":
+        print("cockpit_status_staged_paper_order_authority_mismatch=true")
+        return 1
+    if staged_order.get("execution_allowed_count") != 0:
+        print("cockpit_status_staged_paper_order_execution_allowed=true")
+        return 1
+    if staged_order.get("staged_paper_order_created_count") != 0:
+        print("cockpit_status_staged_paper_order_created=true")
+        return 1
+    if staged_order.get("paper_order_submittable_count") != 0:
+        print("cockpit_status_staged_paper_order_submittable=true")
+        return 1
+    if staged_order.get("broker_write_allowed_count") != 0:
+        print("cockpit_status_staged_paper_order_broker_write_allowed=true")
+        return 1
+    if staged_order.get("live_capital_enabled_count") != 0:
+        print("cockpit_status_staged_paper_order_live_capital_enabled=true")
+        return 1
+    if "cannot create staged orders" not in staged_order.get("boundary", ""):
+        print("cockpit_status_staged_paper_order_boundary_weak=true")
+        return 1
+    if not isinstance(staged_order.get("reviews"), list) or not staged_order["reviews"]:
+        print("cockpit_status_staged_paper_order_reviews_missing=true")
+        return 1
+    for review in staged_order.get("reviews", []):
+        missing_fields = sorted(STAGED_PAPER_ORDER_REVIEW_REQUIRED_FIELDS - set(review))
+        if missing_fields:
+            print(
+                "cockpit_status_staged_paper_order_review_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        if review.get("execution_allowed") is not False:
+            print("cockpit_status_staged_paper_order_review_execution_allowed=true")
+            return 1
+        if review.get("staged_paper_order_created") is not False:
+            print("cockpit_status_staged_paper_order_review_created=true")
+            return 1
+        if review.get("paper_order_submittable") is not False:
+            print("cockpit_status_staged_paper_order_review_submittable=true")
+            return 1
+        if review.get("broker_write_allowed") is not False:
+            print("cockpit_status_staged_paper_order_review_broker_write_allowed=true")
+            return 1
+        if review.get("live_capital_enabled") is not False:
+            print("cockpit_status_staged_paper_order_review_live_capital_enabled=true")
+            return 1
+        missing_hypothetical = sorted(
+            STAGED_PAPER_ORDER_HYPOTHETICAL_REQUIRED_FIELDS - set(review.get("hypothetical_order", {}))
+        )
+        if missing_hypothetical:
+            print(
+                "cockpit_status_staged_paper_order_hypothetical_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_hypothetical)}"
+            )
+            return 1
+        if review.get("hypothetical_order", {}).get("status") != "not_created":
+            print("cockpit_status_staged_paper_order_hypothetical_created=true")
+            return 1
+        missing_checks = sorted(
+            STAGED_PAPER_ORDER_RECONCILIATION_REQUIRED_CHECKS - set(review.get("reconciliation_checks", {}))
+        )
+        if missing_checks:
+            print(
+                "cockpit_status_staged_paper_order_checks_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_checks)}"
+            )
+            return 1
+        if "cannot create a staged order" not in review.get("boundary", ""):
+            print("cockpit_status_staged_paper_order_review_boundary_weak=true")
             return 1
 
     tradingview = payload["tradingview_alerts"]
