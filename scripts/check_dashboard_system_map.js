@@ -71,6 +71,7 @@ async function main() {
         "Risk Agent",
         "Execution Policy",
         "Staged Order Contract",
+        "Broker Reconciliation",
         "Trade Layer",
         "Paper Account Mirror",
         "Postmortem Loop",

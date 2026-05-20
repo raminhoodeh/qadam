@@ -330,9 +330,12 @@ Current implementation start:
 - The first Signal Integrity Gate exists in `orchestrator/signal_integrity.py`; it reviews recent shadow signals, applies Akber 6-stage filter state, and can only block, hold, or mark a signal ready for future risk-shadow review.
 - The first Risk Agent policy router exists in `orchestrator/risk_agent.py`; it reviews Signal Integrity outputs and Trade Intent records, but can only block, hold, or mark a record shadow-ready for later execution-policy review.
 - The first Execution Policy / kill-switch router exists in `orchestrator/execution_policy.py`; it reviews Risk Agent outputs, selected venue state, kill-switch state, and staged-order readiness, but can only block, hold, or mark a record shadow-ready for later paper-order contract review.
+- The disabled staged paper-order contract exists in `orchestrator/staged_paper_order.py`; it describes hypothetical order staging and reconciliation checks, but keeps staged order creation, paper-order submission, broker writes, and live capital disabled.
+- The read-only broker reconciliation contract exists in `orchestrator/broker_reconciliation.py`; it describes broker echo, idempotency, Event Log prewrite, duplicate-order guard, post-submit reconciliation, and postmortem requirements, but keeps paper-order submission, broker writes, and live capital disabled.
 - Shadow Signal store is local-only and all generated signals have `execution_allowed=false`.
 - Risk Agent policy reviews are local-only and all generated reviews have `execution_allowed=false`, `paper_order_allowed=false`, `order_created=false`, and `broker_write_allowed=false`.
 - Execution Policy reviews are local-only and all generated reviews have `execution_allowed=false`, `staged_paper_order_allowed=false`, `paper_order_created=false`, `broker_write_allowed=false`, and `live_capital_enabled=false`.
+- Staged paper-order and broker reconciliation reviews are local-only and all generated reviews keep staged order creation, paper-order submission, broker writes, and live capital at zero.
 - Cockpit can show Shadow Intelligence status.
 
 ### Phase 2 Modules
@@ -660,10 +663,10 @@ These apply from Phase 0 onward.
 
 ## Recommended Next Implementation Batch
 
-The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts, safe provider probes, controlled local model calls, read-only paper-account context, dashboard rendering, Signal Integrity Gate, Risk Agent policy router, Execution Policy / kill-switch router, and disabled staged paper-order contract have started. The next batch should harden durable replay and begin broker adapter / reconciliation design without creating any order route.
+The Agent OS runtime layer is in place, and Phase 2 shadow-intelligence contracts, safe provider probes, controlled local model calls, read-only paper-account context, dashboard rendering, Signal Integrity Gate, Risk Agent policy router, Execution Policy / kill-switch router, disabled staged paper-order contract, and read-only broker reconciliation contract have started. The next batch should harden durable replay and begin a dry-run paper-submit adapter contract without creating any real broker order route.
 
 1. Start LM Studio and verify `gemma-4-e4b` through the `/models` readiness probe.
 2. Run Gemini model-list credential validation without text generation.
 3. Keep running `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` when LM Studio is available.
 4. Keep `scripts/check_signal_integrity_gate.py` green and review why signals are blocked or held.
-5. Keep the Risk Agent, Execution Policy, and disabled staged paper-order contract read-only while adding broker echo, idempotency, Event Log prewrite, duplicate-order guard, and reconciliation contracts before any broker-order route exists.
+5. Keep the Risk Agent, Execution Policy, disabled staged paper-order contract, and broker reconciliation contract read-only while designing the next dry-run paper-submit receipt layer before any broker-order route exists.

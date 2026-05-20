@@ -251,6 +251,88 @@ const REQUIRED_RECONCILIATION_CHECKS = [
     "staging_contract"
 ];
 
+const REQUIRED_BROKER_RECONCILIATION_FIELDS = [
+    "authority",
+    "boundary",
+    "broker_echo_verified_count",
+    "broker_write_allowed_count",
+    "by_status",
+    "duplicate_order_guard_ready_count",
+    "event_log_prewrite_created_count",
+    "idempotency_key_allocated_count",
+    "live_capital_enabled_count",
+    "paper_order_submit_allowed_count",
+    "post_submit_reconciliation_ready_count",
+    "postmortem_link_ready_count",
+    "pre_trade_snapshot_created_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "status"
+];
+
+const REQUIRED_BROKER_RECONCILIATION_REVIEW_FIELDS = [
+    "account_scope",
+    "blocked_reasons",
+    "boundary",
+    "broker_echo",
+    "broker_echo_verified",
+    "broker_write_allowed",
+    "duplicate_order_guard_ready",
+    "event_log_prewrite_created",
+    "hypothetical_order",
+    "idempotency_key_allocated",
+    "instrument",
+    "live_capital_enabled",
+    "paper_order_submit_allowed",
+    "post_submit_reconciliation_ready",
+    "postmortem_link_ready",
+    "pre_trade_snapshot_created",
+    "reconciliation_checks",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "source_execution_policy_review_id",
+    "source_staged_paper_order_review_id",
+    "status",
+    "venue_mode"
+];
+
+const REQUIRED_BROKER_ECHO_FIELDS = [
+    "ack_status",
+    "adapter",
+    "client_order_id",
+    "external_order_id",
+    "fill_status",
+    "raw_broker_payload_stored",
+    "status",
+    "submitted_at",
+    "venue"
+];
+
+const REQUIRED_BROKER_RECONCILIATION_CHECKS = [
+    "broker_adapter_mode",
+    "broker_echo",
+    "broker_route",
+    "duplicate_order_guard",
+    "event_log_prewrite",
+    "idempotency_key",
+    "kill_switch",
+    "live_capital",
+    "paper_account_mirror",
+    "paper_account_write_authority",
+    "paper_order_submittable",
+    "post_submit_reconciliation",
+    "postmortem_link",
+    "pre_trade_snapshot",
+    "source_staged_status",
+    "staged_order_contract",
+    "staged_order_created",
+    "venue_registry_write_health"
+];
+
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -276,6 +358,10 @@ async function main() {
     const executionPolicyReviews = Array.isArray(executionPolicy.reviews) ? executionPolicy.reviews : [];
     const stagedPaperOrder = tradeLayer.staged_paper_order || status.staged_paper_order || {};
     const stagedPaperOrderReviews = Array.isArray(stagedPaperOrder.reviews) ? stagedPaperOrder.reviews : [];
+    const brokerReconciliation = tradeLayer.broker_reconciliation || status.broker_reconciliation || {};
+    const brokerReconciliationReviews = Array.isArray(brokerReconciliation.reviews)
+        ? brokerReconciliation.reviews
+        : [];
 
     assert(tradeLayer.store_status === "ok", "trade intent store is not ok");
     assert(summary.status === "ok", "trade summary is not ok");
@@ -365,6 +451,80 @@ async function main() {
         assert(/cannot create a staged order/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
     }
 
+    const missingBrokerReconciliation = missingFields(
+        brokerReconciliation,
+        REQUIRED_BROKER_RECONCILIATION_FIELDS
+    );
+    assert(
+        !missingBrokerReconciliation.length,
+        `broker reconciliation missing fields: ${missingBrokerReconciliation.join(", ")}`
+    );
+    assert(brokerReconciliation.status === "ok", "broker reconciliation contract is not ok");
+    assert(
+        brokerReconciliation.authority === "read_only_broker_reconciliation",
+        "broker reconciliation authority mismatch"
+    );
+    [
+        "idempotency_key_allocated_count",
+        "event_log_prewrite_created_count",
+        "pre_trade_snapshot_created_count",
+        "duplicate_order_guard_ready_count",
+        "broker_echo_verified_count",
+        "post_submit_reconciliation_ready_count",
+        "postmortem_link_ready_count",
+        "paper_order_submit_allowed_count",
+        "broker_write_allowed_count",
+        "live_capital_enabled_count"
+    ].forEach((field) => {
+        assert(brokerReconciliation[field] === 0, `broker reconciliation ${field} is non-zero`);
+    });
+    assert(
+        /cannot submit paper orders/i.test(brokerReconciliation.boundary || ""),
+        "broker reconciliation boundary is weak"
+    );
+    assert(brokerReconciliationReviews.length >= 1, "broker reconciliation reviews are missing");
+
+    for (const review of brokerReconciliationReviews) {
+        const missing = missingFields(review, REQUIRED_BROKER_RECONCILIATION_REVIEW_FIELDS);
+        assert(!missing.length, `${review.review_id || "broker reconciliation review"} missing fields: ${missing.join(", ")}`);
+        [
+            "idempotency_key_allocated",
+            "event_log_prewrite_created",
+            "pre_trade_snapshot_created",
+            "duplicate_order_guard_ready",
+            "broker_echo_verified",
+            "post_submit_reconciliation_ready",
+            "postmortem_link_ready",
+            "paper_order_submit_allowed",
+            "broker_write_allowed",
+            "live_capital_enabled"
+        ].forEach((field) => {
+            assert(review[field] === false, `${review.review_id} has ${field} enabled`);
+        });
+        assert(
+            REQUIRED_BROKER_ECHO_FIELDS.every((field) => hasOwn(review.broker_echo, field)),
+            `${review.review_id} broker echo is incomplete`
+        );
+        assert(review.broker_echo.status === "not_requested", `${review.review_id} requested broker echo`);
+        assert(
+            REQUIRED_BROKER_RECONCILIATION_CHECKS.every((field) => hasOwn(review.reconciliation_checks, field)),
+            `${review.review_id} broker reconciliation checks are incomplete`
+        );
+        assert(
+            review.reconciliation_checks.broker_route === "fail_closed_no_broker_submit_route",
+            `${review.review_id} broker route is not fail closed`
+        );
+        assert(
+            review.reconciliation_checks.idempotency_key === "fail_not_allocated",
+            `${review.review_id} allocated an idempotency key`
+        );
+        assert(
+            review.reconciliation_checks.event_log_prewrite === "fail_not_written",
+            `${review.review_id} wrote an Event Log prewrite`
+        );
+        assert(/cannot submit paper orders/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
+    }
+
     for (const signal of observedSignals) {
         if (signal.source_type !== "tradingview_paid_alert") continue;
         const missing = missingFields(signal, REQUIRED_OBSERVED_SIGNAL_FIELDS);
@@ -426,6 +586,13 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "Reconciliation checks");
     assertIncludes(rendered, "[data-trade-layer]", "no staged order created");
     assertIncludes(rendered, "[data-trade-layer]", "paper order not submittable");
+    assertIncludes(rendered, "[data-trade-layer]", "Read-only broker reconciliation");
+    assertIncludes(rendered, "[data-trade-layer]", "Broker echo");
+    assertIncludes(rendered, "[data-trade-layer]", "idempotency not allocated");
+    assertIncludes(rendered, "[data-trade-layer]", "Event Log prewrite not created");
+    assertIncludes(rendered, "[data-trade-layer]", "duplicate guard not ready");
+    assertIncludes(rendered, "[data-trade-layer]", "broker echo not verified");
+    assertIncludes(rendered, "[data-trade-layer]", "paper submit blocked");
     assertIncludes(rendered, "[data-trade-layer]", "No broker order path exists");
     assertIncludes(rendered, "[data-trade-layer]", "no broker route exists");
     assertIncludes(rendered, "[data-trade-layer]", "0 execution allowed");
@@ -490,6 +657,25 @@ async function main() {
                 reviews: [],
                 boundary: "Staged paper-order contract is disabled and read-only; it cannot create staged orders."
             },
+            broker_reconciliation: {
+                status: "ok",
+                schema_version: 1,
+                review_count: 0,
+                by_status: {},
+                idempotency_key_allocated_count: 0,
+                event_log_prewrite_created_count: 0,
+                pre_trade_snapshot_created_count: 0,
+                duplicate_order_guard_ready_count: 0,
+                broker_echo_verified_count: 0,
+                post_submit_reconciliation_ready_count: 0,
+                postmortem_link_ready_count: 0,
+                paper_order_submit_allowed_count: 0,
+                broker_write_allowed_count: 0,
+                live_capital_enabled_count: 0,
+                authority: "read_only_broker_reconciliation",
+                reviews: [],
+                boundary: "Broker reconciliation is read-only and cannot submit paper orders."
+            },
             store_status: "ok",
             watching: [],
             candidates: [],
@@ -510,6 +696,7 @@ async function main() {
     assertIncludes(emptyRendered, "[data-trade-layer]", "No Risk Agent reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No execution policy reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No staged paper-order reviews yet");
+    assertIncludes(emptyRendered, "[data-trade-layer]", "No broker reconciliation reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "not connected yet");
 
     console.log("Dashboard trade board contract OK");

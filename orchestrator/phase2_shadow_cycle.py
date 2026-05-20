@@ -23,6 +23,7 @@ from orchestrator.adapters import (
     fetch_rss_sample,
 )
 from orchestrator.agent_runtime import create_shadow_triage_packet
+from orchestrator.broker_reconciliation import run_broker_reconciliation_contract
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.execution_policy import run_execution_policy_router
@@ -204,6 +205,11 @@ def run_phase2_shadow_cycle(
     risk_result = run_risk_policy_router(limit=research_limit, settings=settings, event_log=event_log)
     execution_policy_result = run_execution_policy_router(limit=research_limit, settings=settings, event_log=event_log)
     staged_order_result = run_staged_paper_order_contract(limit=research_limit, settings=settings, event_log=event_log)
+    broker_reconciliation_result = run_broker_reconciliation_contract(
+        limit=research_limit,
+        settings=settings,
+        event_log=event_log,
+    )
     local_result = run_local_research_analyst_inference(
         limit=research_limit,
         live=live_local_llm,
@@ -268,6 +274,57 @@ def run_phase2_shadow_cycle(
         "staged_paper_order_submittable_count": staged_order_result.get("paper_order_submittable_count", 0),
         "staged_paper_order_broker_write_allowed_count": staged_order_result.get("broker_write_allowed_count", 0),
         "staged_paper_order_live_capital_enabled_count": staged_order_result.get("live_capital_enabled_count", 0),
+        "broker_reconciliation_status": broker_reconciliation_result.get("status"),
+        "broker_reconciliation_review_count": broker_reconciliation_result.get("review_count", 0),
+        "broker_reconciliation_blocked_before_count": broker_reconciliation_result.get(
+            "blocked_before_broker_reconciliation_count",
+            0,
+        ),
+        "broker_reconciliation_route_closed_count": broker_reconciliation_result.get("broker_route_closed_count", 0),
+        "broker_reconciliation_contract_hold_count": broker_reconciliation_result.get(
+            "reconciliation_contract_hold_count",
+            0,
+        ),
+        "broker_reconciliation_idempotency_key_allocated_count": broker_reconciliation_result.get(
+            "idempotency_key_allocated_count",
+            0,
+        ),
+        "broker_reconciliation_event_log_prewrite_created_count": broker_reconciliation_result.get(
+            "event_log_prewrite_created_count",
+            0,
+        ),
+        "broker_reconciliation_pre_trade_snapshot_created_count": broker_reconciliation_result.get(
+            "pre_trade_snapshot_created_count",
+            0,
+        ),
+        "broker_reconciliation_duplicate_order_guard_ready_count": broker_reconciliation_result.get(
+            "duplicate_order_guard_ready_count",
+            0,
+        ),
+        "broker_reconciliation_broker_echo_verified_count": broker_reconciliation_result.get(
+            "broker_echo_verified_count",
+            0,
+        ),
+        "broker_reconciliation_post_submit_reconciliation_ready_count": broker_reconciliation_result.get(
+            "post_submit_reconciliation_ready_count",
+            0,
+        ),
+        "broker_reconciliation_postmortem_link_ready_count": broker_reconciliation_result.get(
+            "postmortem_link_ready_count",
+            0,
+        ),
+        "broker_reconciliation_paper_order_submit_allowed_count": broker_reconciliation_result.get(
+            "paper_order_submit_allowed_count",
+            0,
+        ),
+        "broker_reconciliation_broker_write_allowed_count": broker_reconciliation_result.get(
+            "broker_write_allowed_count",
+            0,
+        ),
+        "broker_reconciliation_live_capital_enabled_count": broker_reconciliation_result.get(
+            "live_capital_enabled_count",
+            0,
+        ),
         "local_research_status": local_result.get("status"),
         "local_research_mode": local_result.get("mode"),
         "local_research_assessment_id": assessment.get("assessment_id") if assessment else None,
@@ -291,7 +348,8 @@ def run_phase2_shadow_cycle(
             "shadow signals. Risk Agent policy review is read-only, so execution "
             "and paper orders remain impossible. Execution Policy and kill-switch "
             "review is also read-only, and staged paper-order checks can only "
-            "describe blocked hypothetical staging."
+            "describe blocked hypothetical staging. Broker reconciliation checks "
+            "can only describe read-only submit prerequisites."
         ),
     }
     report_path = _write_report(settings, report)
@@ -307,6 +365,7 @@ def run_phase2_shadow_cycle(
             "risk_agent_review_count": report["risk_agent_review_count"],
             "execution_policy_review_count": report["execution_policy_review_count"],
             "staged_paper_order_review_count": report["staged_paper_order_review_count"],
+            "broker_reconciliation_review_count": report["broker_reconciliation_review_count"],
             "strategy_lead_packet_id": strategy_packet.packet_id,
             "execution_allowed": False,
             "paper_order_allowed": False,

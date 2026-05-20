@@ -313,6 +313,88 @@ STAGED_PAPER_ORDER_RECONCILIATION_REQUIRED_CHECKS = {
     "staging_contract",
 }
 
+BROKER_RECONCILIATION_REQUIRED_FIELDS = {
+    "authority",
+    "boundary",
+    "broker_echo_verified_count",
+    "broker_write_allowed_count",
+    "by_status",
+    "duplicate_order_guard_ready_count",
+    "event_log_prewrite_created_count",
+    "idempotency_key_allocated_count",
+    "live_capital_enabled_count",
+    "paper_order_submit_allowed_count",
+    "post_submit_reconciliation_ready_count",
+    "postmortem_link_ready_count",
+    "pre_trade_snapshot_created_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "status",
+}
+
+BROKER_RECONCILIATION_REVIEW_REQUIRED_FIELDS = {
+    "account_scope",
+    "blocked_reasons",
+    "boundary",
+    "broker_echo",
+    "broker_echo_verified",
+    "broker_write_allowed",
+    "duplicate_order_guard_ready",
+    "event_log_prewrite_created",
+    "hypothetical_order",
+    "idempotency_key_allocated",
+    "instrument",
+    "live_capital_enabled",
+    "paper_order_submit_allowed",
+    "post_submit_reconciliation_ready",
+    "postmortem_link_ready",
+    "pre_trade_snapshot_created",
+    "reconciliation_checks",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "source_execution_policy_review_id",
+    "source_staged_paper_order_review_id",
+    "status",
+    "venue_mode",
+}
+
+BROKER_RECONCILIATION_ECHO_REQUIRED_FIELDS = {
+    "ack_status",
+    "adapter",
+    "client_order_id",
+    "external_order_id",
+    "fill_status",
+    "raw_broker_payload_stored",
+    "status",
+    "submitted_at",
+    "venue",
+}
+
+BROKER_RECONCILIATION_REQUIRED_CHECKS = {
+    "broker_adapter_mode",
+    "broker_echo",
+    "broker_route",
+    "duplicate_order_guard",
+    "event_log_prewrite",
+    "idempotency_key",
+    "kill_switch",
+    "live_capital",
+    "paper_account_mirror",
+    "paper_account_write_authority",
+    "paper_order_submittable",
+    "post_submit_reconciliation",
+    "postmortem_link",
+    "pre_trade_snapshot",
+    "source_staged_status",
+    "staged_order_contract",
+    "staged_order_created",
+    "venue_registry_write_health",
+}
+
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
 TRADE_INTENT_REQUIRED_FIELDS = {
@@ -677,6 +759,8 @@ def main() -> int:
     print(f"cockpit_status_execution_policy_review_count={payload.get('execution_policy', {}).get('review_count')}")
     print(f"cockpit_status_staged_paper_order_status={payload.get('staged_paper_order', {}).get('status')}")
     print(f"cockpit_status_staged_paper_order_review_count={payload.get('staged_paper_order', {}).get('review_count')}")
+    print(f"cockpit_status_broker_reconciliation_status={payload.get('broker_reconciliation', {}).get('status')}")
+    print(f"cockpit_status_broker_reconciliation_review_count={payload.get('broker_reconciliation', {}).get('review_count')}")
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -1460,6 +1544,104 @@ def main() -> int:
             return 1
         if "cannot create a staged order" not in review.get("boundary", ""):
             print("cockpit_status_staged_paper_order_review_boundary_weak=true")
+            return 1
+
+    broker_reconciliation = payload.get("broker_reconciliation", {})
+    missing_broker_reconciliation_fields = sorted(
+        BROKER_RECONCILIATION_REQUIRED_FIELDS - set(broker_reconciliation)
+    )
+    if missing_broker_reconciliation_fields:
+        print(
+            "cockpit_status_broker_reconciliation_fields_missing="
+            + ",".join(missing_broker_reconciliation_fields)
+        )
+        return 1
+    if broker_reconciliation.get("status") != "ok":
+        print("cockpit_status_broker_reconciliation_not_ok=true")
+        return 1
+    if broker_reconciliation.get("authority") != "read_only_broker_reconciliation":
+        print("cockpit_status_broker_reconciliation_authority_mismatch=true")
+        return 1
+    zero_authority_counts = {
+        "idempotency_key_allocated_count": "cockpit_status_broker_reconciliation_idempotency_allocated=true",
+        "event_log_prewrite_created_count": "cockpit_status_broker_reconciliation_event_log_prewrite_created=true",
+        "pre_trade_snapshot_created_count": "cockpit_status_broker_reconciliation_pre_trade_snapshot_created=true",
+        "duplicate_order_guard_ready_count": "cockpit_status_broker_reconciliation_duplicate_guard_ready=true",
+        "broker_echo_verified_count": "cockpit_status_broker_reconciliation_broker_echo_verified=true",
+        "post_submit_reconciliation_ready_count": "cockpit_status_broker_reconciliation_post_submit_ready=true",
+        "postmortem_link_ready_count": "cockpit_status_broker_reconciliation_postmortem_link_ready=true",
+        "paper_order_submit_allowed_count": "cockpit_status_broker_reconciliation_paper_submit_allowed=true",
+        "broker_write_allowed_count": "cockpit_status_broker_reconciliation_broker_write_allowed=true",
+        "live_capital_enabled_count": "cockpit_status_broker_reconciliation_live_capital_enabled=true",
+    }
+    for count_key, error_key in zero_authority_counts.items():
+        if broker_reconciliation.get(count_key) != 0:
+            print(error_key)
+            return 1
+    if "cannot submit paper orders" not in broker_reconciliation.get("boundary", ""):
+        print("cockpit_status_broker_reconciliation_boundary_weak=true")
+        return 1
+    if not isinstance(broker_reconciliation.get("reviews"), list) or not broker_reconciliation["reviews"]:
+        print("cockpit_status_broker_reconciliation_reviews_missing=true")
+        return 1
+    for review in broker_reconciliation.get("reviews", []):
+        missing_fields = sorted(BROKER_RECONCILIATION_REVIEW_REQUIRED_FIELDS - set(review))
+        if missing_fields:
+            print(
+                "cockpit_status_broker_reconciliation_review_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        for flag_key in (
+            "idempotency_key_allocated",
+            "event_log_prewrite_created",
+            "pre_trade_snapshot_created",
+            "duplicate_order_guard_ready",
+            "broker_echo_verified",
+            "post_submit_reconciliation_ready",
+            "postmortem_link_ready",
+            "paper_order_submit_allowed",
+            "broker_write_allowed",
+            "live_capital_enabled",
+        ):
+            if review.get(flag_key) is not False:
+                print(
+                    "cockpit_status_broker_reconciliation_review_flag_not_false="
+                    f"{review.get('review_id', 'unknown')}:{flag_key}"
+                )
+                return 1
+        missing_broker_echo = sorted(
+            BROKER_RECONCILIATION_ECHO_REQUIRED_FIELDS - set(review.get("broker_echo", {}))
+        )
+        if missing_broker_echo:
+            print(
+                "cockpit_status_broker_reconciliation_echo_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_broker_echo)}"
+            )
+            return 1
+        if review.get("broker_echo", {}).get("status") != "not_requested":
+            print("cockpit_status_broker_reconciliation_echo_requested=true")
+            return 1
+        missing_checks = sorted(
+            BROKER_RECONCILIATION_REQUIRED_CHECKS - set(review.get("reconciliation_checks", {}))
+        )
+        if missing_checks:
+            print(
+                "cockpit_status_broker_reconciliation_checks_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_checks)}"
+            )
+            return 1
+        if review.get("reconciliation_checks", {}).get("broker_route") != "fail_closed_no_broker_submit_route":
+            print("cockpit_status_broker_reconciliation_route_not_closed=true")
+            return 1
+        if review.get("reconciliation_checks", {}).get("idempotency_key") != "fail_not_allocated":
+            print("cockpit_status_broker_reconciliation_idempotency_allocated=true")
+            return 1
+        if review.get("reconciliation_checks", {}).get("event_log_prewrite") != "fail_not_written":
+            print("cockpit_status_broker_reconciliation_event_log_written=true")
+            return 1
+        if "cannot submit paper orders" not in review.get("boundary", ""):
+            print("cockpit_status_broker_reconciliation_review_boundary_weak=true")
             return 1
 
     tradingview = payload["tradingview_alerts"]

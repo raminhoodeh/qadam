@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.broker_reconciliation import BrokerReconciliationReviewStore, broker_reconciliation_summary
 from orchestrator.event_log import EventLog
 from orchestrator.execution import execution_registry
 from orchestrator.execution_policy import ExecutionPolicyReviewStore, execution_policy_summary
@@ -119,7 +120,14 @@ def _dashboard_status(raw_status: str) -> str:
 
 
 def _module_authority(module_key: str, raw_status: str) -> str:
-    if module_key in {"execution_registry", "risk_agent", "execution_policy", "staged_order_contract", "trade_layer"}:
+    if module_key in {
+        "execution_registry",
+        "risk_agent",
+        "execution_policy",
+        "staged_order_contract",
+        "broker_reconciliation",
+        "trade_layer",
+    }:
         return "write_blocked"
     if module_key == "telegram_bot":
         return "notify_only"
@@ -148,6 +156,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "risk_agent": "reviewing policy without order authority",
         "execution_policy": "checking kill switches without order authority",
         "staged_order_contract": "describing disabled paper-order staging",
+        "broker_reconciliation": "checking broker echo and reconciliation prerequisites",
         "telegram_bot": "outbound dry-run member communications",
         "live_bridge": "serving authenticated public-safe status snapshots",
         "cockpit": "static live shell frozen",
@@ -641,6 +650,44 @@ def _safe_staged_paper_order_reviews(settings: Settings) -> list[dict[str, Any]]
     ]
 
 
+def _safe_broker_reconciliation_reviews(settings: Settings) -> list[dict[str, Any]]:
+    try:
+        reviews = list(BrokerReconciliationReviewStore(settings=settings).read(limit=5))
+    except Exception:
+        reviews = []
+    return [
+        {
+            "schema_version": review.get("schema_version"),
+            "review_id": review.get("review_id"),
+            "source_staged_paper_order_review_id": review.get("source_staged_paper_order_review_id"),
+            "source_execution_policy_review_id": review.get("source_execution_policy_review_id"),
+            "status": review.get("status"),
+            "instrument": review.get("instrument"),
+            "selected_venue": review.get("selected_venue"),
+            "venue_mode": review.get("venue_mode"),
+            "account_scope": review.get("account_scope"),
+            "hypothetical_order": review.get("hypothetical_order", {}),
+            "broker_echo": review.get("broker_echo", {}),
+            "reconciliation_checks": review.get("reconciliation_checks", {}),
+            "blocked_reasons": review.get("blocked_reasons", []),
+            "required_next_steps": review.get("required_next_steps", []),
+            "idempotency_key_allocated": bool(review.get("idempotency_key_allocated")),
+            "event_log_prewrite_created": bool(review.get("event_log_prewrite_created")),
+            "pre_trade_snapshot_created": bool(review.get("pre_trade_snapshot_created")),
+            "duplicate_order_guard_ready": bool(review.get("duplicate_order_guard_ready")),
+            "broker_echo_verified": bool(review.get("broker_echo_verified")),
+            "post_submit_reconciliation_ready": bool(review.get("post_submit_reconciliation_ready")),
+            "postmortem_link_ready": bool(review.get("postmortem_link_ready")),
+            "paper_order_submit_allowed": bool(review.get("paper_order_submit_allowed")),
+            "broker_write_allowed": bool(review.get("broker_write_allowed")),
+            "live_capital_enabled": bool(review.get("live_capital_enabled")),
+            "reviewed_at": review.get("reviewed_at"),
+            "boundary": review.get("boundary"),
+        }
+        for review in reviews
+    ]
+
+
 def _build_cognition(settings: Settings) -> dict[str, Any]:
     summary = shadow_intelligence_summary(settings)
     store = ShadowSignalStore(settings=settings)
@@ -838,6 +885,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "deterministic triage",
             "signal integrity review",
             "staged paper-order contract hold",
+            "broker reconciliation contract hold",
             "strategy review pending",
             "signal integrity gate blocked",
             "trade layer not reached",
@@ -852,11 +900,13 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "signal_integrity_gate_requires_risk_agent",
             "execution_policy_read_only",
             "staged_paper_order_contract_disabled",
+            "broker_reconciliation_contract_read_only",
         ],
         "boundary": (
             "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, "
             "Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, "
-            "and staged paper-order checks cannot create orders."
+            "staged paper-order checks cannot create orders, and broker reconciliation checks "
+            "cannot submit paper orders."
         ),
     }
 
@@ -1217,6 +1267,7 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         "risk_agent": _risk_agent_status(settings),
         "execution_policy": _execution_policy_status(settings),
         "staged_paper_order": _staged_paper_order_status(settings),
+        "broker_reconciliation": _broker_reconciliation_status(settings),
         "store_status": store_status,
         "watching": [],
         "candidates": [],
@@ -1346,6 +1397,33 @@ def _staged_paper_order_status(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _broker_reconciliation_status(settings: Settings) -> dict[str, Any]:
+    summary = broker_reconciliation_summary(settings)
+    reviews = _safe_broker_reconciliation_reviews(settings)
+    return {
+        "status": summary.get("status", "ok"),
+        "schema_version": summary.get("schema_version"),
+        "review_count": summary.get("review_count", 0),
+        "by_status": summary.get("by_status", {}),
+        "idempotency_key_allocated_count": summary.get("idempotency_key_allocated_count", 0),
+        "event_log_prewrite_created_count": summary.get("event_log_prewrite_created_count", 0),
+        "pre_trade_snapshot_created_count": summary.get("pre_trade_snapshot_created_count", 0),
+        "duplicate_order_guard_ready_count": summary.get("duplicate_order_guard_ready_count", 0),
+        "broker_echo_verified_count": summary.get("broker_echo_verified_count", 0),
+        "post_submit_reconciliation_ready_count": summary.get("post_submit_reconciliation_ready_count", 0),
+        "postmortem_link_ready_count": summary.get("postmortem_link_ready_count", 0),
+        "paper_order_submit_allowed_count": summary.get("paper_order_submit_allowed_count", 0),
+        "broker_write_allowed_count": summary.get("broker_write_allowed_count", 0),
+        "live_capital_enabled_count": summary.get("live_capital_enabled_count", 0),
+        "authority": "read_only_broker_reconciliation",
+        "reviews": reviews,
+        "boundary": summary.get(
+            "boundary",
+            "Broker reconciliation reviews are read-only and cannot submit paper orders or write to brokers.",
+        ),
+    }
+
+
 def _forbidden_actions() -> list[dict[str, str]]:
     return [
         {
@@ -1372,6 +1450,11 @@ def _forbidden_actions() -> list[dict[str, str]]:
             "key": "staged_paper_order_creation",
             "status": "blocked",
             "reason": "staged_order_contract_is_disabled_read_only",
+        },
+        {
+            "key": "paper_order_submission",
+            "status": "blocked",
+            "reason": "broker_reconciliation_contract_is_read_only",
         },
         {
             "key": "tradingview_alert_execution",
@@ -1415,6 +1498,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "risk_agent": _risk_agent_status(settings),
         "execution_policy": _execution_policy_status(settings),
         "staged_paper_order": _staged_paper_order_status(settings),
+        "broker_reconciliation": _broker_reconciliation_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
@@ -1481,6 +1565,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "risk_agent",
         "execution_policy",
         "staged_paper_order",
+        "broker_reconciliation",
         "trade_layer",
         "communications",
         "forbidden_actions",

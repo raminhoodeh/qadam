@@ -98,6 +98,60 @@ def main() -> int:
     print(f"phase2_shadow_cycle_staged_paper_order_submittable_count={report['staged_paper_order_submittable_count']}")
     print(f"phase2_shadow_cycle_staged_paper_order_broker_write_allowed_count={report['staged_paper_order_broker_write_allowed_count']}")
     print(f"phase2_shadow_cycle_staged_paper_order_live_capital_enabled_count={report['staged_paper_order_live_capital_enabled_count']}")
+    print(f"phase2_shadow_cycle_broker_reconciliation_status={report['broker_reconciliation_status']}")
+    print(f"phase2_shadow_cycle_broker_reconciliation_review_count={report['broker_reconciliation_review_count']}")
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_blocked_before_count="
+        f"{report['broker_reconciliation_blocked_before_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_route_closed_count="
+        f"{report['broker_reconciliation_route_closed_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_contract_hold_count="
+        f"{report['broker_reconciliation_contract_hold_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_idempotency_key_allocated_count="
+        f"{report['broker_reconciliation_idempotency_key_allocated_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_event_log_prewrite_created_count="
+        f"{report['broker_reconciliation_event_log_prewrite_created_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_pre_trade_snapshot_created_count="
+        f"{report['broker_reconciliation_pre_trade_snapshot_created_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_duplicate_order_guard_ready_count="
+        f"{report['broker_reconciliation_duplicate_order_guard_ready_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_broker_echo_verified_count="
+        f"{report['broker_reconciliation_broker_echo_verified_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_post_submit_reconciliation_ready_count="
+        f"{report['broker_reconciliation_post_submit_reconciliation_ready_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_postmortem_link_ready_count="
+        f"{report['broker_reconciliation_postmortem_link_ready_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_paper_order_submit_allowed_count="
+        f"{report['broker_reconciliation_paper_order_submit_allowed_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_broker_write_allowed_count="
+        f"{report['broker_reconciliation_broker_write_allowed_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_broker_reconciliation_live_capital_enabled_count="
+        f"{report['broker_reconciliation_live_capital_enabled_count']}"
+    )
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
     print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
@@ -161,6 +215,26 @@ def main() -> int:
     if report["staged_paper_order_broker_write_allowed_count"] != 0:
         return 1
     if report["staged_paper_order_live_capital_enabled_count"] != 0:
+        return 1
+    if report["broker_reconciliation_idempotency_key_allocated_count"] != 0:
+        return 1
+    if report["broker_reconciliation_event_log_prewrite_created_count"] != 0:
+        return 1
+    if report["broker_reconciliation_pre_trade_snapshot_created_count"] != 0:
+        return 1
+    if report["broker_reconciliation_duplicate_order_guard_ready_count"] != 0:
+        return 1
+    if report["broker_reconciliation_broker_echo_verified_count"] != 0:
+        return 1
+    if report["broker_reconciliation_post_submit_reconciliation_ready_count"] != 0:
+        return 1
+    if report["broker_reconciliation_postmortem_link_ready_count"] != 0:
+        return 1
+    if report["broker_reconciliation_paper_order_submit_allowed_count"] != 0:
+        return 1
+    if report["broker_reconciliation_broker_write_allowed_count"] != 0:
+        return 1
+    if report["broker_reconciliation_live_capital_enabled_count"] != 0:
         return 1
     return 0
 
