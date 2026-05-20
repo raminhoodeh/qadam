@@ -267,6 +267,12 @@ const FLOW_NODE_DETAILS = {
         output: "Blocks or gates",
         authority: "Fail closed"
     },
+    staged_order_contract: {
+        role: "Paper gate",
+        input: "Execution-policy reviews",
+        output: "Disabled staging checks",
+        authority: "No orders"
+    },
     trade_layer: {
         role: "Paper desk",
         input: "Approved intents",
@@ -595,6 +601,17 @@ function renderFlowMap(status) {
             handoff: "kill-switch hold"
         },
         {
+            ...(findModule(status, "staged_order_contract") || {
+                key: "staged_order_contract",
+                label: "Staged Order Contract",
+                owner: "Paper Order Gate",
+                status: "blocked",
+                current_process: "Disabled paper-order staging checks",
+                authority: "disabled_staged_order_contract"
+            }),
+            handoff: "staging blocked"
+        },
+        {
             ...(findModule(status, "execution_registry") || {
                 key: "execution_registry",
                 label: "Execution Registry",
@@ -687,7 +704,7 @@ function renderFlowMap(status) {
             "Bounded modelling can inform a gate; risk decides whether an idea may continue.",
             "Only passed gates can become paper-trial state.",
             "blocked",
-            ["head_of_quant", "risk_agent", "execution_policy", "execution_registry"]
+            ["head_of_quant", "risk_agent", "execution_policy", "staged_order_contract", "execution_registry"]
         ),
         makeLane(
             "Paper Trial",
@@ -1475,6 +1492,8 @@ function renderTrades(status) {
     const riskReviews = asArray(riskAgent.reviews);
     const executionPolicy = tradeLayer.execution_policy || status.execution_policy || {};
     const executionPolicyReviews = asArray(executionPolicy.reviews);
+    const stagedPaperOrder = tradeLayer.staged_paper_order || status.staged_paper_order || {};
+    const stagedPaperOrderReviews = asArray(stagedPaperOrder.reviews);
     const summary = tradeLayer.summary || {};
     const philosophy = status.decision_philosophy || {};
     const worldviewBlock = renderDecisionWorldviewBlock(philosophy);
@@ -1717,6 +1736,60 @@ function renderTrades(status) {
         `;
     };
 
+    const renderStagedPaperOrderCard = (review) => {
+        const checkTags = Object.entries(review.reconciliation_checks || {}).map(([key, value]) => `${key}: ${value}`);
+        const hypothetical = review.hypothetical_order || {};
+        return `
+            <article class="trade-intent-card ${statusClass(review.status || "blocked_before_staging")}">
+                <div class="cognition-card-head">
+                    ${renderStatusPill(review.status || "blocked_before_staging")}
+                    <p class="label">Staged paper-order contract · ${htmlText(review.source_execution_policy_review_id, "execution review pending")}</p>
+                </div>
+                <h3>${htmlText(review.instrument, "Staged paper-order review")}</h3>
+                <p>${htmlText(review.boundary, "Staged paper-order contract is disabled.")}</p>
+                <div class="tag-row">
+                    ${renderInlineBadge(review.execution_allowed ? "execution allowed" : "execution blocked", review.execution_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.staged_paper_order_created ? "staged order created" : "no staged order created", review.staged_paper_order_created ? "blocked" : "online")}
+                    ${renderInlineBadge(review.paper_order_submittable ? "paper order submittable" : "paper order not submittable", review.paper_order_submittable ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_write_allowed ? "broker write allowed" : "broker write blocked", review.broker_write_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.live_capital_enabled ? "live capital enabled" : "live capital disabled", review.live_capital_enabled ? "blocked" : "online")}
+                </div>
+                <div class="summary-strip compact">
+                    ${renderMetric("Venue", htmlText(review.selected_venue, "none"))}
+                    ${renderMetric("Venue mode", htmlText(review.venue_mode, "disabled"))}
+                    ${renderMetric("Account", htmlText(review.account_scope, "trial"))}
+                    ${renderMetric("Hypothetical", htmlText(hypothetical.status, "not created"))}
+                    ${renderMetric("Notional", formatMoney(hypothetical.notional_gbp))}
+                    ${renderMetric("Reviewed", formatTime(review.reviewed_at))}
+                </div>
+                <section class="trade-check-section">
+                    <p class="label">Hypothetical order</p>
+                    <div class="tag-row">
+                        ${renderInlineBadge(`direction: ${dashboardText(hypothetical.direction, "not determined")}`, "pending")}
+                        ${renderInlineBadge(`type: ${dashboardText(hypothetical.order_type, "not applicable")}`, "pending")}
+                        ${renderInlineBadge(`idempotency: ${dashboardText(hypothetical.idempotency_key, "not allocated")}`, "blocked")}
+                        ${renderInlineBadge(`event log: ${dashboardText(hypothetical.event_log_ref, "not written")}`, "blocked")}
+                    </div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Reconciliation checks</p>
+                    <div class="tag-row">${renderTagList(checkTags, "No reconciliation checks recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Blocked reasons</p>
+                    <div class="tag-row">${renderTagList(review.blocked_reasons, "No blocking reason recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Required next steps</p>
+                    <ul class="status-list">${asArray(review.required_next_steps).length
+                        ? asArray(review.required_next_steps).map((step) => `<li><strong>${htmlText(step)}</strong></li>`).join("")
+                        : "<li><strong>No next steps recorded</strong></li>"
+                    }</ul>
+                </section>
+            </article>
+        `;
+    };
+
     const observedSignals = asArray(tradeLayer.watching);
     const candidates = asArray(tradeLayer.candidates);
     const blocked = asArray(tradeLayer.blocked);
@@ -1799,6 +1872,25 @@ function renderTrades(status) {
             }</div>
         </section>
         <section class="trade-intent-section">
+            <p class="label">Disabled staged paper-order contract</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", stagedPaperOrder.status || "pending")}
+                ${renderMetric("Reviews", stagedPaperOrder.review_count || 0)}
+                ${renderMetric("Blocked", stagedPaperOrder.by_status?.blocked_before_staging || 0)}
+                ${renderMetric("Reconciliation hold", stagedPaperOrder.by_status?.reconciliation_hold || 0)}
+                ${renderMetric("Disabled hold", stagedPaperOrder.by_status?.disabled_contract_hold || 0)}
+                ${renderMetric("Staged created", stagedPaperOrder.staged_paper_order_created_count || 0)}
+                ${renderMetric("Submittable", stagedPaperOrder.paper_order_submittable_count || 0)}
+                ${renderMetric("Broker writes", stagedPaperOrder.broker_write_allowed_count || 0)}
+                ${renderMetric("Live capital", stagedPaperOrder.live_capital_enabled_count || 0)}
+            </div>
+            <p class="mini">${htmlText(stagedPaperOrder.boundary, "Staged paper-order contract is disabled and read-only.")}</p>
+            <div class="trade-intent-stack">${stagedPaperOrderReviews.length
+                ? stagedPaperOrderReviews.map(renderStagedPaperOrderCard).join("")
+                : `<article class="trade-intent-card"><h3>No staged paper-order reviews yet</h3><p>The disabled staging contract has not reviewed any Execution Policy records.</p></article>`
+            }</div>
+        </section>
+        <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
                 ${renderMetric("Receiver", tradingView.receiver_status || "local contract only")}
@@ -1818,7 +1910,7 @@ function renderTrades(status) {
                 <li>Watching · observed signal only</li>
                 <li>Considering Trade · candidate, not order</li>
                 <li>Blocked · failed evidence, risk, policy, latency, or credential checks</li>
-                <li>Preparing Paper Trade · unavailable until staged paper-order and broker-adapter contracts exist</li>
+                <li>Preparing Paper Trade · disabled until reconciliation and broker-adapter contracts exist</li>
                 <li>Postmortem · unavailable until closed paper trades exist</li>
             </ol>
         </section>
