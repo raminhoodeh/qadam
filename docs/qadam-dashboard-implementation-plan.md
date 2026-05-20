@@ -553,7 +553,7 @@ Limit:
 - Explains Qadam but does not yet read live Qadam state.
 - No additional hardcoded dashboard claims should be added here unless they are explicitly marked as placeholders.
 - Live routing remains stable while D1/D2 are built behind it.
-- Akber and Anas cannot sign in until their allowlist emails are known and added; the current email allowlist covers Ramin, Troy, and Ion.
+- Anas cannot sign in until his allowlist email is known and added; the current email allowlist covers Ramin, Troy, Akber, and Ion.
 
 Exit gate:
 
@@ -703,6 +703,7 @@ Build:
 - Public-safe cockpit export with Risk Agent policy-review status, policy score, blocked reasons, required next steps, account context, and explicit zero-authority flags.
 - Public-safe cockpit export with Execution Policy status, selected venue, venue mode, kill switches, execution checks, blocked reasons, required next steps, and explicit zero-authority flags.
 - Public-safe cockpit export with Broker Reconciliation status, broker echo state, idempotency/prewrite/duplicate-guard state, blocked reasons, required next steps, and explicit zero-authority flags.
+- Public-safe cockpit export with Dry-run Paper-submit Receipt status, simulated receipt state, receipt checks, blocked reasons, required next steps, and explicit zero-authority flags for broker POST, paper-order submission, broker writes, and live capital.
 - D5 test records: one candidate and one blocked trade intent, both clearly marked as local test intent with no broker route.
 - The Trade Board now renders an explicit state ladder: observed signal, candidate, blocked trade, unavailable paper order states, and postmortem.
 - Observed TradingView alerts are labelled `Observed signal only`, `not a candidate`, `execution blocked`, and `no paper order`.
@@ -712,7 +713,8 @@ Build:
 - Execution Policy reviews are rendered as first-class board items with status, selected venue, venue mode, kill switches, execution checks, blocked reasons, required next steps, and badges for execution blocked, no staged paper order, no paper order created, broker write blocked, and live capital disabled.
 - Disabled staged paper-order reviews are rendered as first-class board items with status, hypothetical order, reconciliation checks, blocked reasons, required next steps, and badges for execution blocked, no staged order created, paper order not submittable, broker write blocked, and live capital disabled.
 - Read-only broker reconciliation reviews are rendered as first-class board items with status, broker echo, reconciliation checks, blocked reasons, required next steps, and badges for idempotency not allocated, Event Log prewrite not created, duplicate guard not ready, broker echo not verified, paper submit blocked, broker write blocked, and live capital disabled.
-- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, Execution Policy and kill switches, disabled staged paper-order contract, read-only broker reconciliation, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
+- Dry-run paper-submit receipt reviews are rendered as first-class board items with status, simulated receipt, receipt checks, blocked reasons, required next steps, and badges for dry-run receipt not created, paper order not submitted, broker POST not called, broker write blocked, and live capital disabled.
+- `scripts/check_dashboard_trade_board.js` verifies the rendered Trade Board includes observed signal, candidate, blocked trade, Risk Agent policy router, Execution Policy and kill switches, disabled staged paper-order contract, read-only broker reconciliation, dry-run paper-submit receipt, state ladder, no broker route boundary, unavailable lifecycle states, and empty-state behavior.
 
 Exit gate:
 
@@ -723,12 +725,14 @@ Exit gate:
 - `scripts/check_execution_policy_router.py` validates the Execution Policy review store, required kill switches, required execution checks, kill-switch holds, zero execution authority, zero staged-paper-order authority, zero paper-order creation, zero broker-write authority, and zero live-capital authority.
 - `scripts/check_staged_paper_order_contract.py` validates the disabled staged paper-order review store, hypothetical-order contract, reconciliation checks, zero staged-order creation, zero paper-order submission, zero broker-write authority, and zero live-capital authority.
 - `scripts/check_broker_reconciliation_contract.py` validates the read-only broker reconciliation review store, broker echo contract, idempotency/prewrite/duplicate-guard checks, zero paper-order submission, zero broker-write authority, and zero live-capital authority.
-- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, Execution Policy review fields, disabled staged paper-order review fields, broker reconciliation review fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
+- `scripts/check_paper_submit_receipt_contract.py` validates the dry-run paper-submit receipt review store, simulated receipt contract, receipt checks, zero broker POST calls, zero paper-order submission, zero broker-write authority, and zero live-capital authority.
+- `scripts/check_cockpit_status.py` validates D5 trade-layer summary counts, observed-signal fields, candidate/blocked fields, Risk Agent policy-review fields, Execution Policy review fields, disabled staged paper-order review fields, broker reconciliation review fields, dry-run paper-submit receipt fields, zero execution/paper-order authority, no created candidate from TradingView alerts, and no broker order path.
 - A local D5 render check proves the board renders 1 observed signal, 1 candidate, 1 blocked trade, and lifecycle states as `not connected yet`.
 - A local D5 render check proves the board also renders Risk Agent policy-review cards from the public-safe snapshot.
 - A local D5 render check proves the board also renders Execution Policy / kill-switch cards from the public-safe snapshot.
 - A local D5 render check proves the board also renders disabled staged paper-order review cards from the public-safe snapshot.
 - A local D5 render check proves the board also renders read-only broker reconciliation cards from the public-safe snapshot.
+- A local D5 render check proves the board also renders dry-run paper-submit receipt cards from the public-safe snapshot.
 - No broker order path exists yet.
 
 ### Phase D6 - Paper Account Mirror

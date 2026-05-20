@@ -21,6 +21,7 @@ fi
 "$PYTHON_BIN" scripts/check_execution_policy_router.py
 "$PYTHON_BIN" scripts/check_staged_paper_order_contract.py
 "$PYTHON_BIN" scripts/check_broker_reconciliation_contract.py
+"$PYTHON_BIN" scripts/check_paper_submit_receipt_contract.py
 "$PYTHON_BIN" scripts/check_llm_provider_probes.py
 "$PYTHON_BIN" scripts/check_local_research_analyst.py
 "$PYTHON_BIN" scripts/check_trade_intent.py

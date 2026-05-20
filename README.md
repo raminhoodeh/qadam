@@ -218,8 +218,8 @@ Current founding access list:
 
 - Ramin: `raminhoodeh@gmail.com`
 - Troy: `troycookecareer@gmail.com`
+- Akber: `akber.ali@hotmail.co.uk`
 - Ion: `isioras@yahoo.co.uk`
-- Akber: email pending
 - Anas: email pending
 
 ## Local Start
@@ -345,6 +345,8 @@ Current shadow intelligence state:
 - `scripts/check_staged_paper_order_contract.py` validates that staged paper-order reviews are durable, public-safe, and unable to create staged orders, submit paper orders, enable live capital, or write to brokers.
 - `orchestrator/broker_reconciliation.py` now implements the read-only broker reconciliation contract. It sits after the disabled staged paper-order contract and checks broker echo, idempotency, Event Log prewrite, duplicate-order guard, post-submit reconciliation, and postmortem requirements while keeping `paper_order_submit_allowed=false`, `broker_write_allowed=false`, and `live_capital_enabled=false`.
 - `scripts/check_broker_reconciliation_contract.py` validates that broker reconciliation reviews are durable, public-safe, and unable to allocate order IDs, create broker echoes, prewrite Event Log order records, submit paper orders, enable live capital, or write to brokers.
+- `orchestrator/paper_submit_receipt.py` now implements the dry-run paper-submit receipt contract. It sits after broker reconciliation and can describe a simulated receipt only after reconciliation prerequisites pass, while keeping `paper_order_submitted=false`, `broker_post_called=false`, `broker_write_allowed=false`, and `live_capital_enabled=false`.
+- `scripts/check_paper_submit_receipt_contract.py` validates that dry-run receipt reviews are durable, public-safe, and unable to call Alpaca POST routes, submit paper orders, enable live capital, or write to brokers.
 - All shadow signals are marked non-executable with `execution_allowed=false`.
 
 Current dashboard status-contract state:
@@ -355,7 +357,7 @@ Current dashboard status-contract state:
 - `landing-page-repo/dashboard.js` now tries the authenticated `/api/cockpit-status` live bridge first, then falls back to `/status/cockpit-status.json`, and renders modules, source groups, cognition, forbidden actions, trade state, communications, paper-account fields, comments, and process console from the contract.
 - Dashboard Plan D3 is implemented locally: the Watching panel renders all 35 registered sources under 5 pipeline groups with readiness, credential state, adapter state, degraded reason, trust placeholder, and heartbeat time; D7 appends TradingView paid alerts as an observed market alert source.
 - Dashboard Plan D4 is implemented locally: the Cognition panel renders current focus, read-only paper-account context, Signal Integrity Gate state, recent Signal Integrity reviews, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked-by-reason state from the public-safe snapshot.
-- Dashboard Plan D5 is implemented locally: `orchestrator/trade_intent.py`, `orchestrator/risk_agent.py`, `orchestrator/execution_policy.py`, `orchestrator/staged_paper_order.py`, `orchestrator/broker_reconciliation.py`, `scripts/check_trade_intent.py`, `scripts/check_risk_agent_policy_router.py`, `scripts/check_execution_policy_router.py`, `scripts/check_staged_paper_order_contract.py`, and `scripts/check_broker_reconciliation_contract.py` create a local Trade Intent Store plus read-only Risk Agent, Execution Policy, disabled staged paper-order, and read-only broker reconciliation review layers. The cockpit renders one candidate, one blocked D5 test intent, current Risk Agent policy reviews, current Execution Policy / kill-switch reviews, disabled staged paper-order reviews, and broker reconciliation reviews from those stores.
+- Dashboard Plan D5 is implemented locally: `orchestrator/trade_intent.py`, `orchestrator/risk_agent.py`, `orchestrator/execution_policy.py`, `orchestrator/staged_paper_order.py`, `orchestrator/broker_reconciliation.py`, `orchestrator/paper_submit_receipt.py`, `scripts/check_trade_intent.py`, `scripts/check_risk_agent_policy_router.py`, `scripts/check_execution_policy_router.py`, `scripts/check_staged_paper_order_contract.py`, `scripts/check_broker_reconciliation_contract.py`, and `scripts/check_paper_submit_receipt_contract.py` create a local Trade Intent Store plus read-only Risk Agent, Execution Policy, disabled staged paper-order, read-only broker reconciliation, and dry-run paper-submit receipt review layers. The cockpit renders one candidate, one blocked D5 test intent, current Risk Agent policy reviews, current Execution Policy / kill-switch reviews, disabled staged paper-order reviews, broker reconciliation reviews, and dry-run paper-submit receipt reviews from those stores.
 - Trade intent remains non-executing: `execution_allowed=false`, `paper_order_allowed=false`, no broker order path, no live capital, and no staged paper orders.
 - Dashboard Plan D6 is implemented locally: `orchestrator/paper_account.py`, `scripts/check_paper_account.py`, and `scripts/check_alpaca_paper_mirror.py --live` maintain a read-only paper account mirror. It shows the £1000 trial allocation alongside Alpaca paper balance/P&L/positions/orders, while keeping `write_authority=false`, `live_capital_enabled=false`, and `paper_order_allowed=false`.
 - The cockpit money panel now renders those D6 mirror fields from the public-safe snapshot; it still has no broker write path, no live capital, and no ability to place orders.
@@ -369,6 +371,7 @@ Current dashboard status-contract state:
 - The cockpit trade contract now also includes sanitized Execution Policy state: selected venue, venue mode, kill-switch status, execution checks, blocked reasons, required next steps, and explicit zero-authority flags for staged paper orders, paper-order creation, broker writes, and live capital.
 - The cockpit trade contract now includes sanitized disabled staged paper-order state: hypothetical order, reconciliation checks, blocked reasons, required next steps, and explicit zero-authority flags for staged order creation, paper-order submission, broker writes, and live capital.
 - The cockpit trade contract now includes sanitized broker reconciliation state: broker echo status, reconciliation checks, blocked reasons, required next steps, and explicit zero-authority flags for idempotency allocation, Event Log prewrite, duplicate-order readiness, paper-order submission, broker writes, and live capital.
+- The cockpit trade contract now includes sanitized dry-run paper-submit receipt state: simulated receipt status, receipt checks, blocked reasons, required next steps, and explicit zero-authority flags for broker POST calls, paper-order submission, broker writes, and live capital.
 - Telegram Bot planning now treats Telegram as an outbound-only member communications rail: trade lifecycle updates, insight digests, health warnings, delivery status, and dashboard visibility, with no execution authority.
 - The protected static cockpit now links to `/guide/`, a user guide explaining the dashboard panels, status labels, trade states, member permissions, daily operating routine, and red flags.
 

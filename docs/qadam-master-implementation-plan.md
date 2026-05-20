@@ -128,8 +128,8 @@ Operating constraints:
 - Execution: Qadam may trade autonomously in the test account after Phase 5/7 gates are met.
 - Capital boundary: no live capital in the first release.
 - Access boundary: first-release login is limited to Ramin, Troy, Akber, Anas, and Ion.
-- Current allowlist emails: Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Ion `isioras@yahoo.co.uk`.
-- Pending allowlist emails: Akber and Anas.
+- Current allowlist emails: Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Akber `akber.ali@hotmail.co.uk`, Ion `isioras@yahoo.co.uk`.
+- Pending allowlist emails: Anas.
 - Approval boundary: test-mode trades do not require individual Fund Manager approval, because the point is to test whether Qadam's rules work cleanly without emotional interference.
 - Human controls: Fund Managers can review, comment, suggest improvements, and use allowed kill-switches, strategy toggles, and system-level approval gates; these are logged.
 - Storage: all saved Qadam data remains local on Ramin's MacBook unless a later explicit cloud-sync decision is made.
@@ -189,7 +189,7 @@ Build:
 - Telegram Bot communications plan exists: `docs/qadam-telegram-bot-implementation-plan.md` defines outbound-only member alerts, local bot token storage, local chat-ID registry, dry-run outbox, message templates, dashboard Communications panel, and no trade execution authority.
 - Protected User Guide exists locally: `docs/qadam-user-guide.md` is the source guide, and `landing-page-repo/guide/index.html` is linked from the dashboard with Supabase allowlist protection.
 - Founding Fund Manager access list: Ramin, Troy, Akber, Anas, Ion.
-- Initial email allowlist: `raminhoodeh@gmail.com`, `troycookecareer@gmail.com`, `isioras@yahoo.co.uk`; Akber and Anas pending.
+- Initial email allowlist: `raminhoodeh@gmail.com`, `troycookecareer@gmail.com`, `akber.ali@hotmail.co.uk`, `isioras@yahoo.co.uk`; Anas pending.
 - Local comments/forum schema for signal, module, strategy, and postmortem suggestions.
 - Foundation check script expanded as the build grows.
 
@@ -390,8 +390,10 @@ Current implementation start:
 - `scripts/check_staged_paper_order_contract.py` validates that staged paper-order reviews are replayable, public-safe, and non-executable: the layer cannot create staged orders, mark paper orders submittable, enable live capital, or write to brokers.
 - `orchestrator/broker_reconciliation.py` now implements the read-only broker reconciliation contract. It consumes disabled staged paper-order reviews, exposes broker echo and reconciliation prerequisites, and keeps idempotency allocation, Event Log prewrite, duplicate-order readiness, broker echo verification, paper-order submission, broker writes, and live capital disabled.
 - `scripts/check_broker_reconciliation_contract.py` validates that broker reconciliation reviews are replayable, public-safe, and non-executable: the layer cannot allocate order IDs, create broker echoes, prewrite order events, submit paper orders, enable live capital, or write to brokers.
+- `orchestrator/paper_submit_receipt.py` now implements the dry-run paper-submit receipt contract. It consumes broker reconciliation reviews, exposes simulated receipt prerequisites, and keeps broker POST calls, paper-order submission, broker writes, and live capital disabled.
+- `scripts/check_paper_submit_receipt_contract.py` validates that paper-submit receipt reviews are replayable, public-safe, and non-executable: the layer cannot call Alpaca POST routes, submit paper orders, enable live capital, or write to brokers.
 - Current 2026-05-20 live Phase 2 cycle result: live read-only observations from NASA FIRMS, FRED, RSS, Polymarket, Alpaca, and Telegram produced queued Research Analyst packets, shadow signals, live local Gemma assessments when LM Studio was running, Signal Integrity reviews, Risk Agent policy reviews, Execution Policy / kill-switch reviews, disabled staged paper-order reviews, read-only broker reconciliation reviews, and a Strategy Lead shadow handoff packet. NASA FIRMS was live but had zero current events in the queried window. The Strategy Lead packet included read-only paper-account context: Alpaca paper mirror connected, current broker paper balance visible, zero open positions, zero mirrored orders, no write authority, and live capital disabled. The Signal Integrity Gate returned blocked/hold reviews only, zero trade candidates, zero paper orders, and zero execution approvals. Risk Agent, Execution Policy, disabled staged paper-order, and broker reconciliation authority counts remained zero for execution, staged paper orders, paper-order submission, broker writes, and live capital.
-- The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries, read-only paper-account context, Signal Integrity review state, Risk Agent policy-review state, Execution Policy / kill-switch review state, disabled staged paper-order review state, and broker reconciliation review state without prompts, raw model text, local paths, broker IDs, or secrets.
+- The public-safe cockpit status contract can expose sanitized local Research Analyst assessment summaries, read-only paper-account context, Signal Integrity review state, Risk Agent policy-review state, Execution Policy / kill-switch review state, disabled staged paper-order review state, broker reconciliation review state, and dry-run paper-submit receipt review state without prompts, raw model text, local paths, broker IDs, or secrets.
 - `scripts/check_shadow_intelligence.py` is wired into `start_qadam.sh`.
 - `scripts/check_local_research_analyst.py` is wired into `start_qadam.sh` in dry-contract mode.
 - `scripts/check_signal_integrity_gate.py` is wired into `start_qadam.sh`.
@@ -627,7 +629,7 @@ Phase 0 foundation is substantially implemented, and Phase 1 has started with te
 
 The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, the first read-only Risk Agent policy router, the first read-only Execution Policy / kill-switch router, the disabled staged paper-order contract, and the read-only broker reconciliation contract are active. Dashboard Plan D0-D9 is implemented locally, with the protected D8B User Guide now added. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and design the first dry-run paper-submit adapter contract without creating any broker-write route:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, the first read-only Risk Agent policy router, the first read-only Execution Policy / kill-switch router, the disabled staged paper-order contract, the read-only broker reconciliation contract, and the dry-run paper-submit receipt contract are active. Dashboard Plan D0-D9 is implemented locally, with the protected D8B User Guide now added. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and harden the dry-run receipt layer without creating any broker-write route:
 
 1. Install or open a Docker-compatible runtime on the Mac: Docker Desktop, OrbStack, Podman, or Colima.
 2. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
@@ -644,9 +646,11 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 13. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
 13A. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` whenever LM Studio is running to feed available live read-only observations and paper-account context through Research Analyst and Strategy Lead shadow workflows.
 14. Run the Gemini model-list credential probe without text generation.
-15. Keep all outputs non-executable after Signal Integrity, Risk Agent policy review, Execution Policy review, disabled staged paper-order review, and broker reconciliation review until a separate paper-submit dry-run contract exists.
+15. Keep all outputs non-executable after Signal Integrity, Risk Agent policy review, Execution Policy review, disabled staged paper-order review, broker reconciliation review, and dry-run paper-submit receipt review.
 16. Keep the staged paper-order contract read-only/disabled: it must explain what would be staged, why it is blocked, and how it would reconcile before any broker-write route exists.
 17. Keep the broker reconciliation contract read-only: it must define broker echo checks, idempotency, prewrite event logging, duplicate-order guards, post-submit reconciliation, and postmortem links while keeping paper-order submission, broker writes, and live capital at zero.
-18. Next implementation target: create a dry-run paper-submit adapter contract that produces a simulated submit receipt only after broker reconciliation prerequisites pass, with no Alpaca POST call, no broker write, and no live capital.
+18. Keep the dry-run paper-submit receipt contract non-executing: it can produce a simulated submit receipt only after broker reconciliation prerequisites pass, with no Alpaca POST call, no broker write, no paper-order submission, and no live capital.
+
+Next implementation target: harden the dry-run receipt contract with deterministic idempotency design notes, Event Log prewrite schema, pre-trade snapshot schema, and duplicate-order guard tests, still without creating any broker-write route.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.

@@ -1,6 +1,7 @@
 export const defaultFoundingManagerEmails = [
   "raminhoodeh@gmail.com",
   "troycookecareer@gmail.com",
+  "akber.ali@hotmail.co.uk",
   "isioras@yahoo.co.uk"
 ];
 

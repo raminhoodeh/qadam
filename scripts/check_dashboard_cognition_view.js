@@ -183,6 +183,10 @@ async function main() {
         "analysis timeline does not include broker reconciliation contract hold"
     );
     assert(
+        timeline.includes("paper-submit receipt dry-run hold"),
+        "analysis timeline does not include paper-submit receipt dry-run hold"
+    );
+    assert(
         blockedReasons.includes("paper_account_context_read_only"),
         "blocked reasons do not include paper account read-only context"
     );
@@ -203,10 +207,15 @@ async function main() {
         "blocked reasons do not include the broker reconciliation boundary"
     );
     assert(
+        blockedReasons.includes("paper_submit_receipt_dry_run_only"),
+        "blocked reasons do not include the paper-submit receipt boundary"
+    );
+    assert(
         /Signal Integrity Gate can block or hold signals/i.test(cognition.boundary || "")
             && /Execution Policy kill-switch checks are read-only/i.test(cognition.boundary || "")
             && /staged paper-order checks cannot create orders/i.test(cognition.boundary || "")
-            && /broker reconciliation checks cannot submit paper orders/i.test(cognition.boundary || ""),
+            && /broker reconciliation checks cannot submit paper orders/i.test(cognition.boundary || "")
+            && /Paper-submit receipt checks cannot call brokers/i.test(cognition.boundary || ""),
         "cognition boundary is weak or missing"
     );
 
@@ -329,7 +338,7 @@ async function main() {
     assertIncludes(
         rendered,
         "[data-cognition]",
-        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, staged paper-order checks cannot create orders, and broker reconciliation checks cannot submit paper orders."
+        "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, staged paper-order checks cannot create orders, and broker reconciliation checks cannot submit paper orders. Paper-submit receipt checks cannot call brokers."
     );
 
     const emptyStatus = {
@@ -347,7 +356,7 @@ async function main() {
             signal_integrity_reviews: [],
             analysis_timeline: [],
             blocked_reasons: [],
-            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, staged paper-order checks cannot create orders, and broker reconciliation checks cannot submit paper orders."
+            boundary: "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, staged paper-order checks cannot create orders, and broker reconciliation checks cannot submit paper orders. Paper-submit receipt checks cannot call brokers."
         }
     };
     const emptyRendered = await renderWithStatus(emptyStatus);

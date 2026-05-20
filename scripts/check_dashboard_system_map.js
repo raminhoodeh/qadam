@@ -72,6 +72,7 @@ async function main() {
         "Execution Policy",
         "Staged Order Contract",
         "Broker Reconciliation",
+        "Paper Submit Receipt",
         "Trade Layer",
         "Paper Account Mirror",
         "Postmortem Loop",

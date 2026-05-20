@@ -395,6 +395,82 @@ BROKER_RECONCILIATION_REQUIRED_CHECKS = {
     "venue_registry_write_health",
 }
 
+PAPER_SUBMIT_RECEIPT_REQUIRED_FIELDS = {
+    "authority",
+    "boundary",
+    "broker_post_called_count",
+    "broker_write_allowed_count",
+    "by_status",
+    "dry_run_receipt_created_count",
+    "live_capital_enabled_count",
+    "paper_order_submitted_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "status",
+}
+
+PAPER_SUBMIT_RECEIPT_REVIEW_REQUIRED_FIELDS = {
+    "account_scope",
+    "blocked_reasons",
+    "boundary",
+    "broker_echo",
+    "broker_post_called",
+    "broker_write_allowed",
+    "dry_run_receipt_created",
+    "hypothetical_order",
+    "instrument",
+    "live_capital_enabled",
+    "paper_order_submitted",
+    "receipt_checks",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "simulated_receipt",
+    "source_broker_reconciliation_review_id",
+    "source_execution_policy_review_id",
+    "source_staged_paper_order_review_id",
+    "status",
+    "submitted_at",
+    "venue_mode",
+}
+
+PAPER_SUBMIT_RECEIPT_SIMULATED_REQUIRED_FIELDS = {
+    "adapter",
+    "broker_post_called",
+    "client_order_id",
+    "external_order_id",
+    "mode",
+    "paper_order_submitted",
+    "raw_broker_payload_stored",
+    "status",
+    "venue",
+}
+
+PAPER_SUBMIT_RECEIPT_REQUIRED_CHECKS = {
+    "broker_echo",
+    "broker_post",
+    "broker_reconciliation_contract",
+    "broker_reconciliation_status",
+    "broker_write",
+    "duplicate_order_guard",
+    "dry_run_receipt",
+    "event_log_prewrite",
+    "idempotency_key",
+    "kill_switch",
+    "live_capital",
+    "paper_account_mirror",
+    "paper_account_write_authority",
+    "paper_order_submission",
+    "paper_order_submit_permission",
+    "post_submit_reconciliation",
+    "postmortem_link",
+    "pre_trade_snapshot",
+    "venue_registry_write_health",
+}
+
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
 TRADE_INTENT_REQUIRED_FIELDS = {
@@ -761,6 +837,8 @@ def main() -> int:
     print(f"cockpit_status_staged_paper_order_review_count={payload.get('staged_paper_order', {}).get('review_count')}")
     print(f"cockpit_status_broker_reconciliation_status={payload.get('broker_reconciliation', {}).get('status')}")
     print(f"cockpit_status_broker_reconciliation_review_count={payload.get('broker_reconciliation', {}).get('review_count')}")
+    print(f"cockpit_status_paper_submit_receipt_status={payload.get('paper_submit_receipt', {}).get('status')}")
+    print(f"cockpit_status_paper_submit_receipt_review_count={payload.get('paper_submit_receipt', {}).get('review_count')}")
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -1640,8 +1718,96 @@ def main() -> int:
         if review.get("reconciliation_checks", {}).get("event_log_prewrite") != "fail_not_written":
             print("cockpit_status_broker_reconciliation_event_log_written=true")
             return 1
-        if "cannot submit paper orders" not in review.get("boundary", ""):
-            print("cockpit_status_broker_reconciliation_review_boundary_weak=true")
+    if "cannot submit paper orders" not in review.get("boundary", ""):
+        print("cockpit_status_broker_reconciliation_review_boundary_weak=true")
+        return 1
+
+    paper_submit_receipt = payload.get("paper_submit_receipt", {})
+    missing_paper_submit_receipt_fields = sorted(
+        PAPER_SUBMIT_RECEIPT_REQUIRED_FIELDS - set(paper_submit_receipt)
+    )
+    if missing_paper_submit_receipt_fields:
+        print("cockpit_status_paper_submit_receipt_fields_missing=" + ",".join(missing_paper_submit_receipt_fields))
+        return 1
+    if paper_submit_receipt.get("status") != "ok":
+        print("cockpit_status_paper_submit_receipt_not_ok=true")
+        return 1
+    if paper_submit_receipt.get("authority") != "dry_run_receipt_only":
+        print("cockpit_status_paper_submit_receipt_authority_mismatch=true")
+        return 1
+    zero_receipt_counts = {
+        "paper_order_submitted_count": "cockpit_status_paper_submit_receipt_order_submitted=true",
+        "broker_post_called_count": "cockpit_status_paper_submit_receipt_broker_post_called=true",
+        "broker_write_allowed_count": "cockpit_status_paper_submit_receipt_broker_write_allowed=true",
+        "live_capital_enabled_count": "cockpit_status_paper_submit_receipt_live_capital_enabled=true",
+    }
+    for count_key, error_key in zero_receipt_counts.items():
+        if paper_submit_receipt.get(count_key) != 0:
+            print(error_key)
+            return 1
+    if "cannot call broker POST routes" not in paper_submit_receipt.get("boundary", ""):
+        print("cockpit_status_paper_submit_receipt_boundary_weak=true")
+        return 1
+    if not isinstance(paper_submit_receipt.get("reviews"), list) or not paper_submit_receipt["reviews"]:
+        print("cockpit_status_paper_submit_receipt_reviews_missing=true")
+        return 1
+    for review in paper_submit_receipt.get("reviews", []):
+        missing_fields = sorted(PAPER_SUBMIT_RECEIPT_REVIEW_REQUIRED_FIELDS - set(review))
+        if missing_fields:
+            print(
+                "cockpit_status_paper_submit_receipt_review_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        for flag_key in (
+            "paper_order_submitted",
+            "broker_post_called",
+            "broker_write_allowed",
+            "live_capital_enabled",
+        ):
+            if review.get(flag_key) is not False:
+                print(
+                    "cockpit_status_paper_submit_receipt_review_flag_not_false="
+                    f"{review.get('review_id', 'unknown')}:{flag_key}"
+                )
+                return 1
+        if review.get("submitted_at") != "not_submitted":
+            print("cockpit_status_paper_submit_receipt_submitted_at_not_blocked=true")
+            return 1
+        missing_receipt = sorted(
+            PAPER_SUBMIT_RECEIPT_SIMULATED_REQUIRED_FIELDS - set(review.get("simulated_receipt", {}))
+        )
+        if missing_receipt:
+            print(
+                "cockpit_status_paper_submit_receipt_simulated_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_receipt)}"
+            )
+            return 1
+        simulated = review.get("simulated_receipt", {})
+        if simulated.get("mode") != "dry_run_only":
+            print("cockpit_status_paper_submit_receipt_simulated_not_dry_run=true")
+            return 1
+        if simulated.get("broker_post_called") is not False:
+            print("cockpit_status_paper_submit_receipt_simulated_broker_post_called=true")
+            return 1
+        if simulated.get("paper_order_submitted") is not False:
+            print("cockpit_status_paper_submit_receipt_simulated_order_submitted=true")
+            return 1
+        missing_checks = sorted(PAPER_SUBMIT_RECEIPT_REQUIRED_CHECKS - set(review.get("receipt_checks", {})))
+        if missing_checks:
+            print(
+                "cockpit_status_paper_submit_receipt_checks_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_checks)}"
+            )
+            return 1
+        if review.get("receipt_checks", {}).get("broker_post") != "pass_not_called":
+            print("cockpit_status_paper_submit_receipt_broker_post_not_closed=true")
+            return 1
+        if review.get("receipt_checks", {}).get("paper_order_submission") != "pass_not_submitted":
+            print("cockpit_status_paper_submit_receipt_order_submission_not_closed=true")
+            return 1
+        if "cannot call Alpaca POST routes" not in review.get("boundary", ""):
+            print("cockpit_status_paper_submit_receipt_review_boundary_weak=true")
             return 1
 
     tradingview = payload["tradingview_alerts"]

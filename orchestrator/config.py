@@ -8,9 +8,10 @@ from dataclasses import dataclass
 DEFAULT_FUND_MANAGER_EMAILS = (
     "raminhoodeh@gmail.com",
     "troycookecareer@gmail.com",
+    "akber.ali@hotmail.co.uk",
     "isioras@yahoo.co.uk",
 )
-DEFAULT_PENDING_FUND_MANAGERS = ("Akber", "Anas")
+DEFAULT_PENDING_FUND_MANAGERS = ("Anas",)
 
 
 def _csv_tuple(value: str) -> tuple[str, ...]:

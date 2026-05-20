@@ -27,6 +27,7 @@ from orchestrator.intelligence import (
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
+from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
 from orchestrator.risk_agent import RiskPolicyReviewStore, risk_agent_summary
 from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
@@ -126,6 +127,7 @@ def _module_authority(module_key: str, raw_status: str) -> str:
         "execution_policy",
         "staged_order_contract",
         "broker_reconciliation",
+        "paper_submit_receipt",
         "trade_layer",
     }:
         return "write_blocked"
@@ -157,6 +159,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "execution_policy": "checking kill switches without order authority",
         "staged_order_contract": "describing disabled paper-order staging",
         "broker_reconciliation": "checking broker echo and reconciliation prerequisites",
+        "paper_submit_receipt": "checking dry-run paper-submit receipt prerequisites",
         "telegram_bot": "outbound dry-run member communications",
         "live_bridge": "serving authenticated public-safe status snapshots",
         "cockpit": "static live shell frozen",
@@ -688,6 +691,42 @@ def _safe_broker_reconciliation_reviews(settings: Settings) -> list[dict[str, An
     ]
 
 
+def _safe_paper_submit_receipt_reviews(settings: Settings) -> list[dict[str, Any]]:
+    try:
+        reviews = list(PaperSubmitReceiptReviewStore(settings=settings).read(limit=5))
+    except Exception:
+        reviews = []
+    return [
+        {
+            "schema_version": review.get("schema_version"),
+            "review_id": review.get("review_id"),
+            "source_broker_reconciliation_review_id": review.get("source_broker_reconciliation_review_id"),
+            "source_staged_paper_order_review_id": review.get("source_staged_paper_order_review_id"),
+            "source_execution_policy_review_id": review.get("source_execution_policy_review_id"),
+            "status": review.get("status"),
+            "instrument": review.get("instrument"),
+            "selected_venue": review.get("selected_venue"),
+            "venue_mode": review.get("venue_mode"),
+            "account_scope": review.get("account_scope"),
+            "hypothetical_order": review.get("hypothetical_order", {}),
+            "broker_echo": review.get("broker_echo", {}),
+            "simulated_receipt": review.get("simulated_receipt", {}),
+            "receipt_checks": review.get("receipt_checks", {}),
+            "blocked_reasons": review.get("blocked_reasons", []),
+            "required_next_steps": review.get("required_next_steps", []),
+            "dry_run_receipt_created": bool(review.get("dry_run_receipt_created")),
+            "paper_order_submitted": bool(review.get("paper_order_submitted")),
+            "broker_post_called": bool(review.get("broker_post_called")),
+            "broker_write_allowed": bool(review.get("broker_write_allowed")),
+            "live_capital_enabled": bool(review.get("live_capital_enabled")),
+            "submitted_at": review.get("submitted_at"),
+            "reviewed_at": review.get("reviewed_at"),
+            "boundary": review.get("boundary"),
+        }
+        for review in reviews
+    ]
+
+
 def _build_cognition(settings: Settings) -> dict[str, Any]:
     summary = shadow_intelligence_summary(settings)
     store = ShadowSignalStore(settings=settings)
@@ -886,6 +925,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "signal integrity review",
             "staged paper-order contract hold",
             "broker reconciliation contract hold",
+            "paper-submit receipt dry-run hold",
             "strategy review pending",
             "signal integrity gate blocked",
             "trade layer not reached",
@@ -901,12 +941,13 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "execution_policy_read_only",
             "staged_paper_order_contract_disabled",
             "broker_reconciliation_contract_read_only",
+            "paper_submit_receipt_dry_run_only",
         ],
         "boundary": (
             "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, "
             "Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, "
             "staged paper-order checks cannot create orders, and broker reconciliation checks "
-            "cannot submit paper orders."
+            "cannot submit paper orders. Paper-submit receipt checks cannot call brokers."
         ),
     }
 
@@ -1268,6 +1309,7 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         "execution_policy": _execution_policy_status(settings),
         "staged_paper_order": _staged_paper_order_status(settings),
         "broker_reconciliation": _broker_reconciliation_status(settings),
+        "paper_submit_receipt": _paper_submit_receipt_status(settings),
         "store_status": store_status,
         "watching": [],
         "candidates": [],
@@ -1424,6 +1466,28 @@ def _broker_reconciliation_status(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _paper_submit_receipt_status(settings: Settings) -> dict[str, Any]:
+    summary = paper_submit_receipt_summary(settings)
+    reviews = _safe_paper_submit_receipt_reviews(settings)
+    return {
+        "status": summary.get("status", "ok"),
+        "schema_version": summary.get("schema_version"),
+        "review_count": summary.get("review_count", 0),
+        "by_status": summary.get("by_status", {}),
+        "dry_run_receipt_created_count": summary.get("dry_run_receipt_created_count", 0),
+        "paper_order_submitted_count": summary.get("paper_order_submitted_count", 0),
+        "broker_post_called_count": summary.get("broker_post_called_count", 0),
+        "broker_write_allowed_count": summary.get("broker_write_allowed_count", 0),
+        "live_capital_enabled_count": summary.get("live_capital_enabled_count", 0),
+        "authority": "dry_run_receipt_only",
+        "reviews": reviews,
+        "boundary": summary.get(
+            "boundary",
+            "Paper-submit receipt reviews are dry-run only and cannot call brokers or submit paper orders.",
+        ),
+    }
+
+
 def _forbidden_actions() -> list[dict[str, str]]:
     return [
         {
@@ -1455,6 +1519,11 @@ def _forbidden_actions() -> list[dict[str, str]]:
             "key": "paper_order_submission",
             "status": "blocked",
             "reason": "broker_reconciliation_contract_is_read_only",
+        },
+        {
+            "key": "broker_post_call",
+            "status": "blocked",
+            "reason": "paper_submit_receipt_is_dry_run_only",
         },
         {
             "key": "tradingview_alert_execution",
@@ -1499,6 +1568,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "execution_policy": _execution_policy_status(settings),
         "staged_paper_order": _staged_paper_order_status(settings),
         "broker_reconciliation": _broker_reconciliation_status(settings),
+        "paper_submit_receipt": _paper_submit_receipt_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
@@ -1566,6 +1636,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "execution_policy",
         "staged_paper_order",
         "broker_reconciliation",
+        "paper_submit_receipt",
         "trade_layer",
         "communications",
         "forbidden_actions",

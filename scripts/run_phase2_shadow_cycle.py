@@ -152,6 +152,40 @@ def main() -> int:
         "phase2_shadow_cycle_broker_reconciliation_live_capital_enabled_count="
         f"{report['broker_reconciliation_live_capital_enabled_count']}"
     )
+    print(f"phase2_shadow_cycle_paper_submit_receipt_status={report['paper_submit_receipt_status']}")
+    print(f"phase2_shadow_cycle_paper_submit_receipt_review_count={report['paper_submit_receipt_review_count']}")
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_blocked_before_count="
+        f"{report['paper_submit_receipt_blocked_before_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_dry_run_blocked_count="
+        f"{report['paper_submit_receipt_dry_run_blocked_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_dry_run_ready_count="
+        f"{report['paper_submit_receipt_dry_run_ready_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_dry_run_created_count="
+        f"{report['paper_submit_receipt_dry_run_created_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_paper_order_submitted_count="
+        f"{report['paper_submit_receipt_paper_order_submitted_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_broker_post_called_count="
+        f"{report['paper_submit_receipt_broker_post_called_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_broker_write_allowed_count="
+        f"{report['paper_submit_receipt_broker_write_allowed_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_paper_submit_receipt_live_capital_enabled_count="
+        f"{report['paper_submit_receipt_live_capital_enabled_count']}"
+    )
     print(f"phase2_shadow_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_shadow_cycle_local_research_mode={report['local_research_mode']}")
     print(f"phase2_shadow_cycle_paper_account_context_status={report['paper_account_context_status']}")
@@ -235,6 +269,14 @@ def main() -> int:
     if report["broker_reconciliation_broker_write_allowed_count"] != 0:
         return 1
     if report["broker_reconciliation_live_capital_enabled_count"] != 0:
+        return 1
+    if report["paper_submit_receipt_paper_order_submitted_count"] != 0:
+        return 1
+    if report["paper_submit_receipt_broker_post_called_count"] != 0:
+        return 1
+    if report["paper_submit_receipt_broker_write_allowed_count"] != 0:
+        return 1
+    if report["paper_submit_receipt_live_capital_enabled_count"] != 0:
         return 1
     return 0
 

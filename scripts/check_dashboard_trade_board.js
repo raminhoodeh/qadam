@@ -333,6 +333,82 @@ const REQUIRED_BROKER_RECONCILIATION_CHECKS = [
     "venue_registry_write_health"
 ];
 
+const REQUIRED_PAPER_SUBMIT_RECEIPT_FIELDS = [
+    "authority",
+    "boundary",
+    "broker_post_called_count",
+    "broker_write_allowed_count",
+    "by_status",
+    "dry_run_receipt_created_count",
+    "live_capital_enabled_count",
+    "paper_order_submitted_count",
+    "review_count",
+    "reviews",
+    "schema_version",
+    "status"
+];
+
+const REQUIRED_PAPER_SUBMIT_RECEIPT_REVIEW_FIELDS = [
+    "account_scope",
+    "blocked_reasons",
+    "boundary",
+    "broker_echo",
+    "broker_post_called",
+    "broker_write_allowed",
+    "dry_run_receipt_created",
+    "hypothetical_order",
+    "instrument",
+    "live_capital_enabled",
+    "paper_order_submitted",
+    "receipt_checks",
+    "required_next_steps",
+    "review_id",
+    "reviewed_at",
+    "schema_version",
+    "selected_venue",
+    "simulated_receipt",
+    "source_broker_reconciliation_review_id",
+    "source_execution_policy_review_id",
+    "source_staged_paper_order_review_id",
+    "status",
+    "submitted_at",
+    "venue_mode"
+];
+
+const REQUIRED_SIMULATED_RECEIPT_FIELDS = [
+    "adapter",
+    "broker_post_called",
+    "client_order_id",
+    "external_order_id",
+    "mode",
+    "paper_order_submitted",
+    "raw_broker_payload_stored",
+    "status",
+    "venue"
+];
+
+const REQUIRED_PAPER_SUBMIT_RECEIPT_CHECKS = [
+    "broker_echo",
+    "broker_post",
+    "broker_reconciliation_contract",
+    "broker_reconciliation_status",
+    "broker_write",
+    "duplicate_order_guard",
+    "dry_run_receipt",
+    "event_log_prewrite",
+    "idempotency_key",
+    "kill_switch",
+    "live_capital",
+    "paper_account_mirror",
+    "paper_account_write_authority",
+    "paper_order_submission",
+    "paper_order_submit_permission",
+    "post_submit_reconciliation",
+    "postmortem_link",
+    "pre_trade_snapshot",
+    "venue_registry_write_health"
+];
+
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -361,6 +437,10 @@ async function main() {
     const brokerReconciliation = tradeLayer.broker_reconciliation || status.broker_reconciliation || {};
     const brokerReconciliationReviews = Array.isArray(brokerReconciliation.reviews)
         ? brokerReconciliation.reviews
+        : [];
+    const paperSubmitReceipt = tradeLayer.paper_submit_receipt || status.paper_submit_receipt || {};
+    const paperSubmitReceiptReviews = Array.isArray(paperSubmitReceipt.reviews)
+        ? paperSubmitReceipt.reviews
         : [];
 
     assert(tradeLayer.store_status === "ok", "trade intent store is not ok");
@@ -525,6 +605,61 @@ async function main() {
         assert(/cannot submit paper orders/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
     }
 
+    const missingPaperSubmitReceipt = missingFields(
+        paperSubmitReceipt,
+        REQUIRED_PAPER_SUBMIT_RECEIPT_FIELDS
+    );
+    assert(
+        !missingPaperSubmitReceipt.length,
+        `paper-submit receipt missing fields: ${missingPaperSubmitReceipt.join(", ")}`
+    );
+    assert(paperSubmitReceipt.status === "ok", "paper-submit receipt contract is not ok");
+    assert(paperSubmitReceipt.authority === "dry_run_receipt_only", "paper-submit receipt authority mismatch");
+    [
+        "paper_order_submitted_count",
+        "broker_post_called_count",
+        "broker_write_allowed_count",
+        "live_capital_enabled_count"
+    ].forEach((field) => {
+        assert(paperSubmitReceipt[field] === 0, `paper-submit receipt ${field} is non-zero`);
+    });
+    assert(
+        /cannot call broker POST routes/i.test(paperSubmitReceipt.boundary || ""),
+        "paper-submit receipt boundary is weak"
+    );
+    assert(paperSubmitReceiptReviews.length >= 1, "paper-submit receipt reviews are missing");
+
+    for (const review of paperSubmitReceiptReviews) {
+        const missing = missingFields(review, REQUIRED_PAPER_SUBMIT_RECEIPT_REVIEW_FIELDS);
+        assert(!missing.length, `${review.review_id || "paper-submit receipt review"} missing fields: ${missing.join(", ")}`);
+        [
+            "paper_order_submitted",
+            "broker_post_called",
+            "broker_write_allowed",
+            "live_capital_enabled"
+        ].forEach((field) => {
+            assert(review[field] === false, `${review.review_id} has ${field} enabled`);
+        });
+        assert(review.submitted_at === "not_submitted", `${review.review_id} has submitted timestamp`);
+        assert(
+            REQUIRED_SIMULATED_RECEIPT_FIELDS.every((field) => hasOwn(review.simulated_receipt, field)),
+            `${review.review_id} simulated receipt is incomplete`
+        );
+        assert(review.simulated_receipt.mode === "dry_run_only", `${review.review_id} is not dry-run only`);
+        assert(review.simulated_receipt.broker_post_called === false, `${review.review_id} called broker POST`);
+        assert(review.simulated_receipt.paper_order_submitted === false, `${review.review_id} submitted paper order`);
+        assert(
+            REQUIRED_PAPER_SUBMIT_RECEIPT_CHECKS.every((field) => hasOwn(review.receipt_checks, field)),
+            `${review.review_id} paper-submit receipt checks are incomplete`
+        );
+        assert(review.receipt_checks.broker_post === "pass_not_called", `${review.review_id} broker POST not closed`);
+        assert(
+            review.receipt_checks.paper_order_submission === "pass_not_submitted",
+            `${review.review_id} paper order submission not closed`
+        );
+        assert(/cannot call Alpaca POST routes/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
+    }
+
     for (const signal of observedSignals) {
         if (signal.source_type !== "tradingview_paid_alert") continue;
         const missing = missingFields(signal, REQUIRED_OBSERVED_SIGNAL_FIELDS);
@@ -593,6 +728,12 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "duplicate guard not ready");
     assertIncludes(rendered, "[data-trade-layer]", "broker echo not verified");
     assertIncludes(rendered, "[data-trade-layer]", "paper submit blocked");
+    assertIncludes(rendered, "[data-trade-layer]", "Dry-run paper-submit receipt");
+    assertIncludes(rendered, "[data-trade-layer]", "Simulated receipt");
+    assertIncludes(rendered, "[data-trade-layer]", "dry-run receipt not created");
+    assertIncludes(rendered, "[data-trade-layer]", "paper order not submitted");
+    assertIncludes(rendered, "[data-trade-layer]", "broker POST not called");
+    assertIncludes(rendered, "[data-trade-layer]", "Receipt checks");
     assertIncludes(rendered, "[data-trade-layer]", "No broker order path exists");
     assertIncludes(rendered, "[data-trade-layer]", "no broker route exists");
     assertIncludes(rendered, "[data-trade-layer]", "0 execution allowed");
@@ -676,6 +817,20 @@ async function main() {
                 reviews: [],
                 boundary: "Broker reconciliation is read-only and cannot submit paper orders."
             },
+            paper_submit_receipt: {
+                status: "ok",
+                schema_version: 1,
+                review_count: 0,
+                by_status: {},
+                dry_run_receipt_created_count: 0,
+                paper_order_submitted_count: 0,
+                broker_post_called_count: 0,
+                broker_write_allowed_count: 0,
+                live_capital_enabled_count: 0,
+                authority: "dry_run_receipt_only",
+                reviews: [],
+                boundary: "Paper-submit receipt is dry-run only and cannot call broker POST routes."
+            },
             store_status: "ok",
             watching: [],
             candidates: [],
@@ -697,6 +852,7 @@ async function main() {
     assertIncludes(emptyRendered, "[data-trade-layer]", "No execution policy reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No staged paper-order reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "No broker reconciliation reviews yet");
+    assertIncludes(emptyRendered, "[data-trade-layer]", "No dry-run paper-submit reviews yet");
     assertIncludes(emptyRendered, "[data-trade-layer]", "not connected yet");
 
     console.log("Dashboard trade board contract OK");

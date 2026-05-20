@@ -24,6 +24,7 @@ const pipelineDetails: Record<string, string> = {
 const knownManagerNames: Record<string, string> = {
   "raminhoodeh@gmail.com": "Ramin",
   "troycookecareer@gmail.com": "Troy",
+  "akber.ali@hotmail.co.uk": "Akber",
   "isioras@yahoo.co.uk": "Ion"
 };
 

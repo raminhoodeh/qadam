@@ -24,6 +24,7 @@ from orchestrator.heartbeat import registry_heartbeats
 from orchestrator.ingestion import ingestion_spine_summary
 from orchestrator.intelligence import shadow_intelligence_summary
 from orchestrator.local_store import local_store_health
+from orchestrator.paper_submit_receipt import paper_submit_receipt_summary
 from orchestrator.quantum import quantum_providers
 from orchestrator.resource_registry import resource_registry_summary
 from orchestrator.risk_agent import risk_agent_summary
@@ -85,6 +86,7 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
         {"key": "execution_policy", "label": "Execution Policy", "owner": "Kill Switches", "status": "read_only_ready"},
         {"key": "staged_order_contract", "label": "Staged Order Contract", "owner": "Paper Order Gate", "status": "read_only_ready"},
         {"key": "broker_reconciliation", "label": "Broker Reconciliation", "owner": "Paper Order Gate", "status": "read_only_ready"},
+        {"key": "paper_submit_receipt", "label": "Paper Submit Receipt", "owner": "Paper Order Gate", "status": "dry_run"},
         {"key": "governance_forum", "label": "Governance Forum", "owner": "Fund Managers", "status": "local"},
         {"key": "telegram_bot", "label": "Telegram Bot", "owner": "Fund Manager Interface", "status": str(telegram.get("status", "disabled"))},
         {
@@ -154,6 +156,7 @@ def build_system_health(
         "execution_policy": execution_policy_summary(settings),
         "staged_paper_order": staged_paper_order_summary(settings),
         "broker_reconciliation": broker_reconciliation_summary(settings),
+        "paper_submit_receipt": paper_submit_receipt_summary(settings),
         "governance_forum": governance_health,
         "telegram_communications": telegram_status(settings),
         "ingestion_spine": ingestion_spine_summary(settings),

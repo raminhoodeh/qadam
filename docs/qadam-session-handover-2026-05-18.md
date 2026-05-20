@@ -80,6 +80,7 @@ Local credential status as of 2026-05-18:
 - Execution Policy / kill-switch router now exists as `orchestrator/execution_policy.py`, with `scripts/check_execution_policy_router.py` as its contract check. It reviews Risk Agent outputs against selected venue state, broker-order route state, staged-paper-order contract availability, global/strategy/venue/model/data kill switches, and live-capital boundaries. It can block, hold, or mark a record shadow-ready for later paper-order contract review, but it cannot stage orders or write to brokers.
 - Disabled staged paper-order contract now exists as `orchestrator/staged_paper_order.py`, with `scripts/check_staged_paper_order_contract.py` as its contract check. It consumes Execution Policy reviews, describes hypothetical order staging and reconciliation checks, and keeps staged-order creation, paper-order submission, live capital, and broker writes disabled.
 - Read-only broker reconciliation contract now exists as `orchestrator/broker_reconciliation.py`, with `scripts/check_broker_reconciliation_contract.py` as its contract check. It consumes disabled staged paper-order reviews, describes broker echo, idempotency, Event Log prewrite, duplicate-order guard, post-submit reconciliation, and postmortem requirements, and keeps paper-order submission, live capital, and broker writes disabled.
+- Dry-run paper-submit receipt contract now exists as `orchestrator/paper_submit_receipt.py`, with `scripts/check_paper_submit_receipt_contract.py` as its contract check. It consumes broker reconciliation reviews, describes simulated receipt prerequisites, and keeps broker POST calls, paper-order submission, live capital, and broker writes disabled.
 - Current 2026-05-20 Phase 2 live path reached read-only broker reconciliation review: available read-only observations produced shadow packets, shadow signals, Signal Integrity reviews, Risk Agent policy reviews, Execution Policy / kill-switch reviews, disabled staged paper-order reviews, broker reconciliation reviews, and a Strategy Lead shadow handoff. Risk Agent, Execution Policy, staged paper-order, and broker reconciliation authority counts remained zero for execution, staged paper orders, paper-order submission, live capital, and broker writes.
 - Kalshi is blocked by current location/account availability and should remain deferred until eligibility is resolved.
 
@@ -104,7 +105,7 @@ What still needs work:
 - Add remaining provider credentials only when each source is needed.
 - Run true historical backfills.
 - Replace Trust Score priors with real observation/backtest scores.
-- Keep the broker reconciliation contract read-only and build the next dry-run paper-submit receipt contract before any real broker-order route exists.
+- Keep the broker reconciliation and dry-run paper-submit receipt contracts read-only, then harden idempotency, Event Log prewrite, pre-trade snapshot, and duplicate-order guard schemas before any real broker-order route exists.
 
 ## Secret Handling
 
@@ -177,7 +178,7 @@ Give Codex this handover file and say:
 ```text
 Continue Qadam from docs/qadam-session-handover-2026-05-18.md.
 Use docs/qadam-master-implementation-plan.md as the master plan and docs/qadam-api-key-acquisition-plan.md for API onboarding.
-Start with the dry-run paper-submit receipt contract, keeping broker reconciliation outputs non-executable and keeping all broker writes disabled.
+Start by hardening the dry-run paper-submit receipt contract, keeping broker reconciliation outputs non-executable and keeping all broker POST calls, paper-order submissions, and broker writes disabled.
 Do not expose or commit secrets.
 ```
 
