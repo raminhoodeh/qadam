@@ -69,21 +69,21 @@
     "boundary": "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, but Risk Agent and execution policy still do not exist.",
     "current_focus": [
       "reviewing shadow-only hypotheses",
-      "local Research Analyst focus: Energy commodity flows (US reserves, Russia sanctions impact); Tech sector consolidation (M&A); Macroeconomic policy shi",
+      "local Research Analyst focus: Correlation between equity performance (Nasdaq losses) and macro factors (oil prices, borrowing costs). Monitor the impa",
       "checking paper account context without order authority: alpaca_paper_readonly_connected",
-      "Signal Integrity Gate: 5 recent reviews, 5 held"
+      "Signal Integrity Gate: 5 recent reviews, 23 held"
     ],
     "evidence_packets": [
       {
         "average_trust_score": 0.68,
-        "created_at": "2026-05-19T16:46:42.128630+00:00",
+        "created_at": "2026-05-19T20:08:27.434701+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:1ff1712d-0f72-49f6-b5fd-803ecda23078",
-            "observed_at": "2026-05-19T16:46:42.127693+00:00",
+            "evidence_id": "shadow_triage_packet:1f5039ea-dc20-4470-b275-15fd760f15f5",
+            "observed_at": "2026-05-19T20:08:26.882399+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:90cd64a7-fb17-4509-93cc-c95220f4f067",
+            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:a12aa008-9ffd-4e54-84e3-8fe428ec9bbf",
             "trust_score": 0.68
           }
         ],
@@ -91,23 +91,23 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "1dc991b4-bed9-4d6f-a134-0b42f8a0f6e2",
+        "signal_id": "cec294e9-592c-4db3-b1a3-695379aa182c",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "ee5cee59-c58d-4a3c-b1a3-42ab75b35bf2"
+        "trail_id": "9f63874b-5be7-488a-9a93-c5a3e8e8ff72"
       },
       {
         "average_trust_score": 0.68,
-        "created_at": "2026-05-19T18:25:45.482833+00:00",
+        "created_at": "2026-05-19T20:30:38.659170+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:befb7c5e-cdeb-454f-bba2-408d1f7f8707",
-            "observed_at": "2026-05-19T18:25:43.811997+00:00",
+            "evidence_id": "shadow_triage_packet:6ad1c0e5-2932-44ca-924a-bff0199f38f9",
+            "observed_at": "2026-05-19T20:30:37.114086+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:21c80635-6c7f-4b24-b846-5ee9a4499d41",
+            "summary": "Nasdaq leads equity losses with oil, borrowing costs in focus - Reuters Source refs: social.rss:2ecc5d1a-02f2-4235-b311-db20d9b4bc53",
             "trust_score": 0.68
           }
         ],
@@ -115,23 +115,23 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "signal_id": "9f722ac8-b695-4e39-b235-39ceb92c69e1",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "8b68effd-01c6-49da-ad7d-33a37c8061a1"
+        "trail_id": "a4003ee3-309e-429d-9a16-3b3691677e52"
       },
       {
         "average_trust_score": 0.68,
-        "created_at": "2026-05-19T18:25:45.482881+00:00",
+        "created_at": "2026-05-19T20:30:38.659221+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:9a3dcb1d-b36c-41f8-9e1f-b8bb5f8bd9cc",
-            "observed_at": "2026-05-19T18:25:43.817021+00:00",
+            "evidence_id": "shadow_triage_packet:e63171da-764d-4d59-83f1-8e257c582512",
+            "observed_at": "2026-05-19T20:30:37.117975+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "US extends sanctions waiver on Russian oil to aid vulnerable countries - Reuters Source refs: social.rss:27da6769-4797-4be2-9295-bfdee2d66bd9",
+            "summary": "Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:89cfbfff-f7e4-4a37-8c1c-89c8c34423c2",
             "trust_score": 0.68
           }
         ],
@@ -139,23 +139,23 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "signal_id": "3dfe3538-3a9f-443b-94ac-abcead8e0627",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "d224885f-b25f-40ac-98d8-9e539ac44ce9"
+        "trail_id": "2a12e30d-2bcd-426b-b712-76dc5ce18b1b"
       },
       {
         "average_trust_score": 0.68,
-        "created_at": "2026-05-19T18:25:45.482908+00:00",
+        "created_at": "2026-05-19T20:30:38.659248+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:8c755253-718f-4423-95ee-02bec599c2e8",
-            "observed_at": "2026-05-19T18:25:43.819974+00:00",
+            "evidence_id": "shadow_triage_packet:f2025011-c419-4293-bab0-e32348750d60",
+            "observed_at": "2026-05-19T20:30:37.121415+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Analog Devices in talks to buy Empower Semiconductor for $1.5 billion, Bloomberg News reports - Reuters Source refs: social.rss:52fdd7f6-e283-4e8c-8d58-83d751c2f26a",
+            "summary": "US extends sanctions waiver on Russian oil to aid vulnerable countries - Reuters Source refs: social.rss:df6ffe8e-c26b-4c66-8f7e-89824260c464",
             "trust_score": 0.68
           }
         ],
@@ -163,23 +163,23 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "signal_id": "2e7b3e31-5dd5-4e5d-ac78-bf68f6ce602d",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "87b7171a-b86d-481f-accf-99f7fd022e42"
+        "trail_id": "dd919856-f2af-4e5d-ad39-35eddfe2188e"
       },
       {
         "average_trust_score": 0.68,
-        "created_at": "2026-05-19T18:25:45.482944+00:00",
+        "created_at": "2026-05-19T20:30:38.659284+00:00",
         "items": [
           {
             "event_type": "research_shadow_triage_packet",
-            "evidence_id": "shadow_triage_packet:5c71402f-767f-455a-8cc1-b4df0929563b",
-            "observed_at": "2026-05-19T18:25:45.001513+00:00",
+            "evidence_id": "shadow_triage_packet:912d72a6-2e4a-4bd8-aeaf-9638ab6c8d03",
+            "observed_at": "2026-05-19T20:30:38.192888+00:00",
             "source": "agent_runtime.research_triage_queue",
-            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:b87d9b53-2beb-44c8-9c9c-e1bb13bc4074",
+            "summary": "Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:f479dea4-9836-4b2f-a4d0-c6c966e2827b",
             "trust_score": 0.68
           }
         ],
@@ -187,20 +187,20 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "signal_id": "929d9df9-f95f-44f3-ae32-e29b9ed69d9b",
         "source_count": 1,
         "sources": [
           "agent_runtime.research_triage_queue"
         ],
-        "trail_id": "a8b2bae5-de52-4a10-a4fd-fd17aa46c940"
+        "trail_id": "0a4e1206-ab98-4fd6-ad81-7620d8491ffa"
       }
     ],
     "hypotheses": [
       {
         "blocked_reason": "signal_integrity_gate_hold_or_block",
         "confidence": 0.442,
-        "created_at": "2026-05-19T16:46:42.128637+00:00",
-        "evidence_packet_id": "1dc991b4-bed9-4d6f-a134-0b42f8a0f6e2",
+        "created_at": "2026-05-19T20:08:27.434716+00:00",
+        "evidence_packet_id": "cec294e9-592c-4db3-b1a3-695379aa182c",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -211,16 +211,16 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "1dc991b4-bed9-4d6f-a134-0b42f8a0f6e2",
+        "signal_id": "cec294e9-592c-4db3-b1a3-695379aa182c",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:90cd64a7-fb17-4509-93cc-c95220f4f067",
+        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:a12aa008-9ffd-4e54-84e3-8fe428ec9bbf",
         "title": "Shadow watch: macro_watchlist"
       },
       {
         "blocked_reason": "signal_integrity_gate_hold_or_block",
         "confidence": 0.519,
-        "created_at": "2026-05-19T18:25:45.482854+00:00",
-        "evidence_packet_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "created_at": "2026-05-19T20:30:38.659193+00:00",
+        "evidence_packet_id": "9f722ac8-b695-4e39-b235-39ceb92c69e1",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -231,16 +231,16 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "signal_id": "9f722ac8-b695-4e39-b235-39ceb92c69e1",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:21c80635-6c7f-4b24-b846-5ee9a4499d41",
+        "thesis": "Deterministic triage flagged this observation for review: Nasdaq leads equity losses with oil, borrowing costs in focus - Reuters Source refs: social.rss:2ecc5d1a-02f2-4235-b311-db20d9b4bc53",
         "title": "Shadow watch: crude_oil_or_energy_transport"
       },
       {
         "blocked_reason": "signal_integrity_gate_hold_or_block",
         "confidence": 0.519,
-        "created_at": "2026-05-19T18:25:45.482891+00:00",
-        "evidence_packet_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "created_at": "2026-05-19T20:30:38.659231+00:00",
+        "evidence_packet_id": "3dfe3538-3a9f-443b-94ac-abcead8e0627",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -251,36 +251,36 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "signal_id": "3dfe3538-3a9f-443b-94ac-abcead8e0627",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: US extends sanctions waiver on Russian oil to aid vulnerable countries - Reuters Source refs: social.rss:27da6769-4797-4be2-9295-bfdee2d66bd9",
+        "thesis": "Deterministic triage flagged this observation for review: Record oil draw from US emergency reserve drives total volumes to two-year low - Reuters Source refs: social.rss:89cfbfff-f7e4-4a37-8c1c-89c8c34423c2",
         "title": "Shadow watch: crude_oil_or_energy_transport"
       },
       {
         "blocked_reason": "signal_integrity_gate_hold_or_block",
-        "confidence": 0.526,
-        "created_at": "2026-05-19T18:25:45.482919+00:00",
-        "evidence_packet_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "confidence": 0.519,
+        "created_at": "2026-05-19T20:30:38.659257+00:00",
+        "evidence_packet_id": "2e7b3e31-5dd5-4e5d-ac78-bf68f6ce602d",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
-        "instrument_focus": "semiconductors",
+        "instrument_focus": "crude_oil_or_energy_transport",
         "integrity_review_status": "hold_for_corroboration",
-        "integrity_score": 0.37,
+        "integrity_score": 0.368,
         "invalidation": "Discard unless corroborated by an independent source and transaction-cost assumptions.",
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "signal_id": "2e7b3e31-5dd5-4e5d-ac78-bf68f6ce602d",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Analog Devices in talks to buy Empower Semiconductor for $1.5 billion, Bloomberg News reports - Reuters Source refs: social.rss:52fdd7f6-e283-4e8c-8d58-83d751c2f26a",
-        "title": "Shadow watch: semiconductors"
+        "thesis": "Deterministic triage flagged this observation for review: US extends sanctions waiver on Russian oil to aid vulnerable countries - Reuters Source refs: social.rss:df6ffe8e-c26b-4c66-8f7e-89824260c464",
+        "title": "Shadow watch: crude_oil_or_energy_transport"
       },
       {
         "blocked_reason": "signal_integrity_gate_hold_or_block",
         "confidence": 0.442,
-        "created_at": "2026-05-19T18:25:45.482955+00:00",
-        "evidence_packet_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "created_at": "2026-05-19T20:30:38.659298+00:00",
+        "evidence_packet_id": "929d9df9-f95f-44f3-ae32-e29b9ed69d9b",
         "evidence_source_count": 1,
         "execution_allowed": false,
         "generated_by": "deterministic_keyword_anomaly_fallback",
@@ -291,71 +291,13 @@
         "missing_correlations": [
           "second_independent_source"
         ],
-        "signal_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "signal_id": "929d9df9-f95f-44f3-ae32-e29b9ed69d9b",
         "status": "shadow_only",
-        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:b87d9b53-2beb-44c8-9c9c-e1bb13bc4074",
+        "thesis": "Deterministic triage flagged this observation for review: Alpaca paper account and market-data read-only mirror candidate. Source refs: market.alpaca:f479dea4-9836-4b2f-a4d0-c6c966e2827b",
         "title": "Shadow watch: macro_watchlist"
       }
     ],
     "local_research_assessments": [
-      {
-        "anomalies": [
-          "Record oil draw from US emergency reserve drives total volumes to two-year low",
-          "US extends sanctions waiver on Russian oil to aid vulnerable countries"
-        ],
-        "assessment_id": "57ee8da4-87bb-45da-afe0-65381e52be9c",
-        "confidence": 0.85,
-        "created_at": "2026-05-19T16:37:48.936412+00:00",
-        "escalation_recommendation": "hold_shadow",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "Correlation between sustained high energy demand (implied by reserves draw) and the impact of extended sanctions waivers on global supply/pricing.",
-          "Impact of Analog Devices' potential acquisition of Empower Semiconductor on broader semiconductor market valuations or specific industry segments."
-        ],
-        "mode": "live_local_llm",
-        "model": "google/gemma-4-e4b",
-        "next_questions": [
-          "What is the projected duration and scope of the US oil reserve drawdown? Does this signal sustained high demand?",
-          "How will the extension of Russian oil sanctions waivers affect pricing mechanisms and global supply stability, particularly for non-sanctioned buyers?",
-          "Does the Analog Devices/Empower Semiconductor deal suggest a strategic shift or consolidation trend in specialized semiconductor components?"
-        ],
-        "paper_order_allowed": false,
-        "provider": "lm_studio",
-        "status": "shadow_only",
-        "summary": "Oil market indicators show a potential shift with US emergency reserves hitting two-year lows and sanctions waivers on Russian oil extending to aid vulnerable nations. Concurrently, there is corporate M&A activity reported (Analog Devices/Empower Semiconductor). Sports betting data (NCAAB, NBA) and general narrative context (Telegram updates) are also present, alongside a system status update for the paper account. Paper context: paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%.",
-        "watch_focus": "Energy commodity flows (US reserves draw, Russian oil sanctions waivers) and technology sector M&A activity. The sports/"
-      },
-      {
-        "anomalies": [
-          "DGS10 10-Year Treasury Yield latest 4.45 on 2026-05-19; delta +0.05 (+1.14%), +2.54 sigma",
-          "DCOILWTICO WTI Crude Oil latest 81.6 on 2026-05-19; delta +1.5 (+1.87%), +2.68 sigma",
-          "Alpaca paper account and market-data read-only mirror candidate.",
-          "paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%"
-        ],
-        "assessment_id": "1c4a1cc0-edca-422c-8339-ac7c59216e6d",
-        "confidence": 0.598,
-        "created_at": "2026-05-19T16:46:42.145056+00:00",
-        "escalation_recommendation": "hold_shadow",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
-        ],
-        "mode": "dry_contract",
-        "model": "gemma-4-e4b",
-        "next_questions": [
-          "Which independent source can corroborate this observation?",
-          "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
-          "Which stale-data or missing-credential condition could invalidate the packet?",
-          "Does the read-only paper account state change review priority without creating an order?"
-        ],
-        "paper_order_allowed": false,
-        "provider": "lm_studio",
-        "status": "shadow_only",
-        "summary": "Local Research Analyst contract produced a shadow-only assessment. Current focus: crude_oil_or_energy_transport. No execution path is available.",
-        "watch_focus": "crude_oil_or_energy_transport"
-      },
       {
         "anomalies": [
           "Record oil draw from US emergency reserve drives total volumes to two-year low",
@@ -382,6 +324,59 @@
         "status": "shadow_only",
         "summary": "Global commodity and geopolitical flows show mixed signals: US oil reserves are at a two-year low, while sanctions waivers on Russian oil suggest continued global energy market fluidity. Corporate M&A activity is noted (Analog/Empower), alongside several sports betting events (NCAAB, NBA) that provide medium-certainty narrative context. Paper context: paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%.",
         "watch_focus": "Energy commodity flows (US reserves, Russia sanctions impact); Tech sector consolidation (M&A); Macroeconomic policy shi"
+      },
+      {
+        "anomalies": [
+          "The simultaneous reporting of significant market stress signals (Nasdaq losses, cost focus) alongside a major geopolitical easing (Russian oil waiver) requires careful correlation analysis.",
+          "Low US emergency oil reserve levels suggest potential supply vulnerability or increased price sensitivity."
+        ],
+        "assessment_id": "1e07ec4d-1c79-4183-9eb4-de732c11a8ce",
+        "confidence": 0.85,
+        "created_at": "2026-05-19T20:08:45.537781+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Direct correlation between the stated sanctions waiver and immediate global energy pricing movements.",
+          "How current borrowing costs are influencing corporate sector performance, given the noted equity losses.",
+          "The relationship between declining oil reserves and broader inflation/interest rate expectations."
+        ],
+        "mode": "live_local_llm",
+        "model": "google/gemma-4-e4b",
+        "next_questions": [
+          "What is the market's expected reaction to sustained low oil reserve levels?",
+          "Are the reported equity losses primarily driven by cost concerns or specific sector weakness?",
+          "How will major central banks adjust policy given the combination of high borrowing costs and energy supply volatility?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Global market sentiment is characterized by equity losses (Nasdaq) and focus on oil/borrowing costs, while geopolitical factors introduce complexity via sanctions waivers. Oil reserves are declining to two-year lows. Non-financial data includes sports betting lines (NCAAB, NBA) and general narrative context from Telegram. Paper context: paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%.",
+        "watch_focus": "Macroeconomic indicators (oil prices, borrowing costs) and US equity performance relative to global sentiment shifts. Mo"
+      },
+      {
+        "anomalies": [
+          "The simultaneous reporting of major financial news (equity declines, oil draw) alongside unrelated sports/platform data suggests a high volume of disparate information requiring careful filtering."
+        ],
+        "assessment_id": "2319f11f-2813-4d75-a38d-dde4054e6239",
+        "confidence": 0.85,
+        "created_at": "2026-05-19T20:30:57.195396+00:00",
+        "escalation_recommendation": "hold_shadow",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Lack of direct correlation analysis between the reported equity losses and specific changes in borrowing costs or inflation expectations. The relationship between US reserve draws and immediate market sentiment needs quantification."
+        ],
+        "mode": "live_local_llm",
+        "model": "google/gemma-4-e4b",
+        "next_questions": [
+          "How are major financial indices (e.g., S&P 500, FTSE) reacting to the oil draw and cost concerns relative to Nasdaq's performance?",
+          "What is the projected impact of continued sanctions waivers on global energy commodity pricing and supply chain stability?",
+          "Are there any leading indicators for changes in borrowing costs that could mitigate or exacerbate current equity losses?"
+        ],
+        "paper_order_allowed": false,
+        "provider": "lm_studio",
+        "status": "shadow_only",
+        "summary": "Global market sentiment is under pressure, driven by equity losses and concerns over oil prices and borrowing costs (Nasdaq leads). Oil markets show a record draw from US reserves, while sanctions waivers on Russian oil are extending. The remaining packets are non-financial/market related (NCAAB, NBA scores, platform status updates) and provide limited immediate predictive value. Paper context: paper account mirror: alpaca_paper_readonly_connected, current balance GBP 100000.0, 0 open positions, 0 mirrored orders, drawdown 0.0%.",
+        "watch_focus": "Correlation between equity performance (Nasdaq losses) and macro factors (oil prices, borrowing costs). Monitor the impa"
       }
     ],
     "model_activity": [
@@ -445,10 +440,10 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T18:25:44.313198+00:00",
-        "packet_id": "2a5851ec-0682-4b4b-a8e6-f2f4cae280b4",
+        "created_at": "2026-05-19T20:30:37.552374+00:00",
+        "packet_id": "d4e8f391-9cdd-4379-b103-dcafe9b53ef9",
         "source_event_refs": [
-          "market.polymarket:ed54b597-a115-4090-ac3c-fe42a59ab155"
+          "market.polymarket:a564f52c-225f-4897-bccd-317e9a9b9541"
         ],
         "status": "queued_shadow_only",
         "summary": "NCAAB: Arizona State Sun Devils vs. Nevada Wolf Pack 2023-03-15",
@@ -457,10 +452,10 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T18:25:44.315858+00:00",
-        "packet_id": "c73eee45-e078-4201-a35c-8f4fab7d3f7d",
+        "created_at": "2026-05-19T20:30:37.554364+00:00",
+        "packet_id": "704f5928-c929-4fb9-8d3e-1805c587f516",
         "source_event_refs": [
-          "market.polymarket:4fe5a12a-f2cb-4839-93ea-6a5986bc8d59"
+          "market.polymarket:dbdac494-1f24-4ddc-9e1c-33135b11a8d6"
         ],
         "status": "queued_shadow_only",
         "summary": "NCAAB: Tennessee Volunteers vs. Duke Blue Devils 2023-03-18",
@@ -469,10 +464,10 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T18:25:44.317788+00:00",
-        "packet_id": "88739ca0-c0bd-4ee2-adce-781228fe36e8",
+        "created_at": "2026-05-19T20:30:37.556042+00:00",
+        "packet_id": "2f600046-c022-4773-9c09-63834ae93aae",
         "source_event_refs": [
-          "market.polymarket:fa04d9f9-fdc0-4f20-9929-7d0f007cffcd"
+          "market.polymarket:80e7696a-a338-43d0-ac94-1cc2d01308d7"
         ],
         "status": "queued_shadow_only",
         "summary": "NBA: LA Clippers vs. Orlando Magic 2023-03-18",
@@ -481,10 +476,10 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T18:25:45.001513+00:00",
-        "packet_id": "5c71402f-767f-455a-8cc1-b4df0929563b",
+        "created_at": "2026-05-19T20:30:38.192888+00:00",
+        "packet_id": "912d72a6-2e4a-4bd8-aeaf-9638ab6c8d03",
         "source_event_refs": [
-          "market.alpaca:b87d9b53-2beb-44c8-9c9c-e1bb13bc4074"
+          "market.alpaca:f479dea4-9836-4b2f-a4d0-c6c966e2827b"
         ],
         "status": "queued_shadow_only",
         "summary": "Alpaca paper account and market-data read-only mirror candidate.",
@@ -493,10 +488,10 @@
       {
         "agent_key": "research_analyst",
         "boundary": "Shadow triage only. No signal, risk decision, or execution authority.",
-        "created_at": "2026-05-19T18:25:45.481196+00:00",
-        "packet_id": "7a53a7da-4411-407e-98b8-982781b700c2",
+        "created_at": "2026-05-19T20:30:38.657631+00:00",
+        "packet_id": "2aebc252-28ec-46a9-b08c-821b4a8e3579",
         "source_event_refs": [
-          "social.telegram:10ac892a-e9c4-4fe9-b6cd-70084b384c68"
+          "social.telegram:d02898e1-906e-412d-aefd-a7f7fa408e27"
         ],
         "status": "queued_shadow_only",
         "summary": "Telegram channel or bot update captured as narrative context only.",
@@ -506,12 +501,12 @@
     "signal_integrity": {
       "boundary": "Signal Integrity Gate reviews are non-executable. They can block or hold, but cannot create candidates or orders.",
       "by_status": {
-        "blocked": 8,
-        "hold_for_corroboration": 5
+        "blocked": 16,
+        "hold_for_corroboration": 23
       },
       "execution_allowed_count": 0,
       "paper_order_allowed_count": 0,
-      "review_count": 13,
+      "review_count": 39,
       "schema_version": 1,
       "status": "ok",
       "trade_candidate_created_count": 0
@@ -546,11 +541,11 @@
           "Add a second independent source before any Strategy or Risk review.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "24794ed7-d996-4b82-85c4-05df852f32cf",
-        "reviewed_at": "2026-05-19T18:25:45.502227+00:00",
+        "review_id": "0a941e71-7c5c-4133-8f19-97491436a7b5",
+        "reviewed_at": "2026-05-19T20:30:38.682868+00:00",
         "signal_confidence": 0.442,
         "source_count": 1,
-        "source_signal_id": "1dc991b4-bed9-4d6f-a134-0b42f8a0f6e2",
+        "source_signal_id": "cec294e9-592c-4db3-b1a3-695379aa182c",
         "status": "blocked",
         "trade_candidate_created": false,
         "worldview_prior_status": "private_prior_only_not_evidence"
@@ -583,11 +578,11 @@
           "Add a second independent source before any Strategy or Risk review.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "2fabbcfd-0d25-4d0e-9a92-ad1ab9d5de64",
-        "reviewed_at": "2026-05-19T18:25:45.502240+00:00",
+        "review_id": "5ffd6581-2490-4b1d-92dc-3cf73c7b7cd4",
+        "reviewed_at": "2026-05-19T20:30:38.682881+00:00",
         "signal_confidence": 0.519,
         "source_count": 1,
-        "source_signal_id": "9ae8370c-2ee9-4c2f-ab45-16ba4e18b26c",
+        "source_signal_id": "9f722ac8-b695-4e39-b235-39ceb92c69e1",
         "status": "hold_for_corroboration",
         "trade_candidate_created": false,
         "worldview_prior_status": "private_prior_only_not_evidence"
@@ -620,11 +615,11 @@
           "Add a second independent source before any Strategy or Risk review.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "48a327b8-b201-47ee-81c8-64ce6656f18a",
-        "reviewed_at": "2026-05-19T18:25:45.502252+00:00",
+        "review_id": "87acf1be-ffbe-4974-9bdf-26a0289ef060",
+        "reviewed_at": "2026-05-19T20:30:38.682893+00:00",
         "signal_confidence": 0.519,
         "source_count": 1,
-        "source_signal_id": "68d96b74-d2a2-4330-988d-c1ddf4e3be7c",
+        "source_signal_id": "3dfe3538-3a9f-443b-94ac-abcead8e0627",
         "status": "hold_for_corroboration",
         "trade_candidate_created": false,
         "worldview_prior_status": "private_prior_only_not_evidence"
@@ -646,8 +641,8 @@
           "second_independent_source_required",
           "second_independent_source"
         ],
-        "instrument_focus": "semiconductors",
-        "integrity_score": 0.37,
+        "instrument_focus": "crude_oil_or_energy_transport",
+        "integrity_score": 0.368,
         "min_trust_score": 0.68,
         "missing_correlations": [
           "second_independent_source"
@@ -657,11 +652,11 @@
           "Add a second independent source before any Strategy or Risk review.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "d524bf79-5eec-4f05-9799-9735846e88d0",
-        "reviewed_at": "2026-05-19T18:25:45.502264+00:00",
-        "signal_confidence": 0.526,
+        "review_id": "41273096-0eab-4f93-9bfa-5aa0d3a8b583",
+        "reviewed_at": "2026-05-19T20:30:38.682904+00:00",
+        "signal_confidence": 0.519,
         "source_count": 1,
-        "source_signal_id": "3663048f-8767-4c09-986d-29ea2913787c",
+        "source_signal_id": "2e7b3e31-5dd5-4e5d-ac78-bf68f6ce602d",
         "status": "hold_for_corroboration",
         "trade_candidate_created": false,
         "worldview_prior_status": "private_prior_only_not_evidence"
@@ -695,11 +690,11 @@
           "Add a second independent source before any Strategy or Risk review.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "bdfcdf7e-a22f-4019-a39d-0de5ca149e44",
-        "reviewed_at": "2026-05-19T18:25:45.502275+00:00",
+        "review_id": "8281c6ba-6ca9-44aa-8aa0-0189a3ac8fa7",
+        "reviewed_at": "2026-05-19T20:30:38.682920+00:00",
         "signal_confidence": 0.442,
         "source_count": 1,
-        "source_signal_id": "cdeb2e2e-f916-4ed0-8685-9b2931a722d3",
+        "source_signal_id": "929d9df9-f95f-44f3-ae32-e29b9ed69d9b",
         "status": "blocked",
         "trade_candidate_created": false,
         "worldview_prior_status": "private_prior_only_not_evidence"
@@ -707,99 +702,6 @@
     ],
     "status": "shadow_ready",
     "strategy_lead_packets": [
-      {
-        "blocked_by": [
-          "signal_integrity_gate_missing",
-          "risk_agent_missing",
-          "execution_policy_missing",
-          "broker_write_route_absent",
-          "paper_account_context_read_only"
-        ],
-        "created_at": "2026-05-19T16:37:48.951847+00:00",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "Correlation between sustained high energy demand (implied by reserves draw) and the impact of extended sanctions waivers on global supply/pricing.",
-          "Impact of Analog Devices' potential acquisition of Empower Semiconductor on broader semiconductor market valuations or specific industry segments."
-        ],
-        "packet_id": "495921a6-cde2-4d40-a718-0c709b045e1d",
-        "paper_account_context": {
-          "account_scope": "first_release_gbp_1000_trial",
-          "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
-          "broker": "alpaca_paper_readonly",
-          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
-          "closed_trade_count": 0,
-          "connection_status": "alpaca_paper_readonly_connected",
-          "current_balance_gbp": 100000.0,
-          "drawdown_pct": 0.0,
-          "execution_allowed": false,
-          "live_capital_enabled": false,
-          "maturity_closed_trade_count": 0,
-          "maturity_closed_trade_target": 100,
-          "mode": "paper",
-          "open_order_count": 0,
-          "open_position_count": 0,
-          "order_count": 0,
-          "paper_order_allowed": false,
-          "realized_pnl_gbp": 0.0,
-          "status": "ok",
-          "timeline_status": "alpaca_paper_readonly_mirrored",
-          "trial_allocation_gbp": 1000.0,
-          "unrealized_pnl_gbp": 0,
-          "write_authority": false
-        },
-        "paper_order_allowed": false,
-        "source_assessment_id": "57ee8da4-87bb-45da-afe0-65381e52be9c",
-        "status": "queued_shadow_only",
-        "watch_focus": "Energy commodity flows (US reserves draw, Russian oil sanctions waivers) and technology sector M&A activity. The sports/",
-        "worldview_lens_status": "private_prior_only_not_evidence"
-      },
-      {
-        "blocked_by": [
-          "signal_integrity_gate_missing",
-          "risk_agent_missing",
-          "execution_policy_missing",
-          "broker_write_route_absent",
-          "paper_account_context_read_only"
-        ],
-        "created_at": "2026-05-19T16:46:42.158740+00:00",
-        "execution_allowed": false,
-        "missing_correlations": [
-          "signal_integrity_gate",
-          "risk_agent_review",
-          "market_price_confirmation"
-        ],
-        "packet_id": "c5b1f968-2b06-40d6-835a-d92e53b2a82c",
-        "paper_account_context": {
-          "account_scope": "first_release_gbp_1000_trial",
-          "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
-          "broker": "alpaca_paper_readonly",
-          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
-          "closed_trade_count": 0,
-          "connection_status": "alpaca_paper_readonly_connected",
-          "current_balance_gbp": 100000.0,
-          "drawdown_pct": 0.0,
-          "execution_allowed": false,
-          "live_capital_enabled": false,
-          "maturity_closed_trade_count": 0,
-          "maturity_closed_trade_target": 100,
-          "mode": "paper",
-          "open_order_count": 0,
-          "open_position_count": 0,
-          "order_count": 0,
-          "paper_order_allowed": false,
-          "realized_pnl_gbp": 0.0,
-          "status": "ok",
-          "timeline_status": "alpaca_paper_readonly_mirrored",
-          "trial_allocation_gbp": 1000.0,
-          "unrealized_pnl_gbp": 0,
-          "write_authority": false
-        },
-        "paper_order_allowed": false,
-        "source_assessment_id": "1c4a1cc0-edca-422c-8339-ac7c59216e6d",
-        "status": "queued_shadow_only",
-        "watch_focus": "crude_oil_or_energy_transport",
-        "worldview_lens_status": "private_prior_only_not_evidence"
-      },
       {
         "blocked_by": [
           "signal_integrity_gate_missing",
@@ -844,6 +746,98 @@
         "source_assessment_id": "84e2dd00-930d-49e7-b7c7-8a4c20114db9",
         "status": "queued_shadow_only",
         "watch_focus": "Energy commodity flows (US reserves, Russia sanctions impact); Tech sector consolidation (M&A); Macroeconomic policy shi",
+        "worldview_lens_status": "private_prior_only_not_evidence"
+      },
+      {
+        "blocked_by": [
+          "signal_integrity_gate_missing",
+          "risk_agent_missing",
+          "execution_policy_missing",
+          "broker_write_route_absent",
+          "paper_account_context_read_only"
+        ],
+        "created_at": "2026-05-19T20:08:45.558811+00:00",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Direct correlation between the stated sanctions waiver and immediate global energy pricing movements.",
+          "How current borrowing costs are influencing corporate sector performance, given the noted equity losses.",
+          "The relationship between declining oil reserves and broader inflation/interest rate expectations."
+        ],
+        "packet_id": "c52cbf0e-37e8-4ed7-afea-bf6d3c284e19",
+        "paper_account_context": {
+          "account_scope": "first_release_gbp_1000_trial",
+          "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
+          "broker": "alpaca_paper_readonly",
+          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
+          "closed_trade_count": 0,
+          "connection_status": "alpaca_paper_readonly_connected",
+          "current_balance_gbp": 100000.0,
+          "drawdown_pct": 0.0,
+          "execution_allowed": false,
+          "live_capital_enabled": false,
+          "maturity_closed_trade_count": 0,
+          "maturity_closed_trade_target": 100,
+          "mode": "paper",
+          "open_order_count": 0,
+          "open_position_count": 0,
+          "order_count": 0,
+          "paper_order_allowed": false,
+          "realized_pnl_gbp": 0.0,
+          "status": "ok",
+          "timeline_status": "alpaca_paper_readonly_mirrored",
+          "trial_allocation_gbp": 1000.0,
+          "unrealized_pnl_gbp": 0,
+          "write_authority": false
+        },
+        "paper_order_allowed": false,
+        "source_assessment_id": "1e07ec4d-1c79-4183-9eb4-de732c11a8ce",
+        "status": "queued_shadow_only",
+        "watch_focus": "Macroeconomic indicators (oil prices, borrowing costs) and US equity performance relative to global sentiment shifts. Mo",
+        "worldview_lens_status": "private_prior_only_not_evidence"
+      },
+      {
+        "blocked_by": [
+          "signal_integrity_gate_missing",
+          "risk_agent_missing",
+          "execution_policy_missing",
+          "broker_write_route_absent",
+          "paper_account_context_read_only"
+        ],
+        "created_at": "2026-05-19T20:30:57.212310+00:00",
+        "execution_allowed": false,
+        "missing_correlations": [
+          "Lack of direct correlation analysis between the reported equity losses and specific changes in borrowing costs or inflation expectations. The relationship between US reserve draws and immediate market sentiment needs quantification."
+        ],
+        "packet_id": "61901caf-4dcb-4f27-98a0-52a8e3c52bcf",
+        "paper_account_context": {
+          "account_scope": "first_release_gbp_1000_trial",
+          "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
+          "broker": "alpaca_paper_readonly",
+          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
+          "closed_trade_count": 0,
+          "connection_status": "alpaca_paper_readonly_connected",
+          "current_balance_gbp": 100000.0,
+          "drawdown_pct": 0.0,
+          "execution_allowed": false,
+          "live_capital_enabled": false,
+          "maturity_closed_trade_count": 0,
+          "maturity_closed_trade_target": 100,
+          "mode": "paper",
+          "open_order_count": 0,
+          "open_position_count": 0,
+          "order_count": 0,
+          "paper_order_allowed": false,
+          "realized_pnl_gbp": 0.0,
+          "status": "ok",
+          "timeline_status": "alpaca_paper_readonly_mirrored",
+          "trial_allocation_gbp": 1000.0,
+          "unrealized_pnl_gbp": 0,
+          "write_authority": false
+        },
+        "paper_order_allowed": false,
+        "source_assessment_id": "2319f11f-2813-4d75-a38d-dde4054e6239",
+        "status": "queued_shadow_only",
+        "watch_focus": "Correlation between equity performance (Nasdaq losses) and macro factors (oil prices, borrowing costs). Monitor the impa",
         "worldview_lens_status": "private_prior_only_not_evidence"
       }
     ]
@@ -940,7 +934,7 @@
   },
   "d1_snapshot": {
     "browser_authority": "read_only",
-    "generated_at": "2026-05-19T18:49:55.774161+00:00",
+    "generated_at": "2026-05-20T00:27:15.437763+00:00",
     "landing_copy": "landing-page-repo/status/cockpit-status.json",
     "local_orchestrator_exposed": false,
     "phase": "D1",
@@ -1283,7 +1277,7 @@
     "supabase_table": "fund_manager_comments",
     "visibility": "founding_fund_managers"
   },
-  "generated_at": "2026-05-19T18:49:55.774161+00:00",
+  "generated_at": "2026-05-20T00:27:15.437763+00:00",
   "live_bridge": {
     "allowed_methods": [
       "GET",
@@ -1305,7 +1299,7 @@
       "PATCH",
       "DELETE"
     ],
-    "generated_at": "2026-05-19T18:49:55.774161+00:00",
+    "generated_at": "2026-05-20T00:27:15.437763+00:00",
     "health_checks": [
       "auth_required",
       "rate_limit_enforced",
@@ -1336,7 +1330,7 @@
       "current_process": "supervising local modules",
       "key": "coo",
       "label": "COO",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Python Orchestrator",
       "raw_status": "registered",
@@ -1347,7 +1341,7 @@
       "current_process": "waiting for local LLM readiness",
       "key": "research_analyst",
       "label": "Research Analyst",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Local LLM",
       "raw_status": "pending",
@@ -1358,7 +1352,7 @@
       "current_process": "waiting for frontier model probe",
       "key": "strategy_lead",
       "label": "Strategy Lead",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Frontier LLM",
       "raw_status": "pending",
@@ -1369,7 +1363,7 @@
       "current_process": "deferred weekly oracle",
       "key": "head_of_quant",
       "label": "Head of Quant",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Quantum Compute",
       "raw_status": "registered",
@@ -1380,7 +1374,7 @@
       "current_process": "recording local audit trail",
       "key": "event_log",
       "label": "Event Log",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "Postgres/Timescale",
       "raw_status": "jsonl_fallback",
@@ -1391,7 +1385,7 @@
       "current_process": "holding local memory shell",
       "key": "knowledge_graph",
       "label": "Knowledge Graph",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "ChromaDB",
       "raw_status": "not_running",
@@ -1402,7 +1396,7 @@
       "current_process": "execution disabled in foundation mode",
       "key": "execution_registry",
       "label": "Execution Registry",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Risk Agent",
       "raw_status": "disabled",
@@ -1413,7 +1407,7 @@
       "current_process": "registered",
       "key": "resource_registry",
       "label": "Resource Registry",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Reference Provenance",
       "raw_status": "registered",
@@ -1424,7 +1418,7 @@
       "current_process": "foundational prior",
       "key": "world_model",
       "label": "World-Model Lens",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "Private Corpus",
       "raw_status": "foundational_prior",
@@ -1435,7 +1429,7 @@
       "current_process": "manifest permissions available",
       "key": "agent_os",
       "label": "Agent OS",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Manifest Registry",
       "raw_status": "manifest_ready",
@@ -1446,7 +1440,7 @@
       "current_process": "broker-write tools blocked",
       "key": "agent_runtime",
       "label": "Agent Runtime",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Permission Gate",
       "raw_status": "enforced",
@@ -1457,7 +1451,7 @@
       "current_process": "shadow-only review packets available",
       "key": "shadow_intelligence",
       "label": "Shadow Intelligence",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Research Analyst",
       "raw_status": "shadow_ready",
@@ -1468,10 +1462,21 @@
       "current_process": "auditing shadow signals without trade authority",
       "key": "signal_integrity_gate",
       "label": "Signal Integrity Gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Signal Auditor",
       "raw_status": "shadow_ready",
+      "status": "online"
+    },
+    {
+      "authority": "write_blocked",
+      "current_process": "reviewing policy without order authority",
+      "key": "risk_agent",
+      "label": "Risk Agent",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
+      "local_only": false,
+      "owner": "Policy Router",
+      "raw_status": "read_only_ready",
       "status": "online"
     },
     {
@@ -1479,7 +1484,7 @@
       "current_process": "local",
       "key": "governance_forum",
       "label": "Governance Forum",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "Fund Managers",
       "raw_status": "local",
@@ -1490,7 +1495,7 @@
       "current_process": "outbound dry-run member communications",
       "key": "telegram_bot",
       "label": "Telegram Bot",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "Fund Manager Interface",
       "raw_status": "dry_run",
@@ -1501,7 +1506,7 @@
       "current_process": "serving authenticated public-safe status snapshots",
       "key": "live_bridge",
       "label": "Secure Live Bridge",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "qadam.trade API",
       "raw_status": "read_only_ready",
@@ -1512,7 +1517,7 @@
       "current_process": "test data ready",
       "key": "ingestion_spine",
       "label": "Test Ingestion Spine",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": true,
       "owner": "World Monitor Adapters",
       "raw_status": "test_data_ready",
@@ -1523,7 +1528,7 @@
       "current_process": "sample ready",
       "key": "gdelt_adapter",
       "label": "GDELT Adapter",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1534,7 +1539,7 @@
       "current_process": "sample ready",
       "key": "oref_adapter",
       "label": "Oref Adapter",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -1545,7 +1550,7 @@
       "current_process": "credential gated",
       "key": "nasa_firms_adapter",
       "label": "NASA FIRMS Adapter",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Physical Pipeline",
       "raw_status": "credential_gated",
@@ -1556,7 +1561,7 @@
       "current_process": "sample ready",
       "key": "fred_adapter",
       "label": "FRED Adapter",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Macro Pipeline",
       "raw_status": "sample_ready",
@@ -1567,7 +1572,7 @@
       "current_process": "sample ready",
       "key": "rss_adapter",
       "label": "RSS Adapter",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "Narrative Pipeline",
       "raw_status": "sample_ready",
@@ -1578,7 +1583,7 @@
       "current_process": "static live shell frozen",
       "key": "cockpit",
       "label": "Cockpit",
-      "last_heartbeat": "2026-05-19T18:49:55.774161+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437763+00:00",
       "local_only": false,
       "owner": "qadam.trade",
       "raw_status": "shell",
@@ -1587,54 +1592,322 @@
   ],
   "process_console": [
     {
-      "component": "signal_integrity",
-      "message": "signal_integrity: signal_integrity_review_recorded (info)",
+      "component": "risk_agent",
+      "message": "risk_agent: risk_policy_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:25:45.511455+00:00"
+      "timestamp": "2026-05-19T20:30:38.695497+00:00"
     },
     {
-      "component": "signal_integrity",
-      "message": "signal_integrity: signal_integrity_review_recorded (info)",
+      "component": "risk_agent",
+      "message": "risk_agent: risk_policy_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:25:45.511749+00:00"
+      "timestamp": "2026-05-19T20:30:38.695603+00:00"
     },
     {
-      "component": "signal_integrity",
-      "message": "signal_integrity: signal_integrity_review_recorded (info)",
+      "component": "risk_agent",
+      "message": "risk_agent: risk_policy_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:25:45.511930+00:00"
+      "timestamp": "2026-05-19T20:30:38.695694+00:00"
     },
     {
-      "component": "signal_integrity",
-      "message": "signal_integrity: signal_integrity_review_recorded (info)",
+      "component": "risk_agent",
+      "message": "risk_agent: risk_policy_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:25:45.512157+00:00"
+      "timestamp": "2026-05-19T20:30:38.695789+00:00"
     },
     {
-      "component": "signal_integrity",
-      "message": "signal_integrity: signal_integrity_review_recorded (info)",
+      "component": "risk_agent",
+      "message": "risk_agent: risk_policy_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:25:45.512329+00:00"
+      "timestamp": "2026-05-19T20:30:38.695897+00:00"
     },
     {
       "component": "intelligence",
       "message": "intelligence: local_research_assessment_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:26:01.627144+00:00"
+      "timestamp": "2026-05-19T20:30:57.196854+00:00"
     },
     {
       "component": "strategy_lead",
       "message": "strategy_lead: strategy_lead_shadow_packet_queued (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:26:01.642634+00:00"
+      "timestamp": "2026-05-19T20:30:57.213366+00:00"
     },
     {
       "component": "intelligence",
       "message": "intelligence: phase2_shadow_cycle_completed (info)",
       "severity": "info",
-      "timestamp": "2026-05-19T18:26:01.644352+00:00"
+      "timestamp": "2026-05-19T20:30:57.215270+00:00"
     }
   ],
+  "risk_agent": {
+    "authority": "read_only_policy_router",
+    "boundary": "Risk Agent policy reviews are read-only. They can block or hold, but cannot approve risk, create orders, or write to brokers.",
+    "broker_write_allowed_count": 0,
+    "by_status": {
+      "blocked_before_risk": 34
+    },
+    "execution_allowed_count": 0,
+    "max_risk_pct_per_idea": 1.0,
+    "order_created_count": 0,
+    "paper_order_allowed_count": 0,
+    "review_count": 34,
+    "reviews": [
+      {
+        "blocked_reasons": [
+          "execution_policy",
+          "kill_switch",
+          "broker_order_route",
+          "signal_integrity_not_passed",
+          "insufficient_independent_sources",
+          "missing_correlations",
+          "missing_invalidation"
+        ],
+        "boundary": "Risk Agent policy review is read-only. It can block or hold a signal, but cannot approve risk, create paper orders, or write to a broker.",
+        "broker_write_allowed": false,
+        "checks": {
+          "broker_order_route": "fail_closed_no_order_route",
+          "broker_write": "pass_disabled",
+          "closed_trade_maturity": "informational_below_100_closed_trades",
+          "drawdown": "pass_within_cap",
+          "execution_policy": "fail_closed_not_implemented",
+          "invalidation": "fail_missing_invalidation",
+          "kill_switch": "fail_closed_not_implemented",
+          "live_capital": "pass_disabled",
+          "missing_correlations": "fail_missing_correlations",
+          "mode": "pass_paper_mode",
+          "paper_order_authority": "pass_disabled",
+          "signal_integrity": "fail_hold_for_corroboration",
+          "source_count": "fail_source_count",
+          "trust_floor": "pass"
+        },
+        "execution_allowed": false,
+        "instrument": "crude_oil_or_energy_transport",
+        "max_risk_gbp": 10.0,
+        "max_risk_pct": 1.0,
+        "order_created": false,
+        "paper_account_status": "alpaca_paper_readonly_connected",
+        "paper_order_allowed": false,
+        "policy_score": 0.158,
+        "proposed_risk_gbp": 0.0,
+        "proposed_risk_pct": 0.0,
+        "required_next_steps": [
+          "Wait for Signal Integrity Gate to pass before any Risk Agent sizing.",
+          "Add a concrete invalidation level or condition.",
+          "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+          "Keep broker writes and live capital disabled."
+        ],
+        "review_id": "14140dd3-0947-496f-a3a2-7678c9bfae42",
+        "reviewed_at": "2026-05-19T20:30:38.694402+00:00",
+        "signal_integrity_status": "hold_for_corroboration",
+        "source_ref": "87acf1be-ffbe-4974-9bdf-26a0289ef060",
+        "source_type": "signal_integrity_review",
+        "status": "blocked_before_risk"
+      },
+      {
+        "blocked_reasons": [
+          "execution_policy",
+          "kill_switch",
+          "broker_order_route",
+          "signal_integrity_not_passed",
+          "insufficient_independent_sources",
+          "missing_correlations",
+          "missing_invalidation"
+        ],
+        "boundary": "Risk Agent policy review is read-only. It can block or hold a signal, but cannot approve risk, create paper orders, or write to a broker.",
+        "broker_write_allowed": false,
+        "checks": {
+          "broker_order_route": "fail_closed_no_order_route",
+          "broker_write": "pass_disabled",
+          "closed_trade_maturity": "informational_below_100_closed_trades",
+          "drawdown": "pass_within_cap",
+          "execution_policy": "fail_closed_not_implemented",
+          "invalidation": "fail_missing_invalidation",
+          "kill_switch": "fail_closed_not_implemented",
+          "live_capital": "pass_disabled",
+          "missing_correlations": "fail_missing_correlations",
+          "mode": "pass_paper_mode",
+          "paper_order_authority": "pass_disabled",
+          "signal_integrity": "fail_hold_for_corroboration",
+          "source_count": "fail_source_count",
+          "trust_floor": "pass"
+        },
+        "execution_allowed": false,
+        "instrument": "crude_oil_or_energy_transport",
+        "max_risk_gbp": 10.0,
+        "max_risk_pct": 1.0,
+        "order_created": false,
+        "paper_account_status": "alpaca_paper_readonly_connected",
+        "paper_order_allowed": false,
+        "policy_score": 0.158,
+        "proposed_risk_gbp": 0.0,
+        "proposed_risk_pct": 0.0,
+        "required_next_steps": [
+          "Wait for Signal Integrity Gate to pass before any Risk Agent sizing.",
+          "Add a concrete invalidation level or condition.",
+          "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+          "Keep broker writes and live capital disabled."
+        ],
+        "review_id": "634575bb-bcf1-4c78-83d3-a9d83cfd1dc5",
+        "reviewed_at": "2026-05-19T20:30:38.694424+00:00",
+        "signal_integrity_status": "hold_for_corroboration",
+        "source_ref": "41273096-0eab-4f93-9bfa-5aa0d3a8b583",
+        "source_type": "signal_integrity_review",
+        "status": "blocked_before_risk"
+      },
+      {
+        "blocked_reasons": [
+          "execution_policy",
+          "kill_switch",
+          "broker_order_route",
+          "signal_integrity_not_passed",
+          "insufficient_independent_sources",
+          "missing_correlations",
+          "missing_invalidation"
+        ],
+        "boundary": "Risk Agent policy review is read-only. It can block or hold a signal, but cannot approve risk, create paper orders, or write to a broker.",
+        "broker_write_allowed": false,
+        "checks": {
+          "broker_order_route": "fail_closed_no_order_route",
+          "broker_write": "pass_disabled",
+          "closed_trade_maturity": "informational_below_100_closed_trades",
+          "drawdown": "pass_within_cap",
+          "execution_policy": "fail_closed_not_implemented",
+          "invalidation": "fail_missing_invalidation",
+          "kill_switch": "fail_closed_not_implemented",
+          "live_capital": "pass_disabled",
+          "missing_correlations": "fail_missing_correlations",
+          "mode": "pass_paper_mode",
+          "paper_order_authority": "pass_disabled",
+          "signal_integrity": "fail_blocked",
+          "source_count": "fail_source_count",
+          "trust_floor": "pass"
+        },
+        "execution_allowed": false,
+        "instrument": "macro_watchlist",
+        "max_risk_gbp": 10.0,
+        "max_risk_pct": 1.0,
+        "order_created": false,
+        "paper_account_status": "alpaca_paper_readonly_connected",
+        "paper_order_allowed": false,
+        "policy_score": 0.143,
+        "proposed_risk_gbp": 0.0,
+        "proposed_risk_pct": 0.0,
+        "required_next_steps": [
+          "Wait for Signal Integrity Gate to pass before any Risk Agent sizing.",
+          "Add a concrete invalidation level or condition.",
+          "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+          "Keep broker writes and live capital disabled."
+        ],
+        "review_id": "09af72cb-63e2-4d1a-ac38-1aaf3f3824e8",
+        "reviewed_at": "2026-05-19T20:30:38.694446+00:00",
+        "signal_integrity_status": "blocked",
+        "source_ref": "8281c6ba-6ca9-44aa-8aa0-0189a3ac8fa7",
+        "source_type": "signal_integrity_review",
+        "status": "blocked_before_risk"
+      },
+      {
+        "blocked_reasons": [
+          "execution_policy",
+          "kill_switch",
+          "broker_order_route",
+          "source_signal_not_passed_signal_integrity"
+        ],
+        "boundary": "Risk Agent policy review is read-only. It can block or hold a candidate, but cannot approve risk, create paper orders, or write to a broker.",
+        "broker_write_allowed": false,
+        "checks": {
+          "broker_order_route": "fail_closed_no_order_route",
+          "broker_write": "pass_disabled",
+          "closed_trade_maturity": "informational_below_100_closed_trades",
+          "drawdown": "pass_within_cap",
+          "entry": "pass",
+          "execution_policy": "fail_closed_not_implemented",
+          "intent_state": "pass_candidate",
+          "invalidation": "pass",
+          "kill_switch": "fail_closed_not_implemented",
+          "live_capital": "pass_disabled",
+          "mode": "pass_paper_mode",
+          "paper_order_authority": "pass_disabled",
+          "risk_size": "pass",
+          "signal_integrity": "fail_not_reviewed",
+          "unauthorized_authority_flags": "pass"
+        },
+        "execution_allowed": false,
+        "instrument": "USO options watch",
+        "max_risk_gbp": 10.0,
+        "max_risk_pct": 1.0,
+        "order_created": false,
+        "paper_account_status": "alpaca_paper_readonly_connected",
+        "paper_order_allowed": false,
+        "policy_score": 0.34,
+        "proposed_risk_gbp": 0.0,
+        "proposed_risk_pct": 0.0,
+        "required_next_steps": [
+          "Link candidate to a signal that has passed Signal Integrity review.",
+          "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+          "Keep broker writes and live capital disabled."
+        ],
+        "review_id": "7a5d9c73-ac38-47e7-af2b-77cd5a4cca42",
+        "reviewed_at": "2026-05-19T20:30:38.694472+00:00",
+        "signal_integrity_status": "not_reviewed",
+        "source_ref": "d5-sample-candidate-crude-oil",
+        "source_type": "trade_intent",
+        "status": "blocked_before_risk"
+      },
+      {
+        "blocked_reasons": [
+          "execution_policy",
+          "kill_switch",
+          "broker_order_route",
+          "intent_status_blocked",
+          "source_signal_not_passed_signal_integrity",
+          "missing_entry"
+        ],
+        "boundary": "Risk Agent policy review is read-only. It can block or hold a candidate, but cannot approve risk, create paper orders, or write to a broker.",
+        "broker_write_allowed": false,
+        "checks": {
+          "broker_order_route": "fail_closed_no_order_route",
+          "broker_write": "pass_disabled",
+          "closed_trade_maturity": "informational_below_100_closed_trades",
+          "drawdown": "pass_within_cap",
+          "entry": "fail_missing_entry",
+          "execution_policy": "fail_closed_not_implemented",
+          "intent_state": "fail_blocked",
+          "invalidation": "pass",
+          "kill_switch": "fail_closed_not_implemented",
+          "live_capital": "pass_disabled",
+          "mode": "pass_paper_mode",
+          "paper_order_authority": "pass_disabled",
+          "risk_size": "pass",
+          "signal_integrity": "fail_not_reviewed",
+          "unauthorized_authority_flags": "pass"
+        },
+        "execution_allowed": false,
+        "instrument": "Semiconductor basket watch",
+        "max_risk_gbp": 10.0,
+        "max_risk_pct": 1.0,
+        "order_created": false,
+        "paper_account_status": "alpaca_paper_readonly_connected",
+        "paper_order_allowed": false,
+        "policy_score": 0.13,
+        "proposed_risk_gbp": 0.0,
+        "proposed_risk_pct": 0.0,
+        "required_next_steps": [
+          "Link candidate to a signal that has passed Signal Integrity review.",
+          "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+          "Keep broker writes and live capital disabled."
+        ],
+        "review_id": "0d97abf3-e425-4895-915d-cf00cb1ef66e",
+        "reviewed_at": "2026-05-19T20:30:38.694498+00:00",
+        "signal_integrity_status": "not_reviewed",
+        "source_ref": "d5-sample-blocked-semiconductor",
+        "source_type": "trade_intent",
+        "status": "blocked_before_risk"
+      }
+    ],
+    "schema_version": 1,
+    "status": "ok"
+  },
   "schema_version": 1,
   "source_heartbeat_history": [
     {
@@ -1910,6 +2183,274 @@
     "open_positions": [],
     "postmortems_complete": [],
     "postmortems_due": [],
+    "risk_agent": {
+      "authority": "read_only_policy_router",
+      "boundary": "Risk Agent policy reviews are read-only. They can block or hold, but cannot approve risk, create orders, or write to brokers.",
+      "broker_write_allowed_count": 0,
+      "by_status": {
+        "blocked_before_risk": 34
+      },
+      "execution_allowed_count": 0,
+      "max_risk_pct_per_idea": 1.0,
+      "order_created_count": 0,
+      "paper_order_allowed_count": 0,
+      "review_count": 34,
+      "reviews": [
+        {
+          "blocked_reasons": [
+            "execution_policy",
+            "kill_switch",
+            "broker_order_route",
+            "signal_integrity_not_passed",
+            "insufficient_independent_sources",
+            "missing_correlations",
+            "missing_invalidation"
+          ],
+          "boundary": "Risk Agent policy review is read-only. It can block or hold a signal, but cannot approve risk, create paper orders, or write to a broker.",
+          "broker_write_allowed": false,
+          "checks": {
+            "broker_order_route": "fail_closed_no_order_route",
+            "broker_write": "pass_disabled",
+            "closed_trade_maturity": "informational_below_100_closed_trades",
+            "drawdown": "pass_within_cap",
+            "execution_policy": "fail_closed_not_implemented",
+            "invalidation": "fail_missing_invalidation",
+            "kill_switch": "fail_closed_not_implemented",
+            "live_capital": "pass_disabled",
+            "missing_correlations": "fail_missing_correlations",
+            "mode": "pass_paper_mode",
+            "paper_order_authority": "pass_disabled",
+            "signal_integrity": "fail_hold_for_corroboration",
+            "source_count": "fail_source_count",
+            "trust_floor": "pass"
+          },
+          "execution_allowed": false,
+          "instrument": "crude_oil_or_energy_transport",
+          "max_risk_gbp": 10.0,
+          "max_risk_pct": 1.0,
+          "order_created": false,
+          "paper_account_status": "alpaca_paper_readonly_connected",
+          "paper_order_allowed": false,
+          "policy_score": 0.158,
+          "proposed_risk_gbp": 0.0,
+          "proposed_risk_pct": 0.0,
+          "required_next_steps": [
+            "Wait for Signal Integrity Gate to pass before any Risk Agent sizing.",
+            "Add a concrete invalidation level or condition.",
+            "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+            "Keep broker writes and live capital disabled."
+          ],
+          "review_id": "14140dd3-0947-496f-a3a2-7678c9bfae42",
+          "reviewed_at": "2026-05-19T20:30:38.694402+00:00",
+          "signal_integrity_status": "hold_for_corroboration",
+          "source_ref": "87acf1be-ffbe-4974-9bdf-26a0289ef060",
+          "source_type": "signal_integrity_review",
+          "status": "blocked_before_risk"
+        },
+        {
+          "blocked_reasons": [
+            "execution_policy",
+            "kill_switch",
+            "broker_order_route",
+            "signal_integrity_not_passed",
+            "insufficient_independent_sources",
+            "missing_correlations",
+            "missing_invalidation"
+          ],
+          "boundary": "Risk Agent policy review is read-only. It can block or hold a signal, but cannot approve risk, create paper orders, or write to a broker.",
+          "broker_write_allowed": false,
+          "checks": {
+            "broker_order_route": "fail_closed_no_order_route",
+            "broker_write": "pass_disabled",
+            "closed_trade_maturity": "informational_below_100_closed_trades",
+            "drawdown": "pass_within_cap",
+            "execution_policy": "fail_closed_not_implemented",
+            "invalidation": "fail_missing_invalidation",
+            "kill_switch": "fail_closed_not_implemented",
+            "live_capital": "pass_disabled",
+            "missing_correlations": "fail_missing_correlations",
+            "mode": "pass_paper_mode",
+            "paper_order_authority": "pass_disabled",
+            "signal_integrity": "fail_hold_for_corroboration",
+            "source_count": "fail_source_count",
+            "trust_floor": "pass"
+          },
+          "execution_allowed": false,
+          "instrument": "crude_oil_or_energy_transport",
+          "max_risk_gbp": 10.0,
+          "max_risk_pct": 1.0,
+          "order_created": false,
+          "paper_account_status": "alpaca_paper_readonly_connected",
+          "paper_order_allowed": false,
+          "policy_score": 0.158,
+          "proposed_risk_gbp": 0.0,
+          "proposed_risk_pct": 0.0,
+          "required_next_steps": [
+            "Wait for Signal Integrity Gate to pass before any Risk Agent sizing.",
+            "Add a concrete invalidation level or condition.",
+            "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+            "Keep broker writes and live capital disabled."
+          ],
+          "review_id": "634575bb-bcf1-4c78-83d3-a9d83cfd1dc5",
+          "reviewed_at": "2026-05-19T20:30:38.694424+00:00",
+          "signal_integrity_status": "hold_for_corroboration",
+          "source_ref": "41273096-0eab-4f93-9bfa-5aa0d3a8b583",
+          "source_type": "signal_integrity_review",
+          "status": "blocked_before_risk"
+        },
+        {
+          "blocked_reasons": [
+            "execution_policy",
+            "kill_switch",
+            "broker_order_route",
+            "signal_integrity_not_passed",
+            "insufficient_independent_sources",
+            "missing_correlations",
+            "missing_invalidation"
+          ],
+          "boundary": "Risk Agent policy review is read-only. It can block or hold a signal, but cannot approve risk, create paper orders, or write to a broker.",
+          "broker_write_allowed": false,
+          "checks": {
+            "broker_order_route": "fail_closed_no_order_route",
+            "broker_write": "pass_disabled",
+            "closed_trade_maturity": "informational_below_100_closed_trades",
+            "drawdown": "pass_within_cap",
+            "execution_policy": "fail_closed_not_implemented",
+            "invalidation": "fail_missing_invalidation",
+            "kill_switch": "fail_closed_not_implemented",
+            "live_capital": "pass_disabled",
+            "missing_correlations": "fail_missing_correlations",
+            "mode": "pass_paper_mode",
+            "paper_order_authority": "pass_disabled",
+            "signal_integrity": "fail_blocked",
+            "source_count": "fail_source_count",
+            "trust_floor": "pass"
+          },
+          "execution_allowed": false,
+          "instrument": "macro_watchlist",
+          "max_risk_gbp": 10.0,
+          "max_risk_pct": 1.0,
+          "order_created": false,
+          "paper_account_status": "alpaca_paper_readonly_connected",
+          "paper_order_allowed": false,
+          "policy_score": 0.143,
+          "proposed_risk_gbp": 0.0,
+          "proposed_risk_pct": 0.0,
+          "required_next_steps": [
+            "Wait for Signal Integrity Gate to pass before any Risk Agent sizing.",
+            "Add a concrete invalidation level or condition.",
+            "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+            "Keep broker writes and live capital disabled."
+          ],
+          "review_id": "09af72cb-63e2-4d1a-ac38-1aaf3f3824e8",
+          "reviewed_at": "2026-05-19T20:30:38.694446+00:00",
+          "signal_integrity_status": "blocked",
+          "source_ref": "8281c6ba-6ca9-44aa-8aa0-0189a3ac8fa7",
+          "source_type": "signal_integrity_review",
+          "status": "blocked_before_risk"
+        },
+        {
+          "blocked_reasons": [
+            "execution_policy",
+            "kill_switch",
+            "broker_order_route",
+            "source_signal_not_passed_signal_integrity"
+          ],
+          "boundary": "Risk Agent policy review is read-only. It can block or hold a candidate, but cannot approve risk, create paper orders, or write to a broker.",
+          "broker_write_allowed": false,
+          "checks": {
+            "broker_order_route": "fail_closed_no_order_route",
+            "broker_write": "pass_disabled",
+            "closed_trade_maturity": "informational_below_100_closed_trades",
+            "drawdown": "pass_within_cap",
+            "entry": "pass",
+            "execution_policy": "fail_closed_not_implemented",
+            "intent_state": "pass_candidate",
+            "invalidation": "pass",
+            "kill_switch": "fail_closed_not_implemented",
+            "live_capital": "pass_disabled",
+            "mode": "pass_paper_mode",
+            "paper_order_authority": "pass_disabled",
+            "risk_size": "pass",
+            "signal_integrity": "fail_not_reviewed",
+            "unauthorized_authority_flags": "pass"
+          },
+          "execution_allowed": false,
+          "instrument": "USO options watch",
+          "max_risk_gbp": 10.0,
+          "max_risk_pct": 1.0,
+          "order_created": false,
+          "paper_account_status": "alpaca_paper_readonly_connected",
+          "paper_order_allowed": false,
+          "policy_score": 0.34,
+          "proposed_risk_gbp": 0.0,
+          "proposed_risk_pct": 0.0,
+          "required_next_steps": [
+            "Link candidate to a signal that has passed Signal Integrity review.",
+            "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+            "Keep broker writes and live capital disabled."
+          ],
+          "review_id": "7a5d9c73-ac38-47e7-af2b-77cd5a4cca42",
+          "reviewed_at": "2026-05-19T20:30:38.694472+00:00",
+          "signal_integrity_status": "not_reviewed",
+          "source_ref": "d5-sample-candidate-crude-oil",
+          "source_type": "trade_intent",
+          "status": "blocked_before_risk"
+        },
+        {
+          "blocked_reasons": [
+            "execution_policy",
+            "kill_switch",
+            "broker_order_route",
+            "intent_status_blocked",
+            "source_signal_not_passed_signal_integrity",
+            "missing_entry"
+          ],
+          "boundary": "Risk Agent policy review is read-only. It can block or hold a candidate, but cannot approve risk, create paper orders, or write to a broker.",
+          "broker_write_allowed": false,
+          "checks": {
+            "broker_order_route": "fail_closed_no_order_route",
+            "broker_write": "pass_disabled",
+            "closed_trade_maturity": "informational_below_100_closed_trades",
+            "drawdown": "pass_within_cap",
+            "entry": "fail_missing_entry",
+            "execution_policy": "fail_closed_not_implemented",
+            "intent_state": "fail_blocked",
+            "invalidation": "pass",
+            "kill_switch": "fail_closed_not_implemented",
+            "live_capital": "pass_disabled",
+            "mode": "pass_paper_mode",
+            "paper_order_authority": "pass_disabled",
+            "risk_size": "pass",
+            "signal_integrity": "fail_not_reviewed",
+            "unauthorized_authority_flags": "pass"
+          },
+          "execution_allowed": false,
+          "instrument": "Semiconductor basket watch",
+          "max_risk_gbp": 10.0,
+          "max_risk_pct": 1.0,
+          "order_created": false,
+          "paper_account_status": "alpaca_paper_readonly_connected",
+          "paper_order_allowed": false,
+          "policy_score": 0.13,
+          "proposed_risk_gbp": 0.0,
+          "proposed_risk_pct": 0.0,
+          "required_next_steps": [
+            "Link candidate to a signal that has passed Signal Integrity review.",
+            "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
+            "Keep broker writes and live capital disabled."
+          ],
+          "review_id": "0d97abf3-e425-4895-915d-cf00cb1ef66e",
+          "reviewed_at": "2026-05-19T20:30:38.694498+00:00",
+          "signal_integrity_status": "not_reviewed",
+          "source_ref": "d5-sample-blocked-semiconductor",
+          "source_type": "trade_intent",
+          "status": "blocked_before_risk"
+        }
+      ],
+      "schema_version": 1,
+      "status": "ok"
+    },
     "staged_orders": [],
     "store_status": "ok",
     "submitted_orders": [],
@@ -2006,7 +2547,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -2028,7 +2569,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -2050,7 +2591,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -2072,7 +2613,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -2094,7 +2635,7 @@
       "degraded_reason": null,
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -2116,7 +2657,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2138,7 +2679,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2160,7 +2701,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2182,7 +2723,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2204,7 +2745,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2226,7 +2767,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2248,7 +2789,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -2270,7 +2811,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2292,7 +2833,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2314,7 +2855,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2336,7 +2877,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2358,7 +2899,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2380,7 +2921,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -2402,7 +2943,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2424,7 +2965,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2446,7 +2987,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2468,7 +3009,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2490,7 +3031,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2512,7 +3053,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2534,7 +3075,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2556,7 +3097,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2578,7 +3119,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -2600,7 +3141,7 @@
       "degraded_reason": null,
       "endpoint_count": 3,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2622,7 +3163,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2644,7 +3185,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2666,7 +3207,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2688,7 +3229,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2710,7 +3251,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2732,7 +3273,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -2754,7 +3295,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-19T18:49:55.774163+00:00",
+      "last_heartbeat": "2026-05-20T00:27:15.437765+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",

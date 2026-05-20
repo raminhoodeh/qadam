@@ -573,16 +573,26 @@ function renderFlowMap(status) {
             handoff: "block or hold"
         },
         {
+            ...(findModule(status, "risk_agent") || {
+                key: "risk_agent",
+                label: "Risk Agent",
+                owner: "Policy Router",
+                status: "pending",
+                current_process: "Reviewing policy without order authority",
+                authority: "read_only_policy_router"
+            }),
+            handoff: "policy hold"
+        },
+        {
             ...(findModule(status, "execution_registry") || {
                 key: "execution_registry",
-                label: "Risk Agent",
-                owner: "Risk desk",
+                label: "Execution Registry",
+                owner: "Risk Agent",
                 status: "blocked",
                 current_process: "Broker writes and live capital blocked",
                 authority: "fail_closed"
             }),
-            label: "Risk Agent",
-            handoff: "risk decision"
+            handoff: "broker route blocked"
         },
         {
             key: "trade_layer",
@@ -666,7 +676,7 @@ function renderFlowMap(status) {
             "Bounded modelling can inform a gate; risk decides whether an idea may continue.",
             "Only passed gates can become paper-trial state.",
             "blocked",
-            ["head_of_quant", "execution_registry"]
+            ["head_of_quant", "risk_agent", "execution_registry"]
         ),
         makeLane(
             "Paper Trial",
@@ -1450,6 +1460,8 @@ function renderTrades(status) {
     if (!target) return;
     const tradeLayer = status.trade_layer || {};
     const tradingView = status.tradingview_alerts || {};
+    const riskAgent = tradeLayer.risk_agent || status.risk_agent || {};
+    const riskReviews = asArray(riskAgent.reviews);
     const summary = tradeLayer.summary || {};
     const philosophy = status.decision_philosophy || {};
     const worldviewBlock = renderDecisionWorldviewBlock(philosophy);
@@ -1602,6 +1614,49 @@ function renderTrades(status) {
             `;
     };
 
+    const renderRiskReviewCard = (review) => {
+        const checkTags = Object.entries(review.checks || {}).map(([key, value]) => `${key}: ${value}`);
+        return `
+            <article class="trade-intent-card ${statusClass(review.status || "policy_hold")}">
+                <div class="cognition-card-head">
+                    ${renderStatusPill(review.status || "policy_hold")}
+                    <p class="label">${htmlText(review.source_type, "risk review")} · ${htmlText(review.source_ref, "source pending")}</p>
+                </div>
+                <h3>${htmlText(review.instrument, "Risk policy review")}</h3>
+                <p>${htmlText(review.boundary, "Risk Agent review is read-only.")}</p>
+                <div class="tag-row">
+                    ${renderInlineBadge(review.execution_allowed ? "execution allowed" : "execution blocked", review.execution_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.paper_order_allowed ? "paper order allowed" : "no paper order", review.paper_order_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge(review.order_created ? "order created" : "no order created", review.order_created ? "blocked" : "online")}
+                    ${renderInlineBadge(review.broker_write_allowed ? "broker write allowed" : "broker write blocked", review.broker_write_allowed ? "blocked" : "online")}
+                </div>
+                <div class="summary-strip compact">
+                    ${renderMetric("Policy score", formatProbability(review.policy_score))}
+                    ${renderMetric("Risk asked", `${formatMoney(review.proposed_risk_gbp)} / ${htmlText(review.proposed_risk_pct, "0")}%`)}
+                    ${renderMetric("Max risk", `${formatMoney(review.max_risk_gbp)} / ${htmlText(review.max_risk_pct, "1")}%`)}
+                    ${renderMetric("Signal", htmlText(review.signal_integrity_status, "not reviewed"))}
+                    ${renderMetric("Account", htmlText(review.paper_account_status, "unknown"))}
+                    ${renderMetric("Reviewed", formatTime(review.reviewed_at))}
+                </div>
+                <section class="trade-check-section">
+                    <p class="label">Risk checks</p>
+                    <div class="tag-row">${renderTagList(checkTags, "No risk checks recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Blocked reasons</p>
+                    <div class="tag-row">${renderTagList(review.blocked_reasons, "No blocking reason recorded")}</div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Required next steps</p>
+                    <ul class="status-list">${asArray(review.required_next_steps).length
+                        ? asArray(review.required_next_steps).map((step) => `<li><strong>${htmlText(step)}</strong></li>`).join("")
+                        : "<li><strong>No next steps recorded</strong></li>"
+                    }</ul>
+                </section>
+            </article>
+        `;
+    };
+
     const observedSignals = asArray(tradeLayer.watching);
     const candidates = asArray(tradeLayer.candidates);
     const blocked = asArray(tradeLayer.blocked);
@@ -1646,6 +1701,24 @@ function renderTrades(status) {
             ${renderInlineBadge(`${summary.execution_allowed_count || 0} execution allowed`, summary.execution_allowed_count ? "blocked" : "online")}
             ${renderInlineBadge(`${summary.paper_order_allowed_count || 0} paper orders allowed`, summary.paper_order_allowed_count ? "blocked" : "online")}
         </div>
+        <section class="trade-intent-section">
+            <p class="label">Risk Agent policy router</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", riskAgent.status || "pending")}
+                ${renderMetric("Reviews", riskAgent.review_count || 0)}
+                ${renderMetric("Blocked", riskAgent.by_status?.blocked_before_risk || 0)}
+                ${renderMetric("Policy hold", riskAgent.by_status?.policy_hold || 0)}
+                ${renderMetric("Shadow ready", riskAgent.by_status?.risk_shadow_ready || 0)}
+                ${renderMetric("Orders", riskAgent.order_created_count || 0)}
+                ${renderMetric("Broker writes", riskAgent.broker_write_allowed_count || 0)}
+                ${renderMetric("Max risk", `${htmlText(riskAgent.max_risk_pct_per_idea, "1")}%`)}
+            </div>
+            <p class="mini">${htmlText(riskAgent.boundary, "Risk Agent policy router is read-only and cannot approve risk or create orders.")}</p>
+            <div class="trade-intent-stack">${riskReviews.length
+                ? riskReviews.map(renderRiskReviewCard).join("")
+                : `<article class="trade-intent-card"><h3>No Risk Agent reviews yet</h3><p>The policy router has not reviewed any signal or trade-intent records.</p></article>`
+            }</div>
+        </section>
         <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
