@@ -446,20 +446,21 @@ Current implementation start:
 - `orchestrator/quantum.py` now defines the Phase 3 quantum/classical oracle contract: provider readiness, `QuantumOracleJob`, `QuantumOracleResult`, local validation, deterministic classical fallback, and a JSONL result store.
 - `scripts/check_quantum_oracle.py` validates two bounded oracle jobs: Pattern Recognition and Strategy Collapse / Ambiguity Score.
 - The 2026-05-21 Phase 3 scaffold check produced two oracle results through `classical_fallback` because optional `qiskit-aer` is not installed. This is acceptable: the output schema is live and the hardware path remains closed.
+- The 2026-05-21 Phase 3 hardening pass added the `QuantumBackend` interface, deterministic `ClassicalFallbackBackend`, optional `QiskitAerBackend`, local circuit blueprint, measurement-count output, stable input fingerprint, validation checks, and weekly cadence metadata. If `qiskit` and `qiskit-aer` are absent or fail locally, the backend degrades to the same classical fallback schema.
 - The Head of Quant can now produce a shadow-only `upgrade`, `downgrade`, or `hold` recommendation after Signal Integrity review context exists. It cannot originate signals, create trade candidates, approve risk, create paper orders, call broker routes, submit hardware jobs, or bypass any gate.
-- The public-safe cockpit status now exposes the quantum oracle summary and Mission Control system stack shows the oracle backend and latest recommendation without leaking credentials or local paths.
+- The public-safe cockpit status now exposes the quantum oracle summary and Mission Control system stack shows the oracle backend, local simulation mode, latest recommendation, cadence, fingerprint, and validation-check state without leaking credentials or local paths.
 
 Build:
 
-- `QuantumBackend` interface.
-- Qiskit Aer local simulator.
-- Classical fallback with the same output schema.
+- `QuantumBackend` interface. Implemented.
+- Qiskit Aer local simulator. Optional backend path implemented; active only when local `qiskit` and `qiskit-aer` packages are installed.
+- Classical fallback with the same output schema. Implemented.
 - Q-CTRL optional provider path after local circuit validation.
 - IBM Quantum / Qiskit Runtime backend.
 - AWS Braket secondary backend.
 - Job 1: Pattern Recognition.
 - Job 2: Strategy Collapse / Ambiguity Score.
-- Weekly scheduler.
+- Weekly scheduler. Cadence metadata implemented; actual automation remains deferred.
 - Cockpit quantum status.
 
 Exit gate:
@@ -639,7 +640,7 @@ Phase 0 foundation is substantially implemented, and Phase 1 has started with te
 
 The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, the first read-only Risk Agent policy router, the first read-only Execution Policy / kill-switch router, the disabled staged paper-order contract, the read-only broker reconciliation contract, and the dry-run paper-submit receipt contract are active. Phase 3 has started with the Head of Quant quantum/classical oracle scaffold: local validation, deterministic classical fallback, provider readiness, and public-safe cockpit status, with hardware submission blocked. Dashboard Plan D0-D9 is implemented locally, with Mission Control, Fund Manager comments, dry-run Telegram Communications, and the protected D8B User Guide now added. Mission Control now exposes durable replay readiness, currently as `ready_waiting_for_local_service` until local Postgres/Timescale is running. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and harden the Phase 3 local simulator path without creating any broker-write or hardware-submission route:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, the first read-only Risk Agent policy router, the first read-only Execution Policy / kill-switch router, the disabled staged paper-order contract, the read-only broker reconciliation contract, and the dry-run paper-submit receipt contract are active. Phase 3 now has a hardened Head of Quant quantum/classical oracle path: backend interface, optional Qiskit Aer local backend, deterministic classical fallback, circuit blueprint, measurement-count output, stable fingerprint, weekly cadence metadata, provider readiness, public-safe cockpit status, and hardware submission blocked. Dashboard Plan D0-D9 is implemented locally, with Mission Control, Fund Manager comments, dry-run Telegram Communications, and the protected D8B User Guide now added. Mission Control now exposes durable replay readiness, currently as `ready_waiting_for_local_service` until local Postgres/Timescale is running. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and harden Phase 3 toward provider/scheduler readiness without creating any broker-write or hardware-submission route:
 
 1. Install or open a Docker-compatible runtime on the Mac: Docker Desktop, OrbStack, Podman, or Colima.
 2. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
@@ -656,12 +657,12 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 13. Run `scripts/check_local_research_analyst.py --live` once LM Studio is reachable to record the first true local Research Analyst assessment.
 13A. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` whenever LM Studio is running to feed available live read-only observations and paper-account context through Research Analyst and Strategy Lead shadow workflows.
 14. Run the Gemini model-list credential probe without text generation.
-14A. Run `scripts/check_quantum_oracle.py` after Signal Integrity review data exists; require two local/fallback oracle jobs, zero hardware submissions, zero execution approvals, zero paper-order approvals, and zero trade-candidate creation.
+14A. Run `scripts/check_quantum_oracle.py` after Signal Integrity review data exists; require two local/fallback oracle jobs, local backend validation, circuit blueprint, input fingerprint, weekly cadence metadata, zero hardware scheduler enablement, zero hardware submissions, zero execution approvals, zero paper-order approvals, and zero trade-candidate creation.
 15. Keep all outputs non-executable after Signal Integrity, Risk Agent policy review, Execution Policy review, disabled staged paper-order review, broker reconciliation review, dry-run paper-submit receipt review, and Head of Quant oracle review.
 16. Keep the staged paper-order contract read-only/disabled: it must explain what would be staged, why it is blocked, and how it would reconcile before any broker-write route exists.
 17. Keep the broker reconciliation contract read-only: it must define broker echo checks, idempotency, prewrite event logging, duplicate-order guards, post-submit reconciliation, and postmortem links while keeping paper-order submission, broker writes, and live capital at zero.
 18. Keep the dry-run paper-submit receipt contract non-executing: it can produce a simulated submit receipt only after broker reconciliation prerequisites pass, with no Alpaca POST call, no broker write, no paper-order submission, and no live capital.
 
-Current implementation target completed: the Phase 3 oracle scaffold now emits Pattern Recognition and Strategy Collapse / Ambiguity Score results through `classical_fallback`, writes local Event Log/status records, and exposes Head of Quant status in Mission Control, still without hardware jobs, broker writes, paper orders, or execution authority. The durable replay target remains blocked on the Mac runtime until Docker Desktop, OrbStack, Podman, or Colima is installed/opened and `scripts/start_postgres_timescale_ingestion.sh` can move durable replay from `0/35` to full source coverage.
+Current implementation target completed: the Phase 3 oracle path now emits Pattern Recognition and Strategy Collapse / Ambiguity Score results through a backend contract, currently `classical_fallback`, writes local Event Log/status records, exposes circuit/fingerprint/cadence validation in Mission Control, and still has no hardware scheduler, hardware jobs, broker writes, paper orders, or execution authority. The durable replay target remains blocked on the Mac runtime until Docker Desktop, OrbStack, Podman, or Colima is installed/opened and `scripts/start_postgres_timescale_ingestion.sh` can move durable replay from `0/35` to full source coverage.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.

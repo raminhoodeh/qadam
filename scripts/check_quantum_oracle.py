@@ -23,17 +23,23 @@ from orchestrator.quantum import (  # noqa: E402
 REQUIRED_RESULT_FIELDS = {
     "ambiguity_score",
     "backend",
+    "backend_status",
     "boundary",
+    "circuit_blueprint",
     "confidence_delta",
     "created_at",
     "execution_allowed",
+    "hardware_scheduler_enabled",
     "hardware_provider",
     "hardware_submission_allowed",
     "hardware_submitted",
+    "input_fingerprint",
     "instrument_focus",
     "job_id",
     "job_type",
     "local_validation_status",
+    "local_simulation_mode",
+    "measurement_counts",
     "paper_order_allowed",
     "pattern_score",
     "recommendation",
@@ -44,6 +50,7 @@ REQUIRED_RESULT_FIELDS = {
     "source_ref",
     "status",
     "trade_candidate_created",
+    "validation_checks",
 }
 
 REQUIRED_JOB_FIELDS = {
@@ -78,14 +85,20 @@ def main() -> int:
     print(f"quantum_oracle_job_count={result['job_count']}")
     print(f"quantum_oracle_result_count={result['result_count']}")
     print("quantum_oracle_backend=" + result["backend"])
+    print(f"quantum_oracle_backend_status={summary['latest_backend_status']}")
+    print(f"quantum_oracle_local_simulation_mode={summary['latest_local_simulation_mode']}")
+    print(f"quantum_oracle_cadence={summary['cadence']}")
+    print(f"quantum_oracle_next_due_at={summary['next_due_at']}")
     print(f"quantum_oracle_store_status={summary['status']}")
     print(f"quantum_oracle_store_result_count={summary['result_count']}")
     print(f"quantum_oracle_hardware_submitted_count={result['hardware_submitted_count']}")
     print(f"quantum_oracle_hardware_submission_allowed_count={result['hardware_submission_allowed_count']}")
+    print(f"quantum_oracle_hardware_scheduler_enabled_count={result['hardware_scheduler_enabled_count']}")
     print(f"quantum_oracle_execution_allowed_count={result['execution_allowed_count']}")
     print(f"quantum_oracle_paper_order_allowed_count={result['paper_order_allowed_count']}")
     print(f"quantum_oracle_trade_candidate_created_count={result['trade_candidate_created_count']}")
     print(f"quantum_oracle_qiskit_aer_available={summary['qiskit_aer_available']}")
+    print(f"quantum_oracle_qiskit_available={summary['qiskit_available']}")
     print(f"quantum_provider_count={len(providers)}")
     print("quantum_oracle_boundary=" + result["boundary"])
 
@@ -102,6 +115,9 @@ def main() -> int:
         return 1
     if result["hardware_submission_allowed_count"] != 0:
         print("quantum_oracle_hardware_submission_allowed=true")
+        return 1
+    if result["hardware_scheduler_enabled_count"] != 0:
+        print("quantum_oracle_hardware_scheduler_enabled=true")
         return 1
     if result["execution_allowed_count"] != 0:
         print("quantum_oracle_execution_allowed=true")
@@ -133,6 +149,9 @@ def main() -> int:
         if oracle_result["hardware_submission_allowed"] is not False:
             print("quantum_oracle_result_hardware_submission_allowed=true")
             return 1
+        if oracle_result["hardware_scheduler_enabled"] is not False:
+            print("quantum_oracle_result_hardware_scheduler_enabled=true")
+            return 1
         if oracle_result["execution_allowed"] is not False:
             print("quantum_oracle_result_execution_allowed=true")
             return 1
@@ -141,6 +160,18 @@ def main() -> int:
             return 1
         if oracle_result["trade_candidate_created"] is not False:
             print("quantum_oracle_result_created_candidate=true")
+            return 1
+        if len(str(oracle_result["input_fingerprint"])) != 64:
+            print("quantum_oracle_input_fingerprint_invalid=true")
+            return 1
+        if not oracle_result["circuit_blueprint"]:
+            print("quantum_oracle_circuit_blueprint_missing=true")
+            return 1
+        if not oracle_result["measurement_counts"]:
+            print("quantum_oracle_measurement_counts_missing=true")
+            return 1
+        if any(not str(value).startswith("pass") for value in oracle_result["validation_checks"].values()):
+            print("quantum_oracle_validation_checks_not_passed=true")
             return 1
         if "cannot originate trades" not in oracle_result["boundary"]:
             print("quantum_oracle_boundary_weak=true")

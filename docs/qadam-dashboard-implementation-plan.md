@@ -663,7 +663,7 @@ Build:
 - Hypothesis cards with thesis, confidence, evidence count, invalidation, and generated-by state.
 - Evidence packet cards and evidence item summaries, with raw references stripped.
 - Model activity state for Research Analyst, Strategy Lead, and Head of Quant.
-- Head of Quant oracle state: latest backend, recommendation, result count, optional simulator availability, and zero-authority flags.
+- Head of Quant oracle state: latest backend, local simulation mode, recommendation, result count, cadence, input fingerprint, validation checks, optional simulator availability, and zero-authority flags including disabled hardware scheduler state.
 - Read-only paper-account context inside Cognition: £1000 policy allocation, Alpaca paper mirror balance, P&L, drawdown, position/order counts, maturity progress, and explicit no-authority flags.
 - Signal Integrity Gate summary inside Cognition: total reviews, blocked/held/risk-shadow counts, candidates created, execution count, and explicit no-order/no-candidate boundary.
 - Recent Signal Integrity Review cards: instrument focus, integrity score, source/evidence counts, trust scores, missing correlations, Akber filter output, failure reasons, required next steps, worldview-prior status, and non-execution flags.

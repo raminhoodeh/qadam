@@ -530,12 +530,22 @@ MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
 QUANTUM_ORACLE_REQUIRED_FIELDS = {
     "boundary",
+    "cadence",
+    "cadence_days",
     "execution_allowed_count",
+    "hardware_scheduler_enabled_count",
     "hardware_submission_allowed_count",
     "hardware_submitted_count",
     "latest_backend",
+    "latest_backend_status",
+    "latest_created_at",
+    "latest_input_fingerprint",
+    "latest_local_simulation_mode",
     "latest_recommendation",
+    "latest_validation_checks",
+    "next_due_at",
     "paper_order_allowed_count",
+    "qiskit_available",
     "qiskit_aer_available",
     "result_count",
     "schema_version",
@@ -1045,6 +1055,10 @@ def main() -> int:
     print(f"cockpit_status_quantum_oracle_status={payload.get('quantum_oracle', {}).get('status')}")
     print(f"cockpit_status_quantum_oracle_result_count={payload.get('quantum_oracle', {}).get('result_count')}")
     print(f"cockpit_status_quantum_oracle_backend={payload.get('quantum_oracle', {}).get('latest_backend')}")
+    print(
+        "cockpit_status_quantum_oracle_mode="
+        f"{payload.get('quantum_oracle', {}).get('latest_local_simulation_mode')}"
+    )
     print(f"cockpit_status_mission_control_status={payload.get('mission_control', {}).get('status')}")
     print(f"cockpit_status_mission_control_headline={payload.get('mission_control', {}).get('headline')}")
     print(
@@ -1147,6 +1161,9 @@ def main() -> int:
     if quantum_oracle.get("hardware_submission_allowed_count") != 0:
         print("cockpit_status_quantum_oracle_hardware_allowed=true")
         return 1
+    if quantum_oracle.get("hardware_scheduler_enabled_count") != 0:
+        print("cockpit_status_quantum_oracle_hardware_scheduler_enabled=true")
+        return 1
     if quantum_oracle.get("execution_allowed_count") != 0:
         print("cockpit_status_quantum_oracle_execution_allowed=true")
         return 1
@@ -1158,6 +1175,12 @@ def main() -> int:
         return 1
     if "non-executable" not in quantum_oracle.get("boundary", ""):
         print("cockpit_status_quantum_oracle_boundary_weak=true")
+        return 1
+    if quantum_oracle.get("result_count", 0) and len(str(quantum_oracle.get("latest_input_fingerprint"))) != 64:
+        print("cockpit_status_quantum_oracle_fingerprint_invalid=true")
+        return 1
+    if quantum_oracle.get("result_count", 0) and not quantum_oracle.get("latest_validation_checks"):
+        print("cockpit_status_quantum_oracle_validation_checks_missing=true")
         return 1
     live_bridge = payload["live_bridge"]
     missing_live_bridge_fields = sorted(LIVE_BRIDGE_REQUIRED_FIELDS - set(live_bridge))

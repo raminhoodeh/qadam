@@ -901,13 +901,23 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "schema_version": quantum_oracle.get("schema_version"),
             "result_count": quantum_oracle.get("result_count", 0),
             "latest_backend": quantum_oracle.get("latest_backend", "classical_fallback"),
+            "latest_backend_status": quantum_oracle.get("latest_backend_status", "not_run"),
+            "latest_local_simulation_mode": quantum_oracle.get("latest_local_simulation_mode", "not_run"),
             "latest_recommendation": quantum_oracle.get("latest_recommendation", "not_run"),
+            "latest_input_fingerprint": quantum_oracle.get("latest_input_fingerprint"),
+            "latest_validation_checks": quantum_oracle.get("latest_validation_checks", {}),
+            "latest_created_at": quantum_oracle.get("latest_created_at"),
+            "cadence": quantum_oracle.get("cadence", "weekly_shadow_oracle"),
+            "cadence_days": quantum_oracle.get("cadence_days", 7),
+            "next_due_at": quantum_oracle.get("next_due_at"),
             "hardware_submitted_count": quantum_oracle.get("hardware_submitted_count", 0),
             "hardware_submission_allowed_count": quantum_oracle.get("hardware_submission_allowed_count", 0),
+            "hardware_scheduler_enabled_count": quantum_oracle.get("hardware_scheduler_enabled_count", 0),
             "execution_allowed_count": quantum_oracle.get("execution_allowed_count", 0),
             "paper_order_allowed_count": quantum_oracle.get("paper_order_allowed_count", 0),
             "trade_candidate_created_count": quantum_oracle.get("trade_candidate_created_count", 0),
             "qiskit_aer_available": bool(quantum_oracle.get("qiskit_aer_available")),
+            "qiskit_available": bool(quantum_oracle.get("qiskit_available")),
             "boundary": quantum_oracle.get("boundary"),
         },
         "shadow_packets": _safe_shadow_packets(settings),
@@ -1555,6 +1565,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "frontier_llm": _module_status(payload, "strategy_lead"),
             "quant_oracle": _module_status(payload, "head_of_quant"),
             "quant_oracle_backend": quantum_oracle.get("latest_backend", "classical_fallback"),
+            "quant_oracle_mode": quantum_oracle.get("latest_local_simulation_mode", "not_run"),
             "quant_oracle_recommendation": quantum_oracle.get("latest_recommendation", "not_run"),
             "risk_gate": _module_status(payload, "risk_agent"),
             "paper_account": capital.get("mirror_status", "pending"),
@@ -1943,6 +1954,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     quantum_oracle = payload["quantum_oracle"]
     if quantum_oracle.get("hardware_submitted_count", 0) != 0:
         raise ValueError("quantum oracle must not submit hardware jobs")
+    if quantum_oracle.get("hardware_scheduler_enabled_count", 0) != 0:
+        raise ValueError("quantum oracle hardware scheduler must stay disabled")
     if quantum_oracle.get("execution_allowed_count", 0) != 0:
         raise ValueError("quantum oracle must not allow execution")
     if quantum_oracle.get("paper_order_allowed_count", 0) != 0:

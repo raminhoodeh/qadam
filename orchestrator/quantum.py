@@ -7,11 +7,13 @@ later policy gates explicitly allow submission.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from hashlib import sha256
 import importlib.util
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
-from math import exp
+from datetime import datetime, timedelta, timezone
+from math import exp, pi
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -22,6 +24,8 @@ from orchestrator.secrets import secret_status
 
 QUANTUM_ORACLE_SCHEMA_VERSION = 1
 QUANTUM_ORACLE_JOB_TYPES = {"pattern_recognition", "strategy_collapse"}
+QUANTUM_ORACLE_CADENCE_DAYS = 7
+QUANTUM_ORACLE_SHOTS = 256
 
 
 @dataclass(frozen=True)
@@ -69,7 +73,9 @@ class QuantumOracleResult:
     job_type: str
     status: str
     backend: str
+    backend_status: str
     simulator_status: str
+    local_simulation_mode: str
     local_validation_status: str
     hardware_submission_allowed: bool
     hardware_submitted: bool
@@ -78,12 +84,17 @@ class QuantumOracleResult:
     ambiguity_score: float
     confidence_delta: float
     recommendation: str
+    circuit_blueprint: dict[str, Any]
+    measurement_counts: dict[str, int]
+    input_fingerprint: str
+    validation_checks: dict[str, str]
     instrument_focus: str
     source_ref: str
     required_next_steps: tuple[str, ...]
     execution_allowed: bool
     paper_order_allowed: bool
     trade_candidate_created: bool
+    hardware_scheduler_enabled: bool
     created_at: str
     boundary: str
 
@@ -93,8 +104,42 @@ class QuantumOracleResult:
         return payload
 
 
+@dataclass(frozen=True)
+class QuantumBackendOutput:
+    backend: str
+    backend_status: str
+    simulator_status: str
+    local_simulation_mode: str
+    pattern_score: float
+    ambiguity_score: float
+    circuit_blueprint: dict[str, Any]
+    measurement_counts: dict[str, int]
+    input_fingerprint: str
+    validation_checks: dict[str, str]
+
+
+class QuantumBackend(ABC):
+    key: str
+
+    @abstractmethod
+    def run(self, job: QuantumOracleJob) -> QuantumBackendOutput:
+        """Run a local-only quantum oracle job."""
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _next_due_at(created_at: Any) -> str | None:
+    if not created_at:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return (parsed + timedelta(days=QUANTUM_ORACLE_CADENCE_DAYS)).isoformat()
 
 
 def _optional_module_available(module: str) -> bool:
@@ -207,10 +252,149 @@ def _ambiguity_score(job: QuantumOracleJob) -> float:
     return round(max(0.0, min(1.0, ambiguity)), 3)
 
 
+def _job_fingerprint(job: QuantumOracleJob) -> str:
+    stable_payload = {
+        "schema_version": job.schema_version,
+        "job_type": job.job_type,
+        "source_ref": job.source_ref,
+        "instrument_focus": job.instrument_focus,
+        "evidence_item_count": job.evidence_item_count,
+        "source_count": job.source_count,
+        "average_trust_score": job.average_trust_score,
+        "signal_confidence": job.signal_confidence,
+        "missing_correlation_count": job.missing_correlation_count,
+    }
+    return sha256(json.dumps(stable_payload, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _circuit_blueprint(job: QuantumOracleJob) -> dict[str, Any]:
+    return {
+        "name": f"qadam_{job.job_type}_oracle_v1",
+        "qubits": 2,
+        "classical_bits": 2,
+        "shots": QUANTUM_ORACLE_SHOTS,
+        "encoding": {
+            "q0": "signal_strength_from_trust_confidence_sources",
+            "q1": "ambiguity_from_missing_correlations_and_source_gaps",
+        },
+        "operations": [
+            {"gate": "ry", "target": "q0", "angle": "pattern_score*pi"},
+            {"gate": "ry", "target": "q1", "angle": "ambiguity_score*pi"},
+            {"gate": "cx", "control": "q0", "target": "q1"},
+            {"gate": "measure", "targets": ["q0", "q1"]},
+        ],
+        "authority": "local_validation_only",
+    }
+
+
+def _counts_from_scores(pattern: float, ambiguity: float, *, shots: int = QUANTUM_ORACLE_SHOTS) -> dict[str, int]:
+    pattern_hits = int(round(max(0.0, min(1.0, pattern)) * shots))
+    ambiguity_hits = int(round(max(0.0, min(1.0, ambiguity)) * shots))
+    both = min(pattern_hits, ambiguity_hits, int(round(shots * 0.35)))
+    counts = {
+        "00": max(0, shots - pattern_hits - ambiguity_hits + both),
+        "01": max(0, ambiguity_hits - both),
+        "10": max(0, pattern_hits - both),
+        "11": max(0, both),
+    }
+    drift = shots - sum(counts.values())
+    counts["00"] += drift
+    return counts
+
+
+def _scores_from_counts(counts: dict[str, int]) -> tuple[float, float]:
+    shots = max(1, sum(counts.values()))
+    pattern = (counts.get("10", 0) + counts.get("11", 0)) / shots
+    ambiguity = (counts.get("01", 0) + counts.get("11", 0)) / shots
+    return round(max(0.0, min(1.0, pattern)), 3), round(max(0.0, min(1.0, ambiguity)), 3)
+
+
+class ClassicalFallbackBackend(QuantumBackend):
+    key = "classical_fallback"
+
+    def run(self, job: QuantumOracleJob) -> QuantumBackendOutput:
+        pattern = _pattern_score(job)
+        ambiguity = _ambiguity_score(job)
+        return QuantumBackendOutput(
+            backend=self.key,
+            backend_status="ok",
+            simulator_status="qiskit_aer_missing_classical_fallback",
+            local_simulation_mode="deterministic_classical_shadow",
+            pattern_score=pattern,
+            ambiguity_score=ambiguity,
+            circuit_blueprint=_circuit_blueprint(job),
+            measurement_counts=_counts_from_scores(pattern, ambiguity),
+            input_fingerprint=_job_fingerprint(job),
+            validation_checks={
+                "local_validation": "pass",
+                "hardware_submission": "pass_blocked",
+                "execution_authority": "pass_blocked",
+                "paper_order_authority": "pass_blocked",
+                "trade_candidate_creation": "pass_blocked",
+            },
+        )
+
+
+class QiskitAerBackend(QuantumBackend):
+    key = "qiskit_aer_local"
+
+    def run(self, job: QuantumOracleJob) -> QuantumBackendOutput:
+        pattern = _pattern_score(job)
+        ambiguity = _ambiguity_score(job)
+        try:
+            from qiskit import QuantumCircuit, transpile  # type: ignore[import-not-found]
+            from qiskit_aer import AerSimulator  # type: ignore[import-not-found]
+
+            circuit = QuantumCircuit(2, 2)
+            circuit.ry(pattern * pi, 0)
+            circuit.ry(ambiguity * pi, 1)
+            circuit.cx(0, 1)
+            circuit.measure([0, 1], [0, 1])
+            seed = int(_job_fingerprint(job)[:8], 16)
+            simulator = AerSimulator(seed_simulator=seed)
+            compiled = transpile(circuit, simulator)
+            counts = simulator.run(compiled, shots=QUANTUM_ORACLE_SHOTS).result().get_counts()
+            normalized_counts = {str(key): int(value) for key, value in counts.items()}
+            pattern, ambiguity = _scores_from_counts(normalized_counts)
+            backend_status = "ok"
+            simulator_status = "qiskit_aer_available"
+            local_mode = "qiskit_aer_local_circuit"
+        except Exception:
+            normalized_counts = _counts_from_scores(pattern, ambiguity)
+            backend_status = "degraded_classical_fallback"
+            simulator_status = "qiskit_aer_import_or_runtime_failed_classical_fallback"
+            local_mode = "deterministic_classical_shadow"
+
+        return QuantumBackendOutput(
+            backend=self.key if backend_status == "ok" else "classical_fallback",
+            backend_status=backend_status,
+            simulator_status=simulator_status,
+            local_simulation_mode=local_mode,
+            pattern_score=pattern,
+            ambiguity_score=ambiguity,
+            circuit_blueprint=_circuit_blueprint(job),
+            measurement_counts=normalized_counts,
+            input_fingerprint=_job_fingerprint(job),
+            validation_checks={
+                "local_validation": "pass",
+                "hardware_submission": "pass_blocked",
+                "execution_authority": "pass_blocked",
+                "paper_order_authority": "pass_blocked",
+                "trade_candidate_creation": "pass_blocked",
+            },
+        )
+
+
+def select_quantum_backend() -> QuantumBackend:
+    if _optional_module_available("qiskit") and _optional_module_available("qiskit_aer"):
+        return QiskitAerBackend()
+    return ClassicalFallbackBackend()
+
+
 def run_quantum_oracle_job(job: QuantumOracleJob) -> QuantumOracleResult:
-    simulator_available = _optional_module_available("qiskit_aer")
-    pattern = _pattern_score(job)
-    ambiguity = _ambiguity_score(job)
+    backend_output = select_quantum_backend().run(job)
+    pattern = backend_output.pattern_score
+    ambiguity = backend_output.ambiguity_score
     if ambiguity >= 0.72:
         recommendation = "downgrade_or_hold"
         confidence_delta = -0.08
@@ -226,8 +410,10 @@ def run_quantum_oracle_job(job: QuantumOracleJob) -> QuantumOracleResult:
         job_id=job.job_id,
         job_type=job.job_type,
         status="ok",
-        backend="qiskit_aer_local" if simulator_available else "classical_fallback",
-        simulator_status="qiskit_aer_available" if simulator_available else "qiskit_aer_missing_classical_fallback",
+        backend=backend_output.backend,
+        backend_status=backend_output.backend_status,
+        simulator_status=backend_output.simulator_status,
+        local_simulation_mode=backend_output.local_simulation_mode,
         local_validation_status="passed",
         hardware_submission_allowed=False,
         hardware_submitted=False,
@@ -236,16 +422,21 @@ def run_quantum_oracle_job(job: QuantumOracleJob) -> QuantumOracleResult:
         ambiguity_score=ambiguity,
         confidence_delta=confidence_delta,
         recommendation=recommendation,
+        circuit_blueprint=backend_output.circuit_blueprint,
+        measurement_counts=backend_output.measurement_counts,
+        input_fingerprint=backend_output.input_fingerprint,
+        validation_checks=backend_output.validation_checks,
         instrument_focus=job.instrument_focus,
         source_ref=job.source_ref,
         required_next_steps=(
             "Keep Signal Integrity and Risk Agent gates ahead of any trade state.",
-            "Install qiskit-aer later if actual circuit simulation is required.",
+            "Install qiskit and qiskit-aer later if actual circuit simulation is required.",
             "Add IBM Quantum or AWS Braket credentials only after local circuit validation exists.",
         ),
         execution_allowed=False,
         paper_order_allowed=False,
         trade_candidate_created=False,
+        hardware_scheduler_enabled=False,
         created_at=_now(),
         boundary=(
             "Head of Quant output is a bounded weekly oracle. It can upgrade, downgrade, "
@@ -270,6 +461,20 @@ def validate_quantum_oracle_result(result: QuantumOracleResult) -> None:
         raise ValueError("quantum oracle cannot allow paper orders")
     if result.trade_candidate_created:
         raise ValueError("quantum oracle cannot create trade candidates")
+    if result.hardware_scheduler_enabled:
+        raise ValueError("quantum oracle hardware scheduler must stay disabled")
+    if result.local_validation_status != "passed":
+        raise ValueError("quantum oracle local validation must pass before recording a result")
+    if len(result.input_fingerprint) != 64:
+        raise ValueError("quantum oracle input fingerprint must be a sha256 hex digest")
+    if not result.circuit_blueprint:
+        raise ValueError("quantum oracle result must include a local circuit blueprint")
+    if not result.measurement_counts:
+        raise ValueError("quantum oracle result must include local measurement counts")
+    if not result.validation_checks:
+        raise ValueError("quantum oracle result must include validation checks")
+    if any(not str(value).startswith("pass") for value in result.validation_checks.values()):
+        raise ValueError("quantum oracle validation checks must be passing before storage")
     if not 0 <= result.pattern_score <= 1:
         raise ValueError("quantum pattern score must be between 0 and 1")
     if not 0 <= result.ambiguity_score <= 1:
@@ -300,6 +505,8 @@ class QuantumOracleStore:
                 "result_id": result.result_id,
                 "job_type": result.job_type,
                 "backend": result.backend,
+                "backend_status": result.backend_status,
+                "local_simulation_mode": result.local_simulation_mode,
                 "recommendation": result.recommendation,
                 "hardware_submitted": result.hardware_submitted,
                 "execution_allowed": result.execution_allowed,
@@ -333,6 +540,7 @@ class QuantumOracleStore:
         except Exception as exc:  # noqa: BLE001 - health should report the failure.
             return {"status": "degraded", "schema_version": QUANTUM_ORACLE_SCHEMA_VERSION, "error": str(exc)}
         results = [row.get("result", {}) for row in rows if isinstance(row.get("result"), dict)]
+        latest = results[-1] if results else {}
         return {
             "status": "ready_classical_fallback" if not results else "ok",
             "schema_version": QUANTUM_ORACLE_SCHEMA_VERSION,
@@ -346,9 +554,21 @@ class QuantumOracleStore:
             "trade_candidate_created_count": sum(
                 1 for result in results if result.get("trade_candidate_created") is True
             ),
-            "latest_backend": results[-1].get("backend") if results else "classical_fallback",
-            "latest_recommendation": results[-1].get("recommendation") if results else "not_run",
+            "hardware_scheduler_enabled_count": sum(
+                1 for result in results if result.get("hardware_scheduler_enabled") is True
+            ),
+            "latest_backend": latest.get("backend") if results else "classical_fallback",
+            "latest_backend_status": latest.get("backend_status") if results else "not_run",
+            "latest_local_simulation_mode": latest.get("local_simulation_mode") if results else "not_run",
+            "latest_recommendation": latest.get("recommendation") if results else "not_run",
+            "latest_input_fingerprint": latest.get("input_fingerprint") if results else None,
+            "latest_validation_checks": latest.get("validation_checks") if results else {},
+            "latest_created_at": latest.get("created_at") if results else None,
+            "cadence": "weekly_shadow_oracle",
+            "cadence_days": QUANTUM_ORACLE_CADENCE_DAYS,
+            "next_due_at": _next_due_at(latest.get("created_at")) if results else None,
             "qiskit_aer_available": _optional_module_available("qiskit_aer"),
+            "qiskit_available": _optional_module_available("qiskit"),
             "boundary": (
                 "Quantum oracle status is non-executable. It can only provide a shadow upgrade, "
                 "downgrade, or hold recommendation after local validation."
@@ -397,6 +617,7 @@ def run_quantum_oracle_sample(
         "execution_allowed_count": sum(1 for result in results if result.execution_allowed),
         "paper_order_allowed_count": sum(1 for result in results if result.paper_order_allowed),
         "trade_candidate_created_count": sum(1 for result in results if result.trade_candidate_created),
+        "hardware_scheduler_enabled_count": sum(1 for result in results if result.hardware_scheduler_enabled),
         "store": health,
         "event_log": event_log.health(),
         "boundary": health["boundary"],
