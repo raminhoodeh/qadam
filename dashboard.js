@@ -2144,6 +2144,10 @@ function renderTrades(status) {
         const checkTags = Object.entries(review.receipt_checks || {}).map(([key, value]) => `${key}: ${value}`);
         const receipt = review.simulated_receipt || {};
         const brokerEcho = review.broker_echo || {};
+        const idempotency = review.idempotency_design || {};
+        const prewrite = review.event_log_prewrite_schema || {};
+        const snapshot = review.pre_trade_snapshot_schema || {};
+        const duplicateGuard = review.duplicate_order_guard || {};
         return `
             <article class="trade-intent-card ${statusClass(review.status || "blocked_before_dry_run_submit")}">
                 <div class="cognition-card-head">
@@ -2174,8 +2178,31 @@ function renderTrades(status) {
                         ${renderInlineBadge(`mode: ${dashboardText(receipt.mode, "dry run only")}`, "pending")}
                         ${renderInlineBadge(`adapter: ${dashboardText(receipt.adapter, "not selected")}`, "pending")}
                         ${renderInlineBadge(`client id: ${dashboardText(receipt.client_order_id, "not allocated")}`, "blocked")}
+                        ${renderInlineBadge(`preview: ${dashboardText(receipt.idempotency_preview_key || idempotency.preview_key, "not designed")}`, "pending")}
                         ${renderInlineBadge(`external id: ${dashboardText(receipt.external_order_id, "not created")}`, "blocked")}
                         ${renderInlineBadge(receipt.broker_post_called ? "POST called" : "POST not called", receipt.broker_post_called ? "blocked" : "online")}
+                    </div>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Idempotency preview</p>
+                    <div class="tag-row">
+                        ${renderInlineBadge(`status: ${dashboardText(idempotency.status, "not designed")}`, "pending")}
+                        ${renderInlineBadge(`key: ${dashboardText(idempotency.preview_key, "not allocated")}`, "pending")}
+                        ${renderInlineBadge(idempotency.broker_usable ? "broker usable" : "not broker usable", idempotency.broker_usable ? "blocked" : "online")}
+                        ${renderInlineBadge(idempotency.allocation_authority ? "allocation authority" : "no allocation authority", idempotency.allocation_authority ? "blocked" : "online")}
+                    </div>
+                    <p class="mini">${htmlText(idempotency.boundary, "Idempotency design is dry-run only.")}</p>
+                </section>
+                <section class="trade-check-section">
+                    <p class="label">Prewrite and duplicate guard</p>
+                    <div class="tag-row">
+                        ${renderInlineBadge(`prewrite: ${dashboardText(prewrite.status, "not defined")}`, "pending")}
+                        ${renderInlineBadge(prewrite.write_performed ? "Event Log written" : "Event Log not written", prewrite.write_performed ? "blocked" : "online")}
+                        ${renderInlineBadge(`snapshot: ${dashboardText(snapshot.status, "not defined")}`, "pending")}
+                        ${renderInlineBadge(snapshot.capture_performed ? "snapshot captured" : "snapshot not captured", snapshot.capture_performed ? "blocked" : "online")}
+                        ${renderInlineBadge(`duplicate guard: ${dashboardText(duplicateGuard.status, "not defined")}`, "pending")}
+                        ${renderInlineBadge(duplicateGuard.lookup_performed ? "duplicate lookup run" : "duplicate lookup not run", duplicateGuard.lookup_performed ? "blocked" : "online")}
+                        ${renderInlineBadge(duplicateGuard.guard_write_performed ? "guard written" : "guard not written", duplicateGuard.guard_write_performed ? "blocked" : "online")}
                     </div>
                 </section>
                 <section class="trade-check-section">
