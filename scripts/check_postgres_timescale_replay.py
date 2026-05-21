@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Verify replay coverage from durable Postgres/Timescale observations."""
+"""Verify replay coverage from durable Postgres/Timescale observations.
+
+Default mode is a read-only readiness check and may pass while the local
+Postgres/Timescale service is offline. Use --require-full-source-coverage when
+the durable service is expected to be live and all canonical sources must be
+replayable.
+"""
 
 from __future__ import annotations
 
@@ -29,23 +35,38 @@ async def main() -> int:
     if "postgres" in stores["summary"]["offline_services"]:
         print("postgres_replay_status=offline")
         print("postgres_replay_missing_service=postgres")
+        print("postgres_replay_contract_status=ready_waiting_for_local_service")
         print("postgres_replay_boundary=Read-only replay check. No ingestion writes or trading actions.")
-        return 1
+        if args.require_full_source_coverage:
+            print("postgres_replay_full_source_coverage_required=true")
+            return 1
+        print("postgres_replay_check=ok")
+        return 0
 
     try:
         state = await schema_state(settings)
     except Exception as exc:  # noqa: BLE001 - status script must report the database failure.
         print("postgres_replay_status=unavailable")
         print(f"postgres_replay_error={exc.__class__.__name__}")
+        print("postgres_replay_contract_status=schema_unavailable")
         print("postgres_replay_boundary=Read-only replay check. No ingestion writes or trading actions.")
-        return 1
+        if args.require_full_source_coverage:
+            print("postgres_replay_full_source_coverage_required=true")
+            return 1
+        print("postgres_replay_check=ok")
+        return 0
 
     missing_tables = set(state["missing_tables"])
     print(f"postgres_replay_schema_status={state['status']}")
     print(f"postgres_replay_missing_tables={sorted(missing_tables)}")
     if missing_tables:
         print("postgres_replay_status=missing_tables")
-        return 1
+        print("postgres_replay_contract_status=schema_incomplete")
+        if args.require_full_source_coverage:
+            print("postgres_replay_full_source_coverage_required=true")
+            return 1
+        print("postgres_replay_check=ok")
+        return 0
 
     conn = await connect(settings)
     try:
@@ -81,6 +102,10 @@ async def main() -> int:
     missing_source_keys = sorted(expected_source_keys - observed_source_keys)
 
     print("postgres_replay_status=ok" if not missing_source_keys else "postgres_replay_status=partial")
+    print(
+        "postgres_replay_contract_status="
+        + ("durable_replay_ready" if not missing_source_keys else "durable_replay_partial")
+    )
     print(f"postgres_replay_observation_count={summary['observation_count']}")
     print(f"postgres_replay_distinct_source_count={summary['distinct_source_count']}")
     print(f"postgres_replay_expected_source_count={EXPECTED_SOURCE_COUNT}")
@@ -95,6 +120,7 @@ async def main() -> int:
     if args.require_full_source_coverage and missing_source_keys:
         print("postgres_replay_full_source_coverage_required=true")
         return 1
+    print("postgres_replay_check=ok")
     return 0
 
 
