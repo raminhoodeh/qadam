@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS source_observation (
-    observation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    observation_id UUID DEFAULT gen_random_uuid(),
     schema_version INTEGER NOT NULL,
     source_key TEXT NOT NULL,
     source_name TEXT NOT NULL,
@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS source_observation (
     latency_ms INTEGER NOT NULL,
     trust_score NUMERIC NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (observation_id, observed_at)
 );
 
 SELECT create_hypertable('source_observation', 'observed_at', if_not_exists => TRUE);

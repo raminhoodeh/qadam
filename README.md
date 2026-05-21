@@ -157,7 +157,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Alpaca paper-account mirror with GET-only balance, positions, orders, and P&L refresh through `scripts/check_alpaca_paper_mirror.py --live`.
 - Historical backfill planning and local sample-run contract for 12 priority sources, with credential-aware blocked/ready states.
 - Trust Score seed contract across all 35 sources: 22 sources currently score above 0.5 from priors/promoted adapters; real-data scoring remains pending.
-- Postgres/Timescale durable ingestion contract and status check; it passes as `ready_waiting_for_local_service` until local Postgres is running.
+- Postgres/Timescale durable ingestion is live locally through OrbStack, with 35/35 canonical sources replayable from `source_observation`; it still degrades safely when the local Docker runtime is closed.
 - FastMCP-style tool scaffold.
 - Postgres/Timescale and Chroma service definitions.
 - Local store health checks for Postgres/Timescale and Chroma, with degraded status until the services are running.
@@ -225,7 +225,7 @@ Current founding access list:
 ## Local Start
 
 1. Copy `.env.example` to `.env` and fill only the keys you have.
-2. Start storage with Docker Compose when Docker is available.
+2. Start or keep OrbStack/Docker running, then run `scripts/start_postgres_timescale_ingestion.sh` for the durable Timescale spine.
 3. Run `./start_qadam.sh` to verify the foundation.
 4. Set `QADAM_START_ORCHESTRATOR=1` when you want the local health endpoint to run.
 5. For cockpit login, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the cockpit environment, then open `/login`.
@@ -269,13 +269,13 @@ Current local store state:
 - `docker-compose.yml` defines local Postgres/Timescale and Chroma services.
 - `orchestrator/local_store.py` reports whether those services are reachable.
 - `scripts/check_local_stores.py` treats missing directories as failure and offline services as a degraded but acceptable foundation state.
-- Until Docker is running, Postgres falls back to local JSONL Event Log and Chroma remains an empty Knowledge Graph shell.
+- If Docker/OrbStack is not running, Postgres falls back to local JSONL Event Log and Chroma remains an empty Knowledge Graph shell.
 - `scripts/bootstrap_runtime.sh` creates a local `.venv` using Python 3.12 and installs Qadam dependencies.
 - `scripts/start_local_stores.sh` starts local container services, applies migrations, and seeds durable registry tables when Docker/OrbStack/Podman/Colima is available.
 - `scripts/start_postgres_timescale_ingestion.sh` is the Postgres-only durable-ingestion bootstrap: it starts the Timescale service, waits for readiness, applies migrations, seeds reference/world-model data, writes all 35 deterministic source observations, and verifies replay coverage.
 - `orchestrator/chroma_store.py` initializes an embedded local Chroma Knowledge Graph even before the Chroma server container is running.
 - `scripts/check_chroma_store.py` verifies the embedded Knowledge Graph.
-- Postgres/Timescale is the only remaining durable-store service that requires a Docker-compatible runtime on this Mac.
+- OrbStack is the current Docker-compatible runtime on this Mac; keep it open when Qadam needs live local Timescale replay.
 
 Current registry and governance state:
 
@@ -304,10 +304,10 @@ Current ingestion state:
 - `scripts/check_fred_adapter.py` verifies the FRED macro sample path and can run a live read-only check with `--live`.
 - `scripts/check_rss_adapter.py` verifies the RSS sample path and can run a live read-only check with `--live`.
 - Test observations write to local JSONL and emit Event Log entries.
-- `migrations/0003_source_observation.sql` defines the future durable Timescale table.
-- `orchestrator/postgres_store.py` can seed durable reference/world-model tables and write test observations into Postgres once the database is running.
+- `migrations/0003_source_observation.sql` defines the durable Timescale table for replayable source observations.
+- `orchestrator/postgres_store.py` seeds durable reference/world-model tables and writes test observations into local Postgres/Timescale.
 - `scripts/run_test_ingestion_durable.py --all` writes all 35 deterministic observations into Timescale once migrations are applied.
-- `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` verifies replay coverage from durable observations without writing new rows.
+- `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` verifies full 35-source replay coverage from durable observations without writing new rows.
 - Individual live adapters should replace test observations one at a time after their credentials, rate limits, and failure modes are clear.
 - The data environment map currently distinguishes promoted adapters, derived sources, deferred sources, missing-credential sources, local bridges, fallback-only sources, and ready-to-build/ready-to-port sources.
 - The GDELT live path is read-only and degrades cleanly on network/API failure while preserving the raw attempt locally.
@@ -382,9 +382,9 @@ Current dashboard status-contract state:
 Durable-mode commands:
 
 1. Run `scripts/bootstrap_runtime.sh`.
-2. Install or open a Docker-compatible runtime: Docker Desktop, OrbStack, Podman, or Colima.
-3. Run `scripts/start_postgres_timescale_ingestion.sh`.
-4. Run `scripts/check_postgres_timescale_replay.py --require-full-source-coverage`.
+2. Open OrbStack or another Docker-compatible runtime.
+3. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
+4. Run `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` and require 35/35 sources replayable.
 5. Use `scripts/start_local_stores.sh` later when Chroma server mode is needed as well.
 
 Current quantum credential state:

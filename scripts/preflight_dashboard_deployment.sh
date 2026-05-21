@@ -9,9 +9,14 @@ say() {
 
 cd "$ROOT"
 
+PYTHON_BIN="${QADAM_PYTHON:-python3}"
+if [[ -x ".venv/bin/python" ]]; then
+  PYTHON_BIN="${QADAM_PYTHON:-.venv/bin/python}"
+fi
+
 say "Refreshing dry-run receipt contract"
-python3 scripts/check_paper_submit_receipt_contract.py
-python3 scripts/check_cockpit_status.py
+"$PYTHON_BIN" scripts/check_paper_submit_receipt_contract.py
+"$PYTHON_BIN" scripts/check_cockpit_status.py
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
@@ -43,8 +48,8 @@ node scripts/check_dashboard_forum.js
 node scripts/check_protected_user_guide.js
 
 say "Checking status exporters"
-python3 scripts/check_cockpit_status.py
-python3 scripts/check_live_bridge.py
+"$PYTHON_BIN" scripts/check_cockpit_status.py
+"$PYTHON_BIN" scripts/check_live_bridge.py
 
 say "Checking dashboard syntax and whitespace"
 node --check landing-page-repo/dashboard.js
