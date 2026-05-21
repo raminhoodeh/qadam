@@ -1007,10 +1007,11 @@ function renderMissionControl(status, source) {
         stackTarget.innerHTML = `
             <span>System stack</span>
             <h3>COO ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
-            <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} · risk ${htmlText(stack.risk_gate)}</p>
+            <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} via ${htmlText(stack.quant_oracle_backend, "classical_fallback")} · risk ${htmlText(stack.risk_gate)}</p>
             <div class="mission-tag-row">
                 ${renderInlineBadge(`data ${dashboardText(stack.data_spine)}`, stack.data_spine)}
                 ${renderInlineBadge(`replay ${dashboardText(stack.durable_spine || durable.contract_status)}`, durable.status || stack.durable_spine)}
+                ${renderInlineBadge(`quant ${dashboardText(stack.quant_oracle_recommendation || "not_run")}`, stack.quant_oracle)}
                 ${renderInlineBadge(`paper ${dashboardText(stack.paper_account)}`, stack.paper_account)}
                 ${renderInlineBadge(`telegram ${dashboardText(stack.telegram)}`, stack.telegram)}
             </div>
