@@ -895,6 +895,9 @@ function fallbackMissionControl(status, source) {
             local_llm: findModule(status, "research_analyst")?.status || "pending",
             frontier_llm: findModule(status, "strategy_lead")?.status || "pending",
             quant_oracle: findModule(status, "head_of_quant")?.status || "deferred",
+            quant_oracle_backend: status.quantum_oracle?.latest_backend || "classical_fallback",
+            quant_oracle_mode: status.quantum_oracle?.latest_local_simulation_mode || "not_run",
+            quant_oracle_recommendation: status.quantum_oracle?.latest_recommendation || "not_run",
             risk_gate: status.risk_agent?.status || "pending",
             paper_account: capital.mirror_status || "pending",
             telegram: status.communications?.telegram?.status || "pending",
@@ -1007,7 +1010,7 @@ function renderMissionControl(status, source) {
         stackTarget.innerHTML = `
             <span>System stack</span>
             <h3>COO ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
-            <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} via ${htmlText(stack.quant_oracle_backend, "classical_fallback")} · risk ${htmlText(stack.risk_gate)}</p>
+            <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} via ${htmlText(stack.quant_oracle_backend, "classical_fallback")} / ${htmlText(stack.quant_oracle_mode, "not_run")} · risk ${htmlText(stack.risk_gate)}</p>
             <div class="mission-tag-row">
                 ${renderInlineBadge(`data ${dashboardText(stack.data_spine)}`, stack.data_spine)}
                 ${renderInlineBadge(`replay ${dashboardText(stack.durable_spine || durable.contract_status)}`, durable.status || stack.durable_spine)}
