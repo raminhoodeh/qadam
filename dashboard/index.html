@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260521-mission-control">
+    <link rel="stylesheet" href="/auth.css?v=20260521-nav-ux">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -54,7 +54,25 @@
                 </div>
             </section>
 
-            <section class="mission-control-panel operating-review-panel" aria-label="Qadam mission control" data-mission-control>
+            <nav class="cockpit-nav" aria-label="Cockpit section navigation" data-cockpit-nav>
+                <div class="cockpit-nav-head">
+                    <span>Navigate cockpit</span>
+                    <strong data-cockpit-nav-current>Mission Control</strong>
+                </div>
+                <div class="cockpit-nav-links">
+                    <a href="#mission-control" data-cockpit-nav-link data-target-section="mission-control">Mission</a>
+                    <a href="#system-map" data-cockpit-nav-link data-target-section="system-map">Map</a>
+                    <a href="#watching" data-cockpit-nav-link data-target-section="watching">Sources</a>
+                    <a href="#cognition" data-cockpit-nav-link data-target-section="cognition">Cognition</a>
+                    <a href="#trade-layer" data-cockpit-nav-link data-target-section="trade-layer">Trades</a>
+                    <a href="#money" data-cockpit-nav-link data-target-section="money">Money</a>
+                    <a href="#forbidden" data-cockpit-nav-link data-target-section="forbidden">Safety</a>
+                    <a href="#process-console" data-cockpit-nav-link data-target-section="process-console">Runtime</a>
+                    <a href="#governance" data-cockpit-nav-link data-target-section="governance">Governance</a>
+                </div>
+            </nav>
+
+            <section id="mission-control" class="mission-control-panel operating-review-panel" aria-label="Qadam mission control" data-mission-control data-cockpit-section="Mission Control">
                 <div class="panel-heading">
                     <div>
                         <p class="label">Mission control</p>
@@ -145,7 +163,7 @@
                 </div>
             </section>
 
-            <section class="system-map-panel" aria-label="Qadam system flow">
+            <section id="system-map" class="system-map-panel" aria-label="Qadam system flow" data-cockpit-section="System Map">
                 <div class="map-title-row">
                     <div>
                         <p class="label">End-to-end flow</p>
@@ -396,7 +414,7 @@
                 </div>
             </section>
 
-            <section class="dashboard-section-intro" aria-label="Dashboard section order">
+            <section id="review-sequence" class="dashboard-section-intro" aria-label="Dashboard section order" data-cockpit-section="Review Sequence">
                 <div class="section-intro-heading">
                     <div>
                         <p class="label">Operating detail</p>
@@ -419,7 +437,7 @@
             </section>
 
             <section class="dashboard-detail-flow" aria-label="Dashboard operating detail">
-                <article class="panel-card watching-panel" aria-label="What Qadam is watching">
+                <article id="watching" class="panel-card watching-panel" aria-label="What Qadam is watching" data-cockpit-section="Sources">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Watching</p>
@@ -480,7 +498,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card cognition-panel" aria-label="What Qadam is thinking about">
+                <article id="cognition" class="panel-card cognition-panel" aria-label="What Qadam is thinking about" data-cockpit-section="Cognition">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Cognition</p>
@@ -529,7 +547,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card guardrail-panel" aria-label="Forbidden actions">
+                <article id="forbidden" class="panel-card guardrail-panel" aria-label="Forbidden actions" data-cockpit-section="Safety">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Forbidden</p>
@@ -569,7 +587,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card communications-panel" aria-label="Telegram communications">
+                <article id="communications" class="panel-card communications-panel" aria-label="Telegram communications" data-cockpit-section="Communications">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Communications</p>
@@ -611,7 +629,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card trade-intent-panel" aria-label="Trade layer">
+                <article id="trade-layer" class="panel-card trade-intent-panel" aria-label="Trade layer" data-cockpit-section="Trade Layer">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Trade layer</p>
@@ -664,7 +682,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card capital-panel" aria-label="Money and timeline">
+                <article id="money" class="panel-card capital-panel" aria-label="Money and timeline" data-cockpit-section="Money">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Money</p>
@@ -706,7 +724,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card process-panel" aria-label="Process console">
+                <article id="process-console" class="panel-card process-panel" aria-label="Process console" data-cockpit-section="Process Console">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Process console</p>
@@ -746,7 +764,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card worldview-panel" aria-label="Private edge layer">
+                <article id="worldview" class="panel-card worldview-panel" aria-label="Private edge layer" data-cockpit-section="Private Edge">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Private edge layer</p>
@@ -786,7 +804,7 @@
                     </div>
                 </article>
 
-                <article class="panel-card comments-panel" aria-label="Fund Manager comments">
+                <article id="governance" class="panel-card comments-panel" aria-label="Fund Manager comments" data-cockpit-section="Governance">
                     <div class="panel-heading">
                         <div>
                             <p class="label">Fund Manager comments</p>
@@ -873,7 +891,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260521-mission-control"></script>
+    <script src="/dashboard.js?v=20260521-nav-ux"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

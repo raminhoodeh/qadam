@@ -317,6 +317,76 @@ option {
     box-shadow: var(--glow-cyan);
 }
 
+.cockpit-nav {
+    align-items: center;
+    border: 1px solid rgba(var(--cyan-rgb), 0.22);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.055), rgba(255, 255, 255, 0.02)),
+        rgba(8, 12, 15, 0.86);
+    box-shadow: var(--shadow-soft);
+    display: grid;
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 10px;
+    position: sticky;
+    top: 8px;
+    z-index: 20;
+}
+
+.cockpit-nav-head {
+    border-right: 1px solid var(--line);
+    display: grid;
+    gap: 2px;
+    min-width: 154px;
+    padding-right: 10px;
+}
+
+.cockpit-nav-head span {
+    color: var(--muted-soft);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.cockpit-nav-head strong {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.cockpit-nav-links {
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    padding-bottom: 1px;
+    scrollbar-width: thin;
+}
+
+.cockpit-nav-links a {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1;
+    padding: 9px 11px;
+    text-decoration: none;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.cockpit-nav-links a:hover,
+.cockpit-nav-links a.active {
+    background: rgba(var(--cyan-rgb), 0.1);
+    border-color: rgba(var(--cyan-rgb), 0.38);
+    color: var(--cyan);
+}
+
+[data-cockpit-section] {
+    scroll-margin-top: 86px;
+}
+
 .dot {
     display: inline-block;
     width: 10px;
@@ -2691,6 +2761,22 @@ html[data-dashboard-density="terminal"] .timeline-list li {
         min-width: 0;
     }
 
+    .cockpit-nav {
+        grid-template-columns: 1fr;
+        top: 0;
+    }
+
+    .cockpit-nav-head {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        min-width: 0;
+        padding: 0 0 8px;
+    }
+
+    [data-cockpit-section] {
+        scroll-margin-top: 118px;
+    }
+
     .map-title-row,
     .section-intro-heading,
     .panel-heading,
@@ -2743,6 +2829,17 @@ html[data-dashboard-density="terminal"] .timeline-list li {
     .auth-shell,
     .dashboard-shell {
         width: min(100% - 24px, 1120px);
+    }
+
+    .cockpit-nav {
+        margin-left: -4px;
+        margin-right: -4px;
+        padding: 8px;
+    }
+
+    .cockpit-nav-links a {
+        font-size: 11px;
+        padding: 8px 10px;
     }
 
     .trade-facts div,

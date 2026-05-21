@@ -67,6 +67,44 @@ function initDashboardDensityToggle() {
     return density;
 }
 
+function initCockpitNavigation() {
+    if (typeof document.querySelectorAll !== "function") return;
+    const links = Array.from(document.querySelectorAll("[data-cockpit-nav-link]"));
+    const current = dashboardQuery("[data-cockpit-nav-current]");
+    if (!links.length) return;
+
+    function setActive(targetId) {
+        links.forEach((link) => {
+            const active = link.dataset.targetSection === targetId;
+            link.classList.toggle("active", active);
+            if (active && current) current.textContent = link.textContent || "Mission Control";
+        });
+    }
+
+    links.forEach((link) => {
+        link.addEventListener("click", () => {
+            setActive(link.dataset.targetSection);
+        });
+    });
+
+    setActive(links[0].dataset.targetSection);
+
+    if (typeof IntersectionObserver === "undefined" || typeof document.getElementById !== "function") return;
+    const sections = links
+        .map((link) => document.getElementById(link.dataset.targetSection))
+        .filter(Boolean);
+    const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target?.id) setActive(visible.target.id);
+    }, {
+        rootMargin: "-22% 0px -62% 0px",
+        threshold: [0.1, 0.25, 0.5]
+    });
+    sections.forEach((section) => observer.observe(section));
+}
+
 function dashboardText(value, fallback = "Not connected yet") {
     if (value === null || value === undefined || value === "") return fallback;
     return String(value).replaceAll("_", " ");
@@ -2654,5 +2692,6 @@ async function renderQadamDashboardStatus(session) {
 }
 
 initDashboardDensityToggle();
+initCockpitNavigation();
 window.setDashboardDensity = setDashboardDensity;
 window.renderQadamDashboardStatus = renderQadamDashboardStatus;
