@@ -834,6 +834,7 @@ function fallbackMissionControl(status, source) {
     const tradeLayer = status.trade_layer || {};
     const capital = status.capital || {};
     const philosophy = status.decision_philosophy || {};
+    const durable = status.durable_ingestion || {};
     const candidates = asArray(tradeLayer.candidates);
     const observedSignals = asArray(tradeLayer.watching);
     const blockedTrades = asArray(tradeLayer.blocked);
@@ -849,10 +850,29 @@ function fallbackMissionControl(status, source) {
             degraded_count: sourceCounts.degraded || 0,
             pending_count: sourceCounts.pending || 0,
             missing_credential_count: missingCredentialCount,
+            durable_replay_status: durable.replay_status || "unknown",
+            durable_replayed_source_count: durable.replayed_source_count || 0,
+            durable_expected_source_count: durable.expected_source_count || 0,
             logged_in_count: configuredSources.length,
             logged_in_sources: configuredSources,
             connected_sources: connectedSources,
             boundary: "Configured and connected sources are observation inputs only; they cannot create orders."
+        },
+        durable_spine: {
+            status: durable.status || "unknown",
+            service_status: durable.service_status || "unknown",
+            contract_status: durable.contract_status || "unknown",
+            replay_status: durable.replay_status || "unknown",
+            observation_count: durable.observation_count || 0,
+            replayed_source_count: durable.replayed_source_count || 0,
+            expected_source_count: durable.expected_source_count || 0,
+            missing_source_count: durable.missing_source_count || 0,
+            latest_observed_at: durable.latest_observed_at || null,
+            next_step: durable.next_step || "Verify durable replay readiness.",
+            write_authority: false,
+            signal_authority: false,
+            order_authority: false,
+            boundary: durable.boundary || "Read-only durable ingestion readiness. It cannot create signals, candidates, orders, or broker writes."
         },
         trading_philosophy: {
             status: philosophy.status || "pending",
@@ -871,6 +891,7 @@ function fallbackMissionControl(status, source) {
         system_stack: {
             coo: findModule(status, "event_log")?.status || "local_only",
             data_spine: watching.length ? "online" : "pending",
+            durable_spine: durable.contract_status || "unknown",
             local_llm: findModule(status, "research_analyst")?.status || "pending",
             frontier_llm: findModule(status, "strategy_lead")?.status || "pending",
             quant_oracle: findModule(status, "head_of_quant")?.status || "deferred",
@@ -940,6 +961,7 @@ function renderMissionControl(status, source) {
     const tradeIntent = mission.trade_intent || {};
     const portfolio = mission.portfolio || {};
     const safety = mission.safety || {};
+    const durable = mission.durable_spine || status.durable_ingestion || {};
 
     const primary = dashboardQuery("[data-mission-primary]");
     if (primary) {
@@ -951,6 +973,7 @@ function renderMissionControl(status, source) {
                 ${renderMetric("Thinking", `${thinking.hypothesis_count || 0} hypotheses`)}
                 ${renderMetric("Intent", `${tradeIntent.candidate_count || 0} candidates`)}
                 ${renderMetric("Holdings", `${portfolio.open_position_count || 0} open`)}
+                ${renderMetric("Replay", `${durable.replayed_source_count || 0}/${durable.expected_source_count || 0}`)}
                 ${renderMetric("Safety", safety.live_capital_enabled ? "live enabled" : "live disabled")}
             </div>
             <p class="mini">${htmlText(safety.boundary, "Mission control is read-only.")}</p>
@@ -962,7 +985,7 @@ function renderMissionControl(status, source) {
         sources.innerHTML = `
             <span>Data sources</span>
             <h3>${htmlText(dataSources.logged_in_count || 0)} logged-in/configured · ${htmlText(dataSources.online_count || 0)}/${htmlText(dataSources.total_count || 0)} online</h3>
-            <p>${htmlText(dataSources.degraded_count || 0)} degraded · ${htmlText(dataSources.pending_count || 0)} pending · ${htmlText(dataSources.missing_credential_count || 0)} missing credentials</p>
+            <p>${htmlText(dataSources.degraded_count || 0)} degraded · ${htmlText(dataSources.pending_count || 0)} pending · ${htmlText(dataSources.missing_credential_count || 0)} missing credentials · replay ${htmlText(dataSources.durable_replayed_source_count || durable.replayed_source_count || 0)}/${htmlText(dataSources.durable_expected_source_count || durable.expected_source_count || 0)} ${htmlText(dataSources.durable_replay_status || durable.replay_status || "unknown")}</p>
             <div class="mission-tag-row">${renderMissionTags(dataSources.logged_in_sources || dataSources.connected_sources, "No configured sources visible yet", 8)}</div>
             <small>${htmlText(dataSources.boundary, "Sources are observation only.")}</small>
         `;
@@ -987,6 +1010,7 @@ function renderMissionControl(status, source) {
             <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} · risk ${htmlText(stack.risk_gate)}</p>
             <div class="mission-tag-row">
                 ${renderInlineBadge(`data ${dashboardText(stack.data_spine)}`, stack.data_spine)}
+                ${renderInlineBadge(`replay ${dashboardText(stack.durable_spine || durable.contract_status)}`, durable.status || stack.durable_spine)}
                 ${renderInlineBadge(`paper ${dashboardText(stack.paper_account)}`, stack.paper_account)}
                 ${renderInlineBadge(`telegram ${dashboardText(stack.telegram)}`, stack.telegram)}
             </div>
