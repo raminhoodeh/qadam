@@ -14,8 +14,10 @@ from uuid import uuid4
 
 from orchestrator.config import Settings
 from orchestrator.ingestion import SourceObservation
+from orchestrator.local_store import local_store_health
 from orchestrator.resource_registry import RESOURCE_ENTRIES
 from orchestrator.world_model import CLAIM_CARDS
+from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS
 
 
 def _load_asyncpg():
@@ -235,3 +237,138 @@ async def write_source_observations(
         return {"source_observation": len(observations), "event_log": len(observations)}
     finally:
         await conn.close()
+
+
+async def durable_ingestion_state(settings: Settings | None = None) -> dict[str, Any]:
+    """Return read-only durable replay coverage for the cockpit.
+
+    This does not write observations. It only verifies whether the local
+    Postgres/Timescale target can replay the canonical source set.
+    """
+
+    settings = settings or Settings.from_env()
+    expected_source_keys = {source.key for source in SOURCE_SPECS}
+    base: dict[str, Any] = {
+        "schema_version": 1,
+        "database_configured": bool(settings.database_url),
+        "expected_source_count": EXPECTED_SOURCE_COUNT,
+        "observation_count": 0,
+        "replayed_source_count": 0,
+        "event_log_ingestion_event_count": 0,
+        "missing_source_count": EXPECTED_SOURCE_COUNT,
+        "missing_sources": sorted(expected_source_keys),
+        "first_observed_at": None,
+        "latest_observed_at": None,
+        "write_authority": False,
+        "signal_authority": False,
+        "order_authority": False,
+        "boundary": (
+            "Read-only durable ingestion readiness. It cannot create signals, "
+            "trade candidates, orders, broker writes, or live-capital authority."
+        ),
+    }
+
+    stores = local_store_health(settings)
+    postgres_online = "postgres" not in stores["summary"]["offline_services"]
+    if not postgres_online:
+        return base | {
+            "status": "ready_waiting_for_local_service",
+            "service_status": "offline",
+            "contract_status": "ready_waiting_for_local_service",
+            "replay_status": "offline",
+            "schema_status": "not_checked",
+            "missing_tables": [],
+            "next_step": (
+                "Start Docker, OrbStack, Podman, or Colima and run "
+                "scripts/start_postgres_timescale_ingestion.sh."
+            ),
+        }
+
+    try:
+        state = await schema_state(settings)
+    except Exception as exc:  # noqa: BLE001 - cockpit needs safe degradation details.
+        return base | {
+            "status": "degraded",
+            "service_status": "online",
+            "contract_status": "schema_unavailable",
+            "replay_status": "unavailable",
+            "schema_status": "unavailable",
+            "schema_error": exc.__class__.__name__,
+            "missing_tables": [],
+            "next_step": "Apply migrations and rerun the durable ingestion bootstrap.",
+        }
+
+    missing_tables = list(state.get("missing_tables", []))
+    if missing_tables:
+        return base | {
+            "status": "missing_tables",
+            "service_status": "online",
+            "contract_status": "schema_incomplete",
+            "replay_status": "missing_tables",
+            "schema_status": state.get("status", "unknown"),
+            "missing_tables": missing_tables,
+            "next_step": "Run scripts/apply_migrations.py, then rerun durable ingestion.",
+        }
+
+    conn = await connect(settings)
+    try:
+        summary = await conn.fetchrow(
+            """
+            SELECT
+                COUNT(*)::int AS observation_count,
+                COUNT(DISTINCT source_key)::int AS distinct_source_count,
+                MIN(observed_at) AS first_observed_at,
+                MAX(observed_at) AS latest_observed_at
+            FROM source_observation
+            """
+        )
+        event_log_count = await conn.fetchval(
+            """
+            SELECT COUNT(*)::int
+            FROM event_log
+            WHERE event_type = 'source_test_observation_recorded'
+            """
+        )
+        rows = await conn.fetch(
+            """
+            SELECT source_key
+            FROM source_observation
+            GROUP BY source_key
+            ORDER BY source_key
+            """
+        )
+    finally:
+        await conn.close()
+
+    observed_source_keys = {row["source_key"] for row in rows}
+    missing_source_keys = sorted(expected_source_keys - observed_source_keys)
+    replay_status = "ok" if not missing_source_keys else "partial"
+
+    return base | {
+        "status": "ok" if replay_status == "ok" else "partial",
+        "service_status": "online",
+        "contract_status": "durable_replay_ready" if replay_status == "ok" else "durable_replay_partial",
+        "replay_status": replay_status,
+        "schema_status": state.get("status", "ok"),
+        "missing_tables": [],
+        "observation_count": int(summary["observation_count"] or 0),
+        "replayed_source_count": int(summary["distinct_source_count"] or 0),
+        "event_log_ingestion_event_count": int(event_log_count or 0),
+        "missing_source_count": len(missing_source_keys),
+        "missing_sources": missing_source_keys,
+        "first_observed_at": str(summary["first_observed_at"]) if summary["first_observed_at"] else None,
+        "latest_observed_at": str(summary["latest_observed_at"]) if summary["latest_observed_at"] else None,
+        "next_step": (
+            "Replay coverage is complete."
+            if replay_status == "ok"
+            else "Run scripts/run_test_ingestion_durable.py --all, then verify replay coverage."
+        ),
+    }
+
+
+def durable_ingestion_status(settings: Settings | None = None) -> dict[str, Any]:
+    """Synchronous public-safe durable ingestion readiness wrapper."""
+
+    import asyncio
+
+    return asyncio.run(durable_ingestion_state(settings))

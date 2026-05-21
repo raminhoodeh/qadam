@@ -55,6 +55,7 @@ This is the first read after login.
 Use it to answer:
 
 - Which data sources are configured or connected?
+- Is the durable Postgres/Timescale replay spine online, partial, or still waiting for the local service?
 - What trading philosophy is Qadam currently applying to itself?
 - How are the API spine, Python COO, local LLM, frontier LLM, quantum oracle, risk gates, and paper account connected?
 - What is Qadam thinking about now?
@@ -63,6 +64,8 @@ Use it to answer:
 - What is Qadam forbidden from doing?
 
 Important boundary: Mission Control is a summary, not a command surface. It cannot promote hypotheses, approve trades, submit paper orders, write to brokers, or enable live capital.
+
+Durable replay means Qadam can replay observations from its local Postgres/Timescale store. If Mission Control shows replay as offline or `0/35`, Qadam can still display the static cockpit and JSONL runtime state, but the full durable observation spine has not been started yet.
 
 ### System Operating Map
 

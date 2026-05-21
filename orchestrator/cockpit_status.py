@@ -29,6 +29,7 @@ from orchestrator.intelligence import (
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
+from orchestrator.postgres_store import durable_ingestion_status
 from orchestrator.risk_agent import RiskPolicyReviewStore, risk_agent_summary
 from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
@@ -1405,6 +1406,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     risk_agent = payload.get("risk_agent", {})
     execution_policy = payload.get("execution_policy", {})
     paper_submit_receipt = payload.get("paper_submit_receipt", {})
+    durable_ingestion = payload.get("durable_ingestion", {})
 
     hypotheses = cognition.get("hypotheses", [])
     evidence_packets = cognition.get("evidence_packets", [])
@@ -1465,7 +1467,29 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "logged_in_count": len(configured_sources),
             "logged_in_sources": configured_sources[:12],
             "connected_sources": connected_sources[:12],
+            "durable_replay_status": durable_ingestion.get("replay_status", "unknown"),
+            "durable_replayed_source_count": durable_ingestion.get("replayed_source_count", 0),
+            "durable_expected_source_count": durable_ingestion.get("expected_source_count", 0),
             "boundary": "Configured and connected sources are observation inputs only; they cannot create orders.",
+        },
+        "durable_spine": {
+            "status": durable_ingestion.get("status", "unknown"),
+            "service_status": durable_ingestion.get("service_status", "unknown"),
+            "contract_status": durable_ingestion.get("contract_status", "unknown"),
+            "replay_status": durable_ingestion.get("replay_status", "unknown"),
+            "observation_count": durable_ingestion.get("observation_count", 0),
+            "replayed_source_count": durable_ingestion.get("replayed_source_count", 0),
+            "expected_source_count": durable_ingestion.get("expected_source_count", 0),
+            "missing_source_count": durable_ingestion.get("missing_source_count", 0),
+            "latest_observed_at": durable_ingestion.get("latest_observed_at"),
+            "next_step": durable_ingestion.get("next_step", "Verify durable replay readiness."),
+            "write_authority": False,
+            "signal_authority": False,
+            "order_authority": False,
+            "boundary": durable_ingestion.get(
+                "boundary",
+                "Read-only durable ingestion readiness. It cannot create signals, candidates, orders, or broker writes.",
+            ),
         },
         "trading_philosophy": {
             "status": decision_philosophy.get("status", "pending"),
@@ -1491,6 +1515,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         "system_stack": {
             "coo": _module_status(payload, "event_log"),
             "data_spine": _module_status(payload, "watching"),
+            "durable_spine": durable_ingestion.get("contract_status", "unknown"),
             "local_llm": _module_status(payload, "research_analyst"),
             "frontier_llm": _module_status(payload, "strategy_lead"),
             "quant_oracle": _module_status(payload, "head_of_quant"),
@@ -1775,6 +1800,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
+        "durable_ingestion": durable_ingestion_status(settings),
         "forbidden_actions": _forbidden_actions(),
         "fund_manager_notes": _fund_manager_notes(settings),
         "execution_venues": [
@@ -1829,6 +1855,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "mode",
         "d1_snapshot",
         "d0_shell",
+        "durable_ingestion",
         "capital",
         "mission_control",
         "watching",
@@ -1868,6 +1895,13 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("local orchestrator must not be exposed in D1")
     if payload["capital"].get("live_capital_enabled") is not False:
         raise ValueError("cockpit status must keep live capital disabled")
+    durable_ingestion = payload["durable_ingestion"]
+    if durable_ingestion.get("write_authority") is not False:
+        raise ValueError("durable ingestion must not have write authority in the cockpit")
+    if durable_ingestion.get("signal_authority") is not False:
+        raise ValueError("durable ingestion must not have signal authority in the cockpit")
+    if durable_ingestion.get("order_authority") is not False:
+        raise ValueError("durable ingestion must not have order authority in the cockpit")
     if payload["d0_shell"].get("status") != "frozen":
         raise ValueError("D0 shell must be frozen before D1 export")
     live_bridge = payload["live_bridge"]

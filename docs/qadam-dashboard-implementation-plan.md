@@ -1029,8 +1029,9 @@ Status: implemented locally and extended with the Mission Control top surface.
 
 Implemented now:
 
-- Added a Mission Control band above the system map with connected/logged-in data sources, trading philosophy, API/model/quant stack, current thinking, trade intent, paper holdings, P&L, and hard safety boundaries.
+- Added a Mission Control band above the system map with connected/logged-in data sources, durable replay readiness, trading philosophy, API/model/quant stack, current thinking, trade intent, paper holdings, P&L, and hard safety boundaries.
 - The Mission Control surface renders from the sanitized cockpit status snapshot through `mission_control` plus `renderMissionControl(status, source)`.
+- The status contract now includes `durable_ingestion` and the Mission Control `durable_spine` summary so the top panel shows whether Postgres/Timescale replay is offline, partial, or complete, without granting source observations any signal, order, broker-write, or live-capital authority.
 - The older operating summary cards remain beneath Mission Control as compact paper account, source quality, cognition, trade layer, safety, and bridge summaries via `renderOperatingSummary(status, source)`.
 - The dashboard now introduces the detailed sections with an explicit review sequence: sources, cognition, trade state, money, safety, governance, runtime.
 - The detailed panel layout prioritizes Watching and Cognition first, then Trade Layer and Money, then Safety, Worldview, Communications, Comments, and Runtime.
@@ -1157,6 +1158,7 @@ Implemented now:
 - Bumped dashboard CSS and JS cache keys to `20260521-mission-control`.
 - Added `scripts/check_dashboard_density_toggle.js` to enforce the toggle UI, persisted renderer hook, terminal CSS selectors, cache keys, and default Executive state.
 - Added `scripts/check_dashboard_mission_control.js` to enforce the Mission Control status contract and rendered top-panel output.
+- Added `scripts/check_dashboard_durable_spine.js` to enforce the public-safe durable replay status and Mission Control rendering.
 
 Exit gate:
 

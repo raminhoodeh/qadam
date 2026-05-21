@@ -9,6 +9,7 @@ const {
 
 const MISSION_REQUIRED_FIELDS = [
     "data_sources",
+    "durable_spine",
     "headline",
     "portfolio",
     "safety",
@@ -39,7 +40,15 @@ async function main() {
     assert(mission.data_sources.total_count === status.watching.length, "mission source total mismatch");
     assert(Array.isArray(mission.data_sources.logged_in_sources), "mission logged-in sources list missing");
     assert(Array.isArray(mission.data_sources.connected_sources), "mission connected sources list missing");
+    assert(mission.data_sources.durable_expected_source_count === status.durable_ingestion.expected_source_count, "mission durable source target mismatch");
+    assert(mission.data_sources.durable_replayed_source_count === status.durable_ingestion.replayed_source_count, "mission durable replay count mismatch");
     assert(/observation inputs only/i.test(mission.data_sources.boundary || ""), "mission source boundary is weak");
+    assert(mission.durable_spine.expected_source_count === status.durable_ingestion.expected_source_count, "mission durable expected source count mismatch");
+    assert(mission.durable_spine.replayed_source_count === status.durable_ingestion.replayed_source_count, "mission durable replayed source count mismatch");
+    assert(mission.durable_spine.write_authority === false, "mission durable write authority enabled");
+    assert(mission.durable_spine.signal_authority === false, "mission durable signal authority enabled");
+    assert(mission.durable_spine.order_authority === false, "mission durable order authority enabled");
+    assert(/cannot create signals/i.test(mission.durable_spine.boundary || ""), "mission durable boundary is weak");
     assert(/private prior/i.test(mission.trading_philosophy.boundary || ""), "mission philosophy boundary is weak");
     assert(mission.trading_philosophy.current_self_directive.length >= 4, "mission self-directive is too thin");
     assert(mission.trade_intent.candidate_count === status.trade_layer.candidates.length, "mission candidate count mismatch");
@@ -58,13 +67,16 @@ async function main() {
     assertIncludes(rendered, "[data-mission-primary]", "Operating thesis");
     assertIncludes(rendered, "[data-mission-primary]", "hypotheses");
     assertIncludes(rendered, "[data-mission-primary]", "Mission control is read-only");
+    assertIncludes(rendered, "[data-mission-primary]", "Replay");
     assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
     assertIncludes(rendered, "[data-mission-sources]", "missing credentials");
+    assertIncludes(rendered, "[data-mission-sources]", "replay");
     assertIncludes(rendered, "[data-mission-sources]", "observation inputs only");
     assertIncludes(rendered, "[data-mission-philosophy]", "Trading philosophy");
     assertIncludes(rendered, "[data-mission-philosophy]", "private prior");
     assertIncludes(rendered, "[data-mission-stack]", "Local LLM");
     assertIncludes(rendered, "[data-mission-stack]", "quantum oracle");
+    assertIncludes(rendered, "[data-mission-stack]", "replay");
     assertIncludes(rendered, "[data-mission-stack]", "risk");
     assertIncludes(rendered, "[data-mission-trades]", "Trade intent");
     assertIncludes(rendered, "[data-mission-trades]", "Submitted");

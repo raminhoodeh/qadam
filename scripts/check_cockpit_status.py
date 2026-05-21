@@ -576,6 +576,7 @@ CAPITAL_REQUIRED_FIELDS = {
 
 MISSION_CONTROL_REQUIRED_FIELDS = {
     "data_sources",
+    "durable_spine",
     "headline",
     "portfolio",
     "safety",
@@ -592,6 +593,9 @@ MISSION_DATA_SOURCES_REQUIRED_FIELDS = {
     "boundary",
     "connected_sources",
     "degraded_count",
+    "durable_expected_source_count",
+    "durable_replay_status",
+    "durable_replayed_source_count",
     "logged_in_count",
     "logged_in_sources",
     "missing_credential_count",
@@ -614,12 +618,54 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "boundary",
     "coo",
     "data_spine",
+    "durable_spine",
     "frontier_llm",
     "local_llm",
     "paper_account",
     "quant_oracle",
     "risk_gate",
     "telegram",
+}
+
+DURABLE_INGESTION_REQUIRED_FIELDS = {
+    "boundary",
+    "contract_status",
+    "database_configured",
+    "event_log_ingestion_event_count",
+    "expected_source_count",
+    "first_observed_at",
+    "latest_observed_at",
+    "missing_source_count",
+    "missing_sources",
+    "missing_tables",
+    "next_step",
+    "observation_count",
+    "order_authority",
+    "replay_status",
+    "replayed_source_count",
+    "schema_status",
+    "schema_version",
+    "service_status",
+    "signal_authority",
+    "status",
+    "write_authority",
+}
+
+MISSION_DURABLE_REQUIRED_FIELDS = {
+    "boundary",
+    "contract_status",
+    "expected_source_count",
+    "latest_observed_at",
+    "missing_source_count",
+    "next_step",
+    "observation_count",
+    "order_authority",
+    "replay_status",
+    "replayed_source_count",
+    "service_status",
+    "signal_authority",
+    "status",
+    "write_authority",
 }
 
 MISSION_TRADE_REQUIRED_FIELDS = {
@@ -968,6 +1014,13 @@ def main() -> int:
     print(f"cockpit_status_telegram_dry_run_message_count={payload['communications']['telegram'].get('dry_run_message_count')}")
     print(f"cockpit_status_live_bridge_status={payload['live_bridge'].get('status')}")
     print(f"cockpit_status_live_bridge_endpoint={payload['live_bridge'].get('endpoint')}")
+    print(f"cockpit_status_durable_ingestion_status={payload.get('durable_ingestion', {}).get('status')}")
+    print(f"cockpit_status_durable_ingestion_contract_status={payload.get('durable_ingestion', {}).get('contract_status')}")
+    print(f"cockpit_status_durable_ingestion_replay_status={payload.get('durable_ingestion', {}).get('replay_status')}")
+    print(
+        "cockpit_status_durable_ingestion_replayed_source_count="
+        f"{payload.get('durable_ingestion', {}).get('replayed_source_count')}"
+    )
 
     if payload["schema_version"] != COCKPIT_STATUS_SCHEMA_VERSION:
         print("cockpit_status_schema_mismatch=true")
@@ -989,6 +1042,26 @@ def main() -> int:
         return 1
     if payload["d0_shell"]["status"] != "frozen":
         print("cockpit_status_d0_not_frozen=true")
+        return 1
+    durable_ingestion = payload.get("durable_ingestion", {})
+    missing_durable_fields = sorted(DURABLE_INGESTION_REQUIRED_FIELDS - set(durable_ingestion))
+    if missing_durable_fields:
+        print("cockpit_status_durable_ingestion_fields_missing=" + ",".join(missing_durable_fields))
+        return 1
+    if durable_ingestion.get("expected_source_count") != EXPECTED_SOURCE_COUNT:
+        print("cockpit_status_durable_ingestion_expected_count_mismatch=true")
+        return 1
+    if durable_ingestion.get("write_authority") is not False:
+        print("cockpit_status_durable_ingestion_write_authority_enabled=true")
+        return 1
+    if durable_ingestion.get("signal_authority") is not False or durable_ingestion.get("order_authority") is not False:
+        print("cockpit_status_durable_ingestion_authority_enabled=true")
+        return 1
+    if "cannot create signals" not in durable_ingestion.get("boundary", ""):
+        print("cockpit_status_durable_ingestion_boundary_weak=true")
+        return 1
+    if durable_ingestion.get("status") not in {"ok", "partial", "missing_tables", "degraded", "ready_waiting_for_local_service"}:
+        print("cockpit_status_durable_ingestion_status_invalid=true")
         return 1
     live_bridge = payload["live_bridge"]
     missing_live_bridge_fields = sorted(LIVE_BRIDGE_REQUIRED_FIELDS - set(live_bridge))
@@ -1311,6 +1384,29 @@ def main() -> int:
         return 1
     if "observation inputs only" not in mission_data.get("boundary", ""):
         print("cockpit_status_mission_source_boundary_weak=true")
+        return 1
+    if mission_data.get("durable_expected_source_count") != durable_ingestion.get("expected_source_count"):
+        print("cockpit_status_mission_durable_expected_count_mismatch=true")
+        return 1
+    if mission_data.get("durable_replayed_source_count") != durable_ingestion.get("replayed_source_count"):
+        print("cockpit_status_mission_durable_replay_count_mismatch=true")
+        return 1
+    mission_durable = mission.get("durable_spine", {})
+    missing_mission_durable_fields = sorted(MISSION_DURABLE_REQUIRED_FIELDS - set(mission_durable))
+    if missing_mission_durable_fields:
+        print("cockpit_status_mission_durable_fields_missing=" + ",".join(missing_mission_durable_fields))
+        return 1
+    if mission_durable.get("write_authority") is not False:
+        print("cockpit_status_mission_durable_write_authority_enabled=true")
+        return 1
+    if mission_durable.get("signal_authority") is not False or mission_durable.get("order_authority") is not False:
+        print("cockpit_status_mission_durable_authority_enabled=true")
+        return 1
+    if mission_durable.get("replayed_source_count") != durable_ingestion.get("replayed_source_count"):
+        print("cockpit_status_mission_durable_count_mismatch=true")
+        return 1
+    if "cannot create signals" not in mission_durable.get("boundary", ""):
+        print("cockpit_status_mission_durable_boundary_weak=true")
         return 1
     mission_philosophy = mission.get("trading_philosophy", {})
     missing_mission_philosophy_fields = sorted(MISSION_PHILOSOPHY_REQUIRED_FIELDS - set(mission_philosophy))

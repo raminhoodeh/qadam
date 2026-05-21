@@ -25,6 +25,7 @@ node scripts/check_dashboard_visual_system.js
 node scripts/check_dashboard_page_architecture.js
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_system_map.js
+node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js
 node scripts/check_dashboard_watching_view.js
