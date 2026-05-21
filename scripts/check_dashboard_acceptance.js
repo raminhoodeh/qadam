@@ -105,8 +105,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-density-toggle",
     "data-density-option=\"executive\"",
     "data-density-option=\"terminal\"",
-    "/auth.css?v=20260521-mission-control",
-    "/dashboard.js?v=20260521-mission-control"
+    "/auth.css?v=20260521-nav-ux",
+    "/dashboard.js?v=20260521-nav-ux"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [

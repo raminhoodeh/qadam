@@ -23,6 +23,7 @@ node scripts/check_dashboard_deployment_readiness.js
 
 say "Checking dashboard phase contracts"
 node scripts/check_dashboard_density_toggle.js
+node scripts/check_dashboard_navigation_ux.js
 node scripts/check_dashboard_panel_redesign.js
 node scripts/check_dashboard_section_explainers.js
 node scripts/check_dashboard_visual_system.js
@@ -54,8 +55,10 @@ git diff --check -- \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
   docs/qadam-dashboard-implementation-plan.md \
+  docs/qadam-dashboard-navigation-ux-plan.md \
   scripts/check_dashboard_acceptance.js \
   scripts/check_dashboard_deployment_readiness.js \
+  scripts/check_dashboard_navigation_ux.js \
   scripts/preflight_dashboard_deployment.sh
 
 say "Deployment preflight passed"

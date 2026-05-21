@@ -1156,7 +1156,7 @@ Implemented now:
 - Executive mode keeps the D10F panel-first layout with fuller panel briefs and breathable spacing.
 - Terminal mode compresses the cockpit shell, panel padding, panel briefs, metrics, cards, source rows, trade route, tag rows, and system-map lanes for higher-density monitoring.
 - Terminal mode hides secondary panel-brief prose while preserving the state, watchpoint, and boundary facts.
-- Bumped dashboard CSS and JS cache keys to `20260521-mission-control`.
+- Bumped dashboard CSS and JS cache keys to `20260521-nav-ux`.
 - Added `scripts/check_dashboard_density_toggle.js` to enforce the toggle UI, persisted renderer hook, terminal CSS selectors, cache keys, and default Executive state.
 - Added `scripts/check_dashboard_mission_control.js` to enforce the Mission Control status contract and rendered top-panel output.
 - Added `scripts/check_dashboard_durable_spine.js` to enforce the public-safe durable replay status and Mission Control rendering.
@@ -1216,6 +1216,30 @@ Exit gate:
 - Production deployment is attempted only through `landing-page-repo/scripts/deploy-vercel-production.sh`, not ad hoc terminal commands.
 - A live claim is valid only when the deploy script prints a production deployment URL and aliases `qadam.trade` and `www.qadam.trade`.
 - If Vercel cannot be reached from the execution environment, the correct result is “locally deployment-ready, not deployed.”
+
+### Phase D10J - Navigation UX
+
+Objective: make the cockpit navigable by operating question instead of forcing founding Fund Managers to scroll through the whole page.
+
+Status: implemented locally.
+
+Implemented now:
+
+- Added `docs/qadam-dashboard-navigation-ux-plan.md` as the dedicated navigation roadmap.
+- Added a sticky cockpit navigation rail below the hero with short section routes: Mission, Map, Sources, Cognition, Trades, Money, Safety, Runtime, Governance.
+- Added stable anchors and `data-cockpit-section` labels to Mission Control, System Map, Watching, Cognition, Trade Layer, Money, Forbidden Actions, Process Console, and Governance.
+- Added a current-section label and active-link behaviour through `initCockpitNavigation()`.
+- Added defensive `IntersectionObserver` support so active state updates while scrolling but degrades to simple anchor links if the browser or test DOM does not support it.
+- Added mobile-specific navigation rules so phone users can jump to the key sections without scrolling through the whole cockpit.
+- Bumped dashboard CSS and JS cache keys to `20260521-nav-ux`.
+- Added `scripts/check_dashboard_navigation_ux.js` and wired it into the deployment preflight.
+
+Exit gate:
+
+- A Fund Manager can jump directly to Mission Control, Map, Sources, Cognition, Trades, Money, Safety, Runtime, and Governance.
+- Navigation remains read-only and cannot approve signals, create trade candidates, stage paper orders, submit orders, write to brokers, send Telegram commands, expose local secrets, or enable live capital.
+- `scripts/check_dashboard_navigation_ux.js` passes locally.
+- The full dashboard deployment preflight still passes before live deployment.
 
 ## 11. Acceptance Criteria
 
