@@ -532,6 +532,65 @@ def _safe_shadow_packets(settings: Settings) -> list[dict[str, Any]]:
     ]
 
 
+def _safe_phase2_shadow_cycle(settings: Settings) -> dict[str, Any]:
+    report_path = Path(settings.runtime_dir) / "phase2_shadow_cycle.json"
+    fallback = {
+        "status": "not_run",
+        "mode": "not_run",
+        "source_count": 0,
+        "source_degraded_count": 0,
+        "queued_packet_count": 0,
+        "shadow_signal_count": 0,
+        "durable_replay_requested": False,
+        "durable_replay_status": "not_requested",
+        "durable_replay_contract_status": "not_requested",
+        "durable_replay_observation_count": 0,
+        "durable_replay_replayed_source_count": 0,
+        "durable_replay_missing_source_count": 0,
+        "write_authority": False,
+        "signal_authority": False,
+        "order_authority": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "boundary": "Phase 2 shadow cycle has not run in the current local snapshot.",
+    }
+    try:
+        report = json.loads(report_path.read_text())
+    except Exception:
+        return fallback
+    if not isinstance(report, dict):
+        return fallback
+    return {
+        "status": report.get("status", "unknown"),
+        "mode": report.get("mode", "unknown"),
+        "source_count": int(report.get("source_count", 0) or 0),
+        "source_degraded_count": int(report.get("source_degraded_count", 0) or 0),
+        "queued_packet_count": int(report.get("queued_packet_count", 0) or 0),
+        "shadow_signal_count": int(report.get("shadow_signal_count", 0) or 0),
+        "strategy_lead_status": report.get("strategy_lead_status", "unknown"),
+        "local_research_status": report.get("local_research_status", "unknown"),
+        "signal_integrity_status": report.get("signal_integrity_status", "unknown"),
+        "risk_agent_status": report.get("risk_agent_status", "unknown"),
+        "execution_policy_status": report.get("execution_policy_status", "unknown"),
+        "durable_replay_requested": bool(report.get("durable_replay_requested")),
+        "durable_replay_status": report.get("durable_replay_status", "unknown"),
+        "durable_replay_contract_status": report.get("durable_replay_contract_status", "unknown"),
+        "durable_replay_observation_count": int(report.get("durable_replay_observation_count", 0) or 0),
+        "durable_replay_replayed_source_count": int(report.get("durable_replay_replayed_source_count", 0) or 0),
+        "durable_replay_missing_source_count": int(report.get("durable_replay_missing_source_count", 0) or 0),
+        "write_authority": bool(report.get("durable_replay_write_authority")),
+        "signal_authority": bool(report.get("durable_replay_signal_authority")),
+        "order_authority": bool(report.get("durable_replay_order_authority")),
+        "execution_allowed": bool(report.get("strategy_lead_execution_allowed")),
+        "paper_order_allowed": bool(report.get("strategy_lead_paper_order_allowed")),
+        "created_at": report.get("created_at"),
+        "boundary": report.get(
+            "boundary",
+            "Phase 2 shadow cycle is read-only context and cannot create orders.",
+        ),
+    }
+
+
 def _safe_signal_integrity_reviews(settings: Settings) -> list[dict[str, Any]]:
     try:
         reviews = list(SignalIntegrityReviewStore(settings=settings).read(limit=5))
@@ -745,6 +804,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     paper_context = paper_account_shadow_context(settings)
     signal_integrity = signal_integrity_summary(settings)
     quantum_oracle = quantum_oracle_summary(settings)
+    phase2_cycle = _safe_phase2_shadow_cycle(settings)
     signal_reviews = _safe_signal_integrity_reviews(settings)
     try:
         signals = list(store.read())[-5:]
@@ -817,6 +877,12 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     current_focus = []
     if hypotheses:
         current_focus.append("reviewing shadow-only hypotheses")
+    if phase2_cycle.get("mode") == "durable_replay":
+        current_focus.append(
+            "Phase 2 durable replay: "
+            f"{phase2_cycle.get('durable_replay_replayed_source_count', 0)}/"
+            f"{phase2_cycle.get('source_count', 0)} sources replayed into shadow review"
+        )
     if local_assessments:
         current_focus.append(
             f"local Research Analyst focus: {local_assessments[-1].get('watch_focus', 'shadow review')}"
@@ -884,6 +950,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     return {
         "status": summary.get("status", "shadow_ready"),
         "current_focus": current_focus,
+        "phase2_shadow_cycle": phase2_cycle,
         "paper_account_context": paper_context,
         "signal_integrity": {
             "status": signal_integrity.get("status", "ok"),
@@ -1457,6 +1524,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     evidence_packets = cognition.get("evidence_packets", [])
     strategy_packets = cognition.get("strategy_lead_packets", [])
     local_assessments = cognition.get("local_research_assessments", [])
+    phase2_cycle = cognition.get("phase2_shadow_cycle", {})
     observed_signals = trade_layer.get("watching", [])
     candidates = trade_layer.get("candidates", [])
     blocked_trades = trade_layer.get("blocked", [])
@@ -1574,6 +1642,13 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         },
         "thinking": {
             "status": cognition.get("status", "pending"),
+            "phase2_status": phase2_cycle.get("status", "not_run"),
+            "phase2_mode": phase2_cycle.get("mode", "not_run"),
+            "phase2_queued_packet_count": phase2_cycle.get("queued_packet_count", 0),
+            "phase2_shadow_signal_count": phase2_cycle.get("shadow_signal_count", 0),
+            "phase2_durable_replay_status": phase2_cycle.get("durable_replay_status", "not_requested"),
+            "phase2_durable_replayed_source_count": phase2_cycle.get("durable_replay_replayed_source_count", 0),
+            "phase2_durable_missing_source_count": phase2_cycle.get("durable_replay_missing_source_count", 0),
             "current_focus": cognition.get("current_focus", [])[:5],
             "hypothesis_count": len(hypotheses),
             "evidence_packet_count": len(evidence_packets),

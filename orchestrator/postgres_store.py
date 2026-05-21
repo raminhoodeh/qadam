@@ -239,6 +239,187 @@ async def write_source_observations(
         await conn.close()
 
 
+async def replay_source_observations(
+    *,
+    source_keys: tuple[str, ...] | None = None,
+    per_source: int = 3,
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Read recent durable observations for shadow intelligence.
+
+    This is intentionally read-only. It returns public-safe observation rows
+    for Phase 2 review without creating signals, trade candidates, or orders.
+    """
+
+    settings = settings or Settings.from_env()
+    keys = tuple(source_keys or ())
+    base: dict[str, Any] = {
+        "schema_version": 1,
+        "database_configured": bool(settings.database_url),
+        "requested_sources": list(keys),
+        "requested_source_count": len(keys),
+        "per_source": max(1, per_source),
+        "observation_count": 0,
+        "replayed_source_count": 0,
+        "missing_source_count": len(keys),
+        "missing_sources": list(keys),
+        "observations": [],
+        "write_authority": False,
+        "signal_authority": False,
+        "order_authority": False,
+        "boundary": (
+            "Durable source replay is read-only Phase 2 context. It cannot create "
+            "signals, trade candidates, orders, broker writes, or live-capital authority."
+        ),
+    }
+
+    stores = local_store_health(settings)
+    postgres_online = "postgres" not in stores["summary"]["offline_services"]
+    if not postgres_online:
+        return base | {
+            "status": "ready_waiting_for_local_service",
+            "service_status": "offline",
+            "contract_status": "ready_waiting_for_local_service",
+            "replay_status": "offline",
+            "schema_status": "not_checked",
+            "next_step": (
+                "Start OrbStack, Docker Desktop, Podman, or Colima and rerun "
+                "scripts/start_postgres_timescale_ingestion.sh."
+            ),
+        }
+
+    try:
+        state = await schema_state(settings)
+    except Exception as exc:  # noqa: BLE001 - replay must degrade safely.
+        return base | {
+            "status": "degraded",
+            "service_status": "online",
+            "contract_status": "schema_unavailable",
+            "replay_status": "unavailable",
+            "schema_status": "unavailable",
+            "schema_error": exc.__class__.__name__,
+            "next_step": "Apply migrations and rerun the durable ingestion bootstrap.",
+        }
+
+    missing_tables = list(state.get("missing_tables", []))
+    if "source_observation" in missing_tables:
+        return base | {
+            "status": "missing_tables",
+            "service_status": "online",
+            "contract_status": "schema_incomplete",
+            "replay_status": "missing_tables",
+            "schema_status": state.get("status", "unknown"),
+            "missing_tables": missing_tables,
+            "next_step": "Run scripts/apply_migrations.py, then rerun durable ingestion.",
+        }
+
+    conn = await connect(settings)
+    try:
+        rows = await conn.fetch(
+            """
+            WITH ranked AS (
+                SELECT
+                    source_key,
+                    source_name,
+                    pipeline,
+                    tier,
+                    mode,
+                    adapter_status,
+                    observed_at,
+                    latency_ms,
+                    trust_score,
+                    payload,
+                    row_number() OVER (
+                        PARTITION BY source_key
+                        ORDER BY observed_at DESC, created_at DESC
+                    ) AS row_rank
+                FROM source_observation
+                WHERE cardinality($1::text[]) = 0
+                   OR source_key = ANY($1::text[])
+            )
+            SELECT
+                source_key,
+                source_name,
+                pipeline,
+                tier,
+                mode,
+                adapter_status,
+                observed_at,
+                latency_ms,
+                trust_score,
+                payload
+            FROM ranked
+            WHERE row_rank <= $2
+            ORDER BY source_key, observed_at DESC
+            """,
+            list(keys),
+            max(1, per_source),
+        )
+    finally:
+        await conn.close()
+
+    observations: list[dict[str, Any]] = []
+    for row in rows:
+        payload = row["payload"]
+        if not isinstance(payload, dict):
+            payload = {}
+        observations.append(
+            {
+                "source_key": row["source_key"],
+                "source_name": row["source_name"],
+                "pipeline": row["pipeline"],
+                "tier": row["tier"],
+                "mode": row["mode"],
+                "adapter_status": row["adapter_status"],
+                "observed_at": str(row["observed_at"]),
+                "latency_ms": row["latency_ms"],
+                "trust_score": float(row["trust_score"]),
+                "payload": payload,
+            }
+        )
+
+    observed_source_keys = {observation["source_key"] for observation in observations}
+    missing_sources = sorted(set(keys) - observed_source_keys)
+    replay_status = "ok" if not missing_sources else "partial"
+
+    return base | {
+        "status": "ok" if replay_status == "ok" else "partial",
+        "service_status": "online",
+        "contract_status": "durable_phase2_replay_ready" if replay_status == "ok" else "durable_phase2_replay_partial",
+        "replay_status": replay_status,
+        "schema_status": state.get("status", "ok"),
+        "observation_count": len(observations),
+        "replayed_source_count": len(observed_source_keys),
+        "missing_source_count": len(missing_sources),
+        "missing_sources": missing_sources,
+        "observations": observations,
+        "next_step": (
+            "Feed durable replay observations into Phase 2 shadow review."
+            if replay_status == "ok"
+            else "Run scripts/run_test_ingestion_durable.py --all, then verify replay coverage."
+        ),
+    }
+
+
+def durable_source_observation_replay(
+    *,
+    source_keys: tuple[str, ...] | None = None,
+    per_source: int = 3,
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Synchronous read-only durable replay wrapper for Phase 2 scripts."""
+
+    import asyncio
+
+    return asyncio.run(
+        replay_source_observations(
+            source_keys=source_keys,
+            per_source=per_source,
+            settings=settings,
+        )
+    )
+
+
 async def durable_ingestion_state(settings: Settings | None = None) -> dict[str, Any]:
     """Return read-only durable replay coverage for the cockpit.
 

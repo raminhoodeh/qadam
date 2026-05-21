@@ -297,6 +297,8 @@ Current ingestion state:
 - `scripts/check_alpaca_paper_mirror.py --live` refreshes the Alpaca paper-account mirror in read-only mode: account, positions, orders, and portfolio history only; no broker-write route exists.
 - `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file and writes a redacted local report; it cannot create signals or orders.
 - `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` feeds read-only observations into the Research Analyst queue, runs the local Gemma Research Analyst, and queues a Strategy Lead shadow handoff with no execution authority.
+- `scripts/run_phase2_shadow_cycle.py --durable-replay` feeds replayable read-only observations from local Postgres/Timescale into the same Phase 2 shadow workflow, so intelligence can be rerun from durable `source_observation` rows instead of depending only on live adapter availability.
+- `scripts/check_phase2_durable_replay_cycle.py` validates the durable Phase 2 replay bridge: the default Phase 2 source set must replay from Timescale, queue Research Analyst packets, produce shadow intelligence, and keep signal, risk, order, broker-write, and live-capital authority at zero.
 - `scripts/check_phase2_paper_context.py` validates that Phase 2 receives the paper-account mirror as read-only context and that neither the Research Analyst nor Strategy Lead can approve execution or paper orders.
 - `scripts/check_gdelt_adapter.py` verifies the GDELT sample path and can run a live read-only check with `--live`.
 - `scripts/check_oref_adapter.py` verifies the Oref sample path and can run a live read-only check with `--live`.
@@ -334,6 +336,7 @@ Current shadow intelligence state:
 - The Research Analyst shadow triage runner consumes queued packets and converts them into non-executable shadow signals.
 - `scripts/check_local_research_analyst.py` validates the local Research Analyst assessment contract in dry mode by default, and `--live` calls LM Studio only after the local server is running.
 - Local Research Analyst assessments are stored in `data/runtime/local_research_assessments.jsonl` as shadow-only compression records with no execution authority.
+- Phase 2 can now run from durable Timescale replay with `scripts/run_phase2_shadow_cycle.py --durable-replay`: replayed `source_observation` rows become Research Analyst packets, then pass through Strategy Lead shadow handoff and the downstream safety stack without any authority to create candidates, orders, broker writes, or live-capital access.
 - Phase 2 now feeds a sanitized paper-account context into the Local Research Analyst and Strategy Lead shadow workflow: Alpaca paper balance, P&L, positions, order counts, drawdown, maturity progress, and the £1000 policy allocation are visible as context only, with `execution_allowed=false`, `paper_order_allowed=false`, `write_authority=false`, and `live_capital_enabled=false`.
 - `orchestrator/signal_integrity.py` implements the first Signal Integrity Gate. It reviews shadow signals through evidence count, source count, trust scores, missing corroboration, signal confidence, and Akber's 6-stage filter, then marks each signal as `blocked`, `hold_for_corroboration`, or `passed_to_risk_shadow`.
 - `scripts/check_signal_integrity_gate.py` validates that Signal Integrity reviews are durable, public-safe, and non-executable. The gate cannot approve risk, create trade candidates, create paper orders, or access broker-write routes.
@@ -369,7 +372,7 @@ Current dashboard status-contract state:
 - The cockpit now exports `decision_philosophy` from the private `how-the-world-works/` corpus and renders Qadam's worldview lens in the system map, Private Edge panel, hypothesis cards, and each observed-signal/trade decision card while labelling it as a private prior, not evidence.
 - Dashboard Plan D8/D8A/D8B is implemented locally: the cockpit shows Fund Manager comments, Telegram dry-run Communications, and the protected User Guide.
 - Dashboard Plan D9 is implemented locally: the Secure Live Bridge contract, signed snapshot manifest, read-only authenticated API route, rate-limit boundary, write-method blocks, and static fallback are in place.
-- The cockpit cognition contract can now include sanitized local Research Analyst assessments, read-only paper-account context, and Signal Integrity review state: summary, watch focus, missing correlations, next questions, confidence, paper mirror state, integrity score, Akber filter output, failure reasons, required next steps, and shadow-only authority flags.
+- The cockpit cognition contract can now include sanitized Phase 2 durable replay cycle state, local Research Analyst assessments, read-only paper-account context, and Signal Integrity review state: replay mode, replayed source count, queued packet count, summary, watch focus, missing correlations, next questions, confidence, paper mirror state, integrity score, Akber filter output, failure reasons, required next steps, and shadow-only authority flags.
 - The cockpit trade contract now includes sanitized Risk Agent policy-review state: review status, policy score, blocked reasons, required next steps, account context, risk cap, Signal Integrity reference, and explicit zero-authority flags for execution, paper orders, order creation, and broker writes.
 - The cockpit trade contract now also includes sanitized Execution Policy state: selected venue, venue mode, kill-switch status, execution checks, blocked reasons, required next steps, and explicit zero-authority flags for staged paper orders, paper-order creation, broker writes, and live capital.
 - The cockpit trade contract now includes sanitized disabled staged paper-order state: hypothetical order, reconciliation checks, blocked reasons, required next steps, and explicit zero-authority flags for staged order creation, paper-order submission, broker writes, and live capital.
@@ -385,7 +388,8 @@ Durable-mode commands:
 2. Open OrbStack or another Docker-compatible runtime.
 3. Run `scripts/start_postgres_timescale_ingestion.sh` and require `postgres_timescale_durable_ingestion=ok`.
 4. Run `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` and require 35/35 sources replayable.
-5. Use `scripts/start_local_stores.sh` later when Chroma server mode is needed as well.
+5. Run `scripts/check_phase2_durable_replay_cycle.py` to prove Phase 2 can consume replayed Timescale observations without creating executable authority.
+6. Use `scripts/start_local_stores.sh` later when Chroma server mode is needed as well.
 
 Current quantum credential state:
 

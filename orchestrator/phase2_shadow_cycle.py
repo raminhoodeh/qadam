@@ -33,6 +33,7 @@ from orchestrator.intelligence import (
 )
 from orchestrator.paper_account import paper_account_shadow_context
 from orchestrator.paper_submit_receipt import run_paper_submit_receipt_contract
+from orchestrator.postgres_store import durable_source_observation_replay
 from orchestrator.risk_agent import run_risk_policy_router
 from orchestrator.signal_integrity import run_signal_integrity_gate
 from orchestrator.staged_paper_order import run_staged_paper_order_contract
@@ -109,6 +110,45 @@ def _event_summary(event: dict[str, Any]) -> str:
     return "Read-only source observation requires shadow review."
 
 
+def _durable_observation_to_event(observation: dict[str, Any]) -> dict[str, Any]:
+    payload = observation.get("payload")
+    if not isinstance(payload, dict):
+        payload = {}
+    source_key = str(observation.get("source_key") or "unknown_source")
+    observed_at = str(observation.get("observed_at") or "unknown_time")
+    source_name = str(observation.get("source_name") or source_key)
+    pipeline = str(observation.get("pipeline") or "unknown_pipeline")
+    mode = str(observation.get("mode") or "unknown_mode")
+    adapter_status = str(observation.get("adapter_status") or "unknown_status")
+    trust_score = observation.get("trust_score", 0)
+    summary = str(payload.get("normalised_summary") or payload.get("summary") or "").strip()
+    if not summary:
+        summary = (
+            f"Durable replay observation from {source_name}: pipeline={pipeline}, "
+            f"mode={mode}, adapter_status={adapter_status}, observed_at={observed_at}."
+        )
+    return {
+        "event_id": f"durable_replay:{source_key}:{observed_at}",
+        "source": f"durable.{source_key}",
+        "trust_score_at_ingestion": trust_score,
+        "event_type": "durable_source_observation",
+        "raw_payload": {
+            "source_key": source_key,
+            "source_name": source_name,
+            "pipeline": pipeline,
+            "tier": observation.get("tier"),
+            "mode": mode,
+            "adapter_status": adapter_status,
+            "latency_ms": observation.get("latency_ms"),
+            "payload": payload,
+        },
+        "normalised_summary": summary[:600],
+        "coordinates": None,
+        "ingested_at": observed_at,
+        "linked_catalyst_id": None,
+    }
+
+
 def _uncertainty(event: dict[str, Any], *, degraded: bool) -> str:
     if degraded:
         return "high"
@@ -145,6 +185,7 @@ def run_phase2_shadow_cycle(
     *,
     sources: tuple[str, ...] = DEFAULT_PHASE2_SOURCES,
     live_sources: bool = False,
+    durable_replay: bool = False,
     live_local_llm: bool = False,
     events_per_source: int = 3,
     research_limit: int = 8,
@@ -155,26 +196,47 @@ def run_phase2_shadow_cycle(
     event_log = event_log or EventLog(echo=False)
     source_results: list[SourceCycleResult] = []
     queued_packet_count = 0
+    durable_replay_result: dict[str, Any] | None = None
+    durable_events_by_source: dict[str, list[dict[str, Any]]] = {}
+
+    if durable_replay:
+        durable_replay_result = durable_source_observation_replay(
+            source_keys=sources,
+            per_source=max(1, events_per_source),
+            settings=settings,
+        )
+        for observation in durable_replay_result.get("observations", []):
+            if isinstance(observation, dict):
+                source_key = str(observation.get("source_key") or "unknown_source")
+                durable_events_by_source.setdefault(source_key, []).append(_durable_observation_to_event(observation))
 
     for source_key in sources:
-        try:
-            envelope = (_live_fetcher(source_key) if live_sources else _sample_fetcher(source_key))()
-        except Exception as exc:  # noqa: BLE001 - source failure must degrade, not stop the cycle.
-            source_results.append(
-                SourceCycleResult(
-                    source_key=source_key,
-                    status="degraded",
-                    degraded=True,
-                    degraded_reason=f"fetch_error:{exc.__class__.__name__}",
-                    event_count=0,
-                    queued_packet_count=0,
+        if durable_replay:
+            event_records = durable_events_by_source.get(source_key, [])
+            replay_status = str((durable_replay_result or {}).get("replay_status") or "unknown")
+            degraded = not event_records
+            degraded_reason = None if event_records else f"durable_replay_{replay_status}_missing_source"
+        else:
+            try:
+                envelope = (_live_fetcher(source_key) if live_sources else _sample_fetcher(source_key))()
+            except Exception as exc:  # noqa: BLE001 - source failure must degrade, not stop the cycle.
+                source_results.append(
+                    SourceCycleResult(
+                        source_key=source_key,
+                        status="degraded",
+                        degraded=True,
+                        degraded_reason=f"fetch_error:{exc.__class__.__name__}",
+                        event_count=0,
+                        queued_packet_count=0,
+                    )
                 )
-            )
-            continue
+                continue
 
-        events = envelope.get("events", [])
-        event_records = [event for event in events if isinstance(event, dict)]
-        degraded = bool(envelope.get("degraded"))
+            events = envelope.get("events", [])
+            event_records = [event for event in events if isinstance(event, dict)]
+            degraded = bool(envelope.get("degraded"))
+            degraded_reason = envelope.get("degraded_reason")
+
         source_packet_count = 0
         if not degraded:
             for event in event_records[: max(0, events_per_source)]:
@@ -194,7 +256,7 @@ def run_phase2_shadow_cycle(
                 source_key=source_key,
                 status="degraded" if degraded else "ok",
                 degraded=degraded,
-                degraded_reason=envelope.get("degraded_reason"),
+                degraded_reason=degraded_reason,
                 event_count=len(event_records),
                 queued_packet_count=source_packet_count,
             )
@@ -233,14 +295,42 @@ def run_phase2_shadow_cycle(
         paper_account_context=paper_context,
     )
 
+    source_degraded_count = sum(1 for result in source_results if result.degraded)
+    durable_replay_summary = durable_replay_result or {
+        "status": "not_requested",
+        "contract_status": "not_requested",
+        "replay_status": "not_requested",
+        "observation_count": 0,
+        "replayed_source_count": 0,
+        "missing_source_count": 0,
+        "write_authority": False,
+        "signal_authority": False,
+        "order_authority": False,
+    }
     report = {
         "schema_version": PHASE2_SHADOW_CYCLE_SCHEMA_VERSION,
-        "status": "ok" if local_result.get("status") == "ok" else "degraded",
-        "mode": "live_sources" if live_sources else "sample_sources",
+        "status": (
+            "ok"
+            if local_result.get("status") == "ok"
+            and not source_degraded_count
+            and durable_replay_summary.get("replay_status") not in {"offline", "missing_tables", "unavailable"}
+            else "degraded"
+        ),
+        "mode": "durable_replay" if durable_replay else ("live_sources" if live_sources else "sample_sources"),
         "live_local_llm": live_local_llm,
         "source_count": len(sources),
         "source_results": [result.to_dict() for result in source_results],
+        "source_degraded_count": source_degraded_count,
         "queued_packet_count": queued_packet_count,
+        "durable_replay_requested": durable_replay,
+        "durable_replay_status": durable_replay_summary.get("status"),
+        "durable_replay_contract_status": durable_replay_summary.get("contract_status"),
+        "durable_replay_observation_count": durable_replay_summary.get("observation_count", 0),
+        "durable_replay_replayed_source_count": durable_replay_summary.get("replayed_source_count", 0),
+        "durable_replay_missing_source_count": durable_replay_summary.get("missing_source_count", 0),
+        "durable_replay_write_authority": durable_replay_summary.get("write_authority"),
+        "durable_replay_signal_authority": durable_replay_summary.get("signal_authority"),
+        "durable_replay_order_authority": durable_replay_summary.get("order_authority"),
         "shadow_signal_count": triage_result.get("shadow_signal_count", 0),
         "signal_integrity_status": integrity_result.get("status"),
         "signal_integrity_review_count": integrity_result.get("review_count", 0),
@@ -390,7 +480,8 @@ def run_phase2_shadow_cycle(
             "review is also read-only, and staged paper-order checks can only "
             "describe blocked hypothetical staging. Broker reconciliation checks "
             "can only describe read-only submit prerequisites. Paper-submit receipt "
-            "checks are dry-run only and cannot call brokers."
+            "checks are dry-run only and cannot call brokers. Durable replay is "
+            "read-only context and cannot create signals, trade candidates, or orders."
         ),
     }
     report_path = _write_report(settings, report)
@@ -401,6 +492,9 @@ def run_phase2_shadow_cycle(
             "status": report["status"],
             "mode": report["mode"],
             "queued_packet_count": queued_packet_count,
+            "durable_replay_requested": durable_replay,
+            "durable_replay_status": report["durable_replay_status"],
+            "durable_replay_replayed_source_count": report["durable_replay_replayed_source_count"],
             "shadow_signal_count": report["shadow_signal_count"],
             "signal_integrity_review_count": report["signal_integrity_review_count"],
             "risk_agent_review_count": report["risk_agent_review_count"],

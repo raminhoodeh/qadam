@@ -17,6 +17,11 @@ from orchestrator.phase2_shadow_cycle import DEFAULT_PHASE2_SOURCES, run_phase2_
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Phase 2 shadow-intelligence cycle.")
     parser.add_argument("--live-sources", action="store_true", help="Use read-only live source adapters.")
+    parser.add_argument(
+        "--durable-replay",
+        action="store_true",
+        help="Use read-only Postgres/Timescale replayed source observations instead of adapter fetches.",
+    )
     parser.add_argument("--live-local-llm", action="store_true", help="Call LM Studio chat/completions.")
     parser.add_argument("--events-per-source", type=int, default=3)
     parser.add_argument("--research-limit", type=int, default=8)
@@ -31,6 +36,7 @@ def main() -> int:
     report = run_phase2_shadow_cycle(
         sources=sources,
         live_sources=args.live_sources,
+        durable_replay=args.durable_replay,
         live_local_llm=args.live_local_llm,
         events_per_source=args.events_per_source,
         research_limit=args.research_limit,
@@ -40,7 +46,17 @@ def main() -> int:
     print(f"phase2_shadow_cycle_mode={report['mode']}")
     print(f"phase2_shadow_cycle_live_local_llm={report['live_local_llm']}")
     print(f"phase2_shadow_cycle_source_count={report['source_count']}")
+    print(f"phase2_shadow_cycle_source_degraded_count={report['source_degraded_count']}")
     print(f"phase2_shadow_cycle_queued_packet_count={report['queued_packet_count']}")
+    print(f"phase2_shadow_cycle_durable_replay_requested={report['durable_replay_requested']}")
+    print(f"phase2_shadow_cycle_durable_replay_status={report['durable_replay_status']}")
+    print(f"phase2_shadow_cycle_durable_replay_contract_status={report['durable_replay_contract_status']}")
+    print(f"phase2_shadow_cycle_durable_replay_observation_count={report['durable_replay_observation_count']}")
+    print(f"phase2_shadow_cycle_durable_replay_replayed_source_count={report['durable_replay_replayed_source_count']}")
+    print(f"phase2_shadow_cycle_durable_replay_missing_source_count={report['durable_replay_missing_source_count']}")
+    print(f"phase2_shadow_cycle_durable_replay_write_authority={report['durable_replay_write_authority']}")
+    print(f"phase2_shadow_cycle_durable_replay_signal_authority={report['durable_replay_signal_authority']}")
+    print(f"phase2_shadow_cycle_durable_replay_order_authority={report['durable_replay_order_authority']}")
     print(f"phase2_shadow_cycle_shadow_signal_count={report['shadow_signal_count']}")
     print(f"phase2_shadow_cycle_signal_integrity_status={report['signal_integrity_status']}")
     print(f"phase2_shadow_cycle_signal_integrity_review_count={report['signal_integrity_review_count']}")
@@ -215,6 +231,17 @@ def main() -> int:
         )
 
     if report["status"] != "ok":
+        return 1
+    if args.durable_replay and report["durable_replay_contract_status"] not in {
+        "durable_phase2_replay_ready",
+        "durable_replay_ready",
+    }:
+        return 1
+    if args.durable_replay and report["durable_replay_missing_source_count"] != 0:
+        return 1
+    if report["durable_replay_write_authority"] or report["durable_replay_signal_authority"]:
+        return 1
+    if report["durable_replay_order_authority"]:
         return 1
     if report["strategy_lead_execution_allowed"] or report["strategy_lead_paper_order_allowed"]:
         return 1
