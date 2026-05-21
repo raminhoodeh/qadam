@@ -465,6 +465,7 @@ function renderFundModel(status, source) {
     const target = dashboardQuery("[data-fund-model]");
     if (!target) return;
     const cognition = status.cognition || {};
+    const phase2Cycle = cognition.phase2_shadow_cycle || {};
     const tradeLayer = status.trade_layer || {};
     const capital = status.capital || {};
     const communications = status.communications?.telegram || {};
@@ -943,6 +944,13 @@ function fallbackMissionControl(status, source) {
         },
         thinking: {
             status: cognition.status || "pending",
+            phase2_status: phase2Cycle.status || "not_run",
+            phase2_mode: phase2Cycle.mode || "not_run",
+            phase2_queued_packet_count: phase2Cycle.queued_packet_count || 0,
+            phase2_shadow_signal_count: phase2Cycle.shadow_signal_count || 0,
+            phase2_durable_replay_status: phase2Cycle.durable_replay_status || "not_requested",
+            phase2_durable_replayed_source_count: phase2Cycle.durable_replay_replayed_source_count || 0,
+            phase2_durable_missing_source_count: phase2Cycle.durable_replay_missing_source_count || 0,
             current_focus: cognition.current_focus || [],
             hypothesis_count: asArray(cognition.hypotheses).length,
             evidence_packet_count: asArray(cognition.evidence_packets).length,
@@ -1011,7 +1019,7 @@ function renderMissionControl(status, source) {
             <h3>${htmlText(mission.headline, "Mission state unavailable")}</h3>
             <p>${htmlText(philosophy.summary, "Qadam is waiting for its trading philosophy snapshot.")}</p>
             <div class="mission-mini-grid">
-                ${renderMetric("Thinking", `${thinking.hypothesis_count || 0} hypotheses`)}
+                ${renderMetric("Thinking", `${thinking.hypothesis_count || 0} hyp · ${thinking.phase2_mode || "pending"}`)}
                 ${renderMetric("Intent", `${tradeIntent.candidate_count || 0} candidates`)}
                 ${renderMetric("Holdings", `${portfolio.open_position_count || 0} open`)}
                 ${renderMetric("Replay", `${durable.replayed_source_count || 0}/${durable.expected_source_count || 0}`)}
@@ -1052,6 +1060,7 @@ function renderMissionControl(status, source) {
             <div class="mission-tag-row">
                 ${renderInlineBadge(`data ${dashboardText(stack.data_spine)}`, stack.data_spine)}
                 ${renderInlineBadge(`replay ${dashboardText(stack.durable_spine || durable.contract_status)}`, durable.status || stack.durable_spine)}
+                ${renderInlineBadge(`phase2 ${dashboardText(thinking.phase2_mode || "not_run")}`, thinking.phase2_status || thinking.status)}
                 ${renderInlineBadge(`quant ${dashboardText(stack.quant_oracle_recommendation || "not_run")}`, stack.quant_oracle)}
                 ${renderInlineBadge(`paper ${dashboardText(stack.paper_account)}`, stack.paper_account)}
                 ${renderInlineBadge(`telegram ${dashboardText(stack.telegram)}`, stack.telegram)}
