@@ -52,7 +52,7 @@ function explainerBlock(id) {
 
 const requiredExplainers = [
     "status_safety",
-    "morning_review",
+    "mission_control",
     "system_operating_map",
     "operating_detail",
     "watching",
@@ -78,7 +78,7 @@ requiredExplainers.forEach((id) => {
 
 [
     "This cockpit is read-only",
-    "This is a summary only",
+    "This is a read-only summary",
     "No node is a command button",
     "Every detail panel renders sanitized status only",
     "A watched source is observation only",
@@ -100,7 +100,7 @@ requiredExplainers.forEach((id) => {
     ".section-intro-heading"
 ].forEach((needle) => assertIncludes(css, needle, "explainer CSS"));
 
-assertIncludes(html, "/auth.css?v=20260517-d10g-density", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260521-mission-control", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

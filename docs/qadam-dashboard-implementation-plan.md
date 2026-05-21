@@ -1025,12 +1025,13 @@ Exit gate:
 
 Objective: make the cockpit read in the order a founding Fund Manager should review it.
 
-Status: implemented locally.
+Status: implemented locally and extended with the Mission Control top surface.
 
 Implemented now:
 
-- Added a Morning Review band above the system map with paper account, source quality, cognition, trade layer, safety, and bridge summaries.
-- The Morning Review renders from the sanitized cockpit status snapshot through `renderOperatingSummary(status, source)`.
+- Added a Mission Control band above the system map with connected/logged-in data sources, trading philosophy, API/model/quant stack, current thinking, trade intent, paper holdings, P&L, and hard safety boundaries.
+- The Mission Control surface renders from the sanitized cockpit status snapshot through `mission_control` plus `renderMissionControl(status, source)`.
+- The older operating summary cards remain beneath Mission Control as compact paper account, source quality, cognition, trade layer, safety, and bridge summaries via `renderOperatingSummary(status, source)`.
 - The dashboard now introduces the detailed sections with an explicit review sequence: sources, cognition, trade state, money, safety, governance, runtime.
 - The detailed panel layout prioritizes Watching and Cognition first, then Trade Layer and Money, then Safety, Worldview, Communications, Comments, and Runtime.
 - Runtime events are visually last instead of competing with the operating panels.
@@ -1038,7 +1039,7 @@ Implemented now:
 
 Exit gate:
 
-- A Fund Manager can see the account state, degraded source pressure, cognition queue, trade-intent state, live-capital block, and bridge source before reading any detailed table.
+- A Fund Manager can see connected sources, the current trading philosophy, the system stack, what Qadam is thinking about, what trades it is considering or blocking, what positions/orders it holds, P&L, live-capital state, and bridge source before reading any detailed table.
 - The detailed panels follow Qadam's operating sequence.
 - The existing dashboard renderer and status-contract checks still pass.
 
@@ -1077,7 +1078,7 @@ Implemented now:
 - Added a dual typography system: system sans for navigation and explanatory text, monospaced tabular typography for statuses, metrics, timestamps, node facts, and execution-style labels.
 - Upgraded panels, explainers, and hover cards with frosted-glass layering, stronger depth, and clearer focus states.
 - Added semantic status glows for online, pending/degraded, dry-run, and blocked states across map nodes, priority cards, inline badges, lanes, and trade intent cards.
-- Refined the real system map, Morning Review cards, metrics, source rows, cognition cards, trade cards, and progress bars so the visual hierarchy matches Qadam's fund-team model.
+- Refined the real system map, Mission Control cards, summary metrics, source rows, cognition cards, trade cards, and progress bars so the visual hierarchy matches Qadam's fund-team model.
 - Added tactile hover/focus transitions with a reduced-motion guard.
 - Bumped the dashboard stylesheet cache key to `20260517-d10d-visual` so the cockpit does not silently keep serving the old D9 CSS after deployment.
 - Added `scripts/check_dashboard_visual_system.js` to prevent regressions to the old palette, Arial typography, decorative radial backgrounds, or flat status styling.
@@ -1153,8 +1154,9 @@ Implemented now:
 - Executive mode keeps the D10F panel-first layout with fuller panel briefs and breathable spacing.
 - Terminal mode compresses the cockpit shell, panel padding, panel briefs, metrics, cards, source rows, trade route, tag rows, and system-map lanes for higher-density monitoring.
 - Terminal mode hides secondary panel-brief prose while preserving the state, watchpoint, and boundary facts.
-- Bumped dashboard CSS and JS cache keys to `20260517-d10g-density`.
+- Bumped dashboard CSS and JS cache keys to `20260521-mission-control`.
 - Added `scripts/check_dashboard_density_toggle.js` to enforce the toggle UI, persisted renderer hook, terminal CSS selectors, cache keys, and default Executive state.
+- Added `scripts/check_dashboard_mission_control.js` to enforce the Mission Control status contract and rendered top-panel output.
 
 Exit gate:
 

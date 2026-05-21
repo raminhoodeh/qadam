@@ -574,6 +574,93 @@ CAPITAL_REQUIRED_FIELDS = {
     "write_authority",
 }
 
+MISSION_CONTROL_REQUIRED_FIELDS = {
+    "data_sources",
+    "headline",
+    "portfolio",
+    "safety",
+    "schema_version",
+    "source",
+    "status",
+    "system_stack",
+    "thinking",
+    "trade_intent",
+    "trading_philosophy",
+}
+
+MISSION_DATA_SOURCES_REQUIRED_FIELDS = {
+    "boundary",
+    "connected_sources",
+    "degraded_count",
+    "logged_in_count",
+    "logged_in_sources",
+    "missing_credential_count",
+    "online_count",
+    "pending_count",
+    "pipeline_count",
+    "total_count",
+}
+
+MISSION_PHILOSOPHY_REQUIRED_FIELDS = {
+    "boundary",
+    "current_self_directive",
+    "decision_chain",
+    "private_prior_count",
+    "status",
+    "summary",
+}
+
+MISSION_STACK_REQUIRED_FIELDS = {
+    "boundary",
+    "coo",
+    "data_spine",
+    "frontier_llm",
+    "local_llm",
+    "paper_account",
+    "quant_oracle",
+    "risk_gate",
+    "telegram",
+}
+
+MISSION_TRADE_REQUIRED_FIELDS = {
+    "blocked_count",
+    "blocked_trades",
+    "boundary",
+    "broker_post_called_count",
+    "candidate_count",
+    "execution_allowed_count",
+    "observed_signal_count",
+    "paper_order_submitted_count",
+    "state",
+    "summary",
+    "top_candidates",
+}
+
+MISSION_PORTFOLIO_REQUIRED_FIELDS = {
+    "account_scope",
+    "boundary",
+    "broker",
+    "closed_trade_count",
+    "connection_status",
+    "current_balance_gbp",
+    "drawdown_pct",
+    "live_capital_enabled",
+    "open_position_count",
+    "open_positions",
+    "order_count",
+    "orders",
+    "total_pnl_gbp",
+    "write_authority",
+}
+
+MISSION_SAFETY_REQUIRED_FIELDS = {
+    "boundary",
+    "broker_write_allowed",
+    "forbidden_action_count",
+    "hard_blocks",
+    "live_capital_enabled",
+}
+
 EQUITY_POINT_REQUIRED_FIELDS = {"drawdown_pct", "equity_gbp", "observed_at"}
 
 PAPER_POSITION_REQUIRED_FIELDS = {
@@ -839,6 +926,16 @@ def main() -> int:
     print(f"cockpit_status_broker_reconciliation_review_count={payload.get('broker_reconciliation', {}).get('review_count')}")
     print(f"cockpit_status_paper_submit_receipt_status={payload.get('paper_submit_receipt', {}).get('status')}")
     print(f"cockpit_status_paper_submit_receipt_review_count={payload.get('paper_submit_receipt', {}).get('review_count')}")
+    print(f"cockpit_status_mission_control_status={payload.get('mission_control', {}).get('status')}")
+    print(f"cockpit_status_mission_control_headline={payload.get('mission_control', {}).get('headline')}")
+    print(
+        "cockpit_status_mission_logged_in_source_count="
+        f"{payload.get('mission_control', {}).get('data_sources', {}).get('logged_in_count')}"
+    )
+    print(
+        "cockpit_status_mission_candidate_count="
+        f"{payload.get('mission_control', {}).get('trade_intent', {}).get('candidate_count')}"
+    )
     print(f"cockpit_status_worldview_status={payload['decision_philosophy'].get('status')}")
     print(f"cockpit_status_worldview_claim_count={payload['decision_philosophy'].get('claim_count')}")
     print(
@@ -1190,6 +1287,86 @@ def main() -> int:
         if order.get("execution_allowed") is not False or order.get("paper_order_allowed") is not False:
             print("cockpit_status_paper_order_authority_enabled=true")
             return 1
+    mission = payload.get("mission_control", {})
+    missing_mission_fields = sorted(MISSION_CONTROL_REQUIRED_FIELDS - set(mission))
+    if missing_mission_fields:
+        print("cockpit_status_mission_control_fields_missing=" + ",".join(missing_mission_fields))
+        return 1
+    if mission.get("status") != "read_only_mission_control":
+        print("cockpit_status_mission_control_status_mismatch=true")
+        return 1
+    mission_data = mission.get("data_sources", {})
+    missing_mission_data_fields = sorted(MISSION_DATA_SOURCES_REQUIRED_FIELDS - set(mission_data))
+    if missing_mission_data_fields:
+        print("cockpit_status_mission_data_fields_missing=" + ",".join(missing_mission_data_fields))
+        return 1
+    if mission_data.get("total_count") != len(payload["watching"]):
+        print("cockpit_status_mission_source_total_mismatch=true")
+        return 1
+    if mission_data.get("pipeline_count") != len(payload.get("source_pipeline_summary", [])):
+        print("cockpit_status_mission_pipeline_count_mismatch=true")
+        return 1
+    if not isinstance(mission_data.get("logged_in_sources"), list) or not isinstance(mission_data.get("connected_sources"), list):
+        print("cockpit_status_mission_source_lists_invalid=true")
+        return 1
+    if "observation inputs only" not in mission_data.get("boundary", ""):
+        print("cockpit_status_mission_source_boundary_weak=true")
+        return 1
+    mission_philosophy = mission.get("trading_philosophy", {})
+    missing_mission_philosophy_fields = sorted(MISSION_PHILOSOPHY_REQUIRED_FIELDS - set(mission_philosophy))
+    if missing_mission_philosophy_fields:
+        print("cockpit_status_mission_philosophy_fields_missing=" + ",".join(missing_mission_philosophy_fields))
+        return 1
+    if "private prior" not in mission_philosophy.get("boundary", "").lower():
+        print("cockpit_status_mission_philosophy_boundary_weak=true")
+        return 1
+    if len(mission_philosophy.get("current_self_directive", [])) < 4:
+        print("cockpit_status_mission_self_directive_missing=true")
+        return 1
+    mission_stack = mission.get("system_stack", {})
+    missing_mission_stack_fields = sorted(MISSION_STACK_REQUIRED_FIELDS - set(mission_stack))
+    if missing_mission_stack_fields:
+        print("cockpit_status_mission_stack_fields_missing=" + ",".join(missing_mission_stack_fields))
+        return 1
+    mission_trade = mission.get("trade_intent", {})
+    missing_mission_trade_fields = sorted(MISSION_TRADE_REQUIRED_FIELDS - set(mission_trade))
+    if missing_mission_trade_fields:
+        print("cockpit_status_mission_trade_fields_missing=" + ",".join(missing_mission_trade_fields))
+        return 1
+    if mission_trade.get("candidate_count") != len(payload["trade_layer"].get("candidates", [])):
+        print("cockpit_status_mission_candidate_count_mismatch=true")
+        return 1
+    if mission_trade.get("observed_signal_count") != len(payload["trade_layer"].get("watching", [])):
+        print("cockpit_status_mission_observed_signal_count_mismatch=true")
+        return 1
+    if mission_trade.get("execution_allowed_count") != 0:
+        print("cockpit_status_mission_execution_allowed=true")
+        return 1
+    if mission_trade.get("paper_order_submitted_count") != 0 or mission_trade.get("broker_post_called_count") != 0:
+        print("cockpit_status_mission_broker_submit_enabled=true")
+        return 1
+    mission_portfolio = mission.get("portfolio", {})
+    missing_mission_portfolio_fields = sorted(MISSION_PORTFOLIO_REQUIRED_FIELDS - set(mission_portfolio))
+    if missing_mission_portfolio_fields:
+        print("cockpit_status_mission_portfolio_fields_missing=" + ",".join(missing_mission_portfolio_fields))
+        return 1
+    if mission_portfolio.get("open_position_count") != len(capital.get("open_positions", [])):
+        print("cockpit_status_mission_open_position_count_mismatch=true")
+        return 1
+    if mission_portfolio.get("live_capital_enabled") is not False or mission_portfolio.get("write_authority") is not False:
+        print("cockpit_status_mission_portfolio_authority_enabled=true")
+        return 1
+    mission_safety = mission.get("safety", {})
+    missing_mission_safety_fields = sorted(MISSION_SAFETY_REQUIRED_FIELDS - set(mission_safety))
+    if missing_mission_safety_fields:
+        print("cockpit_status_mission_safety_fields_missing=" + ",".join(missing_mission_safety_fields))
+        return 1
+    if mission_safety.get("live_capital_enabled") is not False or mission_safety.get("broker_write_allowed") is not False:
+        print("cockpit_status_mission_safety_authority_enabled=true")
+        return 1
+    if "read-only" not in mission_safety.get("boundary", ""):
+        print("cockpit_status_mission_safety_boundary_weak=true")
+        return 1
     if len(payload["watching"]) < 1:
         print("cockpit_status_no_sources=true")
         return 1

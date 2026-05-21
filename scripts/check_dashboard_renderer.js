@@ -12,6 +12,12 @@ const rendererCode = fs.readFileSync(rendererPath, "utf8");
 const status = JSON.parse(fs.readFileSync(statusPath, "utf8"));
 
 const selectors = [
+    "[data-mission-primary]",
+    "[data-mission-sources]",
+    "[data-mission-philosophy]",
+    "[data-mission-stack]",
+    "[data-mission-trades]",
+    "[data-mission-portfolio]",
     "[data-operating-summary]",
     "[data-flow-map]",
     "[data-fund-model]",
@@ -191,6 +197,13 @@ async function main() {
     );
     assertIncludes(rendered, "[data-status-banner]", "D1 public-safe snapshot loaded");
     assertIncludes(rendered, "[data-status-banner]", "D9 live bridge connected");
+    assertIncludes(rendered, "[data-mission-primary]", "Operating thesis");
+    assertIncludes(rendered, "[data-mission-primary]", "hypotheses");
+    assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
+    assertIncludes(rendered, "[data-mission-philosophy]", "Trading philosophy");
+    assertIncludes(rendered, "[data-mission-stack]", "Local LLM");
+    assertIncludes(rendered, "[data-mission-trades]", "Trade intent");
+    assertIncludes(rendered, "[data-mission-portfolio]", "Paper account");
     assertIncludes(rendered, "[data-operating-summary]", "Paper account");
     assertIncludes(rendered, "[data-operating-summary]", "Source quality");
     assertIncludes(rendered, "[data-operating-summary]", "Safety state");

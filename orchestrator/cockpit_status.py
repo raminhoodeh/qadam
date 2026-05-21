@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1371,6 +1372,208 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
     return trade_layer
 
 
+def _module_status(payload: dict[str, Any], key: str) -> str:
+    for module in payload.get("modules", []):
+        if module.get("key") == key:
+            return str(module.get("status") or "pending")
+    return "pending"
+
+
+def _mission_control(payload: dict[str, Any], source_label: str = "status_contract") -> dict[str, Any]:
+    watching = payload.get("watching", [])
+    source_counts = Counter(source.get("status", "unknown") for source in watching)
+    pipeline_summary = payload.get("source_pipeline_summary", [])
+    missing_credentials = sum(int(pipeline.get("missing_credential_count", 0)) for pipeline in pipeline_summary)
+    configured_sources = [
+        str(source.get("source_name") or source.get("source_key"))
+        for source in watching
+        if source.get("credential_status") == "configured"
+    ]
+    live_sources = [
+        str(source.get("source_name") or source.get("source_key"))
+        for source in watching
+        if source.get("status") == "online"
+    ]
+    connected_sources = list(dict.fromkeys(configured_sources + live_sources))
+
+    cognition = payload.get("cognition", {})
+    trade_layer = payload.get("trade_layer", {})
+    capital = payload.get("capital", {})
+    decision_philosophy = payload.get("decision_philosophy", {})
+    communications = payload.get("communications", {}).get("telegram", {})
+    forbidden_actions = payload.get("forbidden_actions", [])
+    risk_agent = payload.get("risk_agent", {})
+    execution_policy = payload.get("execution_policy", {})
+    paper_submit_receipt = payload.get("paper_submit_receipt", {})
+
+    hypotheses = cognition.get("hypotheses", [])
+    evidence_packets = cognition.get("evidence_packets", [])
+    strategy_packets = cognition.get("strategy_lead_packets", [])
+    local_assessments = cognition.get("local_research_assessments", [])
+    observed_signals = trade_layer.get("watching", [])
+    candidates = trade_layer.get("candidates", [])
+    blocked_trades = trade_layer.get("blocked", [])
+    open_positions = capital.get("open_positions", [])
+    orders = capital.get("orders", [])
+    closed_trades = capital.get("closed_trades", [])
+
+    live_capital_enabled = bool(capital.get("live_capital_enabled"))
+    broker_write_allowed = any(
+        bool(section.get("broker_write_allowed_count"))
+        for section in (
+            risk_agent,
+            execution_policy,
+            payload.get("staged_paper_order", {}),
+            payload.get("broker_reconciliation", {}),
+            paper_submit_receipt,
+        )
+    )
+    current_balance = float(capital.get("current_balance_gbp") or capital.get("starting_balance_gbp") or 0)
+    pnl_total = float(capital.get("realized_pnl_gbp") or 0) + float(capital.get("unrealized_pnl_gbp") or 0)
+
+    if candidates:
+        next_trade_state = "candidate_review"
+        next_trade_summary = f"{len(candidates)} candidate ideas are waiting behind risk and execution gates."
+    elif observed_signals:
+        next_trade_state = "observed_signal_review"
+        next_trade_summary = f"{len(observed_signals)} observed signals are being watched, but none are orders."
+    elif blocked_trades:
+        next_trade_state = "blocked_review"
+        next_trade_summary = f"{len(blocked_trades)} trade ideas are blocked before execution."
+    else:
+        next_trade_state = "no_trade_candidate"
+        next_trade_summary = "No executable trade candidate exists in the current public-safe snapshot."
+
+    return {
+        "schema_version": 1,
+        "status": "read_only_mission_control",
+        "source": source_label,
+        "headline": (
+            f"{int(source_counts.get('online', 0))}/{len(watching)} sources online; "
+            f"{len(hypotheses)} hypotheses; {len(candidates)} candidates; "
+            f"{len(open_positions)} open positions; live capital "
+            f"{'enabled' if live_capital_enabled else 'disabled'}."
+        ),
+        "data_sources": {
+            "total_count": len(watching),
+            "online_count": int(source_counts.get("online", 0)),
+            "degraded_count": int(source_counts.get("degraded", 0)),
+            "pending_count": int(source_counts.get("pending", 0)),
+            "local_only_count": int(source_counts.get("local_only", 0) + source_counts.get("local-only", 0)),
+            "missing_credential_count": missing_credentials,
+            "pipeline_count": len(pipeline_summary),
+            "logged_in_count": len(configured_sources),
+            "logged_in_sources": configured_sources[:12],
+            "connected_sources": connected_sources[:12],
+            "boundary": "Configured and connected sources are observation inputs only; they cannot create orders.",
+        },
+        "trading_philosophy": {
+            "status": decision_philosophy.get("status", "pending"),
+            "summary": decision_philosophy.get(
+                "trading_philosophy",
+                "Qadam generates hypotheses from private priors, but live evidence and gates decide what can advance.",
+            ),
+            "decision_chain": decision_philosophy.get("decision_chain", []),
+            "private_prior_count": decision_philosophy.get("foundational_prior_count", 0),
+            "current_self_directive": [
+                "Use the worldview to ask sharper questions, not as evidence.",
+                "Require live-source corroboration before signal confidence improves.",
+                "Let the local Research Analyst compress noisy observations.",
+                "Let the Strategy Lead challenge packets before risk review.",
+                "Use the Head of Quant as a bounded oracle only after a testable scenario exists.",
+                "Keep paper orders blocked until Signal Integrity, Risk, Execution Policy, reconciliation, and receipt gates pass.",
+            ],
+            "boundary": decision_philosophy.get(
+                "boundary",
+                "Worldview is a private prior only, not a trade trigger.",
+            ),
+        },
+        "system_stack": {
+            "coo": _module_status(payload, "event_log"),
+            "data_spine": _module_status(payload, "watching"),
+            "local_llm": _module_status(payload, "research_analyst"),
+            "frontier_llm": _module_status(payload, "strategy_lead"),
+            "quant_oracle": _module_status(payload, "head_of_quant"),
+            "risk_gate": _module_status(payload, "risk_agent"),
+            "paper_account": capital.get("mirror_status", "pending"),
+            "telegram": communications.get("status", "pending"),
+            "boundary": "APIs, models, and quantum checks can inform the chain; only gates can advance state.",
+        },
+        "thinking": {
+            "status": cognition.get("status", "pending"),
+            "current_focus": cognition.get("current_focus", [])[:5],
+            "hypothesis_count": len(hypotheses),
+            "evidence_packet_count": len(evidence_packets),
+            "local_assessment_count": len(local_assessments),
+            "strategy_packet_count": len(strategy_packets),
+            "signal_integrity_status": cognition.get("signal_integrity", {}).get("status", "pending"),
+            "blocked_reasons": cognition.get("blocked_reasons", [])[:8],
+            "boundary": cognition.get("boundary", "Cognition is shadow-only and cannot execute trades."),
+        },
+        "trade_intent": {
+            "state": next_trade_state,
+            "summary": next_trade_summary,
+            "observed_signal_count": len(observed_signals),
+            "candidate_count": len(candidates),
+            "blocked_count": len(blocked_trades),
+            "risk_review_count": risk_agent.get("review_count", 0),
+            "execution_policy_review_count": execution_policy.get("review_count", 0),
+            "paper_submit_receipt_review_count": paper_submit_receipt.get("review_count", 0),
+            "top_candidates": [
+                {
+                    "instrument": item.get("instrument"),
+                    "direction": item.get("direction"),
+                    "status": item.get("status"),
+                    "venue": item.get("venue"),
+                    "catalyst": item.get("catalyst"),
+                }
+                for item in candidates[:5]
+            ],
+            "blocked_trades": [
+                {
+                    "instrument": item.get("instrument"),
+                    "status": item.get("status"),
+                    "blocked_reason": item.get("blocked_reason"),
+                }
+                for item in blocked_trades[:5]
+            ],
+            "execution_allowed_count": 0,
+            "paper_order_submitted_count": paper_submit_receipt.get("paper_order_submitted_count", 0),
+            "broker_post_called_count": paper_submit_receipt.get("broker_post_called_count", 0),
+            "boundary": trade_layer.get("boundary", "Candidate is not order; no broker route exists."),
+        },
+        "portfolio": {
+            "account_scope": capital.get("account_scope", "first_release_gbp_1000_trial"),
+            "broker": capital.get("broker", "paper_broker"),
+            "connection_status": capital.get("connection_status", "pending"),
+            "current_balance_gbp": current_balance,
+            "realized_pnl_gbp": capital.get("realized_pnl_gbp", 0),
+            "unrealized_pnl_gbp": capital.get("unrealized_pnl_gbp", 0),
+            "total_pnl_gbp": pnl_total,
+            "drawdown_pct": capital.get("drawdown_pct", 0),
+            "open_position_count": len(open_positions),
+            "order_count": len(orders),
+            "closed_trade_count": len(closed_trades),
+            "maturity_closed_trade_target": capital.get("maturity_closed_trade_target", 100),
+            "live_capital_enabled": live_capital_enabled,
+            "write_authority": bool(capital.get("write_authority")),
+            "open_positions": open_positions[:5],
+            "orders": orders[:5],
+            "boundary": capital.get("boundary", "Read-only paper account mirror."),
+        },
+        "safety": {
+            "live_capital_enabled": live_capital_enabled,
+            "broker_write_allowed": broker_write_allowed,
+            "forbidden_action_count": len(forbidden_actions),
+            "hard_blocks": [
+                action.get("action") or action.get("key") or "blocked_action"
+                for action in forbidden_actions[:8]
+            ],
+            "boundary": "Mission control is read-only. It cannot approve, place, modify, resize, close, or fund trades.",
+        },
+    }
+
+
 def _risk_agent_status(settings: Settings) -> dict[str, Any]:
     summary = risk_agent_summary(settings)
     reviews = _safe_risk_policy_reviews(settings)
@@ -1589,6 +1792,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         ],
         "boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
     }
+    payload["mission_control"] = _mission_control(payload)
     validate_cockpit_status(payload)
     return payload
 
@@ -1626,6 +1830,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "d1_snapshot",
         "d0_shell",
         "capital",
+        "mission_control",
         "watching",
         "modules",
         "process_console",

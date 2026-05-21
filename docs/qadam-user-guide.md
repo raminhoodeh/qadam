@@ -48,6 +48,22 @@ A hypothesis is not a trade. A candidate is not an order. A blocked trade is not
 
 ## 4. How To Read The Dashboard
 
+### Mission Control
+
+This is the first read after login.
+
+Use it to answer:
+
+- Which data sources are configured or connected?
+- What trading philosophy is Qadam currently applying to itself?
+- How are the API spine, Python COO, local LLM, frontier LLM, quantum oracle, risk gates, and paper account connected?
+- What is Qadam thinking about now?
+- Which trade ideas are candidates, blocked, or still only observed signals?
+- What positions, orders, balance, P&L, and drawdown are visible in the paper account?
+- What is Qadam forbidden from doing?
+
+Important boundary: Mission Control is a summary, not a command surface. It cannot promote hypotheses, approve trades, submit paper orders, write to brokers, or enable live capital.
+
 ### System Operating Map
 
 This is the top-level map of Qadam.

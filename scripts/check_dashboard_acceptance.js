@@ -60,6 +60,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_section_explainers.js",
     "scripts/check_dashboard_panel_redesign.js",
     "scripts/check_dashboard_density_toggle.js",
+    "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_renderer.js",
     "scripts/check_dashboard_live_bridge.js",
     "scripts/check_dashboard_watching_view.js",
@@ -87,8 +88,14 @@ function assertNoUnsafePublicText(text, label) {
 
 [
     "dashboard-detail-flow",
-    "Morning review",
-    "What needs attention before reading the map",
+    "Mission control",
+    "What Qadam is watching, thinking, planning, holding, and forbidden from doing",
+    "data-mission-primary",
+    "data-mission-sources",
+    "data-mission-philosophy",
+    "data-mission-stack",
+    "data-mission-trades",
+    "data-mission-portfolio",
     "system-flow-diagram",
     "Closed-loop rule",
     "data-section-explainer",
@@ -97,8 +104,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-density-toggle",
     "data-density-option=\"executive\"",
     "data-density-option=\"terminal\"",
-    "/auth.css?v=20260517-d10g-density",
-    "/dashboard.js?v=20260517-d10g-density"
+    "/auth.css?v=20260521-mission-control",
+    "/dashboard.js?v=20260521-mission-control"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -121,6 +128,9 @@ function assertNoUnsafePublicText(text, label) {
     "--glow-cyan",
     "backdrop-filter: blur",
     ".dashboard-detail-flow",
+    ".mission-control-grid",
+    ".mission-primary",
+    ".mission-card",
     ".system-flow-diagram",
     ".panel-brief",
     ".section-explainer",
@@ -131,6 +141,7 @@ function assertNoUnsafePublicText(text, label) {
 [
     "function renderPanelBrief",
     "function replacePanelBrief",
+    "function renderMissionControl",
     "function renderFlowMap",
     "function renderOperatingSummary",
     "function initDashboardDensityToggle",
@@ -162,6 +173,13 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
     [
         ["[data-status-banner]", "D1 public-safe snapshot loaded"],
         ["[data-status-banner]", "D9 live bridge connected"],
+        ["[data-mission-primary]", "Operating thesis"],
+        ["[data-mission-primary]", "hypotheses"],
+        ["[data-mission-sources]", "logged-in/configured"],
+        ["[data-mission-philosophy]", "Trading philosophy"],
+        ["[data-mission-stack]", "Local LLM"],
+        ["[data-mission-trades]", "Trade intent"],
+        ["[data-mission-portfolio]", "Paper account"],
         ["[data-operating-summary]", "Paper account"],
         ["[data-operating-summary]", "Source quality"],
         ["[data-operating-summary]", "Safety state"],

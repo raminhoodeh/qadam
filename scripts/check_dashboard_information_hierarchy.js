@@ -28,15 +28,18 @@ const map = indexOf("system-map-panel");
 const detailIntro = indexOf("dashboard-section-intro");
 const detailFlow = indexOf("dashboard-detail-flow");
 
-assert(hero < review, "morning review must appear after the hero");
-assert(review < map, "morning review must appear before the system map");
+assert(hero < review, "mission control must appear after the hero");
+assert(review < map, "mission control must appear before the system map");
 assert(map < detailIntro, "section intro must appear after the system map");
 assert(detailIntro < detailFlow, "detail panels must appear after the section intro");
 
 [
     "data-operating-summary",
-    "Morning review",
-    "What needs attention before reading the map",
+    "Mission control",
+    "What Qadam is watching, thinking, planning, holding, and forbidden from doing",
+    "data-mission-primary",
+    "data-mission-sources",
+    "data-mission-trades",
     "Paper account",
     "Source quality",
     "Safety state",
@@ -45,6 +48,9 @@ assert(detailIntro < detailFlow, "detail panels must appear after the section in
 
 [
     ".operating-review-panel",
+    ".mission-control-grid",
+    ".mission-primary",
+    ".mission-card",
     ".priority-grid",
     ".priority-card",
     ".dashboard-detail-flow",
@@ -52,15 +58,21 @@ assert(detailIntro < detailFlow, "detail panels must appear after the section in
     "order: 9"
 ].forEach((needle) => assert(css.includes(needle), `dashboard hierarchy CSS missing ${needle}`));
 
+const missionFunction = renderer.indexOf("function renderMissionControl");
+const missionCall = renderer.lastIndexOf("renderMissionControl(status, source)");
 const renderFunction = renderer.indexOf("function renderOperatingSummary");
 const renderCall = renderer.lastIndexOf("renderOperatingSummary(status, source)");
 const flowCall = renderer.lastIndexOf("renderFlowMap(status)");
+assert(missionFunction >= 0, "renderer missing renderMissionControl");
+assert(missionCall >= 0, "renderer does not call renderMissionControl");
 assert(renderFunction >= 0, "renderer missing renderOperatingSummary");
 assert(renderCall >= 0, "renderer does not call renderOperatingSummary");
+assert(missionCall < renderCall, "mission control must render before operating summary cards");
 assert(renderCall < flowCall, "operating summary must render before the system map");
 
 [
     "Candidate is not order",
+    "logged-in/configured",
     "Source quality",
     "Safety state",
     "Live capital disabled",
