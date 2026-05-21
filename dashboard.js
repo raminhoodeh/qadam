@@ -804,6 +804,241 @@ function renderPriorityCard(label, value, body, meta, tone = "neutral") {
     `;
 }
 
+function compactItems(items, limit = 5) {
+    const list = asArray(items).filter(Boolean);
+    const visible = list.slice(0, limit);
+    const overflow = list.length - visible.length;
+    return overflow > 0 ? [...visible, `+${overflow} more`] : visible;
+}
+
+function renderMissionTags(items, emptyText = "None recorded", limit = 5) {
+    return renderTagList(compactItems(items, limit), emptyText);
+}
+
+function fallbackMissionControl(status, source) {
+    const watching = asArray(status.watching);
+    const sourceCounts = countBy(watching, "status");
+    const pipelineSummary = asArray(status.source_pipeline_summary);
+    const configuredSources = watching
+        .filter((item) => item.credential_status === "configured")
+        .map((item) => item.source_name || item.source_key);
+    const connectedSources = Array.from(new Set([
+        ...configuredSources,
+        ...watching.filter((item) => item.status === "online").map((item) => item.source_name || item.source_key)
+    ]));
+    const missingCredentialCount = pipelineSummary.reduce(
+        (total, pipeline) => total + Number(pipeline.missing_credential_count || 0),
+        0
+    );
+    const cognition = status.cognition || {};
+    const tradeLayer = status.trade_layer || {};
+    const capital = status.capital || {};
+    const philosophy = status.decision_philosophy || {};
+    const candidates = asArray(tradeLayer.candidates);
+    const observedSignals = asArray(tradeLayer.watching);
+    const blockedTrades = asArray(tradeLayer.blocked);
+    const openPositions = asArray(capital.open_positions);
+    const totalPnl = Number(capital.realized_pnl_gbp || 0) + Number(capital.unrealized_pnl_gbp || 0);
+    return {
+        status: "read_only_mission_control",
+        source: source?.key || "dashboard_fallback",
+        headline: `${sourceCounts.online || 0}/${watching.length} sources online; ${asArray(cognition.hypotheses).length} hypotheses; ${candidates.length} candidates; ${openPositions.length} open positions; live capital ${capital.live_capital_enabled ? "enabled" : "disabled"}.`,
+        data_sources: {
+            total_count: watching.length,
+            online_count: sourceCounts.online || 0,
+            degraded_count: sourceCounts.degraded || 0,
+            pending_count: sourceCounts.pending || 0,
+            missing_credential_count: missingCredentialCount,
+            logged_in_count: configuredSources.length,
+            logged_in_sources: configuredSources,
+            connected_sources: connectedSources,
+            boundary: "Configured and connected sources are observation inputs only; they cannot create orders."
+        },
+        trading_philosophy: {
+            status: philosophy.status || "pending",
+            summary: philosophy.trading_philosophy || "Qadam generates hypotheses from private priors, but live evidence and gates decide what can advance.",
+            decision_chain: philosophy.decision_chain || [],
+            private_prior_count: philosophy.foundational_prior_count || 0,
+            current_self_directive: [
+                "Use worldview as private prior.",
+                "Require live-source corroboration.",
+                "Compress source noise locally.",
+                "Challenge with Strategy Lead.",
+                "Keep paper orders blocked until gates pass."
+            ],
+            boundary: philosophy.boundary || "Worldview is context only, not evidence."
+        },
+        system_stack: {
+            coo: findModule(status, "event_log")?.status || "local_only",
+            data_spine: watching.length ? "online" : "pending",
+            local_llm: findModule(status, "research_analyst")?.status || "pending",
+            frontier_llm: findModule(status, "strategy_lead")?.status || "pending",
+            quant_oracle: findModule(status, "head_of_quant")?.status || "deferred",
+            risk_gate: status.risk_agent?.status || "pending",
+            paper_account: capital.mirror_status || "pending",
+            telegram: status.communications?.telegram?.status || "pending",
+            boundary: "APIs, models, and quantum checks can inform the chain; only gates can advance state."
+        },
+        thinking: {
+            status: cognition.status || "pending",
+            current_focus: cognition.current_focus || [],
+            hypothesis_count: asArray(cognition.hypotheses).length,
+            evidence_packet_count: asArray(cognition.evidence_packets).length,
+            local_assessment_count: asArray(cognition.local_research_assessments).length,
+            strategy_packet_count: asArray(cognition.strategy_lead_packets).length,
+            signal_integrity_status: cognition.signal_integrity?.status || "pending",
+            blocked_reasons: cognition.blocked_reasons || [],
+            boundary: cognition.boundary || "Cognition is shadow-only and cannot execute trades."
+        },
+        trade_intent: {
+            state: candidates.length ? "candidate_review" : (observedSignals.length ? "observed_signal_review" : "no_trade_candidate"),
+            summary: candidates.length
+                ? `${candidates.length} candidate ideas are waiting behind risk and execution gates.`
+                : (observedSignals.length ? `${observedSignals.length} observed signals are being watched, but none are orders.` : "No executable trade candidate exists in the current public-safe snapshot."),
+            observed_signal_count: observedSignals.length,
+            candidate_count: candidates.length,
+            blocked_count: blockedTrades.length,
+            top_candidates: candidates.slice(0, 5),
+            blocked_trades: blockedTrades.slice(0, 5),
+            execution_allowed_count: 0,
+            paper_order_submitted_count: status.paper_submit_receipt?.paper_order_submitted_count || 0,
+            broker_post_called_count: status.paper_submit_receipt?.broker_post_called_count || 0,
+            boundary: tradeLayer.boundary || "Candidate is not order; no broker route exists."
+        },
+        portfolio: {
+            account_scope: capital.account_scope || "first_release_gbp_1000_trial",
+            broker: capital.broker || "paper_broker",
+            connection_status: capital.connection_status || "pending",
+            current_balance_gbp: capital.current_balance_gbp || capital.starting_balance_gbp || 0,
+            total_pnl_gbp: totalPnl,
+            drawdown_pct: capital.drawdown_pct || 0,
+            open_position_count: openPositions.length,
+            order_count: asArray(capital.orders).length,
+            closed_trade_count: asArray(capital.closed_trades).length,
+            live_capital_enabled: Boolean(capital.live_capital_enabled),
+            write_authority: Boolean(capital.write_authority),
+            open_positions: openPositions,
+            orders: asArray(capital.orders),
+            boundary: capital.boundary || "Read-only paper account mirror."
+        },
+        safety: {
+            live_capital_enabled: Boolean(capital.live_capital_enabled),
+            broker_write_allowed: false,
+            forbidden_action_count: asArray(status.forbidden_actions).length,
+            hard_blocks: asArray(status.forbidden_actions).map((item) => item.action || item.key || "blocked action"),
+            boundary: "Mission control is read-only. It cannot approve, place, modify, resize, close, or fund trades."
+        }
+    };
+}
+
+function renderMissionControl(status, source) {
+    const mission = status.mission_control || fallbackMissionControl(status, source);
+    const dataSources = mission.data_sources || {};
+    const philosophy = mission.trading_philosophy || {};
+    const stack = mission.system_stack || {};
+    const thinking = mission.thinking || {};
+    const tradeIntent = mission.trade_intent || {};
+    const portfolio = mission.portfolio || {};
+    const safety = mission.safety || {};
+
+    const primary = dashboardQuery("[data-mission-primary]");
+    if (primary) {
+        primary.innerHTML = `
+            <span>Operating thesis</span>
+            <h3>${htmlText(mission.headline, "Mission state unavailable")}</h3>
+            <p>${htmlText(philosophy.summary, "Qadam is waiting for its trading philosophy snapshot.")}</p>
+            <div class="mission-mini-grid">
+                ${renderMetric("Thinking", `${thinking.hypothesis_count || 0} hypotheses`)}
+                ${renderMetric("Intent", `${tradeIntent.candidate_count || 0} candidates`)}
+                ${renderMetric("Holdings", `${portfolio.open_position_count || 0} open`)}
+                ${renderMetric("Safety", safety.live_capital_enabled ? "live enabled" : "live disabled")}
+            </div>
+            <p class="mini">${htmlText(safety.boundary, "Mission control is read-only.")}</p>
+        `;
+    }
+
+    const sources = dashboardQuery("[data-mission-sources]");
+    if (sources) {
+        sources.innerHTML = `
+            <span>Data sources</span>
+            <h3>${htmlText(dataSources.logged_in_count || 0)} logged-in/configured · ${htmlText(dataSources.online_count || 0)}/${htmlText(dataSources.total_count || 0)} online</h3>
+            <p>${htmlText(dataSources.degraded_count || 0)} degraded · ${htmlText(dataSources.pending_count || 0)} pending · ${htmlText(dataSources.missing_credential_count || 0)} missing credentials</p>
+            <div class="mission-tag-row">${renderMissionTags(dataSources.logged_in_sources || dataSources.connected_sources, "No configured sources visible yet", 8)}</div>
+            <small>${htmlText(dataSources.boundary, "Sources are observation only.")}</small>
+        `;
+    }
+
+    const philosophyTarget = dashboardQuery("[data-mission-philosophy]");
+    if (philosophyTarget) {
+        philosophyTarget.innerHTML = `
+            <span>Trading philosophy</span>
+            <h3>${htmlText(philosophy.private_prior_count || 0)} private priors · ${htmlText(philosophy.status, "pending")}</h3>
+            <p>${htmlText(asArray(philosophy.current_self_directive)[0], "Use worldview as a question generator, not proof.")}</p>
+            <div class="mission-tag-row">${renderMissionTags(philosophy.decision_chain, "Decision chain not exported", 7)}</div>
+            <small>${htmlText(philosophy.boundary, "Worldview is context only, not evidence.")}</small>
+        `;
+    }
+
+    const stackTarget = dashboardQuery("[data-mission-stack]");
+    if (stackTarget) {
+        stackTarget.innerHTML = `
+            <span>System stack</span>
+            <h3>COO ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
+            <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} · risk ${htmlText(stack.risk_gate)}</p>
+            <div class="mission-tag-row">
+                ${renderInlineBadge(`data ${dashboardText(stack.data_spine)}`, stack.data_spine)}
+                ${renderInlineBadge(`paper ${dashboardText(stack.paper_account)}`, stack.paper_account)}
+                ${renderInlineBadge(`telegram ${dashboardText(stack.telegram)}`, stack.telegram)}
+            </div>
+            <small>${htmlText(stack.boundary, "Only gates can advance state.")}</small>
+        `;
+    }
+
+    const trades = dashboardQuery("[data-mission-trades]");
+    if (trades) {
+        const candidateNames = asArray(tradeIntent.top_candidates).map((item) => {
+            const direction = item.direction ? ` ${item.direction}` : "";
+            return `${item.instrument || "candidate"}${direction}`;
+        });
+        const blockedNames = asArray(tradeIntent.blocked_trades).map((item) => `${item.instrument || "blocked idea"}: ${item.blocked_reason || item.status || "blocked"}`);
+        trades.innerHTML = `
+            <span>Trade intent</span>
+            <h3>${htmlText(tradeIntent.state, "no trade candidate")}</h3>
+            <p>${htmlText(tradeIntent.summary, "No executable trade candidate exists.")}</p>
+            <div class="mission-mini-grid compact">
+                ${renderMetric("Observed", tradeIntent.observed_signal_count || 0)}
+                ${renderMetric("Candidates", tradeIntent.candidate_count || 0)}
+                ${renderMetric("Blocked", tradeIntent.blocked_count || 0)}
+                ${renderMetric("Submitted", tradeIntent.paper_order_submitted_count || 0)}
+            </div>
+            <div class="mission-tag-row">${renderMissionTags(candidateNames.length ? candidateNames : blockedNames, "No candidate or blocked trade visible yet", 4)}</div>
+            <small>${htmlText(tradeIntent.boundary, "Candidate is not order.")}</small>
+        `;
+    }
+
+    const portfolioTarget = dashboardQuery("[data-mission-portfolio]");
+    if (portfolioTarget) {
+        const openPositionNames = asArray(portfolio.open_positions).map((position) => {
+            const pnl = position.unrealized_pnl_gbp === undefined ? "" : ` ${formatMoney(position.unrealized_pnl_gbp)}`;
+            return `${position.instrument || "position"}${pnl}`;
+        });
+        const orderNames = asArray(portfolio.orders).map((order) => `${order.instrument || "order"} ${order.status || "mirrored"}`);
+        portfolioTarget.innerHTML = `
+            <span>Paper account</span>
+            <h3>${formatMoney(portfolio.current_balance_gbp)} · ${formatMoney(portfolio.total_pnl_gbp)} P&L</h3>
+            <p>${htmlText(portfolio.connection_status, "pending")} · ${htmlText(portfolio.account_scope, "first release trial")} · drawdown ${formatPercent(portfolio.drawdown_pct)}</p>
+            <div class="mission-mini-grid compact">
+                ${renderMetric("Open", portfolio.open_position_count || 0)}
+                ${renderMetric("Orders", portfolio.order_count || 0)}
+                ${renderMetric("Closed", portfolio.closed_trade_count || 0)}
+                ${renderMetric("Write", portfolio.write_authority ? "enabled" : "blocked")}
+            </div>
+            <div class="mission-tag-row">${renderMissionTags(openPositionNames.length ? openPositionNames : orderNames, "No open positions or mirrored orders", 4)}</div>
+            <small>${htmlText(portfolio.boundary, "Read-only paper account mirror.")}</small>
+        `;
+    }
+}
+
 function renderOperatingSummary(status, source) {
     const target = dashboardQuery("[data-operating-summary]");
     if (!target) return;
@@ -2330,6 +2565,7 @@ async function renderQadamDashboardStatus(session) {
     try {
         const { status, source } = await fetchDashboardStatus(session);
         renderSnapshotMeta(status, source);
+        renderMissionControl(status, source);
         renderOperatingSummary(status, source);
         renderFundModel(status, source);
         renderFlowMap(status);

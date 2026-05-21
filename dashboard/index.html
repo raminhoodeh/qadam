@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260517-d10g-density">
+    <link rel="stylesheet" href="/auth.css?v=20260521-mission-control">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -54,26 +54,58 @@
                 </div>
             </section>
 
-            <section class="operating-review-panel" aria-label="Morning operating review">
+            <section class="mission-control-panel operating-review-panel" aria-label="Qadam mission control" data-mission-control>
                 <div class="panel-heading">
                     <div>
-                        <p class="label">Morning review</p>
-                        <h2>What needs attention before reading the map</h2>
+                        <p class="label">Mission control</p>
+                        <h2>What Qadam is watching, thinking, planning, holding, and forbidden from doing</h2>
                     </div>
                     <div class="info-hover">
-                        <button class="info-button" type="button" aria-label="About the morning review">i</button>
-                        <div class="info-card section-explainer" role="tooltip" data-section-explainer="morning_review">
-                            <strong>Morning Review</strong>
+                        <button class="info-button" type="button" aria-label="About mission control">i</button>
+                        <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control">
+                            <strong>Mission Control</strong>
                             <p>Gives a one-pass operating read before the system map and detailed panels.</p>
                             <dl class="explainer-grid">
-                                <div><dt>Use it to</dt><dd>Scan paper account state, source quality, cognition queue, trade layer, safety blocks, and bridge source.</dd></div>
-                                <div><dt>Watch for</dt><dd>Degraded sources, blocked candidates, live-bridge fallback, or any paper account change that needs review.</dd></div>
-                                <div><dt>Boundary</dt><dd>This is a summary only. It cannot promote a hypothesis, create a candidate, or change paper-account state.</dd></div>
+                                <div><dt>Use it to</dt><dd>See connected data sources, current trading philosophy, model/quant stack, trade candidates, paper holdings, P&L, and hard safety limits.</dd></div>
+                                <div><dt>Watch for</dt><dd>Weak sources, model-only reasoning, blocked candidates, paper-account drift, broker-write authority, or live capital accidentally becoming available.</dd></div>
+                                <div><dt>Boundary</dt><dd>This is a read-only summary. It cannot promote a hypothesis, create a candidate, submit an order, or change paper-account state.</dd></div>
                             </dl>
                         </div>
                     </div>
                 </div>
-                <div class="priority-grid" data-operating-summary>
+                <div class="mission-control-grid">
+                    <article class="mission-primary" data-mission-primary>
+                        <span>Operating thesis</span>
+                        <h3>Loading Qadam mission state</h3>
+                        <p>Waiting for the public-safe cockpit snapshot.</p>
+                    </article>
+                    <article class="mission-card" data-mission-sources>
+                        <span>Data sources</span>
+                        <h3>Loading</h3>
+                        <p>Checking configured and connected sources.</p>
+                    </article>
+                    <article class="mission-card" data-mission-philosophy>
+                        <span>Trading philosophy</span>
+                        <h3>Loading</h3>
+                        <p>Checking worldview, evidence, model, quant, and gate boundaries.</p>
+                    </article>
+                    <article class="mission-card" data-mission-stack>
+                        <span>System stack</span>
+                        <h3>Loading</h3>
+                        <p>Checking API spine, local LLM, Strategy Lead, quantum oracle, and risk gates.</p>
+                    </article>
+                    <article class="mission-card" data-mission-trades>
+                        <span>Trade intent</span>
+                        <h3>Loading</h3>
+                        <p>Checking observed signals, candidates, blocks, and paper-order gates.</p>
+                    </article>
+                    <article class="mission-card" data-mission-portfolio>
+                        <span>Paper account</span>
+                        <h3>Loading</h3>
+                        <p>Checking current balance, P&L, open positions, orders, and closed trades.</p>
+                    </article>
+                </div>
+                <div class="priority-grid mission-priority-grid" data-operating-summary>
                     <article class="priority-card">
                         <span>Paper account</span>
                         <strong>Loading</strong>
@@ -841,7 +873,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260517-d10g-density"></script>
+    <script src="/dashboard.js?v=20260521-mission-control"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

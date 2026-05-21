@@ -98,8 +98,26 @@
             </section>
 
             <section>
+                <h2>Mission Control</h2>
+                <p>This is the first read after login. It summarizes connected data sources, Qadam's current trading philosophy, the API/model/quant stack, current thinking, candidate or blocked trade ideas, paper-account holdings, P&amp;L, drawdown, and hard safety boundaries.</p>
+                <div class="guide-table">
+                    <div><strong>Sources</strong><span>Shows configured or connected feeds before you read the detailed Watching panel.</span></div>
+                    <div><strong>Philosophy</strong><span>Shows the private-prior trading lens and decision chain. It is context only, not proof.</span></div>
+                    <div><strong>Stack</strong><span>Shows how the COO, local LLM, Strategy Lead, quantum oracle, risk gates, paper account, and Telegram rail currently stand.</span></div>
+                    <div><strong>Trade intent</strong><span>Shows observed signals, candidates, blocks, and paper-order gate state. Candidate is not order.</span></div>
+                    <div><strong>Paper account</strong><span>Shows balance, P&amp;L, positions, orders, closed trades, and whether write authority remains blocked.</span></div>
+                </div>
+                <p>Mission Control is read-only. It cannot promote hypotheses, approve trades, submit paper orders, write to brokers, or enable live capital.</p>
+            </section>
+
+            <section>
                 <h2>How To Read The Dashboard</h2>
                 <div class="guide-grid">
+                    <div class="guide-card">
+                        <span>First read</span>
+                        <h3>Mission Control</h3>
+                        <p>Shows the top-level state of sources, philosophy, stack, trade intent, paper account, and safety before the detailed panels.</p>
+                    </div>
                     <div class="guide-card">
                         <span>Top map</span>
                         <h3>System Operating Map</h3>
