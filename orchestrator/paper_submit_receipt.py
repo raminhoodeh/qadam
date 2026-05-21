@@ -8,6 +8,7 @@ or write to brokers.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -44,6 +45,10 @@ class PaperSubmitReceiptReview:
     account_scope: str
     hypothetical_order: dict[str, Any]
     broker_echo: dict[str, Any]
+    idempotency_design: dict[str, Any]
+    event_log_prewrite_schema: dict[str, Any]
+    pre_trade_snapshot_schema: dict[str, Any]
+    duplicate_order_guard: dict[str, Any]
     simulated_receipt: dict[str, Any]
     receipt_checks: dict[str, str]
     blocked_reasons: tuple[str, ...]
@@ -109,11 +114,139 @@ def _receipt_ready(
     )
 
 
+def _stable_order_material(
+    broker_review: dict[str, Any],
+    *,
+    account_context: dict[str, Any],
+    venue: dict[str, Any],
+) -> dict[str, Any]:
+    hypothetical = broker_review.get("hypothetical_order", {}) or {}
+    return {
+        "source_broker_reconciliation_review_id": str(broker_review.get("review_id") or "unknown"),
+        "source_staged_paper_order_review_id": str(
+            broker_review.get("source_staged_paper_order_review_id") or "unknown"
+        ),
+        "source_execution_policy_review_id": str(
+            broker_review.get("source_execution_policy_review_id") or "unknown"
+        ),
+        "instrument": str(broker_review.get("instrument") or "unknown"),
+        "selected_venue": str(broker_review.get("selected_venue") or venue.get("key") or "none"),
+        "account_scope": str(broker_review.get("account_scope") or account_context.get("account_scope") or "paper"),
+        "direction": str(hypothetical.get("direction") or "not_determined"),
+        "order_type": str(hypothetical.get("order_type") or "not_applicable"),
+        "notional_gbp": str(hypothetical.get("notional_gbp") or "0"),
+    }
+
+
+def _idempotency_design(
+    broker_review: dict[str, Any],
+    *,
+    account_context: dict[str, Any],
+    venue: dict[str, Any],
+    dry_run_receipt_created: bool,
+) -> dict[str, Any]:
+    material = _stable_order_material(broker_review, account_context=account_context, venue=venue)
+    digest = hashlib.sha256(json.dumps(material, sort_keys=True).encode("utf-8")).hexdigest()[:24]
+    return {
+        "status": "dry_run_preview_ready" if dry_run_receipt_created else "designed_not_allocated",
+        "preview_key": f"dryrun-{digest}",
+        "material_fields": tuple(material.keys()),
+        "broker_usable": False,
+        "allocation_authority": False,
+        "collision_policy": "block_if_preview_key_or_source_review_has_already_reached_submit_receipt",
+        "boundary": "Deterministic idempotency preview only; no broker-usable client order id is allocated.",
+    }
+
+
+def _event_log_prewrite_schema(
+    broker_review: dict[str, Any],
+    *,
+    idempotency_design: dict[str, Any],
+    dry_run_receipt_created: bool,
+) -> dict[str, Any]:
+    return {
+        "status": "schema_ready_not_written" if dry_run_receipt_created else "schema_defined_not_written",
+        "event_type": "paper_order_prewrite_requested",
+        "required_fields": (
+            "schema_version",
+            "event_type",
+            "source_broker_reconciliation_review_id",
+            "source_staged_paper_order_review_id",
+            "source_execution_policy_review_id",
+            "instrument",
+            "selected_venue",
+            "account_scope",
+            "idempotency_preview_key",
+            "hypothetical_order",
+            "pre_trade_snapshot_ref",
+            "created_at",
+        ),
+        "idempotency_preview_key": idempotency_design.get("preview_key"),
+        "source_broker_reconciliation_review_id": str(broker_review.get("review_id") or "unknown"),
+        "write_performed": False,
+        "event_log_ref": "not_written",
+        "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
+    }
+
+
+def _pre_trade_snapshot_schema(
+    *,
+    account_context: dict[str, Any],
+    dry_run_receipt_created: bool,
+) -> dict[str, Any]:
+    return {
+        "status": "schema_ready_not_captured" if dry_run_receipt_created else "schema_defined_not_captured",
+        "required_fields": (
+            "account_scope",
+            "connection_status",
+            "current_balance_gbp",
+            "open_position_count",
+            "order_count",
+            "unrealized_pl_gbp",
+            "write_authority",
+            "live_capital_enabled",
+            "captured_at",
+        ),
+        "account_scope": str(account_context.get("account_scope") or "paper"),
+        "connection_status": str(account_context.get("connection_status") or account_context.get("status") or "unknown"),
+        "current_balance_gbp": account_context.get("current_balance_gbp"),
+        "open_position_count": int(account_context.get("open_position_count") or 0),
+        "order_count": int(account_context.get("order_count") or 0),
+        "capture_performed": False,
+        "snapshot_ref": "not_captured",
+        "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
+    }
+
+
+def _duplicate_order_guard(
+    *,
+    idempotency_design: dict[str, Any],
+    dry_run_receipt_created: bool,
+) -> dict[str, Any]:
+    return {
+        "status": "guard_ready_not_executed" if dry_run_receipt_created else "guard_required_not_executed",
+        "guard_key": idempotency_design.get("preview_key"),
+        "lookup_sources": (
+            "paper_submit_receipt_reviews",
+            "broker_reconciliation_reviews",
+            "event_log:paper_order_prewrite_requested",
+            "paper_account_open_orders_read_only",
+        ),
+        "duplicate_window_seconds": 86400,
+        "lookup_performed": False,
+        "duplicate_detected": False,
+        "guard_write_performed": False,
+        "block_policy": "future_submit_must_block_when_guard_key_or_source_review_already_exists",
+        "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
+    }
+
+
 def _simulated_receipt(
     broker_review: dict[str, Any],
     *,
     venue: dict[str, Any],
     dry_run_receipt_created: bool,
+    idempotency_design: dict[str, Any],
 ) -> dict[str, Any]:
     broker_echo = broker_review.get("broker_echo", {})
     if dry_run_receipt_created:
@@ -123,6 +256,7 @@ def _simulated_receipt(
             "adapter": str(venue.get("adapter") or broker_echo.get("adapter") or "none"),
             "venue": str(broker_review.get("selected_venue") or venue.get("key") or "none"),
             "client_order_id": "simulated_only_not_allocated_for_broker",
+            "idempotency_preview_key": idempotency_design.get("preview_key"),
             "external_order_id": "simulated_only_not_created_at_broker",
             "broker_post_called": False,
             "paper_order_submitted": False,
@@ -134,6 +268,7 @@ def _simulated_receipt(
         "adapter": str(venue.get("adapter") or broker_echo.get("adapter") or "none"),
         "venue": str(broker_review.get("selected_venue") or venue.get("key") or "none"),
         "client_order_id": "not_allocated",
+        "idempotency_preview_key": idempotency_design.get("preview_key"),
         "external_order_id": "not_created",
         "broker_post_called": False,
         "paper_order_submitted": False,
@@ -147,6 +282,10 @@ def _checks(
     account_context: dict[str, Any],
     venue: dict[str, Any],
     dry_run_receipt_created: bool,
+    idempotency_design: dict[str, Any],
+    event_log_prewrite_schema: dict[str, Any],
+    pre_trade_snapshot_schema: dict[str, Any],
+    duplicate_order_guard: dict[str, Any],
 ) -> dict[str, str]:
     broker_status = str(broker_review.get("status") or "unknown")
     write_health = str(venue.get("write_health") or "unknown")
@@ -160,15 +299,32 @@ def _checks(
         "idempotency_key": "pass_allocated"
         if broker_review.get("idempotency_key_allocated") is True
         else "fail_not_allocated",
+        "idempotency_design": "pass_preview_only"
+        if idempotency_design.get("broker_usable") is False
+        and idempotency_design.get("allocation_authority") is False
+        and str(idempotency_design.get("preview_key") or "").startswith("dryrun-")
+        else "fail_idempotency_design_not_safe",
         "event_log_prewrite": "pass_written"
         if broker_review.get("event_log_prewrite_created") is True
         else "fail_not_written",
+        "event_log_prewrite_schema": "pass_schema_not_written"
+        if event_log_prewrite_schema.get("write_performed") is False
+        and event_log_prewrite_schema.get("event_log_ref") == "not_written"
+        else "fail_prewrite_schema_wrote_event",
         "pre_trade_snapshot": "pass_created"
         if broker_review.get("pre_trade_snapshot_created") is True
         else "fail_not_created",
+        "pre_trade_snapshot_schema": "pass_schema_not_captured"
+        if pre_trade_snapshot_schema.get("capture_performed") is False
+        and pre_trade_snapshot_schema.get("snapshot_ref") == "not_captured"
+        else "fail_snapshot_schema_captured_state",
         "duplicate_order_guard": "pass_ready"
         if broker_review.get("duplicate_order_guard_ready") is True
         else "fail_not_ready",
+        "duplicate_order_guard_schema": "pass_guard_not_executed"
+        if duplicate_order_guard.get("lookup_performed") is False
+        and duplicate_order_guard.get("guard_write_performed") is False
+        else "fail_duplicate_guard_executed",
         "broker_echo": "pass_verified"
         if broker_review.get("broker_echo_verified") is True
         else "fail_not_verified",
@@ -258,6 +414,20 @@ def validate_paper_submit_receipt_review(review: PaperSubmitReceiptReview) -> No
         raise ValueError("simulated receipt must not submit paper orders")
     if review.simulated_receipt.get("raw_broker_payload_stored") is not False:
         raise ValueError("simulated receipt must not store raw broker payloads")
+    if review.idempotency_design.get("broker_usable") is not False:
+        raise ValueError("idempotency design must not be broker-usable")
+    if review.idempotency_design.get("allocation_authority") is not False:
+        raise ValueError("idempotency design must not allocate broker IDs")
+    if not str(review.idempotency_design.get("preview_key") or "").startswith("dryrun-"):
+        raise ValueError("idempotency design preview key must be dry-run scoped")
+    if review.event_log_prewrite_schema.get("write_performed") is not False:
+        raise ValueError("Event Log prewrite schema must not write order events")
+    if review.pre_trade_snapshot_schema.get("capture_performed") is not False:
+        raise ValueError("pre-trade snapshot schema must not capture order state")
+    if review.duplicate_order_guard.get("lookup_performed") is not False:
+        raise ValueError("duplicate-order guard must not perform lookups in dry-run receipt layer")
+    if review.duplicate_order_guard.get("guard_write_performed") is not False:
+        raise ValueError("duplicate-order guard must not write guard state")
 
 
 def build_paper_submit_receipt_review(
@@ -267,11 +437,34 @@ def build_paper_submit_receipt_review(
 ) -> PaperSubmitReceiptReview:
     venue = _venue(str(broker_review.get("selected_venue") or "none"))
     dry_run_receipt_created = _receipt_ready(broker_review, account_context=account_context, venue=venue)
+    idempotency_design = _idempotency_design(
+        broker_review,
+        account_context=account_context,
+        venue=venue,
+        dry_run_receipt_created=dry_run_receipt_created,
+    )
+    event_log_prewrite_schema = _event_log_prewrite_schema(
+        broker_review,
+        idempotency_design=idempotency_design,
+        dry_run_receipt_created=dry_run_receipt_created,
+    )
+    pre_trade_snapshot_schema = _pre_trade_snapshot_schema(
+        account_context=account_context,
+        dry_run_receipt_created=dry_run_receipt_created,
+    )
+    duplicate_order_guard = _duplicate_order_guard(
+        idempotency_design=idempotency_design,
+        dry_run_receipt_created=dry_run_receipt_created,
+    )
     checks = _checks(
         broker_review,
         account_context=account_context,
         venue=venue,
         dry_run_receipt_created=dry_run_receipt_created,
+        idempotency_design=idempotency_design,
+        event_log_prewrite_schema=event_log_prewrite_schema,
+        pre_trade_snapshot_schema=pre_trade_snapshot_schema,
+        duplicate_order_guard=duplicate_order_guard,
     )
     blocked = _blocked_reasons(checks)
     review = PaperSubmitReceiptReview(
@@ -293,10 +486,15 @@ def build_paper_submit_receipt_review(
         account_scope=str(broker_review.get("account_scope") or account_context.get("account_scope") or "paper"),
         hypothetical_order=broker_review.get("hypothetical_order", {}),
         broker_echo=broker_review.get("broker_echo", {}),
+        idempotency_design=idempotency_design,
+        event_log_prewrite_schema=event_log_prewrite_schema,
+        pre_trade_snapshot_schema=pre_trade_snapshot_schema,
+        duplicate_order_guard=duplicate_order_guard,
         simulated_receipt=_simulated_receipt(
             broker_review,
             venue=venue,
             dry_run_receipt_created=dry_run_receipt_created,
+            idempotency_design=idempotency_design,
         ),
         receipt_checks=checks,
         blocked_reasons=blocked,

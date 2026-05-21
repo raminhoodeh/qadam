@@ -9,6 +9,10 @@ say() {
 
 cd "$ROOT"
 
+say "Refreshing dry-run receipt contract"
+python3 scripts/check_paper_submit_receipt_contract.py
+python3 scripts/check_cockpit_status.py
+
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js
 node scripts/check_dashboard_acceptance.js

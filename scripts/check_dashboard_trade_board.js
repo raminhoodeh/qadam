@@ -355,11 +355,15 @@ const REQUIRED_PAPER_SUBMIT_RECEIPT_REVIEW_FIELDS = [
     "broker_echo",
     "broker_post_called",
     "broker_write_allowed",
+    "duplicate_order_guard",
     "dry_run_receipt_created",
+    "event_log_prewrite_schema",
     "hypothetical_order",
+    "idempotency_design",
     "instrument",
     "live_capital_enabled",
     "paper_order_submitted",
+    "pre_trade_snapshot_schema",
     "receipt_checks",
     "required_next_steps",
     "review_id",
@@ -380,6 +384,7 @@ const REQUIRED_SIMULATED_RECEIPT_FIELDS = [
     "broker_post_called",
     "client_order_id",
     "external_order_id",
+    "idempotency_preview_key",
     "mode",
     "paper_order_submitted",
     "raw_broker_payload_stored",
@@ -394,8 +399,11 @@ const REQUIRED_PAPER_SUBMIT_RECEIPT_CHECKS = [
     "broker_reconciliation_status",
     "broker_write",
     "duplicate_order_guard",
+    "duplicate_order_guard_schema",
     "dry_run_receipt",
     "event_log_prewrite",
+    "event_log_prewrite_schema",
+    "idempotency_design",
     "idempotency_key",
     "kill_switch",
     "live_capital",
@@ -406,6 +414,7 @@ const REQUIRED_PAPER_SUBMIT_RECEIPT_CHECKS = [
     "post_submit_reconciliation",
     "postmortem_link",
     "pre_trade_snapshot",
+    "pre_trade_snapshot_schema",
     "venue_registry_write_health"
 ];
 
@@ -649,6 +658,32 @@ async function main() {
         assert(review.simulated_receipt.broker_post_called === false, `${review.review_id} called broker POST`);
         assert(review.simulated_receipt.paper_order_submitted === false, `${review.review_id} submitted paper order`);
         assert(
+            review.idempotency_design.broker_usable === false
+                && review.idempotency_design.allocation_authority === false
+                && String(review.idempotency_design.preview_key || "").startsWith("dryrun-"),
+            `${review.review_id} idempotency design is not dry-run only`
+        );
+        assert(
+            review.simulated_receipt.idempotency_preview_key === review.idempotency_design.preview_key,
+            `${review.review_id} idempotency preview mismatch`
+        );
+        assert(
+            review.event_log_prewrite_schema.write_performed === false
+                && review.event_log_prewrite_schema.event_log_ref === "not_written",
+            `${review.review_id} Event Log prewrite was performed`
+        );
+        assert(
+            review.pre_trade_snapshot_schema.capture_performed === false
+                && review.pre_trade_snapshot_schema.snapshot_ref === "not_captured",
+            `${review.review_id} pre-trade snapshot was captured`
+        );
+        assert(
+            review.duplicate_order_guard.lookup_performed === false
+                && review.duplicate_order_guard.guard_write_performed === false
+                && review.duplicate_order_guard.guard_key === review.idempotency_design.preview_key,
+            `${review.review_id} duplicate-order guard has authority`
+        );
+        assert(
             REQUIRED_PAPER_SUBMIT_RECEIPT_CHECKS.every((field) => hasOwn(review.receipt_checks, field)),
             `${review.review_id} paper-submit receipt checks are incomplete`
         );
@@ -656,6 +691,19 @@ async function main() {
         assert(
             review.receipt_checks.paper_order_submission === "pass_not_submitted",
             `${review.review_id} paper order submission not closed`
+        );
+        assert(review.receipt_checks.idempotency_design === "pass_preview_only", `${review.review_id} idempotency design not closed`);
+        assert(
+            review.receipt_checks.event_log_prewrite_schema === "pass_schema_not_written",
+            `${review.review_id} prewrite schema not closed`
+        );
+        assert(
+            review.receipt_checks.pre_trade_snapshot_schema === "pass_schema_not_captured",
+            `${review.review_id} snapshot schema not closed`
+        );
+        assert(
+            review.receipt_checks.duplicate_order_guard_schema === "pass_guard_not_executed",
+            `${review.review_id} duplicate guard schema not closed`
         );
         assert(/cannot call Alpaca POST routes/i.test(review.boundary || ""), `${review.review_id} boundary is weak`);
     }
@@ -730,6 +778,8 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "paper submit blocked");
     assertIncludes(rendered, "[data-trade-layer]", "Dry-run paper-submit receipt");
     assertIncludes(rendered, "[data-trade-layer]", "Simulated receipt");
+    assertIncludes(rendered, "[data-trade-layer]", "Idempotency preview");
+    assertIncludes(rendered, "[data-trade-layer]", "Prewrite and duplicate guard");
     assertIncludes(rendered, "[data-trade-layer]", "dry-run receipt not created");
     assertIncludes(rendered, "[data-trade-layer]", "paper order not submitted");
     assertIncludes(rendered, "[data-trade-layer]", "broker POST not called");

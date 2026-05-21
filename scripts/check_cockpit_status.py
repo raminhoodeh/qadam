@@ -417,11 +417,15 @@ PAPER_SUBMIT_RECEIPT_REVIEW_REQUIRED_FIELDS = {
     "broker_echo",
     "broker_post_called",
     "broker_write_allowed",
+    "duplicate_order_guard",
     "dry_run_receipt_created",
+    "event_log_prewrite_schema",
     "hypothetical_order",
+    "idempotency_design",
     "instrument",
     "live_capital_enabled",
     "paper_order_submitted",
+    "pre_trade_snapshot_schema",
     "receipt_checks",
     "required_next_steps",
     "review_id",
@@ -442,6 +446,7 @@ PAPER_SUBMIT_RECEIPT_SIMULATED_REQUIRED_FIELDS = {
     "broker_post_called",
     "client_order_id",
     "external_order_id",
+    "idempotency_preview_key",
     "mode",
     "paper_order_submitted",
     "raw_broker_payload_stored",
@@ -456,8 +461,11 @@ PAPER_SUBMIT_RECEIPT_REQUIRED_CHECKS = {
     "broker_reconciliation_status",
     "broker_write",
     "duplicate_order_guard",
+    "duplicate_order_guard_schema",
     "dry_run_receipt",
     "event_log_prewrite",
+    "event_log_prewrite_schema",
+    "idempotency_design",
     "idempotency_key",
     "kill_switch",
     "live_capital",
@@ -468,7 +476,54 @@ PAPER_SUBMIT_RECEIPT_REQUIRED_CHECKS = {
     "post_submit_reconciliation",
     "postmortem_link",
     "pre_trade_snapshot",
+    "pre_trade_snapshot_schema",
     "venue_registry_write_health",
+}
+
+PAPER_SUBMIT_RECEIPT_IDEMPOTENCY_REQUIRED_FIELDS = {
+    "allocation_authority",
+    "boundary",
+    "broker_usable",
+    "collision_policy",
+    "material_fields",
+    "preview_key",
+    "status",
+}
+
+PAPER_SUBMIT_RECEIPT_PREWRITE_REQUIRED_FIELDS = {
+    "boundary",
+    "event_log_ref",
+    "event_type",
+    "idempotency_preview_key",
+    "required_fields",
+    "source_broker_reconciliation_review_id",
+    "status",
+    "write_performed",
+}
+
+PAPER_SUBMIT_RECEIPT_SNAPSHOT_REQUIRED_FIELDS = {
+    "account_scope",
+    "boundary",
+    "capture_performed",
+    "connection_status",
+    "current_balance_gbp",
+    "open_position_count",
+    "order_count",
+    "required_fields",
+    "snapshot_ref",
+    "status",
+}
+
+PAPER_SUBMIT_RECEIPT_DUPLICATE_GUARD_REQUIRED_FIELDS = {
+    "block_policy",
+    "boundary",
+    "duplicate_detected",
+    "duplicate_window_seconds",
+    "guard_key",
+    "guard_write_performed",
+    "lookup_performed",
+    "lookup_sources",
+    "status",
 }
 
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
@@ -2066,6 +2121,59 @@ def main() -> int:
         if simulated.get("paper_order_submitted") is not False:
             print("cockpit_status_paper_submit_receipt_simulated_order_submitted=true")
             return 1
+        idempotency = review.get("idempotency_design", {})
+        missing_idempotency = sorted(PAPER_SUBMIT_RECEIPT_IDEMPOTENCY_REQUIRED_FIELDS - set(idempotency))
+        if missing_idempotency:
+            print(
+                "cockpit_status_paper_submit_receipt_idempotency_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_idempotency)}"
+            )
+            return 1
+        if idempotency.get("broker_usable") is not False or idempotency.get("allocation_authority") is not False:
+            print("cockpit_status_paper_submit_receipt_idempotency_has_authority=true")
+            return 1
+        if not str(idempotency.get("preview_key") or "").startswith("dryrun-"):
+            print("cockpit_status_paper_submit_receipt_idempotency_preview_not_dryrun=true")
+            return 1
+        if simulated.get("idempotency_preview_key") != idempotency.get("preview_key"):
+            print("cockpit_status_paper_submit_receipt_idempotency_preview_mismatch=true")
+            return 1
+        prewrite = review.get("event_log_prewrite_schema", {})
+        missing_prewrite = sorted(PAPER_SUBMIT_RECEIPT_PREWRITE_REQUIRED_FIELDS - set(prewrite))
+        if missing_prewrite:
+            print(
+                "cockpit_status_paper_submit_receipt_prewrite_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_prewrite)}"
+            )
+            return 1
+        if prewrite.get("write_performed") is not False or prewrite.get("event_log_ref") != "not_written":
+            print("cockpit_status_paper_submit_receipt_prewrite_wrote=true")
+            return 1
+        snapshot = review.get("pre_trade_snapshot_schema", {})
+        missing_snapshot = sorted(PAPER_SUBMIT_RECEIPT_SNAPSHOT_REQUIRED_FIELDS - set(snapshot))
+        if missing_snapshot:
+            print(
+                "cockpit_status_paper_submit_receipt_snapshot_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_snapshot)}"
+            )
+            return 1
+        if snapshot.get("capture_performed") is not False or snapshot.get("snapshot_ref") != "not_captured":
+            print("cockpit_status_paper_submit_receipt_snapshot_captured=true")
+            return 1
+        duplicate_guard = review.get("duplicate_order_guard", {})
+        missing_guard = sorted(PAPER_SUBMIT_RECEIPT_DUPLICATE_GUARD_REQUIRED_FIELDS - set(duplicate_guard))
+        if missing_guard:
+            print(
+                "cockpit_status_paper_submit_receipt_duplicate_guard_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_guard)}"
+            )
+            return 1
+        if duplicate_guard.get("lookup_performed") is not False or duplicate_guard.get("guard_write_performed") is not False:
+            print("cockpit_status_paper_submit_receipt_duplicate_guard_has_authority=true")
+            return 1
+        if duplicate_guard.get("guard_key") != idempotency.get("preview_key"):
+            print("cockpit_status_paper_submit_receipt_duplicate_guard_key_mismatch=true")
+            return 1
         missing_checks = sorted(PAPER_SUBMIT_RECEIPT_REQUIRED_CHECKS - set(review.get("receipt_checks", {})))
         if missing_checks:
             print(
@@ -2078,6 +2186,18 @@ def main() -> int:
             return 1
         if review.get("receipt_checks", {}).get("paper_order_submission") != "pass_not_submitted":
             print("cockpit_status_paper_submit_receipt_order_submission_not_closed=true")
+            return 1
+        if review.get("receipt_checks", {}).get("idempotency_design") != "pass_preview_only":
+            print("cockpit_status_paper_submit_receipt_idempotency_design_not_closed=true")
+            return 1
+        if review.get("receipt_checks", {}).get("event_log_prewrite_schema") != "pass_schema_not_written":
+            print("cockpit_status_paper_submit_receipt_prewrite_schema_not_closed=true")
+            return 1
+        if review.get("receipt_checks", {}).get("pre_trade_snapshot_schema") != "pass_schema_not_captured":
+            print("cockpit_status_paper_submit_receipt_snapshot_schema_not_closed=true")
+            return 1
+        if review.get("receipt_checks", {}).get("duplicate_order_guard_schema") != "pass_guard_not_executed":
+            print("cockpit_status_paper_submit_receipt_duplicate_guard_schema_not_closed=true")
             return 1
         if "cannot call Alpaca POST routes" not in review.get("boundary", ""):
             print("cockpit_status_paper_submit_receipt_review_boundary_weak=true")

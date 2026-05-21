@@ -167,6 +167,8 @@ Trade states:
 
 The dashboard should never imply Qadam is about to trade unless the state is `staged_paper_order` or `submitted_paper_order`.
 
+The dry-run paper-submit receipt section is deliberately conservative. It may show an idempotency preview, Event Log prewrite schema, pre-trade snapshot schema, and duplicate-order guard schema, but those are readiness checks only. Until the later execution gates are explicitly enabled, Qadam cannot allocate a broker-usable order ID, write a pre-order event, submit to Alpaca, or create broker state.
+
 ### Money / Paper Account Timeline
 
 This panel shows the £1000 paper/test account.
