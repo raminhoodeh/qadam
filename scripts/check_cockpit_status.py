@@ -528,6 +528,21 @@ PAPER_SUBMIT_RECEIPT_DUPLICATE_GUARD_REQUIRED_FIELDS = {
 
 MODEL_ACTIVITY_ROLES = {"Research Analyst", "Strategy Lead", "Head of Quant"}
 
+QUANTUM_ORACLE_REQUIRED_FIELDS = {
+    "boundary",
+    "execution_allowed_count",
+    "hardware_submission_allowed_count",
+    "hardware_submitted_count",
+    "latest_backend",
+    "latest_recommendation",
+    "paper_order_allowed_count",
+    "qiskit_aer_available",
+    "result_count",
+    "schema_version",
+    "status",
+    "trade_candidate_created_count",
+}
+
 TRADE_INTENT_REQUIRED_FIELDS = {
     "akber_filter",
     "blocked_reason",
@@ -1027,6 +1042,9 @@ def main() -> int:
     print(f"cockpit_status_broker_reconciliation_review_count={payload.get('broker_reconciliation', {}).get('review_count')}")
     print(f"cockpit_status_paper_submit_receipt_status={payload.get('paper_submit_receipt', {}).get('status')}")
     print(f"cockpit_status_paper_submit_receipt_review_count={payload.get('paper_submit_receipt', {}).get('review_count')}")
+    print(f"cockpit_status_quantum_oracle_status={payload.get('quantum_oracle', {}).get('status')}")
+    print(f"cockpit_status_quantum_oracle_result_count={payload.get('quantum_oracle', {}).get('result_count')}")
+    print(f"cockpit_status_quantum_oracle_backend={payload.get('quantum_oracle', {}).get('latest_backend')}")
     print(f"cockpit_status_mission_control_status={payload.get('mission_control', {}).get('status')}")
     print(f"cockpit_status_mission_control_headline={payload.get('mission_control', {}).get('headline')}")
     print(
@@ -1117,6 +1135,29 @@ def main() -> int:
         return 1
     if durable_ingestion.get("status") not in {"ok", "partial", "missing_tables", "degraded", "ready_waiting_for_local_service"}:
         print("cockpit_status_durable_ingestion_status_invalid=true")
+        return 1
+    quantum_oracle = payload.get("quantum_oracle", {})
+    missing_quantum_fields = sorted(QUANTUM_ORACLE_REQUIRED_FIELDS - set(quantum_oracle))
+    if missing_quantum_fields:
+        print("cockpit_status_quantum_oracle_fields_missing=" + ",".join(missing_quantum_fields))
+        return 1
+    if quantum_oracle.get("hardware_submitted_count") != 0:
+        print("cockpit_status_quantum_oracle_hardware_submitted=true")
+        return 1
+    if quantum_oracle.get("hardware_submission_allowed_count") != 0:
+        print("cockpit_status_quantum_oracle_hardware_allowed=true")
+        return 1
+    if quantum_oracle.get("execution_allowed_count") != 0:
+        print("cockpit_status_quantum_oracle_execution_allowed=true")
+        return 1
+    if quantum_oracle.get("paper_order_allowed_count") != 0:
+        print("cockpit_status_quantum_oracle_paper_order_allowed=true")
+        return 1
+    if quantum_oracle.get("trade_candidate_created_count") != 0:
+        print("cockpit_status_quantum_oracle_trade_candidate_created=true")
+        return 1
+    if "non-executable" not in quantum_oracle.get("boundary", ""):
+        print("cockpit_status_quantum_oracle_boundary_weak=true")
         return 1
     live_bridge = payload["live_bridge"]
     missing_live_bridge_fields = sorted(LIVE_BRIDGE_REQUIRED_FIELDS - set(live_bridge))

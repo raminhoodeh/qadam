@@ -663,6 +663,7 @@ Build:
 - Hypothesis cards with thesis, confidence, evidence count, invalidation, and generated-by state.
 - Evidence packet cards and evidence item summaries, with raw references stripped.
 - Model activity state for Research Analyst, Strategy Lead, and Head of Quant.
+- Head of Quant oracle state: latest backend, recommendation, result count, optional simulator availability, and zero-authority flags.
 - Read-only paper-account context inside Cognition: £1000 policy allocation, Alpaca paper mirror balance, P&L, drawdown, position/order counts, maturity progress, and explicit no-authority flags.
 - Signal Integrity Gate summary inside Cognition: total reviews, blocked/held/risk-shadow counts, candidates created, execution count, and explicit no-order/no-candidate boundary.
 - Recent Signal Integrity Review cards: instrument focus, integrity score, source/evidence counts, trust scores, missing correlations, Akber filter output, failure reasons, required next steps, worldview-prior status, and non-execution flags.
@@ -673,13 +674,13 @@ Build:
 - Hypothesis cards are explicitly labelled `Hypothesis, not trade` and `Execution blocked`, with created time, linked evidence packet, invalidation, missing corroboration, worldview context, Signal Integrity status/score, and the Risk Agent boundary.
 - Evidence packet cards now show source count, evidence item count, trust scores, created time, source list, missing correlations, and sanitized evidence item summaries without raw references.
 - Shadow packets show their no-signal/no-risk/no-execution boundary.
-- `scripts/check_dashboard_cognition_view.js` verifies the rendered Cognition panel includes model roles, read-only paper-account context, Signal Integrity Gate state, Akber filter output, non-executable authority, hypotheses, evidence packets, missing corroboration, blocked execution, the trade-layer boundary, and empty-state behavior.
+- `scripts/check_dashboard_cognition_view.js` verifies the rendered Cognition panel includes model roles, read-only paper-account context, Signal Integrity Gate state, Head of Quant model activity, Akber filter output, non-executable authority, hypotheses, evidence packets, missing corroboration, blocked execution, the trade-layer boundary, and empty-state behavior.
 
 Exit gate:
 
 - At least one test hypothesis can appear with evidence and blocked execution state.
 - `scripts/check_cockpit_status.py` validates shadow packets, model activity, evidence items, analysis timeline, blocked reasons, and non-executable hypotheses.
-- `scripts/check_cockpit_status.py` also validates D4 required fields for shadow packets, local Research Analyst assessments, read-only paper-account context, Signal Integrity summaries/reviews, hypotheses, evidence packets, non-executable model authority, evidence links, raw-reference stripping, and the `trade layer not reached` timeline boundary.
+- `scripts/check_cockpit_status.py` also validates D4 required fields for shadow packets, local Research Analyst assessments, read-only paper-account context, Signal Integrity summaries/reviews, Head of Quant oracle summary, hypotheses, evidence packets, non-executable model authority, evidence links, raw-reference stripping, and the `trade layer not reached` timeline boundary.
 - A local D4 render check proves the panel renders 5 hypotheses, 5 evidence packets, 5 shadow packets, 5 Signal Integrity reviews, model activity, blocked execution, and the empty cognition fallback.
 
 ### Phase D5 - Trade Intent Board

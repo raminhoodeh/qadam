@@ -18,9 +18,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run safe provider readiness probes.")
     parser.add_argument("--local-live", action="store_true", help="Call LM Studio /models on the configured local URL.")
     parser.add_argument("--gemini-live", action="store_true", help="Call Gemini model-list endpoint without generation.")
+    parser.add_argument("--local-timeout-seconds", type=float, default=2.5)
+    parser.add_argument("--gemini-timeout-seconds", type=float, default=8.0)
     args = parser.parse_args()
 
-    status = provider_status(local_live=args.local_live, gemini_live=args.gemini_live)
+    status = provider_status(
+        local_live=args.local_live,
+        gemini_live=args.gemini_live,
+        local_timeout_seconds=args.local_timeout_seconds,
+        gemini_timeout_seconds=args.gemini_timeout_seconds,
+    )
     frontier = status["frontier_llm"]
     local = status["local_llm"]
 

@@ -303,10 +303,12 @@ def provider_status(
     *,
     local_live: bool = False,
     gemini_live: bool = False,
+    local_timeout_seconds: float = 1.2,
+    gemini_timeout_seconds: float = 1.2,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
-    frontier = gemini_credential_probe(settings, live=gemini_live)
-    local = lm_studio_models_probe(settings, live=local_live)
+    frontier = gemini_credential_probe(settings, live=gemini_live, timeout_seconds=gemini_timeout_seconds)
+    local = lm_studio_models_probe(settings, live=local_live, timeout_seconds=local_timeout_seconds)
     frontier_ready = frontier["credential_configured"] and frontier["probe_status"] in {"not_called", "ok"}
     local_ready = (
         local["provider"] == "lm_studio"

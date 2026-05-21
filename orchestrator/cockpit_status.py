@@ -30,6 +30,7 @@ from orchestrator.live_bridge import live_bridge_contract, write_status_signatur
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
 from orchestrator.postgres_store import durable_ingestion_status
+from orchestrator.quantum import quantum_oracle_summary
 from orchestrator.risk_agent import RiskPolicyReviewStore, risk_agent_summary
 from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
 from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
@@ -104,6 +105,8 @@ def _dashboard_status(raw_status: str) -> str:
         "sample_ready",
         "live_optional",
         "read_only_ready",
+        "ready_classical_fallback",
+        "oracle_ready",
         "ok",
         "dry_run",
         "shell",
@@ -130,6 +133,7 @@ def _module_authority(module_key: str, raw_status: str) -> str:
         "staged_order_contract",
         "broker_reconciliation",
         "paper_submit_receipt",
+        "quantum_oracle",
         "trade_layer",
     }:
         return "write_blocked"
@@ -151,7 +155,7 @@ def _module_process(module_key: str, raw_status: str) -> str:
         "knowledge_graph": "holding local memory shell",
         "research_analyst": "waiting for local LLM readiness",
         "strategy_lead": "waiting for frontier model probe",
-        "head_of_quant": "deferred weekly oracle",
+        "head_of_quant": "weekly quantum/classical oracle check",
         "execution_registry": "execution disabled in foundation mode",
         "agent_os": "manifest permissions available",
         "agent_runtime": "broker-write tools blocked",
@@ -740,6 +744,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     strategy_lead_store = StrategyLeadShadowStore(settings=settings)
     paper_context = paper_account_shadow_context(settings)
     signal_integrity = signal_integrity_summary(settings)
+    quantum_oracle = quantum_oracle_summary(settings)
     signal_reviews = _safe_signal_integrity_reviews(settings)
     try:
         signals = list(store.read())[-5:]
@@ -826,6 +831,11 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             f"Signal Integrity Gate: {len(signal_reviews)} recent reviews, "
             f"{signal_integrity.get('by_status', {}).get('hold_for_corroboration', 0)} held"
         )
+    if quantum_oracle.get("result_count", 0):
+        current_focus.append(
+            "Head of Quant latest oracle: "
+            f"{quantum_oracle.get('latest_recommendation', 'hold')}"
+        )
     if not current_focus:
         current_focus.append("waiting for source heartbeat and shadow triage inputs")
 
@@ -861,10 +871,14 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         {
             "role": "Head of Quant",
             "provider": "quantum_or_classical",
-            "status": "deferred",
+            "status": quantum_oracle.get("status", "ready_classical_fallback"),
             "model": "weekly_oracle",
             "authority": "non_executable",
-            "current_task": "no real-time role",
+            "current_task": (
+                "latest bounded oracle result available"
+                if quantum_oracle.get("result_count", 0)
+                else "classical fallback oracle ready"
+            ),
         },
     ]
     return {
@@ -882,6 +896,20 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "boundary": signal_integrity.get("boundary"),
         },
         "signal_integrity_reviews": signal_reviews,
+        "quantum_oracle": {
+            "status": quantum_oracle.get("status", "ready_classical_fallback"),
+            "schema_version": quantum_oracle.get("schema_version"),
+            "result_count": quantum_oracle.get("result_count", 0),
+            "latest_backend": quantum_oracle.get("latest_backend", "classical_fallback"),
+            "latest_recommendation": quantum_oracle.get("latest_recommendation", "not_run"),
+            "hardware_submitted_count": quantum_oracle.get("hardware_submitted_count", 0),
+            "hardware_submission_allowed_count": quantum_oracle.get("hardware_submission_allowed_count", 0),
+            "execution_allowed_count": quantum_oracle.get("execution_allowed_count", 0),
+            "paper_order_allowed_count": quantum_oracle.get("paper_order_allowed_count", 0),
+            "trade_candidate_created_count": quantum_oracle.get("trade_candidate_created_count", 0),
+            "qiskit_aer_available": bool(quantum_oracle.get("qiskit_aer_available")),
+            "boundary": quantum_oracle.get("boundary"),
+        },
         "shadow_packets": _safe_shadow_packets(settings),
         "local_research_assessments": [
             {
@@ -932,6 +960,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "staged paper-order contract hold",
             "broker reconciliation contract hold",
             "paper-submit receipt dry-run hold",
+            "quantum/classical oracle check",
             "strategy review pending",
             "signal integrity gate blocked",
             "trade layer not reached",
@@ -948,6 +977,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "staged_paper_order_contract_disabled",
             "broker_reconciliation_contract_read_only",
             "paper_submit_receipt_dry_run_only",
+            "quantum_oracle_non_executable",
         ],
         "boundary": (
             "Cognition is shadow-only. Signal Integrity Gate can block or hold signals, "
@@ -1410,6 +1440,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     risk_agent = payload.get("risk_agent", {})
     execution_policy = payload.get("execution_policy", {})
     paper_submit_receipt = payload.get("paper_submit_receipt", {})
+    quantum_oracle = payload.get("quantum_oracle", {})
     durable_ingestion = payload.get("durable_ingestion", {})
 
     hypotheses = cognition.get("hypotheses", [])
@@ -1523,6 +1554,8 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "local_llm": _module_status(payload, "research_analyst"),
             "frontier_llm": _module_status(payload, "strategy_lead"),
             "quant_oracle": _module_status(payload, "head_of_quant"),
+            "quant_oracle_backend": quantum_oracle.get("latest_backend", "classical_fallback"),
+            "quant_oracle_recommendation": quantum_oracle.get("latest_recommendation", "not_run"),
             "risk_gate": _module_status(payload, "risk_agent"),
             "paper_account": capital.get("mirror_status", "pending"),
             "telegram": communications.get("status", "pending"),
@@ -1801,6 +1834,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "staged_paper_order": _staged_paper_order_status(settings),
         "broker_reconciliation": _broker_reconciliation_status(settings),
         "paper_submit_receipt": _paper_submit_receipt_status(settings),
+        "quantum_oracle": health["quantum_oracle"],
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
@@ -1906,6 +1940,15 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("durable ingestion must not have signal authority in the cockpit")
     if durable_ingestion.get("order_authority") is not False:
         raise ValueError("durable ingestion must not have order authority in the cockpit")
+    quantum_oracle = payload["quantum_oracle"]
+    if quantum_oracle.get("hardware_submitted_count", 0) != 0:
+        raise ValueError("quantum oracle must not submit hardware jobs")
+    if quantum_oracle.get("execution_allowed_count", 0) != 0:
+        raise ValueError("quantum oracle must not allow execution")
+    if quantum_oracle.get("paper_order_allowed_count", 0) != 0:
+        raise ValueError("quantum oracle must not allow paper orders")
+    if quantum_oracle.get("trade_candidate_created_count", 0) != 0:
+        raise ValueError("quantum oracle must not create trade candidates")
     if payload["d0_shell"].get("status") != "frozen":
         raise ValueError("D0 shell must be frozen before D1 export")
     live_bridge = payload["live_bridge"]

@@ -25,7 +25,7 @@ from orchestrator.ingestion import ingestion_spine_summary
 from orchestrator.intelligence import shadow_intelligence_summary
 from orchestrator.local_store import local_store_health
 from orchestrator.paper_submit_receipt import paper_submit_receipt_summary
-from orchestrator.quantum import quantum_providers
+from orchestrator.quantum import quantum_oracle_summary, quantum_providers
 from orchestrator.resource_registry import resource_registry_summary
 from orchestrator.risk_agent import risk_agent_summary
 from orchestrator.secrets import validate_secret_file
@@ -58,11 +58,13 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
     storage_health = storage_health or local_store_health()
     settings = settings or Settings.from_env()
     telegram = telegram_status(settings)
+    quantum = quantum_oracle_summary(settings)
+    quantum_status = "oracle_ready" if quantum.get("result_count", 0) else "ready_classical_fallback"
     return [
         {"key": "coo", "label": "COO", "owner": "Python Orchestrator", "status": "registered"},
         {"key": "research_analyst", "label": "Research Analyst", "owner": "Local LLM", "status": "pending"},
         {"key": "strategy_lead", "label": "Strategy Lead", "owner": "Frontier LLM", "status": "pending"},
-        {"key": "head_of_quant", "label": "Head of Quant", "owner": "Quantum Compute", "status": "registered"},
+        {"key": "head_of_quant", "label": "Head of Quant", "owner": "Quantum Compute", "status": quantum_status},
         {
             "key": "event_log",
             "label": "Event Log",
@@ -159,6 +161,7 @@ def build_system_health(
         "paper_submit_receipt": paper_submit_receipt_summary(settings),
         "governance_forum": governance_health,
         "telegram_communications": telegram_status(settings),
+        "quantum_oracle": quantum_oracle_summary(settings),
         "ingestion_spine": ingestion_spine_summary(settings),
         "source_heartbeat": source_heartbeat_summary(settings),
         "adapters": {
