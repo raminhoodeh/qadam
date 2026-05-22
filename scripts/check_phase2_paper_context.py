@@ -65,6 +65,20 @@ def main() -> int:
     if "read-only" not in paper_context.get("boundary", ""):
         print("phase2_paper_context_strategy_boundary_weak=true")
         return 1
+    source_context = strategy_packet.get("source_context", {})
+    strategy_review = strategy_packet.get("strategy_review", {})
+    if not source_context:
+        print("phase2_paper_context_strategy_source_context_missing=true")
+        return 1
+    if source_context.get("write_authority") is not False or source_context.get("order_authority") is not False:
+        print("phase2_paper_context_strategy_source_authority_enabled=true")
+        return 1
+    if strategy_review.get("risk_handoff_allowed") is not False:
+        print("phase2_paper_context_strategy_risk_handoff_enabled=true")
+        return 1
+    if strategy_review.get("trade_candidate_allowed") is not False:
+        print("phase2_paper_context_strategy_trade_candidate_enabled=true")
+        return 1
 
     print("phase2_paper_context_check=ok")
     print(f"phase2_paper_context_status={report['paper_account_context_status']}")

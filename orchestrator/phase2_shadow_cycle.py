@@ -286,15 +286,6 @@ def run_phase2_shadow_cycle(
         paper_account_context=paper_context,
     )
     assessment = local_result.get("assessment") if isinstance(local_result.get("assessment"), dict) else None
-    strategy_store = StrategyLeadShadowStore(settings=settings)
-    strategy_packet = queue_strategy_lead_shadow_packet(
-        assessment,
-        settings=settings,
-        store=strategy_store,
-        event_log=event_log,
-        paper_account_context=paper_context,
-    )
-
     source_degraded_count = sum(1 for result in source_results if result.degraded)
     durable_replay_summary = durable_replay_result or {
         "status": "not_requested",
@@ -307,6 +298,34 @@ def run_phase2_shadow_cycle(
         "signal_authority": False,
         "order_authority": False,
     }
+    strategy_source_context = {
+        "status": "ok" if not source_degraded_count else "degraded",
+        "mode": "durable_replay" if durable_replay else ("live_sources" if live_sources else "sample_sources"),
+        "source_count": len(sources),
+        "source_results": [result.to_dict() for result in source_results],
+        "source_degraded_count": source_degraded_count,
+        "queued_packet_count": queued_packet_count,
+        "shadow_signal_count": triage_result.get("shadow_signal_count", 0),
+        "durable_replay_requested": durable_replay,
+        "durable_replay_status": durable_replay_summary.get("status"),
+        "durable_replay_contract_status": durable_replay_summary.get("contract_status"),
+        "durable_replay_observation_count": durable_replay_summary.get("observation_count", 0),
+        "durable_replay_replayed_source_count": durable_replay_summary.get("replayed_source_count", 0),
+        "durable_replay_missing_source_count": durable_replay_summary.get("missing_source_count", 0),
+        "write_authority": False,
+        "signal_authority": False,
+        "order_authority": False,
+    }
+    strategy_store = StrategyLeadShadowStore(settings=settings)
+    strategy_packet = queue_strategy_lead_shadow_packet(
+        assessment,
+        settings=settings,
+        store=strategy_store,
+        event_log=event_log,
+        paper_account_context=paper_context,
+        source_context=strategy_source_context,
+    )
+
     report = {
         "schema_version": PHASE2_SHADOW_CYCLE_SCHEMA_VERSION,
         "status": (
@@ -471,6 +490,13 @@ def run_phase2_shadow_cycle(
         "strategy_lead_status": strategy_packet.status,
         "strategy_lead_execution_allowed": strategy_packet.execution_allowed,
         "strategy_lead_paper_order_allowed": strategy_packet.paper_order_allowed,
+        "strategy_lead_source_mode": strategy_packet.source_context.get("mode"),
+        "strategy_lead_source_posture": strategy_packet.strategy_review.get("source_posture"),
+        "strategy_lead_review_mode": strategy_packet.strategy_review.get("review_mode"),
+        "strategy_lead_evidence_pressure": strategy_packet.strategy_review.get("evidence_pressure"),
+        "strategy_lead_required_challenge_count": len(strategy_packet.strategy_review.get("required_challenges", [])),
+        "strategy_lead_risk_handoff_allowed": strategy_packet.strategy_review.get("risk_handoff_allowed"),
+        "strategy_lead_trade_candidate_allowed": strategy_packet.strategy_review.get("trade_candidate_allowed"),
         "strategy_lead_store": strategy_store.health(),
         "boundary": (
             "Phase 2 shadow cycle feeds observations into Research Analyst and "
@@ -503,6 +529,8 @@ def run_phase2_shadow_cycle(
             "broker_reconciliation_review_count": report["broker_reconciliation_review_count"],
             "paper_submit_receipt_review_count": report["paper_submit_receipt_review_count"],
             "strategy_lead_packet_id": strategy_packet.packet_id,
+            "strategy_lead_source_mode": report["strategy_lead_source_mode"],
+            "strategy_lead_source_posture": report["strategy_lead_source_posture"],
             "execution_allowed": False,
             "paper_order_allowed": False,
             "report_path": str(report_path),

@@ -214,6 +214,13 @@ def main() -> int:
     print(f"phase2_shadow_cycle_strategy_lead_status={report['strategy_lead_status']}")
     print(f"phase2_shadow_cycle_strategy_lead_execution_allowed={report['strategy_lead_execution_allowed']}")
     print(f"phase2_shadow_cycle_strategy_lead_paper_order_allowed={report['strategy_lead_paper_order_allowed']}")
+    print(f"phase2_shadow_cycle_strategy_lead_source_mode={report['strategy_lead_source_mode']}")
+    print(f"phase2_shadow_cycle_strategy_lead_source_posture={report['strategy_lead_source_posture']}")
+    print(f"phase2_shadow_cycle_strategy_lead_review_mode={report['strategy_lead_review_mode']}")
+    print(f"phase2_shadow_cycle_strategy_lead_evidence_pressure={report['strategy_lead_evidence_pressure']}")
+    print(f"phase2_shadow_cycle_strategy_lead_required_challenge_count={report['strategy_lead_required_challenge_count']}")
+    print(f"phase2_shadow_cycle_strategy_lead_risk_handoff_allowed={report['strategy_lead_risk_handoff_allowed']}")
+    print(f"phase2_shadow_cycle_strategy_lead_trade_candidate_allowed={report['strategy_lead_trade_candidate_allowed']}")
     print(f"phase2_shadow_cycle_report_path={report['report_path']}")
     print(f"phase2_shadow_cycle_boundary={report['boundary']}")
     for result in report["source_results"]:
@@ -244,6 +251,8 @@ def main() -> int:
     if report["durable_replay_order_authority"]:
         return 1
     if report["strategy_lead_execution_allowed"] or report["strategy_lead_paper_order_allowed"]:
+        return 1
+    if report["strategy_lead_risk_handoff_allowed"] or report["strategy_lead_trade_candidate_allowed"]:
         return 1
     if report["paper_account_write_authority"] or report["paper_account_live_capital_enabled"]:
         return 1

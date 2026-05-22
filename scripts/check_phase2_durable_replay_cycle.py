@@ -37,6 +37,11 @@ def main() -> int:
     print(f"phase2_durable_replay_cycle_shadow_signal_count={report['shadow_signal_count']}")
     print(f"phase2_durable_replay_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_durable_replay_cycle_strategy_lead_status={report['strategy_lead_status']}")
+    print(f"phase2_durable_replay_cycle_strategy_source_mode={report['strategy_lead_source_mode']}")
+    print(f"phase2_durable_replay_cycle_strategy_source_posture={report['strategy_lead_source_posture']}")
+    print(f"phase2_durable_replay_cycle_strategy_review_mode={report['strategy_lead_review_mode']}")
+    print(f"phase2_durable_replay_cycle_strategy_evidence_pressure={report['strategy_lead_evidence_pressure']}")
+    print(f"phase2_durable_replay_cycle_strategy_challenge_count={report['strategy_lead_required_challenge_count']}")
     print(f"phase2_durable_replay_cycle_report_path={report['report_path']}")
     print(
         "phase2_durable_replay_cycle_authority="
@@ -61,6 +66,14 @@ def main() -> int:
         return 1
     if report["shadow_signal_count"] < 1:
         return 1
+    if report["strategy_lead_source_mode"] != "durable_replay":
+        return 1
+    if report["strategy_lead_source_posture"] != "durable_replay_complete":
+        return 1
+    if report["strategy_lead_review_mode"] != "durable_replay_shadow_review":
+        return 1
+    if report["strategy_lead_required_challenge_count"] < 4:
+        return 1
     authority_values = (
         report["durable_replay_write_authority"],
         report["durable_replay_signal_authority"],
@@ -69,6 +82,8 @@ def main() -> int:
         report["local_research_paper_order_allowed"],
         report["strategy_lead_execution_allowed"],
         report["strategy_lead_paper_order_allowed"],
+        report["strategy_lead_risk_handoff_allowed"],
+        report["strategy_lead_trade_candidate_allowed"],
         report["signal_integrity_trade_candidate_created_count"],
         report["risk_agent_execution_allowed_count"],
         report["risk_agent_paper_order_allowed_count"],
