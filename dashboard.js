@@ -1312,6 +1312,7 @@ function renderCognition(status) {
     const evidencePackets = asArray(cognition.evidence_packets);
     const shadowPackets = asArray(cognition.shadow_packets);
     const localResearch = asArray(cognition.local_research_assessments);
+    const strategyPackets = asArray(cognition.strategy_lead_packets);
     const activity = asArray(cognition.model_activity);
     const focus = asArray(cognition.current_focus);
     const timeline = asArray(cognition.analysis_timeline);
@@ -1492,6 +1493,40 @@ function renderCognition(status) {
         `).join("")
         : `<article class="cognition-card research-assessment-card"><h3>No local assessment yet</h3><p>The Research Analyst has not compressed the shadow queue.</p></article>`;
 
+    const strategyLeadHtml = strategyPackets.length
+        ? strategyPackets.slice(-3).reverse().map((packet) => {
+            const sourceContext = packet.source_context || {};
+            const review = packet.strategy_review || {};
+            return `
+                <article class="cognition-card strategy-lead-card">
+                    <div class="cognition-card-head">
+                        ${renderStatusPill(packet.status || "queued_shadow_only")}
+                        <p class="label">${htmlText(review.review_mode, "strategy handoff")}</p>
+                    </div>
+                    <h3>${htmlText(packet.watch_focus, "Strategy Lead review")}</h3>
+                    <p>${htmlText(review.boundary || packet.boundary, "Strategy Lead review is challenge-only and non-executable.")}</p>
+                    <div class="summary-strip compact">
+                        ${renderMetric("Source posture", htmlText(review.source_posture, "unknown"))}
+                        ${renderMetric("Mode", htmlText(sourceContext.mode, "unknown"))}
+                        ${renderMetric("Replay", `${sourceContext.durable_replay_replayed_source_count || 0}/${sourceContext.source_count || 0}`)}
+                        ${renderMetric("Queued", sourceContext.queued_packet_count || 0)}
+                        ${renderMetric("Pressure", htmlText(review.evidence_pressure, "thin"))}
+                        ${renderMetric("Trade candidate", review.trade_candidate_allowed ? "Allowed" : "Blocked")}
+                    </div>
+                    <section class="trade-check-section">
+                        <p class="label">Required challenges</p>
+                        <div class="tag-row">${renderTagList(review.required_challenges, "No strategy challenges recorded")}</div>
+                    </section>
+                    <section class="trade-check-section">
+                        <p class="label">Blocked by</p>
+                        <div class="tag-row">${renderTagList(packet.blocked_by, "No blocks recorded")}</div>
+                    </section>
+                    <p class="mini">${htmlText(packet.worldview_lens_status, "private prior only")} · ${formatTime(packet.created_at)}</p>
+                </article>
+            `;
+        }).join("")
+        : `<article class="cognition-card strategy-lead-card"><h3>No Strategy Lead handoff yet</h3><p>The Strategy Lead has not received a shadow packet.</p></article>`;
+
     const paperContextHtml = `
         <article class="cognition-card paper-context-card">
             <div class="cognition-card-head">
@@ -1571,7 +1606,7 @@ function renderCognition(status) {
             question: "What is Qadam thinking about, and why is it blocked?",
             state: `${hypotheses.length} hypotheses`,
             tone: executableHypotheses.length ? "blocked" : "pending",
-            primary: `${shadowPackets.length} shadow packets, ${evidencePackets.length} evidence packets, ${localResearch.length} local assessments, and ${activity.length} model activity records are in the current queue.`,
+            primary: `${shadowPackets.length} shadow packets, ${evidencePackets.length} evidence packets, ${localResearch.length} local assessments, ${strategyPackets.length} Strategy Lead packets, and ${activity.length} model activity records are in the current queue.`,
             secondary: "Model-only reasoning, missing corroboration, stale evidence, blocked reasons, and whether anything unexpectedly claims execution permission.",
             boundary: cognition.boundary || "Research notebook only. A hypothesis is not a trade and cannot bypass risk."
         })}
@@ -1584,6 +1619,7 @@ function renderCognition(status) {
                 ${renderMetric("Evidence items", evidenceItemCount)}
                 ${renderMetric("Shadow packets", shadowPackets.length)}
                 ${renderMetric("Local assessments", localResearch.length)}
+                ${renderMetric("Strategy packets", strategyPackets.length)}
                 ${renderMetric("Integrity reviews", signalReviews.length)}
                 ${renderMetric("Models", activity.length)}
                 ${renderMetric("Execution", executableHypotheses.length ? "Unexpected allowed" : "Blocked")}
@@ -1626,6 +1662,10 @@ function renderCognition(status) {
         <section class="cognition-section">
             <p class="label">Local Research Analyst</p>
             <div class="hypothesis-stack">${localResearchHtml}</div>
+        </section>
+        <section class="cognition-section">
+            <p class="label">Strategy Lead shadow review</p>
+            <div class="hypothesis-stack">${strategyLeadHtml}</div>
         </section>
         <section class="cognition-section">
             <p class="label">Hypotheses and evidence</p>
