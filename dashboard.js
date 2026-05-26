@@ -857,6 +857,7 @@ function collectReadinessWarnings(status) {
 function buildSourcesModel(status = {}) {
     const watching = asArray(status.watching);
     const pipelineSummary = asArray(status.source_pipeline_summary);
+    const cognition = status.cognition || {};
     const sourceCounts = countBy(watching, "status");
     const durable = status.durable_ingestion || status.mission_control?.durable_spine || {};
     const phase5SystemMap = status.phase5_system_map || {};
@@ -949,6 +950,7 @@ function buildSourcesModel(status = {}) {
     ];
     const observedSignals = asArray(status.trade_layer?.watching);
     const candidates = asArray(status.trade_layer?.candidates);
+    const evidencePackets = asArray(cognition.evidence_packets);
     const phase7 = status.phase7_demo_proof || {};
     const sourceSetupLinks = [
         ...observedSignals.map((signal) => ({
@@ -983,12 +985,61 @@ function buildSourcesModel(status = {}) {
         } : null
     ].filter(Boolean);
     const tone = missing || missingCredentialCount || degraded ? "degraded" : (watching.length ? "online" : "pending");
+    const evidencePacketCards = evidencePackets.slice(0, 5).map((packet) => {
+        const items = asArray(packet.items);
+        const itemSources = items
+            .map((item) => item.source)
+            .filter(Boolean)
+            .slice(0, 3);
+        return {
+            trail_id: dashboardText(packet.trail_id, packet.signal_id || "evidence_packet"),
+            signal_id: dashboardText(packet.signal_id, "signal not linked"),
+            status: dashboardText(packet.status, items.length ? "evidence_recorded" : "pending"),
+            item_count: items.length,
+            summary: dashboardText(
+                packet.summary || items[0]?.summary,
+                "Factual evidence packet exported from the research queue."
+            ),
+            sources: itemSources.length ? itemSources.join(", ") : "sources not exported",
+            boundary: "Factual evidence can support review, but cannot create candidates, orders, broker writes, or proof credit."
+        };
+    });
+    const reviewGroups = [
+        {
+            id: "setup_evidence",
+            label: "Setup evidence",
+            summary: "Observed signals, candidates, and setup-pool records tied back to source refs.",
+            record_count: sourceSetupLinks.length,
+            tone: sourceSetupLinks.length ? "pending" : "online"
+        },
+        {
+            id: "source_reliability",
+            label: "Source reliability",
+            summary: "Credential, heartbeat, adapter, and quorum state by intelligence pipeline.",
+            record_count: pipelineRecords.length,
+            tone: missing || missingCredentialCount || degraded ? "degraded" : "online"
+        },
+        {
+            id: "supplemental_context",
+            label: "Supplemental context",
+            summary: "Yahoo Finance and Preference/PREF are confirmation/challenge-only context.",
+            record_count: supplemental.length,
+            tone: supplemental.some((source) => source.degraded) ? "degraded" : "pending"
+        },
+        {
+            id: "factual_packets",
+            label: "Factual evidence packets",
+            summary: "Research packets stay separate from priors and still require corroboration.",
+            record_count: evidencePacketCards.length,
+            tone: evidencePacketCards.length ? "online" : "pending"
+        }
+    ];
     return {
         id: "sources",
-        label: "Sources",
+        label: "Evidence",
         question: "Are Qadam's inputs fresh, trustworthy, and sufficient?",
         tone,
-        summary: `${online}/${watching.length} sources online; ${missing} canonical sources missing; ${missingCredentialCount} credentials missing.`,
+        summary: `${online}/${watching.length} sources online; ${missing} canonical sources missing; ${missingCredentialCount} credentials missing; ${evidencePacketCards.length} factual evidence packets visible.`,
         counts: {
             total: watching.length,
             online,
@@ -997,7 +1048,10 @@ function buildSourcesModel(status = {}) {
             local_only: localOnly,
             missing_credentials: missingCredentialCount,
             signal_influencing: watching.filter((source) => source.can_influence_signals).length,
-            pipelines: pipelineSummary.length
+            pipelines: pipelineSummary.length,
+            supplemental: supplemental.length,
+            source_setup_links: sourceSetupLinks.length,
+            evidence_packets: evidencePacketCards.length
         },
         reliability: [
             { key: "online", label: "Online", count: online, tone: online ? "online" : "pending", detail: "Sources reporting online in the public-safe snapshot." },
@@ -1015,6 +1069,8 @@ function buildSourcesModel(status = {}) {
         },
         pipelines: pipelineRecords,
         supplemental,
+        evidence_packets: evidencePacketCards,
+        evidence_review_groups: reviewGroups,
         source_setup_links: sourceSetupLinks,
         source_to_setup_summary: sourceSetupLinks.length
             ? `${sourceSetupLinks.length} source-linked observed/candidate/setup records need corroboration review.`
@@ -2769,13 +2825,49 @@ function renderSourcePipelineCard(pipeline) {
     `;
 }
 
+function renderEvidencePacketMiniCard(packet) {
+    return `
+        <article class="evidence-packet-mini-card ${statusClass(packet.status)}">
+            <div class="source-workspace-topline">
+                ${renderStatusPill(packet.status)}
+                <span>${htmlText(packet.trail_id)}</span>
+            </div>
+            <h3>${htmlText(packet.signal_id)}</h3>
+            <p>${htmlText(packet.summary)}</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Items", packet.item_count)}
+                ${renderMetric("Sources", packet.sources)}
+            </div>
+            <p class="mini">${htmlText(packet.boundary)}</p>
+        </article>
+    `;
+}
+
+function renderEvidenceReviewGroup(group, bodyHtml, open = false) {
+    return `
+        <details class="evidence-review-group" ${open ? "open" : ""} data-evidence-review-group="${literalHtmlText(group.id)}">
+            <summary>
+                <strong>${htmlText(group.label)}</strong>
+                <span>${htmlText(group.summary)}</span>
+                <em>${htmlText(group.record_count)} records</em>
+            </summary>
+            <div class="evidence-review-group-body">${bodyHtml}</div>
+        </details>
+    `;
+}
+
 function renderSourcesWorkspace(model) {
+    const groups = new Map(asArray(model.evidence_review_groups).map((group) => [group.id, group]));
+    const setupGroup = groups.get("setup_evidence") || { id: "setup_evidence", label: "Setup evidence", summary: "", record_count: 0 };
+    const reliabilityGroup = groups.get("source_reliability") || { id: "source_reliability", label: "Source reliability", summary: "", record_count: 0 };
+    const supplementalGroup = groups.get("supplemental_context") || { id: "supplemental_context", label: "Supplemental context", summary: "", record_count: 0 };
+    const packetGroup = groups.get("factual_packets") || { id: "factual_packets", label: "Factual evidence packets", summary: "", record_count: 0 };
     return `
         <section class="sources-workspace" data-sources-workspace>
             <div class="sources-workspace-head">
                 <div>
-                    <p class="label">Sources workspace</p>
-                    <h3>Source health and provenance</h3>
+                    <p class="label">Evidence workspace</p>
+                    <h3>Source reliability and corroboration</h3>
                     <p>${htmlText(model.summary)} ${htmlText(model.source_to_setup_summary)}</p>
                 </div>
                 <div class="source-quorum-card ${statusClass(model.quorum.status)}">
@@ -2784,32 +2876,74 @@ function renderSourcesWorkspace(model) {
                     <p>${htmlText(model.quorum.replayed_source_count)} replayed of ${htmlText(model.quorum.expected_source_count)} expected; ${htmlText(model.quorum.missing_source_count)} canonical missing.</p>
                 </div>
             </div>
-            <div class="source-reliability-grid">
-                ${asArray(model.reliability).map(renderSourceReliabilityCard).join("")}
-            </div>
-            <div class="source-supplemental-grid">
-                ${asArray(model.supplemental).map(renderSupplementalSourceCard).join("")}
-            </div>
-            <section class="source-setup-panel">
-                <div class="overview-section-head">
-                    <span>Source to setup links</span>
-                    <strong>Observed and candidate records still need corroboration before paper state.</strong>
+            <section class="evidence-consolidated-readout ${statusClass(model.tone)}" data-evidence-consolidated-readout>
+                <div>
+                    <p class="label">Evidence readout</p>
+                    <h3>Can current observations support review?</h3>
+                    <p>Use this view to separate factual evidence, supplemental context, and source weakness before reviewing a setup.</p>
                 </div>
-                <div class="source-setup-grid">
-                    ${asArray(model.source_setup_links).length
+                <div class="evidence-consolidated-metrics" data-source-summary>
+                    ${renderMetric("Sources", model.counts.total)}
+                    ${renderMetric("Online", model.counts.online)}
+                    ${renderMetric("Missing creds", model.counts.missing_credentials)}
+                    ${renderMetric("Signal influence", model.counts.signal_influencing)}
+                    ${renderMetric("Yahoo Finance", asArray(model.supplemental).find((source) => source.key === "yahoo_finance")?.status || "not exported")}
+                    ${renderMetric("Preference MCP", asArray(model.supplemental).find((source) => source.key === "preference_mcp")?.status || "not exported")}
+                </div>
+                <div class="tag-row">
+                    ${renderInlineBadge(`${model.counts.evidence_packets} factual packets`, model.counts.evidence_packets ? "online" : "pending")}
+                    ${renderInlineBadge(`${model.counts.source_setup_links} setup links`, model.counts.source_setup_links ? "pending" : "online")}
+                    ${renderInlineBadge(`${model.counts.supplemental} supplemental inputs`, "pending")}
+                    ${renderInlineBadge("sources cannot create orders", "online")}
+                </div>
+            </section>
+            <div class="evidence-review-groups" data-evidence-review-groups>
+                ${renderEvidenceReviewGroup(setupGroup, `
+                    <section class="source-setup-panel">
+                        <div class="overview-section-head">
+                            <span>Source to setup links</span>
+                            <strong>Observed and candidate records still need corroboration before paper state.</strong>
+                        </div>
+                        <div class="source-setup-grid">
+                            ${asArray(model.source_setup_links).length
         ? asArray(model.source_setup_links).map(renderSourceSetupLink).join("")
         : `<article class="source-setup-link pending"><strong>No source-linked setups</strong><p>No active observed signal, qualified setup, or candidate is exported.</p></article>`}
-                </div>
-            </section>
-            <section class="source-pipeline-workspace">
-                <div class="overview-section-head">
-                    <span>Pipeline groups</span>
-                    <strong>Reliability state by intelligence pipeline.</strong>
-                </div>
-                <div class="source-pipeline-grid">
-                    ${asArray(model.pipelines).map(renderSourcePipelineCard).join("")}
-                </div>
-            </section>
+                        </div>
+                    </section>
+                `, true)}
+                ${renderEvidenceReviewGroup(reliabilityGroup, `
+                    <section class="source-reliability-section">
+                        <div class="overview-section-head">
+                            <span>Reliability states</span>
+                            <strong>Credential, heartbeat, adapter, and quorum problems in one place.</strong>
+                        </div>
+                        <div class="source-reliability-grid">
+                            ${asArray(model.reliability).map(renderSourceReliabilityCard).join("")}
+                        </div>
+                    </section>
+                    <section class="source-pipeline-workspace">
+                        <div class="overview-section-head">
+                            <span>Pipeline groups</span>
+                            <strong>Reliability state by intelligence pipeline.</strong>
+                        </div>
+                        <div class="source-pipeline-grid">
+                            ${asArray(model.pipelines).map(renderSourcePipelineCard).join("")}
+                        </div>
+                    </section>
+                `)}
+                ${renderEvidenceReviewGroup(supplementalGroup, `
+                    <div class="source-supplemental-grid">
+                        ${asArray(model.supplemental).map(renderSupplementalSourceCard).join("")}
+                    </div>
+                `)}
+                ${renderEvidenceReviewGroup(packetGroup, `
+                    <div class="evidence-packet-mini-grid">
+                        ${asArray(model.evidence_packets).length
+        ? asArray(model.evidence_packets).map(renderEvidencePacketMiniCard).join("")
+        : `<article class="evidence-packet-mini-card pending"><h3>No factual evidence packets</h3><p>No public-safe evidence packets are exported in this snapshot.</p></article>`}
+                    </div>
+                `)}
+            </div>
             <p class="mini">${htmlText(model.boundary)}</p>
         </section>
     `;
@@ -4910,6 +5044,10 @@ function renderWatching(status) {
         secondary: "Stale heartbeats, missing credentials, degraded feeds, local-only sources, and whether a source can influence signals.",
         boundary: "Sources create observations only. Weak or pending source state cannot become strong evidence or create orders."
     });
+    const workspace = dashboardQuery("[data-sources-workspace-slot]");
+    if (workspace) {
+        workspace.innerHTML = renderSourcesWorkspace(sourcesModel);
+    }
     const summary = dashboardQuery("[data-source-summary]");
     if (summary) {
         const history = asArray(status.source_heartbeat_history);
@@ -4922,10 +5060,6 @@ function renderWatching(status) {
             renderMetric("Preference MCP", preferenceMcp.status || "not exported"),
             renderMetric("Last heartbeat", formatTime(lastRun?.checked_at || status.generated_at))
         ].join("");
-    }
-    const workspace = dashboardQuery("[data-sources-workspace-slot]");
-    if (workspace) {
-        workspace.innerHTML = renderSourcesWorkspace(sourcesModel);
     }
 
     const grouped = watching.reduce((acc, source) => {
@@ -5031,7 +5165,7 @@ function renderWatching(status) {
         `
         : "";
 
-    target.innerHTML = yahooFinanceHtml + preferenceMcpHtml + Object.entries(grouped)
+    const sourceLedgerHtml = yahooFinanceHtml + preferenceMcpHtml + Object.entries(grouped)
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([pipeline, sources], index) => {
             const counts = countBy(sources, "status");
@@ -5078,6 +5212,15 @@ function renderWatching(status) {
             `;
         })
         .join("");
+    target.innerHTML = `
+        <details class="evidence-source-ledger" data-evidence-source-ledger>
+            <summary>
+                <strong>Detailed source ledger</strong>
+                <span>Advanced diagnostic rows for credentials, heartbeats, adapters, source payload freshness, and supplemental inputs.</span>
+            </summary>
+            <div class="evidence-source-ledger-body">${sourceLedgerHtml}</div>
+        </details>
+    `;
 }
 
 function renderReasoningLaneCard(lane) {

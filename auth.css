@@ -2268,6 +2268,130 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     padding-top: 0;
 }
 
+.evidence-consolidated-readout,
+.evidence-review-group,
+.evidence-source-ledger,
+.evidence-packet-mini-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.evidence-consolidated-readout {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    padding: 14px;
+}
+
+.evidence-consolidated-readout.online {
+    border-color: rgba(var(--green-rgb), 0.3);
+    box-shadow: var(--glow-green);
+}
+
+.evidence-consolidated-readout.pending,
+.evidence-consolidated-readout.degraded {
+    border-color: rgba(var(--amber-rgb), 0.32);
+    box-shadow: var(--glow-amber);
+}
+
+.evidence-consolidated-readout.blocked {
+    border-color: rgba(var(--coral-rgb), 0.36);
+    box-shadow: var(--glow-coral);
+}
+
+.evidence-consolidated-readout h3,
+.evidence-packet-mini-card h3 {
+    font-size: 18px;
+    line-height: 1.22;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.evidence-consolidated-readout p,
+.evidence-packet-mini-card p {
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.evidence-consolidated-metrics,
+.evidence-packet-mini-grid,
+.evidence-review-groups {
+    display: grid;
+    gap: 10px;
+}
+
+.evidence-consolidated-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.evidence-packet-mini-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+
+.evidence-packet-mini-card {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+}
+
+.evidence-review-group,
+.evidence-source-ledger {
+    overflow: clip;
+}
+
+.evidence-review-group summary,
+.evidence-source-ledger > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 0.36fr) minmax(0, 0.54fr) auto;
+    list-style: none;
+    min-height: 48px;
+    padding: 12px 14px;
+}
+
+.evidence-review-group summary::-webkit-details-marker,
+.evidence-source-ledger > summary::-webkit-details-marker {
+    display: none;
+}
+
+.evidence-review-group summary strong,
+.evidence-source-ledger > summary strong {
+    color: var(--text);
+    line-height: 1.25;
+}
+
+.evidence-review-group summary span,
+.evidence-review-group summary em,
+.evidence-source-ledger > summary span {
+    color: var(--muted);
+    font-size: 12px;
+    font-style: normal;
+    line-height: 1.35;
+}
+
+.evidence-review-group summary::after,
+.evidence-source-ledger > summary::after {
+    color: var(--cyan);
+    content: "+";
+    font-family: var(--font-mono);
+}
+
+.evidence-review-group[open] summary::after,
+.evidence-source-ledger[open] > summary::after {
+    content: "-";
+}
+
+.evidence-review-group-body,
+.evidence-source-ledger-body {
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+}
+
 .pipeline-row {
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     padding-top: 10px;
@@ -3877,6 +4001,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .governance-target-grid,
 .governance-record-grid,
 .trade-consolidated-metrics,
+.evidence-consolidated-metrics,
 .trade-proof-partitions,
 .trade-evidence-links {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
@@ -4573,6 +4698,10 @@ summary {
     .trade-consolidated-snapshot,
     .trade-consolidated-metrics,
     .trade-review-group summary,
+    .evidence-consolidated-readout,
+    .evidence-consolidated-metrics,
+    .evidence-review-group summary,
+    .evidence-source-ledger > summary,
     .trade-proof-partitions,
     .trade-evidence-links,
     .sources-workspace-head,

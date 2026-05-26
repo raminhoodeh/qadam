@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-d11e-overview-rebuild">
+    <link rel="stylesheet" href="/auth.css?v=20260526-d11g-evidence-view">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -537,20 +537,20 @@
             </section>
 
             <section class="dashboard-detail-flow" aria-label="Dashboard operating detail">
-                <article id="watching" class="panel-card watching-panel" aria-label="Evidence and source quality" data-dashboard-view-section="evidence" data-cockpit-section="Sources" hidden>
+                <article id="watching" class="panel-card watching-panel" aria-label="Evidence and source quality" data-dashboard-view-section="evidence" data-cockpit-section="Evidence" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Watching</p>
-                            <h2>Live source state</h2>
+                            <p class="label">Evidence</p>
+                            <h2>Source reliability and corroboration</h2>
                         </div>
                         <div class="info-hover">
-                            <button class="info-button" type="button" aria-label="About Watching">i</button>
+                            <button class="info-button" type="button" aria-label="About Evidence">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="watching">
-                                <strong>Watching</strong>
-                                <p>Shows the source registry and whether the inputs are healthy enough to matter.</p>
+                                <strong>Evidence</strong>
+                                <p>Shows whether Qadam's observations have enough source quality and corroboration to deserve review.</p>
                                 <dl class="explainer-grid">
-                                    <div><dt>Use it to</dt><dd>Check source groups, heartbeats, credential state, trust state, degradation, and signal influence.</dd></div>
-                                    <div><dt>Watch for</dt><dd>Missing credentials, stale heartbeats, degraded feeds, pending adapters, or local-only sources.</dd></div>
+                                    <div><dt>Use it to</dt><dd>Check source quorum, credential state, factual evidence packets, supplemental context, and source-to-setup links.</dd></div>
+                                    <div><dt>Watch for</dt><dd>Missing credentials, stale heartbeats, weak corroboration, supplemental-only claims, or local-only sources.</dd></div>
                                     <div><dt>Boundary</dt><dd>A watched source is observation only. Degraded or pending data is weak evidence and no feed can create an order.</dd></div>
                                 </dl>
                             </div>
@@ -561,9 +561,9 @@
                             <section class="sources-workspace" data-sources-workspace>
                                 <div class="sources-workspace-head">
                                     <div>
-                                        <p class="label">Sources workspace</p>
-                                        <h3>Source health and provenance</h3>
-                                        <p>Loading pipeline health, source quorum, supplemental inputs, and source-linked candidate state.</p>
+                                        <p class="label">Evidence workspace</p>
+                                        <h3>Source reliability and corroboration</h3>
+                                        <p>Loading source quorum, factual evidence packets, supplemental inputs, and source-linked candidate state.</p>
                                     </div>
                                     <div class="source-quorum-card pending">
                                         <span>Source quorum</span>
@@ -571,44 +571,60 @@
                                         <p>Public-safe source status will render from the cockpit snapshot.</p>
                                     </div>
                                 </div>
+                                <section class="evidence-consolidated-readout pending" data-evidence-consolidated-readout>
+                                    <div>
+                                        <p class="label">Evidence readout</p>
+                                        <h3>Loading evidence quality</h3>
+                                        <p>The live snapshot will separate factual evidence, source reliability, and supplemental context.</p>
+                                    </div>
+                                    <div class="evidence-consolidated-metrics" data-source-summary>
+                                        <div class="metric"><span>Sources</span><strong>35</strong></div>
+                                        <div class="metric"><span>Missing creds</span><strong>Static</strong></div>
+                                        <div class="metric"><span>Evidence packets</span><strong>Static</strong></div>
+                                    </div>
+                                </section>
+                                <div class="evidence-review-groups" data-evidence-review-groups>
+                                    <details class="evidence-review-group" open data-evidence-review-group="setup_evidence">
+                                        <summary><strong>Setup evidence</strong><span>Loading source-linked observations and candidate records.</span><em>0 records</em></summary>
+                                    </details>
+                                    <details class="evidence-review-group" data-evidence-review-group="source_reliability">
+                                        <summary><strong>Source reliability</strong><span>Loading credential, heartbeat, adapter, and quorum state.</span><em>0 records</em></summary>
+                                    </details>
+                                    <details class="evidence-review-group" data-evidence-review-group="supplemental_context">
+                                        <summary><strong>Supplemental context</strong><span>Loading Yahoo Finance and Preference/PREF context.</span><em>0 records</em></summary>
+                                    </details>
+                                    <details class="evidence-review-group" data-evidence-review-group="factual_packets">
+                                        <summary><strong>Factual evidence packets</strong><span>Loading public-safe research evidence packets.</span><em>0 records</em></summary>
+                                    </details>
+                                </div>
                             </section>
                         </div>
-                        <section class="panel-brief pending" data-panel-brief="watching">
-                            <div class="panel-brief-main">
-                                <p class="label">Panel readout</p>
-                                <h3>Are Qadam's inputs healthy enough to trust?</h3>
-                                <p>Static fallback shows the source registry shape while the live snapshot loads source health, heartbeat, and credential state.</p>
-                            </div>
-                            <dl class="panel-brief-facts">
-                                <div><dt>State</dt><dd><span class="inline-badge pending">Static fallback</span></dd></div>
-                                <div><dt>Watch</dt><dd>Missing credentials, stale heartbeats, degraded feeds, and whether a source can influence signals.</dd></div>
-                                <div><dt>Boundary</dt><dd>Sources create observations only. Weak source state cannot become strong evidence or create orders.</dd></div>
-                            </dl>
-                        </section>
-                        <div class="summary-strip" data-source-summary>
-                            <div class="metric"><span>Sources</span><strong>35</strong></div>
-                            <div class="metric"><span>Pipelines</span><strong>5</strong></div>
-                            <div class="metric"><span>Authority</span><strong>Read-only</strong></div>
-                            <div class="metric"><span>Snapshot</span><strong>Static</strong></div>
-                        </div>
                         <div class="source-pipeline-list" data-watching-list>
-                            <details class="pipeline-row" open>
+                            <details class="evidence-source-ledger" data-evidence-source-ledger>
                                 <summary>
-                                    <h3>Foundation watchlist</h3>
-                                    <p>Conflict, physical, macro, market, and narrative groups are represented here until the status snapshot renders live source rows.</p>
+                                    <strong>Detailed source ledger</strong>
+                                    <span>Static fallback rows are diagnostics only until the snapshot renders source details.</span>
                                 </summary>
-                                <ul class="source-table">
-                                    <li class="source-row">
-                                        <div class="source-main">
-                                            <b class="node-status pending">Static</b>
-                                            <div>
-                                                <strong>D0 source registry shell</strong>
-                                                <span>Shows what Qadam is meant to watch; the JSON snapshot adds heartbeat and credential detail.</span>
-                                            </div>
-                                        </div>
-                                        <p>No static source row can be treated as trade evidence.</p>
-                                    </li>
-                                </ul>
+                                <div class="evidence-source-ledger-body">
+                                    <details class="pipeline-row" open>
+                                        <summary>
+                                            <h3>Foundation watchlist</h3>
+                                            <p>Conflict, physical, macro, market, and narrative groups are represented here until the status snapshot renders live source rows.</p>
+                                        </summary>
+                                        <ul class="source-table">
+                                            <li class="source-row">
+                                                <div class="source-main">
+                                                    <b class="node-status pending">Static</b>
+                                                    <div>
+                                                        <strong>D0 source registry shell</strong>
+                                                        <span>Shows what Qadam is meant to watch; the JSON snapshot adds heartbeat and credential detail.</span>
+                                                    </div>
+                                                </div>
+                                                <p>No static source row can be treated as trade evidence.</p>
+                                            </li>
+                                        </ul>
+                                    </details>
+                                </div>
                             </details>
                         </div>
                     </div>
@@ -1140,7 +1156,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-d11e-overview-rebuild"></script>
+    <script src="/dashboard.js?v=20260526-d11g-evidence-view"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 
