@@ -82,8 +82,11 @@ function assertModelShape(models) {
     ].forEach((key) => assert(models[key], `view model missing ${key}`));
 
     assert(models.schema_version === "dashboard_view_models.v1", "wrong dashboard view-model schema version");
+    assert(models.model_contract_version === "dashboard_view_models.d11k.shared_bundle.v1", "wrong dashboard view-model contract version");
     assert(models.public_safe === true, "view models must be public safe");
     assert(models.authority_boundary.includes("read-only projections"), "view-model authority boundary missing");
+    assert(models.model_graph?.contract === "single_shared_dashboard_view_model_bundle", "view-model graph missing shared-bundle contract");
+    assert(models.model_graph?.renderer_uses_shared_bundle === true, "view-model graph must require shared renderer bundle");
     assert(models.overview_model.cards.length <= 4, "Overview model should expose a compact first-screen readout set");
     assert(models.overview_model.readouts.length === 4, "Overview model should expose exactly four readouts");
     assert(models.overview_model.status_chips.length === 6, "Overview model should expose six compact status chips");
@@ -94,6 +97,10 @@ function assertModelShape(models) {
     assert(models.system_connectivity_model.lanes.length > 0, "connectivity model has no lanes");
     assert(models.system_connectivity_model.edges.length > 0, "connectivity model has no edges");
     assert(models.operations_model.system_connectivity_model.id === "system_connectivity_model", "Operations must own full connectivity model");
+    assert(models.operations_model.system_connectivity_model === models.system_connectivity_model, "Operations must reuse shared connectivity model object");
+    assert(models.trades_model.model_dependencies?.sources_model === "sources", "Trades model must declare shared Sources dependency");
+    assert(models.operations_model.model_dependencies?.governance_model === "governance", "Operations model must declare shared Governance dependency");
+    assert(models.overview_model.model_dependencies?.trades_model === "trades", "Overview model must declare shared Trades dependency");
     assert(models.overview_model.mini_map.source_model === "system_connectivity_model", "Overview mini-map must point at shared connectivity model");
 
     const nodeKeys = new Set(models.system_connectivity_model.nodes.map((node) => node.key));

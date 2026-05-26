@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-d11j-tooltip-simplification",
-    "/dashboard.js?v=20260526-d11j-tooltip-simplification"
+    "/auth.css?v=20260526-d11k-view-model-refactor",
+    "/dashboard.js?v=20260526-d11k-view-model-refactor"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [

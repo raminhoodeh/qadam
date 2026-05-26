@@ -82,6 +82,6 @@ assert(!/radial-gradient\s*\(/.test(css), "dashboard visual system should avoid 
 assertIncludes(css, "@media (prefers-reduced-motion: reduce)", "visual system missing reduced-motion guard");
 assertIncludes(css, "transition:", "visual system missing tactile transitions");
 assertIncludes(css, "body:has(.dashboard-shell)", "dashboard-specific visual background missing");
-assertIncludes(html, "/auth.css?v=20260526-d11j-tooltip-simplification", "dashboard HTML missing current stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260526-d11k-view-model-refactor", "dashboard HTML missing current stylesheet cache key");
 
 console.log("dashboard_visual_system=ok");

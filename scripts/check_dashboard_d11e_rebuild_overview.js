@@ -97,7 +97,7 @@ async function main() {
         "data-overview-metrics",
         "data-overview-mini-map",
         "data-overview-next-links",
-        "20260526-d11j-tooltip-simplification"
+        "20260526-d11k-view-model-refactor"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
