@@ -251,7 +251,7 @@ def main() -> int:
 
     drawdown_probe = _with_metric_records(
         written,
-        _metric_records_from_pnls([200.0, -500.0], prefix="drawdown"),
+        _metric_records_from_pnls([200.0, -25000.0], prefix="drawdown"),
     )
     drawdown_probe["drawdown_within_cap"] = True
     drawdown_probe["phase7_certification_blocked_by_drawdown"] = False

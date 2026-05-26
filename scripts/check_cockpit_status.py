@@ -19,6 +19,7 @@ from orchestrator.cockpit_status import (
 )  # noqa: E402
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.paper_account import MATURITY_CLOSED_TRADE_TARGET  # noqa: E402
+from orchestrator.release_contract import PAPER_ACCOUNT_BALANCE_GBP, PAPER_ACCOUNT_SCOPE  # noqa: E402
 from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E402
     PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
 )
@@ -6529,7 +6530,7 @@ def main() -> int:
     if capital.get("mirror_status") != "ok":
         print("cockpit_status_paper_mirror_not_ok=true")
         return 1
-    if capital.get("account_scope") != "first_release_gbp_1000_trial":
+    if capital.get("account_scope") != PAPER_ACCOUNT_SCOPE:
         print("cockpit_status_paper_account_scope_mismatch=true")
         return 1
     if capital.get("connection_status") not in {"local_mirror_not_broker_connected", "alpaca_paper_readonly_connected"}:
@@ -6541,7 +6542,7 @@ def main() -> int:
     ):
         print("cockpit_status_paper_boundary_weak=true")
         return 1
-    if capital.get("starting_balance_gbp") != 1000:
+    if capital.get("starting_balance_gbp") != PAPER_ACCOUNT_BALANCE_GBP:
         print("cockpit_status_paper_starting_balance_mismatch=true")
         return 1
     if capital.get("connection_status") == "local_mirror_not_broker_connected":

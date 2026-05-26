@@ -20,6 +20,7 @@ from orchestrator.paper_account import (  # noqa: E402
     ensure_d6_paper_account_mirror,
     paper_account_summary,
 )
+from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE  # noqa: E402
 
 SNAPSHOT_REQUIRED_FIELDS = {
     "account_scope",
@@ -97,7 +98,7 @@ def main() -> int:
     if latest.mode != "paper":
         print("paper_account_mode_not_paper=true")
         return 1
-    if latest.account_scope != "first_release_gbp_1000_trial":
+    if latest.account_scope != PAPER_ACCOUNT_SCOPE:
         print("paper_account_scope_mismatch=true")
         return 1
     if latest.connection_status not in {"local_mirror_not_broker_connected", "alpaca_paper_readonly_connected"}:

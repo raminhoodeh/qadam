@@ -131,9 +131,9 @@ The first release of Qadam is a local-first autonomous trial system.
 
 Operating constraints:
 
-- Account: £1000 test/paper account.
-- First-month sprint: use the £1000 test account as the proof surface, with TradingView as the visible market/chart layer and later alert source, before any live-capital path exists.
-- Execution: Qadam may trade autonomously in the test account after Phase 5/7 gates are met.
+- Account: £100,000 test/paper account.
+- First-month sprint: use the £100,000 paper account as the proof surface, with TradingView as the visible market/chart layer and later alert source, before any live-capital path exists.
+- Execution: Qadam may submit guarded paper trades only after Phase 5/7 gates are met and Q-CTRL/proof holds clear.
 - Capital boundary: no live capital in the first release.
 - Access boundary: first-release login is limited to Ramin, Troy, Akber, Anas, and Ion.
 - Current allowlist emails: Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Akber `akber.ali@hotmail.co.uk`, Ion `isioras@yahoo.co.uk`.
@@ -216,7 +216,7 @@ Exit gate:
 - The D3 Watching View renders all registered sources from the public-safe snapshot without exposing secret names or local paths.
 - The D4 Cognition View renders shadow-only reasoning state from the public-safe snapshot without exposing raw references or implying execution authority.
 - The D5 Trade Intent Board renders candidate and blocked trade-intent records from the local store, with `execution_allowed=false`, `paper_order_allowed=false`, and no staged/submitted/open paper-trade state.
-- The D6 Paper Account Mirror renders the £1000 trial account state from local read-only data, with `write_authority=false`, `live_capital_enabled=false`, and 0/100 maturity until closed paper trades exist.
+- The D6 Paper Account Mirror renders the £100,000 paper account state from local read-only data, with `write_authority=false`, `live_capital_enabled=false`, and 0/100 maturity until closed paper trades exist.
 - The D7 TradingView alert contract renders alert-derived observed signals with duplicate protection, receiver-key fail-closed behavior, `execution_allowed=false`, `paper_order_allowed=false`, and `trade_candidate_created=false`.
 - The cockpit renders Qadam's private worldview as decision context for hypotheses, observed signals, candidates, and blocked trades, while preserving the boundary that world-model claims are private priors and not factual evidence or trade triggers.
 - Telegram communications are represented as notify-only: bot status, queue state, delivery state, verified/pending member counts, and last message status can appear in the cockpit, but no Telegram route can trigger broker action or hidden approval.
@@ -258,7 +258,7 @@ Current implementation start:
 - `scripts/refresh_acled_token.py --write --validate-read` is now the ACLED token refresh automation. It uses the refresh-token grant first, falls back to local email/password only when needed, atomically updates `data/runtime/qadam-secrets.env`, and writes a redacted local refresh report.
 - `scripts/check_alpaca_paper_mirror.py --live` is now the Alpaca paper-account mirror gate. It calls only GET endpoints for account, positions, orders, and portfolio history, writes sanitized local mirror files, exposes balance/P&L/positions/orders to the cockpit, and preserves `write_authority=false`, `live_capital_enabled=false`, and `paper_order_allowed=false`.
 - Current live read-only validation on 2026-05-18: live sources are NASA FIRMS, FRED, RSS, Polymarket, Alpaca paper account mirror, BLS public sample, ECB public exchange-rate series, SEC EDGAR public filing metadata, and Telegram bot status. Degraded but explicit sources are GDELT, Oref, and ACLED. Missing/deferred credential sources are UnusualWhales, Kalshi, AIS Maritime, Wingbits, UN Comtrade, Reddit, and X/Twitter.
-- Current supplied-credential validation on 2026-05-21: NASA FIRMS, FRED, Alpaca paper, Telegram, Gemini, and LM Studio are live when network/localhost access is available; ACLED token refresh succeeds but the provider read remains degraded with HTTP 403; Kalshi is intentionally deferred due to location/account availability; UnusualWhales remains the useful missing Batch A key. The Alpaca mirror currently reads paper equity from Alpaca, while Qadam's first-release trial allocation remains capped by policy at £1000 until later risk/execution gates exist.
+- Current supplied-credential validation on 2026-05-21: NASA FIRMS, FRED, Alpaca paper, Telegram, Gemini, and LM Studio are live when network/localhost access is available; ACLED token refresh succeeds but the provider read remains degraded with HTTP 403; Kalshi is intentionally deferred due to location/account availability; UnusualWhales remains the useful missing Batch A key. The Alpaca mirror currently reads paper equity from Alpaca, while Qadam's first-release paper account is GBP 100,000; any GBP 1,000 value is a separate single-order/notional risk cap.
 - ACLED now uses the current documented endpoint pattern `https://acleddata.com/api/acled/read` rather than the legacy `api.acleddata.com` hostname. Token freshness is automated and a 2026-05-21 refresh run succeeded with the refresh-token grant, updating the ignored local secret file. The post-refresh ACLED read validation still returned HTTP 403, so the remaining blocker is entitlement or account scope, not local token plumbing.
 - ECB now validates against a concrete public data-series endpoint instead of an incomplete base URL.
 - Live fetch success is not claimed until each provider credential, account scope, rate limit, and provider terms are configured locally.
@@ -344,7 +344,7 @@ Build:
 Critical boundary:
 
 - Anthropic's reference defaults to "agents draft, humans approve." Qadam keeps that for live capital.
-- Qadam's £1000 first-release paper account is different: autonomous paper trades are allowed only after the Phase 5/7 policy gates, Risk Agent checks, execution venue checks, kill-switches, and Event Log writes exist.
+- Qadam's £100,000 first-release paper account is different: guarded paper trades are allowed only after the Phase 5/7 policy gates, Risk Agent checks, execution venue checks, kill-switches, Q-CTRL/proof holds, and Event Log writes exist.
 - No live-capital trade can be placed without an explicit future approval model.
 
 Exit gate:
@@ -602,7 +602,7 @@ Exit gate:
 - Telegram alerts match dashboard state exactly and never imply execution before backend state reaches `staged_paper_order`, `submitted_paper_order`, `open_position`, or `closed_trade`.
 - Phase 5 test trades do not count toward Phase 7 proof.
 - No live endpoint or live credential can be used in first-release mode.
-- PriveX or any crypto-perps venue remains disabled in the first-release £1000 test run unless a separate paper/sandbox account is explicitly approved.
+- PriveX or any crypto-perps venue remains disabled in the first-release £100,000 paper-account proof run unless a separate paper/sandbox account is explicitly approved.
 
 ## 13. Phase 6 - Learning Loop
 
@@ -1309,7 +1309,7 @@ Build:
 Operating rules:
 
 - 30 consecutive calendar days.
-- £1000 Alpaca paper account.
+- £100,000 Alpaca paper account.
 - Three proof trades per week where qualified setups exist.
 - No forced trades.
 - The weekly target is `min(3, qualified_setup_count)`, with policy/risk/venue
@@ -1640,8 +1640,8 @@ Current handoff state after Q7-12:
   `phase7_drawdown_new_proof_trade_submission_allowed=True`,
   `phase7_drawdown_source_closed_proof_trade_count=0`,
   `phase7_drawdown_source_evaluated_trade_count=0`,
-  `phase7_drawdown_current_equity_gbp=1000.0`,
-  `phase7_drawdown_peak_equity_gbp=1000.0`,
+  `phase7_drawdown_current_equity_gbp=100000.0`,
+  `phase7_drawdown_peak_equity_gbp=100000.0`,
   `phase7_drawdown_realized_drawdown_fraction_observed=0.0`,
   `phase7_drawdown_unrealized_drawdown_fraction_observed=0.0`,
   `phase7_drawdown_max_drawdown_fraction_observed=0.0`,
@@ -1914,7 +1914,7 @@ Current repository state:
 - The dedicated dashboard build path is `docs/qadam-dashboard-implementation-plan.md`.
 - The live dashboard now prioritizes a top Mission Control surface before the detailed panels and includes a sticky cockpit navigation rail. After login, a Fund Manager should first see which data sources are configured/connected, whether durable Postgres/Timescale replay is ready, what trading philosophy Qadam is currently telling itself, how the API spine, Python COO, local LLM, frontier LLM, quantum oracle, risk gates, and paper account fit together, which trades Qadam is considering or blocking, what positions/orders it holds, current P&L, and the hard safety boundaries.
 - Mission Control is exported as a public-safe `mission_control` status-contract object and rendered in the static cockpit by `renderMissionControl(status, source)`. It is read-only and cannot promote hypotheses, create trade candidates, submit paper orders, call broker POST routes, write to brokers, or enable live capital.
-- The first-month trade layer should explicitly show the £1000 paper/test account, TradingView-assisted market view, live-capital block, and the full reasoning chain from catalyst to postmortem.
+- The first-month trade layer should explicitly show the £100,000 paper/test account, TradingView-assisted market view, live-capital block, and the full reasoning chain from catalyst to postmortem.
 - Immediate design decision: the dashboard is not a generic SaaS card grid and must not force endless scrolling. The main view starts with Mission Control, then the system map; the navigation rail jumps to Mission, Map, Sources, Cognition, Trades, Money, Safety, Runtime, and Governance; every node must show status; the secondary views are source detail, cognition, trade layer, paper-account mirror, safety, communications, Fund Manager comments, and process console.
 - Dashboard language must separate observation, hypothesis, trade candidate, blocked trade, staged paper order, submitted paper order, open position, closed trade, and postmortem. It must not imply Qadam is about to make a trade unless the backend state is `staged_paper_order` or `submitted_paper_order`.
 - The richer Next.js cockpit remains in `cockpit/` as the local/server-rendered target for later health, settings, and API-backed views.
@@ -1964,7 +1964,7 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 1. Keep OrbStack open when working locally and rerun `scripts/start_postgres_timescale_ingestion.sh` after machine restarts or Docker runtime updates.
 2. Require `scripts/check_postgres_timescale_ingestion.py --require-live`, `scripts/check_postgres_timescale_replay.py --require-full-source-coverage`, `scripts/check_phase2_durable_replay_cycle.py`, and `scripts/check_strategy_lead_durable_context.py` to remain green before deepening intelligence workflows.
 3. Keep the live cockpit snapshot deployed with `durable_ingestion.status=ok`, `contract_status=durable_replay_ready`, `replay_status=ok`, `replayed_source_count=35`, and `missing_source_count=0`.
-4. Keep the D6 paper mirror read-only: £1000 starting/current balance, zero P&L until read-only broker data exists, no live capital, and no write authority.
+4. Keep the D6 paper mirror read-only: £100,000 starting/current balance, zero P&L until read-only broker data exists, no live capital, and no write authority.
 5. Keep the D7 TradingView alert source observed-only: duplicate protected, Event Log backed, and unable to create trade candidates or orders.
 6. Register TradingView MCP as read-only market/technical-analysis tooling when Codex CLI access is available; no TradingView retail data API key is expected.
 6A. Keep `yahoo-finance-api/` as a supplemental read-only market-data capability. The Qadam Yahoo Finance adapter, sample check, Signal Integrity market-confirmation policy, and public-safe cockpit wrapper now exist; before relying on live Yahoo reads, install dependencies deliberately, pass live mode with `YFINANCE_ENABLED=true`, and keep no execution, fill, receipt, broker, reconciliation, or live-capital authority.

@@ -163,7 +163,7 @@ Foundation implication:
   - Scope every venue by account, subaccount, network, chain, and permission set where possible.
   - Retry only idempotent read calls; never automatically retry order-creating POST requests.
   - Require explicit confirmation flags for any live-money smoke test.
-  - Keep PriveX or any crypto-perps venue `live_blocked` in the first-release £1000 test run unless a separate approved paper/sandbox account exists.
+  - Keep PriveX or any crypto-perps venue `live_blocked` in the first-release £100,000 paper-account proof run unless a separate approved paper/sandbox account exists.
 
 ## Analytical Frameworks
 

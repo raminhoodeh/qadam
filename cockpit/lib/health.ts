@@ -170,7 +170,7 @@ const fallbackHealth: CockpitHealth = {
   status: "degraded",
   source: "cockpit_fallback",
   mode: "paper",
-  trial_balance_gbp: 1000,
+  trial_balance_gbp: 100000,
   source_count: 35,
   expected_source_count: 35,
   pipeline_counts: { conflict: 5, physical: 7, macro: 6, market: 9, social: 8 },

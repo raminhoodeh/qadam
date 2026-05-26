@@ -4,7 +4,7 @@
 
 Qadam is a trading intelligence system built around Akber's core philosophy: high-conviction, catalyst-driven opportunities, not random signals, hype, or overtrading.
 
-It watches the world, detects possible catalysts, checks whether markets have mispriced them, runs the idea through risk rules, paper trades autonomously in a £1000 test account, and logs every decision so the system can be judged honestly.
+It watches the world, detects possible catalysts, checks whether markets have mispriced them, runs the idea through risk rules, routes qualified paper trades through guarded approval, and logs every decision so the system can be judged honestly.
 
 The founding Fund Managers are **Ramin, Troy, Akber, Anas, and Ion**. In the first release, these are the only people with login access to oversee Qadam.
 
@@ -39,7 +39,7 @@ flowchart TB
     HQ["Head of Quant<br/>Quantum Compute"]
     SIGNAL["Signal Decision<br/>Akber's 6-stage filter"]
     RISK["Risk And Execution<br/>Sizing · Caps · Kill-switches"]
-    PAPER["£1000 Paper Account<br/>Autonomous test trades"]
+    PAPER["£100,000 Paper Account<br/>Guarded paper proof"]
     LEARN["Learning Loop<br/>Event Log · Knowledge Graph"]
     FUTURE["Future Compute Sharing<br/>Opt-in local capacity"]
 
@@ -148,7 +148,7 @@ If any of these are missing, the signal is blocked, downgraded, or left as a wat
 
 ## What Happens In The Test Account
 
-The first release runs on a **£1000 paper/test account**.
+The first release runs on a **£100,000 paper/test account**.
 
 In test mode, Qadam may trade autonomously after the proper gates are built. That is intentional. The point is to test whether the system can follow its own rules without the Fund Managers emotionally interfering trade by trade.
 
@@ -243,7 +243,7 @@ Its edge is the combination of:
 - **Options mispricing focus:** Qadam looks for when options price a normal distribution around a non-normal event.
 - **Private world-model lens:** it treats official narratives as incomplete and looks for hidden incentives.
 - **Evidence trail:** every signal must show why it exists.
-- **Autonomous paper proof:** the system must prove itself on a £1000 test account before live capital.
+- **Guarded paper proof:** the system must prove itself on a £100,000 paper account before live capital.
 - **Founding Fund Manager oversight:** five trusted humans can inspect, challenge, and improve the system without turning it into a public signal group.
 - **Internal comments/forum loop:** suggestions and debate become part of the governance record.
 - **Postmortem learning:** every closed trade updates the system.
@@ -260,7 +260,7 @@ The first release goal is:
 - Build the local system.
 - Give the five founding Fund Managers login access.
 - Connect the data spine.
-- Let Qadam paper trade autonomously in the £1000 test account.
+- Let Qadam paper trade through the guarded £100,000 paper account when qualified setups exist and all gates pass.
 - Log every decision.
 - Save comments and suggestions locally.
 - Review every outcome.

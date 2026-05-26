@@ -19,6 +19,7 @@ from orchestrator.event_log import EventLog
 from orchestrator.execution import execution_registry
 from orchestrator.local_store import local_store_health
 from orchestrator.quantum import quantum_providers
+from orchestrator.release_contract import PAPER_ACCOUNT_BALANCE_GBP
 from orchestrator.secrets import validate_secret_file
 
 
@@ -58,7 +59,7 @@ def main() -> int:
     if settings.mode != "paper":
         print("qadam_mode_must_be_paper=true")
         return 1
-    if settings.trial_balance_gbp != 1000:
+    if settings.trial_balance_gbp != PAPER_ACCOUNT_BALANCE_GBP:
         print("trial_balance_mismatch=true")
         return 1
 

@@ -181,7 +181,7 @@ Performance becomes the paper/demo-proof account view.
 
 Segments:
 
-- GBP 1000 paper account state.
+- GBP 100,000 paper account state.
 - Realized/unrealized P&L.
 - Drawdown and halt state.
 - Weekly proof cadence.

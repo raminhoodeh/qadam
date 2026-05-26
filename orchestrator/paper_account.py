@@ -17,10 +17,15 @@ from uuid import uuid4
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.release_contract import (
+    PAPER_ACCOUNT_CAPITAL_POLICY,
+    PAPER_ACCOUNT_SCOPE,
+    PHASE7_MATURE_CLOSED_TRADE_BENCHMARK,
+)
 from orchestrator.secrets import secret_status, secret_value
 
 PAPER_ACCOUNT_SCHEMA_VERSION = 1
-MATURITY_CLOSED_TRADE_TARGET = 100
+MATURITY_CLOSED_TRADE_TARGET = PHASE7_MATURE_CLOSED_TRADE_BENCHMARK
 POSTMORTEM_PENDING_MARKER_STATUS = "postmortem_pending_marker"
 POSTMORTEM_STATUSES = frozenset(
     {
@@ -339,7 +344,7 @@ def initial_paper_account_snapshot(settings: Settings | None = None) -> PaperAcc
     return PaperAccountSnapshot(
         schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
         snapshot_id=str(uuid4()),
-        account_scope="first_release_gbp_1000_trial",
+        account_scope=PAPER_ACCOUNT_SCOPE,
         mode="paper",
         broker="local_mirror_pending_alpaca_readonly",
         connection_status="local_mirror_not_broker_connected",
@@ -437,7 +442,7 @@ def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, 
     return {
         "status": health.get("status", "not_initialized"),
         "schema_version": PAPER_ACCOUNT_SCHEMA_VERSION,
-        "account_scope": latest.account_scope if latest else "first_release_gbp_1000_trial",
+        "account_scope": latest.account_scope if latest else PAPER_ACCOUNT_SCOPE,
         "mode": latest.mode if latest else "paper",
         "broker": latest.broker if latest else "local_mirror_pending_alpaca_readonly",
         "connection_status": latest.connection_status if latest else "local_mirror_not_broker_connected",
@@ -483,10 +488,7 @@ def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, 
         "paper_order_allowed": False,
         "write_authority": False,
         "live_capital_enabled": False,
-        "capital_policy": (
-            "The first-release policy allocation is GBP 1000 even if the connected "
-            "paper broker reports a larger simulated account balance."
-        ),
+        "capital_policy": PAPER_ACCOUNT_CAPITAL_POLICY,
         "boundary": (
             "Paper account context is read-only state for shadow intelligence. It cannot "
             "approve, create, cancel, replace, close, resize, or fund orders."
@@ -595,7 +597,7 @@ class AlpacaReadOnlyPaperMirror:
         snapshot = PaperAccountSnapshot(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
             snapshot_id=str(uuid4()),
-            account_scope="first_release_gbp_1000_trial",
+            account_scope=PAPER_ACCOUNT_SCOPE,
             mode="paper",
             broker="alpaca_paper_readonly",
             connection_status="alpaca_paper_readonly_connected",

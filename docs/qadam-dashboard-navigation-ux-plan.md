@@ -7,7 +7,7 @@ This plan turns the protected Qadam cockpit from a long operating page into an i
 - What is Qadam thinking about next?
 - What is it forbidden from doing?
 - What trades are candidates, blocked, staged, open, closed, or ready for postmortem?
-- What money state does the GBP 1000 paper account show?
+- What money state does the GBP 100,000 paper account show?
 - Which worldview and trading philosophy are shaping the current review?
 
 The dashboard remains read-only. Navigation must never create authority to approve signals, stage orders, submit paper orders, write to a broker, send Telegram commands, expose local secrets, or enable live capital.
@@ -23,7 +23,7 @@ The dashboard should be navigated by operating question, not by implementation m
 | Sources | What is Qadam watching and which feeds are degraded? | `sources`, `watching`, `source_health` |
 | Cognition | What is Qadam thinking and why is it blocked? | `cognition`, `shadow_packets`, `hypotheses` |
 | Trades | What trades are candidates, blocked, staged, or postmortem-ready? | `trade_intent`, `signal_integrity`, `staged_paper_order` |
-| Money | What does the GBP 1000 paper account show? | `paper_account`, `alpaca_paper_mirror` |
+| Money | What does the GBP 100,000 paper account show? | `paper_account`, `alpaca_paper_mirror` |
 | Safety | What is Qadam forbidden from doing? | `forbidden_actions`, `risk_agent`, `execution_policy` |
 | Runtime | What processes have run recently? | `event_log`, `process_console`, deployment receipt |
 | Governance | What have Fund Managers suggested or accepted? | `fund_manager_comments`, `communications` |

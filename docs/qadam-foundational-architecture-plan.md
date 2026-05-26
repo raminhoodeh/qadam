@@ -23,7 +23,7 @@ By the end of this foundation pass, Qadam should boot as a coherent system:
 - The `how-the-world-works/` corpus is tracked as Qadam's private foundational world-model layer, with an evidence boundary before signals or execution.
 - Execution venue architecture is defined as a disabled/read-only contract before any broker or exchange can trade.
 - First-release storage is local-first on Ramin's MacBook: Event Log, Knowledge Graph, raw payloads, runtime state, and proof data remain local by default.
-- The system is clearly configured for a £1000 paper/test account before any autonomous test trading is possible.
+- The system is clearly configured for a £100,000 paper/test account before any guarded paper trading is possible.
 - Secrets are loaded safely.
 - Startup and verification are one-command.
 
@@ -69,7 +69,7 @@ Deliverables:
 - Keep `cockpit/package.json` as the web dependency contract.
 - Maintain `.env.example` with all planned secrets but no real values.
 - Define local data directories for raw payloads, Event Log persistence, Chroma persistence, model/cache data, runtime files, and backups.
-- Add first-release mode config for `paper` / `test` trading with £1000 starting balance.
+- Add first-release mode config for `paper` / `test` trading with £100,000 starting balance.
 - Add local verification commands to `start_qadam.sh`.
 
 Exit checks:
@@ -347,7 +347,7 @@ Boundary:
 
 - Qadam uses the Anthropic pattern as architecture inspiration, not as a dependency.
 - For live capital, agents draft and humans approve.
-- For the first-release £1000 paper account, autonomous trades remain allowed only after deterministic policy gates, Risk Agent checks, execution venue checks, kill-switches, and Event Log writes exist.
+- For the first-release £100,000 paper account, guarded paper trades remain allowed only after deterministic policy gates, Risk Agent checks, execution venue checks, kill-switches, Q-CTRL/proof holds, and Event Log writes exist.
 
 Exit checks:
 

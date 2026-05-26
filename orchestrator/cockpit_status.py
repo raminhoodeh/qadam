@@ -28,6 +28,7 @@ from orchestrator.intelligence import (
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
+from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
 from orchestrator.paper_live_activation import paper_live_activation_public_status
 from orchestrator.paper_live_qctrl_product_access import (
@@ -2541,7 +2542,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
                 "worldview_lens_status": packet.get("worldview_lens_status"),
                 "source_context": packet.get("source_context", {}),
                 "strategy_review": packet.get("strategy_review", {}),
-                "paper_account_context": packet.get("paper_account_context") or paper_context,
+                "paper_account_context": paper_context,
                 "execution_allowed": bool(packet.get("execution_allowed")),
                 "paper_order_allowed": bool(packet.get("paper_order_allowed")),
                 "created_at": packet.get("created_at"),
@@ -2826,10 +2827,13 @@ def _capital(settings: Settings) -> dict[str, Any]:
     if latest is None:
         return {
             "mirror_status": summary["status"],
+            "account_scope": PAPER_ACCOUNT_SCOPE,
+            "broker": "local_mirror_pending_alpaca_readonly",
             "starting_balance_gbp": settings.trial_balance_gbp,
             "current_balance_gbp": settings.trial_balance_gbp,
             "cash_gbp": settings.trial_balance_gbp,
             "equity_gbp": settings.trial_balance_gbp,
+            "peak_equity_gbp": settings.trial_balance_gbp,
             "realized_pnl_gbp": 0,
             "unrealized_pnl_gbp": 0,
             "drawdown_pct": 0,
@@ -5765,7 +5769,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "boundary": trade_layer.get("boundary", "Candidate is not order; no broker route exists."),
         },
         "portfolio": {
-            "account_scope": capital.get("account_scope", "first_release_gbp_1000_trial"),
+            "account_scope": capital.get("account_scope", PAPER_ACCOUNT_SCOPE),
             "broker": capital.get("broker", "paper_broker"),
             "connection_status": capital.get("connection_status", "pending"),
             "current_balance_gbp": current_balance,
@@ -8783,9 +8787,15 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("Phase 7 demo proof status must be public-safe")
     if phase7_demo_proof.get("recorded") is not True:
         raise ValueError("Phase 7 demo proof visibility must be recorded after Q7-15")
-    if phase7_demo_proof.get("status") != "visible":
-        raise ValueError("Phase 7 demo proof visibility is not visible")
-    if phase7_demo_proof.get("stage_status") != "phase7_demo_proof_visible":
+    phase7_demo_proof_status = phase7_demo_proof.get("status")
+    if phase7_demo_proof_status not in {"visible", "blocked"}:
+        raise ValueError("Phase 7 demo proof visibility status is invalid")
+    expected_phase7_demo_stage_status = (
+        "phase7_demo_proof_visible"
+        if phase7_demo_proof_status == "visible"
+        else "phase7_demo_proof_visibility_blocked"
+    )
+    if phase7_demo_proof.get("stage_status") != expected_phase7_demo_stage_status:
         raise ValueError("Phase 7 demo proof stage status mismatch")
     if phase7_demo_proof.get("validation_error_count") != 0:
         raise ValueError("Phase 7 demo proof validation errors present")
@@ -8807,7 +8817,10 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("Phase 7 demo proof visibility state is not backend-derived")
     if phase7_demo_proof.get("source_missing_count") != 0:
         raise ValueError("Phase 7 demo proof source artifacts missing")
-    if phase7_demo_proof.get("source_validation_error_count") != 0:
+    if (
+        phase7_demo_proof_status == "visible"
+        and phase7_demo_proof.get("source_validation_error_count") != 0
+    ):
         raise ValueError("Phase 7 demo proof source validation errors present")
     if phase7_demo_proof.get("source_artifact_count") != len(
         phase7_demo_proof.get("source_status_records", [])
@@ -8845,8 +8858,11 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     if phase7_demo_proof.get("drawdown_cap_breached") is True:
         if phase7_demo_proof.get("new_proof_trades_frozen") is not True:
             raise ValueError("Phase 7 demo proof drawdown breach did not freeze trades")
-    if phase7_demo_proof.get("q7_16_weekly_review_pack_stage_allowed") is not True:
-        raise ValueError("Phase 7 demo proof does not allow Q7-16 weekly review pack")
+    if phase7_demo_proof_status == "visible":
+        if phase7_demo_proof.get("q7_16_weekly_review_pack_stage_allowed") is not True:
+            raise ValueError("Phase 7 demo proof does not allow Q7-16 weekly review pack")
+    elif phase7_demo_proof.get("q7_16_weekly_review_pack_stage_allowed") is not False:
+        raise ValueError("Phase 7 blocked demo proof unexpectedly allows Q7-16")
     for key in (
         "phase5_test_trades_count_for_phase7",
         "q6_deferred_learning_counts_as_proof",

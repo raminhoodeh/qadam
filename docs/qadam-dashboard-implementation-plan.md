@@ -8,7 +8,7 @@ The dashboard must answer five questions immediately:
 2. Which modules are alive, pending, blocked, degraded, or local-only?
 3. What is Qadam thinking about, and how is it analyzing sources and news?
 4. Which trades is Qadam considering, blocking, preparing, holding, closing, or reviewing?
-5. How is the £1,000 test account performing over time?
+5. How is the £100,000 paper account performing over time?
 
 The live dashboard can start as a static site on `qadam.trade`, but its content must be driven by a read-only status contract exported from Qadam's local runtime.
 
@@ -42,7 +42,7 @@ It should not show:
 
 First release mode:
 
-- Account: £1,000 test/paper account.
+- Account: £100,000 test/paper account.
 - Live capital: disabled.
 - Human access: founding Fund Managers only.
 - Data persistence: local MacBook is canonical.
@@ -131,13 +131,13 @@ The dashboard should render from one sanitized status file:
   "mode": "paper",
   "capital": {
     "mirror_status": "ok",
-    "account_scope": "first_release_gbp_1000_trial",
+    "account_scope": "first_release_gbp_100000_paper",
     "broker": "local_mirror_pending_alpaca_readonly",
     "connection_status": "local_mirror_not_broker_connected",
-    "starting_balance_gbp": 1000,
-    "current_balance_gbp": 1000,
-    "cash_gbp": 1000,
-    "equity_gbp": 1000,
+    "starting_balance_gbp": 100000,
+    "current_balance_gbp": 100000,
+    "cash_gbp": 100000,
+    "equity_gbp": 100000,
     "realized_pnl_gbp": 0,
     "unrealized_pnl_gbp": 0,
     "drawdown_pct": 0,
@@ -372,7 +372,7 @@ This answers: how much money is Qadam making or losing, and over what period?
 
 For the first month:
 
-- Starting balance: £1,000.
+- Starting balance: £100,000.
 - Current balance.
 - Realized P&L.
 - Unrealized P&L.
@@ -392,7 +392,7 @@ The timeline should show:
 Source event -> hypothesis -> candidate -> risk decision -> order -> position -> exit -> postmortem
 ```
 
-In early phases, this view should show `not connected yet` rather than invented P&L. Once paper-account mirroring exists, the money panel becomes authoritative for the £1,000 trial account.
+In early phases, this view should show `not connected yet` rather than invented P&L. Once paper-account mirroring exists, the money panel becomes authoritative for the £100,000 paper account.
 
 ### F. Process Console
 
@@ -441,7 +441,7 @@ The first operational dashboard should contain these panels.
 | Watching Queue | Shows what sources and themes are active. | D3 |
 | Cognition Queue | Shows current focus, hypotheses, evidence packets, and missing corroboration. | D4 |
 | Trade Intent Board | Shows candidates, blocked trades, staged orders, open positions, closed trades, and postmortems. | D5-D6 |
-| Money Timeline | Shows £1,000 paper balance, P&L, drawdown, trade count, and 100-trade benchmark progress. | D6 |
+| Money Timeline | Shows £100,000 paper balance, P&L, drawdown, trade count, and 100-trade benchmark progress. | D6 |
 | Worldview Lens | Shows how the `how-the-world-works/` corpus frames decisions without becoming evidence. | D0-D7 |
 | Process Console | Shows read-only runtime events. | D1-D2 |
 | Forbidden Actions | Shows why live capital, broker writes, stale data, or unverified sources are blocked. | D1-D5 |
@@ -517,7 +517,7 @@ Required first-release explainers:
 | Cognition | Shows current hypotheses, model activity, evidence packets, missing corroboration, and why the idea is blocked from the trade layer. |
 | Private Edge Layer | Shows Qadam's private worldview lens. It can shape questions but cannot become evidence or trigger trades. |
 | Trade Layer | Shows the trade ladder. Observed signals, hypotheses, candidates, blocked trades, orders, positions, and postmortems must remain distinct. |
-| Money | Shows the £1,000 paper/test mirror, P&L, drawdown, positions, closed trades, and 100-trade maturity progress. |
+| Money | Shows the £100,000 paper/test mirror, P&L, drawdown, positions, closed trades, and 100-trade maturity progress. |
 | Forbidden | Shows what Qadam is deliberately blocked from doing. Blocks are safety rails, not generic failures. |
 | Process Console | Shows read-only runtime events. It is not shell access and cannot run commands. |
 | Fund Manager Comments | Shows member suggestions and governance notes linked to modules, sources, signals, trades, or postmortems. |
@@ -664,7 +664,7 @@ Build:
 - Evidence packet cards and evidence item summaries, with raw references stripped.
 - Model activity state for Research Analyst, Strategy Lead, and Head of Quant.
 - Head of Quant oracle state: latest backend, local simulation mode, recommendation, result count, cadence, input fingerprint, validation checks, optional simulator availability, and zero-authority flags including disabled hardware scheduler state.
-- Read-only paper-account context inside Cognition: £1000 policy allocation, Alpaca paper mirror balance, P&L, drawdown, position/order counts, maturity progress, and explicit no-authority flags.
+- Read-only paper-account context inside Cognition: £100,000 paper account, separate single-order/notional risk cap, Alpaca paper mirror balance, P&L, drawdown, position/order counts, maturity progress, and explicit no-authority flags.
 - Signal Integrity Gate summary inside Cognition: total reviews, blocked/held/risk-shadow counts, candidates created, execution count, and explicit no-order/no-candidate boundary.
 - Recent Signal Integrity Review cards: instrument focus, integrity score, source/evidence counts, trust scores, missing correlations, Akber filter output, failure reasons, required next steps, worldview-prior status, and non-execution flags.
 - Missing corroboration field.
@@ -740,7 +740,7 @@ Exit gate:
 
 Objective: show money and positions.
 
-Status: implemented and contract-checked locally as a read-only account mirror for the £1,000 trial allocation and the connected Alpaca paper account.
+Status: implemented and contract-checked locally as a read-only account mirror for the £100,000 paper account and the connected Alpaca paper account.
 
 Build:
 
@@ -757,8 +757,8 @@ Build:
 
 Current D6 state:
 
-- Starting balance: £1,000.
-- Current balance: mirrors the Alpaca paper account when the live read-only sync has run; the Qadam trial allocation remains £1,000 by policy.
+- Starting balance: £100,000.
+- Current balance: mirrors the Alpaca paper account when the live read-only sync has run; Qadam's paper account is GBP 100,000 by policy, with GBP 1,000 reserved only for any explicit single-order/notional risk cap.
 - Realized P&L: £0.
 - Unrealized P&L: £0.
 - Drawdown: 0%.
@@ -775,7 +775,7 @@ Exit gate:
 - `scripts/check_paper_account.py` passes.
 - `scripts/check_alpaca_paper_mirror.py --live` passes when Alpaca credentials and network are available.
 - `scripts/check_cockpit_status.py` validates `mirror_status=ok`, `write_authority=false`, `live_capital_enabled=false`, and 100-trade maturity target.
-- A local D6 render check proves the panel renders the £1,000 paper mirror, zero P&L, zero drawdown, zero open/closed trades, 0/100 maturity progress, one equity snapshot, and the no-broker/no-live-capital boundary.
+- A local D6 render check proves the panel renders the £100,000 paper mirror, zero P&L, zero drawdown, zero open/closed trades, 0/100 maturity progress, one equity snapshot, and the no-broker/no-live-capital boundary.
 - The dashboard does not invent P&L, open positions, closed trades, or postmortems.
 
 ### Phase D7 - TradingView Alert Source
@@ -972,7 +972,7 @@ Implemented deliverables:
 - Watching View with 35 registered sources grouped under 5 pipeline groups plus the D7 TradingView observed-alert source.
 - Cognition View with current focus, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked reasons.
 - Trade Intent Board with a local candidate record and a blocked trade record from `trade_candidates.jsonl`.
-- Paper Account Mirror with £1,000 starting/current balance, zero P&L, zero drawdown, empty open/closed trade lists, postmortem counts, and 0/100 maturity progress from `paper_account_snapshots.jsonl`.
+- Paper Account Mirror with £100,000 starting/current balance, zero P&L, zero drawdown, empty open/closed trade lists, postmortem counts, and 0/100 maturity progress from `paper_account_snapshots.jsonl`.
 - TradingView Alert Source with one local observed chart-signal fixture, duplicate protection, Event Log write, and no candidate/order authority.
 - Worldview Lens with 5 private claim cards from `how-the-world-works/`, rendered in the system map, Private Edge panel, hypothesis cards, and each observed-signal/trade decision card.
 - Fund Manager Forum with private governance comments, local mirror export, and accepted/implemented Event Log markers without broker authority.
@@ -1258,7 +1258,7 @@ The dashboard is acceptable when a founding Fund Manager can answer:
 - What trade candidates exist?
 - Which trades were blocked?
 - What positions are open?
-- How much has the £1,000 paper account gained or lost?
+- How much has the £100,000 paper account gained or lost?
 - Which trades need postmortem?
 - What Qadam has communicated to members, and whether any messages failed or were suppressed?
 

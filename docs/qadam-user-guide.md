@@ -82,12 +82,17 @@ the control system is working.
 
 As of this guide update, Qadam is in Phase 7 demo-proof operation:
 
+- the available paper trading account is GBP 100,000
+- GBP 1,000 may appear only as a separate single-order/notional risk cap
 - the 30 consecutive calendar day demo-proof harness has started
 - proof trades are collected only where Q7-qualified setups exist
 - the discipline target is 3 proof trades per week where qualified setups exist
 - no trades are forced
 - Phase 5 test trades do not count as Phase 7 proof trades
 - Phase 7 proof credit remains blocked until Phase 7 evidence earns it
+- the paper-live control plane is certified, visible, and guarded
+- full paper-live submission remains held until Q-CTRL and proof gates clear
+- Q-CTRL product access is currently a blocker, not active quantum execution
 - live capital is disabled
 - broker live endpoints are disabled
 
@@ -332,6 +337,13 @@ Important labels:
 | Notify-only | A module can communicate status but cannot approve or create trade actions. |
 | Certified | A phase gate has passed its explicit checker. |
 | Eligible | A stage can proceed under its guardrails, but this is not live trading approval. |
+| Paper mode | Paper account mode with live capital disabled. |
+| Paper-live control plane certified | The guarded route, logs, checks, and dashboard visibility exist. This is not the same as active submission. |
+| Paper-live certified | Full paper-live operation is allowed only when PT-10 reports `paper_live_certified=True`. |
+| Paper order staged | A guarded paper order preparation record exists. |
+| Paper order submitted | A paper order has been submitted to the paper broker under the allowed path. |
+| Q-CTRL hold | Paper submission remains held while Q-CTRL product access or consultation is unresolved. |
+| Phase 7 proof credit | Credit for the 30-day proof sample; it is granted only by backend Phase 7 proof artifacts. |
 
 ## 11. How Qadam Makes A Trade
 
@@ -448,8 +460,8 @@ Members cannot:
 
 - use the dashboard to place live trades
 - use Telegram to place trades
-- use Telegram to approve, reject, modify, close, or resize trades
-- use the Secure Live Bridge to run commands or trade
+- Use Telegram to approve, reject, modify, close, or resize trades
+- Use the Secure Live Bridge to run commands or trade
 - bypass the Risk Agent
 - bypass the Signal Integrity Gate
 - bypass the Event Log
@@ -457,9 +469,6 @@ Members cannot:
 - treat a candidate as an order
 - manually interfere with individual proof trades during a clean demo-proof
   sample
-
-Use the Secure Live Bridge to run commands or trade.
-Use Telegram to approve, reject, modify, close, or resize trades.
 
 ## 17. Local Operator Instructions
 
@@ -610,13 +619,9 @@ Escalate or comment if:
 - a trade has no invalidation
 - the paper balance changes without a logged trade
 - Telegram sends a message that does not match the dashboard
-- the bridge claims write authority, broker authority, shell access, or local
-  orchestrator exposure
-- any secret, token, chat ID, local path, or credential appears in the UI
+- The bridge claims write authority, broker authority, shell access, or local orchestrator exposure
+- Any secret, token, chat ID, local path, or credential appears in the UI
 - any screen implies live capital is enabled
-
-The bridge claims write authority, broker authority, shell access, or local orchestrator exposure.
-Any secret, token, chat ID, local path, or credential appears in the UI.
 
 ## 21. Glossary
 
@@ -646,6 +651,9 @@ Any secret, token, chat ID, local path, or credential appears in the UI.
 | Knowledge Graph | The learned context store. |
 | Live capital | Real money trading authority; currently disabled. |
 | Secure Live Bridge | Read-only dashboard status bridge. |
+| Paper-live control plane certified | Guarded paper-trading machinery exists and is visible, but full submission may still be held. |
+| Paper-live certified | Full guarded paper submission is allowed by PT-10. |
+| Q-CTRL hold | A hold that blocks paper submission until Q-CTRL consultation/product access gates clear. |
 
 ## 22. First Release Success
 

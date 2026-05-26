@@ -19,6 +19,7 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.execution_policy import ExecutionPolicyReviewStore
 from orchestrator.paper_account import paper_account_shadow_context
+from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
 
 STAGED_PAPER_ORDER_SCHEMA_VERSION = 1
 STAGED_PAPER_ORDER_STATUSES = {
@@ -171,7 +172,7 @@ def build_staged_paper_order_review(
         instrument=str(execution_review.get("instrument") or "unknown")[:120],
         selected_venue=str(execution_review.get("selected_venue") or "none"),
         venue_mode=str(execution_review.get("venue_mode") or "disabled"),
-        account_scope=str(account_context.get("account_scope") or "first_release_gbp_1000_trial"),
+        account_scope=str(account_context.get("account_scope") or PAPER_ACCOUNT_SCOPE),
         hypothetical_order=_hypothetical_order(execution_review),
         reconciliation_checks=checks,
         blocked_reasons=blocked,

@@ -5,6 +5,12 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from orchestrator.release_contract import (
+    LIVE_CAPITAL_ENABLED,
+    PAPER_ACCOUNT_BALANCE_GBP,
+    PAPER_OPERATIONAL_MAX_NOTIONAL_GBP,
+)
+
 DEFAULT_FUND_MANAGER_EMAILS = (
     "raminhoodeh@gmail.com",
     "troycookecareer@gmail.com",
@@ -86,7 +92,9 @@ class Settings:
         return cls(
             env=os.getenv("QADAM_ENV", "local"),
             mode=os.getenv("QADAM_MODE", "paper"),
-            trial_balance_gbp=int(os.getenv("QADAM_TRIAL_BALANCE_GBP", "1000")),
+            trial_balance_gbp=int(
+                os.getenv("QADAM_TRIAL_BALANCE_GBP", str(PAPER_ACCOUNT_BALANCE_GBP))
+            ),
             health_host=os.getenv("QADAM_HEALTH_HOST", "127.0.0.1"),
             health_port=int(os.getenv("QADAM_HEALTH_PORT", "8717")),
             database_url=os.getenv("DATABASE_URL", "postgresql://qadam:qadam@localhost:5432/qadam"),
@@ -139,9 +147,12 @@ class Settings:
             paper_operational_enabled=_bool_env("QADAM_PAPER_OPERATIONAL_ENABLED", False),
             alpaca_paper_submit_enabled=_bool_env("QADAM_ALPACA_PAPER_SUBMIT_ENABLED", False),
             alpaca_paper_exit_enabled=_bool_env("QADAM_ALPACA_PAPER_EXIT_ENABLED", False),
-            live_capital_enabled=_bool_env("QADAM_LIVE_CAPITAL_ENABLED", False),
+            live_capital_enabled=_bool_env("QADAM_LIVE_CAPITAL_ENABLED", LIVE_CAPITAL_ENABLED),
             paper_operational_max_notional_gbp=int(
-                os.getenv("QADAM_PAPER_OPERATIONAL_MAX_NOTIONAL_GBP", "1000")
+                os.getenv(
+                    "QADAM_PAPER_OPERATIONAL_MAX_NOTIONAL_GBP",
+                    str(PAPER_OPERATIONAL_MAX_NOTIONAL_GBP),
+                )
             ),
             quantum_paper_parity_required=_bool_env("QADAM_QUANTUM_PAPER_PARITY_REQUIRED", True),
             qctrl_paper_consultation_enabled=_bool_env(

@@ -28,7 +28,7 @@ Supporting technical specs:
 Build Qadam as replaceable modules around stable contracts.
 
 - First release is local-first: canonical saved state stays on Ramin's MacBook.
-- First release trades autonomously only in a £1000 paper/test account after gates are met.
+- First release routes guarded paper trades only in a £100,000 paper/test account after gates are met.
 - Event Log first: every module emits events before it is considered real.
 - Health first: every module exposes status, heartbeat, latency, and degraded-state.
 - Read-only first: every data, LLM, quantum, and market module starts without execution authority.
@@ -65,7 +65,7 @@ Build Qadam as replaceable modules around stable contracts.
 | Execution Registry | Python COO / Risk Agent | Disabled/read-only venue map, credential state, account/subaccount scope, network/chain scope, venue mode, kill-switch state | Phase 0 |
 | Execution Plane | Broker/exchange adapters | Alpaca paper/live, prediction-market routing, later PriveX-style perps rails if approved | Phase 5 |
 | Learning Plane | Postmortems + Bayesian updates + Architect Agent | Learning loop, Trust Score updates, strategy review | Phase 6 |
-| Proof Plane | Demo proof harness | 90-day autonomous paper run and 100-trade maturity benchmark | Phase 7 |
+| Proof Plane | Demo proof harness | 30-day guarded paper run and 100-trade maturity benchmark | Phase 7 |
 
 ## Contract-First Interfaces
 
@@ -554,7 +554,7 @@ Trading state: autonomous paper, then live decision.
 
 | Module | Build In This Phase | Independent Exit Check |
 | --- | --- | --- |
-| Demo proof harness | 90-day clock, mode lock, proof state | Start date logged |
+| Demo proof harness | 30-day calendar clock, mode lock, proof state | Start date logged |
 | Autonomous paper policy | Test-mode auto-approval after gates pass | No manual trade-level approvals |
 | Performance evaluator | Expectancy, drawdown, Brier, Sharpe/Sortino | Metrics update from Event Log |
 | Override detector | Detect manual interventions | Any manual override voids clean sample |
@@ -565,11 +565,11 @@ Trading state: autonomous paper, then live decision.
 
 - Layer A watches continuously.
 - Layer B executes only when policy gates pass.
-- Two proof trades per week is a discipline target, not a quota.
+- Three proof trades per week where qualified setups exist is a discipline target, not a quota.
 - If qualified setups do not exist, Qadam does not force trades.
-- Starting balance is £1000 in a paper/test account.
+- Starting balance is £100,000 in a paper/test account.
 - 100 closed trades is the maturity benchmark.
-- If 90 days pass with fewer than 100 closed trades, continue paper until maturity exists.
+- If 30 days pass with fewer than 100 closed trades, continue paper until maturity exists.
 - Max drawdown must stay at or below 20%.
 - Zero manual trade-level overrides during the clean proof sample.
 
@@ -597,7 +597,7 @@ The cockpit should evolve without becoming a trading toy.
 | Phase 1E | Agent ownership map, tool grants, skill bundle status, forbidden-action warnings |
 | Phase 1F | Runtime permission status, enforced blocks, shadow triage queue state |
 
-Live cockpit sprint decision: the dashboard's main view is the system map. Each node shows status. The supporting surfaces are process console, Fund Manager view, trade layer, and comments. The first-month trade layer is a £1000 paper/test-account view with TradingView as the market/chart layer and later alert source; live capital remains blocked.
+Live cockpit sprint decision: the dashboard's main view is the system map. Each node shows status. The supporting surfaces are process console, Fund Manager view, trade layer, and comments. The first-month trade layer is a £100,000 paper/test-account view with TradingView as the market/chart layer and later alert source; live capital remains blocked.
 | Phase 2 | Hidden/debug shadow signals, evidence trail previews |
 | Phase 3 | Quantum job status and fallback visibility |
 | Phase 4 | Manifested Strategy review and approval record |

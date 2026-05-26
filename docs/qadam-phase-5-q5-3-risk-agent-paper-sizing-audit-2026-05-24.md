@@ -57,8 +57,8 @@ sizing under current evidence:
 - `semiconductor_policy_options_asymmetry`
 
 All five currently produce `risk_decision=blocked_risk_gate_failed` and
-`proposed_risk_gbp=0.0`. The sizing cap is 1% of the GBP 1000 first-release
-policy balance, so `max_risk_gbp=10.0`.
+`proposed_risk_gbp=0.0`. The sizing cap is 1% of the GBP 100,000 first-release
+paper balance, so `max_risk_gbp=1000.0`.
 
 The primary blockers are Signal Integrity not yet passing to risk shadow,
 missing or insufficient market confirmation, and unconfirmed pricing-gap

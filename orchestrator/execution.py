@@ -81,7 +81,10 @@ def default_execution_venues() -> tuple[ExecutionVenue, ...]:
             write_health="blocked_first_release",
             kill_switch_status="armed",
             last_reconciliation_at=None,
-            notes="Optional later execution rail reference. Not part of the GBP 1000 v1 test run.",
+            notes=(
+                "Optional later execution rail reference. Not part of the GBP 100,000 "
+                "paper account proof run."
+            ),
         ),
         ExecutionVenue(
             key="privex_coti",

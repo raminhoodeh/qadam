@@ -329,8 +329,8 @@ produces five replayable `risk_sizing_review` records from the five Q5-2
 eligible approval-policy decisions. All five are `blocked_risk_gate_failed`
 with `paper_size_eligible_count=0` because current Signal Integrity evidence is
 hold-only and pricing-gap/market-confirmation evidence is not sufficient for
-paper sizing. The risk cap is 1% of the GBP 1000 first-release policy balance
-(`max_risk_gbp=10.0`), but proposed risk remains GBP 0 while blocked.
+paper sizing. The risk cap is 1% of the GBP 100,000 first-release paper
+balance (`max_risk_gbp=1000.0`), but proposed risk remains GBP 0 while blocked.
 
 Latest audit record:
 `docs/qadam-phase-5-q5-3-risk-agent-paper-sizing-audit-2026-05-24.md`.

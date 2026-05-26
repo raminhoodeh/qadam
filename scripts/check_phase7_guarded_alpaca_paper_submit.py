@@ -31,6 +31,7 @@ from orchestrator.phase7_readiness import (  # noqa: E402
     build_phase7_readiness,
     validate_phase7_readiness,
 )
+from orchestrator.release_contract import PAPER_ACCOUNT_BALANCE_GBP  # noqa: E402
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -165,7 +166,7 @@ def _valid_submit_record() -> dict[str, object]:
             "snapshot_schema_version": 1,
             "snapshot_type": "phase7_pre_trade_snapshot",
             "source_setup_record_id": "probe:q7-setup",
-            "paper_account_starting_gbp": 1000.0,
+            "paper_account_starting_gbp": float(PAPER_ACCOUNT_BALANCE_GBP),
             "max_drawdown_fraction": 0.2,
             "broker_identifier_exposed": False,
             "raw_payload_exposed": False,

@@ -22,6 +22,7 @@ from orchestrator.phase7_proof_order_staging import (  # noqa: E402
     validate_phase7_proof_order_staging,
     write_phase7_proof_order_staging,
 )
+from orchestrator.release_contract import PAPER_ACCOUNT_BALANCE_GBP  # noqa: E402
 from orchestrator.phase7_readiness import (  # noqa: E402
     build_phase7_readiness,
     validate_phase7_readiness,
@@ -122,7 +123,7 @@ def _valid_staged_record() -> dict[str, object]:
             "strategy_family_key": "probe_strategy",
             "instrument": "spy",
             "selected_venue": "alpaca_paper",
-            "paper_account_starting_gbp": 1000.0,
+            "paper_account_starting_gbp": float(PAPER_ACCOUNT_BALANCE_GBP),
             "max_drawdown_fraction": 0.2,
             "source_quorum_passed": True,
             "risk_gate_passed": True,

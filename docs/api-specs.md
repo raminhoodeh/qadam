@@ -75,7 +75,7 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | Conflict and protest event data for escalation monitoring. |
 | UnusualWhales | `UNUSUAL_WHALES_API_KEY` | Options flow, dark pool, gamma, congressional trading, and institutional confirmation. |
 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Prediction-market monitoring and later guarded paper/live venue path. |
-| Alpaca paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account mirror and eventual £1000 autonomous test execution. |
+| Alpaca paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account mirror and guarded £100,000 paper proof execution. |
 | Gemini | `GEMINI_API_KEY` | Frontier LLM Strategy Lead / deep research packets. |
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Founding Fund Manager cockpit auth. |
 | Telegram bot | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Outbound member communications, alerts, and delivery status. |
@@ -150,7 +150,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 20 | Polymarket | Market | 1 | none for public data; later `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER_ADDRESS` | `https://clob.polymarket.com/markets` | Prediction-market prices, probability gaps, and later guarded execution. |
 | 21 | Kalshi | Market | 1 | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | `https://trading-api.kalshi.com/trade-api/v2/markets` | Regulated prediction-market monitoring and later guarded venue path. |
 | 22 | Hyperliquid Perps | Market | 4 | none for public info; later `HYPERLIQUID_PRIVATE_KEY`, `HYPERLIQUID_WALLET_ADDRESS` | `https://api.hyperliquid.xyz/info` | Crypto/perps liquidity, funding context, optional later sandbox execution. |
-| 23 | Alpaca Markets API | Market | 1 | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Alpaca market data and trading APIs | US equities/options data and £1000 paper account rail. |
+| 23 | Alpaca Markets API | Market | 1 | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Alpaca market data and trading APIs | US equities/options data and £100,000 paper account rail. |
 | 24 | RapidAPI Hub | Market | 3 | `RAPIDAPI_KEY` | `https://rapidapi.com/hub` | Fallback marketplace for niche finance, sentiment, and alternative data APIs. |
 | 25 | Coinglass | Market | 4 | `COINGLASS_API_KEY` | `https://open-api.coinglass.com/public/v2/` | Crypto derivatives, liquidations, funding rates, open interest. |
 | 26 | Chainlink Price Feeds | Market | 4 | `ETH_RPC_URL` | Ethereum RPC endpoint | On-chain price-feed cross-checking. |

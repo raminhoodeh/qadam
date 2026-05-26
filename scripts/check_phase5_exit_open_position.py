@@ -85,6 +85,7 @@ from orchestrator.phase5_system_map import (  # noqa: E402
     validate_phase5_system_map_bundle,
     write_phase5_system_map,
 )
+from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE  # noqa: E402
 
 
 def _target_record(bundle: dict) -> dict:
@@ -150,7 +151,7 @@ def _append_open_position_snapshot(store: PaperAccountMirrorStore, settings: Set
     snapshot = PaperAccountSnapshot(
         schema_version=1,
         snapshot_id=str(uuid4()),
-        account_scope=getattr(latest, "account_scope", "first_release_gbp_1000_trial"),
+        account_scope=getattr(latest, "account_scope", PAPER_ACCOUNT_SCOPE),
         mode="paper",
         broker=getattr(latest, "broker", "local_mirror_pending_alpaca_readonly"),
         connection_status=getattr(

@@ -32,6 +32,7 @@ from orchestrator.phase7_performance_evaluator import (  # noqa: E402
     write_phase7_performance_evaluator,
 )
 from orchestrator.phase7_readiness import phase7_authority_defaults  # noqa: E402
+from orchestrator.release_contract import PAPER_ACCOUNT_BALANCE_GBP  # noqa: E402
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -286,7 +287,7 @@ def main() -> int:
 
     valid_breach_probe = _with_source_records(
         written,
-        _records_from_pnls([200.0, -500.0], prefix="breach"),
+        _records_from_pnls([200.0, -25000.0], prefix="breach"),
     )
     valid_breach_errors = validate_phase7_drawdown_risk_sentinel(valid_breach_probe)
 
@@ -575,9 +576,10 @@ def main() -> int:
         errors.append("phase7_drawdown_staging_not_allowed_without_breach")
     if written["new_proof_trade_submission_allowed"] is not True:
         errors.append("phase7_drawdown_submission_not_allowed_without_breach")
-    if written["current_equity_gbp"] != 1000.0:
+    expected_equity = float(PAPER_ACCOUNT_BALANCE_GBP)
+    if written["current_equity_gbp"] != expected_equity:
         errors.append("phase7_drawdown_current_equity_invalid")
-    if written["peak_equity_gbp"] != 1000.0:
+    if written["peak_equity_gbp"] != expected_equity:
         errors.append("phase7_drawdown_peak_equity_invalid")
     if written["max_drawdown_fraction_observed"] != 0.0:
         errors.append("phase7_drawdown_empty_max_drawdown_nonzero")

@@ -44,6 +44,8 @@ const CAPITAL_REQUIRED_FIELDS = [
 ];
 
 const EQUITY_POINT_REQUIRED_FIELDS = ["drawdown_pct", "equity_gbp", "observed_at"];
+const PAPER_ACCOUNT_SCOPE = "first_release_gbp_100000_paper";
+const PAPER_ACCOUNT_BALANCE_GBP = 100000;
 
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
@@ -66,16 +68,16 @@ async function main() {
     const equityCurve = Array.isArray(capital.equity_curve) ? capital.equity_curve : [];
 
     assert(capital.mirror_status === "ok", "paper mirror is not ok");
-    assert(capital.account_scope === "first_release_gbp_1000_trial", "paper account scope mismatch");
+    assert(capital.account_scope === PAPER_ACCOUNT_SCOPE, "paper account scope mismatch");
     assert(
         ["local_mirror_not_broker_connected", "alpaca_paper_readonly_connected"].includes(capital.connection_status),
         "paper account connection status mismatch"
     );
     assert(capital.live_capital_enabled === false, "live capital is enabled");
     assert(capital.write_authority === false, "paper mirror has write authority");
-    assert(capital.starting_balance_gbp === 1000, "starting balance is not 1000 GBP");
+    assert(capital.starting_balance_gbp === PAPER_ACCOUNT_BALANCE_GBP, "starting balance is not 100000 GBP");
     if (capital.connection_status === "local_mirror_not_broker_connected") {
-        assert(capital.current_balance_gbp === 1000, "current balance is not 1000 GBP");
+        assert(capital.current_balance_gbp === PAPER_ACCOUNT_BALANCE_GBP, "current balance is not 100000 GBP");
         assert(capital.cash_gbp === capital.current_balance_gbp, "cash does not match current balance");
         assert(capital.equity_gbp === capital.current_balance_gbp, "equity does not match current balance");
         assert(capital.peak_equity_gbp === capital.current_balance_gbp, "peak equity does not match current balance");
@@ -120,7 +122,7 @@ async function main() {
     assertIncludes(rendered, "[data-capital]", "Closed trades");
     assertIncludes(rendered, "[data-capital]", capital.boundary.split("P&L")[0].trim());
     assertIncludes(rendered, "[data-capital]", "mirror ok");
-    assertIncludes(rendered, "[data-capital]", "first release gbp 1000 trial");
+    assertIncludes(rendered, "[data-capital]", "first release gbp 100000 paper");
     assertIncludes(rendered, "[data-capital]", String(capital.broker || "").replaceAll("_", " "));
     assertIncludes(rendered, "[data-capital]", String(capital.connection_status || "").replaceAll("_", " "));
     assertIncludes(rendered, "[data-capital]", "read only");

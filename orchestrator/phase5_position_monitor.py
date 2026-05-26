@@ -22,6 +22,7 @@ from orchestrator.paper_account import (
     PaperAccountMirrorStore,
     ensure_d6_paper_account_mirror,
 )
+from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
 from orchestrator.phase5_artifacts import (
     PHASE5_ARTIFACT_SCHEMA_VERSION,
     PHASE5_AUTHORITY_FIELDS,
@@ -1004,7 +1005,7 @@ def _common_record_fields(
         "provenance": phase5_provenance(POSITION_MONITOR_SOURCE_REFS),
         "boundary": POSITION_MONITOR_BOUNDARY,
         **phase5_authority_defaults(),
-        "account_scope": getattr(latest, "account_scope", "first_release_gbp_1000_trial"),
+        "account_scope": getattr(latest, "account_scope", PAPER_ACCOUNT_SCOPE),
         "paper_account_mode": getattr(latest, "mode", "paper"),
         "paper_account_connection_status": getattr(
             latest,

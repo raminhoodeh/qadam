@@ -110,7 +110,7 @@ First release operating mode:
 - Qadam runs as a local-first autonomous trial system on Ramin's MacBook with 1TB SSD and 24GB unified memory.
 - Saved canonical state remains local by default: Event Log, Knowledge Graph, raw payload archive, source heartbeats, postmortems, paper trades, and model/runtime artifacts.
 - External APIs, Gemini, IBM Quantum/AWS Braket, Vercel, and broker/paper-trading APIs are allowed as services, but they do not become the canonical storage layer.
-- The first release may trade autonomously only in the £1000 test/paper account after the required gates are built.
+- The first release may route guarded paper trades only in the £100,000 test/paper account after the required gates are built.
 - Cockpit login is limited to the five founding Fund Managers: Ramin, Troy, Akber, Anas, and Ion.
 - The cockpit includes a small private comments/forum area for improvement suggestions, signal debates, module notes, and postmortem concerns.
 - Future compute-sharing is allowed as a later concept: Fund Managers may eventually rent or contribute local RAM/compute/storage to Qadam after the system is understood, secured, and permissioned.
@@ -409,7 +409,7 @@ Build:
 Operating rule:
 
 - Live-capital work follows the Anthropic-style posture: agents draft, humans approve.
-- First-release paper-mode trading remains different: Qadam may trade autonomously in the £1000 paper account only after deterministic Risk Agent, execution venue, kill-switch, and Event Log gates are built.
+- First-release paper-mode trading remains different: Qadam may route guarded paper trades in the £100,000 paper account only after deterministic Risk Agent, execution venue, kill-switch, Q-CTRL/proof holds, and Event Log gates are built.
 - No LLM agent ever receives direct broker write authority.
 
 Exit criteria:
@@ -687,7 +687,7 @@ Clean proof rules:
 Evaluation:
 
 - 30 consecutive calendar days of autonomous operation.
-- £1000 starting paper/test account.
+- £100,000 starting paper/test account.
 - 3 proof trades per week where qualified setups exist.
 - The weekly proof target is `min(3, qualified_setup_count)` so Qadam never
   forces trades to hit a quota.
@@ -713,7 +713,7 @@ Live promotion:
 
 `qadam.trade` is the login surface and command cockpit for the founding Fund Managers: Ramin, Troy, Akber, Anas, and Ion. It starts as a landing page, but the authenticated experience is a system-map dashboard showing how the entire hybrid fund is wired together: Python COO, local LLM Research Analyst, frontier LLM Strategy Lead, quantum Head of Quant, data pipelines, Event Log, Knowledge Graph, Risk Agent, broker adapters, notifications, kill-switches, and internal comments/forum notes.
 
-Immediate dashboard design decision: the cockpit's main view is a diagrammatic system map, not a generic card grid. Every node must show status. The supporting views are a read-only process console, Fund Manager view, trade layer, and comments/forum area. The first-month trade layer must show the £1000 paper/test account, TradingView-assisted market view, live-capital block, and the full trade reasoning chain from catalyst to postmortem.
+Immediate dashboard design decision: the cockpit's main view is a diagrammatic system map, not a generic card grid. Every node must show status. The supporting views are a read-only process console, Fund Manager view, trade layer, and comments/forum area. The first-month trade layer must show the £100,000 paper/test account, TradingView-assisted market view, live-capital block, and the full trade reasoning chain from catalyst to postmortem.
 
 Current deployment anchor:
 

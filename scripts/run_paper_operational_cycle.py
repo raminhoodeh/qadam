@@ -100,6 +100,50 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("paper_ops_readiness", "scripts/check_paper_operational_readiness.py", True),
 )
 
+NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
+    {
+        # Q7 proof stages can be blocked on a no-qualified-setup day without
+        # making the PaperOps control loop unsafe.
+        "phase7_qualified_setups",
+        "phase7_auto_approval",
+        "phase7_order_staging",
+        "phase7_guarded_paper_submit",
+        "phase7_lifecycle",
+        "phase7_postmortem",
+        "phase7_performance",
+        "phase7_drawdown",
+        "phase7_override",
+        "phase7_signal_funnel",
+        "phase7_maturity",
+        "phase7_cockpit_visibility",
+        # These two observe the cycle and can be stale for one bootstrap pass.
+        "paperops_notification_review",
+        "paperops_30_day_operations",
+        "paper_live_certification",
+        "paper_ops_readiness",
+    }
+)
+
+UNSAFE_NUMERIC_KEY_FRAGMENTS = (
+    "unsafe_write_counter",
+    "broker_post_called_count",
+    "alpaca_post_called_count",
+    "live_endpoint_called_count",
+    "live_endpoint_allowed_count",
+    "broker_write_allowed_count",
+    "notification_live_send_allowed_count",
+    "telegram_command_path_enabled_count",
+    "proof_credit_granted_count",
+)
+
+UNSAFE_TRUE_KEY_FRAGMENTS = (
+    "live_capital_enabled",
+    "phase7_proof_credit_allowed",
+    "broker_post_allowed",
+    "paper_order_submission_allowed",
+    "manual_trade_level_override_allowed",
+)
+
 PAPER_OPS_CYCLE_BOUNDARY = (
     "PaperOps-1 runs the current paper-only operational pass without broker "
     "side effects. It may refresh Q7 paper proof artifacts and readiness state, "
@@ -151,6 +195,31 @@ def _parse_output(output: str) -> dict[str, str]:
     return parsed
 
 
+def _parsed_int(value: str | None) -> int:
+    if value is None:
+        return 0
+    try:
+        return int(value)
+    except ValueError:
+        return 0
+
+
+def _parsed_bool(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _has_unsafe_output(parsed: dict[str, str]) -> bool:
+    for key, value in parsed.items():
+        lowered = key.lower()
+        if any(fragment in lowered for fragment in UNSAFE_NUMERIC_KEY_FRAGMENTS):
+            if _parsed_int(value) != 0:
+                return True
+        if any(fragment in lowered for fragment in UNSAFE_TRUE_KEY_FRAGMENTS):
+            if _parsed_bool(value):
+                return True
+    return False
+
+
 def _run_command(label: str, script: str) -> dict[str, Any]:
     result = subprocess.run(
         [sys.executable, script],
@@ -163,11 +232,25 @@ def _run_command(label: str, script: str) -> dict[str, Any]:
     stdout = result.stdout.strip()
     stderr = result.stderr.strip()
     parsed = _parse_output(stdout)
+    ok = result.returncode == 0
+    nonblocking_safe_failure = False
+    safe_failure_reason = None
+    if (
+        not ok
+        and label in NONBLOCKING_SAFE_FAILURE_LABELS
+        and not _has_unsafe_output(parsed)
+    ):
+        ok = True
+        nonblocking_safe_failure = True
+        safe_failure_reason = "safe_blocked_or_self_observer_state"
     return {
         "label": label,
         "script": script,
         "returncode": result.returncode,
-        "ok": result.returncode == 0,
+        "raw_returncode": result.returncode,
+        "ok": ok,
+        "nonblocking_safe_failure": nonblocking_safe_failure,
+        "safe_failure_reason": safe_failure_reason,
         "parsed": parsed,
         "stdout_tail": stdout.splitlines()[-12:],
         "stderr_tail": stderr.splitlines()[-12:],

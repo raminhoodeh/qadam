@@ -22,13 +22,13 @@ and does not enable live broker or prediction-market writes.
 
 ## 2. Updated Phase 7 Operating Rules
 
-The Phase 7 proof run is now a 30-day demo-proof harness rather than the older
-90-day harness.
+The Phase 7 proof run is a 30-day demo-proof harness. Older 90-day wording is
+historical only and is not the active operating rule.
 
 Operating rules:
 
 - 30 consecutive calendar days.
-- GBP 1000 Alpaca paper/test proof surface.
+- GBP 100,000 Alpaca paper/test proof surface.
 - Three proof trades per proof week where qualified setups exist.
 - No forced trades.
 - A no-trade week is valid only when the qualified-setup ledger shows fewer
@@ -701,8 +701,8 @@ Implementation status:
   `phase7_drawdown_new_proof_trade_submission_allowed=True`,
   `phase7_drawdown_source_closed_proof_trade_count=0`,
   `phase7_drawdown_source_evaluated_trade_count=0`,
-  `phase7_drawdown_current_equity_gbp=1000.0`,
-  `phase7_drawdown_peak_equity_gbp=1000.0`,
+  `phase7_drawdown_current_equity_gbp=100000.0`,
+  `phase7_drawdown_peak_equity_gbp=100000.0`,
   `phase7_drawdown_realized_drawdown_fraction_observed=0.0`,
   `phase7_drawdown_unrealized_drawdown_fraction_observed=0.0`,
   `phase7_drawdown_max_drawdown_fraction_observed=0.0`,
