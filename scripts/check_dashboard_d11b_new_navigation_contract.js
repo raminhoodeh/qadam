@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-d11g-evidence-view",
-    "/dashboard.js?v=20260526-d11g-evidence-view"
+    "/auth.css?v=20260526-d11h-reasoning-view",
+    "/dashboard.js?v=20260526-d11h-reasoning-view"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [
