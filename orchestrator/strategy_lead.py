@@ -127,6 +127,116 @@ def _safe_source_results(value: Any) -> list[dict[str, Any]]:
     return rows
 
 
+def _safe_preference_shadow_context(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "status": "not_available",
+            "context_role": "not_available",
+            "shadow_observation_count": 0,
+            "active_required_challenges": [],
+            "source_quorum_credit_allowed": False,
+            "preference_only_confirmation_allowed": False,
+            "trade_candidate_creation_allowed": False,
+            "risk_handoff_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+            "live_capital_enabled": False,
+            "boundary": "No Preference/PREF MCP shadow context was supplied.",
+        }
+    observations = value.get("observation_refs", value.get("shadow_observations", []))
+    if not isinstance(observations, list):
+        observations = []
+    challenges = value.get("active_required_challenges", [])
+    if not isinstance(challenges, list):
+        challenges = []
+    return {
+        "source_key": str(value.get("source_key") or "preference_mcp")[:80],
+        "stage": str(value.get("stage") or "PREF-8")[:40],
+        "status": str(value.get("status") or "unknown")[:80],
+        "context_role": str(value.get("context_role") or "read_only_shadow_context")[:120],
+        "sample_context_mode": str(value.get("sample_context_mode") or "deterministic_sample")[:80],
+        "shadow_observation_count": int(value.get("shadow_observation_count", 0) or 0),
+        "observation_refs": [
+            {
+                "domain_pack": str(item.get("domain_pack") or "")[:80],
+                "upstream_source": str(item.get("upstream_source") or "")[:80],
+                "signal_class": str(item.get("signal_class") or "")[:80],
+                "context_role": str(item.get("context_role") or "")[:80],
+            }
+            for item in observations[:6]
+            if isinstance(item, dict)
+        ],
+        "active_required_challenges": tuple(str(item)[:240] for item in challenges[:8]),
+        "active_required_challenge_count": len(challenges),
+        "context_stale": bool(value.get("context_stale")),
+        "single_source_hold": bool(value.get("single_source_hold")),
+        "missing_provenance_hold": bool(value.get("missing_provenance_hold")),
+        "quota_degraded": bool(value.get("quota_degraded")),
+        "source_quorum_credit_allowed": False,
+        "preference_only_confirmation_allowed": False,
+        "orderbook_depth_execution_or_venue_permission": False,
+        "wallet_kol_company_truth_allowed": False,
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+        "boundary": str(value.get("boundary") or "Preference context is read-only.")[:700],
+    }
+
+
+def _safe_strategy_research_context(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "status": "not_available",
+            "context_role": "not_available",
+            "candidate_count": 0,
+            "strategy_lead_challenge_count": 0,
+            "strategy_lead_challenges": [],
+            "trade_candidate_creation_allowed": False,
+            "risk_handoff_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+            "live_capital_enabled": False,
+            "boundary": "No strategy research intake context was supplied.",
+        }
+    challenges = value.get("strategy_lead_challenges", [])
+    if not isinstance(challenges, list):
+        challenges = []
+    candidate_refs = value.get("candidate_refs", [])
+    if not isinstance(candidate_refs, list):
+        candidate_refs = []
+    return {
+        "status": str(value.get("status") or "unknown")[:80],
+        "context_role": str(value.get("context_role") or "strategy_research_challenge_context")[:120],
+        "source_note_ref": str(value.get("source_note_ref") or "")[:160],
+        "candidate_count": int(value.get("candidate_count", 0) or 0),
+        "active_decision_candidate_count": int(value.get("active_decision_candidate_count", 0) or 0),
+        "best_initial_research_candidate": str(value.get("best_initial_research_candidate") or "")[:120],
+        "benchmark_candidate": str(value.get("benchmark_candidate") or "")[:120],
+        "candidate_refs": [str(item)[:120] for item in candidate_refs[:8]],
+        "strategy_lead_challenge_count": int(value.get("strategy_lead_challenge_count", 0) or 0),
+        "strategy_lead_challenges": [
+            {
+                "candidate_key": str(item.get("candidate_key") or "")[:120],
+                "challenge": str(item.get("challenge") or "")[:260],
+            }
+            for item in challenges[:8]
+            if isinstance(item, dict)
+        ],
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+        "boundary": str(value.get("boundary") or "Strategy research intake is decision context only.")[:700],
+    }
+
+
 def _safe_source_context(value: dict[str, Any] | None) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {
@@ -159,6 +269,12 @@ def _safe_source_context(value: dict[str, Any] | None) -> dict[str, Any]:
         "durable_replay_replayed_source_count": int(value.get("durable_replay_replayed_source_count", 0) or 0),
         "durable_replay_missing_source_count": int(value.get("durable_replay_missing_source_count", 0) or 0),
         "source_results": _safe_source_results(value.get("source_results")),
+        "preference_mcp_shadow_context": _safe_preference_shadow_context(
+            value.get("preference_mcp_shadow_context")
+        ),
+        "strategy_research_intake": _safe_strategy_research_context(
+            value.get("strategy_research_intake")
+        ),
         "write_authority": False,
         "signal_authority": False,
         "order_authority": False,
@@ -202,6 +318,22 @@ def _strategy_review(
             fallback=("Which independent source can corroborate this assessment?",),
         )
     )
+    preference_context = source_context.get("preference_mcp_shadow_context", {})
+    preference_challenges = _safe_tuple(
+        preference_context.get("active_required_challenges") if isinstance(preference_context, dict) else (),
+    )
+    questions.extend(preference_challenges)
+    strategy_research_context = source_context.get("strategy_research_intake", {})
+    strategy_research_challenges: tuple[str, ...] = ()
+    if isinstance(strategy_research_context, dict):
+        challenge_rows = strategy_research_context.get("strategy_lead_challenges", [])
+        if isinstance(challenge_rows, list):
+            strategy_research_challenges = tuple(
+                str(item.get("challenge") or "")[:240]
+                for item in challenge_rows
+                if isinstance(item, dict) and str(item.get("challenge") or "").strip()
+            )
+    questions.extend(strategy_research_challenges[:3])
     if replay_complete:
         questions.extend(
             [
@@ -221,6 +353,17 @@ def _strategy_review(
         "paper_context_status": paper_account_context.get("status", "unknown"),
         "paper_context_connection_status": paper_account_context.get("connection_status", "unknown"),
         "required_challenges": tuple(questions[:8]),
+        "preference_mcp_context_status": preference_context.get("status", "not_available")
+        if isinstance(preference_context, dict)
+        else "not_available",
+        "preference_mcp_challenge_count": len(preference_challenges),
+        "strategy_research_context_status": strategy_research_context.get("status", "not_available")
+        if isinstance(strategy_research_context, dict)
+        else "not_available",
+        "strategy_research_candidate_count": strategy_research_context.get("candidate_count", 0)
+        if isinstance(strategy_research_context, dict)
+        else 0,
+        "strategy_research_challenge_count": len(strategy_research_challenges),
         "risk_handoff_allowed": False,
         "trade_candidate_allowed": False,
         "execution_allowed": False,

@@ -1,0 +1,1072 @@
+"""PaperOps-2 explicit Alpaca paper POST gate.
+
+This stage is the first real broker-write boundary for PaperOps, but it is
+still paper-only and opt-in. The default builder evaluates readiness without
+performing a network call. A POST can only happen when the caller passes the
+explicit execution flag, Qadam is in paper mode, live capital is disabled, the
+Alpaca endpoint is classified as paper, paper credentials are configured, and a
+Q7 guarded submit record is eligible.
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from datetime import datetime, timezone
+from hashlib import sha256
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+from orchestrator.config import Settings
+from orchestrator.event_log import EventLog
+from orchestrator.paper_account import ALPACA_PAPER_BASE_URL
+from orchestrator.phase7_guarded_alpaca_paper_submit import (
+    build_phase7_guarded_alpaca_paper_submit_path,
+    phase7_guarded_alpaca_submit_paths,
+    validate_phase7_guarded_alpaca_paper_submit_path,
+)
+from orchestrator.secrets import secret_status, secret_value
+
+
+PAPEROPS_ALPACA_POST_SCHEMA_VERSION = 1
+PAPEROPS_ALPACA_POST_RUNTIME_ARTIFACT = "paperops_alpaca_paper_post.json"
+PAPEROPS_ALPACA_POST_HISTORY = "paperops_alpaca_paper_post_history.jsonl"
+PAPEROPS_ALPACA_POST_EVENT_LOG = "paperops_alpaca_paper_post_events.jsonl"
+PAPEROPS_ALPACA_POST_EVENT_TYPE = "paperops_alpaca_paper_post_recorded"
+PAPEROPS_ALPACA_POST_PREWRITE_EVENT_TYPE = "paperops_alpaca_paper_post_prewrite"
+PAPEROPS_ALPACA_POST_COMPONENT = "paperops_alpaca_paper_post"
+
+PAPEROPS_ALPACA_POST_AUTHORITY_FALSE_FIELDS = (
+    "execution_allowed",
+    "paper_order_allowed",
+    "prediction_market_write_allowed",
+    "crypto_perps_write_allowed",
+    "live_endpoint_allowed",
+    "live_capital_enabled",
+    "manual_trade_level_override_allowed",
+    "phase7_proof_credit_allowed",
+    "secret_value_exposed",
+    "raw_broker_payload_stored",
+    "raw_broker_payload_exposed",
+    "authorization_header_exposed",
+    "base_url_exposed",
+    "broker_order_identifier_exposed",
+)
+
+PAPEROPS_ALPACA_POST_BOUNDARY = (
+    "PaperOps-2 is the explicit Alpaca paper-only POST gate. It may call "
+    "Alpaca /v2/orders only when QADAM_MODE=paper, live capital is disabled, "
+    "QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true, the endpoint is classified as "
+    "paper, paper API credentials are configured, a Q7 guarded submit record "
+    "exists, the Q7 source Event Log prewrite exists, a pre-trade snapshot "
+    "exists, the idempotency key is phase7_demo_proof scoped, and the caller "
+    "passes the explicit submit flag. It cannot call live endpoints, cannot "
+    "use live credentials, cannot submit non-Q7 orders, cannot submit "
+    "prediction-market or crypto-perps orders, cannot expose secrets or raw "
+    "broker payloads, cannot grant Phase 7 proof credit, and cannot enable "
+    "live capital."
+)
+
+PROHIBITED_VALUE_PATTERNS = (
+    re.compile(r"ghp_[A-Za-z0-9_]{20,}"),
+    re.compile(r"vcp_[A-Za-z0-9_]{20,}"),
+    re.compile(r"AIza[0-9A-Za-z_-]{20,}"),
+    re.compile(r"sb_secret_[0-9A-Za-z_-]{12,}"),
+    re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
+    re.compile(r"pref_agent_[0-9A-Za-z_-]{12,}"),
+    re.compile(r"[0-9]{6,}:[A-Za-z0-9_-]{20,}"),
+    re.compile(r"(ALPACA_API_KEY|ALPACA_API_SECRET)=[A-Za-z0-9_-]{8,}"),
+)
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _runtime_dir(settings: Settings | None = None) -> Path:
+    return Path((settings or Settings.from_env()).runtime_dir)
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, dict) else {}
+
+
+def paperops_alpaca_paper_post_paths(
+    settings: Settings | None = None,
+) -> tuple[Path, Path, Path]:
+    runtime = _runtime_dir(settings)
+    return (
+        runtime / PAPEROPS_ALPACA_POST_RUNTIME_ARTIFACT,
+        runtime / PAPEROPS_ALPACA_POST_HISTORY,
+        runtime / PAPEROPS_ALPACA_POST_EVENT_LOG,
+    )
+
+
+def read_latest_paperops_alpaca_paper_post(
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    output_path, _, _ = paperops_alpaca_paper_post_paths(settings)
+    if not output_path.exists():
+        return {}
+    return _read_json(output_path)
+
+
+def _contains_secret_shape(value: object) -> bool:
+    text = json.dumps(value, sort_keys=True, default=str)
+    return any(pattern.search(text) for pattern in PROHIBITED_VALUE_PATTERNS)
+
+
+def _fingerprint(payload: dict[str, Any]) -> str:
+    return sha256(json.dumps(payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
+def _int(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _bool(value: Any) -> bool:
+    return value is True or str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _endpoint_context(settings: Settings) -> dict[str, Any]:
+    paper_flag = (secret_value("ALPACA_PAPER", settings) or "true").strip().lower()
+    endpoint = (
+        secret_value("ALPACA_ENDPOINT", settings)
+        or secret_value("ALPACA_BASE_URL", settings)
+        or ALPACA_PAPER_BASE_URL
+    ).rstrip("/")
+    endpoint_is_paper = (
+        paper_flag != "false"
+        and endpoint.startswith("https://paper-api.alpaca.markets")
+        and "paper-api.alpaca.markets" in endpoint
+    )
+    key_ready = secret_status("ALPACA_API_KEY", settings)
+    secret_ready = secret_status("ALPACA_API_SECRET", settings)
+    return {
+        "alpaca_api_key_configured": key_ready.configured,
+        "alpaca_api_secret_configured": secret_ready.configured,
+        "alpaca_paper_flag": paper_flag != "false",
+        "endpoint_classification": (
+            "alpaca_paper_endpoint" if endpoint_is_paper else "blocked_non_paper_endpoint"
+        ),
+        "paper_endpoint_confirmed": endpoint_is_paper,
+        "base_url_exposed": False,
+        "authorization_header_exposed": False,
+        "secret_value_exposed": False,
+    }
+
+
+def _orders_url(settings: Settings) -> str:
+    endpoint = (
+        secret_value("ALPACA_ENDPOINT", settings)
+        or secret_value("ALPACA_BASE_URL", settings)
+        or ALPACA_PAPER_BASE_URL
+    ).rstrip("/")
+    if endpoint.endswith("/v2"):
+        return f"{endpoint}/orders"
+    return f"{endpoint}/v2/orders"
+
+
+def _headers(settings: Settings) -> dict[str, str]:
+    api_key = secret_value("ALPACA_API_KEY", settings)
+    api_secret = secret_value("ALPACA_API_SECRET", settings)
+    if not api_key or not api_secret:
+        raise PermissionError("missing Alpaca paper credentials")
+    return {
+        "APCA-API-KEY-ID": api_key,
+        "APCA-API-SECRET-KEY": api_secret,
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Qadam/0.1 paperops-alpaca-paper-post",
+    }
+
+
+def _source_guarded_submit(settings: Settings) -> dict[str, Any]:
+    submit_path, _, _ = phase7_guarded_alpaca_submit_paths(settings)
+    if submit_path.exists():
+        return _read_json(submit_path)
+    return build_phase7_guarded_alpaca_paper_submit_path(settings=settings)
+
+
+def _source_record_errors(record: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    request = record.get("submit_request_payload", {})
+    if not isinstance(request, dict):
+        request = {}
+        errors.append("source_request_payload_missing")
+    pre_trade_snapshot = record.get("pre_trade_snapshot")
+    if record.get("status") != "submitted":
+        errors.append("source_status_not_submitted")
+    if record.get("selected_venue") != "alpaca_paper":
+        errors.append("source_venue_not_alpaca_paper")
+    if record.get("idempotency_namespace") != "phase7_demo_proof":
+        errors.append("source_idempotency_namespace_not_phase7")
+    if not str(record.get("idempotency_key") or "").startswith("q7-6-stage-"):
+        errors.append("source_idempotency_key_not_phase7")
+    if not str(record.get("event_log_prewrite_ref") or "").strip():
+        errors.append("source_event_log_prewrite_ref_missing")
+    if not isinstance(pre_trade_snapshot, dict) or not pre_trade_snapshot:
+        errors.append("source_pre_trade_snapshot_missing")
+    if request.get("endpoint_classification") != "alpaca_paper_endpoint":
+        errors.append("source_endpoint_not_paper")
+    for key in (
+        "authorization_header_included",
+        "base_url_exposed",
+        "raw_payload_exposed",
+        "broker_identifier_exposed",
+        "post_call_performed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+    ):
+        if request.get(key) is not False:
+            errors.append(f"source_request_forbidden:{key}")
+    for key in (
+        "broker_post_called",
+        "alpaca_post_called",
+        "external_broker_post_performed",
+        "broker_write_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "prediction_market_write_allowed",
+        "crypto_perps_write_allowed",
+        "phase7_proof_credit_allowed",
+        "manual_trade_level_override_allowed",
+        "broker_order_identifier_exposed",
+        "secret_value_exposed",
+        "raw_payload_exposed",
+        "authorization_header_exposed",
+        "base_url_exposed",
+    ):
+        if record.get(key) is not False:
+            errors.append(f"source_record_forbidden:{key}")
+    return sorted(set(errors))
+
+
+def _client_order_id(source_idempotency_key: str) -> str:
+    digest = sha256(source_idempotency_key.encode("utf-8")).hexdigest()[:24]
+    return f"q7-6-stage-{digest}"
+
+
+def _request_preview(record: dict[str, Any]) -> dict[str, Any]:
+    request = record.get("submit_request_payload", {})
+    if not isinstance(request, dict):
+        request = {}
+    source_key = str(record.get("idempotency_key") or "")
+    return {
+        "request_type": "paperops_alpaca_paper_order_post",
+        "method": "POST",
+        "path": "/v2/orders",
+        "symbol": str(request.get("symbol") or "").upper(),
+        "qty": str(request.get("qty") or ""),
+        "side": str(request.get("side") or "").lower(),
+        "type": str(request.get("type") or "market").lower(),
+        "time_in_force": str(request.get("time_in_force") or "day").lower(),
+        "client_order_id": _client_order_id(source_key),
+        "source_idempotency_key": source_key,
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "base_url_exposed": False,
+        "authorization_header_included": False,
+        "raw_payload_exposed": False,
+        "broker_identifier_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+    }
+
+
+def _alpaca_post_body(preview: dict[str, Any]) -> dict[str, str]:
+    return {
+        "symbol": str(preview.get("symbol") or ""),
+        "qty": str(preview.get("qty") or ""),
+        "side": str(preview.get("side") or ""),
+        "type": str(preview.get("type") or ""),
+        "time_in_force": str(preview.get("time_in_force") or ""),
+        "client_order_id": str(preview.get("client_order_id") or ""),
+    }
+
+
+def _source_record_to_submit_candidate(record: dict[str, Any]) -> dict[str, Any]:
+    source_errors = _source_record_errors(record)
+    preview = _request_preview(record)
+    source_key = str(record.get("idempotency_key") or "")
+    pre_trade_snapshot = record.get("pre_trade_snapshot")
+    snapshot_fingerprint = (
+        _fingerprint(pre_trade_snapshot) if isinstance(pre_trade_snapshot, dict) else None
+    )
+    return {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "record_type": "paperops_alpaca_paper_post_candidate",
+        "source_submit_record_artifact_id": record.get("artifact_id"),
+        "source_staged_order_artifact_id": record.get("source_staged_order_artifact_id"),
+        "source_proof_order_id": record.get("source_proof_order_id"),
+        "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
+        "source_setup_record_id": record.get("source_setup_record_id"),
+        "source_idempotency_key": source_key,
+        "idempotency_key": preview["client_order_id"],
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "source_event_log_prewrite_ref": record.get("event_log_prewrite_ref"),
+        "source_pre_trade_snapshot_present": isinstance(pre_trade_snapshot, dict)
+        and bool(pre_trade_snapshot),
+        "source_pre_trade_snapshot_fingerprint": snapshot_fingerprint,
+        "selected_venue": "alpaca_paper",
+        "endpoint_classification": "alpaca_paper_endpoint",
+        "request_preview": preview,
+        "request_fingerprint": _fingerprint(preview),
+        "source_record_errors": source_errors,
+        "eligible_for_paper_post": not source_errors,
+        "status": "eligible" if not source_errors else "blocked_source_contract",
+        "broker_post_called": False,
+        "alpaca_paper_post_called": False,
+        "alpaca_paper_post_succeeded": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+        "manual_trade_level_override_allowed": False,
+    }
+
+
+def _eligible_submit_candidates(source_submit: dict[str, Any]) -> list[dict[str, Any]]:
+    records = [
+        record
+        for record in source_submit.get("submit_records", []) or []
+        if isinstance(record, dict)
+    ]
+    candidates = [_source_record_to_submit_candidate(record) for record in records]
+    return [candidate for candidate in candidates if candidate["eligible_for_paper_post"]]
+
+
+def _sanitize_broker_success(response_payload: dict[str, Any], *, submitted_at: str) -> dict[str, Any]:
+    broker_id = str(response_payload.get("id") or "")
+    return {
+        "receipt_type": "alpaca_paper_order_submit_receipt",
+        "receipt_state": "submitted_to_alpaca_paper",
+        "submitted_at": submitted_at,
+        "broker_order_status": response_payload.get("status"),
+        "broker_client_order_id": response_payload.get("client_order_id"),
+        "broker_order_id_hash": sha256(broker_id.encode("utf-8")).hexdigest()
+        if broker_id
+        else None,
+        "broker_order_identifier_exposed": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "secret_value_exposed": False,
+    }
+
+
+def _post_to_alpaca_paper(
+    *,
+    settings: Settings,
+    request_preview: dict[str, Any],
+    timeout_seconds: float = 12.0,
+) -> dict[str, Any]:
+    try:
+        import httpx
+    except ImportError as exc:
+        return {
+            "post_attempted": False,
+            "post_succeeded": False,
+            "failure_class": "missing_httpx",
+            "failure_message_persisted": False,
+            "sanitized_http_status": None,
+            "receipt": None,
+            "exception": exc,
+        }
+
+    submitted_at = _now()
+    try:
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
+            response = client.post(
+                _orders_url(settings),
+                headers=_headers(settings),
+                json=_alpaca_post_body(request_preview),
+            )
+        status_code = response.status_code
+        if status_code < 200 or status_code >= 300:
+            return {
+                "post_attempted": True,
+                "post_succeeded": False,
+                "failure_class": f"http_{status_code}",
+                "failure_message_persisted": False,
+                "sanitized_http_status": status_code,
+                "receipt": None,
+                "exception": None,
+            }
+        payload = response.json()
+        if not isinstance(payload, dict):
+            payload = {}
+        return {
+            "post_attempted": True,
+            "post_succeeded": True,
+            "failure_class": None,
+            "failure_message_persisted": False,
+            "sanitized_http_status": status_code,
+            "receipt": _sanitize_broker_success(payload, submitted_at=submitted_at),
+            "exception": None,
+        }
+    except Exception as exc:  # noqa: BLE001 - artifact must persist sanitized failure class only.
+        return {
+            "post_attempted": True,
+            "post_succeeded": False,
+            "failure_class": type(exc).__name__,
+            "failure_message_persisted": False,
+            "sanitized_http_status": None,
+            "receipt": None,
+            "exception": None,
+        }
+
+
+def _precondition_records(settings: Settings, endpoint: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "key": "mode_is_paper",
+            "passed": settings.mode == "paper",
+            "detail": f"mode={settings.mode}",
+        },
+        {
+            "key": "live_capital_disabled",
+            "passed": settings.live_capital_enabled is False,
+            "detail": f"live_capital_enabled={settings.live_capital_enabled}",
+        },
+        {
+            "key": "paper_submit_flag_enabled",
+            "passed": settings.alpaca_paper_submit_enabled is True,
+            "detail": "QADAM_ALPACA_PAPER_SUBMIT_ENABLED",
+        },
+        {
+            "key": "alpaca_endpoint_classified_paper",
+            "passed": endpoint["paper_endpoint_confirmed"] is True,
+            "detail": endpoint["endpoint_classification"],
+        },
+        {
+            "key": "alpaca_paper_credentials_configured",
+            "passed": endpoint["alpaca_api_key_configured"] is True
+            and endpoint["alpaca_api_secret_configured"] is True,
+            "detail": (
+                f"key={endpoint['alpaca_api_key_configured']}; "
+                f"secret={endpoint['alpaca_api_secret_configured']}"
+            ),
+        },
+    ]
+
+
+def _status(
+    *,
+    settings: Settings,
+    endpoint: dict[str, Any],
+    eligible_count: int,
+    execute_post: bool,
+    post_result: dict[str, Any] | None,
+) -> str:
+    if settings.mode != "paper":
+        return "blocked_not_paper_mode"
+    if settings.live_capital_enabled:
+        return "blocked_live_capital_enabled"
+    if not settings.alpaca_paper_submit_enabled:
+        return "disabled_pending_enablement"
+    if endpoint["paper_endpoint_confirmed"] is not True:
+        return "blocked_non_paper_endpoint"
+    if not endpoint["alpaca_api_key_configured"] or not endpoint["alpaca_api_secret_configured"]:
+        return "blocked_missing_alpaca_paper_credentials"
+    if eligible_count < 1:
+        return "ready_no_eligible_order"
+    if not execute_post:
+        return "ready_pending_explicit_execute"
+    if post_result and post_result.get("post_succeeded") is True:
+        return "submitted_to_alpaca_paper"
+    return "broker_post_failed_sanitized"
+
+
+def build_paperops_alpaca_paper_post(
+    settings: Settings | None = None,
+    *,
+    execute_post: bool = False,
+    event_log_path: str | Path | None = None,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    generated_at = _now()
+    endpoint = _endpoint_context(settings)
+    source_submit = _source_guarded_submit(settings)
+    source_validation_errors = validate_phase7_guarded_alpaca_paper_submit_path(source_submit)
+    all_candidates = [
+        _source_record_to_submit_candidate(record)
+        for record in source_submit.get("submit_records", []) or []
+        if isinstance(record, dict)
+    ]
+    eligible_candidates = _eligible_submit_candidates(source_submit)
+    selected_candidate = eligible_candidates[0] if eligible_candidates else None
+    preconditions = _precondition_records(settings, endpoint)
+    precondition_failures = [
+        record["key"] for record in preconditions if record.get("passed") is not True
+    ]
+    post_path_available = not precondition_failures
+    post_result: dict[str, Any] | None = None
+    prewrite_entry_ref: str | None = None
+    prewrite_event_count = 0
+
+    if execute_post and post_path_available and selected_candidate is not None:
+        event_path = Path(
+            event_log_path or (_runtime_dir(settings) / PAPEROPS_ALPACA_POST_EVENT_LOG)
+        )
+        prewrite = EventLog(event_path, echo=False).write(
+            PAPEROPS_ALPACA_POST_PREWRITE_EVENT_TYPE,
+            PAPEROPS_ALPACA_POST_COMPONENT,
+            payload={
+                "status": "prewrite_before_alpaca_paper_post",
+                "source_submit_record_artifact_id": selected_candidate.get(
+                    "source_submit_record_artifact_id"
+                ),
+                "source_staged_order_artifact_id": selected_candidate.get(
+                    "source_staged_order_artifact_id"
+                ),
+                "source_event_log_prewrite_ref": selected_candidate.get(
+                    "source_event_log_prewrite_ref"
+                ),
+                "idempotency_namespace": selected_candidate.get("idempotency_namespace"),
+                "source_idempotency_key": selected_candidate.get("source_idempotency_key"),
+                "client_order_id": selected_candidate.get("idempotency_key"),
+                "request_fingerprint": selected_candidate.get("request_fingerprint"),
+                "endpoint_classification": endpoint["endpoint_classification"],
+                "live_endpoint_allowed": False,
+                "live_capital_enabled": False,
+            },
+        )
+        prewrite_entry_ref = prewrite.correlation_id
+        prewrite_event_count = 1
+        post_result = _post_to_alpaca_paper(
+            settings=settings,
+            request_preview=selected_candidate["request_preview"],
+        )
+        selected_candidate = deepcopy(selected_candidate)
+        selected_candidate["paperops_event_log_prewrite_written"] = True
+        selected_candidate["paperops_event_log_prewrite_ref"] = prewrite_entry_ref
+        selected_candidate["broker_post_called"] = post_result["post_attempted"]
+        selected_candidate["alpaca_paper_post_called"] = post_result["post_attempted"]
+        selected_candidate["alpaca_paper_post_succeeded"] = post_result["post_succeeded"]
+        selected_candidate["sanitized_http_status"] = post_result["sanitized_http_status"]
+        selected_candidate["broker_failure_class"] = post_result["failure_class"]
+        selected_candidate["broker_failure_message_persisted"] = False
+        selected_candidate["broker_receipt"] = post_result["receipt"]
+        selected_candidate["status"] = (
+            "submitted_to_alpaca_paper"
+            if post_result["post_succeeded"]
+            else "broker_post_failed_sanitized"
+        )
+
+    submitted_records = [selected_candidate] if selected_candidate is not None else []
+    post_attempted = bool(post_result and post_result.get("post_attempted"))
+    post_succeeded = bool(post_result and post_result.get("post_succeeded"))
+    status = _status(
+        settings=settings,
+        endpoint=endpoint,
+        eligible_count=len(eligible_candidates),
+        execute_post=execute_post,
+        post_result=post_result,
+    )
+    pre_trade_snapshot_present_count = sum(
+        1 for candidate in eligible_candidates if candidate["source_pre_trade_snapshot_present"]
+    )
+    source_event_log_prewrite_present_count = sum(
+        1
+        for candidate in eligible_candidates
+        if str(candidate.get("source_event_log_prewrite_ref") or "").strip()
+    )
+    artifact = {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "artifact_type": "paperops_alpaca_paper_post",
+        "artifact_id": "paperops:alpaca-paper-post:latest",
+        "phase": "PaperOps",
+        "stage": "PaperOps-2",
+        "status": status,
+        "generated_at": generated_at,
+        "public_safe": True,
+        "recorded": False,
+        "event_log_required": True,
+        "event_log_written": False,
+        "event_log_path": None,
+        "event_log_event_count": prewrite_event_count,
+        "event_log_correlation_id": None,
+        "event_log_created_at": None,
+        "runtime_artifact_path": None,
+        "history_log_path": None,
+        "mode": settings.mode,
+        "paper_operational_enabled": settings.paper_operational_enabled,
+        "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
+        "live_capital_enabled": settings.live_capital_enabled,
+        "execute_post_requested": execute_post,
+        "explicit_submit_flag_required": True,
+        "paper_post_path_available": post_path_available,
+        "post_path_method": "POST",
+        "post_path_template": "/v2/orders",
+        "endpoint_classification": endpoint["endpoint_classification"],
+        "paper_endpoint_confirmed": endpoint["paper_endpoint_confirmed"],
+        "alpaca_paper_flag": endpoint["alpaca_paper_flag"],
+        "alpaca_api_key_configured": endpoint["alpaca_api_key_configured"],
+        "alpaca_api_secret_configured": endpoint["alpaca_api_secret_configured"],
+        "precondition_records": preconditions,
+        "precondition_failure_count": len(precondition_failures),
+        "precondition_failures": precondition_failures,
+        "source_guarded_submit_artifact_id": source_submit.get("artifact_id"),
+        "source_guarded_submit_status": source_submit.get("status"),
+        "source_guarded_submit_validation_error_count": len(source_validation_errors),
+        "source_guarded_submit_validation_errors": source_validation_errors[:12],
+        "source_submit_record_count": len(all_candidates),
+        "eligible_submit_record_count": len(eligible_candidates),
+        "blocked_source_record_count": len(all_candidates) - len(eligible_candidates),
+        "selected_submit_record_count": len(submitted_records),
+        "source_event_log_prewrite_present_count": source_event_log_prewrite_present_count,
+        "pre_trade_snapshot_present_count": pre_trade_snapshot_present_count,
+        "paperops_event_log_prewrite_required": bool(execute_post and selected_candidate),
+        "paperops_event_log_prewrite_written": prewrite_entry_ref is not None,
+        "paperops_event_log_prewrite_ref": prewrite_entry_ref,
+        "paperops_event_log_prewrite_count": prewrite_event_count,
+        "post_candidates": all_candidates,
+        "selected_post_records": submitted_records,
+        "alpaca_paper_post_called_count": 1 if post_attempted else 0,
+        "alpaca_paper_post_succeeded_count": 1 if post_succeeded else 0,
+        "alpaca_paper_post_failed_count": 1 if post_attempted and not post_succeeded else 0,
+        "broker_post_called_count": 1 if post_attempted else 0,
+        "broker_submit_receipt_created_count": 1 if post_succeeded else 0,
+        "unsafe_live_endpoint_called_count": 0,
+        "live_endpoint_called_count": 0,
+        "live_capital_enabled_count": 0,
+        "manual_trade_level_override_count": 0,
+        "prediction_market_write_allowed_count": 0,
+        "crypto_perps_write_allowed_count": 0,
+        "phase7_proof_credit_allowed_count": 0,
+        "broker_order_identifier_exposed_count": 0,
+        "secret_value_exposed_count": 0,
+        "raw_broker_payload_exposed_count": 0,
+        "authorization_header_exposed_count": 0,
+        "base_url_exposed_count": 0,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "prediction_market_write_allowed": False,
+        "crypto_perps_write_allowed": False,
+        "live_endpoint_allowed": False,
+        "manual_trade_level_override_allowed": False,
+        "phase7_proof_credit_allowed": False,
+        "secret_value_exposed": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "raw_broker_response_persisted": False,
+        "broker_failure_message_persisted": False,
+        "raw_broker_payload_stored_count": 0,
+        "recommended_next_stage": (
+            "PaperOps-3 paper lifecycle poller"
+            if status == "submitted_to_alpaca_paper"
+            else "Wait for eligible Q7 staged proof order and explicit paper-submit enablement"
+        ),
+        "boundary": PAPEROPS_ALPACA_POST_BOUNDARY,
+    }
+    artifact["validation_errors"] = validate_paperops_alpaca_paper_post(artifact)
+    if artifact["validation_errors"]:
+        artifact["status"] = "invalid"
+    return artifact
+
+
+def _record_errors(record: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    preview = record.get("request_preview", {})
+    if not isinstance(preview, dict):
+        errors.append("paperops_alpaca_record_request_preview_missing")
+        preview = {}
+    eligible = record.get("eligible_for_paper_post") is True
+    if not eligible:
+        if record.get("status") != "blocked_source_contract":
+            errors.append("paperops_alpaca_blocked_record_status_invalid")
+        if not isinstance(record.get("source_record_errors"), list):
+            errors.append("paperops_alpaca_blocked_record_errors_missing")
+        for key in (
+            "raw_broker_payload_stored",
+            "raw_broker_payload_exposed",
+            "authorization_header_exposed",
+            "base_url_exposed",
+            "broker_order_identifier_exposed",
+            "secret_value_exposed",
+            "live_endpoint_allowed",
+            "live_capital_enabled",
+            "manual_trade_level_override_allowed",
+        ):
+            if record.get(key) is not False:
+                errors.append(f"paperops_alpaca_record_forbidden:{key}")
+        for key in (
+            "base_url_exposed",
+            "authorization_header_included",
+            "raw_payload_exposed",
+            "broker_identifier_exposed",
+            "live_endpoint_allowed",
+            "live_capital_enabled",
+        ):
+            if preview.get(key) is not False:
+                errors.append(f"paperops_alpaca_record_preview_forbidden:{key}")
+        return errors
+    if record.get("selected_venue") != "alpaca_paper":
+        errors.append("paperops_alpaca_record_venue_invalid")
+    if record.get("endpoint_classification") != "alpaca_paper_endpoint":
+        errors.append("paperops_alpaca_record_endpoint_invalid")
+    if record.get("idempotency_namespace") != "phase7_demo_proof":
+        errors.append("paperops_alpaca_record_namespace_invalid")
+    if not str(record.get("source_idempotency_key") or "").startswith("q7-6-stage-"):
+        errors.append("paperops_alpaca_record_source_idempotency_invalid")
+    if not str(record.get("idempotency_key") or "").startswith("q7-6-stage-"):
+        errors.append("paperops_alpaca_record_client_id_invalid")
+    if not str(record.get("source_event_log_prewrite_ref") or "").strip():
+        errors.append("paperops_alpaca_record_source_prewrite_missing")
+    if record.get("source_pre_trade_snapshot_present") is not True:
+        errors.append("paperops_alpaca_record_pre_trade_snapshot_missing")
+    if record.get("request_fingerprint") != _fingerprint(preview):
+        errors.append("paperops_alpaca_record_request_fingerprint_mismatch")
+    for key in (
+        "base_url_exposed",
+        "authorization_header_included",
+        "raw_payload_exposed",
+        "broker_identifier_exposed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+    ):
+        if preview.get(key) is not False:
+            errors.append(f"paperops_alpaca_record_preview_forbidden:{key}")
+    for key in (
+        "raw_broker_payload_stored",
+        "raw_broker_payload_exposed",
+        "authorization_header_exposed",
+        "base_url_exposed",
+        "broker_order_identifier_exposed",
+        "secret_value_exposed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "manual_trade_level_override_allowed",
+    ):
+        if record.get(key) is not False:
+            errors.append(f"paperops_alpaca_record_forbidden:{key}")
+    if record.get("alpaca_paper_post_succeeded") is True:
+        receipt = record.get("broker_receipt")
+        if not isinstance(receipt, dict):
+            errors.append("paperops_alpaca_record_success_receipt_missing")
+            receipt = {}
+        if not str(receipt.get("broker_order_id_hash") or "").strip():
+            errors.append("paperops_alpaca_record_broker_order_hash_missing")
+        for key in (
+            "broker_order_identifier_exposed",
+            "raw_broker_payload_stored",
+            "raw_broker_payload_exposed",
+            "authorization_header_exposed",
+            "base_url_exposed",
+            "secret_value_exposed",
+        ):
+            if receipt.get(key) is not False:
+                errors.append(f"paperops_alpaca_record_receipt_forbidden:{key}")
+    return errors
+
+
+def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    required = {
+        "alpaca_api_key_configured",
+        "alpaca_api_secret_configured",
+        "alpaca_paper_post_called_count",
+        "alpaca_paper_post_succeeded_count",
+        "alpaca_paper_submit_enabled",
+        "artifact_type",
+        "base_url_exposed",
+        "boundary",
+        "broker_order_identifier_exposed",
+        "broker_order_identifier_exposed_count",
+        "broker_post_called_count",
+        "crypto_perps_write_allowed",
+        "endpoint_classification",
+        "event_log_required",
+        "event_log_written",
+        "execute_post_requested",
+        "explicit_submit_flag_required",
+        "live_capital_enabled",
+        "live_endpoint_allowed",
+        "mode",
+        "paper_endpoint_confirmed",
+        "paper_post_path_available",
+        "paperops_event_log_prewrite_written",
+        "phase",
+        "phase7_proof_credit_allowed",
+        "post_candidates",
+        "prediction_market_write_allowed",
+        "public_safe",
+        "raw_broker_payload_exposed",
+        "raw_broker_payload_stored",
+        "recorded",
+        "schema_version",
+        "secret_value_exposed",
+        "selected_post_records",
+        "source_event_log_prewrite_present_count",
+        "stage",
+        "status",
+    }
+    missing = sorted(required - set(artifact))
+    if missing:
+        errors.append("paperops_alpaca_missing_fields:" + ",".join(missing))
+    if artifact.get("schema_version") != PAPEROPS_ALPACA_POST_SCHEMA_VERSION:
+        errors.append("paperops_alpaca_schema_version_mismatch")
+    if artifact.get("artifact_type") != "paperops_alpaca_paper_post":
+        errors.append("paperops_alpaca_artifact_type_mismatch")
+    if artifact.get("phase") != "PaperOps" or artifact.get("stage") != "PaperOps-2":
+        errors.append("paperops_alpaca_phase_stage_mismatch")
+    if artifact.get("mode") != "paper":
+        errors.append("paperops_alpaca_mode_not_paper")
+    if artifact.get("public_safe") is not True:
+        errors.append("paperops_alpaca_not_public_safe")
+    for key in PAPEROPS_ALPACA_POST_AUTHORITY_FALSE_FIELDS:
+        if artifact.get(key) is not False:
+            errors.append(f"paperops_alpaca_forbidden:{key}")
+    for key in (
+        "unsafe_live_endpoint_called_count",
+        "live_endpoint_called_count",
+        "live_capital_enabled_count",
+        "manual_trade_level_override_count",
+        "prediction_market_write_allowed_count",
+        "crypto_perps_write_allowed_count",
+        "phase7_proof_credit_allowed_count",
+        "broker_order_identifier_exposed_count",
+        "secret_value_exposed_count",
+        "raw_broker_payload_exposed_count",
+        "authorization_header_exposed_count",
+        "base_url_exposed_count",
+        "raw_broker_payload_stored_count",
+    ):
+        if _int(artifact.get(key)) != 0:
+            errors.append(f"paperops_alpaca_unsafe_counter_nonzero:{key}")
+    if artifact.get("explicit_submit_flag_required") is not True:
+        errors.append("paperops_alpaca_explicit_submit_flag_not_required")
+    if artifact.get("endpoint_classification") != "alpaca_paper_endpoint":
+        if _int(artifact.get("alpaca_paper_post_called_count")) != 0:
+            errors.append("paperops_alpaca_post_called_without_paper_endpoint")
+    if artifact.get("paper_endpoint_confirmed") is not True:
+        if artifact.get("paper_post_path_available") is True:
+            errors.append("paperops_alpaca_path_available_without_paper_endpoint")
+    if artifact.get("alpaca_paper_submit_enabled") is not True:
+        if _int(artifact.get("alpaca_paper_post_called_count")) != 0:
+            errors.append("paperops_alpaca_post_called_without_flag")
+        if artifact.get("status") not in {
+            "disabled_pending_enablement",
+            "blocked_not_paper_mode",
+            "blocked_live_capital_enabled",
+            "invalid",
+        }:
+            errors.append("paperops_alpaca_disabled_status_invalid")
+    if artifact.get("execute_post_requested") is not True:
+        if _int(artifact.get("alpaca_paper_post_called_count")) != 0:
+            errors.append("paperops_alpaca_post_called_without_explicit_execute")
+    if _int(artifact.get("alpaca_paper_post_called_count")):
+        if artifact.get("execute_post_requested") is not True:
+            errors.append("paperops_alpaca_called_without_execute")
+        if artifact.get("alpaca_paper_submit_enabled") is not True:
+            errors.append("paperops_alpaca_called_without_submit_flag")
+        if artifact.get("paper_endpoint_confirmed") is not True:
+            errors.append("paperops_alpaca_called_without_paper_endpoint")
+        if artifact.get("paperops_event_log_prewrite_written") is not True:
+            errors.append("paperops_alpaca_called_without_paperops_prewrite")
+        if _int(artifact.get("source_event_log_prewrite_present_count")) < 1:
+            errors.append("paperops_alpaca_called_without_source_prewrite")
+        if _int(artifact.get("pre_trade_snapshot_present_count")) < 1:
+            errors.append("paperops_alpaca_called_without_pre_trade_snapshot")
+        if _int(artifact.get("eligible_submit_record_count")) < 1:
+            errors.append("paperops_alpaca_called_without_eligible_order")
+    if _int(artifact.get("alpaca_paper_post_succeeded_count")):
+        if artifact.get("status") != "submitted_to_alpaca_paper":
+            errors.append("paperops_alpaca_success_status_invalid")
+        if _int(artifact.get("broker_submit_receipt_created_count")) < 1:
+            errors.append("paperops_alpaca_success_without_receipt")
+    if _int(artifact.get("alpaca_paper_post_succeeded_count")) > _int(
+        artifact.get("alpaca_paper_post_called_count")
+    ):
+        errors.append("paperops_alpaca_success_gt_called")
+    records = artifact.get("post_candidates", [])
+    selected = artifact.get("selected_post_records", [])
+    if not isinstance(records, list):
+        errors.append("paperops_alpaca_post_candidates_not_list")
+        records = []
+    if not isinstance(selected, list):
+        errors.append("paperops_alpaca_selected_records_not_list")
+        selected = []
+    if artifact.get("source_submit_record_count") != len(records):
+        errors.append("paperops_alpaca_source_record_count_mismatch")
+    eligible_records = [
+        record
+        for record in records
+        if isinstance(record, dict) and record.get("eligible_for_paper_post") is True
+    ]
+    if artifact.get("eligible_submit_record_count") != len(eligible_records):
+        errors.append("paperops_alpaca_eligible_count_mismatch")
+    for record in records + selected:
+        if isinstance(record, dict):
+            errors.extend(_record_errors(record))
+        else:
+            errors.append("paperops_alpaca_record_invalid")
+    if artifact.get("recorded") is True and artifact.get("event_log_written") is not True:
+        errors.append("paperops_alpaca_event_log_missing")
+    if artifact.get("event_log_written") is True and _int(artifact.get("event_log_event_count")) < 1:
+        errors.append("paperops_alpaca_event_log_count_invalid")
+    boundary = str(artifact.get("boundary") or "")
+    for phrase in (
+        "explicit Alpaca paper-only POST gate",
+        "QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true",
+        "explicit submit flag",
+        "cannot call live endpoints",
+        "cannot expose secrets or raw broker payloads",
+        "cannot enable live capital",
+    ):
+        if phrase not in boundary:
+            errors.append("paperops_alpaca_boundary_weak")
+            break
+    if _contains_secret_shape(artifact):
+        errors.append("paperops_alpaca_secret_shape_exposed")
+    return sorted(set(errors))
+
+
+def write_paperops_alpaca_paper_post(
+    artifact: dict[str, Any],
+    settings: Settings | None = None,
+    *,
+    record_event: bool = True,
+    event_log_path: str | Path | None = None,
+) -> tuple[Path, Path, Path, dict[str, Any]]:
+    settings = settings or Settings.from_env()
+    output_path, history_path, default_event_path = paperops_alpaca_paper_post_paths(
+        settings
+    )
+    event_path = Path(event_log_path or default_event_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    written = deepcopy(artifact)
+    written["recorded"] = True
+    written["runtime_artifact_path"] = str(output_path)
+    written["history_log_path"] = str(history_path)
+    if record_event:
+        event = EventLog(event_path, echo=False).write(
+            PAPEROPS_ALPACA_POST_EVENT_TYPE,
+            PAPEROPS_ALPACA_POST_COMPONENT,
+            payload={
+                "status": written["status"],
+                "execute_post_requested": written["execute_post_requested"],
+                "paper_post_path_available": written["paper_post_path_available"],
+                "eligible_submit_record_count": written["eligible_submit_record_count"],
+                "alpaca_paper_post_called_count": written[
+                    "alpaca_paper_post_called_count"
+                ],
+                "alpaca_paper_post_succeeded_count": written[
+                    "alpaca_paper_post_succeeded_count"
+                ],
+                "live_endpoint_called_count": written["live_endpoint_called_count"],
+                "live_capital_enabled": written["live_capital_enabled"],
+            },
+        )
+        written["event_log_written"] = True
+        written["event_log_path"] = str(event_path)
+        written["event_log_event_count"] = int(
+            written.get("paperops_event_log_prewrite_count", 0) or 0
+        ) + 1
+        written["event_log_correlation_id"] = event.correlation_id
+        written["event_log_created_at"] = event.created_at
+    written["validation_errors"] = validate_paperops_alpaca_paper_post(written)
+    if written["validation_errors"]:
+        written["status"] = "invalid"
+    output_path.write_text(
+        json.dumps(written, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    history_record = {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "artifact_id": written.get("artifact_id"),
+        "status": written.get("status"),
+        "recorded_at": _now(),
+        "alpaca_paper_submit_enabled": written.get("alpaca_paper_submit_enabled"),
+        "execute_post_requested": written.get("execute_post_requested"),
+        "paper_post_path_available": written.get("paper_post_path_available"),
+        "eligible_submit_record_count": written.get("eligible_submit_record_count"),
+        "alpaca_paper_post_called_count": written.get("alpaca_paper_post_called_count"),
+        "alpaca_paper_post_succeeded_count": written.get(
+            "alpaca_paper_post_succeeded_count"
+        ),
+        "live_endpoint_called_count": written.get("live_endpoint_called_count"),
+        "live_capital_enabled": written.get("live_capital_enabled"),
+        "validation_error_count": len(written.get("validation_errors", [])),
+    }
+    with history_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(history_record, sort_keys=True) + "\n")
+    return output_path, history_path, event_path, written
+
+
+def paperops_alpaca_paper_post_public_status(
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    artifact = read_latest_paperops_alpaca_paper_post(settings)
+    if not artifact:
+        return {
+            "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+            "status": "not_run",
+            "stage": "PaperOps-2",
+            "paper_post_path_available": False,
+            "eligible_submit_record_count": 0,
+            "alpaca_paper_post_called_count": 0,
+            "alpaca_paper_post_succeeded_count": 0,
+            "live_endpoint_called_count": 0,
+            "live_capital_enabled": False,
+            "secret_value_exposed": False,
+            "raw_broker_payload_exposed": False,
+            "broker_order_identifier_exposed": False,
+            "boundary": PAPEROPS_ALPACA_POST_BOUNDARY,
+        }
+    return {
+        "schema_version": artifact.get("schema_version"),
+        "status": artifact.get("status"),
+        "stage": artifact.get("stage"),
+        "alpaca_paper_submit_enabled": artifact.get("alpaca_paper_submit_enabled"),
+        "paper_post_path_available": artifact.get("paper_post_path_available"),
+        "endpoint_classification": artifact.get("endpoint_classification"),
+        "paper_endpoint_confirmed": artifact.get("paper_endpoint_confirmed"),
+        "alpaca_api_key_configured": artifact.get("alpaca_api_key_configured"),
+        "alpaca_api_secret_configured": artifact.get("alpaca_api_secret_configured"),
+        "execute_post_requested": artifact.get("execute_post_requested"),
+        "eligible_submit_record_count": artifact.get("eligible_submit_record_count", 0),
+        "selected_submit_record_count": artifact.get("selected_submit_record_count", 0),
+        "source_event_log_prewrite_present_count": artifact.get(
+            "source_event_log_prewrite_present_count",
+            0,
+        ),
+        "pre_trade_snapshot_present_count": artifact.get(
+            "pre_trade_snapshot_present_count",
+            0,
+        ),
+        "paperops_event_log_prewrite_written": artifact.get(
+            "paperops_event_log_prewrite_written"
+        ),
+        "alpaca_paper_post_called_count": artifact.get(
+            "alpaca_paper_post_called_count",
+            0,
+        ),
+        "alpaca_paper_post_succeeded_count": artifact.get(
+            "alpaca_paper_post_succeeded_count",
+            0,
+        ),
+        "live_endpoint_called_count": artifact.get("live_endpoint_called_count", 0),
+        "live_capital_enabled": artifact.get("live_capital_enabled"),
+        "secret_value_exposed": artifact.get("secret_value_exposed"),
+        "raw_broker_payload_exposed": artifact.get("raw_broker_payload_exposed"),
+        "broker_order_identifier_exposed": artifact.get(
+            "broker_order_identifier_exposed"
+        ),
+        "boundary": artifact.get("boundary", PAPEROPS_ALPACA_POST_BOUNDARY),
+    }

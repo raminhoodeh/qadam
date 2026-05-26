@@ -190,6 +190,27 @@ RESOURCE_ENTRIES: tuple[ResourceEntry, ...] = (
         ("resource_registry", "source_registry"),
     ),
     ResourceEntry(
+        "preference_mcp",
+        "Preference / PREF MCP",
+        "supplemental_data_plane",
+        "https://pref.trade/mcp",
+        "Supplemental multi-source data-plane reference for status, catalog, provenance, and upstream-source context.",
+        (
+            "source_registry",
+            "resource_registry",
+            "data_veracity",
+            "trust_scores",
+            "research_analyst",
+            "strategy_lead",
+            "signal_integrity",
+        ),
+        validation_status="architecture_reference",
+        decision_notes=(
+            "Supplemental only; not source 36 and cannot affect canonical source rank unless an individual "
+            "upstream source is separately promoted through the source registry."
+        ),
+    ),
+    ResourceEntry(
         "prive_x_starter",
         "PriveX Starter",
         "technical_infrastructure",

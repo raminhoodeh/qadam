@@ -34,17 +34,25 @@ from orchestrator.intelligence import (
 from orchestrator.paper_account import paper_account_shadow_context
 from orchestrator.paper_submit_receipt import run_paper_submit_receipt_contract
 from orchestrator.postgres_store import durable_source_observation_replay
+from orchestrator.preference_mcp_shadow_context import (
+    build_preference_shadow_context,
+    preference_shadow_packet_context,
+    write_preference_shadow_context,
+)
 from orchestrator.risk_agent import run_risk_policy_router
 from orchestrator.signal_integrity import run_signal_integrity_gate
 from orchestrator.staged_paper_order import run_staged_paper_order_contract
+from orchestrator.strategy_research_intake import strategy_research_decision_context
 from orchestrator.phase1_live_adapters import (
     fetch_phase1_live_adapter_live_sync,
     fetch_phase1_live_adapter_sample,
 )
 from orchestrator.strategy_lead import StrategyLeadShadowStore, queue_strategy_lead_shadow_packet
+from orchestrator.yahoo_finance_adapter import fetch_yahoo_finance_live, fetch_yahoo_finance_sample
 
 PHASE2_SHADOW_CYCLE_SCHEMA_VERSION = 1
 DEFAULT_PHASE2_SOURCES = ("nasa_firms", "fred", "rss", "polymarket", "alpaca", "telegram")
+SUPPLEMENTAL_PHASE2_SOURCES = {"yahoo_finance": "supplemental_market_confirmation"}
 
 SECRET_LIKE_PATTERNS = (
     re.compile(r"\d{6,}:[A-Za-z0-9_-]{20,}"),
@@ -64,12 +72,17 @@ class SourceCycleResult:
     degraded_reason: str | None
     event_count: int
     queued_packet_count: int
+    context_role: str = "canonical_phase2_source"
+    signal_authority: bool = False
+    order_authority: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
 def _sample_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
+    if source_key == "yahoo_finance":
+        return lambda: fetch_yahoo_finance_sample()
     fetchers: dict[str, Callable[[], dict[str, Any]]] = {
         "nasa_firms": lambda: fetch_nasa_firms_sample(days=1),
         "fred": lambda: fetch_fred_sample(series_ids=("DGS10", "DCOILWTICO", "VIXCLS")),
@@ -81,6 +94,8 @@ def _sample_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
 
 
 def _live_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
+    if source_key == "yahoo_finance":
+        return lambda: fetch_yahoo_finance_live()
     fetchers: dict[str, Callable[[], dict[str, Any]]] = {
         "nasa_firms": lambda: fetch_nasa_firms_live_sync(days=1),
         "fred": lambda: fetch_fred_live_sync(series_ids=("DGS10", "DCOILWTICO", "VIXCLS"), limit=20),
@@ -198,6 +213,16 @@ def run_phase2_shadow_cycle(
     queued_packet_count = 0
     durable_replay_result: dict[str, Any] | None = None
     durable_events_by_source: dict[str, list[dict[str, Any]]] = {}
+    preference_shadow_context = build_preference_shadow_context(
+        settings=settings,
+        event_log=event_log,
+        record_event=True,
+    )
+    write_preference_shadow_context(preference_shadow_context, settings=settings)
+    preference_packet_context = {
+        "preference_mcp": preference_shadow_packet_context(preference_shadow_context)
+    }
+    strategy_research_context = strategy_research_decision_context(settings)
 
     if durable_replay:
         durable_replay_result = durable_source_observation_replay(
@@ -228,6 +253,9 @@ def run_phase2_shadow_cycle(
                         degraded_reason=f"fetch_error:{exc.__class__.__name__}",
                         event_count=0,
                         queued_packet_count=0,
+                        context_role=SUPPLEMENTAL_PHASE2_SOURCES.get(source_key, "canonical_phase2_source"),
+                        signal_authority=False,
+                        order_authority=False,
                     )
                 )
                 continue
@@ -244,6 +272,7 @@ def run_phase2_shadow_cycle(
                     source_event_refs=(_event_ref(event),),
                     summary=_event_summary(event),
                     uncertainty=_uncertainty(event, degraded=degraded),
+                    read_only_context=preference_packet_context,
                     settings=settings,
                     event_log=event_log,
                 )
@@ -259,6 +288,9 @@ def run_phase2_shadow_cycle(
                 degraded_reason=degraded_reason,
                 event_count=len(event_records),
                 queued_packet_count=source_packet_count,
+                context_role=SUPPLEMENTAL_PHASE2_SOURCES.get(source_key, "canonical_phase2_source"),
+                signal_authority=False,
+                order_authority=False,
             )
         )
 
@@ -303,6 +335,38 @@ def run_phase2_shadow_cycle(
         "mode": "durable_replay" if durable_replay else ("live_sources" if live_sources else "sample_sources"),
         "source_count": len(sources),
         "source_results": [result.to_dict() for result in source_results],
+        "supplemental_market_confirmation_count": sum(
+            1 for result in source_results if result.context_role == "supplemental_market_confirmation"
+        ),
+        "supplemental_market_confirmation_authority": False,
+        "preference_mcp_shadow_context": preference_packet_context["preference_mcp"],
+        "preference_mcp_shadow_context_status": preference_shadow_context.get("status"),
+        "preference_mcp_shadow_context_role": preference_shadow_context.get("context_role"),
+        "preference_mcp_shadow_observation_count": preference_shadow_context.get(
+            "shadow_observation_count",
+            0,
+        ),
+        "preference_mcp_active_required_challenge_count": preference_shadow_context.get(
+            "active_required_challenge_count",
+            0,
+        ),
+        "preference_mcp_source_quorum_credit_allowed": False,
+        "preference_mcp_trade_candidate_creation_allowed": False,
+        "preference_mcp_risk_handoff_allowed": False,
+        "preference_mcp_execution_allowed": False,
+        "preference_mcp_broker_write_allowed": False,
+        "strategy_research_intake": strategy_research_context,
+        "strategy_research_intake_status": strategy_research_context.get("status"),
+        "strategy_research_candidate_count": strategy_research_context.get("candidate_count", 0),
+        "strategy_research_challenge_count": strategy_research_context.get(
+            "strategy_lead_challenge_count",
+            0,
+        ),
+        "strategy_research_trade_candidate_creation_allowed": False,
+        "strategy_research_risk_handoff_allowed": False,
+        "strategy_research_execution_allowed": False,
+        "strategy_research_paper_order_allowed": False,
+        "strategy_research_broker_write_allowed": False,
         "source_degraded_count": source_degraded_count,
         "queued_packet_count": queued_packet_count,
         "shadow_signal_count": triage_result.get("shadow_signal_count", 0),
@@ -340,6 +404,71 @@ def run_phase2_shadow_cycle(
         "source_count": len(sources),
         "source_results": [result.to_dict() for result in source_results],
         "source_degraded_count": source_degraded_count,
+        "supplemental_market_confirmation_count": strategy_source_context[
+            "supplemental_market_confirmation_count"
+        ],
+        "supplemental_market_confirmation_authority": strategy_source_context[
+            "supplemental_market_confirmation_authority"
+        ],
+        "preference_mcp_shadow_context_status": strategy_source_context[
+            "preference_mcp_shadow_context_status"
+        ],
+        "preference_mcp_shadow_context_role": strategy_source_context[
+            "preference_mcp_shadow_context_role"
+        ],
+        "preference_mcp_shadow_observation_count": strategy_source_context[
+            "preference_mcp_shadow_observation_count"
+        ],
+        "preference_mcp_active_required_challenge_count": strategy_source_context[
+            "preference_mcp_active_required_challenge_count"
+        ],
+        "preference_mcp_quota_degraded": preference_shadow_context.get("quota_degraded"),
+        "preference_mcp_context_stale": preference_shadow_context.get("context_stale"),
+        "preference_mcp_single_source_hold": preference_shadow_context.get("single_source_hold"),
+        "preference_mcp_missing_provenance_hold": preference_shadow_context.get(
+            "missing_provenance_hold"
+        ),
+        "preference_mcp_source_quorum_credit_allowed": strategy_source_context[
+            "preference_mcp_source_quorum_credit_allowed"
+        ],
+        "preference_mcp_trade_candidate_creation_allowed": strategy_source_context[
+            "preference_mcp_trade_candidate_creation_allowed"
+        ],
+        "preference_mcp_risk_handoff_allowed": strategy_source_context[
+            "preference_mcp_risk_handoff_allowed"
+        ],
+        "preference_mcp_execution_allowed": strategy_source_context[
+            "preference_mcp_execution_allowed"
+        ],
+        "preference_mcp_broker_write_allowed": strategy_source_context[
+            "preference_mcp_broker_write_allowed"
+        ],
+        "preference_mcp_shadow_context": preference_packet_context["preference_mcp"],
+        "strategy_research_intake_status": strategy_source_context[
+            "strategy_research_intake_status"
+        ],
+        "strategy_research_candidate_count": strategy_source_context[
+            "strategy_research_candidate_count"
+        ],
+        "strategy_research_challenge_count": strategy_source_context[
+            "strategy_research_challenge_count"
+        ],
+        "strategy_research_trade_candidate_creation_allowed": strategy_source_context[
+            "strategy_research_trade_candidate_creation_allowed"
+        ],
+        "strategy_research_risk_handoff_allowed": strategy_source_context[
+            "strategy_research_risk_handoff_allowed"
+        ],
+        "strategy_research_execution_allowed": strategy_source_context[
+            "strategy_research_execution_allowed"
+        ],
+        "strategy_research_paper_order_allowed": strategy_source_context[
+            "strategy_research_paper_order_allowed"
+        ],
+        "strategy_research_broker_write_allowed": strategy_source_context[
+            "strategy_research_broker_write_allowed"
+        ],
+        "strategy_research_intake": strategy_research_context,
         "queued_packet_count": queued_packet_count,
         "durable_replay_requested": durable_replay,
         "durable_replay_status": durable_replay_summary.get("status"),
@@ -495,6 +624,24 @@ def run_phase2_shadow_cycle(
         "strategy_lead_review_mode": strategy_packet.strategy_review.get("review_mode"),
         "strategy_lead_evidence_pressure": strategy_packet.strategy_review.get("evidence_pressure"),
         "strategy_lead_required_challenge_count": len(strategy_packet.strategy_review.get("required_challenges", [])),
+        "strategy_lead_preference_mcp_context_status": strategy_packet.strategy_review.get(
+            "preference_mcp_context_status"
+        ),
+        "strategy_lead_preference_mcp_challenge_count": strategy_packet.strategy_review.get(
+            "preference_mcp_challenge_count",
+            0,
+        ),
+        "strategy_lead_strategy_research_context_status": strategy_packet.strategy_review.get(
+            "strategy_research_context_status"
+        ),
+        "strategy_lead_strategy_research_candidate_count": strategy_packet.strategy_review.get(
+            "strategy_research_candidate_count",
+            0,
+        ),
+        "strategy_lead_strategy_research_challenge_count": strategy_packet.strategy_review.get(
+            "strategy_research_challenge_count",
+            0,
+        ),
         "strategy_lead_risk_handoff_allowed": strategy_packet.strategy_review.get("risk_handoff_allowed"),
         "strategy_lead_trade_candidate_allowed": strategy_packet.strategy_review.get("trade_candidate_allowed"),
         "strategy_lead_store": strategy_store.health(),
@@ -507,7 +654,10 @@ def run_phase2_shadow_cycle(
             "describe blocked hypothetical staging. Broker reconciliation checks "
             "can only describe read-only submit prerequisites. Paper-submit receipt "
             "checks are dry-run only and cannot call brokers. Durable replay is "
-            "read-only context and cannot create signals, trade candidates, or orders."
+            "read-only context and cannot create signals, trade candidates, or orders. "
+            "Preference/PREF MCP context is read-only challenge material only; it cannot "
+            "satisfy source quorum or move anything to risk, execution, paper order, "
+            "broker write, or live capital."
         ),
     }
     report_path = _write_report(settings, report)
@@ -531,6 +681,14 @@ def run_phase2_shadow_cycle(
             "strategy_lead_packet_id": strategy_packet.packet_id,
             "strategy_lead_source_mode": report["strategy_lead_source_mode"],
             "strategy_lead_source_posture": report["strategy_lead_source_posture"],
+            "preference_mcp_shadow_context_status": report["preference_mcp_shadow_context_status"],
+            "preference_mcp_shadow_observation_count": report[
+                "preference_mcp_shadow_observation_count"
+            ],
+            "preference_mcp_trade_candidate_creation_allowed": False,
+            "strategy_research_intake_status": report["strategy_research_intake_status"],
+            "strategy_research_candidate_count": report["strategy_research_candidate_count"],
+            "strategy_research_trade_candidate_creation_allowed": False,
             "execution_allowed": False,
             "paper_order_allowed": False,
             "report_path": str(report_path),

@@ -555,7 +555,7 @@ def _extract_json_object(text: str) -> dict[str, Any]:
 
 def _packet_projection(packet: dict[str, Any]) -> dict[str, Any]:
     refs = packet.get("source_event_refs", [])
-    return {
+    projection = {
         "packet_id": str(packet.get("packet_id", "unknown")),
         "status": str(packet.get("status", "unknown")),
         "summary": str(packet.get("summary", ""))[:600],
@@ -563,6 +563,80 @@ def _packet_projection(packet: dict[str, Any]) -> dict[str, Any]:
         "source_event_refs": [str(ref)[:160] for ref in refs if isinstance(ref, str)][:8],
         "created_at": str(packet.get("created_at", "")),
     }
+    preference_context = _packet_preference_context(packet)
+    if preference_context:
+        projection["read_only_context"] = {"preference_mcp": preference_context}
+    return projection
+
+
+def _packet_preference_context(packet: dict[str, Any]) -> dict[str, Any]:
+    context = packet.get("read_only_context")
+    if not isinstance(context, dict):
+        return {}
+    preference = context.get("preference_mcp")
+    if not isinstance(preference, dict):
+        return {}
+    observations = preference.get("observation_refs", [])
+    if not isinstance(observations, list):
+        observations = []
+    challenges = preference.get("active_required_challenges", [])
+    if not isinstance(challenges, list):
+        challenges = []
+    return {
+        "source_key": "preference_mcp",
+        "stage": str(preference.get("stage") or "PREF-8")[:40],
+        "status": str(preference.get("status") or "unknown")[:80],
+        "context_role": str(preference.get("context_role") or "read_only_context")[:120],
+        "shadow_observation_count": int(preference.get("shadow_observation_count", 0) or 0),
+        "observation_refs": [
+            {
+                "domain_pack": str(item.get("domain_pack") or "")[:80],
+                "upstream_source": str(item.get("upstream_source") or "")[:80],
+                "signal_class": str(item.get("signal_class") or "")[:80],
+                "context_role": str(item.get("context_role") or "")[:80],
+            }
+            for item in observations[:6]
+            if isinstance(item, dict)
+        ],
+        "active_required_challenges": [str(item)[:220] for item in challenges[:6]],
+        "context_stale": bool(preference.get("context_stale")),
+        "single_source_hold": bool(preference.get("single_source_hold")),
+        "missing_provenance_hold": bool(preference.get("missing_provenance_hold")),
+        "quota_degraded": bool(preference.get("quota_degraded")),
+        "source_quorum_credit_allowed": False,
+        "preference_only_confirmation_allowed": False,
+        "orderbook_depth_execution_or_venue_permission": False,
+        "wallet_kol_company_truth_allowed": False,
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+    }
+
+
+def _preference_context_digest_from_packets(packets: tuple[dict[str, Any], ...]) -> str | None:
+    contexts = [_packet_preference_context(packet) for packet in packets]
+    contexts = [context for context in contexts if context]
+    if not contexts:
+        return None
+    latest = contexts[-1]
+    packs = sorted(
+        {
+            str(item.get("domain_pack"))
+            for context in contexts
+            for item in context.get("observation_refs", [])
+            if isinstance(item, dict) and item.get("domain_pack")
+        }
+    )
+    challenges = latest.get("active_required_challenges", [])
+    challenge_text = "; ".join(str(item) for item in challenges[:3]) or "no active challenge"
+    return (
+        f"Preference MCP read-only context: status={latest.get('status')}, "
+        f"observations={latest.get('shadow_observation_count')}, "
+        f"domain_packs={','.join(packs[:6]) or 'none'}, challenges={challenge_text}"
+    )[:700]
 
 
 def _paper_account_projection(paper_account_context: dict[str, Any] | None) -> dict[str, Any]:
@@ -638,6 +712,7 @@ def _deterministic_local_research_assessment(
     packet_ids = tuple(str(packet.get("packet_id", "unknown")) for packet in packets)
     focus = _instrument_focus(summaries)
     paper_digest = _paper_account_digest(paper_account_context)
+    preference_digest = _preference_context_digest_from_packets(packets)
     confidence = round(min(0.82, 0.4 + _keyword_strength(summaries) * 0.45), 3)
     anomalies: tuple[str, ...] = ("no queued packets",)
     next_questions: tuple[str, ...] = ("wait for source heartbeat and shadow triage inputs",)
@@ -645,7 +720,7 @@ def _deterministic_local_research_assessment(
         anomalies = tuple(
             str(packet.get("summary", "shadow packet requires review"))[:180]
             for packet in packets[-3:]
-        ) + (paper_digest,)
+        ) + ((preference_digest,) if preference_digest else ()) + (paper_digest,)
         next_questions = (
             "Which independent source can corroborate this observation?",
             "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
@@ -655,6 +730,8 @@ def _deterministic_local_research_assessment(
     missing_correlations = ("signal_integrity_gate", "risk_agent_review", "market_price_confirmation")
     if len(packets) < 2:
         missing_correlations += ("second_independent_source",)
+    if preference_digest:
+        missing_correlations += ("preference_mcp_canonical_corroboration",)
     return LocalResearchAssessment(
         schema_version=LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION,
         assessment_id=str(uuid4()),
@@ -991,6 +1068,28 @@ def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
     refs = packet.get("source_event_refs", [])
     ref_text = ", ".join(ref for ref in refs if isinstance(ref, str)) or "no source refs"
     summary = str(packet.get("summary", "")).strip() or "Research Analyst queued an empty shadow packet."
+    preference_context = _packet_preference_context(packet)
+    if preference_context:
+        challenges = preference_context.get("active_required_challenges", [])
+        observation_refs = preference_context.get("observation_refs", [])
+        domain_packs = sorted(
+            {
+                str(item.get("domain_pack"))
+                for item in observation_refs
+                if isinstance(item, dict) and item.get("domain_pack")
+            }
+        )
+        preference_summary = (
+            "Preference MCP read-only context attached: "
+            f"status={preference_context.get('status')}; "
+            f"role={preference_context.get('context_role')}; "
+            f"domain_packs={','.join(domain_packs[:6]) or 'none'}; "
+            "preference-only confirmation is a hold condition; "
+            "orderbook depth is market context only; "
+            "wallet/KOL movement is risk sentiment only; "
+            f"challenges={'; '.join(str(item) for item in challenges[:3])}."
+        )
+        summary = f"{summary} {preference_summary}"[:1000]
     uncertainty = str(packet.get("uncertainty", "unknown")).lower()
     trust_score = 0.56
     if uncertainty in {"low", "bounded", "known"}:

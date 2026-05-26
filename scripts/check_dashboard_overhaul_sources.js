@@ -1,0 +1,209 @@
+#!/usr/bin/env node
+
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+const {
+    assert,
+    assertIncludes,
+    html,
+    renderWithStatus,
+    status
+} = require("./check_dashboard_renderer.js");
+
+const repoRoot = path.resolve(__dirname, "..");
+const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
+const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
+const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
+const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-dx-7-sources-audit-2026-05-25.md");
+
+const dashboardHtml = fs.readFileSync(htmlPath, "utf8");
+const css = fs.readFileSync(cssPath, "utf8");
+const renderer = fs.readFileSync(rendererPath, "utf8");
+const plan = fs.readFileSync(planPath, "utf8");
+
+function includesAll(text, needles, label) {
+    needles.forEach((needle) => {
+        assert(text.includes(needle), `${label} missing ${needle}`);
+    });
+}
+
+function loadRendererWindow() {
+    const document = {
+        documentElement: { dataset: {} },
+        querySelector() {
+            return null;
+        },
+        querySelectorAll() {
+            return [];
+        }
+    };
+    const window = { document };
+    const context = {
+        Array,
+        Boolean,
+        Date,
+        Error,
+        Intl,
+        Map,
+        Math,
+        Number,
+        Object,
+        Promise,
+        Set,
+        String,
+        console,
+        document,
+        fetch: async () => ({ ok: true, json: async () => status }),
+        localStorage: {
+            getItem() {
+                return null;
+            },
+            setItem() {}
+        },
+        sessionStorage: {
+            getItem() {
+                return null;
+            },
+            setItem() {}
+        },
+        window
+    };
+    window.window = window;
+    vm.createContext(context);
+    vm.runInContext(renderer, context, { filename: rendererPath });
+    return window;
+}
+
+async function main() {
+    includesAll(dashboardHtml, [
+        "data-sources-workspace",
+        "Source health and provenance",
+        "Source quorum"
+    ], "Sources workspace static shell");
+
+    includesAll(css, [
+        ".sources-workspace",
+        ".sources-workspace-head",
+        ".source-quorum-card",
+        ".source-reliability-grid",
+        ".source-reliability-card",
+        ".source-supplemental-grid",
+        ".source-supplemental-card",
+        ".source-setup-grid",
+        ".source-setup-link",
+        ".source-pipeline-grid",
+        ".source-pipeline-card",
+        ".source-workspace-topline .node-status"
+    ], "Sources workspace CSS");
+
+    includesAll(renderer, [
+        "function renderSourcesWorkspace",
+        "function renderSourceReliabilityCard",
+        "function renderSupplementalSourceCard",
+        "function renderSourceSetupLink",
+        "function renderSourcePipelineCard",
+        "source_setup_links",
+        "supplemental_only",
+        "pending_adapter",
+        "stale_heartbeat"
+    ], "Sources workspace renderer");
+
+    const window = loadRendererWindow();
+    assert(typeof window.buildQadamDashboardSourcesModel === "function", "sources model builder not exported");
+    const model = window.buildQadamDashboardSourcesModel(status);
+    const reliability = model.reliability || [];
+    const reliabilityByKey = new Map(reliability.map((record) => [record.key, record]));
+    const supplementalByKey = new Map((model.supplemental || []).map((record) => [record.key, record]));
+
+    assert(model.id === "sources", "sources model id mismatch");
+    assert(model.pipelines.length === 5, "sources model must expose five intelligence pipelines");
+    assert(reliability.length === 6, "sources model must expose six reliability states");
+    [
+        "online",
+        "degraded",
+        "missing_credential",
+        "stale_heartbeat",
+        "pending_adapter",
+        "supplemental_only"
+    ].forEach((key) => assert(reliabilityByKey.has(key), `missing reliability state ${key}`));
+    assert(reliabilityByKey.get("missing_credential").count >= 1, "missing credentials must be visible");
+    assert(reliabilityByKey.get("pending_adapter").count >= 1, "pending adapters must be visible");
+    assert(reliabilityByKey.get("supplemental_only").count === 2, "supplemental-only count must include Yahoo and Preference");
+    assert(model.quorum.status === "ok", "source quorum status should be visible and ok for current snapshot");
+    assert(supplementalByKey.has("yahoo_finance"), "Yahoo Finance supplemental source missing");
+    assert(supplementalByKey.has("preference_mcp"), "Preference MCP supplemental source missing");
+    assert(supplementalByKey.get("yahoo_finance").proof_boundary.includes("not source quorum"), "Yahoo Finance boundary must prevent sole-proof use");
+    assert(supplementalByKey.get("preference_mcp").proof_boundary.includes("not source quorum"), "Preference boundary must prevent sole-proof use");
+    assert(model.source_setup_links.length >= 3, "source-to-setup links should include observed, candidate, and setup pool state");
+    assert(model.source_setup_links.some((link) => link.stage === "Candidate"), "candidate source link missing");
+    assert(model.source_setup_links.some((link) => link.stage === "Observed signal"), "observed-signal source link missing");
+    assert(model.source_setup_links.every((link) => link.href === "#trade-layer" || link.href === "#trades"), "source setup links must route to trade review surfaces");
+    assert(model.source_setup_links.every((link) => !/order authority|broker write|live capital/i.test(link.proof_boundary)), "source setup links must not imply execution authority");
+
+    const rendered = await renderWithStatus(status);
+    const workspaceHtml = html(rendered, "[data-sources-workspace-slot]");
+    const sourcesHtml = `${workspaceHtml} ${html(rendered, "[data-watching-list]")}`;
+    [
+        "Source health and provenance",
+        "Source quorum",
+        "Missing credential",
+        "Stale heartbeat",
+        "Pending adapter",
+        "Supplemental only",
+        "Yahoo Finance",
+        "Preference MCP",
+        "Supplemental confirmation only",
+        "Challenge-only supplemental data plane",
+        "Source to setup links",
+        "Observed signal",
+        "Candidate",
+        "Phase 7 setup pool",
+        "Pipeline groups",
+        "Reliability state by intelligence pipeline",
+        "credential required",
+        "pending adapter",
+        "evidence blocked"
+    ].forEach((needle) => assert(sourcesHtml.includes(needle), `rendered sources workspace missing ${needle}`));
+
+    [
+        "/Users/",
+        "api_key",
+        "PREFERENCE_API_KEY",
+        "ALPACA_SECRET",
+        "raw_payload",
+        "private_payload",
+        "local_path",
+        "request_body",
+        "broker_identifier"
+    ].forEach((needle) => {
+        assert(!workspaceHtml.includes(needle), `sources workspace leaked non-public-safe marker ${needle}`);
+    });
+
+    [
+        "DX-7 - Sources Workspace",
+        "Group sources by pipeline and reliability state",
+        "Surface Yahoo Finance and PREF/Preference as capability-aware supplemental",
+        "scripts/check_dashboard_overhaul_sources.js"
+    ].forEach((needle) => {
+        assert(plan.includes(needle), `master plan missing DX-7 marker: ${needle}`);
+    });
+    assert(fs.existsSync(auditPath), "DX-7 audit document missing");
+
+    console.log("dashboard_overhaul_sources=ok");
+    console.log("dashboard_sources_pipeline_count=" + model.pipelines.length);
+    console.log("dashboard_sources_reliability_state_count=6");
+    console.log("dashboard_sources_supplemental_count=2");
+    console.log("dashboard_sources_setup_link_count=" + model.source_setup_links.length);
+    console.log("dashboard_sources_public_safe=True");
+    console.log("dashboard_source_authority_unchanged=True");
+}
+
+if (require.main === module) {
+    main().catch((error) => {
+        console.error(error.message);
+        process.exitCode = 1;
+    });
+}

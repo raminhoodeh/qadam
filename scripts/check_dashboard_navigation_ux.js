@@ -26,17 +26,18 @@ function assertIncludes(text, needle, label) {
     "data-cockpit-nav",
     "data-cockpit-nav-current",
     "data-cockpit-nav-link",
-    "data-target-section=\"mission-control\"",
-    "data-target-section=\"system-map\"",
-    "data-target-section=\"watching\"",
-    "data-target-section=\"cognition\"",
-    "data-target-section=\"trade-layer\"",
-    "data-target-section=\"money\"",
-    "data-target-section=\"forbidden\"",
-    "data-target-section=\"process-console\"",
+    "data-dashboard-view-switcher",
+    "data-dashboard-view-current",
+    "data-dashboard-view-link",
+    "data-dashboard-view-target=\"overview\"",
+    "data-dashboard-view-target=\"trades\"",
+    "data-dashboard-view-target=\"sources\"",
+    "data-dashboard-view-target=\"reasoning\"",
+    "data-dashboard-view-target=\"performance\"",
+    "data-dashboard-view-target=\"operations\"",
     "data-target-section=\"governance\"",
-    "/auth.css?v=20260521-nav-ux",
-    "/dashboard.js?v=20260521-nav-ux"
+    "/auth.css?v=20260526-paper-equity-chart",
+    "/dashboard.js?v=20260526-paper-equity-chart"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
 
 [
@@ -62,6 +63,9 @@ assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
     ".cockpit-nav-links",
     ".cockpit-nav-links a",
     ".cockpit-nav-links a.active",
+    ".cockpit-nav-links a[aria-current=\"page\"]",
+    "[data-dashboard-view-section][hidden]",
+    ".dashboard-view-switcher",
     "[data-cockpit-section]",
     "scroll-margin-top",
     "@media (max-width: 900px)",
@@ -70,11 +74,13 @@ assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
 
 [
     "function initCockpitNavigation",
-    "data-cockpit-nav-link",
+    "data-dashboard-view-link",
     "data-cockpit-nav-current",
-    "IntersectionObserver",
-    "document.getElementById",
+    "DASHBOARD_LEGACY_SECTION_VIEWS",
+    "resolveDashboardHash",
+    "activateDashboardView",
     "classList.toggle(\"active\", active)",
+    "window.addEventListener(\"hashchange\"",
     "initCockpitNavigation();"
 ].forEach((needle) => assertIncludes(renderer, needle, "navigation renderer"));
 

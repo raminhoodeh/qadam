@@ -19,6 +19,12 @@ from orchestrator.cockpit_status import (
 )  # noqa: E402
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.paper_account import MATURITY_CLOSED_TRADE_TARGET  # noqa: E402
+from orchestrator.phase6_cockpit_visibility import (
+    PUBLIC_STATUS_FIELDS as PHASE6_LEARNING_LOOP_REQUIRED_FIELDS,
+)  # noqa: E402
+from orchestrator.phase6_certification import (
+    PUBLIC_STATUS_FIELDS as PHASE6_CERTIFICATION_REQUIRED_FIELDS,
+)  # noqa: E402
 from orchestrator.telegram_comms import ensure_d8a_telegram_dry_run  # noqa: E402
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
 
@@ -126,6 +132,7 @@ SIGNAL_INTEGRITY_REVIEW_REQUIRED_FIELDS = {
     "failure_reasons",
     "instrument_focus",
     "integrity_score",
+    "market_confirmation_policy",
     "min_trust_score",
     "missing_correlations",
     "paper_order_allowed",
@@ -138,6 +145,865 @@ SIGNAL_INTEGRITY_REVIEW_REQUIRED_FIELDS = {
     "status",
     "trade_candidate_created",
     "worldview_prior_status",
+}
+
+YAHOO_FINANCE_REQUIRED_FIELDS = {
+    "boundary",
+    "broker_echo_authority",
+    "broker_write_authority",
+    "cache_path_exposed",
+    "canonical_source",
+    "canonical_source_count",
+    "classification",
+    "cookies_exposed",
+    "crumb_tokens_exposed",
+    "degraded",
+    "degraded_reason",
+    "enabled",
+    "fill_confirmation_authority",
+    "last_check_at",
+    "live_capital_authority",
+    "live_read_deferred",
+    "live_read_enabled",
+    "market_confirmation_policy",
+    "market_confirmation_role",
+    "order_authority",
+    "public_safe",
+    "raw_archive_path_exposed",
+    "raw_payload_exposed",
+    "receipt_evidence_authority",
+    "reconciliation_truth_authority",
+    "risk_approval_authority",
+    "sample_mode_available",
+    "schema_version",
+    "scraped_html_exposed",
+    "signal_authority",
+    "source",
+    "status",
+    "symbol_allowlist_count",
+}
+
+PREFERENCE_MCP_REQUIRED_FIELDS = {
+    "active_required_challenge_count",
+    "approved_domain_pack_count",
+    "approved_domain_packs",
+    "authority_flags",
+    "blocked_paid_tool_count",
+    "boundary",
+    "catalog_entry_count",
+    "catalog_status",
+    "classification",
+    "daily_call_budget",
+    "degraded",
+    "degraded_reason",
+    "domain_pack_count",
+    "domain_pack_status",
+    "domain_tool_calls_allowed",
+    "enabled",
+    "execution_allowed",
+    "first_trading_universe_strategy_family_count",
+    "identity_gate_status",
+    "identity_status",
+    "last_successful_catalog_check",
+    "last_successful_domain_pack_check",
+    "last_successful_provenance_check",
+    "last_successful_shadow_context_check",
+    "live_capital_enabled",
+    "live_mcp_call_allowed",
+    "paid_tool_calls_allowed",
+    "paid_tools_allowed",
+    "paper_order_allowed",
+    "preference_only_confirmation_allowed",
+    "private_source_payload_exposed",
+    "provider_label",
+    "provenance_context_status",
+    "provenance_distinct_upstream_source_count",
+    "provenance_status",
+    "public_safe",
+    "quota_degraded",
+    "quota_metadata_present",
+    "quota_status",
+    "raw_key_exposed",
+    "raw_payload_exposed",
+    "raw_prompt_exposed",
+    "risk_handoff_allowed",
+    "run_call_budget",
+    "schema_version",
+    "search_tools_allowed",
+    "shadow_context_role",
+    "shadow_context_status",
+    "shadow_observation_count",
+    "source_key",
+    "source_promotion_canonical_source_count_after",
+    "source_promotion_decision_count",
+    "source_promotion_promoted_decision_count",
+    "source_promotion_status",
+    "source_quorum_credit_allowed",
+    "status",
+    "trade_candidate_creation_allowed",
+}
+
+PHASE4_STRATEGY_REQUIRED_FIELDS = {
+    "approved_shadow_ready",
+    "approved_shadow_strategy_toggle_count",
+    "approval_event",
+    "approval_event_status",
+    "audit_completion_state",
+    "boundary",
+    "broker_write_allowed",
+    "broker_write_allowed_count",
+    "certification",
+    "certification_status",
+    "execution_allowed",
+    "execution_allowed_count",
+    "live_capital_enabled",
+    "live_capital_enabled_count",
+    "market_confirmation_policy",
+    "no_execution_boundary",
+    "paper_order_allowed",
+    "paper_order_allowed_count",
+    "phase",
+    "phase4_certification_allowed",
+    "phase4_certified",
+    "phase5_handoff_allowed",
+    "public_safe",
+    "schema_version",
+    "stage",
+    "stage_status",
+    "strategy_document",
+    "strategy_document_status",
+    "strategy_toggles",
+    "toggle_count",
+    "trade_candidate_count",
+}
+
+PHASE5_LAYER_B_REQUIRED_FIELDS = {
+    "approval_state",
+    "approval_policy_router_enabled",
+    "boundary",
+    "broker_write_allowed",
+    "execution_adapter_write_authority",
+    "kill_switch_mutation_authority",
+    "layer",
+    "live_capital_enabled",
+    "nonapproval_blocker_count",
+    "only_explicit_approval_blocks_phase5_plan",
+    "paper_execution_allowed",
+    "paper_order_allowed",
+    "phase",
+    "phase4_certified",
+    "phase5_handoff_allowed",
+    "phase5_layer_b_implementation_allowed",
+    "phase5_layer_b_implementation_plan_allowed",
+    "phase5_layer_b_scope_count",
+    "phase5_orchestration_start_allowed",
+    "preference_source_promotion_status",
+    "public_safe",
+    "readiness_blocker_count",
+    "readiness_blockers",
+    "risk_agent_approval_authority",
+    "schema_version",
+    "stage",
+    "status",
+    "yahoo_finance_role",
+}
+
+PHASE5_KILL_SWITCH_REQUIRED_FIELDS = {
+    "active_switch_count",
+    "blocking_switch_count",
+    "boundary",
+    "broker_write_allowed",
+    "clear_switch_count",
+    "corrupt_state_fail_closed_default_count",
+    "default_fail_closed_on_corrupt_state",
+    "default_fail_closed_on_missing_state",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed",
+    "fail_closed_default_count",
+    "kill_switch_mutation_authority",
+    "ledger_recorded",
+    "live_capital_enabled",
+    "missing_state_fail_closed_default_count",
+    "paper_order_allowed",
+    "phase",
+    "public_safe",
+    "q5_3_paper_size_eligible_count",
+    "q5_3_risk_review_count",
+    "required_enforcement_point_count",
+    "required_enforcement_points",
+    "required_scope_type_count",
+    "required_scope_types",
+    "schema_version",
+    "scope_counts",
+    "stage",
+    "state_counts",
+    "status",
+    "status_counts",
+    "switch_count",
+    "telegram_live_notifications_allowed",
+    "validation_error_count",
+}
+
+PHASE5_EXECUTION_ADAPTER_REQUIRED_FIELDS = {
+    "active_kill_switch_block_count",
+    "adapter_status_count",
+    "alpaca_account_mode",
+    "alpaca_credentials_configured",
+    "alpaca_current_balance_gbp",
+    "alpaca_open_order_count",
+    "alpaca_open_position_count",
+    "alpaca_read_health",
+    "alpaca_status",
+    "alpaca_write_health",
+    "boundary",
+    "broker_write_allowed",
+    "crypto_perps_write_allowed",
+    "downstream_staging_allowed_count",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_adapter_write_authority",
+    "first_release_allowed_count",
+    "live_capital_enabled",
+    "live_endpoint_allowed",
+    "local_path_exposed_count",
+    "paper_order_allowed",
+    "paper_order_staging_allowed",
+    "paper_order_submission_allowed",
+    "phase",
+    "prediction_market_write_allowed",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "read_allowed_count",
+    "read_health_counts",
+    "reconciliation_prerequisite_count",
+    "recorded",
+    "required_check_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "stage",
+    "status",
+    "status_counts",
+    "validation_error_count",
+    "write_health_counts",
+}
+
+PHASE5_PAPER_ORDER_STAGING_REQUIRED_FIELDS = {
+    "active_kill_switch_block_count",
+    "blocked_count",
+    "boundary",
+    "broker_post_called",
+    "broker_write_allowed",
+    "cancellation_condition_count",
+    "eligible_for_staging_count",
+    "event_log_event_count",
+    "event_log_prewrite_ready_count",
+    "event_log_written",
+    "execution_allowed",
+    "global_error_count",
+    "live_capital_enabled",
+    "local_path_exposed_count",
+    "order_state_counts",
+    "paper_order_allowed",
+    "paper_order_staging_allowed",
+    "paper_order_submitted",
+    "paper_order_submission_allowed",
+    "paper_size_eligible_count",
+    "phase",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "reconciliation_prerequisite_count",
+    "recorded",
+    "required_check_count",
+    "risk_review_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "stage",
+    "staged_order_count",
+    "staging_allowed",
+    "staging_record_count",
+    "status",
+    "status_counts",
+    "submission_allowed",
+    "validation_error_count",
+}
+
+PHASE5_ALPACA_PAPER_DRY_RUN_REQUIRED_FIELDS = {
+    "alpaca_post_called",
+    "blocked_count",
+    "boundary",
+    "broker_post_called",
+    "broker_write_allowed",
+    "dry_run_receipt_count",
+    "dry_run_record_count",
+    "duplicate_guard_collision_count",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed",
+    "idempotency_collision_count",
+    "live_capital_enabled",
+    "live_endpoint_allowed",
+    "local_path_exposed_count",
+    "paper_order_allowed",
+    "paper_order_submitted",
+    "paper_order_submission_allowed",
+    "phase",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "receipt_state_counts",
+    "recorded",
+    "request_preview_count",
+    "required_check_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "source_staged_order_count",
+    "source_staging_record_count",
+    "stage",
+    "status",
+    "status_counts",
+    "validation_error_count",
+}
+
+PHASE5_PAPER_SUBMIT_ENABLEMENT_REQUIRED_FIELDS = {
+    "alpaca_post_called",
+    "authorization_header_exposed_count",
+    "base_url_exposed_count",
+    "blocked_count",
+    "boundary",
+    "broker_post_called",
+    "broker_submit_receipt_created_count",
+    "broker_write_allowed",
+    "broker_write_allowed_count",
+    "dry_run_bundle_validation_error_count",
+    "duplicate_guard_collision_count",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_adapter_write_authority",
+    "execution_adapter_write_authority_count",
+    "idempotency_collision_count",
+    "live_capital_enabled",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed",
+    "live_endpoint_allowed_count",
+    "local_path_exposed_count",
+    "paper_execution_allowed",
+    "paper_execution_allowed_count",
+    "paper_order_allowed",
+    "paper_order_allowed_count",
+    "paper_order_submission_allowed",
+    "paper_order_submission_allowed_count",
+    "paper_order_submitted",
+    "paper_order_submitted_count",
+    "paper_submit_approval_logged",
+    "paper_submit_approval_present",
+    "paper_submit_approval_state",
+    "phase",
+    "prediction_market_write_allowed",
+    "prediction_market_write_allowed_count",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "receipt_state_counts",
+    "recorded",
+    "required_check_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "source_dry_run_receipt_count",
+    "source_dry_run_record_count",
+    "source_request_preview_count",
+    "stage",
+    "status",
+    "status_counts",
+    "submit_enablement_record_count",
+    "submit_path_available",
+    "submit_path_available_count",
+    "submit_path_key",
+    "validation_error_count",
+}
+
+PHASE5_PREDICTION_MARKET_ADAPTER_REQUIRED_FIELDS = {
+    "authorization_header_exposed_count",
+    "base_url_exposed_count",
+    "boundary",
+    "broker_post_called_count",
+    "broker_write_allowed",
+    "broker_write_allowed_count",
+    "crypto_perps_write_allowed",
+    "crypto_perps_write_allowed_count",
+    "event_log_event_count",
+    "event_log_written",
+    "guarded_placeholder_count",
+    "live_blocked_count",
+    "live_capital_enabled",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed",
+    "live_endpoint_allowed_count",
+    "local_path_exposed_count",
+    "paid_preference_tools_allowed",
+    "paid_preference_tools_allowed_count",
+    "paper_not_available_count",
+    "paper_order_allowed",
+    "paper_order_allowed_count",
+    "paper_order_submitted",
+    "paper_order_submitted_count",
+    "phase",
+    "placeholder_status_counts",
+    "policy_risk_caution_context_count",
+    "prediction_market_context_count",
+    "prediction_market_live_order_allowed_count",
+    "prediction_market_order_allowed_count",
+    "prediction_market_route_count",
+    "prediction_market_spend_allowed_count",
+    "prediction_market_write_allowed",
+    "prediction_market_write_allowed_count",
+    "preference_context_status",
+    "preference_counts_as_canonical_source",
+    "preference_distinct_upstream_source_count",
+    "preference_multi_source_context_allowed",
+    "preference_only_source_quorum_allowed",
+    "preference_provenance_status",
+    "preference_source_quorum_credit_allowed",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "read_only_route_count",
+    "recorded",
+    "required_check_count",
+    "route_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "stage",
+    "status",
+    "status_counts",
+    "strategy_source_quorum_credit_allowed",
+    "validation_error_count",
+}
+
+PHASE5_TELEGRAM_NOTIFIER_REQUIRED_FIELDS = {
+    "alert_type_count",
+    "authorization_header_exposed_count",
+    "bot_token_exposed_count",
+    "boundary",
+    "broker_post_called_count",
+    "broker_write_allowed",
+    "broker_write_allowed_count",
+    "chat_id_exposed_count",
+    "eligible_alert_count",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed_count",
+    "live_capital_enabled",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed_count",
+    "live_send_allowed_count",
+    "local_path_exposed_count",
+    "normal_live_notification_allowed",
+    "notification_record_count",
+    "notification_state_counts",
+    "outbox_message_written_count",
+    "paper_order_allowed",
+    "paper_order_allowed_count",
+    "paper_order_submitted",
+    "paper_order_submitted_count",
+    "phase",
+    "prediction_market_write_allowed_count",
+    "private_send_test_allowed",
+    "public_safe",
+    "queued_dry_run_alert_count",
+    "raw_payload_exposed_count",
+    "recorded",
+    "required_check_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "send_test_approval_logged",
+    "send_test_approval_present",
+    "send_test_gate_state",
+    "source_degradation_count",
+    "stage",
+    "status",
+    "status_counts",
+    "suppressed_alert_count",
+    "telegram_approve_trade_command_enabled_count",
+    "telegram_bot_configured",
+    "telegram_cancel_trade_command_enabled_count",
+    "telegram_close_trade_command_enabled_count",
+    "telegram_command_path_enabled",
+    "telegram_command_path_enabled_count",
+    "telegram_delivery_target_count",
+    "telegram_live_notifications_allowed",
+    "telegram_live_notifications_allowed_count",
+    "telegram_mode",
+    "telegram_modify_trade_command_enabled_count",
+    "telegram_place_trade_command_enabled_count",
+    "telegram_reject_trade_command_enabled_count",
+    "telegram_resize_trade_command_enabled_count",
+    "telegram_send_gate",
+    "telegram_status",
+    "telegram_trade_command_enabled_count",
+    "validation_error_count",
+}
+
+PHASE5_POSITION_MONITOR_REQUIRED_FIELDS = {
+    "account_equity_gbp",
+    "account_identifier_exposed_count",
+    "alpaca_post_called_count",
+    "authorization_header_exposed_count",
+    "boundary",
+    "broker_order_identifier_exposed_count",
+    "broker_post_called_count",
+    "broker_write_allowed",
+    "broker_write_allowed_count",
+    "closed_trade_count",
+    "closed_trade_summary_count",
+    "contradictory_state_count",
+    "current_balance_gbp",
+    "drawdown_pct",
+    "duplicate_state_count",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed_count",
+    "failed_reconciliation_count",
+    "lifecycle_state_count",
+    "lifecycle_state_counts",
+    "live_capital_enabled",
+    "live_capital_enabled_count",
+    "local_path_exposed_count",
+    "mirrored_order_count",
+    "missing_state_count",
+    "monitor_record_count",
+    "new_actions_blocked_by_reconciliation_failure",
+    "open_order_count",
+    "open_position_count",
+    "order_cancel_allowed_count",
+    "paper_account_connection_status",
+    "paper_account_snapshot_count",
+    "paper_account_status",
+    "paper_order_allowed",
+    "paper_order_allowed_count",
+    "paper_order_submitted",
+    "paper_order_submitted_count",
+    "paper_submit_gate_status",
+    "phase",
+    "position_close_allowed_count",
+    "position_created_count",
+    "position_monitor_write_authority",
+    "position_monitor_write_authority_count",
+    "position_record_count",
+    "position_resize_allowed_count",
+    "postmortem_complete_count",
+    "postmortem_due_count",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "realized_pnl_gbp",
+    "reconciliation_state_counts",
+    "recorded",
+    "required_check_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "stage",
+    "status",
+    "status_counts",
+    "stuck_state_count",
+    "submitted_order_count",
+    "telegram_live_notifications_allowed_count",
+    "telegram_notifier_status",
+    "unknown_state_count",
+    "unrealized_pnl_gbp",
+    "validation_error_count",
+}
+
+PHASE5_SIGNAL_REVIEW_REQUIRED_FIELDS = {
+    "account_identifier_exposed_count",
+    "alpaca_post_called_count",
+    "authorization_header_exposed_count",
+    "backend_truth_displayed_count",
+    "backend_validation_error_count",
+    "boundary",
+    "broker_order_identifier_exposed_count",
+    "broker_post_called_count",
+    "broker_write_allowed",
+    "broker_write_allowed_count",
+    "chain_status_counts",
+    "chain_step_count",
+    "decision_chain_count",
+    "event_log_event_count",
+    "event_log_written",
+    "governance_action_count",
+    "governance_comment_count",
+    "governance_comment_event_count",
+    "kill_switch_action_available_count",
+    "kill_switch_action_event_count",
+    "kill_switch_action_mutates_state_count",
+    "kill_switch_mutation_authority",
+    "kill_switch_mutation_authority_count",
+    "live_capital_enabled",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed_count",
+    "local_path_exposed_count",
+    "order_cancel_control_enabled_count",
+    "order_modify_control_enabled_count",
+    "order_place_control_enabled_count",
+    "paper_order_allowed",
+    "paper_order_allowed_count",
+    "paper_order_submitted",
+    "paper_order_submitted_count",
+    "phase",
+    "position_close_control_enabled_count",
+    "position_resize_control_enabled_count",
+    "prediction_market_write_allowed",
+    "prediction_market_write_allowed_count",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "recorded",
+    "records",
+    "required_check_count",
+    "required_chain_steps",
+    "schema_version",
+    "secret_value_exposed_count",
+    "signal_review_record_count",
+    "stage",
+    "status",
+    "status_counts",
+    "telegram_command_path_enabled_count",
+    "trade_approval_control_enabled_count",
+    "trade_rejection_control_enabled_count",
+    "ui_inferred_readiness_count",
+    "validation_error_count",
+}
+
+PHASE5_SYSTEM_MAP_REQUIRED_FIELDS = {
+    "artifact_id",
+    "artifact_type",
+    "backend_parity_check_count",
+    "backend_parity_error_count",
+    "boundary",
+    "broker_write_allowed",
+    "event_log_event_count",
+    "event_log_required",
+    "event_log_written",
+    "generated_at",
+    "guardrails",
+    "kill_switch_mutation_authority",
+    "lane_count",
+    "lanes",
+    "layer_b_node_count",
+    "layer_b_node_keys",
+    "live_capital_enabled",
+    "node_count",
+    "nodes",
+    "order_place_control_enabled",
+    "phase",
+    "prediction_market_write_allowed",
+    "public_safe",
+    "recorded",
+    "required_node_keys",
+    "schema_version",
+    "source_posture",
+    "stage",
+    "status",
+    "trade_approval_control_enabled",
+    "ui_inferred_node_count",
+    "unsafe_control_count",
+    "validation_error_count",
+}
+
+PHASE5_PAPER_TRADE_DRILL_REQUIRED_FIELDS = {
+    "alpaca_post_called_count",
+    "artifact_id",
+    "artifact_type",
+    "authorization_header_exposed_count",
+    "backend_status_counts",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_order_identifier_exposed_count",
+    "broker_post_called_count",
+    "broker_receipt_count",
+    "broker_write_allowed_count",
+    "canonical_source_count",
+    "closed_trade_count",
+    "dashboard_backend_parity_error_count",
+    "dashboard_unsafe_control_count",
+    "dry_run_receipt_count",
+    "event_log_event_count",
+    "event_log_required",
+    "event_log_written",
+    "generated_at",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed_count",
+    "local_path_exposed_count",
+    "open_position_count",
+    "order_cancel_allowed_count",
+    "paper_size_eligible_count",
+    "paper_submit_approval_present",
+    "paper_submit_approval_state",
+    "paper_submit_path_available_count",
+    "paper_trade_drill_complete",
+    "paper_trade_drill_state",
+    "phase",
+    "phase5_paper_trade_drill_exit_gate_passed",
+    "phase5_paper_trade_drill_implementation_ready",
+    "phase7_proof_credit_allowed",
+    "phase7_proof_credit_allowed_count",
+    "position_close_allowed_count",
+    "position_open_lifecycle_satisfied",
+    "position_monitor_write_authority_count",
+    "position_resize_allowed_count",
+    "prediction_market_write_allowed_count",
+    "public_safe",
+    "raw_payload_exposed_count",
+    "recorded",
+    "records",
+    "required_step_count",
+    "required_steps",
+    "risk_review_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "signal_review_record_count",
+    "source_bundle_count",
+    "source_bundles",
+    "source_validation_error_count",
+    "stage",
+    "staged_order_count",
+    "status",
+    "status_counts",
+    "step_count",
+    "submitted_paper_order_count",
+    "telegram_dashboard_sync_status",
+    "telegram_live_notifications_allowed_count",
+    "validation_error_count",
+}
+
+PHASE5_CERTIFICATION_REQUIRED_FIELDS = {
+    "artifact_id",
+    "artifact_type",
+    "blocking_unsafe_count",
+    "boundary",
+    "broker_write_allowed_count",
+    "canonical_source_count",
+    "certification_blocker_count",
+    "certification_blockers",
+    "closed_trade_count",
+    "crypto_perps_write_allowed_count",
+    "event_log_event_count",
+    "event_log_required",
+    "event_log_written",
+    "gate_records",
+    "generated_at",
+    "input_gate_blocked_count",
+    "input_gate_count",
+    "input_gate_passed_count",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed_count",
+    "open_position_count",
+    "paper_trade_drill_complete",
+    "paper_trade_drill_exit_gate_passed",
+    "phase",
+    "phase5_certification_schema_version",
+    "phase5_certified",
+    "phase5_complete",
+    "phase5_exit_gate",
+    "phase6_handoff_allowed",
+    "phase7_planning_allowed",
+    "phase7_proof_credit_allowed",
+    "phase7_proof_credit_allowed_count",
+    "postmortem_due_count",
+    "prediction_market_write_allowed_count",
+    "public_safe",
+    "q5_stage_count",
+    "recorded",
+    "required_input_stage_count",
+    "required_input_stages",
+    "schema_version",
+    "stage",
+    "stage_status",
+    "status",
+    "submitted_paper_order_count",
+    "telegram_live_notifications_allowed_count",
+    "validation_error_count",
+}
+
+PHASE5_PHASE6_HANDOFF_REQUIRED_FIELDS = {
+    "alpaca_post_called_count",
+    "artifact_id",
+    "artifact_type",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_post_called_count",
+    "broker_write_allowed_count",
+    "canonical_source_count",
+    "closed_trade_count",
+    "crypto_perps_write_allowed_count",
+    "downstream_staging_allowed_count",
+    "event_log_event_count",
+    "event_log_required",
+    "event_log_written",
+    "failed_reconciliation_count",
+    "generated_at",
+    "guarded_postmortem_due_ready",
+    "guarded_postmortem_due_ref",
+    "handoff_state",
+    "live_capital_enabled_count",
+    "live_endpoint_allowed_count",
+    "mirrored_order_count",
+    "open_position_count",
+    "paper_trade_drill_blocker_count",
+    "paper_trade_drill_complete",
+    "paper_trade_drill_exit_gate_passed",
+    "phase",
+    "phase5_certified",
+    "phase5_exit_gate",
+    "phase5_phase6_handoff_schema_version",
+    "phase5_test_trades_count_for_phase7",
+    "phase6_architect_policy_mutation_allowed",
+    "phase6_knowledge_graph_write_allowed",
+    "phase6_knowledge_graph_write_allowed_count",
+    "phase6_learning_loop_implementation_allowed",
+    "phase6_learning_loop_plan_allowed",
+    "phase6_learning_write_allowed",
+    "phase6_learning_write_allowed_count",
+    "phase6_model_weight_update_allowed",
+    "phase6_model_weight_update_allowed_count",
+    "phase6_policy_mutation_allowed_count",
+    "phase6_postmortem_ingestion_allowed",
+    "phase6_required_module_count",
+    "phase6_required_modules",
+    "phase6_shadow_strategy_runner_allowed",
+    "phase6_trust_score_update_allowed",
+    "phase6_trust_score_update_allowed_count",
+    "phase6_handoff_allowed",
+    "phase7_planning_allowed",
+    "phase7_proof_credit_allowed",
+    "phase7_proof_credit_allowed_count",
+    "postmortem_due_count",
+    "prediction_market_write_allowed_count",
+    "public_safe",
+    "recorded",
+    "recommended_next_stage",
+    "required_source_count",
+    "schema_version",
+    "source_recorded_count",
+    "source_validation_error_count",
+    "stage",
+    "status",
+    "submitted_order_count",
+    "validation_error_count",
+}
+
+MARKET_CONFIRMATION_POLICY_REQUIRED_FIELDS = {
+    "boundary",
+    "broker_reconciliation_authority",
+    "latest_observed_at",
+    "market_price_confirmation",
+    "max_age_seconds",
+    "order_authority",
+    "pricing_gap",
+    "providers",
+    "signal_authority",
+    "single_source_hold",
+    "stale",
+    "status",
+    "unavailable",
+    "uses_yahoo_finance",
 }
 
 RISK_AGENT_REQUIRED_FIELDS = {
@@ -539,18 +1405,313 @@ QUANTUM_ORACLE_REQUIRED_FIELDS = {
     "latest_backend",
     "latest_backend_status",
     "latest_created_at",
+    "latest_durable_evidence_status",
+    "latest_input_contract_status",
     "latest_input_fingerprint",
+    "latest_input_source_type",
     "latest_local_simulation_mode",
+    "latest_market_confirmation_status",
+    "latest_output_annotation_target",
+    "latest_output_route_type",
+    "latest_output_routing",
+    "latest_output_routing_status",
+    "latest_output_storage_type",
     "latest_recommendation",
     "latest_validation_checks",
+    "latest_yahoo_finance_role",
+    "latest_yahoo_only_market_confirmation",
+    "local_simulator",
     "next_due_at",
     "paper_order_allowed_count",
     "qiskit_available",
     "qiskit_aer_available",
+    "provider_readiness",
     "result_count",
+    "scheduler_dry_run",
     "schema_version",
     "status",
     "trade_candidate_created_count",
+}
+
+QUANTUM_SCHEDULER_DRY_RUN_REQUIRED_FIELDS = {
+    "autonomous_scheduler_enabled",
+    "background_automation_created",
+    "boundary",
+    "bypass_broker_reconciliation_allowed",
+    "bypass_execution_policy_allowed",
+    "bypass_paper_submit_receipt_allowed",
+    "bypass_risk_agent_allowed",
+    "bypass_signal_integrity_allowed",
+    "bypass_strategy_lead_allowed",
+    "cadence",
+    "cadence_days",
+    "dry_run_only",
+    "due",
+    "due_reason",
+    "execution_allowed",
+    "hardware_jobs_submitted_count",
+    "hardware_scheduler_enabled",
+    "hardware_scheduler_enabled_count",
+    "hardware_submission_allowed",
+    "hardware_submission_allowed_count",
+    "intended_job_count",
+    "intended_jobs",
+    "job_submission_allowed",
+    "jobs_queued_count",
+    "jobs_submitted_count",
+    "last_run_at",
+    "next_due_at",
+    "paper_order_allowed",
+    "provider_call_allowed",
+    "public_safe",
+    "queue_write_allowed",
+    "recurring_job_created",
+    "scheduler_enabled",
+    "schema_version",
+    "status",
+    "trade_candidate_authority",
+    "would_queue_job_count",
+    "would_queue_jobs",
+}
+
+QUANTUM_SCHEDULER_JOB_REQUIRED_FIELDS = {
+    "boundary",
+    "dry_run_only",
+    "execution_allowed",
+    "hardware_submission_allowed",
+    "job_submission_allowed",
+    "job_type",
+    "local_validation_required",
+    "paper_order_allowed",
+    "provider_call_allowed",
+    "queue_write_allowed",
+    "required_gates",
+    "schema_version",
+    "source",
+    "trade_candidate_authority",
+}
+
+QUANTUM_OUTPUT_ROUTING_REQUIRED_FIELDS = {
+    "ambiguity_score",
+    "annotation_target",
+    "blocked_routes",
+    "boundary",
+    "broker_reconciliation_authority",
+    "broker_reconciliation_write_count",
+    "broker_write_allowed",
+    "confidence_delta",
+    "execution_allowed",
+    "execution_policy_approval_count",
+    "execution_policy_authority",
+    "hardware_submission_allowed",
+    "job_id",
+    "job_type",
+    "paper_order_allowed",
+    "paper_submit_receipt_authority",
+    "paper_submit_receipt_created_count",
+    "pattern_score",
+    "provider_call_allowed",
+    "public_safe",
+    "recommendation",
+    "recommendation_class",
+    "risk_approval_authority",
+    "risk_approval_count",
+    "route_type",
+    "schema_version",
+    "signal_integrity_context",
+    "source_ref",
+    "staged_paper_order_authority",
+    "staged_paper_order_created_count",
+    "status",
+    "storage_type",
+    "strategy_lead_context",
+    "trade_candidate_authority",
+    "trade_candidate_created_count",
+}
+
+QUANTUM_LOCAL_SIMULATOR_REQUIRED_FIELDS = {
+    "backend_selection_policy",
+    "boundary",
+    "classical_fallback_available",
+    "dependency_guidance",
+    "execution_allowed",
+    "expected_job_types",
+    "hardware_provider_selected",
+    "hardware_scheduler_enabled",
+    "hardware_submission_allowed",
+    "local_only",
+    "output_schema_version",
+    "paper_order_allowed",
+    "provider_call_allowed",
+    "public_safe",
+    "qiskit_aer_available",
+    "qiskit_available",
+    "qiskit_dependencies_available",
+    "required_job_count",
+    "runtime_failure_policy",
+    "schema_consistent_across_backends",
+    "schema_version",
+    "selected_backend",
+    "status",
+    "trade_candidate_authority",
+}
+
+QUANTUM_PROVIDER_READINESS_REQUIRED_FIELDS = {
+    "available_without_secret_count",
+    "boundary",
+    "by_status",
+    "configured_count",
+    "disabled_by_policy_count",
+    "execution_allowed_count",
+    "expected_provider_count",
+    "hardware_provider_stubs",
+    "hardware_scheduler_enabled_count",
+    "hardware_submission_allowed_count",
+    "missing_optional_package_count",
+    "missing_secret_count",
+    "paper_order_allowed_count",
+    "provider_call_allowed_count",
+    "provider_count",
+    "providers",
+    "public_safe",
+    "qctrl_configured",
+    "qctrl_readiness",
+    "raw_response_exposed_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "status",
+    "trade_candidate_authority_count",
+}
+
+QUANTUM_HARDWARE_PROVIDER_STUB_LEDGER_REQUIRED_FIELDS = {
+    "boundary",
+    "configured_policy_blocked_count",
+    "credential_configured_count",
+    "disabled_by_policy_count",
+    "execution_allowed_count",
+    "expected_provider_count",
+    "explicit_hardware_policy_approval_present",
+    "hardware_backend_implemented_count",
+    "hardware_scheduler_enabled_count",
+    "hardware_submission_allowed_count",
+    "hardware_submitted_count",
+    "live_probe_allowed_count",
+    "local_simulator_validation_passed",
+    "missing_credentials_count",
+    "missing_local_validation_count",
+    "paper_order_allowed_count",
+    "provider_call_allowed_count",
+    "provider_count",
+    "providers",
+    "public_safe",
+    "raw_response_exposed_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "status",
+    "submitting_backend_implemented_count",
+    "trade_candidate_authority_count",
+}
+
+QUANTUM_HARDWARE_PROVIDER_STUB_PROVIDER_REQUIRED_FIELDS = {
+    "boundary",
+    "credential_configured",
+    "credential_requirements",
+    "execution_allowed",
+    "explicit_hardware_policy_approval_present",
+    "hardware_backend_implemented",
+    "hardware_scheduler_enabled",
+    "hardware_submission_allowed",
+    "hardware_submitted",
+    "key",
+    "live_probe_allowed",
+    "local_simulator_validation_passed",
+    "missing_prerequisites",
+    "name",
+    "notes",
+    "paper_order_allowed",
+    "policy_block_reason",
+    "provider_call_allowed",
+    "provider_call_count",
+    "provider_role",
+    "public_safe",
+    "raw_response_exposed",
+    "schema_version",
+    "sdk_module_candidates",
+    "sdk_package_importable",
+    "secret_value_exposed",
+    "status",
+    "submitting_backend_implemented",
+    "trade_candidate_authority",
+}
+
+QUANTUM_QCTRL_READINESS_REQUIRED_FIELDS = {
+    "boundary",
+    "credential_configured",
+    "credential_source",
+    "default_mode",
+    "execution_allowed",
+    "hardware_backend_role",
+    "hardware_job_submitted",
+    "hardware_scheduler_enabled",
+    "hardware_submission_allowed",
+    "importable_modules",
+    "live_probe_attempted",
+    "live_probe_enabled",
+    "live_probe_required_flag",
+    "optimization_job_submission_allowed",
+    "optimization_job_submitted",
+    "paper_order_allowed",
+    "provider_call_allowed",
+    "provider_call_count",
+    "provider_role",
+    "public_safe",
+    "raw_response_exposed",
+    "recommendation_authority",
+    "runtime_failure_policy",
+    "schema_version",
+    "sdk_module_candidates",
+    "sdk_package_importable",
+    "secret_value_exposed",
+    "status",
+    "trade_candidate_authority",
+}
+
+QUANTUM_PROVIDER_REQUIRED_FIELDS = {
+    "boundary",
+    "credential_configured",
+    "execution_allowed",
+    "hardware_scheduler_enabled",
+    "hardware_submission_allowed",
+    "key",
+    "name",
+    "notes",
+    "paper_order_allowed",
+    "provider_call_allowed",
+    "public_safe",
+    "raw_response_exposed",
+    "role",
+    "schema_version",
+    "secret_value_exposed",
+    "status",
+    "trade_candidate_authority",
+}
+
+EXPECTED_QUANTUM_PROVIDERS = {"qiskit_aer", "qctrl", "ibm_quantum", "aws_braket"}
+EXPECTED_QUANTUM_HARDWARE_PROVIDERS = {"ibm_quantum", "aws_braket"}
+EXPECTED_QUANTUM_JOB_TYPES = {"pattern_recognition", "strategy_collapse"}
+ALLOWED_QUANTUM_LOCAL_SIMULATOR_BACKENDS = {"classical_fallback", "qiskit_aer_local"}
+ALLOWED_QUANTUM_HARDWARE_PROVIDER_STATUSES = {
+    "missing_credentials",
+    "missing_local_validation",
+    "configured_policy_blocked",
+    "disabled_by_policy",
+}
+ALLOWED_QUANTUM_PROVIDER_STATUSES = {
+    "available_without_secret",
+    "missing_optional_package",
+    "configured",
+    "missing_secret",
+    "disabled_by_policy",
 }
 
 TRADE_INTENT_REQUIRED_FIELDS = {
@@ -658,6 +1819,9 @@ MISSION_CONTROL_REQUIRED_FIELDS = {
     "data_sources",
     "durable_spine",
     "headline",
+    "phase3_readiness",
+    "phase5_layer_b",
+    "phase6_learning_loop",
     "portfolio",
     "safety",
     "schema_version",
@@ -682,6 +1846,14 @@ MISSION_DATA_SOURCES_REQUIRED_FIELDS = {
     "online_count",
     "pending_count",
     "pipeline_count",
+    "preference_mcp_catalog_status",
+    "preference_mcp_degraded_reason",
+    "preference_mcp_domain_pack_count",
+    "preference_mcp_identity_status",
+    "preference_mcp_provenance_status",
+    "preference_mcp_quota_status",
+    "preference_mcp_shadow_context_status",
+    "preference_mcp_status",
     "total_count",
 }
 
@@ -702,9 +1874,300 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "frontier_llm",
     "local_llm",
     "paper_account",
+    "paperops_alpaca_paper_post",
+    "paperops_alpaca_paper_post_called_count",
+    "paperops_paper_lifecycle_poller",
+    "paperops_paper_lifecycle_poller_order_poll_called_count",
+    "paperops_paper_exit_path",
+    "paperops_paper_exit_path_close_called_count",
+    "paperops_notification_review",
+    "paperops_notification_review_live_send_allowed_count",
+    "paperops_30_day_operations",
+    "paperops_30_day_operations_scheduler_status",
+    "paperops_30_day_operations_active_day_number",
+    "phase5_layer_b",
+    "phase5_alpaca_paper_dry_run",
+    "phase5_execution_adapter",
+    "phase5_kill_switch",
+    "phase5_paper_order_staging",
+    "phase5_paper_submit_enablement",
+    "phase5_prediction_market_adapter",
+    "phase5_position_monitor",
+    "phase5_paper_trade_drill",
+    "phase5_certification",
+    "phase5_phase6_handoff",
+    "phase5_signal_review",
+    "phase5_system_map",
+    "phase6_learning_loop",
+    "phase5_telegram_notifier",
+    "preference_mcp",
     "quant_oracle",
     "risk_gate",
     "telegram",
+}
+
+PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS = {
+    "active_day_number",
+    "automation_active",
+    "automation_prompt_paperops_bound",
+    "boundary",
+    "calendar_days_remaining",
+    "closed_proof_trade_count",
+    "completed_calendar_day_count",
+    "dashboard_mirror_public_safe",
+    "dashboard_mirror_status",
+    "event_log_event_count",
+    "event_log_written",
+    "live_capital_enabled",
+    "paper_operational_cycle_command_count",
+    "paper_operational_cycle_status",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "qualified_setup_count",
+    "recorded",
+    "run_id",
+    "run_state",
+    "scheduler_status",
+    "schema_version",
+    "stage",
+    "status",
+    "submitted_paper_order_count",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+MISSION_PHASE5_LAYER_B_REQUIRED_FIELDS = {
+    "boundary",
+    "implementation_allowed",
+    "implementation_plan_allowed",
+    "layer",
+    "nonapproval_blocker_count",
+    "only_explicit_approval_blocks_plan",
+    "orchestration_start_allowed",
+    "phase",
+    "readiness_blocker_count",
+    "scope_count",
+    "kill_switch_active_count",
+    "kill_switch_blocking_count",
+    "kill_switch_count",
+    "kill_switch_event_log_written",
+    "kill_switch_status",
+    "execution_adapter_count",
+    "execution_adapter_read_allowed_count",
+    "execution_adapter_staging_allowed_count",
+    "execution_adapter_status",
+    "alpaca_paper_dry_run_blocked_count",
+    "alpaca_paper_dry_run_broker_post_called",
+    "alpaca_paper_dry_run_event_log_written",
+    "alpaca_paper_dry_run_receipt_count",
+    "alpaca_paper_dry_run_record_count",
+    "alpaca_paper_dry_run_request_preview_count",
+    "alpaca_paper_dry_run_status",
+    "paper_order_staged_count",
+    "paper_order_staging_blocked_count",
+    "paper_order_staging_event_log_written",
+    "paper_order_staging_record_count",
+    "paper_order_staging_status",
+    "paper_submit_approval_present",
+    "paper_submit_approval_state",
+    "paper_submit_broker_post_called",
+    "paper_submit_enablement_record_count",
+    "paper_submit_enablement_status",
+    "paper_submit_event_log_written",
+    "paper_submit_path_available_count",
+    "prediction_market_adapter_status",
+    "prediction_market_context_count",
+    "prediction_market_event_log_written",
+    "prediction_market_live_blocked_route_count",
+    "prediction_market_preference_provenance_status",
+    "prediction_market_preference_source_quorum_credit_allowed",
+    "prediction_market_read_only_route_count",
+    "prediction_market_route_count",
+    "prediction_market_spend_allowed_count",
+    "prediction_market_write_allowed_count",
+    "telegram_notifier_alert_type_count",
+    "telegram_notifier_command_path_enabled_count",
+    "telegram_notifier_eligible_alert_count",
+    "telegram_notifier_event_log_written",
+    "telegram_notifier_live_send_allowed_count",
+    "telegram_notifier_mode",
+    "telegram_notifier_outbox_written_count",
+    "telegram_notifier_queued_count",
+    "telegram_notifier_send_gate",
+    "telegram_notifier_status",
+    "telegram_notifier_suppressed_count",
+    "position_monitor_cancel_allowed_count",
+    "position_monitor_closed_trade_count",
+    "position_monitor_closed_trade_summary_count",
+    "position_monitor_close_allowed_count",
+    "position_monitor_event_log_written",
+    "position_monitor_failed_reconciliation_count",
+    "position_monitor_mirrored_order_count",
+    "position_monitor_open_position_count",
+    "position_monitor_position_record_count",
+    "position_monitor_record_count",
+    "position_monitor_resize_allowed_count",
+    "position_monitor_status",
+    "position_monitor_submitted_order_count",
+    "position_monitor_write_authority_count",
+    "signal_review_backend_truth_displayed_count",
+    "signal_review_broker_write_allowed_count",
+    "signal_review_decision_chain_count",
+    "signal_review_event_log_written",
+    "signal_review_governance_comment_event_count",
+    "signal_review_kill_switch_action_event_count",
+    "signal_review_live_capital_enabled_count",
+    "signal_review_order_cancel_control_count",
+    "signal_review_order_place_control_count",
+    "signal_review_position_close_control_count",
+    "signal_review_position_resize_control_count",
+    "signal_review_prediction_market_write_allowed_count",
+    "signal_review_record_count",
+    "signal_review_status",
+    "signal_review_trade_approval_control_count",
+    "signal_review_ui_inferred_readiness_count",
+    "paper_trade_drill_blocker_count",
+    "paper_trade_drill_broker_post_called_count",
+    "paper_trade_drill_closed_trade_count",
+    "paper_trade_drill_complete",
+    "paper_trade_drill_exit_gate_passed",
+    "paper_trade_drill_implementation_ready",
+    "paper_trade_drill_live_capital_enabled_count",
+    "paper_trade_drill_open_position_count",
+    "paper_trade_drill_postmortem_due_count",
+    "paper_trade_drill_state",
+    "paper_trade_drill_status",
+    "paper_trade_drill_step_count",
+    "paper_trade_drill_submit_approval_present",
+    "paper_trade_drill_submit_path_available_count",
+    "paper_trade_drill_submitted_order_count",
+    "certification_blocker_count",
+    "certification_closed_trade_count",
+    "certification_input_gate_blocked_count",
+    "certification_input_gate_count",
+    "certification_input_gate_passed_count",
+    "certification_live_capital_enabled_count",
+    "certification_open_position_count",
+    "certification_paper_trade_drill_complete",
+    "certification_paper_trade_drill_exit_gate_passed",
+    "certification_phase5_certified",
+    "certification_phase5_exit_gate",
+    "certification_phase6_handoff_allowed",
+    "certification_phase7_planning_allowed",
+    "certification_phase7_proof_credit_allowed",
+    "certification_stage_status",
+    "certification_status",
+    "certification_submitted_paper_order_count",
+    "phase6_handoff_blocker_count",
+    "phase6_handoff_closed_trade_count",
+    "phase6_handoff_event_log_written",
+    "phase6_handoff_live_capital_enabled_count",
+    "phase6_handoff_phase7_proof_credit_allowed",
+    "phase6_handoff_postmortem_due_count",
+    "phase6_handoff_recommended_next_stage",
+    "phase6_handoff_state",
+    "phase6_handoff_status",
+    "phase6_knowledge_graph_write_allowed",
+    "phase6_learning_loop_implementation_allowed",
+    "phase6_learning_loop_plan_allowed",
+    "phase6_learning_write_allowed",
+    "phase6_required_module_count",
+    "system_map_backend_parity_error_count",
+    "system_map_dashboard_claims_trading_now",
+    "system_map_event_log_written",
+    "system_map_lane_count",
+    "system_map_layer_b_node_count",
+    "system_map_node_count",
+    "system_map_status",
+    "system_map_unsafe_control_count",
+    "stage",
+    "status",
+}
+
+MISSION_PHASE6_LEARNING_LOOP_REQUIRED_FIELDS = {
+    "approval_state",
+    "architect_blocked_recommendation_count",
+    "architect_recommendation_count",
+    "backend_derived",
+    "backend_parity_error_count",
+    "blocked_authority_count",
+    "boundary",
+    "broker_identifier_exposed_count",
+    "display_derived_from_backend",
+    "knowledge_graph_read_result_count",
+    "learning_state",
+    "live_capital_enabled",
+    "local_path_exposed_count",
+    "model_weight_proposal_count",
+    "phase",
+    "phase6_architect_policy_mutation_allowed",
+    "phase6_knowledge_graph_write_allowed",
+    "phase6_learning_write_allowed",
+    "phase6_model_weight_update_allowed",
+    "phase6_trust_score_update_allowed",
+    "phase7_proof_credit_allowed",
+    "postmortem_due_count",
+    "postmortem_resolved_count",
+    "raw_payload_exposed_count",
+    "secret_ref_exposed_count",
+    "shadow_replay_variant_count",
+    "stage",
+    "staged_graph_entry_count",
+    "status",
+    "trust_score_proposal_count",
+    "ui_inferred_readiness_count",
+    "unsafe_write_counter_total",
+    "visibility_state",
+}
+
+MISSION_PHASE3_READINESS_REQUIRED_FIELDS = {
+    "autonomous_scheduler_enabled",
+    "aws_braket_status",
+    "boundary",
+    "cloud_job_identifier_exposed_count",
+    "configured_provider_count",
+    "execution_allowed_count",
+    "execution_readiness",
+    "expected_provider_count",
+    "hardware_scheduler_enabled_count",
+    "hardware_submission_allowed_count",
+    "hardware_submitted_count",
+    "ibm_quantum_status",
+    "latest_output_route_type",
+    "latest_output_routing_status",
+    "latest_output_storage_type",
+    "latest_recommendation",
+    "local_absolute_path_exposed_count",
+    "local_simulator_backend",
+    "local_simulator_mode",
+    "local_simulator_status",
+    "missing_optional_package_count",
+    "missing_secret_count",
+    "next_due_at",
+    "paper_order_allowed_count",
+    "phase",
+    "provider_count",
+    "provider_readiness_status",
+    "public_safe",
+    "qctrl_configured",
+    "qctrl_live_probe_enabled",
+    "qctrl_optimization_job_submitted",
+    "qctrl_provider_call_count",
+    "qctrl_status",
+    "qiskit_aer_available",
+    "qiskit_available",
+    "raw_response_exposed_count",
+    "readiness_scope",
+    "scheduler_due",
+    "scheduler_enabled",
+    "scheduler_jobs_queued_count",
+    "scheduler_jobs_submitted_count",
+    "scheduler_status",
+    "scheduler_would_queue_job_count",
+    "schema_version",
+    "secret_value_exposed_count",
+    "status",
+    "trade_candidate_created_count",
 }
 
 DURABLE_INGESTION_REQUIRED_FIELDS = {
@@ -1108,6 +2571,693 @@ def main() -> int:
         "cockpit_status_durable_ingestion_replayed_source_count="
         f"{payload.get('durable_ingestion', {}).get('replayed_source_count')}"
     )
+    print(f"cockpit_status_yahoo_finance_status={payload.get('yahoo_finance', {}).get('status')}")
+    print(f"cockpit_status_yahoo_finance_enabled={payload.get('yahoo_finance', {}).get('enabled')}")
+    print(
+        "cockpit_status_yahoo_finance_symbol_allowlist_count="
+        f"{payload.get('yahoo_finance', {}).get('symbol_allowlist_count')}"
+    )
+    print(
+        "cockpit_status_yahoo_finance_degraded_reason="
+        f"{payload.get('yahoo_finance', {}).get('degraded_reason')}"
+    )
+    print(f"cockpit_status_preference_mcp_status={payload.get('preference_mcp', {}).get('status')}")
+    print(f"cockpit_status_preference_mcp_enabled={payload.get('preference_mcp', {}).get('enabled')}")
+    print(
+        "cockpit_status_preference_mcp_identity_status="
+        f"{payload.get('preference_mcp', {}).get('identity_status')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_quota_status="
+        f"{payload.get('preference_mcp', {}).get('quota_status')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_catalog_status="
+        f"{payload.get('preference_mcp', {}).get('catalog_status')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_domain_pack_count="
+        f"{payload.get('preference_mcp', {}).get('approved_domain_pack_count')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_provenance_status="
+        f"{payload.get('preference_mcp', {}).get('provenance_status')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_shadow_context_status="
+        f"{payload.get('preference_mcp', {}).get('shadow_context_status')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_source_promotion_status="
+        f"{payload.get('preference_mcp', {}).get('source_promotion_status')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_source_promotion_decision_count="
+        f"{payload.get('preference_mcp', {}).get('source_promotion_decision_count')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_source_promotion_promoted_count="
+        f"{payload.get('preference_mcp', {}).get('source_promotion_promoted_decision_count')}"
+    )
+    print(
+        "cockpit_status_preference_mcp_degraded_reason="
+        f"{payload.get('preference_mcp', {}).get('degraded_reason')}"
+    )
+    phase4_strategy = payload.get("phase4_strategy", {})
+    phase5_readiness = payload.get("phase5_layer_b_readiness", {})
+    phase5_kill_switch = payload.get("phase5_kill_switch_ledger", {})
+    phase5_execution_adapter = payload.get("phase5_execution_adapter_status", {})
+    phase5_paper_order_staging = payload.get("phase5_paper_order_staging_gate", {})
+    phase5_alpaca_dry_run = payload.get("phase5_alpaca_paper_dry_run", {})
+    phase5_paper_submit_enablement = payload.get("phase5_paper_submit_enablement_gate", {})
+    phase5_prediction_market_adapter = payload.get("phase5_prediction_market_adapter", {})
+    phase5_telegram_notifier = payload.get("phase5_telegram_notifier", {})
+    phase5_position_monitor = payload.get("phase5_position_monitor", {})
+    phase5_signal_review = payload.get("phase5_signal_review", {})
+    phase5_paper_trade_drill = payload.get("phase5_paper_trade_drill", {})
+    phase5_certification = payload.get("phase5_certification", {})
+    phase5_phase6_handoff = payload.get("phase5_phase6_handoff", {})
+    phase5_system_map = payload.get("phase5_system_map", {})
+    phase6_learning_loop = payload.get("phase6_learning_loop", {})
+    phase6_certification = payload.get("phase6_certification", {})
+    paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
+    paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
+    paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
+    paperops_notification_review = payload.get("paperops_notification_review", {})
+    paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    phase4_approval = phase4_strategy.get("approval_event", {})
+    phase4_toggles = phase4_strategy.get("strategy_toggles", {})
+    phase4_certification = phase4_strategy.get("certification", {})
+    phase4_preference_gate = phase4_certification.get(
+        "preference_mcp_certification_gate",
+        {},
+    )
+    print(f"cockpit_status_phase4_stage={phase4_strategy.get('stage')}")
+    print(
+        "cockpit_status_paperops_lifecycle_poller_status="
+        f"{paperops_paper_lifecycle_poller.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_poller_source_submitted_order_count="
+        f"{paperops_paper_lifecycle_poller.get('source_submitted_paper_order_count')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_poller_order_poll_called_count="
+        f"{paperops_paper_lifecycle_poller.get('paper_order_poll_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_poller_live_endpoint_called_count="
+        f"{paperops_paper_lifecycle_poller.get('live_endpoint_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_exit_path_status="
+        f"{paperops_paper_exit_path.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_exit_path_open_position_readback_count="
+        f"{paperops_paper_exit_path.get('open_position_readback_count')}"
+    )
+    print(
+        "cockpit_status_paperops_exit_path_close_called_count="
+        f"{paperops_paper_exit_path.get('paper_position_close_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_exit_path_live_endpoint_called_count="
+        f"{paperops_paper_exit_path.get('live_endpoint_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_notification_review_status="
+        f"{paperops_notification_review.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_notification_review_record_count="
+        f"{paperops_notification_review.get('notification_record_count')}"
+    )
+    print(
+        "cockpit_status_paperops_notification_review_live_send_allowed_count="
+        f"{paperops_notification_review.get('live_send_allowed_count')}"
+    )
+    print(
+        "cockpit_status_paperops_notification_review_command_path_enabled_count="
+        f"{paperops_notification_review.get('telegram_command_path_enabled_count')}"
+    )
+    print(
+        "cockpit_status_paperops_30_day_operations_status="
+        f"{paperops_30_day_operations.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_30_day_operations_scheduler_status="
+        f"{paperops_30_day_operations.get('scheduler_status')}"
+    )
+    print(
+        "cockpit_status_paperops_30_day_operations_active_day_number="
+        f"{paperops_30_day_operations.get('active_day_number')}"
+    )
+    print(
+        "cockpit_status_paperops_30_day_operations_cycle_status="
+        f"{paperops_30_day_operations.get('paper_operational_cycle_status')}"
+    )
+    print(
+        "cockpit_status_paperops_30_day_operations_dashboard_public_safe="
+        f"{paperops_30_day_operations.get('dashboard_mirror_public_safe')}"
+    )
+    print(
+        "cockpit_status_paperops_30_day_operations_unsafe_write_counter_total="
+        f"{paperops_30_day_operations.get('unsafe_write_counter_total')}"
+    )
+    print(f"cockpit_status_phase4_stage_status={phase4_strategy.get('stage_status')}")
+    print(
+        "cockpit_status_phase4_strategy_document_status="
+        f"{phase4_strategy.get('strategy_document_status')}"
+    )
+    print(f"cockpit_status_phase4_approval_state={phase4_strategy.get('approval_event_status')}")
+    print(f"cockpit_status_phase4_approval_logged={phase4_approval.get('approval_logged')}")
+    print(f"cockpit_status_phase4_required_amendment_count={phase4_approval.get('required_amendment_count')}")
+    print(f"cockpit_status_phase4_toggle_count={phase4_strategy.get('toggle_count')}")
+    print(
+        "cockpit_status_phase4_approved_shadow_toggle_count="
+        f"{phase4_strategy.get('approved_shadow_strategy_toggle_count')}"
+    )
+    print(f"cockpit_status_phase4_certification_allowed={phase4_strategy.get('phase4_certification_allowed')}")
+    print(f"cockpit_status_phase4_certification_status={phase4_strategy.get('certification_status')}")
+    print(f"cockpit_status_phase4_certified={phase4_strategy.get('phase4_certified')}")
+    print(f"cockpit_status_phase4_phase5_handoff_allowed={phase4_strategy.get('phase5_handoff_allowed')}")
+    print(f"cockpit_status_phase4_trade_candidate_count={phase4_strategy.get('trade_candidate_count')}")
+    print(f"cockpit_status_phase4_execution_allowed_count={phase4_strategy.get('execution_allowed_count')}")
+    print(f"cockpit_status_phase4_paper_order_allowed_count={phase4_strategy.get('paper_order_allowed_count')}")
+    print(f"cockpit_status_phase4_broker_write_allowed_count={phase4_strategy.get('broker_write_allowed_count')}")
+    print(f"cockpit_status_phase4_live_capital_enabled_count={phase4_strategy.get('live_capital_enabled_count')}")
+    print(f"cockpit_status_phase4_toggle_validation_error_count={phase4_toggles.get('validation_error_count')}")
+    print(
+        "cockpit_status_phase4_preference_source_promotion_status="
+        f"{phase4_preference_gate.get('source_promotion_status')}"
+    )
+    print(
+        "cockpit_status_phase4_preference_source_promotion_promoted_count="
+        f"{phase4_preference_gate.get('source_promotion_promoted_decision_count')}"
+    )
+    print(
+        "cockpit_status_phase4_preference_source_promotion_source_count_after="
+        f"{phase4_preference_gate.get('source_promotion_canonical_source_count_after')}"
+    )
+    print(f"cockpit_status_phase5_status={phase5_readiness.get('status')}")
+    print(
+        "cockpit_status_phase5_plan_allowed="
+        f"{phase5_readiness.get('phase5_layer_b_implementation_plan_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_implementation_allowed="
+        f"{phase5_readiness.get('phase5_layer_b_implementation_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_orchestration_start_allowed="
+        f"{phase5_readiness.get('phase5_orchestration_start_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_nonapproval_blocker_count="
+        f"{phase5_readiness.get('nonapproval_blocker_count')}"
+    )
+    print(f"cockpit_status_phase5_kill_switch_status={phase5_kill_switch.get('status')}")
+    print(
+        "cockpit_status_phase5_kill_switch_count="
+        f"{phase5_kill_switch.get('switch_count')}"
+    )
+    print(
+        "cockpit_status_phase5_kill_switch_active_count="
+        f"{phase5_kill_switch.get('active_switch_count')}"
+    )
+    print(
+        "cockpit_status_phase5_kill_switch_blocking_count="
+        f"{phase5_kill_switch.get('blocking_switch_count')}"
+    )
+    print(
+        "cockpit_status_phase5_kill_switch_event_log_written="
+        f"{phase5_kill_switch.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_execution_adapter_status="
+        f"{phase5_execution_adapter.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_execution_adapter_count="
+        f"{phase5_execution_adapter.get('adapter_status_count')}"
+    )
+    print(
+        "cockpit_status_phase5_execution_adapter_read_allowed_count="
+        f"{phase5_execution_adapter.get('read_allowed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_execution_adapter_staging_allowed_count="
+        f"{phase5_execution_adapter.get('downstream_staging_allowed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_execution_adapter_alpaca_read_health="
+        f"{phase5_execution_adapter.get('alpaca_read_health')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_order_staging_status="
+        f"{phase5_paper_order_staging.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_order_staging_record_count="
+        f"{phase5_paper_order_staging.get('staging_record_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_order_staged_count="
+        f"{phase5_paper_order_staging.get('staged_order_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_order_staging_blocked_count="
+        f"{phase5_paper_order_staging.get('blocked_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_order_staging_event_log_written="
+        f"{phase5_paper_order_staging.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_alpaca_paper_dry_run_status="
+        f"{phase5_alpaca_dry_run.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_alpaca_paper_dry_run_record_count="
+        f"{phase5_alpaca_dry_run.get('dry_run_record_count')}"
+    )
+    print(
+        "cockpit_status_phase5_alpaca_paper_dry_run_request_preview_count="
+        f"{phase5_alpaca_dry_run.get('request_preview_count')}"
+    )
+    print(
+        "cockpit_status_phase5_alpaca_paper_dry_run_receipt_count="
+        f"{phase5_alpaca_dry_run.get('dry_run_receipt_count')}"
+    )
+    print(
+        "cockpit_status_phase5_alpaca_paper_dry_run_blocked_count="
+        f"{phase5_alpaca_dry_run.get('blocked_count')}"
+    )
+    print(
+        "cockpit_status_phase5_alpaca_paper_dry_run_event_log_written="
+        f"{phase5_alpaca_dry_run.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_enablement_status="
+        f"{phase5_paper_submit_enablement.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_enablement_record_count="
+        f"{phase5_paper_submit_enablement.get('submit_enablement_record_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_path_available_count="
+        f"{phase5_paper_submit_enablement.get('submit_path_available_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_approval_state="
+        f"{phase5_paper_submit_enablement.get('paper_submit_approval_state')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_approval_present="
+        f"{phase5_paper_submit_enablement.get('paper_submit_approval_present')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_event_log_written="
+        f"{phase5_paper_submit_enablement.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_submit_broker_post_called="
+        f"{phase5_paper_submit_enablement.get('broker_post_called')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_adapter_status="
+        f"{phase5_prediction_market_adapter.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_route_count="
+        f"{phase5_prediction_market_adapter.get('prediction_market_route_count')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_context_count="
+        f"{phase5_prediction_market_adapter.get('prediction_market_context_count')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_read_only_route_count="
+        f"{phase5_prediction_market_adapter.get('read_only_route_count')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_live_blocked_count="
+        f"{phase5_prediction_market_adapter.get('live_blocked_count')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_write_allowed_count="
+        f"{phase5_prediction_market_adapter.get('prediction_market_write_allowed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_spend_allowed_count="
+        f"{phase5_prediction_market_adapter.get('prediction_market_spend_allowed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_preference_provenance_status="
+        f"{phase5_prediction_market_adapter.get('preference_provenance_status')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_preference_context_status="
+        f"{phase5_prediction_market_adapter.get('preference_context_status')}"
+    )
+    print(
+        "cockpit_status_phase5_prediction_market_event_log_written="
+        f"{phase5_prediction_market_adapter.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_status="
+        f"{phase5_telegram_notifier.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_alert_type_count="
+        f"{phase5_telegram_notifier.get('alert_type_count')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_eligible_alert_count="
+        f"{phase5_telegram_notifier.get('eligible_alert_count')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_queued_count="
+        f"{phase5_telegram_notifier.get('queued_dry_run_alert_count')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_outbox_written_count="
+        f"{phase5_telegram_notifier.get('outbox_message_written_count')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_send_gate="
+        f"{phase5_telegram_notifier.get('telegram_send_gate')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_command_path_count="
+        f"{phase5_telegram_notifier.get('telegram_command_path_enabled_count')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_live_send_count="
+        f"{phase5_telegram_notifier.get('live_send_allowed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_telegram_notifier_event_log_written="
+        f"{phase5_telegram_notifier.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_status="
+        f"{phase5_position_monitor.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_record_count="
+        f"{phase5_position_monitor.get('monitor_record_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_position_record_count="
+        f"{phase5_position_monitor.get('position_record_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_closed_trade_summary_count="
+        f"{phase5_position_monitor.get('closed_trade_summary_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_submitted_order_count="
+        f"{phase5_position_monitor.get('submitted_order_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_open_position_count="
+        f"{phase5_position_monitor.get('open_position_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_closed_trade_count="
+        f"{phase5_position_monitor.get('closed_trade_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_failed_reconciliation_count="
+        f"{phase5_position_monitor.get('failed_reconciliation_count')}"
+    )
+    print(
+        "cockpit_status_phase5_position_monitor_event_log_written="
+        f"{phase5_position_monitor.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_status="
+        f"{phase5_signal_review.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_record_count="
+        f"{phase5_signal_review.get('signal_review_record_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_decision_chain_count="
+        f"{phase5_signal_review.get('decision_chain_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_governance_comment_event_count="
+        f"{phase5_signal_review.get('governance_comment_event_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_kill_switch_action_event_count="
+        f"{phase5_signal_review.get('kill_switch_action_event_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_backend_truth_displayed_count="
+        f"{phase5_signal_review.get('backend_truth_displayed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_ui_inferred_readiness_count="
+        f"{phase5_signal_review.get('ui_inferred_readiness_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_event_log_written="
+        f"{phase5_signal_review.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_status="
+        f"{phase5_paper_trade_drill.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_state="
+        f"{phase5_paper_trade_drill.get('paper_trade_drill_state')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_complete="
+        f"{phase5_paper_trade_drill.get('paper_trade_drill_complete')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_exit_gate_passed="
+        f"{phase5_paper_trade_drill.get('phase5_paper_trade_drill_exit_gate_passed')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_step_count="
+        f"{phase5_paper_trade_drill.get('step_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_blocker_count="
+        f"{phase5_paper_trade_drill.get('blocker_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_submit_approval_present="
+        f"{phase5_paper_trade_drill.get('paper_submit_approval_present')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_submit_path_available_count="
+        f"{phase5_paper_trade_drill.get('paper_submit_path_available_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_broker_post_called_count="
+        f"{phase5_paper_trade_drill.get('broker_post_called_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_live_capital_enabled_count="
+        f"{phase5_paper_trade_drill.get('live_capital_enabled_count')}"
+    )
+    print(
+        "cockpit_status_phase5_paper_trade_drill_event_log_written="
+        f"{phase5_paper_trade_drill.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_status="
+        f"{phase5_certification.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_stage_status="
+        f"{phase5_certification.get('stage_status')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_phase5_certified="
+        f"{phase5_certification.get('phase5_certified')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_phase5_exit_gate="
+        f"{phase5_certification.get('phase5_exit_gate')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_phase6_handoff_allowed="
+        f"{phase5_certification.get('phase6_handoff_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_phase7_planning_allowed="
+        f"{phase5_certification.get('phase7_planning_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_input_gate_passed_count="
+        f"{phase5_certification.get('input_gate_passed_count')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_input_gate_blocked_count="
+        f"{phase5_certification.get('input_gate_blocked_count')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_blocker_count="
+        f"{phase5_certification.get('certification_blocker_count')}"
+    )
+    print(
+        "cockpit_status_phase5_certification_event_log_written="
+        f"{phase5_certification.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_status="
+        f"{phase5_phase6_handoff.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_state="
+        f"{phase5_phase6_handoff.get('handoff_state')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_phase6_plan_allowed="
+        f"{phase5_phase6_handoff.get('phase6_learning_loop_plan_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_phase6_implementation_allowed="
+        f"{phase5_phase6_handoff.get('phase6_learning_loop_implementation_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_learning_write_allowed="
+        f"{phase5_phase6_handoff.get('phase6_learning_write_allowed')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_blocker_count="
+        f"{phase5_phase6_handoff.get('blocker_count')}"
+    )
+    print(
+        "cockpit_status_phase5_phase6_handoff_event_log_written="
+        f"{phase5_phase6_handoff.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_status="
+        f"{phase5_system_map.get('status')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_node_count="
+        f"{phase5_system_map.get('node_count')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_lane_count="
+        f"{phase5_system_map.get('lane_count')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_layer_b_node_count="
+        f"{phase5_system_map.get('layer_b_node_count')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_backend_parity_error_count="
+        f"{phase5_system_map.get('backend_parity_error_count')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_unsafe_control_count="
+        f"{phase5_system_map.get('unsafe_control_count')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_ui_inferred_node_count="
+        f"{phase5_system_map.get('ui_inferred_node_count')}"
+    )
+    print(
+        "cockpit_status_phase5_system_map_event_log_written="
+        f"{phase5_system_map.get('event_log_written')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_status="
+        f"{phase6_learning_loop.get('status')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_visibility_state="
+        f"{phase6_learning_loop.get('visibility_state')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_learning_state="
+        f"{phase6_learning_loop.get('learning_state')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_backend_derived="
+        f"{phase6_learning_loop.get('backend_derived')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_ui_inferred_readiness_count="
+        f"{phase6_learning_loop.get('ui_inferred_readiness_count')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_postmortem_due_count="
+        f"{phase6_learning_loop.get('postmortem_due_count')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_approval_state="
+        f"{phase6_learning_loop.get('approval_state')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_staged_graph_entry_count="
+        f"{phase6_learning_loop.get('staged_graph_entry_count')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_model_weight_proposal_count="
+        f"{phase6_learning_loop.get('model_weight_proposal_count')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_trust_score_proposal_count="
+        f"{phase6_learning_loop.get('trust_score_proposal_count')}"
+    )
+    print(
+        "cockpit_status_phase6_learning_loop_blocked_authority_count="
+        f"{phase6_learning_loop.get('blocked_authority_count')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_status="
+        f"{phase6_certification.get('status')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_stage_status="
+        f"{phase6_certification.get('stage_status')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_phase6_certified="
+        f"{phase6_certification.get('phase6_certified')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_phase6_exit_gate="
+        f"{phase6_certification.get('phase6_exit_gate')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_phase7_demo_proof_planning_allowed="
+        f"{phase6_certification.get('phase7_demo_proof_planning_allowed')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_blocker_count="
+        f"{phase6_certification.get('certification_blocker_count')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_input_gate_passed_count="
+        f"{phase6_certification.get('input_gate_passed_count')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_approval_state="
+        f"{phase6_certification.get('approval_state')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_unresolved_postmortem_count="
+        f"{phase6_certification.get('unresolved_postmortem_count')}"
+    )
+    print(
+        "cockpit_status_phase6_certification_pending_review_action_count="
+        f"{phase6_certification.get('pending_review_action_count')}"
+    )
 
     if payload["schema_version"] != COCKPIT_STATUS_SCHEMA_VERSION:
         print("cockpit_status_schema_mismatch=true")
@@ -1150,6 +3300,1921 @@ def main() -> int:
     if durable_ingestion.get("status") not in {"ok", "partial", "missing_tables", "degraded", "ready_waiting_for_local_service"}:
         print("cockpit_status_durable_ingestion_status_invalid=true")
         return 1
+    yahoo_finance = payload.get("yahoo_finance", {})
+    missing_yahoo_fields = sorted(YAHOO_FINANCE_REQUIRED_FIELDS - set(yahoo_finance))
+    if missing_yahoo_fields:
+        print("cockpit_status_yahoo_finance_fields_missing=" + ",".join(missing_yahoo_fields))
+        return 1
+    if yahoo_finance.get("source") != "market.yahoo_finance":
+        print("cockpit_status_yahoo_finance_source_mismatch=true")
+        return 1
+    if yahoo_finance.get("classification") != "accepted_supplemental_pending_live_dependencies":
+        print("cockpit_status_yahoo_finance_classification_mismatch=true")
+        return 1
+    if yahoo_finance.get("public_safe") is not True:
+        print("cockpit_status_yahoo_finance_not_public_safe=true")
+        return 1
+    if yahoo_finance.get("canonical_source") is not False:
+        print("cockpit_status_yahoo_finance_canonical_source=true")
+        return 1
+    if yahoo_finance.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+        print("cockpit_status_yahoo_finance_canonical_count_mismatch=true")
+        return 1
+    if yahoo_finance.get("market_confirmation_role") != "supplemental_market_confirmation":
+        print("cockpit_status_yahoo_finance_role_mismatch=true")
+        return 1
+    if yahoo_finance.get("symbol_allowlist_count", 0) < 1:
+        print("cockpit_status_yahoo_finance_symbols_missing=true")
+        return 1
+    if yahoo_finance.get("status") not in {"deferred", "degraded", "live_read_only_ready"}:
+        print("cockpit_status_yahoo_finance_status_invalid=true")
+        return 1
+    for key in (
+        "raw_payload_exposed",
+        "raw_archive_path_exposed",
+        "cache_path_exposed",
+        "cookies_exposed",
+        "crumb_tokens_exposed",
+        "scraped_html_exposed",
+        "signal_authority",
+        "risk_approval_authority",
+        "order_authority",
+        "broker_write_authority",
+        "broker_echo_authority",
+        "fill_confirmation_authority",
+        "receipt_evidence_authority",
+        "reconciliation_truth_authority",
+        "live_capital_authority",
+    ):
+        if yahoo_finance.get(key) is not False:
+            print(f"cockpit_status_yahoo_finance_flag_not_false={key}")
+            return 1
+    if "supplemental market confirmation" not in yahoo_finance.get("boundary", ""):
+        print("cockpit_status_yahoo_finance_boundary_weak=true")
+        return 1
+    preference_mcp = payload.get("preference_mcp", {})
+    missing_preference_fields = sorted(PREFERENCE_MCP_REQUIRED_FIELDS - set(preference_mcp))
+    if missing_preference_fields:
+        print("cockpit_status_preference_mcp_fields_missing=" + ",".join(missing_preference_fields))
+        return 1
+    if preference_mcp.get("source_key") != "preference_mcp":
+        print("cockpit_status_preference_mcp_source_key_mismatch=true")
+        return 1
+    if preference_mcp.get("provider_label") != "preference_labs_mcp":
+        print("cockpit_status_preference_mcp_provider_mismatch=true")
+        return 1
+    if preference_mcp.get("classification") != "proposed_supplemental_multi_source_data_plane":
+        print("cockpit_status_preference_mcp_classification_mismatch=true")
+        return 1
+    if preference_mcp.get("public_safe") is not True:
+        print("cockpit_status_preference_mcp_not_public_safe=true")
+        return 1
+    if preference_mcp.get("status") not in {"challenge_only_ready", "catalog_only_ready", "disabled", "degraded"}:
+        print("cockpit_status_preference_mcp_status_invalid=true")
+        return 1
+    if preference_mcp.get("quota_status") not in {
+        "verified",
+        "disabled_live_mode",
+        "blocked_pending_verified_identity",
+    }:
+        print("cockpit_status_preference_mcp_quota_status_invalid=true")
+        return 1
+    if preference_mcp.get("approved_domain_pack_count") != len(preference_mcp.get("approved_domain_packs", [])):
+        print("cockpit_status_preference_mcp_domain_pack_count_mismatch=true")
+        return 1
+    if preference_mcp.get("approved_domain_pack_count", 0) < 1:
+        print("cockpit_status_preference_mcp_domain_pack_coverage_missing=true")
+        return 1
+    if preference_mcp.get("source_promotion_status") not in {"not_run", "validated"}:
+        print("cockpit_status_preference_mcp_source_promotion_status_invalid=true")
+        return 1
+    if preference_mcp.get("source_promotion_promoted_decision_count", 0) != 0:
+        print("cockpit_status_preference_mcp_source_promotion_promoted=true")
+        return 1
+    if preference_mcp.get("source_promotion_canonical_source_count_after") != EXPECTED_SOURCE_COUNT:
+        print("cockpit_status_preference_mcp_source_promotion_source_count_mismatch=true")
+        return 1
+    for key in (
+        "paid_tools_allowed",
+        "live_mcp_call_allowed",
+        "search_tools_allowed",
+        "domain_tool_calls_allowed",
+        "paid_tool_calls_allowed",
+        "source_quorum_credit_allowed",
+        "preference_only_confirmation_allowed",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "live_capital_enabled",
+        "raw_key_exposed",
+        "raw_prompt_exposed",
+        "raw_payload_exposed",
+        "private_source_payload_exposed",
+    ):
+        if preference_mcp.get(key) is not False:
+            print(f"cockpit_status_preference_mcp_flag_not_false={key}")
+            return 1
+    preference_authority_flags = preference_mcp.get("authority_flags", {})
+    if not isinstance(preference_authority_flags, dict) or not preference_authority_flags:
+        print("cockpit_status_preference_mcp_authority_flags_missing=true")
+        return 1
+    for key, value in preference_authority_flags.items():
+        if value is not False:
+            print(f"cockpit_status_preference_mcp_authority_flag_enabled={key}")
+            return 1
+    preference_boundary = preference_mcp.get("boundary", "")
+    for phrase in ("read-only", "without secrets", "cannot satisfy source quorum", "create trade candidates"):
+        if phrase not in preference_boundary:
+            print("cockpit_status_preference_mcp_boundary_weak=true")
+            return 1
+    phase4_strategy = payload.get("phase4_strategy", {})
+    missing_phase4_fields = sorted(PHASE4_STRATEGY_REQUIRED_FIELDS - set(phase4_strategy))
+    if missing_phase4_fields:
+        print("cockpit_status_phase4_fields_missing=" + ",".join(missing_phase4_fields))
+        return 1
+    if phase4_strategy.get("phase") != "Q4" or phase4_strategy.get("stage") != "Q4-12":
+        print("cockpit_status_phase4_stage_mismatch=true")
+        return 1
+    if phase4_strategy.get("public_safe") is not True:
+        print("cockpit_status_phase4_not_public_safe=true")
+        return 1
+    if phase4_strategy.get("strategy_document_status") != "validated":
+        print("cockpit_status_phase4_strategy_document_not_validated=true")
+        return 1
+    phase4_approval = phase4_strategy.get("approval_event", {})
+    phase4_approved = phase4_strategy.get("approval_event_status") == "approved"
+    if phase4_approval.get("approval_logged") is not True:
+        print("cockpit_status_phase4_approval_not_logged=true")
+        return 1
+    if phase4_certification.get("validation_error_count") != 0:
+        print("cockpit_status_phase4_certification_validation_errors=true")
+        return 1
+    if phase4_approved:
+        if phase4_approval.get("required_amendment_count") != 0:
+            print("cockpit_status_phase4_required_amendments_present=true")
+            return 1
+        if phase4_strategy.get("phase4_certification_allowed") is not True:
+            print("cockpit_status_phase4_certification_not_allowed=true")
+            return 1
+        if phase4_strategy.get("phase4_certified") is not True:
+            print("cockpit_status_phase4_not_certified=true")
+            return 1
+        if phase4_strategy.get("phase5_handoff_allowed") is not True:
+            print("cockpit_status_phase4_phase5_handoff_not_allowed=true")
+            return 1
+        if phase4_strategy.get("certification_status") != "certified":
+            print("cockpit_status_phase4_certification_status_not_certified=true")
+            return 1
+        if phase4_certification.get("certification_blocker_count", 0) != 0:
+            print("cockpit_status_phase4_certification_blockers_present=true")
+            return 1
+    else:
+        if phase4_strategy.get("approval_event_status") != "amendments_required":
+            print("cockpit_status_phase4_approval_state_mismatch=true")
+            return 1
+        if phase4_approval.get("required_amendment_count") < 1:
+            print("cockpit_status_phase4_required_amendments_missing=true")
+            return 1
+        if phase4_strategy.get("phase4_certification_allowed") is not False:
+            print("cockpit_status_phase4_certification_allowed=true")
+            return 1
+        if phase4_strategy.get("phase4_certified") is not False:
+            print("cockpit_status_phase4_certified=true")
+            return 1
+        if phase4_strategy.get("phase5_handoff_allowed") is not False:
+            print("cockpit_status_phase4_phase5_handoff_allowed=true")
+            return 1
+        if phase4_strategy.get("certification_status") != "blocked":
+            print("cockpit_status_phase4_certification_status_not_blocked=true")
+            return 1
+        if phase4_certification.get("certification_blocker_count", 0) < 1:
+            print("cockpit_status_phase4_certification_blocker_missing=true")
+            return 1
+        if "explicit_fund_manager_approval_required" not in phase4_certification.get(
+            "certification_blockers",
+            [],
+        ):
+            print("cockpit_status_phase4_explicit_approval_blocker_missing=true")
+            return 1
+    if phase4_preference_gate.get("source_promotion_status") != "validated":
+        print("cockpit_status_phase4_preference_source_promotion_not_validated=true")
+        return 1
+    if phase4_preference_gate.get("source_promotion_promoted_decision_count", 0) != 0:
+        print("cockpit_status_phase4_preference_source_promotion_promoted=true")
+        return 1
+    if (
+        phase4_preference_gate.get("source_promotion_canonical_source_count_after")
+        != EXPECTED_SOURCE_COUNT
+    ):
+        print("cockpit_status_phase4_preference_source_promotion_count_mismatch=true")
+        return 1
+    if phase4_preference_gate.get("preference_mcp_source_36") is not False:
+        print("cockpit_status_phase4_preference_source36=true")
+        return 1
+    phase4_toggles = phase4_strategy.get("strategy_toggles", {})
+    if phase4_toggles.get("toggle_count") != 5:
+        print("cockpit_status_phase4_toggle_count_mismatch=true")
+        return 1
+    if phase4_approved:
+        if phase4_strategy.get("approved_shadow_strategy_toggle_count") != 5:
+            print("cockpit_status_phase4_approved_shadow_toggle_count_mismatch=true")
+            return 1
+        if phase4_toggles.get("draft_toggle_count") != 0:
+            print("cockpit_status_phase4_draft_toggle_count_mismatch=true")
+            return 1
+    else:
+        if phase4_strategy.get("approved_shadow_strategy_toggle_count") != 0:
+            print("cockpit_status_phase4_approved_shadow_toggle_enabled=true")
+            return 1
+        if phase4_toggles.get("draft_toggle_count") != 5:
+            print("cockpit_status_phase4_draft_toggle_count_mismatch=true")
+            return 1
+    if phase4_toggles.get("validation_error_count") != 0:
+        print("cockpit_status_phase4_toggle_validation_errors=true")
+        return 1
+    for key in (
+        "trade_candidate_count",
+        "execution_allowed_count",
+        "paper_order_allowed_count",
+        "broker_write_allowed_count",
+        "live_capital_enabled_count",
+    ):
+        if phase4_strategy.get(key) != 0:
+            print(f"cockpit_status_phase4_count_not_zero={key}")
+            return 1
+    for key in ("execution_allowed", "paper_order_allowed", "broker_write_allowed", "live_capital_enabled"):
+        if phase4_strategy.get(key) is not False:
+            print(f"cockpit_status_phase4_flag_not_false={key}")
+            return 1
+    if "cannot create trade candidates" not in phase4_strategy.get("no_execution_boundary", ""):
+        print("cockpit_status_phase4_boundary_weak=true")
+        return 1
+    phase5_readiness = payload.get("phase5_layer_b_readiness", {})
+    missing_phase5_fields = sorted(PHASE5_LAYER_B_REQUIRED_FIELDS - set(phase5_readiness))
+    if missing_phase5_fields:
+        print("cockpit_status_phase5_fields_missing=" + ",".join(missing_phase5_fields))
+        return 1
+    if phase5_readiness.get("phase") != "Q5" or phase5_readiness.get("layer") != "Layer B":
+        print("cockpit_status_phase5_phase_or_layer_mismatch=true")
+        return 1
+    if phase5_readiness.get("stage") != "P5-PRE":
+        print("cockpit_status_phase5_stage_mismatch=true")
+        return 1
+    if phase5_readiness.get("public_safe") is not True:
+        print("cockpit_status_phase5_not_public_safe=true")
+        return 1
+    if phase5_readiness.get("phase5_layer_b_implementation_plan_allowed") is not True:
+        print("cockpit_status_phase5_plan_not_allowed=true")
+        return 1
+    if phase5_readiness.get("phase5_orchestration_start_allowed") is not False:
+        print("cockpit_status_phase5_orchestration_start_allowed=true")
+        return 1
+    phase5_implementation_allowed = (
+        phase5_readiness.get("phase5_layer_b_implementation_allowed") is True
+    )
+    if phase5_implementation_allowed:
+        if phase5_readiness.get("status") != "ready_for_phase5_layer_b_implementation":
+            print("cockpit_status_phase5_not_ready=true")
+            return 1
+        if phase5_readiness.get("phase4_certified") is not True:
+            print("cockpit_status_phase5_phase4_not_certified=true")
+            return 1
+        if phase5_readiness.get("phase5_handoff_allowed") is not True:
+            print("cockpit_status_phase5_handoff_not_allowed=true")
+            return 1
+        if phase5_readiness.get("readiness_blocker_count") != 0:
+            print("cockpit_status_phase5_blockers_present=true")
+            return 1
+    else:
+        if phase5_readiness.get("status") != "blocked_pending_phase4_certification":
+            print("cockpit_status_phase5_not_blocked=true")
+            return 1
+        if phase5_readiness.get("phase4_certified") is not False:
+            print("cockpit_status_phase5_phase4_certified=true")
+            return 1
+        if phase5_readiness.get("phase5_handoff_allowed") is not False:
+            print("cockpit_status_phase5_handoff_allowed=true")
+            return 1
+        if "explicit_fund_manager_approval_required" not in phase5_readiness.get(
+            "readiness_blockers",
+            [],
+        ):
+            print("cockpit_status_phase5_explicit_approval_blocker_missing=true")
+            return 1
+    if phase5_readiness.get("nonapproval_blocker_count") != 0:
+        print("cockpit_status_phase5_nonapproval_blockers_present=true")
+        return 1
+    if phase5_readiness.get("preference_source_promotion_status") != "validated":
+        print("cockpit_status_phase5_preference_source_promotion_not_validated=true")
+        return 1
+    if phase5_readiness.get("yahoo_finance_role") != "supplemental_market_confirmation_only":
+        print("cockpit_status_phase5_yahoo_role_not_supplemental=true")
+        return 1
+    for key in (
+        "approval_policy_router_enabled",
+        "risk_agent_approval_authority",
+        "kill_switch_mutation_authority",
+        "execution_adapter_write_authority",
+        "paper_execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "prediction_market_write_allowed",
+        "telegram_live_notifications_allowed",
+        "position_monitor_write_authority",
+        "live_capital_enabled",
+    ):
+        if phase5_readiness.get(key) is not False:
+            print(f"cockpit_status_phase5_authority_enabled={key}")
+            return 1
+    missing_phase5_kill_switch_fields = sorted(
+        PHASE5_KILL_SWITCH_REQUIRED_FIELDS - set(phase5_kill_switch)
+    )
+    if missing_phase5_kill_switch_fields:
+        print(
+            "cockpit_status_phase5_kill_switch_fields_missing="
+            + ",".join(missing_phase5_kill_switch_fields)
+        )
+        return 1
+    if phase5_kill_switch.get("phase") != "Q5" or phase5_kill_switch.get("stage") != "Q5-4":
+        print("cockpit_status_phase5_kill_switch_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_kill_switch.get("public_safe") is not True:
+        print("cockpit_status_phase5_kill_switch_not_public_safe=true")
+        return 1
+    if phase5_kill_switch.get("ledger_recorded") is not True:
+        print("cockpit_status_phase5_kill_switch_not_recorded=true")
+        return 1
+    if phase5_kill_switch.get("status") != "ok":
+        print("cockpit_status_phase5_kill_switch_not_ok=true")
+        return 1
+    if phase5_kill_switch.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_kill_switch_validation_errors=true")
+        return 1
+    if phase5_kill_switch.get("event_log_written") is not True:
+        print("cockpit_status_phase5_kill_switch_event_log_not_written=true")
+        return 1
+    if phase5_kill_switch.get("event_log_event_count") != phase5_kill_switch.get("switch_count"):
+        print("cockpit_status_phase5_kill_switch_event_log_count_mismatch=true")
+        return 1
+    if phase5_kill_switch.get("switch_count", 0) < phase5_kill_switch.get(
+        "required_scope_type_count",
+        0,
+    ):
+        print("cockpit_status_phase5_kill_switch_count_below_scope_count=true")
+        return 1
+    if phase5_kill_switch.get("fail_closed_default_count") != phase5_kill_switch.get("switch_count"):
+        print("cockpit_status_phase5_kill_switch_fail_closed_count_mismatch=true")
+        return 1
+    if phase5_kill_switch.get("active_switch_count") != phase5_kill_switch.get("blocking_switch_count"):
+        print("cockpit_status_phase5_kill_switch_active_blocking_mismatch=true")
+        return 1
+    if phase5_kill_switch.get("default_fail_closed_on_missing_state") is not True:
+        print("cockpit_status_phase5_kill_switch_missing_state_not_fail_closed=true")
+        return 1
+    if phase5_kill_switch.get("default_fail_closed_on_corrupt_state") is not True:
+        print("cockpit_status_phase5_kill_switch_corrupt_state_not_fail_closed=true")
+        return 1
+    for scope_type in phase5_kill_switch.get("required_scope_types", []):
+        if int(phase5_kill_switch.get("scope_counts", {}).get(scope_type, 0) or 0) < 1:
+            print(f"cockpit_status_phase5_kill_switch_scope_missing={scope_type}")
+            return 1
+    for key in (
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "telegram_live_notifications_allowed",
+        "kill_switch_mutation_authority",
+        "live_capital_enabled",
+    ):
+        if phase5_kill_switch.get(key) is not False:
+            print(f"cockpit_status_phase5_kill_switch_authority_enabled={key}")
+            return 1
+    if "live capital" not in phase5_kill_switch.get("boundary", ""):
+        print("cockpit_status_phase5_kill_switch_boundary_weak=true")
+        return 1
+    missing_phase5_execution_adapter_fields = sorted(
+        PHASE5_EXECUTION_ADAPTER_REQUIRED_FIELDS - set(phase5_execution_adapter)
+    )
+    if missing_phase5_execution_adapter_fields:
+        print(
+            "cockpit_status_phase5_execution_adapter_fields_missing="
+            + ",".join(missing_phase5_execution_adapter_fields)
+        )
+        return 1
+    if (
+        phase5_execution_adapter.get("phase") != "Q5"
+        or phase5_execution_adapter.get("stage") != "Q5-5"
+    ):
+        print("cockpit_status_phase5_execution_adapter_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_execution_adapter.get("public_safe") is not True:
+        print("cockpit_status_phase5_execution_adapter_not_public_safe=true")
+        return 1
+    if phase5_execution_adapter.get("recorded") is not True:
+        print("cockpit_status_phase5_execution_adapter_not_recorded=true")
+        return 1
+    if phase5_execution_adapter.get("status") != "ok":
+        print("cockpit_status_phase5_execution_adapter_not_ok=true")
+        return 1
+    if phase5_execution_adapter.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_execution_adapter_validation_errors=true")
+        return 1
+    if phase5_execution_adapter.get("event_log_written") is not True:
+        print("cockpit_status_phase5_execution_adapter_event_log_not_written=true")
+        return 1
+    if phase5_execution_adapter.get("event_log_event_count") != phase5_execution_adapter.get(
+        "adapter_status_count"
+    ):
+        print("cockpit_status_phase5_execution_adapter_event_log_count_mismatch=true")
+        return 1
+    if phase5_execution_adapter.get("downstream_staging_allowed_count", 0) > 1:
+        print("cockpit_status_phase5_execution_adapter_staging_count_invalid=true")
+        return 1
+    if phase5_execution_adapter.get("alpaca_credentials_configured") is True:
+        if phase5_execution_adapter.get("alpaca_read_health") != "read_only_available":
+            print("cockpit_status_phase5_execution_adapter_alpaca_read_unavailable=true")
+            return 1
+        if phase5_execution_adapter.get("alpaca_account_mode") != "paper":
+            print("cockpit_status_phase5_execution_adapter_alpaca_mode_not_paper=true")
+            return 1
+    if phase5_execution_adapter.get("alpaca_write_health") != "blocked_q5_5_status_contract":
+        print("cockpit_status_phase5_execution_adapter_alpaca_write_unblocked=true")
+        return 1
+    for key in (
+        "execution_adapter_write_authority",
+        "paper_order_staging_allowed",
+        "paper_order_submission_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "prediction_market_write_allowed",
+        "crypto_perps_write_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+    ):
+        if phase5_execution_adapter.get(key) is not False:
+            print(f"cockpit_status_phase5_execution_adapter_authority_enabled={key}")
+            return 1
+    for key in (
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+    ):
+        if phase5_execution_adapter.get(key) != 0:
+            print(f"cockpit_status_phase5_execution_adapter_exposure_count_nonzero={key}")
+            return 1
+    if "live capital" not in phase5_execution_adapter.get("boundary", ""):
+        print("cockpit_status_phase5_execution_adapter_boundary_weak=true")
+        return 1
+    missing_phase5_paper_order_staging_fields = sorted(
+        PHASE5_PAPER_ORDER_STAGING_REQUIRED_FIELDS - set(phase5_paper_order_staging)
+    )
+    if missing_phase5_paper_order_staging_fields:
+        print(
+            "cockpit_status_phase5_paper_order_staging_fields_missing="
+            + ",".join(missing_phase5_paper_order_staging_fields)
+        )
+        return 1
+    if (
+        phase5_paper_order_staging.get("phase") != "Q5"
+        or phase5_paper_order_staging.get("stage") != "Q5-6"
+    ):
+        print("cockpit_status_phase5_paper_order_staging_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_paper_order_staging.get("public_safe") is not True:
+        print("cockpit_status_phase5_paper_order_staging_not_public_safe=true")
+        return 1
+    if phase5_paper_order_staging.get("recorded") is not True:
+        print("cockpit_status_phase5_paper_order_staging_not_recorded=true")
+        return 1
+    if phase5_paper_order_staging.get("status") != "ok":
+        print("cockpit_status_phase5_paper_order_staging_not_ok=true")
+        return 1
+    if phase5_paper_order_staging.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_paper_order_staging_validation_errors=true")
+        return 1
+    if phase5_paper_order_staging.get("event_log_written") is not True:
+        print("cockpit_status_phase5_paper_order_staging_event_log_not_written=true")
+        return 1
+    if phase5_paper_order_staging.get("event_log_event_count") != phase5_paper_order_staging.get(
+        "staging_record_count"
+    ):
+        print("cockpit_status_phase5_paper_order_staging_event_log_count_mismatch=true")
+        return 1
+    if phase5_paper_order_staging.get("staging_record_count") != phase5_paper_order_staging.get(
+        "risk_review_count"
+    ):
+        print("cockpit_status_phase5_paper_order_staging_record_count_mismatch=true")
+        return 1
+    if phase5_paper_order_staging.get("paper_size_eligible_count") == 0:
+        if phase5_paper_order_staging.get("staged_order_count") != 0:
+            print("cockpit_status_phase5_paper_order_staging_created_order_without_risk=true")
+            return 1
+        if phase5_paper_order_staging.get("blocked_count") != phase5_paper_order_staging.get(
+            "staging_record_count"
+        ):
+            print("cockpit_status_phase5_paper_order_staging_blocked_count_mismatch=true")
+            return 1
+    for key in (
+        "staging_allowed",
+        "submission_allowed",
+        "paper_order_staging_allowed",
+        "paper_order_submission_allowed",
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "broker_post_called",
+        "execution_allowed",
+        "live_capital_enabled",
+    ):
+        if phase5_paper_order_staging.get(key) is not False:
+            print(f"cockpit_status_phase5_paper_order_staging_authority_enabled={key}")
+            return 1
+    for key in (
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+    ):
+        if phase5_paper_order_staging.get(key) != 0:
+            print(f"cockpit_status_phase5_paper_order_staging_exposure_count_nonzero={key}")
+            return 1
+    if "cannot submit paper orders" not in phase5_paper_order_staging.get("boundary", ""):
+        print("cockpit_status_phase5_paper_order_staging_boundary_weak=true")
+        return 1
+    missing_phase5_alpaca_dry_run_fields = sorted(
+        PHASE5_ALPACA_PAPER_DRY_RUN_REQUIRED_FIELDS - set(phase5_alpaca_dry_run)
+    )
+    if missing_phase5_alpaca_dry_run_fields:
+        print(
+            "cockpit_status_phase5_alpaca_paper_dry_run_fields_missing="
+            + ",".join(missing_phase5_alpaca_dry_run_fields)
+        )
+        return 1
+    if (
+        phase5_alpaca_dry_run.get("phase") != "Q5"
+        or phase5_alpaca_dry_run.get("stage") != "Q5-7"
+    ):
+        print("cockpit_status_phase5_alpaca_paper_dry_run_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_alpaca_dry_run.get("public_safe") is not True:
+        print("cockpit_status_phase5_alpaca_paper_dry_run_not_public_safe=true")
+        return 1
+    if phase5_alpaca_dry_run.get("recorded") is not True:
+        print("cockpit_status_phase5_alpaca_paper_dry_run_not_recorded=true")
+        return 1
+    if phase5_alpaca_dry_run.get("status") != "ok":
+        print("cockpit_status_phase5_alpaca_paper_dry_run_not_ok=true")
+        return 1
+    if phase5_alpaca_dry_run.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_alpaca_paper_dry_run_validation_errors=true")
+        return 1
+    if phase5_alpaca_dry_run.get("event_log_written") is not True:
+        print("cockpit_status_phase5_alpaca_paper_dry_run_event_log_not_written=true")
+        return 1
+    if phase5_alpaca_dry_run.get("event_log_event_count") != phase5_alpaca_dry_run.get(
+        "dry_run_record_count"
+    ):
+        print("cockpit_status_phase5_alpaca_paper_dry_run_event_log_count_mismatch=true")
+        return 1
+    if phase5_alpaca_dry_run.get("dry_run_record_count") != phase5_alpaca_dry_run.get(
+        "source_staging_record_count"
+    ):
+        print("cockpit_status_phase5_alpaca_paper_dry_run_record_count_mismatch=true")
+        return 1
+    if phase5_alpaca_dry_run.get("source_staged_order_count") == 0:
+        if phase5_alpaca_dry_run.get("request_preview_count") != 0:
+            print("cockpit_status_phase5_alpaca_paper_dry_run_preview_without_staged=true")
+            return 1
+        if phase5_alpaca_dry_run.get("dry_run_receipt_count") != 0:
+            print("cockpit_status_phase5_alpaca_paper_dry_run_receipt_without_staged=true")
+            return 1
+        if phase5_alpaca_dry_run.get("blocked_count") != phase5_alpaca_dry_run.get(
+            "dry_run_record_count"
+        ):
+            print("cockpit_status_phase5_alpaca_paper_dry_run_blocked_count_mismatch=true")
+            return 1
+    for key in (
+        "paper_order_submission_allowed",
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "broker_post_called",
+        "alpaca_post_called",
+        "execution_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+    ):
+        if phase5_alpaca_dry_run.get(key) is not False:
+            print(f"cockpit_status_phase5_alpaca_paper_dry_run_authority_enabled={key}")
+            return 1
+    for key in (
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "idempotency_collision_count",
+        "duplicate_guard_collision_count",
+    ):
+        if phase5_alpaca_dry_run.get(key) != 0:
+            print(f"cockpit_status_phase5_alpaca_paper_dry_run_count_nonzero={key}")
+            return 1
+    if "cannot call Alpaca POST routes" not in phase5_alpaca_dry_run.get("boundary", ""):
+        print("cockpit_status_phase5_alpaca_paper_dry_run_boundary_weak=true")
+        return 1
+    missing_phase5_paper_submit_enablement_fields = sorted(
+        PHASE5_PAPER_SUBMIT_ENABLEMENT_REQUIRED_FIELDS - set(phase5_paper_submit_enablement)
+    )
+    if missing_phase5_paper_submit_enablement_fields:
+        print(
+            "cockpit_status_phase5_paper_submit_enablement_fields_missing="
+            + ",".join(missing_phase5_paper_submit_enablement_fields)
+        )
+        return 1
+    if (
+        phase5_paper_submit_enablement.get("phase") != "Q5"
+        or phase5_paper_submit_enablement.get("stage") != "Q5-8"
+    ):
+        print("cockpit_status_phase5_paper_submit_enablement_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_paper_submit_enablement.get("public_safe") is not True:
+        print("cockpit_status_phase5_paper_submit_enablement_not_public_safe=true")
+        return 1
+    if phase5_paper_submit_enablement.get("recorded") is not True:
+        print("cockpit_status_phase5_paper_submit_enablement_not_recorded=true")
+        return 1
+    if phase5_paper_submit_enablement.get("status") != "ok":
+        print("cockpit_status_phase5_paper_submit_enablement_not_ok=true")
+        return 1
+    if phase5_paper_submit_enablement.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_paper_submit_enablement_validation_errors=true")
+        return 1
+    if phase5_paper_submit_enablement.get("event_log_written") is not True:
+        print("cockpit_status_phase5_paper_submit_enablement_event_log_not_written=true")
+        return 1
+    if phase5_paper_submit_enablement.get(
+        "event_log_event_count"
+    ) != phase5_paper_submit_enablement.get("submit_enablement_record_count"):
+        print("cockpit_status_phase5_paper_submit_enablement_event_log_count_mismatch=true")
+        return 1
+    if phase5_paper_submit_enablement.get(
+        "submit_enablement_record_count"
+    ) != phase5_paper_submit_enablement.get("source_dry_run_record_count"):
+        print("cockpit_status_phase5_paper_submit_enablement_record_count_mismatch=true")
+        return 1
+    if phase5_paper_submit_enablement.get("paper_submit_approval_present") is False:
+        if phase5_paper_submit_enablement.get("submit_path_available_count") != 0:
+            print("cockpit_status_phase5_paper_submit_enablement_path_without_approval=true")
+            return 1
+        if phase5_paper_submit_enablement.get("submit_path_available") is not False:
+            print("cockpit_status_phase5_paper_submit_enablement_path_flag_without_approval=true")
+            return 1
+        if phase5_paper_submit_enablement.get("blocked_count") != phase5_paper_submit_enablement.get(
+            "submit_enablement_record_count"
+        ):
+            print("cockpit_status_phase5_paper_submit_enablement_blocked_count_mismatch=true")
+            return 1
+    if phase5_paper_submit_enablement.get("broker_submit_receipt_created_count") != (
+        phase5_paper_submit_enablement.get("paper_order_submitted_count")
+    ):
+        print("cockpit_status_phase5_paper_submit_enablement_receipt_count_mismatch=true")
+        return 1
+    for key in (
+        "execution_adapter_write_authority",
+        "paper_execution_allowed",
+        "paper_order_submission_allowed",
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "broker_post_called",
+        "alpaca_post_called",
+        "prediction_market_write_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+    ):
+        if phase5_paper_submit_enablement.get("paper_submit_approval_present") is False:
+            if phase5_paper_submit_enablement.get(key) is not False:
+                print(f"cockpit_status_phase5_paper_submit_enablement_authority_enabled={key}")
+                return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_capital_enabled_count",
+        "live_endpoint_allowed_count",
+        "prediction_market_write_allowed_count",
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "authorization_header_exposed_count",
+        "base_url_exposed_count",
+        "idempotency_collision_count",
+        "duplicate_guard_collision_count",
+    ):
+        if phase5_paper_submit_enablement.get(key) != 0:
+            print(f"cockpit_status_phase5_paper_submit_enablement_count_nonzero={key}")
+            return 1
+    if "single guarded Alpaca paper POST path" not in phase5_paper_submit_enablement.get(
+        "boundary",
+        "",
+    ):
+        print("cockpit_status_phase5_paper_submit_enablement_boundary_weak=true")
+        return 1
+    missing_phase5_prediction_market_adapter_fields = sorted(
+        PHASE5_PREDICTION_MARKET_ADAPTER_REQUIRED_FIELDS - set(phase5_prediction_market_adapter)
+    )
+    if missing_phase5_prediction_market_adapter_fields:
+        print(
+            "cockpit_status_phase5_prediction_market_adapter_fields_missing="
+            + ",".join(missing_phase5_prediction_market_adapter_fields)
+        )
+        return 1
+    if (
+        phase5_prediction_market_adapter.get("phase") != "Q5"
+        or phase5_prediction_market_adapter.get("stage") != "Q5-9"
+    ):
+        print("cockpit_status_phase5_prediction_market_adapter_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("public_safe") is not True:
+        print("cockpit_status_phase5_prediction_market_adapter_not_public_safe=true")
+        return 1
+    if phase5_prediction_market_adapter.get("recorded") is not True:
+        print("cockpit_status_phase5_prediction_market_adapter_not_recorded=true")
+        return 1
+    if phase5_prediction_market_adapter.get("status") != "ok":
+        print("cockpit_status_phase5_prediction_market_adapter_not_ok=true")
+        return 1
+    if phase5_prediction_market_adapter.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_prediction_market_adapter_validation_errors=true")
+        return 1
+    if phase5_prediction_market_adapter.get("event_log_written") is not True:
+        print("cockpit_status_phase5_prediction_market_adapter_event_log_not_written=true")
+        return 1
+    if phase5_prediction_market_adapter.get(
+        "event_log_event_count"
+    ) != phase5_prediction_market_adapter.get("route_count"):
+        print("cockpit_status_phase5_prediction_market_adapter_event_log_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("prediction_market_route_count") != 2:
+        print("cockpit_status_phase5_prediction_market_adapter_route_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("read_only_route_count") != 2:
+        print("cockpit_status_phase5_prediction_market_adapter_read_only_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("prediction_market_context_count") != 2:
+        print("cockpit_status_phase5_prediction_market_adapter_context_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("policy_risk_caution_context_count") != 2:
+        print("cockpit_status_phase5_prediction_market_adapter_policy_context_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("guarded_placeholder_count") != (
+        phase5_prediction_market_adapter.get("route_count")
+    ):
+        print("cockpit_status_phase5_prediction_market_adapter_placeholder_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("paper_not_available_count") != 2:
+        print("cockpit_status_phase5_prediction_market_adapter_paper_not_available_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("live_blocked_count") != 4:
+        print("cockpit_status_phase5_prediction_market_adapter_live_blocked_count_mismatch=true")
+        return 1
+    if phase5_prediction_market_adapter.get("preference_provenance_status") != "validated":
+        print("cockpit_status_phase5_prediction_market_adapter_preference_not_validated=true")
+        return 1
+    if phase5_prediction_market_adapter.get(
+        "preference_context_status"
+    ) != "explicit_multi_upstream_context":
+        print("cockpit_status_phase5_prediction_market_adapter_preference_context_mismatch=true")
+        return 1
+    for key in (
+        "preference_counts_as_canonical_source",
+        "preference_only_source_quorum_allowed",
+        "preference_source_quorum_credit_allowed",
+        "strategy_source_quorum_credit_allowed",
+        "prediction_market_write_allowed",
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "crypto_perps_write_allowed",
+        "paid_preference_tools_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+    ):
+        if phase5_prediction_market_adapter.get(key) is not False:
+            print(f"cockpit_status_phase5_prediction_market_adapter_authority_enabled={key}")
+            return 1
+    for key in (
+        "prediction_market_write_allowed_count",
+        "prediction_market_order_allowed_count",
+        "prediction_market_spend_allowed_count",
+        "prediction_market_live_order_allowed_count",
+        "crypto_perps_write_allowed_count",
+        "paid_preference_tools_allowed_count",
+        "paper_order_allowed_count",
+        "paper_order_submitted_count",
+        "broker_write_allowed_count",
+        "broker_post_called_count",
+        "live_endpoint_allowed_count",
+        "live_capital_enabled_count",
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "authorization_header_exposed_count",
+        "base_url_exposed_count",
+    ):
+        if phase5_prediction_market_adapter.get(key) != 0:
+            print(f"cockpit_status_phase5_prediction_market_adapter_count_nonzero={key}")
+            return 1
+    if "Polymarket and Kalshi context" not in phase5_prediction_market_adapter.get(
+        "boundary",
+        "",
+    ):
+        print("cockpit_status_phase5_prediction_market_adapter_boundary_weak=true")
+        return 1
+    missing_phase5_telegram_notifier_fields = sorted(
+        PHASE5_TELEGRAM_NOTIFIER_REQUIRED_FIELDS - set(phase5_telegram_notifier)
+    )
+    if missing_phase5_telegram_notifier_fields:
+        print(
+            "cockpit_status_phase5_telegram_notifier_fields_missing="
+            + ",".join(missing_phase5_telegram_notifier_fields)
+        )
+        return 1
+    if (
+        phase5_telegram_notifier.get("phase") != "Q5"
+        or phase5_telegram_notifier.get("stage") != "Q5-10"
+    ):
+        print("cockpit_status_phase5_telegram_notifier_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_telegram_notifier.get("public_safe") is not True:
+        print("cockpit_status_phase5_telegram_notifier_not_public_safe=true")
+        return 1
+    if phase5_telegram_notifier.get("recorded") is not True:
+        print("cockpit_status_phase5_telegram_notifier_not_recorded=true")
+        return 1
+    if phase5_telegram_notifier.get("status") != "ok":
+        print("cockpit_status_phase5_telegram_notifier_not_ok=true")
+        return 1
+    if phase5_telegram_notifier.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_telegram_notifier_validation_errors=true")
+        return 1
+    if phase5_telegram_notifier.get("event_log_written") is not True:
+        print("cockpit_status_phase5_telegram_notifier_event_log_not_written=true")
+        return 1
+    if phase5_telegram_notifier.get("event_log_event_count") != phase5_telegram_notifier.get(
+        "notification_record_count"
+    ):
+        print("cockpit_status_phase5_telegram_notifier_event_log_count_mismatch=true")
+        return 1
+    if phase5_telegram_notifier.get("alert_type_count") != 9:
+        print("cockpit_status_phase5_telegram_notifier_alert_type_count_mismatch=true")
+        return 1
+    if phase5_telegram_notifier.get("notification_record_count") != 9:
+        print("cockpit_status_phase5_telegram_notifier_record_count_mismatch=true")
+        return 1
+    if phase5_telegram_notifier.get("eligible_alert_count", 0) < 3:
+        print("cockpit_status_phase5_telegram_notifier_eligible_alerts_missing=true")
+        return 1
+    if phase5_telegram_notifier.get("queued_dry_run_alert_count") != phase5_telegram_notifier.get(
+        "eligible_alert_count"
+    ):
+        print("cockpit_status_phase5_telegram_notifier_queued_count_mismatch=true")
+        return 1
+    if phase5_telegram_notifier.get("outbox_message_written_count") != phase5_telegram_notifier.get(
+        "eligible_alert_count"
+    ):
+        print("cockpit_status_phase5_telegram_notifier_outbox_count_mismatch=true")
+        return 1
+    if phase5_telegram_notifier.get("telegram_mode") != "dry_run":
+        print("cockpit_status_phase5_telegram_notifier_mode_not_dry_run=true")
+        return 1
+    if phase5_telegram_notifier.get("telegram_send_gate") != "disabled":
+        print("cockpit_status_phase5_telegram_notifier_send_gate_enabled=true")
+        return 1
+    if phase5_telegram_notifier.get("private_send_test_allowed") is not False:
+        print("cockpit_status_phase5_telegram_notifier_private_send_test_allowed=true")
+        return 1
+    for key in (
+        "telegram_command_path_enabled",
+        "telegram_live_notifications_allowed",
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "live_capital_enabled",
+        "normal_live_notification_allowed",
+    ):
+        if phase5_telegram_notifier.get(key) is not False:
+            print(f"cockpit_status_phase5_telegram_notifier_authority_enabled={key}")
+            return 1
+    for key in (
+        "telegram_command_path_enabled_count",
+        "telegram_trade_command_enabled_count",
+        "telegram_place_trade_command_enabled_count",
+        "telegram_approve_trade_command_enabled_count",
+        "telegram_reject_trade_command_enabled_count",
+        "telegram_modify_trade_command_enabled_count",
+        "telegram_resize_trade_command_enabled_count",
+        "telegram_close_trade_command_enabled_count",
+        "telegram_cancel_trade_command_enabled_count",
+        "telegram_live_notifications_allowed_count",
+        "live_send_allowed_count",
+        "broker_write_allowed_count",
+        "broker_post_called_count",
+        "paper_order_allowed_count",
+        "paper_order_submitted_count",
+        "execution_allowed_count",
+        "prediction_market_write_allowed_count",
+        "live_endpoint_allowed_count",
+        "live_capital_enabled_count",
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "authorization_header_exposed_count",
+        "chat_id_exposed_count",
+        "bot_token_exposed_count",
+    ):
+        if phase5_telegram_notifier.get(key) != 0:
+            print(f"cockpit_status_phase5_telegram_notifier_count_nonzero={key}")
+            return 1
+    if (
+        "cannot place, approve, reject, modify, resize, close, or cancel trades"
+        not in phase5_telegram_notifier.get("boundary", "")
+    ):
+        print("cockpit_status_phase5_telegram_notifier_boundary_weak=true")
+        return 1
+    missing_phase5_position_monitor_fields = sorted(
+        PHASE5_POSITION_MONITOR_REQUIRED_FIELDS - set(phase5_position_monitor)
+    )
+    if missing_phase5_position_monitor_fields:
+        print(
+            "cockpit_status_phase5_position_monitor_fields_missing="
+            + ",".join(missing_phase5_position_monitor_fields)
+        )
+        return 1
+    if (
+        phase5_position_monitor.get("phase") != "Q5"
+        or phase5_position_monitor.get("stage") != "Q5-11"
+    ):
+        print("cockpit_status_phase5_position_monitor_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_position_monitor.get("public_safe") is not True:
+        print("cockpit_status_phase5_position_monitor_not_public_safe=true")
+        return 1
+    if phase5_position_monitor.get("recorded") is not True:
+        print("cockpit_status_phase5_position_monitor_not_recorded=true")
+        return 1
+    if phase5_position_monitor.get("status") != "ok":
+        print("cockpit_status_phase5_position_monitor_not_ok=true")
+        return 1
+    if phase5_position_monitor.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_position_monitor_validation_errors=true")
+        return 1
+    if phase5_position_monitor.get("event_log_written") is not True:
+        print("cockpit_status_phase5_position_monitor_event_log_not_written=true")
+        return 1
+    if phase5_position_monitor.get("event_log_event_count") != phase5_position_monitor.get(
+        "monitor_record_count"
+    ):
+        print("cockpit_status_phase5_position_monitor_event_log_count_mismatch=true")
+        return 1
+    if phase5_position_monitor.get("monitor_record_count") != (
+        phase5_position_monitor.get("position_record_count")
+        + phase5_position_monitor.get("closed_trade_summary_count")
+    ):
+        print("cockpit_status_phase5_position_monitor_record_count_mismatch=true")
+        return 1
+    if phase5_position_monitor.get("lifecycle_state_count") != 9:
+        print("cockpit_status_phase5_position_monitor_lifecycle_state_count_mismatch=true")
+        return 1
+    if phase5_position_monitor.get("failed_reconciliation_count") != 0:
+        print("cockpit_status_phase5_position_monitor_reconciliation_failures_present=true")
+        return 1
+    if phase5_position_monitor.get("postmortem_due_count", 0) > phase5_position_monitor.get(
+        "closed_trade_count",
+        0,
+    ):
+        print("cockpit_status_phase5_position_monitor_postmortem_due_exceeds_closed=true")
+        return 1
+    for key in (
+        "position_monitor_write_authority",
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "live_capital_enabled",
+    ):
+        if phase5_position_monitor.get(key) is not False:
+            print(f"cockpit_status_phase5_position_monitor_authority_enabled={key}")
+            return 1
+    for key in (
+        "execution_allowed_count",
+        "paper_order_allowed_count",
+        "paper_order_submitted_count",
+        "broker_write_allowed_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "telegram_live_notifications_allowed_count",
+        "position_created_count",
+        "position_monitor_write_authority_count",
+        "position_close_allowed_count",
+        "position_resize_allowed_count",
+        "order_cancel_allowed_count",
+        "live_capital_enabled_count",
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "authorization_header_exposed_count",
+        "account_identifier_exposed_count",
+        "broker_order_identifier_exposed_count",
+    ):
+        if phase5_position_monitor.get(key) != 0:
+            print(f"cockpit_status_phase5_position_monitor_count_nonzero={key}")
+            return 1
+    if "cannot submit, close, resize, cancel" not in phase5_position_monitor.get(
+        "boundary",
+        "",
+    ):
+        print("cockpit_status_phase5_position_monitor_boundary_weak=true")
+        return 1
+    missing_phase5_signal_review_fields = sorted(
+        PHASE5_SIGNAL_REVIEW_REQUIRED_FIELDS - set(phase5_signal_review)
+    )
+    if missing_phase5_signal_review_fields:
+        print(
+            "cockpit_status_phase5_signal_review_fields_missing="
+            + ",".join(missing_phase5_signal_review_fields)
+        )
+        return 1
+    if (
+        phase5_signal_review.get("phase") != "Q5"
+        or phase5_signal_review.get("stage") != "Q5-12"
+    ):
+        print("cockpit_status_phase5_signal_review_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_signal_review.get("public_safe") is not True:
+        print("cockpit_status_phase5_signal_review_not_public_safe=true")
+        return 1
+    if phase5_signal_review.get("recorded") is not True:
+        print("cockpit_status_phase5_signal_review_not_recorded=true")
+        return 1
+    if phase5_signal_review.get("status") != "ok":
+        print("cockpit_status_phase5_signal_review_not_ok=true")
+        return 1
+    if phase5_signal_review.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_signal_review_validation_errors=true")
+        return 1
+    if phase5_signal_review.get("backend_validation_error_count") != 0:
+        print("cockpit_status_phase5_signal_review_backend_validation_errors=true")
+        return 1
+    if phase5_signal_review.get("event_log_written") is not True:
+        print("cockpit_status_phase5_signal_review_event_log_not_written=true")
+        return 1
+    expected_signal_review_events = (
+        phase5_signal_review.get("signal_review_record_count")
+        + phase5_signal_review.get("governance_comment_event_count")
+        + phase5_signal_review.get("kill_switch_action_event_count")
+    )
+    if phase5_signal_review.get("event_log_event_count") != expected_signal_review_events:
+        print("cockpit_status_phase5_signal_review_event_log_count_mismatch=true")
+        return 1
+    if phase5_signal_review.get("chain_step_count") != 9:
+        print("cockpit_status_phase5_signal_review_chain_step_count_mismatch=true")
+        return 1
+    if phase5_signal_review.get("decision_chain_count") != (
+        phase5_signal_review.get("signal_review_record_count") * 9
+    ):
+        print("cockpit_status_phase5_signal_review_decision_chain_count_mismatch=true")
+        return 1
+    if phase5_signal_review.get("backend_truth_displayed_count") != phase5_signal_review.get(
+        "signal_review_record_count"
+    ):
+        print("cockpit_status_phase5_signal_review_backend_truth_count_mismatch=true")
+        return 1
+    if phase5_signal_review.get("ui_inferred_readiness_count") != 0:
+        print("cockpit_status_phase5_signal_review_inferred_readiness_present=true")
+        return 1
+    if phase5_signal_review.get("governance_comment_event_count") != phase5_signal_review.get(
+        "signal_review_record_count"
+    ):
+        print("cockpit_status_phase5_signal_review_comment_event_count_mismatch=true")
+        return 1
+    if phase5_signal_review.get("kill_switch_action_event_count") != phase5_signal_review.get(
+        "signal_review_record_count"
+    ):
+        print("cockpit_status_phase5_signal_review_kill_action_event_count_mismatch=true")
+        return 1
+    if phase5_signal_review.get("kill_switch_action_available_count") != phase5_signal_review.get(
+        "signal_review_record_count"
+    ):
+        print("cockpit_status_phase5_signal_review_kill_action_available_count_mismatch=true")
+        return 1
+    for key in (
+        "paper_order_allowed",
+        "paper_order_submitted",
+        "broker_write_allowed",
+        "prediction_market_write_allowed",
+        "kill_switch_mutation_authority",
+        "live_capital_enabled",
+    ):
+        if phase5_signal_review.get(key) is not False:
+            print(f"cockpit_status_phase5_signal_review_authority_enabled={key}")
+            return 1
+    for key in (
+        "trade_approval_control_enabled_count",
+        "trade_rejection_control_enabled_count",
+        "order_place_control_enabled_count",
+        "order_modify_control_enabled_count",
+        "position_resize_control_enabled_count",
+        "position_close_control_enabled_count",
+        "order_cancel_control_enabled_count",
+        "kill_switch_mutation_authority_count",
+        "kill_switch_action_mutates_state_count",
+        "broker_write_allowed_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "prediction_market_write_allowed_count",
+        "paper_order_allowed_count",
+        "paper_order_submitted_count",
+        "telegram_command_path_enabled_count",
+        "live_endpoint_allowed_count",
+        "live_capital_enabled_count",
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "authorization_header_exposed_count",
+        "account_identifier_exposed_count",
+        "broker_order_identifier_exposed_count",
+    ):
+        if phase5_signal_review.get(key) != 0:
+            print(f"cockpit_status_phase5_signal_review_count_nonzero={key}")
+            return 1
+    for record in phase5_signal_review.get("records", []):
+        if record.get("backend_truth_displayed") is not True:
+            print("cockpit_status_phase5_signal_review_record_not_backend_truth=true")
+            return 1
+        if record.get("ui_inferred_readiness") is not False:
+            print("cockpit_status_phase5_signal_review_record_inferred_readiness=true")
+            return 1
+        action = record.get("governance_action", {})
+        if not action.get("target_artifact_id"):
+            print("cockpit_status_phase5_signal_review_governance_action_target_missing=true")
+            return 1
+        if action.get("comment_event_log_written") is not True:
+            print("cockpit_status_phase5_signal_review_comment_event_not_written=true")
+            return 1
+        if action.get("kill_switch_action_event_log_written") is not True:
+            print("cockpit_status_phase5_signal_review_kill_action_event_not_written=true")
+            return 1
+        if action.get("kill_switch_mutation_authority") is not False:
+            print("cockpit_status_phase5_signal_review_kill_mutation_authority=true")
+            return 1
+    signal_review_boundary = phase5_signal_review.get("boundary", "")
+    if (
+        "cannot approve, reject, place, modify, resize, close, or cancel" not in signal_review_boundary
+        or "cannot call brokers or venues" not in signal_review_boundary
+    ):
+        print("cockpit_status_phase5_signal_review_boundary_weak=true")
+        return 1
+    missing_phase5_paper_trade_drill_fields = sorted(
+        PHASE5_PAPER_TRADE_DRILL_REQUIRED_FIELDS - set(phase5_paper_trade_drill)
+    )
+    if missing_phase5_paper_trade_drill_fields:
+        print(
+            "cockpit_status_phase5_paper_trade_drill_fields_missing="
+            + ",".join(missing_phase5_paper_trade_drill_fields)
+        )
+        return 1
+    if (
+        phase5_paper_trade_drill.get("phase") != "Q5"
+        or phase5_paper_trade_drill.get("stage") != "Q5-14"
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_paper_trade_drill.get("public_safe") is not True:
+        print("cockpit_status_phase5_paper_trade_drill_not_public_safe=true")
+        return 1
+    if phase5_paper_trade_drill.get("recorded") is not True:
+        print("cockpit_status_phase5_paper_trade_drill_not_recorded=true")
+        return 1
+    if phase5_paper_trade_drill.get("status") != "ok":
+        print("cockpit_status_phase5_paper_trade_drill_not_ok=true")
+        return 1
+    if phase5_paper_trade_drill.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_paper_trade_drill_validation_errors=true")
+        return 1
+    if phase5_paper_trade_drill.get("event_log_written") is not True:
+        print("cockpit_status_phase5_paper_trade_drill_event_log_not_written=true")
+        return 1
+    if phase5_paper_trade_drill.get("event_log_event_count") != phase5_paper_trade_drill.get(
+        "required_step_count"
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_event_log_count_mismatch=true")
+        return 1
+    if phase5_paper_trade_drill.get("required_step_count") != 13:
+        print("cockpit_status_phase5_paper_trade_drill_required_step_count_mismatch=true")
+        return 1
+    if phase5_paper_trade_drill.get("step_count") != phase5_paper_trade_drill.get(
+        "required_step_count"
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_step_count_mismatch=true")
+        return 1
+    if (
+        phase5_paper_trade_drill.get("phase5_paper_trade_drill_implementation_ready")
+        is not True
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_not_implementation_ready=true")
+        return 1
+    if phase5_paper_trade_drill.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_phase5_paper_trade_drill_phase7_credit_allowed=true")
+        return 1
+    if (
+        phase5_paper_trade_drill.get("paper_trade_drill_complete") is True
+        and phase5_paper_trade_drill.get("phase5_paper_trade_drill_exit_gate_passed") is not True
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_complete_without_exit_gate=true")
+        return 1
+    if (
+        phase5_paper_trade_drill.get("phase5_paper_trade_drill_exit_gate_passed") is True
+        and phase5_paper_trade_drill.get("paper_submit_approval_present") is not True
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_exit_without_approval=true")
+        return 1
+    if (
+        phase5_paper_trade_drill.get("paper_submit_approval_present") is not True
+        and "paper_submit_approval_missing" not in phase5_paper_trade_drill.get("blockers", [])
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_missing_approval_blocker=true")
+        return 1
+    if (
+        phase5_paper_trade_drill.get("paper_submit_path_available_count") == 0
+        and "paper_submit_path_unavailable" not in phase5_paper_trade_drill.get("blockers", [])
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_missing_submit_path_blocker=true")
+        return 1
+    if phase5_paper_trade_drill.get("paper_trade_drill_complete") is True:
+        for key in (
+            "submitted_paper_order_count",
+            "closed_trade_count",
+            "postmortem_due_count",
+        ):
+            if phase5_paper_trade_drill.get(key, 0) <= 0:
+                print(f"cockpit_status_phase5_paper_trade_drill_complete_missing={key}")
+                return 1
+        if phase5_paper_trade_drill.get("position_open_lifecycle_satisfied") is not True:
+            print("cockpit_status_phase5_paper_trade_drill_complete_missing_position_open_lifecycle=true")
+            return 1
+    for key in (
+        "broker_write_allowed_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "prediction_market_write_allowed_count",
+        "telegram_live_notifications_allowed_count",
+        "position_monitor_write_authority_count",
+        "position_close_allowed_count",
+        "position_resize_allowed_count",
+        "order_cancel_allowed_count",
+        "live_capital_enabled_count",
+        "live_endpoint_allowed_count",
+        "phase7_proof_credit_allowed_count",
+        "secret_value_exposed_count",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "authorization_header_exposed_count",
+        "broker_order_identifier_exposed_count",
+    ):
+        if phase5_paper_trade_drill.get(key) != 0:
+            print(f"cockpit_status_phase5_paper_trade_drill_count_nonzero={key}")
+            return 1
+    if (
+        phase5_paper_trade_drill.get("broker_post_called_count") != 0
+        and phase5_paper_trade_drill.get("phase5_paper_trade_drill_exit_gate_passed")
+        is not True
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_broker_post_before_exit=true")
+        return 1
+    if (
+        phase5_paper_trade_drill.get("alpaca_post_called_count") != 0
+        and phase5_paper_trade_drill.get("phase5_paper_trade_drill_exit_gate_passed")
+        is not True
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_alpaca_post_before_exit=true")
+        return 1
+    for record in phase5_paper_trade_drill.get("records", []):
+        if record.get("display_status") != record.get("backend_status"):
+            print("cockpit_status_phase5_paper_trade_drill_record_status_mismatch=true")
+            return 1
+        if record.get("display_derived_from_backend") is not True:
+            print("cockpit_status_phase5_paper_trade_drill_record_not_backend_derived=true")
+            return 1
+        if record.get("ui_inferred_readiness") is not False:
+            print("cockpit_status_phase5_paper_trade_drill_record_inferred_readiness=true")
+            return 1
+        for key in (
+            "broker_post_called",
+            "broker_write_allowed",
+            "live_capital_enabled",
+            "phase7_proof_credit_allowed",
+        ):
+            if record.get(key) is not False:
+                print(f"cockpit_status_phase5_paper_trade_drill_record_flag_enabled={key}")
+                return 1
+    paper_trade_drill_boundary = phase5_paper_trade_drill.get("boundary", "")
+    if (
+        "cannot bypass explicit paper-submit approval" not in paper_trade_drill_boundary
+        or "cannot call brokers or venues" not in paper_trade_drill_boundary
+        or "cannot enable live capital" not in paper_trade_drill_boundary
+        or "cannot count toward Phase 7 proof" not in paper_trade_drill_boundary
+    ):
+        print("cockpit_status_phase5_paper_trade_drill_boundary_weak=true")
+        return 1
+    missing_phase5_certification_fields = sorted(
+        PHASE5_CERTIFICATION_REQUIRED_FIELDS - set(phase5_certification)
+    )
+    if missing_phase5_certification_fields:
+        print(
+            "cockpit_status_phase5_certification_fields_missing="
+            + ",".join(missing_phase5_certification_fields)
+        )
+        return 1
+    if (
+        phase5_certification.get("phase") != "Q5"
+        or phase5_certification.get("stage") != "Q5-15"
+    ):
+        print("cockpit_status_phase5_certification_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_certification.get("public_safe") is not True:
+        print("cockpit_status_phase5_certification_not_public_safe=true")
+        return 1
+    if phase5_certification.get("recorded") is not True:
+        print("cockpit_status_phase5_certification_not_recorded=true")
+        return 1
+    if phase5_certification.get("status") not in {"blocked", "eligible"}:
+        print("cockpit_status_phase5_certification_status_invalid=true")
+        return 1
+    if phase5_certification.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_certification_validation_errors=true")
+        return 1
+    if phase5_certification.get("event_log_written") is not True:
+        print("cockpit_status_phase5_certification_event_log_not_written=true")
+        return 1
+    if phase5_certification.get("event_log_event_count") != 1:
+        print("cockpit_status_phase5_certification_event_log_count_mismatch=true")
+        return 1
+    if phase5_certification.get("q5_stage_count") != 16:
+        print("cockpit_status_phase5_certification_stage_count_mismatch=true")
+        return 1
+    if phase5_certification.get("required_input_stage_count") != 15:
+        print("cockpit_status_phase5_certification_input_stage_count_mismatch=true")
+        return 1
+    if phase5_certification.get("input_gate_count") != 15:
+        print("cockpit_status_phase5_certification_gate_count_mismatch=true")
+        return 1
+    if phase5_certification.get("input_gate_blocked_count") != (
+        phase5_certification.get("input_gate_count", 0)
+        - phase5_certification.get("input_gate_passed_count", 0)
+    ):
+        print("cockpit_status_phase5_certification_blocked_gate_count_mismatch=true")
+        return 1
+    if phase5_certification.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_phase5_certification_phase7_credit_allowed=true")
+        return 1
+    if phase5_certification.get("phase7_proof_credit_allowed_count") != 0:
+        print("cockpit_status_phase5_certification_phase7_credit_count_nonzero=true")
+        return 1
+    if phase5_certification.get("blocking_unsafe_count") != 0:
+        print("cockpit_status_phase5_certification_blocking_unsafe_count_nonzero=true")
+        return 1
+    for key in (
+        "broker_write_allowed_count",
+        "prediction_market_write_allowed_count",
+        "crypto_perps_write_allowed_count",
+        "telegram_live_notifications_allowed_count",
+        "live_endpoint_allowed_count",
+        "live_capital_enabled_count",
+    ):
+        if phase5_certification.get(key) != 0:
+            print(f"cockpit_status_phase5_certification_count_nonzero={key}")
+            return 1
+    if phase5_certification.get("phase5_certified") is True:
+        if phase5_certification.get("status") != "eligible":
+            print("cockpit_status_phase5_certification_certified_not_eligible=true")
+            return 1
+        for key in (
+            "phase5_complete",
+            "phase5_exit_gate",
+            "phase6_handoff_allowed",
+            "phase7_planning_allowed",
+            "paper_trade_drill_complete",
+            "paper_trade_drill_exit_gate_passed",
+        ):
+            if phase5_certification.get(key) is not True:
+                print(f"cockpit_status_phase5_certification_missing_true={key}")
+                return 1
+        for key in (
+            "submitted_paper_order_count",
+            "open_position_count",
+            "closed_trade_count",
+            "postmortem_due_count",
+        ):
+            if phase5_certification.get(key, 0) <= 0:
+                print(f"cockpit_status_phase5_certification_missing_count={key}")
+                return 1
+    else:
+        if phase5_certification.get("status") != "blocked":
+            print("cockpit_status_phase5_certification_blocked_status_mismatch=true")
+            return 1
+        if phase5_certification.get("phase5_exit_gate") is not False:
+            print("cockpit_status_phase5_certification_exit_gate_open=true")
+            return 1
+        if phase5_certification.get("phase6_handoff_allowed") is not False:
+            print("cockpit_status_phase5_certification_phase6_handoff_open=true")
+            return 1
+        if phase5_certification.get("phase7_planning_allowed") is not False:
+            print("cockpit_status_phase5_certification_phase7_planning_open=true")
+            return 1
+        if phase5_certification.get("certification_blocker_count", 0) < 1:
+            print("cockpit_status_phase5_certification_blocker_missing=true")
+            return 1
+        if (
+            phase5_certification.get("paper_trade_drill_exit_gate_passed") is not True
+            and "q5_14_exit_gate_not_passed"
+            not in phase5_certification.get("certification_blockers", [])
+        ):
+            print("cockpit_status_phase5_certification_q5_14_blocker_missing=true")
+            return 1
+    for record in phase5_certification.get("gate_records", []):
+        if record.get("display_status") != record.get("backend_status"):
+            print("cockpit_status_phase5_certification_gate_status_mismatch=true")
+            return 1
+        if record.get("display_derived_from_backend") is not True:
+            print("cockpit_status_phase5_certification_gate_not_backend_derived=true")
+            return 1
+        if record.get("ui_inferred_readiness") is not False:
+            print("cockpit_status_phase5_certification_gate_inferred_readiness=true")
+            return 1
+        if record.get("phase7_proof_credit_allowed") is not False:
+            print("cockpit_status_phase5_certification_gate_phase7_credit=true")
+            return 1
+    certification_boundary = phase5_certification.get("boundary", "")
+    if (
+        "cannot bypass Q5-14" not in certification_boundary
+        or "cannot call live endpoints" not in certification_boundary
+        or "cannot enable live capital" not in certification_boundary
+        or "cannot let Phase 5 test trades count toward Phase 7 proof"
+        not in certification_boundary
+    ):
+        print("cockpit_status_phase5_certification_boundary_weak=true")
+        return 1
+    missing_phase5_phase6_handoff_fields = sorted(
+        PHASE5_PHASE6_HANDOFF_REQUIRED_FIELDS - set(phase5_phase6_handoff)
+    )
+    if missing_phase5_phase6_handoff_fields:
+        print(
+            "cockpit_status_phase5_phase6_handoff_fields_missing="
+            + ",".join(missing_phase5_phase6_handoff_fields)
+        )
+        return 1
+    if (
+        phase5_phase6_handoff.get("phase") != "Q5"
+        or phase5_phase6_handoff.get("stage") != "Q5E-10"
+    ):
+        print("cockpit_status_phase5_phase6_handoff_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_phase6_handoff.get("public_safe") is not True:
+        print("cockpit_status_phase5_phase6_handoff_not_public_safe=true")
+        return 1
+    if phase5_phase6_handoff.get("recorded") is not True:
+        print("cockpit_status_phase5_phase6_handoff_not_recorded=true")
+        return 1
+    if phase5_phase6_handoff.get("status") not in {"eligible", "blocked"}:
+        print("cockpit_status_phase5_phase6_handoff_status_invalid=true")
+        return 1
+    if phase5_phase6_handoff.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_phase6_handoff_validation_errors=true")
+        return 1
+    if phase5_phase6_handoff.get("event_log_written") is not True:
+        print("cockpit_status_phase5_phase6_handoff_event_log_not_written=true")
+        return 1
+    if phase5_phase6_handoff.get("event_log_event_count") != 1:
+        print("cockpit_status_phase5_phase6_handoff_event_log_count_mismatch=true")
+        return 1
+    if phase5_phase6_handoff.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_phase5_phase6_handoff_phase7_credit_allowed=true")
+        return 1
+    if phase5_phase6_handoff.get("phase5_test_trades_count_for_phase7") is not False:
+        print("cockpit_status_phase5_phase6_handoff_phase5_trade_credit=true")
+        return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "broker_write_allowed_count",
+        "prediction_market_write_allowed_count",
+        "crypto_perps_write_allowed_count",
+        "live_endpoint_allowed_count",
+        "live_capital_enabled_count",
+        "phase7_proof_credit_allowed_count",
+        "phase6_learning_write_allowed_count",
+        "phase6_knowledge_graph_write_allowed_count",
+        "phase6_model_weight_update_allowed_count",
+        "phase6_trust_score_update_allowed_count",
+        "phase6_policy_mutation_allowed_count",
+    ):
+        if phase5_phase6_handoff.get(key) != 0:
+            print(f"cockpit_status_phase5_phase6_handoff_count_nonzero={key}")
+            return 1
+    for key in (
+        "phase6_learning_loop_implementation_allowed",
+        "phase6_postmortem_ingestion_allowed",
+        "phase6_learning_write_allowed",
+        "phase6_knowledge_graph_write_allowed",
+        "phase6_model_weight_update_allowed",
+        "phase6_trust_score_update_allowed",
+        "phase6_shadow_strategy_runner_allowed",
+        "phase6_architect_policy_mutation_allowed",
+    ):
+        if phase5_phase6_handoff.get(key) is not False:
+            print(f"cockpit_status_phase5_phase6_handoff_phase6_authority={key}")
+            return 1
+    if phase5_phase6_handoff.get("phase6_learning_loop_plan_allowed") is True:
+        if phase5_phase6_handoff.get("status") != "eligible":
+            print("cockpit_status_phase5_phase6_handoff_plan_not_eligible=true")
+            return 1
+        if phase5_phase6_handoff.get("handoff_state") != "phase6_learning_loop_plan_ready":
+            print("cockpit_status_phase5_phase6_handoff_state_mismatch=true")
+            return 1
+        if phase5_phase6_handoff.get("blocker_count") != 0:
+            print("cockpit_status_phase5_phase6_handoff_blockers_present=true")
+            return 1
+        for key in (
+            "phase5_certified",
+            "phase5_exit_gate",
+            "phase6_handoff_allowed",
+            "phase7_planning_allowed",
+            "paper_trade_drill_complete",
+            "paper_trade_drill_exit_gate_passed",
+            "guarded_postmortem_due_ready",
+        ):
+            if phase5_phase6_handoff.get(key) is not True:
+                print(f"cockpit_status_phase5_phase6_handoff_missing_true={key}")
+                return 1
+        if phase5_phase6_handoff.get("paper_trade_drill_blocker_count") != 0:
+            print("cockpit_status_phase5_phase6_handoff_drill_blockers=true")
+            return 1
+        for key in (
+            "downstream_staging_allowed_count",
+            "submitted_order_count",
+            "mirrored_order_count",
+            "closed_trade_count",
+            "postmortem_due_count",
+        ):
+            if phase5_phase6_handoff.get(key, 0) <= 0:
+                print(f"cockpit_status_phase5_phase6_handoff_missing_count={key}")
+                return 1
+        if phase5_phase6_handoff.get("failed_reconciliation_count") != 0:
+            print("cockpit_status_phase5_phase6_handoff_failed_reconciliation=true")
+            return 1
+        if phase5_phase6_handoff.get("source_validation_error_count") != 0:
+            print("cockpit_status_phase5_phase6_handoff_source_errors=true")
+            return 1
+        if phase5_phase6_handoff.get("source_recorded_count") != phase5_phase6_handoff.get(
+            "required_source_count"
+        ):
+            print("cockpit_status_phase5_phase6_handoff_source_count_mismatch=true")
+            return 1
+    else:
+        if phase5_phase6_handoff.get("status") != "blocked":
+            print("cockpit_status_phase5_phase6_handoff_blocked_status_mismatch=true")
+            return 1
+        if phase5_phase6_handoff.get("blocker_count", 0) < 1:
+            print("cockpit_status_phase5_phase6_handoff_blocker_missing=true")
+            return 1
+    if phase5_phase6_handoff.get("phase6_required_module_count") != len(
+        phase5_phase6_handoff.get("phase6_required_modules", [])
+    ):
+        print("cockpit_status_phase5_phase6_handoff_module_count_mismatch=true")
+        return 1
+    handoff_boundary = phase5_phase6_handoff.get("boundary", "")
+    if (
+        "cannot implement Phase 6" not in handoff_boundary
+        or "cannot write learning data" not in handoff_boundary
+        or "cannot call broker POST routes" not in handoff_boundary
+        or "cannot enable live capital" not in handoff_boundary
+        or "cannot count Phase 5 test trades toward Phase 7 proof"
+        not in handoff_boundary
+    ):
+        print("cockpit_status_phase5_phase6_handoff_boundary_weak=true")
+        return 1
+    missing_phase6_learning_loop_fields = sorted(
+        set(PHASE6_LEARNING_LOOP_REQUIRED_FIELDS) - set(phase6_learning_loop)
+    )
+    if missing_phase6_learning_loop_fields:
+        print(
+            "cockpit_status_phase6_learning_loop_fields_missing="
+            + ",".join(missing_phase6_learning_loop_fields)
+        )
+        return 1
+    if phase6_learning_loop.get("phase") != "Q6" or phase6_learning_loop.get("stage") != "Q6-16":
+        print("cockpit_status_phase6_learning_loop_phase_or_stage_mismatch=true")
+        return 1
+    if phase6_learning_loop.get("public_safe") is not True:
+        print("cockpit_status_phase6_learning_loop_not_public_safe=true")
+        return 1
+    if phase6_learning_loop.get("recorded") is not True:
+        print("cockpit_status_phase6_learning_loop_not_recorded=true")
+        return 1
+    if phase6_learning_loop.get("status") != "visible":
+        print("cockpit_status_phase6_learning_loop_not_visible=true")
+        return 1
+    if phase6_learning_loop.get("visibility_state") != "backend_derived_deferred_learning_visible":
+        print("cockpit_status_phase6_learning_loop_visibility_state_mismatch=true")
+        return 1
+    if phase6_learning_loop.get("learning_state") != "deferred_learning_visible":
+        print("cockpit_status_phase6_learning_loop_learning_state_mismatch=true")
+        return 1
+    if phase6_learning_loop.get("backend_derived") is not True:
+        print("cockpit_status_phase6_learning_loop_not_backend_derived=true")
+        return 1
+    if phase6_learning_loop.get("display_derived_from_backend") is not True:
+        print("cockpit_status_phase6_learning_loop_display_not_backend_derived=true")
+        return 1
+    if phase6_learning_loop.get("dashboard_uses_backend_status") is not True:
+        print("cockpit_status_phase6_learning_loop_dashboard_not_backend_derived=true")
+        return 1
+    if phase6_learning_loop.get("ui_inferred_readiness_count") != 0:
+        print("cockpit_status_phase6_learning_loop_ui_inferred=true")
+        return 1
+    if phase6_learning_loop.get("backend_parity_error_count") != 0:
+        print("cockpit_status_phase6_learning_loop_parity_errors=true")
+        return 1
+    if phase6_learning_loop.get("validation_error_count") != 0:
+        print("cockpit_status_phase6_learning_loop_validation_errors=true")
+        return 1
+    if phase6_learning_loop.get("event_log_written") is not True:
+        print("cockpit_status_phase6_learning_loop_event_log_missing=true")
+        return 1
+    if phase6_learning_loop.get("event_log_event_count") != 1:
+        print("cockpit_status_phase6_learning_loop_event_log_count_mismatch=true")
+        return 1
+    if phase6_learning_loop.get("source_missing_count") != 0:
+        print("cockpit_status_phase6_learning_loop_source_missing=true")
+        return 1
+    if phase6_learning_loop.get("source_validation_error_count") != 0:
+        print("cockpit_status_phase6_learning_loop_source_validation_errors=true")
+        return 1
+    if phase6_learning_loop.get("source_artifact_count") != len(
+        phase6_learning_loop.get("source_status_records", [])
+    ):
+        print("cockpit_status_phase6_learning_loop_source_count_mismatch=true")
+        return 1
+    for record in phase6_learning_loop.get("source_status_records", []):
+        if record.get("display_status") != record.get("backend_status"):
+            print("cockpit_status_phase6_learning_loop_source_display_mismatch=true")
+            return 1
+        if record.get("display_derived_from_backend") is not True:
+            print("cockpit_status_phase6_learning_loop_source_not_backend_derived=true")
+            return 1
+        if record.get("ui_inferred_readiness") is not False:
+            print("cockpit_status_phase6_learning_loop_source_ui_inferred=true")
+            return 1
+        if not str(record.get("source_ref", "")).startswith("data/runtime/"):
+            print("cockpit_status_phase6_learning_loop_source_ref_invalid=true")
+            return 1
+    if phase6_learning_loop.get("postmortem_due_count", 0) < 1:
+        print("cockpit_status_phase6_learning_loop_postmortem_due_missing=true")
+        return 1
+    if phase6_learning_loop.get("postmortem_resolved_count") != 0:
+        print("cockpit_status_phase6_learning_loop_resolved_unexpected=true")
+        return 1
+    if phase6_learning_loop.get("approval_state") != "deferred":
+        print("cockpit_status_phase6_learning_loop_approval_state_mismatch=true")
+        return 1
+    if phase6_learning_loop.get("staged_graph_entry_count") != 0:
+        print("cockpit_status_phase6_learning_loop_staged_graph_unexpected=true")
+        return 1
+    for key in (
+        "knowledge_graph_read_result_count",
+        "model_weight_proposal_count",
+        "trust_score_proposal_count",
+        "shadow_replay_variant_count",
+        "architect_recommendation_count",
+        "architect_blocked_recommendation_count",
+    ):
+        if phase6_learning_loop.get(key, 0) < 1:
+            print(f"cockpit_status_phase6_learning_loop_missing_count={key}")
+            return 1
+    if phase6_learning_loop.get("blocked_authority_count") != len(
+        phase6_learning_loop.get("blocked_authorities", [])
+    ):
+        print("cockpit_status_phase6_learning_loop_blocked_authority_count_mismatch=true")
+        return 1
+    for key in (
+        "phase6_learning_write_allowed",
+        "phase6_knowledge_graph_write_allowed",
+        "phase6_model_weight_update_allowed",
+        "phase6_trust_score_update_allowed",
+        "phase6_architect_policy_mutation_allowed",
+        "phase7_proof_credit_allowed",
+        "live_capital_enabled",
+    ):
+        if phase6_learning_loop.get(key) is not False:
+            print(f"cockpit_status_phase6_learning_loop_authority_enabled={key}")
+            return 1
+    for key in (
+        "unsafe_write_counter_total",
+        "raw_payload_exposed_count",
+        "private_payload_exposed_count",
+        "local_path_exposed_count",
+        "secret_ref_exposed_count",
+        "broker_identifier_exposed_count",
+    ):
+        if phase6_learning_loop.get(key) != 0:
+            print(f"cockpit_status_phase6_learning_loop_exposure_nonzero={key}")
+            return 1
+    missing_phase6_certification_fields = sorted(
+        set(PHASE6_CERTIFICATION_REQUIRED_FIELDS) - set(phase6_certification)
+    )
+    if missing_phase6_certification_fields:
+        print(
+            "cockpit_status_phase6_certification_fields_missing="
+            + ",".join(missing_phase6_certification_fields)
+        )
+        return 1
+    if phase6_certification.get("phase") != "Q6" or phase6_certification.get("stage") != "Q6-17":
+        print("cockpit_status_phase6_certification_phase_or_stage_mismatch=true")
+        return 1
+    if phase6_certification.get("public_safe") is not True:
+        print("cockpit_status_phase6_certification_not_public_safe=true")
+        return 1
+    if phase6_certification.get("recorded") is not True:
+        print("cockpit_status_phase6_certification_not_recorded=true")
+        return 1
+    if phase6_certification.get("status") != "certified":
+        print("cockpit_status_phase6_certification_not_certified=true")
+        return 1
+    if phase6_certification.get("stage_status") != "phase6_certified":
+        print("cockpit_status_phase6_certification_stage_status_mismatch=true")
+        return 1
+    if phase6_certification.get("phase6_certified") is not True:
+        print("cockpit_status_phase6_certification_not_certified_true=true")
+        return 1
+    if phase6_certification.get("phase6_exit_gate") is not True:
+        print("cockpit_status_phase6_certification_exit_gate_not_open=true")
+        return 1
+    if phase6_certification.get("phase7_demo_proof_planning_allowed") is not True:
+        print("cockpit_status_phase6_certification_phase7_demo_not_allowed=true")
+        return 1
+    if phase6_certification.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_phase6_certification_phase7_credit_allowed=true")
+        return 1
+    if phase6_certification.get("phase5_test_trades_count_for_phase7") is not False:
+        print("cockpit_status_phase6_certification_phase5_trade_counted=true")
+        return 1
+    if phase6_certification.get("input_gate_count") != 17:
+        print("cockpit_status_phase6_certification_input_gate_count_mismatch=true")
+        return 1
+    if phase6_certification.get("input_gate_passed_count") != 17:
+        print("cockpit_status_phase6_certification_input_gate_passed_mismatch=true")
+        return 1
+    if phase6_certification.get("input_gate_blocked_count") != 0:
+        print("cockpit_status_phase6_certification_input_gate_blocked=true")
+        return 1
+    if phase6_certification.get("certification_blocker_count") != 0:
+        print("cockpit_status_phase6_certification_blockers_present=true")
+        return 1
+    if phase6_certification.get("unresolved_postmortem_count") != 0:
+        print("cockpit_status_phase6_certification_unresolved_postmortem_nonzero=true")
+        return 1
+    if phase6_certification.get("pending_review_action_count") != 0:
+        print("cockpit_status_phase6_certification_pending_actions_nonzero=true")
+        return 1
+    if phase6_certification.get("reviewed_postmortem_coverage_satisfied") is not True:
+        print("cockpit_status_phase6_certification_postmortem_coverage_missing=true")
+        return 1
+    if phase6_certification.get("learning_actions_review_satisfied") is not True:
+        print("cockpit_status_phase6_certification_learning_review_missing=true")
+        return 1
+    if phase6_certification.get("knowledge_graph_requirement_satisfied") is not True:
+        print("cockpit_status_phase6_certification_kg_requirement_missing=true")
+        return 1
+    for key in (
+        "knowledge_graph_read_result_count",
+        "model_weight_proposal_count",
+        "trust_score_proposal_count",
+        "shadow_replay_variant_count",
+        "architect_recommendation_count",
+    ):
+        if phase6_certification.get(key, 0) < 1:
+            print(f"cockpit_status_phase6_certification_missing_count={key}")
+            return 1
+    if phase6_certification.get("cockpit_visibility_status") != "visible":
+        print("cockpit_status_phase6_certification_cockpit_not_visible=true")
+        return 1
+    if phase6_certification.get("cockpit_backend_derived") is not True:
+        print("cockpit_status_phase6_certification_cockpit_not_backend=true")
+        return 1
+    for key in (
+        "unsafe_write_counter_total",
+        "blocking_unsafe_count",
+        "phase7_proof_credit_allowed_count",
+        "live_capital_enabled_count",
+        "broker_write_allowed_count",
+    ):
+        if phase6_certification.get(key) != 0:
+            print(f"cockpit_status_phase6_certification_unsafe_nonzero={key}")
+            return 1
+    missing_phase5_system_map_fields = sorted(
+        PHASE5_SYSTEM_MAP_REQUIRED_FIELDS - set(phase5_system_map)
+    )
+    if missing_phase5_system_map_fields:
+        print(
+            "cockpit_status_phase5_system_map_fields_missing="
+            + ",".join(missing_phase5_system_map_fields)
+        )
+        return 1
+    if phase5_system_map.get("phase") != "Q5" or phase5_system_map.get("stage") != "Q5-13":
+        print("cockpit_status_phase5_system_map_phase_or_stage_mismatch=true")
+        return 1
+    if phase5_system_map.get("public_safe") is not True:
+        print("cockpit_status_phase5_system_map_not_public_safe=true")
+        return 1
+    if phase5_system_map.get("recorded") is not True:
+        print("cockpit_status_phase5_system_map_not_recorded=true")
+        return 1
+    if phase5_system_map.get("status") != "ok":
+        print("cockpit_status_phase5_system_map_not_ok=true")
+        return 1
+    if phase5_system_map.get("validation_error_count") != 0:
+        print("cockpit_status_phase5_system_map_validation_errors=true")
+        return 1
+    if phase5_system_map.get("event_log_written") is not True:
+        print("cockpit_status_phase5_system_map_event_log_not_written=true")
+        return 1
+    if phase5_system_map.get("event_log_event_count") != 1:
+        print("cockpit_status_phase5_system_map_event_log_count_mismatch=true")
+        return 1
+    if phase5_system_map.get("node_count") != len(phase5_system_map.get("nodes", [])):
+        print("cockpit_status_phase5_system_map_node_count_mismatch=true")
+        return 1
+    if phase5_system_map.get("lane_count") != len(phase5_system_map.get("lanes", [])):
+        print("cockpit_status_phase5_system_map_lane_count_mismatch=true")
+        return 1
+    if phase5_system_map.get("backend_parity_error_count") != 0:
+        print("cockpit_status_phase5_system_map_backend_parity_errors=true")
+        return 1
+    if phase5_system_map.get("unsafe_control_count") != 0:
+        print("cockpit_status_phase5_system_map_unsafe_controls=true")
+        return 1
+    if phase5_system_map.get("ui_inferred_node_count") != 0:
+        print("cockpit_status_phase5_system_map_ui_inferred_nodes=true")
+        return 1
+    for node in phase5_system_map.get("nodes", []):
+        if node.get("backend_status") != node.get("display_status"):
+            print("cockpit_status_phase5_system_map_node_status_mismatch=true")
+            return 1
+        if node.get("ui_inferred") is not False:
+            print("cockpit_status_phase5_system_map_node_inferred=true")
+            return 1
+        for key in (
+            "trade_approval_control_enabled",
+            "order_place_control_enabled",
+            "broker_write_allowed",
+            "prediction_market_write_allowed",
+            "kill_switch_mutation_authority",
+            "live_capital_enabled",
+        ):
+            if node.get(key) is not False:
+                print(f"cockpit_status_phase5_system_map_node_authority_enabled={key}")
+                return 1
+    system_map_posture = phase5_system_map.get("source_posture", {})
+    if system_map_posture.get("canonical", {}).get("expected_source_count") != EXPECTED_SOURCE_COUNT:
+        print("cockpit_status_phase5_system_map_canonical_source_count_mismatch=true")
+        return 1
+    if (
+        system_map_posture.get("yahoo_finance", {}).get("role")
+        != "supplemental_market_confirmation_only"
+    ):
+        print("cockpit_status_phase5_system_map_yahoo_role_mismatch=true")
+        return 1
+    if system_map_posture.get("preference_mcp", {}).get("source_36") is not False:
+        print("cockpit_status_phase5_system_map_preference_source_36=true")
+        return 1
+    if system_map_posture.get("preference_mcp", {}).get("source_quorum_credit_allowed") is not False:
+        print("cockpit_status_phase5_system_map_preference_source_quorum=true")
+        return 1
+    system_map_guardrails = phase5_system_map.get("guardrails", {})
+    if system_map_guardrails.get("live_capital_enabled") is not False:
+        print("cockpit_status_phase5_system_map_live_capital_enabled=true")
+        return 1
+    if system_map_guardrails.get("phase5_orchestration_start_allowed") is not False:
+        print("cockpit_status_phase5_system_map_orchestration_start_allowed=true")
+        return 1
+    if (
+        system_map_guardrails.get("dashboard_claims_trading_now") is True
+        and not system_map_guardrails.get("trading_state_present")
+    ):
+        print("cockpit_status_phase5_system_map_claims_trading_without_state=true")
+        return 1
+    system_map_boundary = phase5_system_map.get("boundary", "")
+    if "cannot approve trades" not in system_map_boundary or "cannot enable live capital" not in system_map_boundary:
+        print("cockpit_status_phase5_system_map_boundary_weak=true")
+        return 1
     quantum_oracle = payload.get("quantum_oracle", {})
     missing_quantum_fields = sorted(QUANTUM_ORACLE_REQUIRED_FIELDS - set(quantum_oracle))
     if missing_quantum_fields:
@@ -1182,6 +5247,452 @@ def main() -> int:
     if quantum_oracle.get("result_count", 0) and not quantum_oracle.get("latest_validation_checks"):
         print("cockpit_status_quantum_oracle_validation_checks_missing=true")
         return 1
+    if quantum_oracle.get("result_count", 0):
+        if quantum_oracle.get("latest_input_contract_status") != "accepted":
+            print("cockpit_status_quantum_oracle_input_contract_not_accepted=true")
+            return 1
+        if quantum_oracle.get("latest_input_source_type") not in {
+            "signal_integrity_review",
+            "certified_shadow_review_packet",
+        }:
+            print("cockpit_status_quantum_oracle_input_source_invalid=true")
+            return 1
+        if quantum_oracle.get("latest_market_confirmation_status") != "market_confirmation_corroboration_available":
+            print("cockpit_status_quantum_oracle_market_confirmation_invalid=true")
+            return 1
+        if quantum_oracle.get("latest_yahoo_finance_role") not in {"supplemental_market_confirmation", "not_used"}:
+            print("cockpit_status_quantum_oracle_yahoo_role_invalid=true")
+            return 1
+        if quantum_oracle.get("latest_yahoo_only_market_confirmation") is not False:
+            print("cockpit_status_quantum_oracle_yahoo_only_market_confirmation=true")
+            return 1
+        output_routing = quantum_oracle.get("latest_output_routing", {})
+        if not isinstance(output_routing, dict):
+            print("cockpit_status_quantum_oracle_output_routing_invalid=true")
+            return 1
+        missing_output_fields = sorted(QUANTUM_OUTPUT_ROUTING_REQUIRED_FIELDS - set(output_routing))
+        if missing_output_fields:
+            print("cockpit_status_quantum_oracle_output_routing_fields_missing=" + ",".join(missing_output_fields))
+            return 1
+        if quantum_oracle.get("latest_output_route_type") != "shadow_annotation":
+            print("cockpit_status_quantum_oracle_output_route_type_invalid=true")
+            return 1
+        if quantum_oracle.get("latest_output_storage_type") != "oracle_review_result":
+            print("cockpit_status_quantum_oracle_output_storage_type_invalid=true")
+            return 1
+        if quantum_oracle.get("latest_output_routing_status") != "shadow_annotation_ready":
+            print("cockpit_status_quantum_oracle_output_routing_status_invalid=true")
+            return 1
+        if output_routing.get("route_type") != "shadow_annotation":
+            print("cockpit_status_quantum_oracle_output_route_invalid=true")
+            return 1
+        if output_routing.get("storage_type") != "oracle_review_result":
+            print("cockpit_status_quantum_oracle_output_storage_invalid=true")
+            return 1
+        if output_routing.get("recommendation_class") != quantum_oracle.get("latest_recommendation"):
+            print("cockpit_status_quantum_oracle_output_recommendation_mismatch=true")
+            return 1
+        blocked_routes = output_routing.get("blocked_routes", {})
+        if not isinstance(blocked_routes, dict) or any(value is not False for value in blocked_routes.values()):
+            print("cockpit_status_quantum_oracle_output_route_unblocked=true")
+            return 1
+        for key in (
+            "trade_candidate_created_count",
+            "risk_approval_count",
+            "execution_policy_approval_count",
+            "staged_paper_order_created_count",
+            "broker_reconciliation_write_count",
+            "paper_submit_receipt_created_count",
+        ):
+            if output_routing.get(key) != 0:
+                print(f"cockpit_status_quantum_oracle_output_count_nonzero={key}")
+                return 1
+        for key in (
+            "execution_allowed",
+            "paper_order_allowed",
+            "trade_candidate_authority",
+            "risk_approval_authority",
+            "execution_policy_authority",
+            "staged_paper_order_authority",
+            "broker_reconciliation_authority",
+            "paper_submit_receipt_authority",
+            "broker_write_allowed",
+        ):
+            if output_routing.get(key) is not False:
+                print(f"cockpit_status_quantum_oracle_output_flag_not_false={key}")
+                return 1
+    scheduler_dry_run = quantum_oracle.get("scheduler_dry_run", {})
+    missing_scheduler_fields = sorted(QUANTUM_SCHEDULER_DRY_RUN_REQUIRED_FIELDS - set(scheduler_dry_run))
+    if missing_scheduler_fields:
+        print("cockpit_status_quantum_scheduler_fields_missing=" + ",".join(missing_scheduler_fields))
+        return 1
+    if scheduler_dry_run.get("public_safe") is not True:
+        print("cockpit_status_quantum_scheduler_not_public_safe=true")
+        return 1
+    if scheduler_dry_run.get("dry_run_only") is not True:
+        print("cockpit_status_quantum_scheduler_not_dry_run=true")
+        return 1
+    if scheduler_dry_run.get("cadence") != "weekly_shadow_oracle":
+        print("cockpit_status_quantum_scheduler_cadence_mismatch=true")
+        return 1
+    if scheduler_dry_run.get("cadence_days") != 7:
+        print("cockpit_status_quantum_scheduler_cadence_days_mismatch=true")
+        return 1
+    if scheduler_dry_run.get("status") not in {"due", "not_due"}:
+        print("cockpit_status_quantum_scheduler_status_invalid=true")
+        return 1
+    if scheduler_dry_run.get("due") is not (scheduler_dry_run.get("status") == "due"):
+        print("cockpit_status_quantum_scheduler_due_status_mismatch=true")
+        return 1
+    if scheduler_dry_run.get("intended_job_count") != len(EXPECTED_QUANTUM_JOB_TYPES):
+        print("cockpit_status_quantum_scheduler_intended_job_count_mismatch=true")
+        return 1
+    intended_jobs = scheduler_dry_run.get("intended_jobs", [])
+    if not isinstance(intended_jobs, list):
+        print("cockpit_status_quantum_scheduler_intended_jobs_invalid=true")
+        return 1
+    intended_job_types = {str(job.get("job_type")) for job in intended_jobs if isinstance(job, dict)}
+    if intended_job_types != EXPECTED_QUANTUM_JOB_TYPES:
+        print("cockpit_status_quantum_scheduler_intended_job_types_mismatch=true")
+        return 1
+    would_queue_jobs = scheduler_dry_run.get("would_queue_jobs", [])
+    if not isinstance(would_queue_jobs, list):
+        print("cockpit_status_quantum_scheduler_would_queue_jobs_invalid=true")
+        return 1
+    if scheduler_dry_run.get("due") is True and scheduler_dry_run.get("would_queue_job_count") != len(
+        EXPECTED_QUANTUM_JOB_TYPES
+    ):
+        print("cockpit_status_quantum_scheduler_due_queue_count_mismatch=true")
+        return 1
+    if scheduler_dry_run.get("due") is False and scheduler_dry_run.get("would_queue_job_count") != 0:
+        print("cockpit_status_quantum_scheduler_not_due_queue_count_nonzero=true")
+        return 1
+    if scheduler_dry_run.get("jobs_queued_count") != 0 or scheduler_dry_run.get("jobs_submitted_count") != 0:
+        print("cockpit_status_quantum_scheduler_queued_or_submitted=true")
+        return 1
+    if scheduler_dry_run.get("hardware_jobs_submitted_count") != 0:
+        print("cockpit_status_quantum_scheduler_hardware_jobs_submitted=true")
+        return 1
+    if scheduler_dry_run.get("hardware_scheduler_enabled_count") != 0:
+        print("cockpit_status_quantum_scheduler_hardware_scheduler_enabled_count=true")
+        return 1
+    if scheduler_dry_run.get("hardware_submission_allowed_count") != 0:
+        print("cockpit_status_quantum_scheduler_hardware_submission_allowed_count=true")
+        return 1
+    for key in (
+        "scheduler_enabled",
+        "autonomous_scheduler_enabled",
+        "background_automation_created",
+        "recurring_job_created",
+        "queue_write_allowed",
+        "job_submission_allowed",
+        "hardware_scheduler_enabled",
+        "hardware_submission_allowed",
+        "provider_call_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "trade_candidate_authority",
+        "bypass_signal_integrity_allowed",
+        "bypass_strategy_lead_allowed",
+        "bypass_risk_agent_allowed",
+        "bypass_execution_policy_allowed",
+        "bypass_broker_reconciliation_allowed",
+        "bypass_paper_submit_receipt_allowed",
+    ):
+        if scheduler_dry_run.get(key) is not False:
+            print(f"cockpit_status_quantum_scheduler_flag_not_false={key}")
+            return 1
+    for job in intended_jobs + would_queue_jobs:
+        if not isinstance(job, dict):
+            print("cockpit_status_quantum_scheduler_job_invalid=true")
+            return 1
+        missing_scheduler_job_fields = sorted(QUANTUM_SCHEDULER_JOB_REQUIRED_FIELDS - set(job))
+        if missing_scheduler_job_fields:
+            print(
+                "cockpit_status_quantum_scheduler_job_fields_missing="
+                f"{job.get('job_type', 'unknown')}:{','.join(missing_scheduler_job_fields)}"
+            )
+            return 1
+        for key in (
+            "queue_write_allowed",
+            "job_submission_allowed",
+            "hardware_submission_allowed",
+            "provider_call_allowed",
+            "execution_allowed",
+            "paper_order_allowed",
+            "trade_candidate_authority",
+        ):
+            if job.get(key) is not False:
+                print(f"cockpit_status_quantum_scheduler_job_flag_not_false={job.get('job_type')}:{key}")
+                return 1
+    if "metadata only" not in scheduler_dry_run.get("boundary", ""):
+        print("cockpit_status_quantum_scheduler_boundary_weak=true")
+        return 1
+    local_simulator = quantum_oracle.get("local_simulator", {})
+    missing_local_simulator_fields = sorted(
+        QUANTUM_LOCAL_SIMULATOR_REQUIRED_FIELDS - set(local_simulator)
+    )
+    if missing_local_simulator_fields:
+        print("cockpit_status_quantum_local_simulator_fields_missing=" + ",".join(missing_local_simulator_fields))
+        return 1
+    if local_simulator.get("public_safe") is not True:
+        print("cockpit_status_quantum_local_simulator_not_public_safe=true")
+        return 1
+    if local_simulator.get("local_only") is not True:
+        print("cockpit_status_quantum_local_simulator_not_local_only=true")
+        return 1
+    if local_simulator.get("classical_fallback_available") is not True:
+        print("cockpit_status_quantum_local_simulator_fallback_unavailable=true")
+        return 1
+    if local_simulator.get("selected_backend") not in ALLOWED_QUANTUM_LOCAL_SIMULATOR_BACKENDS:
+        print("cockpit_status_quantum_local_simulator_backend_invalid=true")
+        return 1
+    if set(local_simulator.get("expected_job_types", [])) != EXPECTED_QUANTUM_JOB_TYPES:
+        print("cockpit_status_quantum_local_simulator_job_types_mismatch=true")
+        return 1
+    if local_simulator.get("required_job_count") != len(EXPECTED_QUANTUM_JOB_TYPES):
+        print("cockpit_status_quantum_local_simulator_job_count_mismatch=true")
+        return 1
+    dependencies_available = (
+        local_simulator.get("qiskit_available") is True
+        and local_simulator.get("qiskit_aer_available") is True
+    )
+    if local_simulator.get("qiskit_dependencies_available") is not dependencies_available:
+        print("cockpit_status_quantum_local_simulator_dependency_mismatch=true")
+        return 1
+    expected_backend = "qiskit_aer_local" if dependencies_available else "classical_fallback"
+    if local_simulator.get("selected_backend") != expected_backend:
+        print("cockpit_status_quantum_local_simulator_selected_backend_mismatch=true")
+        return 1
+    if local_simulator.get("schema_consistent_across_backends") is not True:
+        print("cockpit_status_quantum_local_simulator_schema_not_consistent=true")
+        return 1
+    if "local-only" not in local_simulator.get("boundary", ""):
+        print("cockpit_status_quantum_local_simulator_boundary_weak=true")
+        return 1
+    for key in (
+        "provider_call_allowed",
+        "hardware_provider_selected",
+        "hardware_submission_allowed",
+        "hardware_scheduler_enabled",
+        "execution_allowed",
+        "paper_order_allowed",
+        "trade_candidate_authority",
+    ):
+        if local_simulator.get(key) is not False:
+            print(f"cockpit_status_quantum_local_simulator_flag_not_false={key}")
+            return 1
+    provider_readiness = quantum_oracle.get("provider_readiness", {})
+    missing_provider_readiness_fields = sorted(
+        QUANTUM_PROVIDER_READINESS_REQUIRED_FIELDS - set(provider_readiness)
+    )
+    if missing_provider_readiness_fields:
+        print("cockpit_status_quantum_provider_readiness_fields_missing=" + ",".join(missing_provider_readiness_fields))
+        return 1
+    if provider_readiness.get("public_safe") is not True:
+        print("cockpit_status_quantum_provider_readiness_not_public_safe=true")
+        return 1
+    if provider_readiness.get("provider_count") != len(EXPECTED_QUANTUM_PROVIDERS):
+        print("cockpit_status_quantum_provider_count_mismatch=true")
+        return 1
+    if provider_readiness.get("expected_provider_count") != len(EXPECTED_QUANTUM_PROVIDERS):
+        print("cockpit_status_quantum_expected_provider_count_mismatch=true")
+        return 1
+    hardware_stubs = provider_readiness.get("hardware_provider_stubs", {})
+    if not isinstance(hardware_stubs, dict):
+        print("cockpit_status_quantum_hardware_provider_stubs_invalid=true")
+        return 1
+    missing_hardware_stub_fields = sorted(
+        QUANTUM_HARDWARE_PROVIDER_STUB_LEDGER_REQUIRED_FIELDS - set(hardware_stubs)
+    )
+    if missing_hardware_stub_fields:
+        print("cockpit_status_quantum_hardware_provider_stubs_fields_missing=" + ",".join(missing_hardware_stub_fields))
+        return 1
+    if hardware_stubs.get("public_safe") is not True:
+        print("cockpit_status_quantum_hardware_provider_stubs_not_public_safe=true")
+        return 1
+    if hardware_stubs.get("provider_count") != len(EXPECTED_QUANTUM_HARDWARE_PROVIDERS):
+        print("cockpit_status_quantum_hardware_provider_count_mismatch=true")
+        return 1
+    if hardware_stubs.get("expected_provider_count") != len(EXPECTED_QUANTUM_HARDWARE_PROVIDERS):
+        print("cockpit_status_quantum_hardware_provider_expected_count_mismatch=true")
+        return 1
+    if hardware_stubs.get("explicit_hardware_policy_approval_present") is not False:
+        print("cockpit_status_quantum_hardware_policy_approval_present=true")
+        return 1
+    if hardware_stubs.get("local_simulator_validation_passed") is not True:
+        print("cockpit_status_quantum_hardware_local_validation_missing=true")
+        return 1
+    for key in (
+        "provider_call_allowed_count",
+        "live_probe_allowed_count",
+        "hardware_backend_implemented_count",
+        "submitting_backend_implemented_count",
+        "hardware_submission_allowed_count",
+        "hardware_submitted_count",
+        "hardware_scheduler_enabled_count",
+        "execution_allowed_count",
+        "paper_order_allowed_count",
+        "trade_candidate_authority_count",
+        "secret_value_exposed_count",
+        "raw_response_exposed_count",
+    ):
+        if hardware_stubs.get(key) != 0:
+            print(f"cockpit_status_quantum_hardware_provider_stubs_nonzero={key}")
+            return 1
+    hardware_provider_rows = hardware_stubs.get("providers", [])
+    if not isinstance(hardware_provider_rows, list):
+        print("cockpit_status_quantum_hardware_provider_list_invalid=true")
+        return 1
+    hardware_provider_keys = {
+        str(provider.get("key")) for provider in hardware_provider_rows if isinstance(provider, dict)
+    }
+    if hardware_provider_keys != EXPECTED_QUANTUM_HARDWARE_PROVIDERS:
+        print("cockpit_status_quantum_hardware_provider_keys_mismatch=true")
+        return 1
+    for hardware_provider in hardware_provider_rows:
+        if not isinstance(hardware_provider, dict):
+            print("cockpit_status_quantum_hardware_provider_row_invalid=true")
+            return 1
+        missing_hardware_provider_fields = sorted(
+            QUANTUM_HARDWARE_PROVIDER_STUB_PROVIDER_REQUIRED_FIELDS - set(hardware_provider)
+        )
+        if missing_hardware_provider_fields:
+            print(
+                "cockpit_status_quantum_hardware_provider_fields_missing="
+                f"{hardware_provider.get('key', 'unknown')}:{','.join(missing_hardware_provider_fields)}"
+            )
+            return 1
+        if hardware_provider.get("status") not in ALLOWED_QUANTUM_HARDWARE_PROVIDER_STATUSES:
+            print(f"cockpit_status_quantum_hardware_provider_status_invalid={hardware_provider.get('key')}")
+            return 1
+        if hardware_provider.get("policy_block_reason") != "explicit_hardware_policy_approval_missing":
+            print(f"cockpit_status_quantum_hardware_provider_policy_block_invalid={hardware_provider.get('key')}")
+            return 1
+        if "credential_key" in hardware_provider:
+            print("cockpit_status_quantum_hardware_provider_exposes_credential_key=true")
+            return 1
+        for key in (
+            "provider_call_allowed",
+            "live_probe_allowed",
+            "hardware_backend_implemented",
+            "submitting_backend_implemented",
+            "hardware_submission_allowed",
+            "hardware_submitted",
+            "hardware_scheduler_enabled",
+            "execution_allowed",
+            "paper_order_allowed",
+            "trade_candidate_authority",
+            "secret_value_exposed",
+            "raw_response_exposed",
+        ):
+            if hardware_provider.get(key) is not False:
+                print(f"cockpit_status_quantum_hardware_provider_flag_not_false={hardware_provider.get('key')}:{key}")
+                return 1
+    qctrl_readiness = provider_readiness.get("qctrl_readiness", {})
+    if not isinstance(qctrl_readiness, dict):
+        print("cockpit_status_qctrl_readiness_invalid=true")
+        return 1
+    missing_qctrl_readiness_fields = sorted(
+        QUANTUM_QCTRL_READINESS_REQUIRED_FIELDS - set(qctrl_readiness)
+    )
+    if missing_qctrl_readiness_fields:
+        print("cockpit_status_qctrl_readiness_fields_missing=" + ",".join(missing_qctrl_readiness_fields))
+        return 1
+    if qctrl_readiness.get("public_safe") is not True:
+        print("cockpit_status_qctrl_readiness_not_public_safe=true")
+        return 1
+    if qctrl_readiness.get("credential_configured") is not True:
+        print("cockpit_status_qctrl_credential_missing=true")
+        return 1
+    if qctrl_readiness.get("hardware_backend_role") != "not_hardware_backend":
+        print("cockpit_status_qctrl_hardware_backend_role_invalid=true")
+        return 1
+    if qctrl_readiness.get("default_mode") != "metadata_only_no_provider_call":
+        print("cockpit_status_qctrl_default_mode_invalid=true")
+        return 1
+    if qctrl_readiness.get("live_probe_required_flag") != "--live-qctrl-readiness":
+        print("cockpit_status_qctrl_live_probe_flag_missing=true")
+        return 1
+    if qctrl_readiness.get("provider_call_count") != 0:
+        print("cockpit_status_qctrl_provider_call_count_nonzero=true")
+        return 1
+    if "metadata-only" not in qctrl_readiness.get("boundary", ""):
+        print("cockpit_status_qctrl_readiness_boundary_weak=true")
+        return 1
+    for key in (
+        "live_probe_enabled",
+        "live_probe_attempted",
+        "provider_call_allowed",
+        "optimization_job_submission_allowed",
+        "optimization_job_submitted",
+        "hardware_submission_allowed",
+        "hardware_job_submitted",
+        "hardware_scheduler_enabled",
+        "recommendation_authority",
+        "execution_allowed",
+        "paper_order_allowed",
+        "trade_candidate_authority",
+        "secret_value_exposed",
+        "raw_response_exposed",
+    ):
+        if qctrl_readiness.get(key) is not False:
+            print(f"cockpit_status_qctrl_readiness_flag_not_false={key}")
+            return 1
+    for key in (
+        "provider_call_allowed_count",
+        "hardware_submission_allowed_count",
+        "hardware_scheduler_enabled_count",
+        "execution_allowed_count",
+        "paper_order_allowed_count",
+        "trade_candidate_authority_count",
+        "secret_value_exposed_count",
+        "raw_response_exposed_count",
+    ):
+        if provider_readiness.get(key) != 0:
+            print(f"cockpit_status_quantum_provider_readiness_nonzero={key}")
+            return 1
+    providers = provider_readiness.get("providers", [])
+    if not isinstance(providers, list):
+        print("cockpit_status_quantum_provider_list_invalid=true")
+        return 1
+    provider_keys = {str(provider.get("key")) for provider in providers if isinstance(provider, dict)}
+    if provider_keys != EXPECTED_QUANTUM_PROVIDERS:
+        print("cockpit_status_quantum_provider_keys_mismatch=true")
+        return 1
+    for provider in providers:
+        if not isinstance(provider, dict):
+            print("cockpit_status_quantum_provider_row_invalid=true")
+            return 1
+        missing_provider_fields = sorted(QUANTUM_PROVIDER_REQUIRED_FIELDS - set(provider))
+        if missing_provider_fields:
+            print(
+                "cockpit_status_quantum_provider_fields_missing="
+                f"{provider.get('key', 'unknown')}:{','.join(missing_provider_fields)}"
+            )
+            return 1
+        if "credential_key" in provider:
+            print("cockpit_status_quantum_provider_exposes_credential_key=true")
+            return 1
+        if provider.get("status") not in ALLOWED_QUANTUM_PROVIDER_STATUSES:
+            print(f"cockpit_status_quantum_provider_status_invalid={provider.get('key')}")
+            return 1
+        if provider.get("public_safe") is not True:
+            print(f"cockpit_status_quantum_provider_not_public_safe={provider.get('key')}")
+            return 1
+        for key in (
+            "provider_call_allowed",
+            "hardware_submission_allowed",
+            "hardware_scheduler_enabled",
+            "execution_allowed",
+            "paper_order_allowed",
+            "trade_candidate_authority",
+            "secret_value_exposed",
+            "raw_response_exposed",
+        ):
+            if provider.get(key) is not False:
+                print(f"cockpit_status_quantum_provider_flag_not_false={provider.get('key')}:{key}")
+                return 1
     live_bridge = payload["live_bridge"]
     missing_live_bridge_fields = sorted(LIVE_BRIDGE_REQUIRED_FIELDS - set(live_bridge))
     if missing_live_bridge_fields:
@@ -1468,7 +5979,11 @@ def main() -> int:
         if missing_fields:
             print(f"cockpit_status_closed_paper_trade_fields_missing={trade.get('trade_id', 'unknown')}:{','.join(missing_fields)}")
             return 1
-        if trade.get("postmortem_status") not in {"postmortem_due", "postmortem_complete"}:
+        if trade.get("postmortem_status") not in {
+            "postmortem_pending_marker",
+            "postmortem_due",
+            "postmortem_complete",
+        }:
             print("cockpit_status_closed_paper_trade_postmortem_invalid=true")
             return 1
     for order in capital.get("orders", []):
@@ -1510,6 +6025,30 @@ def main() -> int:
     if mission_data.get("durable_replayed_source_count") != durable_ingestion.get("replayed_source_count"):
         print("cockpit_status_mission_durable_replay_count_mismatch=true")
         return 1
+    if mission_data.get("preference_mcp_status") != preference_mcp.get("status"):
+        print("cockpit_status_mission_preference_mcp_status_mismatch=true")
+        return 1
+    if mission_data.get("preference_mcp_identity_status") != preference_mcp.get("identity_status"):
+        print("cockpit_status_mission_preference_mcp_identity_mismatch=true")
+        return 1
+    if mission_data.get("preference_mcp_quota_status") != preference_mcp.get("quota_status"):
+        print("cockpit_status_mission_preference_mcp_quota_mismatch=true")
+        return 1
+    if mission_data.get("preference_mcp_catalog_status") != preference_mcp.get("catalog_status"):
+        print("cockpit_status_mission_preference_mcp_catalog_mismatch=true")
+        return 1
+    if mission_data.get("preference_mcp_domain_pack_count") != preference_mcp.get("approved_domain_pack_count"):
+        print("cockpit_status_mission_preference_mcp_domain_pack_mismatch=true")
+        return 1
+    if mission_data.get("preference_mcp_provenance_status") != preference_mcp.get("provenance_status"):
+        print("cockpit_status_mission_preference_mcp_provenance_mismatch=true")
+        return 1
+    if mission_data.get("preference_mcp_shadow_context_status") != preference_mcp.get("shadow_context_status"):
+        print("cockpit_status_mission_preference_mcp_shadow_context_mismatch=true")
+        return 1
+    if "Supplemental data planes are observation inputs only" not in mission_data.get("boundary", ""):
+        print("cockpit_status_mission_preference_mcp_boundary_missing=true")
+        return 1
     mission_durable = mission.get("durable_spine", {})
     missing_mission_durable_fields = sorted(MISSION_DURABLE_REQUIRED_FIELDS - set(mission_durable))
     if missing_mission_durable_fields:
@@ -1542,6 +6081,847 @@ def main() -> int:
     missing_mission_stack_fields = sorted(MISSION_STACK_REQUIRED_FIELDS - set(mission_stack))
     if missing_mission_stack_fields:
         print("cockpit_status_mission_stack_fields_missing=" + ",".join(missing_mission_stack_fields))
+        return 1
+    if mission_stack.get("preference_mcp") != preference_mcp.get("status"):
+        print("cockpit_status_mission_stack_preference_mcp_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_alpaca_paper_post") != paperops_alpaca_paper_post.get("status"):
+        print("cockpit_status_mission_stack_paperops_alpaca_post_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_alpaca_paper_post_called_count") != (
+        paperops_alpaca_paper_post.get("alpaca_paper_post_called_count")
+    ):
+        print("cockpit_status_mission_stack_paperops_alpaca_post_count_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("paperops_paper_lifecycle_poller")
+        != paperops_paper_lifecycle_poller.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_lifecycle_poller_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_paper_lifecycle_poller_order_poll_called_count") != (
+        paperops_paper_lifecycle_poller.get("paper_order_poll_called_count")
+    ):
+        print("cockpit_status_mission_stack_paperops_lifecycle_poller_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_paper_exit_path") != paperops_paper_exit_path.get("status"):
+        print("cockpit_status_mission_stack_paperops_exit_path_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_paper_exit_path_close_called_count") != (
+        paperops_paper_exit_path.get("paper_position_close_called_count")
+    ):
+        print("cockpit_status_mission_stack_paperops_exit_path_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_notification_review") != paperops_notification_review.get(
+        "status"
+    ):
+        print("cockpit_status_mission_stack_paperops_notification_review_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_notification_review_live_send_allowed_count") != (
+        paperops_notification_review.get("live_send_allowed_count")
+    ):
+        print("cockpit_status_mission_stack_paperops_notification_review_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_30_day_operations") != paperops_30_day_operations.get(
+        "status"
+    ):
+        print("cockpit_status_mission_stack_paperops_30_day_status_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_30_day_operations_scheduler_status") != (
+        paperops_30_day_operations.get("scheduler_status")
+    ):
+        print("cockpit_status_mission_stack_paperops_30_day_scheduler_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_30_day_operations_active_day_number") != (
+        paperops_30_day_operations.get("active_day_number")
+    ):
+        print("cockpit_status_mission_stack_paperops_30_day_day_mismatch=true")
+        return 1
+    missing_paperops_30_day_fields = sorted(
+        PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS - set(paperops_30_day_operations)
+    )
+    if missing_paperops_30_day_fields:
+        print(
+            "cockpit_status_paperops_30_day_operations_fields_missing="
+            + ",".join(missing_paperops_30_day_fields)
+        )
+        return 1
+    if paperops_30_day_operations.get("status") != "operations_active":
+        print("cockpit_status_paperops_30_day_operations_not_active=true")
+        return 1
+    if paperops_30_day_operations.get("public_safe") is not True:
+        print("cockpit_status_paperops_30_day_operations_not_public_safe=true")
+        return 1
+    if paperops_30_day_operations.get("recorded") is not True:
+        print("cockpit_status_paperops_30_day_operations_not_recorded=true")
+        return 1
+    if paperops_30_day_operations.get("event_log_written") is not True:
+        print("cockpit_status_paperops_30_day_operations_event_log_not_written=true")
+        return 1
+    if paperops_30_day_operations.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_30_day_operations_event_count_mismatch=true")
+        return 1
+    if paperops_30_day_operations.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_30_day_operations_validation_errors=true")
+        return 1
+    if paperops_30_day_operations.get("automation_active") is not True:
+        print("cockpit_status_paperops_30_day_operations_automation_inactive=true")
+        return 1
+    if paperops_30_day_operations.get("automation_prompt_paperops_bound") is not True:
+        print("cockpit_status_paperops_30_day_operations_prompt_not_bound=true")
+        return 1
+    if paperops_30_day_operations.get("dashboard_mirror_public_safe") is not True:
+        print("cockpit_status_paperops_30_day_operations_dashboard_not_safe=true")
+        return 1
+    if paperops_30_day_operations.get("live_capital_enabled") is not False:
+        print("cockpit_status_paperops_30_day_operations_live_capital_enabled=true")
+        return 1
+    if paperops_30_day_operations.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_paperops_30_day_operations_proof_credit_allowed=true")
+        return 1
+    if int(paperops_30_day_operations.get("unsafe_write_counter_total", 0) or 0) != 0:
+        print("cockpit_status_paperops_30_day_operations_unsafe_counter_nonzero=true")
+        return 1
+    if "cannot force trades" not in paperops_30_day_operations.get("boundary", ""):
+        print("cockpit_status_paperops_30_day_operations_boundary_weak=true")
+        return 1
+    if mission_stack.get("phase5_layer_b") != phase5_readiness.get("status"):
+        print("cockpit_status_mission_stack_phase5_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_kill_switch") != phase5_kill_switch.get("status"):
+        print("cockpit_status_mission_stack_phase5_kill_switch_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_execution_adapter") != phase5_execution_adapter.get("status"):
+        print("cockpit_status_mission_stack_phase5_execution_adapter_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_paper_order_staging") != phase5_paper_order_staging.get("status"):
+        print("cockpit_status_mission_stack_phase5_paper_order_staging_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_alpaca_paper_dry_run") != phase5_alpaca_dry_run.get("status"):
+        print("cockpit_status_mission_stack_phase5_alpaca_paper_dry_run_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_paper_submit_enablement") != phase5_paper_submit_enablement.get("status"):
+        print("cockpit_status_mission_stack_phase5_paper_submit_enablement_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_prediction_market_adapter") != phase5_prediction_market_adapter.get("status"):
+        print("cockpit_status_mission_stack_phase5_prediction_market_adapter_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_telegram_notifier") != phase5_telegram_notifier.get("status"):
+        print("cockpit_status_mission_stack_phase5_telegram_notifier_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_position_monitor") != phase5_position_monitor.get("status"):
+        print("cockpit_status_mission_stack_phase5_position_monitor_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_signal_review") != phase5_signal_review.get("status"):
+        print("cockpit_status_mission_stack_phase5_signal_review_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_paper_trade_drill") != phase5_paper_trade_drill.get("status"):
+        print("cockpit_status_mission_stack_phase5_paper_trade_drill_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_certification") != phase5_certification.get("status"):
+        print("cockpit_status_mission_stack_phase5_certification_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_phase6_handoff") != phase5_phase6_handoff.get("status"):
+        print("cockpit_status_mission_stack_phase5_phase6_handoff_mismatch=true")
+        return 1
+    if mission_stack.get("phase5_system_map") != phase5_system_map.get("status"):
+        print("cockpit_status_mission_stack_phase5_system_map_mismatch=true")
+        return 1
+    if mission_stack.get("phase6_learning_loop") != phase6_learning_loop.get("status"):
+        print("cockpit_status_mission_stack_phase6_learning_loop_mismatch=true")
+        return 1
+    mission_phase6 = mission.get("phase6_learning_loop", {})
+    missing_mission_phase6_fields = sorted(
+        MISSION_PHASE6_LEARNING_LOOP_REQUIRED_FIELDS - set(mission_phase6)
+    )
+    if missing_mission_phase6_fields:
+        print("cockpit_status_mission_phase6_fields_missing=" + ",".join(missing_mission_phase6_fields))
+        return 1
+    if mission_phase6.get("phase") != "Q6" or mission_phase6.get("stage") != "Q6-16":
+        print("cockpit_status_mission_phase6_phase_or_stage_mismatch=true")
+        return 1
+    if mission_phase6.get("status") != phase6_learning_loop.get("status"):
+        print("cockpit_status_mission_phase6_status_mismatch=true")
+        return 1
+    if mission_phase6.get("learning_state") != phase6_learning_loop.get("learning_state"):
+        print("cockpit_status_mission_phase6_learning_state_mismatch=true")
+        return 1
+    if mission_phase6.get("backend_derived") is not True:
+        print("cockpit_status_mission_phase6_not_backend_derived=true")
+        return 1
+    if mission_phase6.get("ui_inferred_readiness_count") != 0:
+        print("cockpit_status_mission_phase6_ui_inferred=true")
+        return 1
+    if mission_phase6.get("backend_parity_error_count") != 0:
+        print("cockpit_status_mission_phase6_parity_errors=true")
+        return 1
+    if mission_phase6.get("postmortem_due_count") != phase6_learning_loop.get("postmortem_due_count"):
+        print("cockpit_status_mission_phase6_postmortem_mismatch=true")
+        return 1
+    if mission_phase6.get("approval_state") != phase6_learning_loop.get("approval_state"):
+        print("cockpit_status_mission_phase6_approval_mismatch=true")
+        return 1
+    if mission_phase6.get("model_weight_proposal_count") != phase6_learning_loop.get("model_weight_proposal_count"):
+        print("cockpit_status_mission_phase6_model_proposal_mismatch=true")
+        return 1
+    if mission_phase6.get("trust_score_proposal_count") != phase6_learning_loop.get("trust_score_proposal_count"):
+        print("cockpit_status_mission_phase6_trust_proposal_mismatch=true")
+        return 1
+    if mission_phase6.get("blocked_authority_count") != phase6_learning_loop.get("blocked_authority_count"):
+        print("cockpit_status_mission_phase6_blocked_authority_mismatch=true")
+        return 1
+    for key in (
+        "phase6_learning_write_allowed",
+        "phase6_knowledge_graph_write_allowed",
+        "phase6_model_weight_update_allowed",
+        "phase6_trust_score_update_allowed",
+        "phase6_architect_policy_mutation_allowed",
+        "phase7_proof_credit_allowed",
+        "live_capital_enabled",
+    ):
+        if mission_phase6.get(key) is not False:
+            print(f"cockpit_status_mission_phase6_authority_enabled={key}")
+            return 1
+    if mission_phase6.get("unsafe_write_counter_total") != 0:
+        print("cockpit_status_mission_phase6_unsafe_writes=true")
+        return 1
+    mission_phase5 = mission.get("phase5_layer_b", {})
+    missing_mission_phase5_fields = sorted(
+        MISSION_PHASE5_LAYER_B_REQUIRED_FIELDS - set(mission_phase5)
+    )
+    if missing_mission_phase5_fields:
+        print("cockpit_status_mission_phase5_fields_missing=" + ",".join(missing_mission_phase5_fields))
+        return 1
+    if mission_phase5.get("phase") != "Q5" or mission_phase5.get("layer") != "Layer B":
+        print("cockpit_status_mission_phase5_phase_or_layer_mismatch=true")
+        return 1
+    if mission_phase5.get("status") != phase5_readiness.get("status"):
+        print("cockpit_status_mission_phase5_status_mismatch=true")
+        return 1
+    if mission_phase5.get("implementation_plan_allowed") is not True:
+        print("cockpit_status_mission_phase5_plan_not_allowed=true")
+        return 1
+    if mission_phase5.get("implementation_allowed") is not phase5_implementation_allowed:
+        print("cockpit_status_mission_phase5_implementation_allowed_mismatch=true")
+        return 1
+    if mission_phase5.get("kill_switch_status") != phase5_kill_switch.get("status"):
+        print("cockpit_status_mission_phase5_kill_switch_status_mismatch=true")
+        return 1
+    if mission_phase5.get("kill_switch_count") != phase5_kill_switch.get("switch_count"):
+        print("cockpit_status_mission_phase5_kill_switch_count_mismatch=true")
+        return 1
+    if mission_phase5.get("kill_switch_active_count") != phase5_kill_switch.get(
+        "active_switch_count"
+    ):
+        print("cockpit_status_mission_phase5_kill_switch_active_count_mismatch=true")
+        return 1
+    if mission_phase5.get("kill_switch_blocking_count") != phase5_kill_switch.get(
+        "blocking_switch_count"
+    ):
+        print("cockpit_status_mission_phase5_kill_switch_blocking_count_mismatch=true")
+        return 1
+    if mission_phase5.get("kill_switch_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_kill_switch_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("execution_adapter_status") != phase5_execution_adapter.get("status"):
+        print("cockpit_status_mission_phase5_execution_adapter_status_mismatch=true")
+        return 1
+    if mission_phase5.get("execution_adapter_count") != phase5_execution_adapter.get(
+        "adapter_status_count"
+    ):
+        print("cockpit_status_mission_phase5_execution_adapter_count_mismatch=true")
+        return 1
+    if mission_phase5.get("execution_adapter_read_allowed_count") != phase5_execution_adapter.get(
+        "read_allowed_count"
+    ):
+        print("cockpit_status_mission_phase5_execution_adapter_read_count_mismatch=true")
+        return 1
+    if mission_phase5.get("execution_adapter_staging_allowed_count") != phase5_execution_adapter.get(
+        "downstream_staging_allowed_count"
+    ):
+        print("cockpit_status_mission_phase5_execution_adapter_staging_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_order_staging_status") != phase5_paper_order_staging.get("status"):
+        print("cockpit_status_mission_phase5_paper_order_staging_status_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_order_staging_record_count") != phase5_paper_order_staging.get(
+        "staging_record_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_order_staging_record_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_order_staged_count") != phase5_paper_order_staging.get(
+        "staged_order_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_order_staged_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_order_staging_blocked_count") != phase5_paper_order_staging.get(
+        "blocked_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_order_staging_blocked_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_order_staging_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_paper_order_staging_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_status") != phase5_alpaca_dry_run.get("status"):
+        print("cockpit_status_mission_phase5_alpaca_dry_run_status_mismatch=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_record_count") != phase5_alpaca_dry_run.get(
+        "dry_run_record_count"
+    ):
+        print("cockpit_status_mission_phase5_alpaca_dry_run_record_count_mismatch=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_request_preview_count") != phase5_alpaca_dry_run.get(
+        "request_preview_count"
+    ):
+        print("cockpit_status_mission_phase5_alpaca_dry_run_preview_count_mismatch=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_receipt_count") != phase5_alpaca_dry_run.get(
+        "dry_run_receipt_count"
+    ):
+        print("cockpit_status_mission_phase5_alpaca_dry_run_receipt_count_mismatch=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_blocked_count") != phase5_alpaca_dry_run.get(
+        "blocked_count"
+    ):
+        print("cockpit_status_mission_phase5_alpaca_dry_run_blocked_count_mismatch=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_alpaca_dry_run_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("alpaca_paper_dry_run_broker_post_called") is not False:
+        print("cockpit_status_mission_phase5_alpaca_dry_run_broker_post_called=true")
+        return 1
+    if mission_phase5.get("paper_submit_enablement_status") != phase5_paper_submit_enablement.get("status"):
+        print("cockpit_status_mission_phase5_paper_submit_enablement_status_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_submit_enablement_record_count") != phase5_paper_submit_enablement.get(
+        "submit_enablement_record_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_submit_enablement_record_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_submit_path_available_count") != phase5_paper_submit_enablement.get(
+        "submit_path_available_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_submit_path_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_submit_approval_state") != phase5_paper_submit_enablement.get(
+        "paper_submit_approval_state"
+    ):
+        print("cockpit_status_mission_phase5_paper_submit_approval_state_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_submit_approval_present") != (
+        phase5_paper_submit_enablement.get("paper_submit_approval_present") is True
+    ):
+        print("cockpit_status_mission_phase5_paper_submit_approval_present_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_submit_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_paper_submit_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("paper_submit_broker_post_called") is not False:
+        print("cockpit_status_mission_phase5_paper_submit_broker_post_called=true")
+        return 1
+    if mission_phase5.get("prediction_market_adapter_status") != phase5_prediction_market_adapter.get("status"):
+        print("cockpit_status_mission_phase5_prediction_market_adapter_status_mismatch=true")
+        return 1
+    if mission_phase5.get("prediction_market_route_count") != phase5_prediction_market_adapter.get(
+        "prediction_market_route_count"
+    ):
+        print("cockpit_status_mission_phase5_prediction_market_route_count_mismatch=true")
+        return 1
+    if mission_phase5.get("prediction_market_context_count") != phase5_prediction_market_adapter.get(
+        "prediction_market_context_count"
+    ):
+        print("cockpit_status_mission_phase5_prediction_market_context_count_mismatch=true")
+        return 1
+    if mission_phase5.get("prediction_market_read_only_route_count") != phase5_prediction_market_adapter.get(
+        "read_only_route_count"
+    ):
+        print("cockpit_status_mission_phase5_prediction_market_read_only_count_mismatch=true")
+        return 1
+    if mission_phase5.get("prediction_market_live_blocked_route_count") != phase5_prediction_market_adapter.get(
+        "live_blocked_count"
+    ):
+        print("cockpit_status_mission_phase5_prediction_market_live_blocked_count_mismatch=true")
+        return 1
+    if mission_phase5.get("prediction_market_write_allowed_count") != 0:
+        print("cockpit_status_mission_phase5_prediction_market_write_allowed=true")
+        return 1
+    if mission_phase5.get("prediction_market_spend_allowed_count") != 0:
+        print("cockpit_status_mission_phase5_prediction_market_spend_allowed=true")
+        return 1
+    if mission_phase5.get(
+        "prediction_market_preference_provenance_status"
+    ) != phase5_prediction_market_adapter.get("preference_provenance_status"):
+        print("cockpit_status_mission_phase5_prediction_market_provenance_mismatch=true")
+        return 1
+    if mission_phase5.get("prediction_market_preference_source_quorum_credit_allowed") is not False:
+        print("cockpit_status_mission_phase5_prediction_market_source_quorum_credit=true")
+        return 1
+    if mission_phase5.get("prediction_market_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_prediction_market_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_status") != phase5_telegram_notifier.get("status"):
+        print("cockpit_status_mission_phase5_telegram_notifier_status_mismatch=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_alert_type_count") != phase5_telegram_notifier.get(
+        "alert_type_count"
+    ):
+        print("cockpit_status_mission_phase5_telegram_notifier_alert_count_mismatch=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_eligible_alert_count") != phase5_telegram_notifier.get(
+        "eligible_alert_count"
+    ):
+        print("cockpit_status_mission_phase5_telegram_notifier_eligible_count_mismatch=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_queued_count") != phase5_telegram_notifier.get(
+        "queued_dry_run_alert_count"
+    ):
+        print("cockpit_status_mission_phase5_telegram_notifier_queued_count_mismatch=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_outbox_written_count") != phase5_telegram_notifier.get(
+        "outbox_message_written_count"
+    ):
+        print("cockpit_status_mission_phase5_telegram_notifier_outbox_count_mismatch=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_suppressed_count") != phase5_telegram_notifier.get(
+        "suppressed_alert_count"
+    ):
+        print("cockpit_status_mission_phase5_telegram_notifier_suppressed_count_mismatch=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_send_gate") != "disabled":
+        print("cockpit_status_mission_phase5_telegram_notifier_send_gate_enabled=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_mode") != "dry_run":
+        print("cockpit_status_mission_phase5_telegram_notifier_not_dry_run=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_command_path_enabled_count") != 0:
+        print("cockpit_status_mission_phase5_telegram_notifier_command_path_enabled=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_live_send_allowed_count") != 0:
+        print("cockpit_status_mission_phase5_telegram_notifier_live_send_allowed=true")
+        return 1
+    if mission_phase5.get("telegram_notifier_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_telegram_notifier_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("position_monitor_status") != phase5_position_monitor.get("status"):
+        print("cockpit_status_mission_phase5_position_monitor_status_mismatch=true")
+        return 1
+    if mission_phase5.get("position_monitor_record_count") != phase5_position_monitor.get(
+        "monitor_record_count"
+    ):
+        print("cockpit_status_mission_phase5_position_monitor_record_count_mismatch=true")
+        return 1
+    if mission_phase5.get(
+        "position_monitor_position_record_count"
+    ) != phase5_position_monitor.get("position_record_count"):
+        print("cockpit_status_mission_phase5_position_record_count_mismatch=true")
+        return 1
+    if mission_phase5.get(
+        "position_monitor_closed_trade_summary_count"
+    ) != phase5_position_monitor.get("closed_trade_summary_count"):
+        print("cockpit_status_mission_phase5_closed_trade_summary_count_mismatch=true")
+        return 1
+    if mission_phase5.get("position_monitor_open_position_count") != phase5_position_monitor.get(
+        "open_position_count"
+    ):
+        print("cockpit_status_mission_phase5_position_monitor_open_position_mismatch=true")
+        return 1
+    if mission_phase5.get("position_monitor_closed_trade_count") != phase5_position_monitor.get(
+        "closed_trade_count"
+    ):
+        print("cockpit_status_mission_phase5_position_monitor_closed_trade_mismatch=true")
+        return 1
+    if mission_phase5.get("position_monitor_failed_reconciliation_count") != 0:
+        print("cockpit_status_mission_phase5_position_monitor_reconciliation_failures=true")
+        return 1
+    if mission_phase5.get("position_monitor_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_position_monitor_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("position_monitor_write_authority_count") != 0:
+        print("cockpit_status_mission_phase5_position_monitor_write_authority=true")
+        return 1
+    if mission_phase5.get("position_monitor_close_allowed_count") != 0:
+        print("cockpit_status_mission_phase5_position_monitor_close_allowed=true")
+        return 1
+    if mission_phase5.get("position_monitor_resize_allowed_count") != 0:
+        print("cockpit_status_mission_phase5_position_monitor_resize_allowed=true")
+        return 1
+    if mission_phase5.get("position_monitor_cancel_allowed_count") != 0:
+        print("cockpit_status_mission_phase5_position_monitor_cancel_allowed=true")
+        return 1
+    if mission_phase5.get("signal_review_status") != phase5_signal_review.get("status"):
+        print("cockpit_status_mission_phase5_signal_review_status_mismatch=true")
+        return 1
+    if mission_phase5.get("signal_review_record_count") != phase5_signal_review.get(
+        "signal_review_record_count"
+    ):
+        print("cockpit_status_mission_phase5_signal_review_record_count_mismatch=true")
+        return 1
+    if mission_phase5.get("signal_review_decision_chain_count") != phase5_signal_review.get(
+        "decision_chain_count"
+    ):
+        print("cockpit_status_mission_phase5_signal_review_chain_count_mismatch=true")
+        return 1
+    if mission_phase5.get(
+        "signal_review_governance_comment_event_count"
+    ) != phase5_signal_review.get("governance_comment_event_count"):
+        print("cockpit_status_mission_phase5_signal_review_comment_count_mismatch=true")
+        return 1
+    if mission_phase5.get(
+        "signal_review_kill_switch_action_event_count"
+    ) != phase5_signal_review.get("kill_switch_action_event_count"):
+        print("cockpit_status_mission_phase5_signal_review_kill_action_count_mismatch=true")
+        return 1
+    if mission_phase5.get(
+        "signal_review_backend_truth_displayed_count"
+    ) != phase5_signal_review.get("backend_truth_displayed_count"):
+        print("cockpit_status_mission_phase5_signal_review_truth_count_mismatch=true")
+        return 1
+    if mission_phase5.get("signal_review_ui_inferred_readiness_count") != 0:
+        print("cockpit_status_mission_phase5_signal_review_inferred_readiness=true")
+        return 1
+    if mission_phase5.get("signal_review_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_signal_review_event_log_not_written=true")
+        return 1
+    for key in (
+        "signal_review_trade_approval_control_count",
+        "signal_review_order_place_control_count",
+        "signal_review_position_close_control_count",
+        "signal_review_position_resize_control_count",
+        "signal_review_order_cancel_control_count",
+        "signal_review_broker_write_allowed_count",
+        "signal_review_prediction_market_write_allowed_count",
+        "signal_review_live_capital_enabled_count",
+    ):
+        if mission_phase5.get(key) != 0:
+            print(f"cockpit_status_mission_phase5_{key}_nonzero=true")
+            return 1
+    if mission_phase5.get("paper_trade_drill_status") != phase5_paper_trade_drill.get("status"):
+        print("cockpit_status_mission_phase5_paper_trade_drill_status_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_state") != phase5_paper_trade_drill.get(
+        "paper_trade_drill_state"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_state_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_step_count") != phase5_paper_trade_drill.get(
+        "step_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_step_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_blocker_count") != phase5_paper_trade_drill.get(
+        "blocker_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_blocker_count_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_complete") != phase5_paper_trade_drill.get(
+        "paper_trade_drill_complete"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_complete_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_exit_gate_passed") != phase5_paper_trade_drill.get(
+        "phase5_paper_trade_drill_exit_gate_passed"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_exit_gate_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_implementation_ready") is not True:
+        print("cockpit_status_mission_phase5_paper_trade_drill_not_ready=true")
+        return 1
+    if (
+        mission_phase5.get("paper_trade_drill_submit_approval_present")
+        != phase5_paper_trade_drill.get("paper_submit_approval_present")
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_approval_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_open_position_count") != phase5_paper_trade_drill.get(
+        "open_position_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_open_position_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_closed_trade_count") != phase5_paper_trade_drill.get(
+        "closed_trade_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_closed_trade_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_postmortem_due_count") != phase5_paper_trade_drill.get(
+        "postmortem_due_count"
+    ):
+        print("cockpit_status_mission_phase5_paper_trade_drill_postmortem_due_mismatch=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_broker_post_called_count") != 0:
+        print("cockpit_status_mission_phase5_paper_trade_drill_broker_post_called=true")
+        return 1
+    if mission_phase5.get("paper_trade_drill_live_capital_enabled_count") != 0:
+        print("cockpit_status_mission_phase5_paper_trade_drill_live_capital_enabled=true")
+        return 1
+    if mission_phase5.get("certification_status") != phase5_certification.get("status"):
+        print("cockpit_status_mission_phase5_certification_status_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_stage_status") != phase5_certification.get(
+        "stage_status"
+    ):
+        print("cockpit_status_mission_phase5_certification_stage_status_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_phase5_certified") != phase5_certification.get(
+        "phase5_certified"
+    ):
+        print("cockpit_status_mission_phase5_certification_certified_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_phase5_exit_gate") != phase5_certification.get(
+        "phase5_exit_gate"
+    ):
+        print("cockpit_status_mission_phase5_certification_exit_gate_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_phase6_handoff_allowed") != phase5_certification.get(
+        "phase6_handoff_allowed"
+    ):
+        print("cockpit_status_mission_phase5_certification_phase6_handoff_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_phase7_planning_allowed") != phase5_certification.get(
+        "phase7_planning_allowed"
+    ):
+        print("cockpit_status_mission_phase5_certification_phase7_planning_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_mission_phase5_certification_phase7_credit=true")
+        return 1
+    if mission_phase5.get("certification_input_gate_count") != phase5_certification.get(
+        "input_gate_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_gate_count_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_input_gate_passed_count") != phase5_certification.get(
+        "input_gate_passed_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_passed_count_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_input_gate_blocked_count") != phase5_certification.get(
+        "input_gate_blocked_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_blocked_count_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_blocker_count") != phase5_certification.get(
+        "certification_blocker_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_blocker_count_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_paper_trade_drill_complete") != phase5_certification.get(
+        "paper_trade_drill_complete"
+    ):
+        print("cockpit_status_mission_phase5_certification_drill_complete_mismatch=true")
+        return 1
+    if mission_phase5.get(
+        "certification_paper_trade_drill_exit_gate_passed"
+    ) != phase5_certification.get("paper_trade_drill_exit_gate_passed"):
+        print("cockpit_status_mission_phase5_certification_drill_exit_gate_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_submitted_paper_order_count") != phase5_certification.get(
+        "submitted_paper_order_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_submitted_order_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_open_position_count") != phase5_certification.get(
+        "open_position_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_open_position_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_closed_trade_count") != phase5_certification.get(
+        "closed_trade_count"
+    ):
+        print("cockpit_status_mission_phase5_certification_closed_trade_mismatch=true")
+        return 1
+    if mission_phase5.get("certification_live_capital_enabled_count") != 0:
+        print("cockpit_status_mission_phase5_certification_live_capital=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_status") != phase5_phase6_handoff.get("status"):
+        print("cockpit_status_mission_phase5_phase6_handoff_status_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_state") != phase5_phase6_handoff.get(
+        "handoff_state"
+    ):
+        print("cockpit_status_mission_phase5_phase6_handoff_state_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_blocker_count") != phase5_phase6_handoff.get(
+        "blocker_count"
+    ):
+        print("cockpit_status_mission_phase5_phase6_handoff_blocker_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_event_log_written") != (
+        phase5_phase6_handoff.get("event_log_written") is True
+    ):
+        print("cockpit_status_mission_phase5_phase6_handoff_event_log_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_learning_loop_plan_allowed") != (
+        phase5_phase6_handoff.get("phase6_learning_loop_plan_allowed") is True
+    ):
+        print("cockpit_status_mission_phase5_phase6_plan_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_learning_loop_implementation_allowed") is not False:
+        print("cockpit_status_mission_phase5_phase6_implementation_allowed=true")
+        return 1
+    if mission_phase5.get("phase6_learning_write_allowed") is not False:
+        print("cockpit_status_mission_phase5_phase6_learning_write_allowed=true")
+        return 1
+    if mission_phase5.get("phase6_knowledge_graph_write_allowed") is not False:
+        print("cockpit_status_mission_phase5_phase6_knowledge_graph_write_allowed=true")
+        return 1
+    if mission_phase5.get("phase6_required_module_count") != phase5_phase6_handoff.get(
+        "phase6_required_module_count"
+    ):
+        print("cockpit_status_mission_phase5_phase6_module_count_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_closed_trade_count") != phase5_phase6_handoff.get(
+        "closed_trade_count"
+    ):
+        print("cockpit_status_mission_phase5_phase6_closed_trade_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_postmortem_due_count") != phase5_phase6_handoff.get(
+        "postmortem_due_count"
+    ):
+        print("cockpit_status_mission_phase5_phase6_postmortem_due_mismatch=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_mission_phase5_phase6_phase7_credit=true")
+        return 1
+    if mission_phase5.get("phase6_handoff_live_capital_enabled_count") != 0:
+        print("cockpit_status_mission_phase5_phase6_live_capital=true")
+        return 1
+    if mission_phase5.get("system_map_status") != phase5_system_map.get("status"):
+        print("cockpit_status_mission_phase5_system_map_status_mismatch=true")
+        return 1
+    if mission_phase5.get("system_map_node_count") != phase5_system_map.get("node_count"):
+        print("cockpit_status_mission_phase5_system_map_node_count_mismatch=true")
+        return 1
+    if mission_phase5.get("system_map_lane_count") != phase5_system_map.get("lane_count"):
+        print("cockpit_status_mission_phase5_system_map_lane_count_mismatch=true")
+        return 1
+    if mission_phase5.get("system_map_layer_b_node_count") != phase5_system_map.get(
+        "layer_b_node_count"
+    ):
+        print("cockpit_status_mission_phase5_system_map_layer_b_count_mismatch=true")
+        return 1
+    if mission_phase5.get("system_map_backend_parity_error_count") != 0:
+        print("cockpit_status_mission_phase5_system_map_parity_errors=true")
+        return 1
+    if mission_phase5.get("system_map_unsafe_control_count") != 0:
+        print("cockpit_status_mission_phase5_system_map_unsafe_controls=true")
+        return 1
+    if mission_phase5.get("system_map_event_log_written") is not True:
+        print("cockpit_status_mission_phase5_system_map_event_log_not_written=true")
+        return 1
+    if mission_phase5.get("system_map_dashboard_claims_trading_now") is not False:
+        print("cockpit_status_mission_phase5_system_map_claims_trading=true")
+        return 1
+    if mission_phase5.get("orchestration_start_allowed") is not False:
+        print("cockpit_status_mission_phase5_orchestration_start_allowed=true")
+        return 1
+    if mission_phase5.get("nonapproval_blocker_count") != 0:
+        print("cockpit_status_mission_phase5_nonapproval_blockers_present=true")
+        return 1
+    if "cannot start Layer B orchestration" not in mission_phase5.get("boundary", ""):
+        print("cockpit_status_mission_phase5_boundary_weak=true")
+        return 1
+    mission_phase3 = mission.get("phase3_readiness", {})
+    missing_mission_phase3_fields = sorted(MISSION_PHASE3_READINESS_REQUIRED_FIELDS - set(mission_phase3))
+    if missing_mission_phase3_fields:
+        print("cockpit_status_mission_phase3_fields_missing=" + ",".join(missing_mission_phase3_fields))
+        return 1
+    if mission_phase3.get("phase") != "Q3":
+        print("cockpit_status_mission_phase3_phase_mismatch=true")
+        return 1
+    if mission_phase3.get("status") != "provider_scheduler_readiness":
+        print("cockpit_status_mission_phase3_status_mismatch=true")
+        return 1
+    if mission_phase3.get("readiness_scope") != "provider_scheduler_readiness":
+        print("cockpit_status_mission_phase3_scope_mismatch=true")
+        return 1
+    if mission_phase3.get("execution_readiness") != "not_execution_ready":
+        print("cockpit_status_mission_phase3_execution_readiness_enabled=true")
+        return 1
+    if mission_phase3.get("public_safe") is not True:
+        print("cockpit_status_mission_phase3_not_public_safe=true")
+        return 1
+    if mission_phase3.get("provider_count") != quantum_oracle.get("provider_readiness", {}).get("provider_count"):
+        print("cockpit_status_mission_phase3_provider_count_mismatch=true")
+        return 1
+    if mission_phase3.get("expected_provider_count") != quantum_oracle.get("provider_readiness", {}).get(
+        "expected_provider_count"
+    ):
+        print("cockpit_status_mission_phase3_expected_provider_count_mismatch=true")
+        return 1
+    if mission_phase3.get("configured_provider_count") != quantum_oracle.get("provider_readiness", {}).get(
+        "configured_count"
+    ):
+        print("cockpit_status_mission_phase3_configured_provider_count_mismatch=true")
+        return 1
+    if mission_phase3.get("qctrl_configured") is not True:
+        print("cockpit_status_mission_phase3_qctrl_not_configured=true")
+        return 1
+    if mission_phase3.get("qctrl_status") != quantum_oracle.get("provider_readiness", {}).get(
+        "qctrl_readiness", {}
+    ).get("status"):
+        print("cockpit_status_mission_phase3_qctrl_status_mismatch=true")
+        return 1
+    if mission_phase3.get("qctrl_live_probe_enabled") is not False:
+        print("cockpit_status_mission_phase3_qctrl_live_probe_enabled=true")
+        return 1
+    if mission_phase3.get("qctrl_optimization_job_submitted") is not False:
+        print("cockpit_status_mission_phase3_qctrl_optimization_submitted=true")
+        return 1
+    if not isinstance(mission_phase3.get("qiskit_available"), bool) or not isinstance(
+        mission_phase3.get("qiskit_aer_available"), bool
+    ):
+        print("cockpit_status_mission_phase3_qiskit_availability_invalid=true")
+        return 1
+    if mission_phase3.get("local_simulator_backend") != quantum_oracle.get("local_simulator", {}).get(
+        "selected_backend"
+    ):
+        print("cockpit_status_mission_phase3_local_backend_mismatch=true")
+        return 1
+    if mission_phase3.get("ibm_quantum_status") != "missing_secret":
+        print("cockpit_status_mission_phase3_ibm_status_mismatch=true")
+        return 1
+    if mission_phase3.get("aws_braket_status") != "missing_secret":
+        print("cockpit_status_mission_phase3_aws_status_mismatch=true")
+        return 1
+    if mission_phase3.get("scheduler_status") != quantum_oracle.get("scheduler_dry_run", {}).get("status"):
+        print("cockpit_status_mission_phase3_scheduler_status_mismatch=true")
+        return 1
+    if mission_phase3.get("scheduler_enabled") is not False:
+        print("cockpit_status_mission_phase3_scheduler_enabled=true")
+        return 1
+    if mission_phase3.get("autonomous_scheduler_enabled") is not False:
+        print("cockpit_status_mission_phase3_autonomous_scheduler_enabled=true")
+        return 1
+    if mission_phase3.get("latest_recommendation") != quantum_oracle.get("latest_recommendation"):
+        print("cockpit_status_mission_phase3_recommendation_mismatch=true")
+        return 1
+    if mission_phase3.get("latest_output_route_type") != quantum_oracle.get("latest_output_route_type"):
+        print("cockpit_status_mission_phase3_output_route_mismatch=true")
+        return 1
+    for key in (
+        "qctrl_provider_call_count",
+        "scheduler_jobs_queued_count",
+        "scheduler_jobs_submitted_count",
+        "hardware_submission_allowed_count",
+        "hardware_submitted_count",
+        "hardware_scheduler_enabled_count",
+        "execution_allowed_count",
+        "paper_order_allowed_count",
+        "trade_candidate_created_count",
+        "secret_value_exposed_count",
+        "raw_response_exposed_count",
+        "local_absolute_path_exposed_count",
+        "cloud_job_identifier_exposed_count",
+    ):
+        if mission_phase3.get(key) != 0:
+            print(f"cockpit_status_mission_phase3_nonzero={key}")
+            return 1
+    if "provider/scheduler readiness only" not in mission_phase3.get("boundary", ""):
+        print("cockpit_status_mission_phase3_boundary_scope_weak=true")
+        return 1
+    if "not execution readiness" not in mission_phase3.get("boundary", ""):
+        print("cockpit_status_mission_phase3_boundary_execution_weak=true")
         return 1
     mission_trade = mission.get("trade_intent", {})
     missing_mission_trade_fields = sorted(MISSION_TRADE_REQUIRED_FIELDS - set(mission_trade))
@@ -1703,6 +7083,26 @@ def main() -> int:
             return 1
         if review.get("trade_candidate_created") is not False:
             print("cockpit_status_signal_integrity_review_created_trade_candidate=true")
+            return 1
+        market_policy = review.get("market_confirmation_policy", {})
+        if not isinstance(market_policy, dict):
+            print("cockpit_status_signal_integrity_market_policy_invalid=true")
+            return 1
+        missing_market_policy_fields = sorted(MARKET_CONFIRMATION_POLICY_REQUIRED_FIELDS - set(market_policy))
+        if missing_market_policy_fields:
+            print(
+                "cockpit_status_signal_integrity_market_policy_fields_missing="
+                f"{review.get('review_id', 'unknown')}:{','.join(missing_market_policy_fields)}"
+            )
+            return 1
+        if market_policy.get("signal_authority") is not False:
+            print("cockpit_status_signal_integrity_market_policy_signal_authority=true")
+            return 1
+        if market_policy.get("order_authority") is not False:
+            print("cockpit_status_signal_integrity_market_policy_order_authority=true")
+            return 1
+        if market_policy.get("broker_reconciliation_authority") is not False:
+            print("cockpit_status_signal_integrity_market_policy_reconciliation_authority=true")
             return 1
         if "cannot approve" not in review.get("boundary", ""):
             print("cockpit_status_signal_integrity_review_boundary_weak=true")

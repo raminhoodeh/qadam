@@ -34,6 +34,7 @@ from orchestrator.source_health import source_heartbeat_summary
 from orchestrator.staged_paper_order import staged_paper_order_summary
 from orchestrator.telegram_comms import telegram_status
 from orchestrator.world_model import world_model_summary
+from orchestrator.yahoo_finance_adapter import yahoo_finance_adapter_status
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, unresolved_sources
 
 
@@ -59,7 +60,13 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
     settings = settings or Settings.from_env()
     telegram = telegram_status(settings)
     quantum = quantum_oracle_summary(settings)
+    yahoo_finance = yahoo_finance_adapter_status(settings)
     quantum_status = "oracle_ready" if quantum.get("result_count", 0) else "ready_classical_fallback"
+    yahoo_status = (
+        "read_only_ready"
+        if yahoo_finance.get("enabled") and yahoo_finance.get("dependency_importable")
+        else "deferred"
+    )
     return [
         {"key": "coo", "label": "COO", "owner": "Python Orchestrator", "status": "registered"},
         {"key": "research_analyst", "label": "Research Analyst", "owner": "Local LLM", "status": "pending"},
@@ -103,6 +110,12 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
         {"key": "nasa_firms_adapter", "label": "NASA FIRMS Adapter", "owner": "Physical Pipeline", "status": "credential_gated"},
         {"key": "fred_adapter", "label": "FRED Adapter", "owner": "Macro Pipeline", "status": "sample_ready"},
         {"key": "rss_adapter", "label": "RSS Adapter", "owner": "Narrative Pipeline", "status": "sample_ready"},
+        {
+            "key": "yahoo_finance_adapter",
+            "label": "Yahoo Finance Adapter",
+            "owner": "Supplemental Market Confirmation",
+            "status": yahoo_status,
+        },
         {"key": "cockpit", "label": "Cockpit", "owner": "qadam.trade", "status": "shell"},
     ]
 
@@ -170,6 +183,7 @@ def build_system_health(
             "nasa_firms": nasa_firms_adapter_status(settings),
             "fred": fred_adapter_status(settings),
             "rss": rss_adapter_status(settings),
+            "yahoo_finance": yahoo_finance_adapter_status(settings),
         },
         "secret_file": validate_secret_file(settings.secrets_file),
         "quantum_providers": quantum_providers(settings),

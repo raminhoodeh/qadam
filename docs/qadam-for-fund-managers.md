@@ -266,7 +266,10 @@ The first release goal is:
 - Review every outcome.
 - Reach a clean proof sample.
 
-The mature benchmark is **100 closed proof trades**. The 90-day run matters, but Qadam should not force trades just to hit a number. If the signal-quality floor is not met, no trade is a valid result.
+The mature benchmark is **100 closed proof trades**. The 30-day demo proof run
+matters, but Qadam should not force trades just to hit a number. The operating
+discipline is three proof trades per week where qualified setups exist. If the
+signal-quality floor is not met, no trade is a valid result.
 
 ## How To Judge Qadam
 

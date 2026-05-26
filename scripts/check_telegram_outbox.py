@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -12,6 +13,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from orchestrator.config import Settings  # noqa: E402
+from orchestrator.phase5_telegram_notifier import (  # noqa: E402
+    TELEGRAM_NOTIFIER_RUNTIME_ARTIFACT,
+    validate_phase5_telegram_notifier_bundle,
+)
 from orchestrator.telegram_comms import (  # noqa: E402
     TelegramCommunicationsStore,
     ensure_d8a_telegram_dry_run,
@@ -40,6 +45,13 @@ FORBIDDEN_MESSAGE_PATTERNS = (
     re.compile(r"@[A-Za-z0-9_]{5,}"),
     re.compile(r"/Users/|/private/|/var/folders/|\\Users\\"),
 )
+
+
+def _load_q5_telegram_notifier(settings: Settings) -> dict | None:
+    path = Path(settings.runtime_dir) / TELEGRAM_NOTIFIER_RUNTIME_ARTIFACT
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def main() -> int:
@@ -114,6 +126,49 @@ def main() -> int:
             return 1
         if message.message_class == "source_degraded" and "No trade command is available" not in message.body:
             print("telegram_outbox_system_warning_boundary_missing=true")
+            return 1
+
+    q5_notifier = _load_q5_telegram_notifier(settings)
+    if q5_notifier is not None:
+        q5_errors = validate_phase5_telegram_notifier_bundle(q5_notifier)
+        q5_records = [
+            record
+            for record in q5_notifier.get("records", [])
+            if isinstance(record, dict) and record.get("outbox_message_written") is True
+        ]
+        print("telegram_outbox_q5_10_status=" + str(q5_notifier.get("status")))
+        print(f"telegram_outbox_q5_10_written_count={len(q5_records)}")
+        print(f"telegram_outbox_q5_10_validation_error_count={len(q5_errors)}")
+        if q5_errors:
+            print("telegram_outbox_q5_10_validation_errors_present=true")
+            return 1
+        for record in q5_records:
+            message_id = str(record.get("outbox_message_id") or "")
+            message = by_id.get(message_id)
+            if message is None:
+                print(f"telegram_outbox_q5_10_message_missing={message_id}")
+                return 1
+            if message.mode != "dry_run":
+                print(f"telegram_outbox_q5_10_message_not_dry_run={message_id}")
+                return 1
+            if message.status != "queued":
+                print(f"telegram_outbox_q5_10_message_not_queued={message_id}")
+                return 1
+            if message.send_allowed:
+                print(f"telegram_outbox_q5_10_message_send_allowed={message_id}")
+                return 1
+            if "Dashboard: qadam.trade/dashboard/" not in message.body:
+                print(f"telegram_outbox_q5_10_dashboard_link_missing={message_id}")
+                return 1
+            if "No Telegram input" in message.body:
+                print(f"telegram_outbox_q5_10_ui_copy_leaked={message_id}")
+                return 1
+            for pattern in FORBIDDEN_MESSAGE_PATTERNS:
+                if pattern.search(message.title) or pattern.search(message.body):
+                    print(f"telegram_outbox_q5_10_forbidden_text={message_id}")
+                    return 1
+        if q5_notifier.get("outbox_message_written_count") != len(q5_records):
+            print("telegram_outbox_q5_10_written_count_mismatch=true")
             return 1
 
     print("telegram_outbox_check=ok")

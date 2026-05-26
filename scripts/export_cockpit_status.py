@@ -59,6 +59,7 @@ def main() -> int:
     print(f"cockpit_status_hypothesis_count={result['hypothesis_count']}")
     print(f"cockpit_status_trade_candidate_count={result['trade_candidate_count']}")
     print(f"cockpit_status_forbidden_action_count={result['forbidden_action_count']}")
+    print(f"cockpit_status_yahoo_finance_status={result['yahoo_finance_status']}")
     return 0
 
 

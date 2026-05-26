@@ -34,6 +34,18 @@ node scripts/check_dashboard_section_explainers.js
 node scripts/check_dashboard_visual_system.js
 node scripts/check_dashboard_page_architecture.js
 node scripts/check_dashboard_information_hierarchy.js
+node scripts/check_dashboard_overhaul_ia_contract.js
+node scripts/check_dashboard_overhaul_copy_system.js
+node scripts/check_dashboard_overhaul_view_models.js
+node scripts/check_dashboard_overhaul_shell.js
+node scripts/check_dashboard_overhaul_overview.js
+node scripts/check_dashboard_overhaul_trades.js
+node scripts/check_dashboard_overhaul_sources.js
+node scripts/check_dashboard_overhaul_reasoning.js
+node scripts/check_dashboard_overhaul_performance.js
+node scripts/check_dashboard_overhaul_operations.js
+node scripts/check_dashboard_overhaul_governance.js
+node scripts/check_dashboard_overhaul_responsive.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
@@ -55,15 +67,47 @@ say "Checking dashboard syntax and whitespace"
 node --check landing-page-repo/dashboard.js
 git diff --check -- \
   landing-page-repo/auth.css \
+  landing-page-repo/auth.js \
   landing-page-repo/dashboard/index.html \
   landing-page-repo/dashboard.js \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
   docs/qadam-dashboard-implementation-plan.md \
   docs/qadam-dashboard-navigation-ux-plan.md \
+  docs/qadam-dashboard-overhaul-dx-1-ia-contract.json \
+  docs/qadam-dashboard-overhaul-dx-1-ia-contract-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-2-copy-system.json \
+  docs/qadam-dashboard-overhaul-dx-2-copy-system-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-3-view-model-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-4-segmented-shell-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-5-overview-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-6-trades-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-7-sources-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-8-reasoning-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-9-performance-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-10-operations-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-11-governance-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-dx-12-responsive-audit-2026-05-25.md \
+  docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   scripts/check_dashboard_acceptance.js \
   scripts/check_dashboard_deployment_readiness.js \
+  scripts/check_dashboard_density_toggle.js \
   scripts/check_dashboard_navigation_ux.js \
+  scripts/check_dashboard_panel_redesign.js \
+  scripts/check_dashboard_section_explainers.js \
+  scripts/check_dashboard_visual_system.js \
+  scripts/check_dashboard_overhaul_ia_contract.js \
+  scripts/check_dashboard_overhaul_copy_system.js \
+  scripts/check_dashboard_overhaul_view_models.js \
+  scripts/check_dashboard_overhaul_shell.js \
+  scripts/check_dashboard_overhaul_overview.js \
+  scripts/check_dashboard_overhaul_trades.js \
+  scripts/check_dashboard_overhaul_sources.js \
+  scripts/check_dashboard_overhaul_reasoning.js \
+  scripts/check_dashboard_overhaul_performance.js \
+  scripts/check_dashboard_overhaul_operations.js \
+  scripts/check_dashboard_overhaul_governance.js \
+  scripts/check_dashboard_overhaul_responsive.js \
   scripts/preflight_dashboard_deployment.sh
 
 say "Deployment preflight passed"

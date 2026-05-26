@@ -16,6 +16,8 @@ Key split decisions:
 - SEC EDGAR and STOCK Act / politician filings are separate narrative sources, even though the integration reference combines them.
 - Space-Track and CelesTrak remain one TLE source for now because only Space-Track has a detailed endpoint in the specs.
 - Spire and MarineTraffic remain one AIS source for now because the tool contract is identical.
+- Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
+- Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
 
 ## Tier 1 - Wire First
 
@@ -71,6 +73,18 @@ Key split decisions:
 | Patents | Public USPTO/EPO APIs | Long-cycle R&D signal. |
 | RapidAPI | RapidAPI key | Catch-all fallback for niche sources. |
 
+## Supplemental Market Confirmation - Accepted Pending Live Dependencies
+
+| Capability | Access | Notes |
+| --- | --- | --- |
+| Yahoo Finance / yfinance | No key by default; local `yahoo-finance-api/` wrapper | Useful for OHLCV, volume, options-chain, market status, quote search, sector, screener, and news context. A dormant wrapper now exists in `orchestrator/yahoo_finance_adapter.py`; live mode still needs dependencies installed and must remain corroboration only. Cannot be used for broker execution, fills, receipts, reconciliation, or sole signal authority. |
+
+## Supplemental Multi-Source Data Plane - Registered Supplemental Reference
+
+| Capability | Access | Notes |
+| --- | --- | --- |
+| Preference / PREF MCP | Remote Streamable HTTP MCP at `https://pref.trade/mcp`; bearer key `pref_agent_*` or account key | Registered in the Resource Registry as `preference_mcp` with category `supplemental_data_plane`. It is a read-only data plane for prediction markets, orderbooks, physical movement, weather, filings, wallet intelligence, news, macro, sports lines, and other world data. Current Qadam posture is status/catalog/sample/provenance/domain-pack/shadow-context, public cockpit visibility, Preference-aware Phase 4 strategy manifestation, Q4-10/Q4-12 certification gating, and PREF-12 upstream source-promotion decisions only until identity and allowlist gates pass. PREF-12 currently promotes zero sources: Polymarket, Kalshi, SEC EDGAR, and vessel tracking map to existing registry entries; NOAA-style weather and KOL wallet context are deferred. It is not source 36, not an execution venue, not a broker, not a fill/receipt/reconciliation source, and cannot affect canonical trust rank unless a specific upstream source is separately promoted. |
+
 ## Conflicts To Carry Into Implementation
 
 - The documents say "35 sources", but the integration reference details fewer because some sources are combined. The registry resolves this by splitting Polymarket/Kalshi and SEC/STOCK Act.
@@ -78,3 +92,4 @@ Key split decisions:
 - `qadam-specs.md` names Space-Track / CelesTrak, but only Space-Track has endpoint details.
 - Oref cadence says 5 seconds, while the World Monitor implementation suggests a slower practical polling setup with Tzeva Adom/Oref fallback behavior.
 - World Monitor contains strong source-access patterns, but Qadam should not inherit its Redis/Railway/Vercel architecture.
+- Yahoo Finance creates a source-count decision: keep it supplemental for market confirmation, or deliberately promote it into the canonical registry with a new source count and acceptance gate.

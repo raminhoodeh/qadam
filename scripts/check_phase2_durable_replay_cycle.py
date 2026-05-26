@@ -30,6 +30,20 @@ def main() -> int:
     print(f"phase2_durable_replay_cycle_mode={report['mode']}")
     print(f"phase2_durable_replay_cycle_source_count={report['source_count']}")
     print(f"phase2_durable_replay_cycle_degraded_source_count={report['source_degraded_count']}")
+    print(f"phase2_durable_replay_cycle_preference_mcp_status={report['preference_mcp_shadow_context_status']}")
+    print(f"phase2_durable_replay_cycle_preference_mcp_role={report['preference_mcp_shadow_context_role']}")
+    print(
+        "phase2_durable_replay_cycle_preference_mcp_shadow_observation_count="
+        f"{report['preference_mcp_shadow_observation_count']}"
+    )
+    print(
+        "phase2_durable_replay_cycle_preference_mcp_active_required_challenge_count="
+        f"{report['preference_mcp_active_required_challenge_count']}"
+    )
+    print(
+        "phase2_durable_replay_cycle_preference_mcp_source_quorum_credit_allowed="
+        f"{report['preference_mcp_source_quorum_credit_allowed']}"
+    )
     print(f"phase2_durable_replay_cycle_observation_count={report['durable_replay_observation_count']}")
     print(f"phase2_durable_replay_cycle_replayed_source_count={report['durable_replay_replayed_source_count']}")
     print(f"phase2_durable_replay_cycle_missing_source_count={report['durable_replay_missing_source_count']}")
@@ -62,6 +76,22 @@ def main() -> int:
         return 1
     if report["source_degraded_count"] != 0:
         return 1
+    if report["preference_mcp_shadow_context_status"] != "challenge_only_ready":
+        return 1
+    if report["preference_mcp_shadow_context_role"] != "read_only_shadow_challenge_context":
+        return 1
+    if report["preference_mcp_shadow_observation_count"] < 1:
+        return 1
+    if report["preference_mcp_active_required_challenge_count"] < 1:
+        return 1
+    if report["preference_mcp_source_quorum_credit_allowed"] is not False:
+        return 1
+    if report["preference_mcp_trade_candidate_creation_allowed"] is not False:
+        return 1
+    if report["preference_mcp_execution_allowed"] is not False:
+        return 1
+    if report["preference_mcp_broker_write_allowed"] is not False:
+        return 1
     if report["queued_packet_count"] < len(DEFAULT_PHASE2_SOURCES):
         return 1
     if report["shadow_signal_count"] < 1:
@@ -85,6 +115,10 @@ def main() -> int:
         report["strategy_lead_risk_handoff_allowed"],
         report["strategy_lead_trade_candidate_allowed"],
         report["signal_integrity_trade_candidate_created_count"],
+        report["preference_mcp_trade_candidate_creation_allowed"],
+        report["preference_mcp_risk_handoff_allowed"],
+        report["preference_mcp_execution_allowed"],
+        report["preference_mcp_broker_write_allowed"],
         report["risk_agent_execution_allowed_count"],
         report["risk_agent_paper_order_allowed_count"],
         report["execution_policy_execution_allowed_count"],

@@ -99,6 +99,8 @@ async function main() {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-source-summary]", "Missing creds");
     assertIncludes(rendered, "[data-source-summary]", "Signal influence");
+    assertIncludes(rendered, "[data-source-summary]", "Yahoo Finance");
+    assertIncludes(rendered, "[data-source-summary]", "Preference MCP");
     assertIncludes(rendered, "[data-watching-list]", "ACLED API");
     assertIncludes(rendered, "[data-watching-list]", "credential required");
     assertIncludes(rendered, "[data-watching-list]", "ready to port");
@@ -107,6 +109,14 @@ async function main() {
     assertIncludes(rendered, "[data-watching-list]", "blocked until signal integrity gate");
     assertIncludes(rendered, "[data-watching-list]", "payload Not connected");
     assertIncludes(rendered, "[data-watching-list]", "TradingView Paid Alerts");
+    assertIncludes(rendered, "[data-watching-list]", "Supplemental market confirmation");
+    assertIncludes(rendered, "[data-watching-list]", "Yahoo Finance");
+    assertIncludes(rendered, "[data-watching-list]", "live read deferred");
+    assertIncludes(rendered, "[data-watching-list]", "no reconciliation truth");
+    assertIncludes(rendered, "[data-watching-list]", "Preference MCP data plane");
+    assertIncludes(rendered, "[data-watching-list]", "Domain-pack coverage");
+    assertIncludes(rendered, "[data-watching-list]", "Blocked paid tools");
+    assertIncludes(rendered, "[data-watching-list]", "no trade authority");
     assertIncludes(rendered, "[data-watching-list]", "d7 local contract");
     assertIncludes(rendered, "[data-watching-list]", "observed signal only no execution path");
     assertIncludes(rendered, "[data-watching-list]", "signal-influencing");

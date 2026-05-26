@@ -45,6 +45,7 @@ class ShadowTriagePacket:
     source_event_refs: tuple[str, ...]
     summary: str
     uncertainty: str
+    read_only_context: dict[str, Any]
     created_at: str
     boundary: str
 
@@ -187,6 +188,7 @@ def create_shadow_triage_packet(
     source_event_refs: tuple[str, ...],
     summary: str,
     uncertainty: str = "unknown",
+    read_only_context: dict[str, Any] | None = None,
     settings: Settings | None = None,
     event_log: EventLog | None = None,
 ) -> dict[str, Any]:
@@ -205,8 +207,12 @@ def create_shadow_triage_packet(
         source_event_refs=source_event_refs,
         summary=summary,
         uncertainty=uncertainty,
+        read_only_context=read_only_context if isinstance(read_only_context, dict) else {},
         created_at=datetime.now(timezone.utc).isoformat(),
-        boundary="Shadow triage only. No signal, risk decision, or execution authority.",
+        boundary=(
+            "Shadow triage only. No signal, risk decision, or execution authority. "
+            "Read-only context cannot create source quorum, trade candidates, or orders."
+        ),
     )
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(packet.to_dict(), sort_keys=True) + "\n")

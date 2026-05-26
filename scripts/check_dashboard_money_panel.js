@@ -109,6 +109,11 @@ async function main() {
     assertIncludes(rendered, "[data-capital]", "Current");
     assertIncludes(rendered, "[data-capital]", "Cash");
     assertIncludes(rendered, "[data-capital]", "Equity");
+    assertIncludes(rendered, "[data-capital]", "Paper trading account");
+    assertIncludes(rendered, "[data-capital]", "Live paper equity graph");
+    assertIncludes(rendered, "[data-capital]", "in the paper trading account");
+    assertIncludes(rendered, "[data-capital]", "Paper trading account equity over time");
+    assertIncludes(rendered, "[data-capital]", "Trade activity");
     assertIncludes(rendered, "[data-capital]", "Realized");
     assertIncludes(rendered, "[data-capital]", "Unrealized");
     assertIncludes(rendered, "[data-capital]", "Drawdown");
@@ -126,11 +131,18 @@ async function main() {
     assertIncludes(rendered, "[data-capital]", "Max drawdown");
     assertIncludes(rendered, "[data-capital]", "Mirrored paper orders");
     assertIncludes(rendered, "[data-capital]", "Maturity benchmark");
-    assertIncludes(rendered, "[data-capital]", "0 of 100 closed proof trades");
+    assertIncludes(rendered, "[data-capital]", `${capital.maturity_closed_trade_count} of ${capital.maturity_closed_trade_target} closed paper trades`);
+    assertIncludes(rendered, "[data-capital]", `Phase 7 proof: ${status.phase7_demo_proof.closed_proof_trade_count} of ${status.phase7_demo_proof.mature_benchmark} closed proof trades`);
+    assertIncludes(rendered, "[data-capital]", "no Phase 7 proof credit");
+    assertIncludes(rendered, "[data-capital]", "Phase 5 trades excluded from proof");
     assertIncludes(rendered, "[data-capital]", "No open positions");
     assertIncludes(rendered, "[data-capital]", orders.length ? "Mirrored paper order" : "No mirrored paper orders");
-    assertIncludes(rendered, "[data-capital]", "No closed trades");
-    assertIncludes(rendered, "[data-capital]", "Equity timeline");
+    assertIncludes(
+        rendered,
+        "[data-capital]",
+        closedTrades.length ? String(closedTrades[0].instrument || "Closed paper trade").replaceAll("_", " ") : "No closed trades"
+    );
+    assertIncludes(rendered, "[data-capital]", "Equity snapshot log");
 
     const emptyStatus = {
         ...status,
@@ -155,7 +167,7 @@ async function main() {
     assertIncludes(emptyRendered, "[data-capital]", "No open positions");
     assertIncludes(emptyRendered, "[data-capital]", "No mirrored paper orders");
     assertIncludes(emptyRendered, "[data-capital]", "No closed trades");
-    assertIncludes(emptyRendered, "[data-capital]", "No equity snapshots");
+    assertIncludes(emptyRendered, "[data-capital]", "Live paper equity graph");
 
     console.log("Dashboard money panel contract OK");
     console.log(`Rendered snapshot: ${statusPath}`);

@@ -42,7 +42,8 @@ Product boundaries:
 Rare Edge Doctrine:
 
 - Qadam should never trade to fill a calendar.
-- Two proof trades per week is a discipline target, not a quota.
+- Three proof trades per week is a Phase 7 discipline target only where
+  qualified setups exist; it is not a quota.
 - Rare high-conviction opportunities are expected roughly 4-6 times per year.
 - Forcing trades corrupts the Knowledge Graph.
 - Quality of thesis beats quantity of trades.
@@ -685,11 +686,15 @@ Clean proof rules:
 
 Evaluation:
 
-- 90 consecutive calendar days of autonomous operation.
+- 30 consecutive calendar days of autonomous operation.
 - £1000 starting paper/test account.
-- 2 proof trades per week where qualified setups exist.
+- 3 proof trades per week where qualified setups exist.
+- The weekly proof target is `min(3, qualified_setup_count)` so Qadam never
+  forces trades to hit a quota.
 - 100 closed trades is the mature statistical benchmark.
-- If 90 days pass with fewer than 100 closed trades, do not force trades; continue paper until the mature benchmark exists.
+- If 30 days pass with fewer than 100 closed trades, do not force trades; mark
+  the run statistically immature and continue paper until the mature benchmark
+  exists.
 - At least two contributing strategies.
 - Expectancy > 0 after costs.
 - Max drawdown <= 20%.
@@ -824,7 +829,7 @@ Review cadence:
 - Daily: 5-minute cockpit review.
 - Weekly: funnel, overrides, Trust Scores, Quantum success, rolling expectancy.
 - Monthly: full metric set, Reflective Manifestation, Shadow Strategy, Knowledge Graph, Brier Score.
-- 90-day: full demo proof review and live decision.
+- 30-day: full demo proof review and live decision-readiness review.
 
 ## 17. Markdown-First Agent And Skill Structure
 

@@ -29,11 +29,17 @@ This does not dilute Qadam. It reduces cognitive load. The project remains deep,
 | Modular appendix | `docs/qadam-modular-implementation-plan.md` | Module contracts and phase decomposition. |
 | Foundation appendix | `docs/qadam-foundational-architecture-plan.md` | Phase 0 technical detail. |
 | Dashboard appendix | `docs/qadam-dashboard-implementation-plan.md` | Cockpit/system-map/trade-layer implementation path. |
+| Dashboard UX overhaul appendix | `docs/qadam-dashboard-overhaul-master-implementation-plan.md` | Control plan for replacing the long cockpit page with a segmented Overview, Trades, Sources, Reasoning, Performance, Operations, and Governance experience. |
 | Telegram appendix | `docs/qadam-telegram-bot-implementation-plan.md` | Member communications rail, bot phases, message classes, and dashboard visibility. |
-| User guide | `docs/qadam-user-guide.md` | Plain-English cockpit guide for founding members. |
+| User guide | `docs/qadam-user-guide.md` | Full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries. |
 | Live source appendix | `docs/api-source-inventory.md` | 35 live/live-adjacent feeds and source conflicts. |
 | API credential appendix | `docs/api-specs.md` | Full API/provider inventory, credential placeholders, onboarding batches, and unresolved provider decisions. |
 | API key acquisition plan | `docs/qadam-api-key-acquisition-plan.md` | Practical provider-by-provider order, cost posture, official links, and validation checks for getting keys safely. |
+| Pre-Phase-3 readiness appendix | `docs/qadam-pre-phase-3-implementation-plan.md` | Modular checklist for completing Phase 0, Phase 1, Agent OS, Phase 2, durable replay, safety-chain, and cockpit gates before Phase 3 resumes beyond scaffold mode. |
+| Phase 3 appendix | `docs/qadam-phase-3-implementation-plan.md` | Staged provider/scheduler readiness plan for Head of Quant work after pre-Phase-3 certification. |
+| Phase 6 appendix | `docs/qadam-phase-6-learning-loop-implementation-plan.md` | Staged learning-loop plan from Q6-0 re-entry through Q6-17 certification, preserving plan-only handoff boundaries until each gate passes. |
+| Phase 7 appendix | `docs/qadam-phase-7-demo-proof-implementation-plan.md` | Staged 30-day demo-proof plan from Q7-0 re-entry through certification and live-promotion review preparation. |
+| Paper Operational appendix | `docs/qadam-paper-operational-mode-plan.md` | Control plan for making Qadam fully operational in paper mode before any live-capital path exists. |
 | Resource appendix | `docs/qadam-resource-registry.md` | Papers, products, OSS stacks, frameworks, build references. |
 | Private worldview appendix | `docs/how-the-world-works-integration.md` | Qadam's private world-model foundation and evidence boundary. |
 
@@ -90,6 +96,7 @@ Core modules:
 | Execution Venue Registry | Disabled/read-only venue map covering credential status, account/subaccount scope, network/chain scope, mode, reconciliation, and kill-switch state. |
 | Broker / Venue Adapters | Alpaca paper/live, prediction-market adapters, and later optional venues such as PriveX-style perps rails. |
 | TradingView MCP / Alerts | Read-only technical-analysis MCP tooling now; paid TradingView account alert webhooks later. |
+| Yahoo Finance / yfinance Market Data | Supplemental read-only market confirmation from the local `yahoo-finance-api/` reference checkout: OHLCV, volume, options chains, market status, quote search, news, sectors, and screeners. Not a broker, not an execution venue, and not canonical source number 36 unless the registry is deliberately changed. |
 | Knowledge Graph | Resolved catalyst memory and nearest-neighbour recall. |
 | Cockpit | `qadam.trade` login, dashboard, system map, signal review, comments forum, postmortems. |
 | Fund Manager Forum | Private suggestions and governance comments from Ramin, Troy, Akber, Anas, and Ion. |
@@ -114,7 +121,8 @@ Core modules:
 - Never retry order-creating POST requests automatically.
 - Venue account/subaccount/network scope must be explicit before any order path is enabled.
 - Quantum is a weekly oracle, not a real-time trading brain.
-- Two proof trades per week is a discipline target, not a quota.
+- Three proof trades per week is a Phase 7 discipline target only where
+  qualified setups exist; it is not a quota.
 - 100 closed trades is the maturity benchmark.
 
 ## 6. First Release Trial Mode
@@ -212,7 +220,7 @@ Exit gate:
 - The D7 TradingView alert contract renders alert-derived observed signals with duplicate protection, receiver-key fail-closed behavior, `execution_allowed=false`, `paper_order_allowed=false`, and `trade_candidate_created=false`.
 - The cockpit renders Qadam's private worldview as decision context for hypotheses, observed signals, candidates, and blocked trades, while preserving the boundary that world-model claims are private priors and not factual evidence or trade triggers.
 - Telegram communications are represented as notify-only: bot status, queue state, delivery state, verified/pending member counts, and last message status can appear in the cockpit, but no Telegram route can trigger broker action or hidden approval.
-- The protected guide explains every major cockpit panel, status label, trade state, member permission, daily review routine, and red flag without exposing secrets or implying execution authority.
+- The protected guide explains Qadam from first principles, including access, cockpit panels, status labels, trade states, demo-proof rules, member permissions, local operator checks, troubleshooting, and red flags without exposing secrets or implying execution authority.
 - Cockpit access model is limited to the five founding Fund Managers.
 - Comment/forum entries can be saved locally and linked to a module or signal.
 - No secret appears in committed files.
@@ -265,6 +273,7 @@ Current implementation start:
 - GDELT is promoted to the first real read-only adapter path; Oref is promoted as the second, higher-trust conflict alert adapter; NASA FIRMS is promoted as the first physical anomaly adapter; FRED is promoted as the first macro regime adapter; RSS is promoted as the first narrative feed adapter.
 - No promoted adapter is allowed to influence signal confidence without corroboration and Signal Integrity Gate approval.
 - TradingView note: a paid TradingView account does not provide a normal retail data API key. Treat TradingView MCP as read-only market/technical-analysis tooling that does not require a TradingView login, and treat the paid TradingView account as useful later for webhook alerts once Qadam has a secure receiver.
+- Yahoo Finance note: the local `yahoo-finance-api/` checkout is a useful `yfinance` capability for read-only market price, volume, options-chain, market-status, quote-search, sector, screener, and news context. It should backfill the current market-confirmation gap before Phase 3 depends on price context, but only through a Qadam wrapper with sample mode, rate limits, caching, raw archive, degraded-state handling, and public-safe status. It is not a broker, not an order source, not a fill/reconciliation source, and not automatically counted as a 36th canonical source.
 
 Objective: make Qadam observe the world.
 
@@ -278,6 +287,8 @@ Build:
 - Tier 2 adapters: FRED, AIS, Wingbits, GDELT, RSS, X, TradingView webhook alerts.
 - Tier 3 adapters: BLS, ECB, UN Comtrade, BIS, USGS, Reddit, Telegram, SEC, STOCK Act.
 - Tier 4 adapters or deferred stubs.
+- Supplemental market-confirmation capability: Yahoo Finance / yfinance via `yahoo-finance-api/`, now accepted as `accepted_supplemental_pending_live_dependencies` with a dormant read-only Qadam wrapper before any Phase 2 or Phase 3 module consumes it.
+- Registered supplemental multi-source data plane: Preference/PREF MCP via `https://pref.trade/mcp`, now planned in `docs/qadam-preference-mcp-integration-plan.md` as status/catalog-first, read-only, quota-governed, provenance-gated, and not automatically a canonical source.
 - Credential onboarding ledger driven by `docs/api-specs.md`, where every source is marked as `keyless`, `configured`, `missing`, `deferred`, `needs_provider_choice`, or `blocked_by_license`.
 - Batch A credentials first: NASA FIRMS, ACLED, UnusualWhales, Kalshi, Alpaca paper, Gemini, Supabase, and Telegram bot.
 - Batch B credentials second: FRED, BLS, UN Comtrade, X, Reddit, Telegram MTProto, AIS provider, and Wingbits.
@@ -445,6 +456,8 @@ Exit gate:
 
 Objective: connect the weekly oracle without making the system dependent on it.
 
+Detailed staged plan: `docs/qadam-phase-3-implementation-plan.md`.
+
 Current implementation start:
 
 - `orchestrator/quantum.py` now defines the Phase 3 quantum/classical oracle contract: provider readiness, `QuantumOracleJob`, `QuantumOracleResult`, local validation, deterministic classical fallback, and a JSONL result store.
@@ -453,19 +466,23 @@ Current implementation start:
 - The 2026-05-21 Phase 3 hardening pass added the `QuantumBackend` interface, deterministic `ClassicalFallbackBackend`, optional `QiskitAerBackend`, local circuit blueprint, measurement-count output, stable input fingerprint, validation checks, and weekly cadence metadata. If `qiskit` and `qiskit-aer` are absent or fail locally, the backend degrades to the same classical fallback schema.
 - The Head of Quant can now produce a shadow-only `upgrade`, `downgrade`, or `hold` recommendation after Signal Integrity review context exists. It cannot originate signals, create trade candidates, approve risk, create paper orders, call broker routes, submit hardware jobs, or bypass any gate.
 - The public-safe cockpit status now exposes the quantum oracle summary and Mission Control system stack shows the oracle backend, local simulation mode, latest recommendation, cadence, fingerprint, and validation-check state without leaking credentials or local paths.
+- The 2026-05-23 Phase 3A certification is recorded in `docs/qadam-phase-3-q3-10-phase-3a-certification-audit-2026-05-23.md`: provider/scheduler readiness is certified locally with Q-CTRL configured, IBM/AWS missing-secret stubs, local `classical_fallback`, `quantum_oracle.result_count=46`, durable replay `35/35`, dashboard/cockpit checks green, and all hardware, scheduler, execution, paper-order, trade-candidate, provider-call, secret-exposure, raw-response, local-path, and cloud-job counters at zero.
+- The 2026-05-23 Q3-11 hardware enablement proposal is recorded in `docs/qadam-phase-3-q3-11-hardware-enablement-proposal-2026-05-23.md`. It is documentation only: Phase 3B hardware implementation remains blocked until a separate future certification explicitly authorizes a live provider call or hardware job.
 
 Build:
 
 - `QuantumBackend` interface. Implemented.
 - Qiskit Aer local simulator. Optional backend path implemented; active only when local `qiskit` and `qiskit-aer` packages are installed.
 - Classical fallback with the same output schema. Implemented.
-- Q-CTRL optional provider path after local circuit validation.
-- IBM Quantum / Qiskit Runtime backend.
-- AWS Braket secondary backend.
+- Q-CTRL optional provider path after local circuit validation. Current local status: credential configured, no API calls by default, Phase 3A certified metadata-only.
+- IBM Quantum / Qiskit Runtime backend. Future provider stub/readiness work only until separately certified.
+- AWS Braket secondary backend. Future provider stub/readiness work only until separately certified.
 - Job 1: Pattern Recognition.
 - Job 2: Strategy Collapse / Ambiguity Score.
 - Weekly scheduler. Cadence metadata implemented; actual automation remains deferred.
 - Cockpit quantum status.
+- Phase 3A local certification. Implemented on 2026-05-23; release publication still requires a clean commit/push/deploy record.
+- Hardware enablement proposal. Documented only; no implementation authority granted.
 
 Exit gate:
 
@@ -478,6 +495,8 @@ Exit gate:
 
 Objective: turn observed system behaviour into an approved strategy document.
 
+Staged implementation plan: `docs/qadam-phase-4-implementation-plan.md`. Q4-0 Re-Entry Baseline and Safety Contract is complete in `docs/qadam-phase-4-q4-0-re-entry-baseline-audit-2026-05-23.md`; Q4-1 Phase 4 Artifact Schema is complete in `docs/qadam-phase-4-q4-1-artifact-schema-audit-2026-05-23.md`; Q4-2 Triple-Mirror Audit is complete in `docs/qadam-phase-4-q4-2-triple-mirror-audit-2026-05-23.md`; Q4-3 Data Veracity Audit is complete in `docs/qadam-phase-4-q4-3-data-veracity-audit-2026-05-23.md`; Q4-4 Trust Score Recalculation is complete in `docs/qadam-phase-4-q4-4-trust-score-recalculation-audit-2026-05-23.md`; Q4-5 Resource Registry Validation is complete in `docs/qadam-phase-4-q4-5-resource-registry-validation-audit-2026-05-23.md`; Q4-6 World-Model Lens Validation is complete in `docs/qadam-phase-4-q4-6-world-model-lens-validation-audit-2026-05-23.md`; Q4-7 Candidate Strategy Universe is complete in `docs/qadam-phase-4-q4-7-candidate-strategy-universe-audit-2026-05-23.md`; Q4-8 Manifested Strategy Draft is complete in `docs/qadam-phase-4-q4-8-manifested-strategy-draft-audit-2026-05-23.md`; Q4-9 Strategy Toggle Contract is complete in `docs/qadam-phase-4-q4-9-strategy-toggle-contract-audit-2026-05-23.md`; Q4-10 Fund Manager Approval Record is complete in `docs/qadam-phase-4-q4-10-fund-manager-approval-record-audit-2026-05-23.md`; Q4-11 Cockpit Strategy Visibility is complete in `docs/qadam-phase-4-q4-11-cockpit-strategy-visibility-audit-2026-05-23.md`; Q4-12 Phase 4 Certification is evaluated in `docs/qadam-phase-4-q4-12-phase-4-certification-audit-2026-05-23.md` and amended for Yahoo Finance plus Preference/PREF MCP source-promotion closeout in `docs/qadam-phase-4-data-source-closeout-audit-2026-05-24.md`. Q5-0 later logged explicit Fund Manager approval and certified Q4-12 in `docs/qadam-phase-5-q5-0-re-entry-gate-audit-2026-05-24.md`. Phase 4 can approve strategy, but it cannot create trade candidates, approve risk, stage/submit paper orders, write to brokers, enable quantum hardware calls, or enable live capital.
+
 Build:
 
 - Triple-Mirror Audit.
@@ -485,6 +504,7 @@ Build:
 - Trust Score recalculation.
 - Resource Registry validation.
 - World-model lens validation against observed outcomes.
+- Candidate Strategy Universe.
 - Manifested Strategy Document.
 - Strategy toggles.
 - Ramin approval logged in Event Log.
@@ -493,12 +513,70 @@ Exit gate:
 
 - Approved strategy document exists.
 - Active instruments, catalyst classes, source weights, model weights, quantum role, and risk assumptions are explicit.
-- Private world-model frames used by active strategies are marked as validated, provisional, or rejected.
+- Private world-model frames used by active strategies are marked as validated, provisional, rejected, or untestable.
 - No execution occurs before approval.
 
 ## 12. Phase 5 - Layer B Orchestration
 
 Objective: wire risk, policy, paper execution, alerts, and cockpit actions.
+
+Pre-handoff readiness: `docs/qadam-phase-5-layer-b-readiness-audit-2026-05-24.md`.
+The readiness gate writes `data/runtime/phase5_layer_b_readiness.json` and
+now reports `ready_for_phase5_layer_b_implementation` after explicit Fund
+Manager approval and Q4-12 certification. Phase 5 implementation may begin one
+stage at a time, but Layer B orchestration start remains false until the later
+Q5 contracts explicitly create and verify paper-order, broker, notification,
+and position-monitor gates.
+
+Dedicated staged plan:
+`docs/qadam-phase-5-layer-b-implementation-plan.md`. The plan splits Phase 5
+into Q5-0 through Q5-15. Q5-0 is complete in
+`docs/qadam-phase-5-q5-0-re-entry-gate-audit-2026-05-24.md`; Q5-1 is complete
+in `docs/qadam-phase-5-q5-1-artifact-schema-authority-ledger-audit-2026-05-24.md`;
+Q5-2 is complete in
+`docs/qadam-phase-5-q5-2-approval-policy-router-audit-2026-05-24.md`;
+Q5-3 is complete in
+`docs/qadam-phase-5-q5-3-risk-agent-paper-sizing-audit-2026-05-24.md`.
+Q5-4 is complete in
+`docs/qadam-phase-5-q5-4-kill-switch-ledger-audit-2026-05-24.md`.
+Q5-5 is complete in
+`docs/qadam-phase-5-q5-5-execution-adapter-status-audit-2026-05-24.md`.
+Q5-6 is complete in
+`docs/qadam-phase-5-q5-6-paper-order-staging-gate-audit-2026-05-24.md`.
+Q5-7 is complete in
+`docs/qadam-phase-5-q5-7-alpaca-paper-dry-run-audit-2026-05-24.md`.
+Q5-8 is complete in
+`docs/qadam-phase-5-q5-8-paper-submit-enablement-gate-audit-2026-05-24.md`.
+Q5-9 is complete in
+`docs/qadam-phase-5-q5-9-prediction-market-adapter-audit-2026-05-24.md`.
+Q5-10 is complete in
+`docs/qadam-phase-5-q5-10-telegram-notifier-audit-2026-05-24.md`.
+Q5-11 is complete in
+`docs/qadam-phase-5-q5-11-position-monitor-audit-2026-05-24.md`.
+Q5-12 is complete in
+`docs/qadam-phase-5-q5-12-signal-review-governance-actions-audit-2026-05-24.md`.
+Q5-13 is complete in
+`docs/qadam-phase-5-q5-13-functional-system-map-dashboard-audit-2026-05-24.md`.
+Q5-14 implementation harness is complete in
+`docs/qadam-phase-5-q5-14-end-to-end-paper-trade-drill-audit-2026-05-24.md`;
+its paper-submit approval unblock is recorded in
+`docs/qadam-phase-5-q5-14-exit-unblock-approval-audit-2026-05-24.md`, and its
+lifecycle exit gate is now passed after Q5E-9 in
+`docs/qadam-phase-5-q5e-9-execution-adapter-readiness-audit-2026-05-24.md`.
+Q5-15 certification evaluation is complete in
+`docs/qadam-phase-5-q5-15-phase-5-certification-audit-2026-05-24.md`, and it
+now reports `phase5_certified=True`, `phase5_exit_gate=True`,
+`phase6_handoff_allowed=True`, `phase7_planning_allowed=True`, and
+`phase7_proof_credit_allowed=False`. Phase 5 is complete for the handoff to
+Phase 6 - Learning Loop. Q5E-10 formalizes that closeout in
+`docs/qadam-phase-5-q5e-10-phase-6-handoff-closeout-audit-2026-05-24.md` and
+reports `phase6_learning_loop_plan_allowed=True` while
+`phase6_learning_loop_implementation_allowed=False`. Q5E-11 exposes that handoff
+in cockpit, Mission Control, and dashboard checks through
+`docs/qadam-phase-5-q5e-11-phase-6-handoff-visibility-audit-2026-05-24.md`.
+Broker POST calls, Alpaca POST calls, live endpoints, prediction-market writes,
+crypto-perps writes, live capital, autonomous execution, Phase 6 learning
+writes, knowledge-graph writes, and Phase 7 proof credit remain disabled.
 
 Build:
 
@@ -528,36 +606,556 @@ Exit gate:
 
 ## 13. Phase 6 - Learning Loop
 
-Objective: make Qadam improve without rewriting history.
+Objective: make Qadam improve from paper outcomes without rewriting history,
+silently changing policy, or treating Phase 5 test lifecycle evidence as Phase
+7 proof.
+
+Dedicated staged plan: `docs/qadam-phase-6-learning-loop-implementation-plan.md`.
+The plan splits Phase 6 into Q6-0 through Q6-17, beginning with a re-entry gate
+that must keep implementation and learning-write authority closed before any
+Phase 6 module starts.
+
+Current handoff state after Q6-17:
+
+- Q5E-11 exposes the Q5E-10 handoff through cockpit, Mission Control, and the
+  dashboard.
+- Q6-0 is complete in
+  `docs/qadam-phase-6-q6-0-re-entry-gate-audit-2026-05-24.md` and writes
+  `data/runtime/phase6_readiness.json`.
+- Q6-1 is complete in
+  `docs/qadam-phase-6-q6-1-artifact-schema-authority-ledger-audit-2026-05-24.md`
+  and defines the shared Phase 6 schema, authority ledger, event contracts,
+  source posture, provenance rules, and dishonest-payload probes.
+- Q6-2 is complete in
+  `docs/qadam-phase-6-q6-2-learning-source-intake-audit-2026-05-24.md`
+  and writes `data/runtime/phase6_learning_source_intake.json`.
+- Q6-3 is complete in
+  `docs/qadam-phase-6-q6-3-closed-trade-outcome-schema-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_closed_trade_outcome.json`.
+- Q6-4 is complete in
+  `docs/qadam-phase-6-q6-4-postmortem-packet-contract-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_postmortem_packet_contract.json`.
+- Q6-5 is complete in
+  `docs/qadam-phase-6-q6-5-postmortem-agent-draft-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_postmortem_draft.json`.
+- Q6-6 is complete in
+  `docs/qadam-phase-6-q6-6-analysis-packets-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_postmortem_analysis_packets.json`.
+- Q6-7 is complete in
+  `docs/qadam-phase-6-q6-7-reducer-review-gate-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_postmortem_reduced_review.json`.
+- Q6-8 is complete in
+  `docs/qadam-phase-6-q6-8-outcome-linker-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_outcome_links.json`.
+- Q6-9 is complete in
+  `docs/qadam-phase-6-q6-9-learning-approval-ledger-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_learning_approval_ledger.json`.
+- Q6-10 is complete in
+  `docs/qadam-phase-6-q6-10-knowledge-graph-staged-writes-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_knowledge_graph_staged_writes.json`.
+- Q6-11 is complete in
+  `docs/qadam-phase-6-q6-11-knowledge-graph-read-path-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_knowledge_graph_read_view.json`.
+- Q6-12 is complete in
+  `docs/qadam-phase-6-q6-12-model-weight-update-proposals-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_model_weight_update_proposals.json`.
+- Q6-13 is complete in
+  `docs/qadam-phase-6-q6-13-trust-score-update-proposals-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_trust_score_update_proposals.json`.
+- Q6-14 is complete in
+  `docs/qadam-phase-6-q6-14-shadow-strategy-runner-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_shadow_strategy_replay.json`.
+- Q6-15 is complete in
+  `docs/qadam-phase-6-q6-15-architect-learning-summary-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_architect_learning_summary.json`.
+- Q6-16 is complete in
+  `docs/qadam-phase-6-q6-16-journal-cockpit-visibility-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_cockpit_learning_visibility.json`.
+- Q6-17 is complete in
+  `docs/qadam-phase-6-q6-17-phase-6-certification-audit-2026-05-25.md`
+  and writes `data/runtime/phase6_certification.json`.
+- Q5-14 is complete with `paper_trade_drill_complete=True`,
+  `phase5_paper_trade_drill_exit_gate_passed=True`, and `blocker_count=0`.
+- Q5-15 is certified with `phase5_certified=True`, `phase5_exit_gate=True`,
+  `phase6_handoff_allowed=True`, `phase7_planning_allowed=True`, and
+  `phase7_proof_credit_allowed=False`.
+- Q5E-10/Q5E-11 allows only Phase 6 planning:
+  `phase6_learning_loop_plan_allowed=True`,
+  `phase6_learning_loop_implementation_allowed=False`,
+  `phase6_learning_write_allowed=False`,
+  `phase6_knowledge_graph_write_allowed=False`, and
+  `live_capital_enabled_count=0`.
+- Q6-0 reports `phase6_re_entry_gate_passed=True`,
+  `q6_1_artifact_schema_stage_allowed=True`, and
+  `unsafe_write_counter_total=0`, while keeping
+  `phase6_learning_loop_implementation_allowed=False`,
+  `phase6_postmortem_ingestion_allowed=False`,
+  `phase6_learning_write_allowed=False`,
+  `phase6_knowledge_graph_write_allowed=False`, and
+  `phase7_proof_credit_allowed=False`.
+- Q6-1 reports `phase6_artifact_schema_status=ok`,
+  `phase6_artifact_contract_count=17`, `phase6_authority_field_count=20`,
+  `phase6_unsafe_counter_field_count=15`, `phase6_event_contract_count=6`,
+  `phase6_sample_authority_enabled_count=0`, and
+  `phase6_sample_unsafe_counter_total=0`.
+- Q6-2 reports `phase6_learning_source_intake_status=read_only`,
+  `postmortem_due_count=1`, `source_ref_count=20`,
+  `required_source_present_count=11`, `optional_source_present_count=9`,
+  `learning_write_created=False`, `knowledge_graph_write_created=False`,
+  `phase5_hash_mutation_count=0`, `phase7_proof_credit_allowed=False`, and
+  `unsafe_write_counter_total=0`.
+- Q6-3 reports `phase6_closed_trade_outcome_status=read_only`,
+  `outcome_status=closed_trade_outcome_normalized`, `outcome_record_count=1`,
+  `closed_trade_ref=q5e7-closed-trade-crude_oil_energy_security_disruption`,
+  `broker_truth_separated=True`, `unknown_field_count=5`,
+  `deferred_field_count=6`, `source_hash_mutation_count=0`,
+  `learning_write_allowed=False`, `knowledge_graph_write_created=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-4 reports `phase6_postmortem_packet_contract_status=schema_only`,
+  `packet_section_count=13`, `assertion_source_refs_required=True`,
+  `uncited_conclusion_allowed=False`, `narrative_only_allowed=False`,
+  `postmortem_draft_created=False`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`, `source_hash_mutation_count=0`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-5 reports `phase6_postmortem_agent_status=draft`,
+  `postmortem_draft_created=True`, `postmortem_approved=False`,
+  `approval_state=not_requested`, `packet_section_count=13`,
+  `source_assertion_count=20`, `unknown_marker_count=5`,
+  `deferred_marker_count=6`, `missing_ref_count=3`, `llm_used=False`,
+  `learning_write_created=False`, `knowledge_graph_write_created=False`,
+  `model_weight_update_created=False`, `trust_score_update_created=False`,
+  `policy_mutation_created=False`, `strategy_mutation_created=False`,
+  `source_hash_mutation_count=0`, `phase7_proof_credit_allowed=False`, and
+  `unsafe_write_counter_total=0`.
+- Q6-6 reports `phase6_postmortem_analysis_status=draft`,
+  `analysis_state=deterministic_analysis_packets_created`,
+  `analysis_packet_count=5`, catalyst/pricing/regime/execution/override packet
+  coverage, `claim_count=10`, `all_claims_cited=True`,
+  `confidence_packet_count=5`, `uncertainty_count=5`,
+  `missing_evidence_count=9`, `postmortem_approved=False`,
+  `approval_state=not_requested`, `llm_used=False`,
+  `learning_write_created=False`, `knowledge_graph_write_created=False`,
+  `model_weight_update_created=False`, `trust_score_update_created=False`,
+  `policy_mutation_created=False`, `strategy_mutation_created=False`,
+  `source_hash_mutation_count=0`, `phase7_proof_credit_allowed=False`, and
+  `unsafe_write_counter_total=0`.
+- Q6-7 reports `phase6_postmortem_reducer_status=pending_review`,
+  `review_state=review_required`, `governance_state=review_required`,
+  `reduced_postmortem_created=True`, `classification_record_count=5`,
+  useful=2, harmful=0, neutral=1, untestable=2, `review_queue_count=5`,
+  `postmortem_approved=False`, `approval_state=not_requested`,
+  `approval_logged=False`, `reviewer_label=None`, `write_allowed=False`,
+  `learning_action_count=0`, `learning_action_approved_count=0`,
+  `learning_write_created=False`, `knowledge_graph_write_created=False`,
+  `model_weight_update_created=False`, `trust_score_update_created=False`,
+  `policy_mutation_created=False`, `strategy_mutation_created=False`,
+  `source_hash_mutation_count=0`, `phase7_proof_credit_allowed=False`, and
+  `unsafe_write_counter_total=0`.
+- Q6-8 reports `phase6_outcome_linker_status=linked`,
+  `source_trade_ref=q5e7-closed-trade-crude_oil_energy_security_disruption`,
+  `source_review_state=review_required`,
+  `complete_outcome_link_created=True`, `linked_ref_count=21`,
+  `required_link_present_count=12`, `missing_required_link_count=0`,
+  `optional_link_present_count=9`, `missing_optional_link_count=0`,
+  `reference_only_link_count=21`, `raw_payload_copied_count=0`,
+  `private_payload_copied_count=0`, `local_path_exposed_count=0`,
+  `secret_ref_exposed_count=0`, `source_hash_mutation_count=0`,
+  `link_write_allowed=False`, `postmortem_approved=False`,
+  `approval_state=not_requested`, `approval_logged=False`,
+  `learning_action_count=0`, `learning_action_approved_count=0`,
+  `learning_write_created=False`, `knowledge_graph_write_created=False`,
+  `model_weight_update_created=False`, `trust_score_update_created=False`,
+  `policy_mutation_created=False`, `strategy_mutation_created=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-9 reports `phase6_learning_approval_status=deferred`,
+  `approval_state=deferred`, `approval_logged=True`,
+  `reviewer_label=fund_manager_ramin`,
+  `approval_event_log_ref=data/runtime/phase6_learning_approval_ledger_events.jsonl`,
+  `default_approval_exists=False`,
+  `missing_approval_blocks_downstream=True`, `source_review_state=review_required`,
+  `source_outcome_link_status=linked`, `proposed_action_count=5`,
+  `approved_action_count=0`, `rejected_action_count=0`,
+  `deferred_action_count=5`, `pending_review_action_count=0`,
+  `learning_action_count=0`, `learning_action_approved_count=0`,
+  `downstream_advance_allowed=False`, `downstream_blocked_gate_count=4`,
+  `knowledge_graph_staged_write_allowed=False`,
+  `model_weight_update_proposal_allowed=False`,
+  `trust_score_update_proposal_allowed=False`,
+  `strategy_learning_proposal_allowed=False`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`, `model_weight_update_created=False`,
+  `trust_score_update_created=False`, `policy_mutation_created=False`,
+  `strategy_mutation_created=False`, `source_hash_mutation_count=0`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-10 reports `phase6_knowledge_graph_staging_status=blocked`,
+  `kg_write_state=blocked_pending_learning_approval`,
+  `source_approval_state=deferred`, `source_approved_action_count=0`,
+  `candidate_action_count=5`, `blocked_action_count=5`,
+  `staged_entry_count=0`, `staged_write_allowed=False`,
+  `knowledge_graph_staged_write_allowed=False`,
+  `missing_approval_blocks_staging=True`,
+  `knowledge_graph_commit_allowed=False`, `chroma_write_allowed=False`,
+  `graph_backend_write_allowed=False`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`, `actual_graph_commit_created=False`,
+  `chroma_write_created=False`, `graph_backend_write_created=False`,
+  `destructive_overwrite_allowed=False`, `supersession_required=True`,
+  `rollback_available=True`, `source_hash_mutation_count=0`,
+  `phase5_source_artifacts_mutated=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-11 reports `phase6_knowledge_graph_read_path_status=read_only`,
+  `read_view_state=read_only_seed_context_available`,
+  `source_staging_status=blocked`, `source_approval_state=deferred`,
+  `source_staged_entry_count=0`, `source_blocked_action_count=5`,
+  `result_count=1`, `seed_result_count=1`, `staged_result_count=0`,
+  `approved_learning_entry_count=0`, `search_enabled=True`,
+  `crude_oil_search_result_count=1`, `paper_lifecycle_search_result_count=1`,
+  `write_allowed=False`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`,
+  `chroma_write_created=False`, `graph_backend_write_created=False`,
+  `raw_payload_copied_count=0`, `private_payload_copied_count=0`,
+  `local_path_exposed_count=0`, `secret_ref_exposed_count=0`,
+  `source_hash_mutation_count=0`, `phase5_source_artifacts_mutated=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-12 reports `phase6_model_weight_updates_status=blocked`,
+  `proposal_state=blocked_pending_learning_approval`,
+  `source_read_path_status=read_only`, `source_approval_state=deferred`,
+  `source_approved_learning_entry_count=0`, `source_staged_result_count=0`,
+  `source_seed_result_count=1`, `proposal_record_count=1`,
+  `active_proposal_count=0`, `blocked_proposal_count=1`,
+  `approved_evidence_count=0`, `bayesian_update_count=0`,
+  `before_weight_count=7`, `after_weight_count=7`, `before_weight_sum=1.0`,
+  `after_weight_sum=1.0`, `weight_delta_total_abs=0.0`,
+  `weights_normalized=True`, `model_weight_update_proposal_allowed=False`,
+  `model_weight_update_proposed=False`, `apply_allowed=False`,
+  `model_weight_update_allowed=False`, `model_weight_update_applied=False`,
+  `active_model_weight_mutated=False`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`,
+  `chroma_write_created=False`, `graph_backend_write_created=False`,
+  `model_weight_update_created=False`, `trust_score_update_created=False`,
+  `policy_mutation_created=False`, `strategy_mutation_created=False`,
+  `source_hash_mutation_count=0`, `phase5_source_artifacts_mutated=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-13 reports `phase6_trust_score_updates_status=blocked`,
+  `proposal_state=blocked_pending_learning_approval`,
+  `source_model_weight_status=blocked`, `source_approval_state=deferred`,
+  `source_approved_evidence_count=0`, `canonical_source_score_count=35`,
+  `supplemental_policy_record_count=2`, `proposal_record_count=35`,
+  `active_proposal_count=0`, `blocked_proposal_count=35`,
+  `approved_evidence_count=0`, `trust_score_update_count=0`,
+  `before_score=0.539143`, `after_score=0.539143`,
+  `score_delta_total_abs=0.0`, `trust_score_update_proposal_allowed=False`,
+  `trust_score_update_proposed=False`, `apply_allowed=False`,
+  `trust_score_update_allowed=False`, `trust_score_update_applied=False`,
+  `active_trust_score_mutated=False`, `canonical_rank_mutated=False`,
+  `source_quorum_credit_granted=False`, `single_source_verdict_rejected=True`,
+  `supplemental_only_verdict_rejected=True`,
+  `yahoo_finance_score_included=False`,
+  `preference_mcp_source_quorum_credit_allowed=False`,
+  `learning_write_created=False`, `knowledge_graph_write_created=False`,
+  `knowledge_graph_commit_created=False`, `chroma_write_created=False`,
+  `graph_backend_write_created=False`, `model_weight_update_created=False`,
+  `trust_score_update_created=False`, `policy_mutation_created=False`,
+  `strategy_mutation_created=False`, `source_hash_mutation_count=0`,
+  `phase5_source_artifacts_mutated=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-14 reports `phase6_shadow_strategy_runner_status=blocked`,
+  `replay_state=blocked_pending_learning_approval`,
+  `source_trust_score_status=blocked`,
+  `source_approval_state=deferred`,
+  `source_approved_evidence_count=0`, `approved_fact_count=0`,
+  `variant_record_count=3`, `active_replay_count=0`,
+  `blocked_replay_count=3`, `evaluated_variant_count=0`,
+  `actual_vs_hypothetical_comparison_count=3`,
+  `evaluated_comparison_count=0`, `replay_output_exists=True`,
+  `shadow_strategy_replay_allowed=False`,
+  `shadow_strategy_replay_created=False`,
+  `trade_candidate_creation_allowed=False`,
+  `trade_candidate_created=False`, `trade_candidate_created_count=0`,
+  `order_creation_allowed=False`, `paper_order_allowed=False`,
+  `paper_order_allowed_count=0`, `paper_order_created=False`,
+  `paper_order_created_count=0`, `execution_allowed=False`,
+  `execution_allowed_count=0`, `execution_intent_created=False`,
+  `execution_intent_created_count=0`, `broker_post_allowed=False`,
+  `alpaca_post_allowed=False`, `broker_post_called_count=0`,
+  `alpaca_post_called_count=0`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`,
+  `knowledge_graph_commit_created=False`, `chroma_write_created=False`,
+  `graph_backend_write_created=False`, `model_weight_update_created=False`,
+  `trust_score_update_created=False`, `policy_mutation_created=False`,
+  `strategy_mutation_created=False`, `source_hash_mutation_count=0`,
+  `phase5_source_artifacts_mutated=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-15 reports `phase6_architect_learning_status=blocked`,
+  `summary_state=blocked_pending_learning_approval`,
+  `source_shadow_replay_status=blocked`,
+  `source_approval_state=deferred`, `source_approved_fact_count=0`,
+  `approved_fact_count=0`, `architect_summary_created=True`,
+  `recommendation_count=4`, `recommendation_record_count=4`,
+  `active_recommendation_count=0`, `blocked_recommendation_count=4`,
+  `governance_pending_count=4`, `policy_recommendation_count=1`,
+  `strategy_recommendation_count=1`, `risk_limit_recommendation_count=1`,
+  `source_model_trust_recommendation_count=1`,
+  `recommendation_apply_allowed=False`, `policy_mutation_allowed=False`,
+  `policy_mutation_created=False`, `strategy_mutation_allowed=False`,
+  `strategy_mutation_created=False`, `risk_limit_update_allowed=False`,
+  `risk_limit_update_created=False`, `source_weight_update_allowed=False`,
+  `source_weight_update_created=False`, `model_weight_update_allowed=False`,
+  `model_weight_update_created=False`, `trust_score_update_allowed=False`,
+  `trust_score_update_created=False`, `learning_write_created=False`,
+  `knowledge_graph_write_created=False`,
+  `knowledge_graph_commit_created=False`, `chroma_write_created=False`,
+  `graph_backend_write_created=False`, `source_hash_mutation_count=0`,
+  `phase5_source_artifacts_mutated=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`.
+- Q6-16 reports `phase6_cockpit_visibility_status=visible`,
+  `visibility_state=backend_derived_deferred_learning_visible`,
+  `learning_state=deferred_learning_visible`,
+  `backend_derived=True`, `display_derived_from_backend=True`,
+  `dashboard_uses_backend_status=True`, `ui_inferred_readiness_count=0`,
+  `backend_parity_error_count=0`, `postmortem_due_count=1`,
+  `postmortem_resolved_count=0`, `approval_state=deferred`,
+  `pending_review_action_count=0`, `deferred_action_count=5`,
+  `explicitly_deferred_action_count=5`,
+  `learning_actions_review_satisfied=True`,
+  `staged_graph_entry_count=0`, `knowledge_graph_read_result_count=1`,
+  `model_weight_proposal_count=1`, `trust_score_proposal_count=35`,
+  `shadow_replay_variant_count=3`, `architect_recommendation_count=4`,
+  `blocked_authority_count=20`, `raw_payload_exposed_count=0`,
+  `private_payload_exposed_count=0`, `local_path_exposed_count=0`,
+  `secret_ref_exposed_count=0`, `broker_identifier_exposed_count=0`,
+  `phase6_learning_write_allowed=False`,
+  `phase6_knowledge_graph_write_allowed=False`,
+  `phase6_model_weight_update_allowed=False`,
+  `phase6_trust_score_update_allowed=False`,
+  `phase6_architect_policy_mutation_allowed=False`,
+  `phase7_proof_credit_allowed=False`, `live_capital_enabled=False`, and
+  `unsafe_write_counter_total=0`.
+- Q6-17 reports `phase6_certification_status=certified`,
+  `stage_status=phase6_certified`,
+  `phase6_certified=True`, `phase6_exit_gate=True`,
+  `phase7_demo_proof_planning_allowed=True`,
+  `phase7_proof_credit_allowed=False`,
+  `phase5_test_trades_count_for_phase7=False`, `input_gate_count=17`,
+  `input_gate_passed_count=17`, `input_gate_blocked_count=0`,
+  `certification_blocker_count=0`,
+  `postmortem_due_count=1`, `postmortem_resolved_count=0`,
+  `postmortem_explicitly_deferred_count=1`, `unresolved_postmortem_count=0`,
+  `reviewed_postmortem_coverage_satisfied=True`,
+  `approval_state=deferred`, `proposed_action_count=5`,
+  `approved_action_count=0`, `explicitly_deferred_action_count=5`,
+  `pending_review_action_count=0`, `learning_actions_review_satisfied=True`,
+  `knowledge_graph_requirement_satisfied=True`,
+  `knowledge_graph_read_result_count=1`, `model_weight_proposal_count=1`,
+  `trust_score_proposal_count=35`, `shadow_replay_variant_count=3`,
+  `architect_recommendation_count=4`, `cockpit_visibility_status=visible`,
+  `blocking_unsafe_count=0`, and `unsafe_write_counter_total=0`.
+- The first learning seed is a guarded local paper lifecycle for
+  `crude_oil_energy_security_disruption`: staged order, dry-run preview,
+  guarded local submitted paper order, local broker receipt, mirrored submitted
+  order, guarded local closed trade, and postmortem-due marker. This is Phase 5
+  test data and must not count toward Phase 7 proof.
+
+Entry rule:
+
+- Q6-0 must pass before Q6-1 begins. It is now passed, but it allows only Q6-1
+  schema and authority-ledger work; it does not enable learning writes.
+- Phase 6 may read Phase 5 artifacts, Event Log records, cockpit status,
+  postmortem-due markers, Strategy Lead reviews, Signal Integrity reviews,
+  Risk Agent reviews, Execution Policy decisions, Position Monitor records, and
+  source provenance, but it must not mutate those Phase 5 source records.
+- Any new learning output must be append-only, Event Log backed, provenance
+  linked, public-safe in cockpit, and reversible by superseding record rather
+  than destructive rewrite.
+- The first implementation stages must keep broker POST, Alpaca POST, live
+  endpoints, prediction-market writes, crypto-perps writes, live capital,
+  autonomous execution, Phase 7 proof credit, policy mutation, and hidden model
+  weight changes disabled.
 
 Build:
 
-- Postmortem Agent.
-- Closed-trade schema.
-- Outcome linker.
-- Knowledge Graph write/read path.
-- Bayesian model weight updates.
-- Trust Score monthly updates.
-- Shadow Strategy runner.
-- Architect Agent summaries.
-- Trade Journal and Postmortems cockpit pages.
+- Q6-0 modular implementation plan and Phase 6 re-entry gate.
+- Phase 6 artifact schema, authority ledger, source refs, and audit/event
+  contract.
+- Postmortem Agent that consumes `postmortem_due` markers and drafts
+  postmortem packets without changing scores or policy.
+- Closed-trade and outcome schema covering realized outcome, expected thesis,
+  catalyst path, risk decision, sizing, execution path, slippage/receipt data,
+  source evidence, and invalidation.
+- Outcome linker that connects the closed trade to Signal Integrity, Strategy
+  Lead, Risk Agent, Execution Policy, paper order, position monitor,
+  postmortem-due, Yahoo Finance market-confirmation context, Preference/PREF
+  MCP provenance context, and optional Head of Quant shadow annotations.
+- Human/governance review gate for postmortem approval before any Knowledge
+  Graph, model-weight, trust-score, or strategy-learning write is allowed.
+- Knowledge Graph write/read path for approved resolved catalyst entries,
+  using append-only records with source refs and no destructive overwrite.
+- Bayesian model-weight update proposals in shadow mode first, with before/after
+  deltas, confidence, replay evidence, and approval state.
+- Trust Score monthly update proposals based on resolved source usefulness,
+  error, staleness, provenance quality, and corroboration history.
+- Shadow Strategy runner that can replay "what would have happened" variants
+  and propose adjustments, but cannot create trade candidates or orders.
+- Architect Agent learning summaries that recommend policy or strategy changes
+  but cannot silently mutate policy, source weights, model weights, trust
+  scores, or risk limits.
+- Trade Journal and Postmortems cockpit pages that are backend-derived and show
+  learning state, review state, unresolved postmortems, proposed updates, and
+  rejected/approved changes without implying live execution.
+- Phase 6 certification and Phase 7 handoff gate.
+
+Data-source rules:
+
+- Yahoo Finance remains supplemental market-confirmation context only. It can
+  help evaluate price/volume context around a trade, but cannot become fill
+  truth, broker echo, receipt evidence, reconciliation truth, or a single-source
+  learning verdict.
+- Preference/PREF MCP remains a supplemental multi-source data plane. Polymarket,
+  Kalshi, SEC, vessel, weather, wallet, or other PREF-derived context can enrich
+  postmortems only with tool/source provenance and only under the existing
+  source-promotion policy; it does not create source-quorum credit by itself.
+- Q-CTRL/quantum outputs remain shadow annotations unless a later hardware gate
+  explicitly changes that role; they cannot become execution proof or learning
+  truth on their own.
+- Learning must distinguish execution evidence, market context, source
+  provenance, model interpretation, and governance approval as separate fields.
 
 Exit gate:
 
-- Every closed paper trade has a postmortem.
-- Knowledge Graph contains resolved catalyst entries.
-- Trust Scores and model weights update with audit trail.
-- World-model frames are scored as helpful, harmful, neutral, or untestable.
+- Every closed paper trade in Phase 6 scope has a reviewed postmortem, and
+  every `postmortem_due` marker is either resolved or explicitly deferred with
+  reason and next-review date.
+- Knowledge Graph contains approved resolved catalyst entries with source refs,
+  timestamps, provenance, linked trade/outcome ids, and supersession semantics.
+- Trust Score and model-weight update proposals have before/after audit trails,
+  replay evidence, reviewer state, Event Log entries, and rollback/supersession
+  paths.
+- World-model frames are scored as helpful, harmful, neutral, or untestable
+  only when tied to resolved evidence; private priors remain context, not proof.
+- Shadow Strategy runner outputs are replay/proposal only and cannot create
+  trade candidates, approvals, paper orders, broker writes, or live actions.
 - Architect Agent recommends; it does not silently change policy.
+- Cockpit and dashboard expose Phase 6 learning state from backend artifacts
+  only, with zero UI-inferred readiness.
+- Phase 5 test trades remain excluded from Phase 7 proof credit.
+- Phase 6 certification may allow Phase 7 demo-proof planning, but does not by
+  itself enable live capital, broker writes, prediction-market writes,
+  crypto-perps writes, or Phase 7 proof credit.
 
 ## 14. Phase 7 - Demo Proof
 
 Objective: prove the autonomous paper system before live capital.
 
+Dedicated staged plan: `docs/qadam-phase-7-demo-proof-implementation-plan.md`.
+The plan updates the old 90-day/two-trade cadence into a 30-consecutive-day
+demo proof harness with three proof trades per proof week where qualified
+setups exist. No trade may be forced to satisfy the cadence target.
+
+Paper operational target: `docs/qadam-paper-operational-mode-plan.md` defines
+the next control track. The goal is a full end-to-end autonomous paper loop:
+source observations, reasoning, Head-of-Quant/Q-CTRL consultation, evidence
+gates, risk, staging, Alpaca paper submit, lifecycle monitoring, Telegram
+notification, postmortem, performance, and learning review. Paper mode is the
+high-fidelity simulation of the intended Qadam reality: the decision/provider
+stack should match live mode, while the venue and capital boundary stay paper
+only. Live capital, live endpoints, live credentials, prediction-market writes,
+crypto-perps writes, UI-to-broker shortcuts, LLM-to-broker shortcuts, and live
+promotion remain disabled.
+
+Current PaperOps status:
+
+- PaperOps-0 readiness gate is implemented in
+  `orchestrator/paper_operational_readiness.py` and
+  `scripts/check_paper_operational_readiness.py`.
+- PaperOps-1 cycle runner is implemented in
+  `scripts/run_paper_operational_cycle.py`.
+- PaperOps-Q Q-CTRL paper consultation gate is implemented in
+  `orchestrator/paperops_qctrl_consultation.py` and
+  `scripts/check_paperops_qctrl_consultation.py`. Fire Opal is installed and
+  SDK importability is true; the explicit flagged provider probe records a
+  sanitized provider-call attempt, but successful consultation remains blocked
+  by Q-CTRL account/product subscription access.
+- PaperOps-2 explicit Alpaca paper POST gate is implemented in
+  `orchestrator/paperops_alpaca_paper_post.py` and
+  `scripts/check_paperops_alpaca_paper_post.py`. The default path is
+  non-submit; a real Alpaca paper POST requires paper mode, live capital
+  disabled, `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true`, paper endpoint
+  classification, paper credentials, an eligible Q7 guarded submit record,
+  source Event Log prewrite, pre-trade snapshot, Phase 7 idempotency, and the
+  explicit `--submit-paper-order` CLI flag.
+- PaperOps-3 paper lifecycle poller is implemented in
+  `orchestrator/paperops_paper_lifecycle_poller.py` and
+  `scripts/check_paperops_paper_lifecycle_poller.py`. It consumes only
+  successful PaperOps-2 submitted paper orders, writes a sanitized read-only
+  lifecycle readback artifact, and requires the explicit `--poll-paper-orders`
+  CLI flag before any Alpaca paper GET.
+- PaperOps-4 guarded paper exit path is implemented in
+  `orchestrator/paperops_paper_exit_path.py` and
+  `scripts/check_paperops_paper_exit_path.py`. It consumes only PaperOps-3
+  open-position readbacks, writes a sanitized paper-exit artifact, and requires
+  `QADAM_ALPACA_PAPER_EXIT_ENABLED=true`, paper endpoint classification, paper
+  credentials, Event Log prewrite, and the explicit `--execute-paper-exit` CLI
+  flag before any Alpaca paper position close.
+- PaperOps-5 notification and review is implemented in
+  `orchestrator/paperops_notification_review.py` and
+  `scripts/check_paperops_notification_review.py`. It renders seven
+  public-safe review records for PaperOps readiness, submitted paper orders,
+  broker receipts, open positions, paper exit-path state, closed trades, and
+  postmortem due markers. Telegram remains notify-only, dry-run by default, and
+  command-disabled; live-send requires a separate send-test approval and is not
+  used by the default PaperOps cycle.
+- PaperOps-6 30-day paper run operations is implemented in
+  `orchestrator/paperops_30_day_operations.py` and
+  `scripts/check_paperops_30_day_operations.py`. It binds the active Phase 7
+  30-day paper window to the existing hourly Codex automation, validates the
+  scheduler prompt, records PaperOps cycle state, keeps the cockpit as the
+  public-safe operating mirror, and rejects backfill, simulated time, forced
+  trades, broker writes, live endpoints, live credentials, live capital,
+  Telegram command paths, live notification sends, and Phase 7 proof credit.
+- External trading strategy notes are now integrated as decision context through
+  `orchestrator/strategy_research_intake.py`, Strategy Lead shadow review, the
+  Phase 4 candidate strategy universe, and PaperOps readiness. This gives Qadam
+  four structured research candidates without granting trade, broker, Q-CTRL, or
+  live-capital authority.
+- Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
+  23/23 commands passing: paper mode is safe to continue, the Phase 7 run is
+  active, the Head-of-Quant oracle can run in its current non-provider mode,
+  broker/Alpaca POST counters remain zero, PaperOps-2 reports
+  `disabled_pending_enablement`, PaperOps-3 reports
+  `ready_no_submitted_paper_orders`, PaperOps-4 reports
+  `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
+  PaperOps-6 reports `operations_active`, and the remaining blockers include the
+  disabled PaperOps flag, the disabled Alpaca paper POST path/no eligible Q7
+  guarded submit record, the disabled Alpaca paper exit path/no PaperOps-3
+  open-position readback, and Q-CTRL paper-consultation product access required
+  for full paper-reality parity.
+- The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
+  day `2`, with completed calendar days `1`, calendar days remaining `29`,
+  `qualified_setup_count=0`, `submitted_paper_order_count=0`, and
+  `closed_proof_trade_count=0`. This is a valid no-trade state because no
+  Q7-qualified setups exist.
+- The existing hourly automation is now `Qadam PaperOps 30-Day Runner`, remains
+  `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PaperOps-6
+  operations check, Phase 7 demo-run check, Phase 7 certification check,
+  live-promotion review, and cockpit status export.
+- The next operational step is to keep the PaperOps runner active through the
+  actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
+  where Q7-qualified setups exist, and resolve PaperOps-Q product access plus
+  PaperOps-2/PaperOps-4 enablement only after the explicit paper-submit and
+  paper-exit prerequisites exist.
+
 Build:
 
-- 90-day demo proof harness.
+- 30-day demo proof harness.
 - Test-mode auto-approval after gates pass.
+- Qualified setup ledger.
+- Weekly proof cadence tracker.
 - Performance evaluator.
 - Override detector.
 - 100-trade maturity tracker.
@@ -565,24 +1163,596 @@ Build:
 
 Operating rules:
 
-- 90 consecutive calendar days.
+- 30 consecutive calendar days.
 - £1000 Alpaca paper account.
-- Two proof trades per week where qualified setups exist.
+- Three proof trades per week where qualified setups exist.
 - No forced trades.
+- The weekly target is `min(3, qualified_setup_count)`, with policy/risk/venue
+  blocks and no-trade rationale recorded explicitly.
 - Max drawdown <= 20%.
 - Zero manual trade-level overrides.
-- 100 closed trades is the mature benchmark.
+- 100 closed trades remains the mature statistical benchmark.
+- A completed 30-day run with fewer than 100 closed proof trades must be marked
+  statistically immature.
+- Phase 5 test trades and Q6 deferred-learning artifacts do not count as Phase
+  7 proof.
 - All saved proof data remains local on the MacBook.
 
 Exit gate:
 
-- 90-day run complete.
+- 30-day run complete.
+- Weekly qualified-setup cadence satisfied or explicitly explained without
+  forced trades.
 - Expectancy positive after costs.
 - Drawdown within cap.
 - No manual trade-level overrides.
 - Postmortems exist for all closed trades.
 - 100-trade benchmark met, or result marked statistically immature.
 - Ramin completes structured live-promotion review.
+
+Current handoff state after Q7-12:
+
+- Q7-0 is complete in
+  `docs/qadam-phase-7-q7-0-re-entry-operating-rules-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_readiness.json`.
+- Q7-0 reports `phase7_re_entry_gate_passed=True`,
+  `phase7_harness_day_count=30`,
+  `phase7_consecutive_calendar_days_required=True`,
+  `phase7_weekly_proof_trade_target=3`,
+  `phase7_weekly_target_where_qualified_setups_exist=True`,
+  `phase7_no_forced_trades=True`,
+  `phase7_mature_closed_trade_benchmark=100`,
+  `phase7_statistical_immaturity_allowed=True`,
+  `phase7_proof_credit_allowed=False`,
+  `phase5_test_trades_count_for_phase7=False`,
+  `phase7_harness_started=False`,
+  `phase7_demo_proof_implementation_allowed=False`,
+  `phase7_proof_trade_execution_allowed=False`,
+  `live_capital_enabled=False`,
+  `manual_trade_level_override_allowed=False`,
+  `unsafe_write_counter_total=0`, and `blocker_count=0`.
+- Q7-1 is complete in
+  `docs/qadam-phase-7-q7-1-artifact-schema-authority-ledger-audit-2026-05-25.md`.
+- Q7-1 defines 19 Phase 7 proof artifact contracts, 19 statuses, 20
+  authority flags, 14 unsafe counters, and 18 Event Log categories.
+- Q7-1 reports `phase7_artifact_schema_status=ok`,
+  `phase7_sample_error_count=0`,
+  `phase7_sample_authority_enabled_count=0`,
+  `phase7_sample_unsafe_counter_total=0`,
+  `phase7_sample_proof_contract_status=validated`,
+  `phase7_sample_source_posture_status=validated`,
+  `phase7_sample_provenance_status=validated`, and
+  `phase7_sample_event_contract_status=validated`.
+- Yahoo Finance and Preference/PREF MCP remain supplemental-only for Phase 7
+  proof; Q-CTRL remains shadow annotation only; Phase 5 lifecycle records and
+  Q6 deferred-learning artifacts remain excluded from Phase 7 proof credit.
+- Q7-1 grants no proof trade, proof credit, broker POST, live endpoint,
+  manual trade-level override, or live capital authority.
+- Q7-2 is complete in
+  `docs/qadam-phase-7-q7-2-calendar-harness-audit-2026-05-25.md` and writes
+  `data/runtime/phase7_calendar_harness.json`.
+- Q7-2 reports `phase7_calendar_status=scheduled`,
+  `phase7_calendar_stage_status=phase7_calendar_harness_scheduled`,
+  `phase7_calendar_day_record_count=30`,
+  `phase7_calendar_record_present_count=30`,
+  `phase7_calendar_consecutive_calendar_days_validated=True`,
+  `phase7_calendar_proof_week_count=5`,
+  `phase7_calendar_full_proof_week_count=4`,
+  `phase7_calendar_partial_proof_week_count=1`,
+  `phase7_calendar_partial_week_trade_pressure_allowed=False`,
+  `phase7_calendar_weekly_proof_trade_target=3`,
+  `phase7_calendar_no_forced_trades=True`,
+  `phase7_calendar_harness_started=False`,
+  `phase7_calendar_phase7_demo_day_count=0`,
+  `phase7_calendar_qualified_setup_count=0`,
+  `phase7_calendar_proof_trade_count=0`,
+  `phase7_calendar_closed_proof_trade_count=0`,
+  `phase7_calendar_phase7_proof_credit_allowed=False`,
+  `phase7_calendar_live_capital_enabled=False`,
+  `phase7_calendar_unsafe_write_counter_total=0`, and
+  `phase7_calendar_blocker_count=0`.
+- Q7-2 grants no proof trade, proof credit, broker POST, live endpoint,
+  manual trade-level override, or live capital authority.
+- Q7-3 is complete in
+  `docs/qadam-phase-7-q7-3-qualified-setup-ledger-audit-2026-05-25.md` and
+  writes `data/runtime/phase7_qualified_setup_ledger.json`.
+- Q7-3 reports `phase7_setup_ledger_status=read_only_no_q7_setups`,
+  `phase7_setup_ledger_stage_status=qualified_setup_ledger_recorded_no_q7_setup_window`,
+  `phase7_setup_ledger_calendar_day_record_count=30`,
+  `phase7_setup_ledger_daily_setup_decision_count=30`,
+  `phase7_setup_ledger_weekly_setup_summary_count=5`,
+  `phase7_setup_ledger_candidate_setup_record_count=1`,
+  `phase7_setup_ledger_qualified_setup_record_count=0`,
+  `phase7_setup_ledger_eligible_setup_count=0`,
+  `phase7_setup_ledger_qualified_setup_count=0`,
+  `phase7_setup_ledger_blocked_setup_count=0`,
+  `phase7_setup_ledger_expired_setup_count=0`,
+  `phase7_setup_ledger_no_trade_day_explanation_count=30`,
+  `phase7_setup_ledger_no_trade_week_explanation_count=5`,
+  `phase7_setup_ledger_rejected_phase5_lifecycle_count=1`,
+  `phase7_setup_ledger_supplemental_only_qualification_allowed=False`,
+  `phase7_setup_ledger_phase5_test_trades_count_for_phase7=False`,
+  `phase7_setup_ledger_proof_trade_count=0`,
+  `phase7_setup_ledger_phase7_proof_credit_allowed=False`,
+  `phase7_setup_ledger_live_capital_enabled=False`,
+  `phase7_setup_ledger_unsafe_write_counter_total=0`, and
+  `phase7_setup_ledger_blocker_count=0`.
+- Q7-3 grants no qualified setup creation, auto-approval, proof order, proof
+  trade, proof credit, broker POST, live endpoint, manual trade-level override,
+  or live capital authority.
+- Q7-4 is complete in
+  `docs/qadam-phase-7-q7-4-weekly-cadence-tracker-audit-2026-05-25.md` and
+  writes `data/runtime/phase7_weekly_cadence_tracker.json`.
+- Q7-4 reports `phase7_weekly_cadence_status=cadence_satisfied_no_q7_setups`,
+  `phase7_weekly_cadence_stage_status=weekly_cadence_recorded_no_qualified_setups`,
+  `phase7_weekly_cadence_record_count=5`,
+  `phase7_weekly_cadence_satisfied_count=5`,
+  `phase7_weekly_cadence_failed_count=0`,
+  `phase7_weekly_cadence_weekly_target_total=0`,
+  `phase7_weekly_cadence_weekly_target_formula=min(3, qualified_setup_count)`,
+  `phase7_weekly_cadence_weekly_proof_trade_target=3`,
+  `phase7_weekly_cadence_qualified_setup_count=0`,
+  `phase7_weekly_cadence_target_proof_trade_count=0`,
+  `phase7_weekly_cadence_proof_trade_count=0`,
+  `phase7_weekly_cadence_missed_qualified_setup_count=0`,
+  `phase7_weekly_cadence_no_forced_trade_exception_count=5`,
+  `phase7_weekly_cadence_no_trade_week_explanation_count=5`,
+  `phase7_weekly_cadence_partial_week_trade_pressure_allowed=False`,
+  `phase7_weekly_cadence_phase7_proof_credit_allowed=False`,
+  `phase7_weekly_cadence_live_capital_enabled=False`,
+  `phase7_weekly_cadence_unsafe_write_counter_total=0`, and
+  `phase7_weekly_cadence_blocker_count=0`.
+- Q7-4 grants no auto-approval, proof order, proof trade, proof credit, broker
+  POST, live endpoint, manual trade-level override, or live capital authority.
+- Q7-5 is complete in
+  `docs/qadam-phase-7-q7-5-test-mode-auto-approval-router-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_test_mode_auto_approval_router.json`.
+- Q7-5 reports `phase7_auto_approval_status=ready_no_auto_approved_setups`,
+  `phase7_auto_approval_stage_status=test_mode_auto_approval_router_ready_no_q7_setups`,
+  `phase7_auto_approval_test_mode_auto_approval_allowed=True`,
+  `phase7_auto_approval_phase7_test_mode_auto_approval_allowed=True`,
+  `phase7_auto_approval_q7_6_proof_order_staging_stage_allowed=True`,
+  `phase7_auto_approval_decision_record_count=1`,
+  `phase7_auto_approval_qualified_setup_count=0`,
+  `phase7_auto_approval_qualified_setup_decision_count=0`,
+  `phase7_auto_approval_auto_approved_setup_count=0`,
+  `phase7_auto_approval_rejected_setup_decision_count=1`,
+  `phase7_auto_approval_phase5_candidate_rejected_count=1`,
+  `phase7_auto_approval_fund_manager_trade_level_approval_count=0`,
+  `phase7_auto_approval_manual_trade_level_override_attempt_count=0`,
+  `phase7_auto_approval_sample_contaminated=False`,
+  `phase7_auto_approval_risk_or_kill_switch_bypass_count=0`,
+  `phase7_auto_approval_proof_order_staged_count=0`,
+  `phase7_auto_approval_proof_trade_count=0`,
+  `phase7_auto_approval_phase7_proof_order_staging_allowed=False`,
+  `phase7_auto_approval_phase7_proof_credit_allowed=False`,
+  `phase7_auto_approval_live_capital_enabled=False`,
+  `phase7_auto_approval_unsafe_write_counter_total=0`, and
+  `phase7_auto_approval_blocker_count=0`.
+- Q7-5 grants no proof order staging, proof trade submission, proof trade
+  execution, proof credit, broker POST, live endpoint, manual trade-level
+  override, or live capital authority.
+- Q7-6 is complete in
+  `docs/qadam-phase-7-q7-6-proof-order-staging-audit-2026-05-25.md` and writes
+  `data/runtime/phase7_proof_order_staging.json`.
+- Q7-6 reports `phase7_proof_order_staging_status=ready_no_staged_orders`,
+  `phase7_proof_order_staging_stage_status=proof_order_staging_ready_no_auto_approved_setups`,
+  `phase7_proof_order_staging_allowed=True`,
+  `phase7_proof_order_staging_phase7_proof_order_staging_allowed=True`,
+  `phase7_proof_order_staging_q7_7_guarded_alpaca_stage_allowed=True`,
+  `phase7_proof_order_staging_decision_record_count=1`,
+  `phase7_proof_order_staging_staged_order_count=0`,
+  `phase7_proof_order_staging_blocked_decision_count=1`,
+  `phase7_proof_order_staging_auto_approved_setup_count=0`,
+  `phase7_proof_order_staging_idempotency_key_count=0`,
+  `phase7_proof_order_staging_duplicate_idempotency_key_count=0`,
+  `phase7_proof_order_staging_phase5_order_id_reuse_count=0`,
+  `phase7_proof_order_staging_event_log_prewrite_ready_count=0`,
+  `phase7_proof_order_staging_event_log_prewrite_written_count=0`,
+  `phase7_proof_order_staging_pre_trade_snapshot_present_count=0`,
+  `phase7_proof_order_staging_proof_trade_count=0`,
+  `phase7_proof_order_staging_phase7_proof_credit_allowed=False`,
+  `phase7_proof_order_staging_broker_post_allowed=False`,
+  `phase7_proof_order_staging_live_capital_enabled=False`,
+  `phase7_proof_order_staging_unsafe_write_counter_total=0`, and
+  `phase7_proof_order_staging_blocker_count=0`.
+- Q7-6 grants no proof trade submission, proof trade execution, proof credit,
+  broker POST, Alpaca POST, prediction-market write, crypto-perps write, live
+  endpoint, manual trade-level override, or live capital authority.
+- Q7-7 is complete in
+  `docs/qadam-phase-7-q7-7-guarded-alpaca-paper-submit-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_guarded_alpaca_paper_submit_path.json`.
+- Q7-7 reports `phase7_guarded_submit_status=ready_no_submit_candidates`,
+  `phase7_guarded_submit_stage_status=guarded_alpaca_submit_path_ready_no_staged_orders`,
+  `phase7_guarded_submit_source_proof_order_staging_status=ready_no_staged_orders`,
+  `phase7_guarded_submit_path_available=True`,
+  `phase7_guarded_submit_phase7_proof_trade_submission_allowed=True`,
+  `phase7_guarded_submit_q7_8_lifecycle_stage_allowed=True`,
+  `phase7_guarded_submit_source_staged_order_count=0`,
+  `phase7_guarded_submit_submit_record_count=0`,
+  `phase7_guarded_submit_submitted_paper_order_count=0`,
+  `phase7_guarded_submit_broker_receipt_record_count=0`,
+  `phase7_guarded_submit_idempotency_key_count=0`,
+  `phase7_guarded_submit_duplicate_idempotency_key_count=0`,
+  `phase7_guarded_submit_phase5_order_id_reuse_count=0`,
+  `phase7_guarded_submit_broker_post_called_count=0`,
+  `phase7_guarded_submit_alpaca_post_called_count=0`,
+  `phase7_guarded_submit_paper_order_submitted_count=0`,
+  `phase7_guarded_submit_broker_receipt_created_count=0`,
+  `phase7_guarded_submit_proof_trade_count=0`,
+  `phase7_guarded_submit_phase7_proof_credit_allowed=False`,
+  `phase7_guarded_submit_live_capital_enabled=False`,
+  `phase7_guarded_submit_unsafe_write_counter_total=0`, and
+  `phase7_guarded_submit_blocker_count=0`.
+- Q7-7 grants narrow guarded paper-submit-path authority only for future
+  eligible Phase 7 staged proof orders. Broker POST, Alpaca POST, proof trade
+  execution, proof lifecycle writes, proof credit, prediction-market write,
+  crypto-perps write, live endpoint, manual trade-level override, and live
+  capital authority remain disabled.
+- Q7-8 is complete in
+  `docs/qadam-phase-7-q7-8-proof-lifecycle-monitor-audit-2026-05-25.md` and
+  writes `data/runtime/phase7_proof_lifecycle_monitor.json`.
+- Q7-8 reports `phase7_lifecycle_status=ready_no_lifecycle_events`,
+  `phase7_lifecycle_stage_status=proof_lifecycle_monitor_ready_no_submitted_orders`,
+  `phase7_lifecycle_source_guarded_submit_status=ready_no_submit_candidates`,
+  `phase7_lifecycle_q7_9_postmortem_stage_allowed=True`,
+  `phase7_lifecycle_write_allowed=True`,
+  `phase7_lifecycle_source_submitted_paper_order_count=0`,
+  `phase7_lifecycle_event_count=0`,
+  `phase7_lifecycle_mirrored_submitted_order_count=0`,
+  `phase7_lifecycle_open_position_count=0`,
+  `phase7_lifecycle_exit_intent_count=0`,
+  `phase7_lifecycle_closed_proof_trade_count=0`,
+  `phase7_lifecycle_proof_trade_count=0`,
+  `phase7_lifecycle_postmortem_due_count=0`,
+  `phase7_lifecycle_missing_broker_echo_count=0`,
+  `phase7_lifecycle_duplicate_fill_count=0`,
+  `phase7_lifecycle_stale_position_count=0`,
+  `phase7_lifecycle_failed_reconciliation_count=0`,
+  `phase7_lifecycle_phase7_proof_credit_allowed=False`,
+  `phase7_lifecycle_live_capital_enabled=False`,
+  `phase7_lifecycle_broker_post_called_count=0`,
+  `phase7_lifecycle_alpaca_post_called_count=0`,
+  `phase7_lifecycle_unsafe_write_counter_total=0`, and
+  `phase7_lifecycle_blocker_count=0`.
+- Q7-8 grants narrow local proof lifecycle write authority only for lifecycle
+  records derived from Q7-7 guarded paper-submit receipts. Broker POST, Alpaca
+  POST, proof trade execution authority, postmortem writes, proof credit,
+  prediction-market write, crypto-perps write, live endpoint, manual
+  trade-level override, and live capital authority remain disabled.
+- Q7-9 is complete in
+  `docs/qadam-phase-7-q7-9-proof-postmortem-contract-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_proof_postmortem_contract.json`.
+- Q7-9 reports `phase7_postmortem_status=ready_no_closed_trades`,
+  `phase7_postmortem_stage_status=proof_postmortem_contract_ready_no_closed_trades`,
+  `phase7_postmortem_source_lifecycle_status=ready_no_lifecycle_events`,
+  `phase7_postmortem_q7_10_performance_stage_allowed=True`,
+  `phase7_postmortem_write_allowed=True`,
+  `phase7_postmortem_source_closed_proof_trade_count=0`,
+  `phase7_postmortem_record_count=0`,
+  `phase7_postmortem_due_count=0`,
+  `phase7_postmortem_due_marker_created_count=0`,
+  `phase7_postmortem_packet_required_count=0`,
+  `phase7_postmortem_packet_template_count=0`,
+  `phase7_postmortem_packet_submitted_count=0`,
+  `phase7_postmortem_reviewed_count=0`,
+  `phase7_postmortem_explicitly_deferred_count=0`,
+  `phase7_postmortem_late_count=0`,
+  `phase7_postmortem_missing_count=0`,
+  `phase7_postmortem_missing_coverage_count=0`,
+  `phase7_postmortem_phase7_proof_credit_allowed=False`,
+  `phase7_postmortem_live_capital_enabled=False`,
+  `phase7_postmortem_broker_post_called_count=0`,
+  `phase7_postmortem_alpaca_post_called_count=0`,
+  `phase7_postmortem_unsafe_write_counter_total=0`, and
+  `phase7_postmortem_blocker_count=0`.
+- Q7-9 grants narrow local postmortem write authority only for due markers and
+  packet templates derived from Q7-8 closed proof trades. Postmortem approval,
+  learning writes, Knowledge Graph writes, model/trust updates,
+  policy/strategy mutation, proof credit, broker POST, Alpaca POST,
+  prediction-market write, crypto-perps write, live endpoint, manual
+  trade-level override, and live capital authority remain disabled.
+- Q7-10 is complete in
+  `docs/qadam-phase-7-q7-10-performance-evaluator-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_performance_evaluator.json`.
+- Q7-10 reports `phase7_performance_status=ready_no_closed_trades`,
+  `phase7_performance_stage_status=performance_evaluator_ready_no_closed_trades`,
+  `phase7_performance_source_postmortem_status=ready_no_closed_trades`,
+  `phase7_performance_q7_11_drawdown_stage_allowed=True`,
+  `phase7_performance_write_allowed=True`,
+  `phase7_performance_closed_proof_trade_count=0`,
+  `phase7_performance_evaluated_trade_count=0`,
+  `phase7_performance_metric_record_count=0`,
+  `phase7_performance_expectancy_after_costs_gbp=None`,
+  `phase7_performance_expectancy_after_costs_positive=False`,
+  `phase7_performance_win_rate=None`,
+  `phase7_performance_loss_rate=None`,
+  `phase7_performance_max_drawdown_fraction_observed=0.0`,
+  `phase7_performance_drawdown_within_cap=True`,
+  `phase7_performance_statistical_maturity_state=no_sample`,
+  `phase7_performance_phase7_proof_credit_allowed=False`,
+  `phase7_performance_live_capital_enabled=False`,
+  `phase7_performance_broker_post_called_count=0`,
+  `phase7_performance_alpaca_post_called_count=0`,
+  `phase7_performance_unsafe_write_counter_total=0`, and
+  `phase7_performance_blocker_count=0`.
+- Q7-10 grants narrow local performance-evaluation write authority only for
+  metrics derived from Q7-9 postmortem-covered Q7 proof trades. It does not
+  certify Phase 7, grant proof credit, call broker POST, call Alpaca POST,
+  write market orders, mutate policy/strategy, permit manual trade-level
+  overrides, or enable live capital.
+- Q7-11 is complete in
+  `docs/qadam-phase-7-q7-11-drawdown-risk-sentinel-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_drawdown_risk_sentinel.json`.
+- Q7-11 reports `phase7_drawdown_status=ready_no_drawdown_sample`,
+  `phase7_drawdown_stage_status=drawdown_sentinel_ready_no_closed_trades`,
+  `phase7_drawdown_source_performance_status=ready_no_closed_trades`,
+  `phase7_drawdown_q7_12_override_stage_allowed=True`,
+  `phase7_drawdown_risk_halt_write_allowed=True`,
+  `phase7_drawdown_risk_halt_active=False`,
+  `phase7_drawdown_new_proof_trades_frozen=False`,
+  `phase7_drawdown_new_proof_order_staging_allowed=True`,
+  `phase7_drawdown_new_proof_trade_submission_allowed=True`,
+  `phase7_drawdown_source_closed_proof_trade_count=0`,
+  `phase7_drawdown_source_evaluated_trade_count=0`,
+  `phase7_drawdown_current_equity_gbp=1000.0`,
+  `phase7_drawdown_peak_equity_gbp=1000.0`,
+  `phase7_drawdown_realized_drawdown_fraction_observed=0.0`,
+  `phase7_drawdown_unrealized_drawdown_fraction_observed=0.0`,
+  `phase7_drawdown_max_drawdown_fraction_observed=0.0`,
+  `phase7_drawdown_drawdown_within_cap=True`,
+  `phase7_drawdown_drawdown_state=no_sample_within_cap`,
+  `phase7_drawdown_phase7_certification_blocked_by_drawdown=False`,
+  `phase7_drawdown_phase7_proof_credit_allowed=False`,
+  `phase7_drawdown_live_capital_enabled=False`,
+  `phase7_drawdown_broker_post_called_count=0`,
+  `phase7_drawdown_alpaca_post_called_count=0`,
+  `phase7_drawdown_unsafe_write_counter_total=0`, and
+  `phase7_drawdown_blocker_count=0`.
+- Q7-11 grants narrow local risk-halt write authority only for drawdown
+  sentinel state. It enforces that a drawdown breach above 20 percent freezes
+  new Phase 7 proof-order staging and proof-trade submission while preserving
+  lifecycle/postmortem/performance closeout authority. It does not certify
+  Phase 7, grant proof credit, create proof trades, call broker POST, call
+  Alpaca POST, write market orders, mutate policy/strategy, permit manual
+  trade-level overrides, or enable live capital.
+- Q7-12 is complete in
+  `docs/qadam-phase-7-q7-12-override-detector-audit-2026-05-25.md`
+  and writes `data/runtime/phase7_override_detector.json`.
+- Q7-12 reports `phase7_override_status=clean_no_overrides`,
+  `phase7_override_stage_status=override_detector_clean_no_interventions`,
+  `phase7_override_source_drawdown_status=ready_no_drawdown_sample`,
+  `phase7_override_source_drawdown_new_proof_trades_frozen=False`,
+  `phase7_override_q7_13_signal_stage_allowed=True`,
+  `phase7_override_detection_write_allowed=True`,
+  `phase7_override_sample_contaminated=False`,
+  `phase7_override_clean_sample=True`,
+  `phase7_override_count=0`,
+  `phase7_override_record_count=0`,
+  `phase7_override_manual_trade_level_override_count=0`,
+  `phase7_override_broker_side_intervention_count=0`,
+  `phase7_override_unlinked_lifecycle_record_count=0`,
+  `phase7_override_governance_feedback_record_count=3`,
+  `phase7_override_governance_feedback_trade_level_intervention_count=0`,
+  `phase7_override_new_proof_trades_frozen=False`,
+  `phase7_override_new_proof_order_staging_allowed=True`,
+  `phase7_override_new_proof_trade_submission_allowed=True`,
+  `phase7_override_phase7_certification_blocked_by_override=False`,
+  `phase7_override_run_restart_required=False`,
+  `phase7_override_phase7_proof_credit_allowed=False`,
+  `phase7_override_live_capital_enabled=False`,
+  `phase7_override_broker_post_called_count=0`,
+  `phase7_override_alpaca_post_called_count=0`,
+  `phase7_override_unsafe_write_counter_total=0`, and
+  `phase7_override_blocker_count=0`.
+- Q7-12 grants narrow local override-detection write authority only for
+  clean-sample and contamination evidence. It separates governance feedback
+  from trade-level intervention and enforces that manual approvals, rejects,
+  edits, exits, broker-side intervention, or unlinked lifecycle records
+  contaminate the proof sample, block Phase 7 certification, freeze new proof
+  trades, and require restart. It does not certify Phase 7, grant proof credit,
+  create proof trades, call broker POST, call Alpaca POST, write market orders,
+  mutate policy/strategy, permit manual trade-level override authority, or
+  enable live capital.
+- Q7-13 is complete in
+  `docs/qadam-phase-7-q7-13-source-signal-funnel-evidence-audit-2026-05-25.md`.
+  Q7-13 adds `orchestrator/phase7_signal_funnel_evidence.py` and
+  `scripts/check_phase7_signal_funnel_evidence.py`, writes
+  `data/runtime/phase7_signal_funnel_evidence.json`, and reports
+  `phase7_signal_evidence_status=ready_no_proof_trades`,
+  `phase7_signal_evidence_stage_status=signal_funnel_evidence_ready_no_proof_trades`,
+  `phase7_signal_evidence_source_override_status=clean_no_overrides`,
+  `phase7_signal_evidence_source_override_sample_contaminated=False`,
+  `phase7_signal_evidence_q7_14_maturity_stage_allowed=True`,
+  `phase7_signal_evidence_write_allowed=True`,
+  `phase7_signal_evidence_record_count=0`,
+  `phase7_signal_evidence_complete_decision_chain_count=0`,
+  `phase7_signal_evidence_missing_decision_chain_count=0`,
+  `phase7_signal_evidence_private_priors_only_proof_trade_count=0`,
+  `phase7_signal_evidence_phase7_certification_blocked_by_signal_evidence=False`,
+  `phase7_signal_evidence_phase7_proof_credit_allowed=False`,
+  `phase7_signal_evidence_live_capital_enabled=False`, and
+  `phase7_signal_evidence_unsafe_write_counter_total=0`. It enforces that
+  each proof trade must carry source quorum, source trust, Akber filter, Signal
+  Integrity, Risk Agent, Execution Policy, kill-switch state, paper sizing, and
+  broker readiness evidence; private priors cannot certify a proof trade; and
+  Preference/PREF, Yahoo Finance, and Q-CTRL remain challenge-only,
+  supplemental-only, and shadow-only respectively.
+- Q7-14 is complete in
+  `docs/qadam-phase-7-q7-14-maturity-tracker-audit-2026-05-25.md`. Q7-14
+  adds `orchestrator/phase7_maturity_tracker.py` and
+  `scripts/check_phase7_maturity_tracker.py`, writes
+  `data/runtime/phase7_maturity_tracker.json`, and reports
+  `phase7_maturity_status=ready_no_closed_trades`,
+  `phase7_maturity_stage_status=maturity_tracker_ready_no_closed_trades`,
+  `phase7_maturity_source_signal_status=ready_no_proof_trades`,
+  `phase7_maturity_q7_15_cockpit_visibility_stage_allowed=True`,
+  `phase7_maturity_write_allowed=True`,
+  `phase7_maturity_closed_proof_trade_count=0`,
+  `phase7_maturity_mature_benchmark=100`,
+  `phase7_maturity_progress_fraction=0.0`,
+  `phase7_maturity_closed_trades_remaining_to_mature=100`,
+  `phase7_maturity_phase7_mature_benchmark_met=False`,
+  `phase7_maturity_phase7_mature_status_blocked=True`,
+  `phase7_maturity_phase7_statistically_immature=False`,
+  `phase7_maturity_phase7_statistical_immaturity_hidden=False`,
+  `phase7_maturity_phase7_30_day_run_complete=False`,
+  `phase7_maturity_completed_calendar_day_count=0`,
+  `phase7_maturity_phase7_30_day_operational_result_erased_by_immaturity=False`,
+  `phase7_maturity_phase7_certification_blocked_by_maturity=True`,
+  `phase7_maturity_phase7_proof_credit_allowed=False`,
+  `phase7_maturity_live_capital_enabled=False`, and
+  `phase7_maturity_unsafe_write_counter_total=0`. It keeps the 100 closed
+  proof-trade benchmark visible, blocks mature status below 100 closed proof
+  trades, prevents hidden statistical immaturity, and preserves the 30-day
+  operational result separately from mature-sample status. It does not certify
+  Phase 7, force trades, grant proof credit, call broker routes, write market
+  orders, mutate policy/strategy, permit manual trade-level override authority,
+  or enable live capital.
+- Q7-15 is complete in
+  `docs/qadam-phase-7-q7-15-cockpit-mission-control-visibility-audit-2026-05-25.md`.
+  Q7-15 adds `orchestrator/phase7_cockpit_visibility.py`,
+  `scripts/check_phase7_cockpit_visibility.py`, and
+  `scripts/check_dashboard_phase7_demo_proof.js`, wires
+  `phase7_demo_proof` into `orchestrator/cockpit_status.py`,
+  `landing-page-repo/dashboard.js`, and `scripts/check_dashboard_renderer.js`,
+  writes `data/runtime/phase7_cockpit_visibility.json`, and exports a
+  backend-derived public Phase 7 demo-proof readout. Current state is
+  `phase7_cockpit_visibility_status=visible`,
+  `phase7_cockpit_visibility_stage_status=phase7_demo_proof_visible`,
+  `phase7_cockpit_visibility_backend_derived=True`,
+  `phase7_cockpit_visibility_ui_inferred_readiness_count=0`,
+  `phase7_cockpit_visibility_source_artifact_count=14`,
+  `phase7_cockpit_visibility_source_missing_count=0`,
+  `phase7_cockpit_visibility_source_validation_error_count=0`,
+  `phase7_cockpit_visibility_completed_calendar_day_count=0`,
+  `phase7_cockpit_visibility_phase7_harness_day_count=30`,
+  `phase7_cockpit_visibility_proof_week_count=5`,
+  `phase7_cockpit_visibility_qualified_setup_count=0`,
+  `phase7_cockpit_visibility_submitted_paper_order_count=0`,
+  `phase7_cockpit_visibility_broker_receipt_count=0`,
+  `phase7_cockpit_visibility_closed_proof_trade_count=0`,
+  `phase7_cockpit_visibility_mature_benchmark=100`,
+  `phase7_cockpit_visibility_maturity_progress_fraction=0.0`,
+  `phase7_cockpit_visibility_phase7_mature_benchmark_met=False`,
+  `phase7_cockpit_visibility_phase7_mature_status_blocked=True`,
+  `phase7_cockpit_visibility_phase7_statistical_immaturity_hidden=False`,
+  `phase7_cockpit_visibility_phase5_test_trades_count_for_phase7=False`,
+  `phase7_cockpit_visibility_phase7_proof_credit_allowed=False`,
+  `phase7_cockpit_visibility_live_capital_enabled=False`,
+  `phase7_cockpit_visibility_unsafe_write_counter_total=0`, and
+  `phase7_cockpit_visibility_q7_16_weekly_review_pack_stage_allowed=True`.
+  It exposes day count, proof week, qualified/missed setups, staged/submitted
+  paper-order state, broker receipts, proof lifecycle, postmortems,
+  expectancy, drawdown, overrides, source/signal evidence, and 100-trade
+  maturity from backend artifacts only; it rejects UI-inferred readiness,
+  public payload leakage, local paths, hidden statistical immaturity, Phase 5
+  proof reuse, proof credit, and live capital.
+- Q7-16 is complete in
+  `docs/qadam-phase-7-q7-16-weekly-review-pack-audit-2026-05-25.md`.
+  Q7-16 adds `orchestrator/phase7_weekly_review_pack.py` and
+  `scripts/check_phase7_weekly_review_pack.py`, then writes
+  `data/runtime/phase7_weekly_review_pack.json` with one read-only review
+  packet for each of the five proof weeks. Current state is
+  `phase7_weekly_review_status=read_only`,
+  `phase7_weekly_review_stage_status=weekly_review_pack_created`,
+  `phase7_weekly_review_packet_created_count=5`,
+  `phase7_weekly_review_all_proof_weeks_have_review_packet=True`,
+  `phase7_weekly_review_future_policy_comment_allowed=True`,
+  `phase7_weekly_review_trade_level_intervention_allowed=False`,
+  `phase7_weekly_review_trade_level_intervention_count=0`,
+  `phase7_weekly_review_phase7_proof_credit_allowed=False`,
+  `phase7_weekly_review_live_capital_enabled=False`,
+  `phase7_weekly_review_unsafe_write_counter_total=0`, and
+  `phase7_weekly_review_q7_17_certification_stage_allowed=True`. Fund Manager
+  comments are limited to future-policy review; current-trade comments,
+  trade-level intervention, proof credit, live capital, broker/market writes,
+  UI-inferred readiness, and raw/private payload exposure are rejected.
+- Q7-17 is complete in
+  `docs/qadam-phase-7-q7-17-demo-proof-certification-audit-2026-05-25.md`.
+  Q7-17 adds `orchestrator/phase7_certification.py` and
+  `scripts/check_phase7_certification.py`, then writes
+  `data/runtime/phase7_certification.json`. Current state is
+  `phase7_certification_status=blocked`,
+  `phase7_certification_stage_status=phase7_certification_blocked_run_incomplete`,
+  `phase7_certification_phase7_demo_proof_certified=False`,
+  `phase7_certification_phase7_demo_proof_exit_gate=False`,
+  `phase7_certification_30_day_operational_result_clean=False`,
+  `phase7_certification_30_day_operational_result_preserved=True`,
+  `phase7_certification_phase7_30_day_run_complete=False`,
+  `phase7_certification_completed_calendar_day_count=0`,
+  `phase7_certification_weekly_cadence_satisfied_count=5`,
+  `phase7_certification_weekly_review_packet_created_count=5`,
+  `phase7_certification_evaluated_trade_count=0`,
+  `phase7_certification_expectancy_after_costs_positive=False`,
+  `phase7_certification_phase7_mature_benchmark_met=False`,
+  `phase7_certification_phase7_proof_credit_allowed=False`,
+  `phase7_certification_live_capital_enabled=False`,
+  `phase7_certification_unsafe_write_counter_total=0`,
+  `phase7_certification_gate_passed_count=6`,
+  `phase7_certification_gate_blocked_count=3`, and
+  `phase7_certification_q7_18_live_promotion_review_stage_allowed=False`.
+  Current blockers are `phase7_30_day_run_incomplete`,
+  `positive_expectancy_after_costs_missing`, and
+  `phase7_maturity_benchmark_not_met`. Q7-17 preserves a future clean 30-day
+  operational result separately from 100-trade maturity, rejects hidden
+  statistical immaturity and false mature claims, and keeps proof credit, live
+  capital, broker/market writes, Phase 5 proof reuse, and Q7-18 handoff
+  closed until certification is real.
+- Q7-18 is complete in
+  `docs/qadam-phase-7-q7-18-live-promotion-review-flow-audit-2026-05-25.md`.
+  Q7-18 adds `orchestrator/phase7_live_promotion_review.py` and
+  `scripts/check_phase7_live_promotion_review.py`, then writes
+  `data/runtime/phase7_live_promotion_review.json`. Current state is
+  `phase7_live_promotion_status=blocked`,
+  `phase7_live_promotion_stage_status=live_promotion_review_blocked_phase7_not_certified`,
+  `phase7_live_promotion_source_certification_status=blocked`,
+  `phase7_live_promotion_phase7_demo_proof_certified=False`,
+  `phase7_live_promotion_q7_18_live_promotion_review_stage_allowed=False`,
+  `phase7_live_promotion_review_packet_draft_allowed=False`,
+  `phase7_live_promotion_review_packet_created=False`,
+  `phase7_live_promotion_cooling_off_required=True`,
+  `phase7_live_promotion_cooling_off_complete=False`,
+  `phase7_live_promotion_live_promotion_approval_state=not_requested`,
+  `phase7_live_promotion_live_credentials_enabled=False`,
+  `phase7_live_promotion_live_credentials_loaded=False`,
+  `phase7_live_promotion_live_capital_enabled=False`,
+  `phase7_live_promotion_phase7_proof_credit_allowed=False`,
+  `phase7_live_promotion_broker_post_called_count=0`,
+  `phase7_live_promotion_alpaca_post_called_count=0`, and
+  `phase7_live_promotion_unsafe_write_counter_total=0`. Q7-18 validates the
+  future post-certification read-only packet path and rejects early handoff,
+  blocked packet creation, live credentials, live capital, broker/market
+  writes, proof credit, cooling-off bypass, premature approval, public payload
+  leakage, and source display drift.
+- Phase 7 staged implementation through Q7-18 is structurally complete. The
+  current explicit operational target is the actual 30-day demo-proof run and
+  evidence collection needed to unblock Q7-17 and then Q7-18. Phase 8 or live
+  capital remains blocked until Q7-17 certifies and Q7-18 can produce the
+  read-only live-promotion review packet.
+- Operational update after demo-proof run start: the actual Phase 7 run ledger
+  is active in `data/runtime/phase7_demo_proof_run.json` through
+  `orchestrator/phase7_demo_proof_run.py`,
+  `scripts/run_phase7_demo_proof_harness.py`, and
+  `scripts/check_phase7_demo_proof_run.py`. The run starts on 2026-05-25
+  America/Chicago and ends after 2026-06-23. Q7-17 certification now treats
+  `data/runtime/phase7_demo_proof_run.json` as authoritative for the actual
+  completed-day count and 30-day completion flag. Current state is
+  `phase7_demo_run_status=running`, `phase7_demo_run_state=active`,
+  `phase7_demo_run_active_day_number=1`,
+  `phase7_demo_run_completed_calendar_day_count=0`,
+  `phase7_demo_run_phase7_30_day_run_complete=False`,
+  `phase7_demo_run_qualified_setups_exist=False`,
+  `phase7_demo_run_submitted_paper_order_count=0`,
+  `phase7_demo_run_closed_proof_trade_count=0`,
+  `phase7_demo_run_collection_state=active_no_qualified_setups`,
+  `phase7_demo_run_phase7_proof_credit_allowed=False`,
+  `phase7_demo_run_live_capital_enabled=False`,
+  `phase7_demo_run_broker_post_called_count=0`,
+  `phase7_demo_run_alpaca_post_called_count=0`, and
+  `phase7_demo_run_unsafe_write_counter_total=0`. The first operational pass
+  found no Q7-qualified setups and recorded the no-trade rationale instead of
+  forcing a trade.
 
 ## 15. qadam.trade Route Plan
 
@@ -644,7 +1814,7 @@ Phase 0 foundation is substantially implemented, and Phase 1 has started with te
 
 The live access surface is now functional through the static `qadam.trade` cockpit workaround. Treat it as the first-release founding-manager demo shell, not the final cockpit architecture. It proves login, allowlist, and System Map access, while keeping the local orchestrator private.
 
-Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, the first read-only Risk Agent policy router, the first read-only Execution Policy / kill-switch router, the disabled staged paper-order contract, the read-only broker reconciliation contract, and the dry-run paper-submit receipt contract are active. Phase 3 now has a hardened Head of Quant quantum/classical oracle path: backend interface, optional Qiskit Aer local backend, deterministic classical fallback, circuit blueprint, measurement-count output, stable fingerprint, weekly cadence metadata, provider readiness, public-safe cockpit status, and hardware submission blocked. Dashboard Plan D0-D10J is implemented locally, with Mission Control, sticky navigation UX, Fund Manager comments, dry-run Telegram Communications, and the protected D8B User Guide now added. Mission Control now exposes durable replay readiness as `durable_replay_ready` when OrbStack/Postgres is running, with 35/35 canonical sources replayable from local Timescale. The next practical batch is to keep durable Postgres/Timescale green, keep live credential validation fresh, and harden Phase 3 toward provider/scheduler readiness without creating any broker-write or hardware-submission route:
+Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase 2 shadow-intelligence contracts, provider-safe probes, live Local Research Analyst runs, Strategy Lead shadow handoffs, read-only paper-account context, the first Signal Integrity Gate, the first read-only Risk Agent policy router, the first read-only Execution Policy / kill-switch router, the disabled staged paper-order contract, the read-only broker reconciliation contract, and the dry-run paper-submit receipt contract are active. Phase 3 now has a hardened Head of Quant quantum/classical oracle path: backend interface, optional Qiskit Aer local backend, deterministic classical fallback, circuit blueprint, measurement-count output, stable fingerprint, weekly cadence metadata, provider readiness, public-safe cockpit status, hardware submission blocked, local Phase 3A certification, and a docs-only hardware enablement proposal. Dashboard Plan D0-D10J is implemented locally, with Mission Control, sticky navigation UX, Fund Manager comments, dry-run Telegram Communications, and the protected D8B User Guide now added. Mission Control now exposes durable replay readiness as `durable_replay_ready` when OrbStack/Postgres is running, with 35/35 canonical sources replayable from local Timescale. The local `yahoo-finance-api/` checkout is now accepted as a supplemental read-only market-confirmation capability with a dormant Qadam wrapper, Signal Integrity market-confirmation policy, and public-safe cockpit status. Preference/PREF MCP is now implemented through PREF-12 as a supplemental multi-source data plane in `docs/qadam-preference-mcp-integration-plan.md`; it has identity, status/catalog, quota, provenance, Resource Registry, Data Veracity, Trust Score, domain-allowlist, shadow-intelligence enrichment, cockpit/Mission Control visibility, Preference-aware Phase 4 manifestation, Q4-10 approval scoping, Q4-12 certification gating, and upstream source-promotion decisions with no source-count change. PREF-12 evaluates six Preference sample upstreams one at a time, maps Polymarket, Kalshi, SEC EDGAR, and vessel tracking to existing registry entries, defers NOAA-style weather and KOL wallet context, promotes zero sources, and preserves the canonical source count at 35; Q4-10 is now `approved` and Q4-12 is certified after explicit Fund Manager approval. The 2026-05-22 pre-Phase-3 certification is recorded in `docs/qadam-pre-phase-3-certification-2026-05-22.md`; the 2026-05-23 Phase 3A certification is recorded in `docs/qadam-phase-3-q3-10-phase-3a-certification-audit-2026-05-23.md`; the Q3-11 proposal is recorded in `docs/qadam-phase-3-q3-11-hardware-enablement-proposal-2026-05-23.md`. Phase 3B hardware implementation remains blocked; broker-write, hardware-submission, paper-order, scheduler, provider-call, and live-capital authority remain disabled. The next practical batch is:
 
 1. Keep OrbStack open when working locally and rerun `scripts/start_postgres_timescale_ingestion.sh` after machine restarts or Docker runtime updates.
 2. Require `scripts/check_postgres_timescale_ingestion.py --require-live`, `scripts/check_postgres_timescale_replay.py --require-full-source-coverage`, `scripts/check_phase2_durable_replay_cycle.py`, and `scripts/check_strategy_lead_durable_context.py` to remain green before deepening intelligence workflows.
@@ -652,6 +1822,8 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 4. Keep the D6 paper mirror read-only: £1000 starting/current balance, zero P&L until read-only broker data exists, no live capital, and no write authority.
 5. Keep the D7 TradingView alert source observed-only: duplicate protected, Event Log backed, and unable to create trade candidates or orders.
 6. Register TradingView MCP as read-only market/technical-analysis tooling when Codex CLI access is available; no TradingView retail data API key is expected.
+6A. Keep `yahoo-finance-api/` as a supplemental read-only market-data capability. The Qadam Yahoo Finance adapter, sample check, Signal Integrity market-confirmation policy, and public-safe cockpit wrapper now exist; before relying on live Yahoo reads, install dependencies deliberately, pass live mode with `YFINANCE_ENABLED=true`, and keep no execution, fill, receipt, broker, reconciliation, or live-capital authority.
+6B. Implement Preference/PREF MCP through `docs/qadam-preference-mcp-integration-plan.md`. PREF-0 capability review is complete in `docs/qadam-preference-mcp-pref-0-capability-review-audit-2026-05-24.md`; PREF-1 identity/status gating is complete in `docs/qadam-preference-mcp-pref-1-identity-status-gate-audit-2026-05-24.md`; PREF-2 catalog/schema gating is complete in `docs/qadam-preference-mcp-pref-2-tool-catalog-audit-2026-05-24.md`; PREF-3 offline sample adapter scaffolding is complete in `docs/qadam-preference-mcp-pref-3-offline-sample-adapter-audit-2026-05-24.md`; PREF-4 live read-only smoke gating is complete in `docs/qadam-preference-mcp-pref-4-live-read-only-smoke-gate-audit-2026-05-24.md` and currently blocks before network calls until a valid non-anonymous Preference identity exists; PREF-5 provenance/source-quorum policy is complete in `docs/qadam-preference-mcp-pref-5-provenance-source-quorum-audit-2026-05-24.md`; PREF-6 source inventory, Resource Registry, and trust policy is complete in `docs/qadam-preference-mcp-pref-6-source-inventory-registry-trust-policy-audit-2026-05-24.md`; PREF-7 first-trading-universe domain pack mapping is complete in `docs/qadam-preference-mcp-pref-7-first-trading-universe-domain-packs-audit-2026-05-24.md`; PREF-8 shadow intelligence enrichment is complete in `docs/qadam-preference-mcp-pref-8-shadow-intelligence-enrichment-audit-2026-05-24.md`; PREF-9 cockpit and Mission Control visibility is complete in `docs/qadam-preference-mcp-pref-9-cockpit-mission-control-visibility-audit-2026-05-24.md`; PREF-10 Phase 4 re-manifestation is complete in `docs/qadam-preference-mcp-pref-10-phase-4-re-manifestation-audit-2026-05-24.md`; PREF-11 certification and Phase 5 gate update is complete in `docs/qadam-preference-mcp-pref-11-certification-phase-5-gate-audit-2026-05-24.md`; PREF-12 source-promotion decisions are complete in `docs/qadam-preference-mcp-pref-12-source-promotion-decisions-audit-2026-05-24.md`. Treat Preference as a supplemental data plane, not source 36, until individual upstream sources are explicitly promoted through a later registry decision.
 7. Use `docs/api-specs.md` as the credential onboarding ledger; add keys gradually to `data/runtime/qadam-secrets.env`, never to Git.
 8. Run `scripts/refresh_acled_token.py --write --validate-read`, then rerun `scripts/check_supplied_credentials.py` after starting LM Studio or refreshing ACLED. Keep Kalshi deferred and UnusualWhales missing until those external conditions change.
 9. Keep `scripts/check_phase1_data_spine.py` and `scripts/check_phase1_agent_os.py` green before adding new intelligence, source, broker, or notification behavior.
@@ -662,12 +1834,72 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 13A. Run `scripts/run_phase2_shadow_cycle.py --durable-replay` after Timescale is green to feed replayable observations and paper-account context through Research Analyst and Strategy Lead shadow workflows without depending on live source availability.
 13B. Run `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` whenever LM Studio is running to refresh the live-source variant of the same shadow workflow.
 14. Run the Gemini model-list credential probe without text generation.
-14A. Run `scripts/check_quantum_oracle.py` after Signal Integrity review data exists; require two local/fallback oracle jobs, local backend validation, circuit blueprint, input fingerprint, weekly cadence metadata, zero hardware scheduler enablement, zero hardware submissions, zero execution approvals, zero paper-order approvals, and zero trade-candidate creation.
+14A. Run `scripts/run_pre_phase3_operational_routine.sh --stage phase3-readiness` before treating Phase 3A evidence as current; require provider/scheduler readiness, cockpit/dashboard export, secret scan, two local/fallback oracle jobs, local backend validation, circuit blueprint, input fingerprint, weekly cadence metadata, zero provider calls, zero hardware scheduler enablement, zero hardware submissions, zero execution approvals, zero paper-order approvals, and zero trade-candidate creation.
 15. Keep all outputs non-executable after Signal Integrity, Risk Agent policy review, Execution Policy review, disabled staged paper-order review, broker reconciliation review, dry-run paper-submit receipt review, and Head of Quant oracle review.
 16. Keep the staged paper-order contract read-only/disabled: it must explain what would be staged, why it is blocked, and how it would reconcile before any broker-write route exists.
 17. Keep the broker reconciliation contract read-only: it must define broker echo checks, idempotency, prewrite event logging, duplicate-order guards, post-submit reconciliation, and postmortem links while keeping paper-order submission, broker writes, and live capital at zero.
 18. Keep the dry-run paper-submit receipt contract non-executing: it can produce a simulated submit receipt only after broker reconciliation prerequisites pass, with no Alpaca POST call, no broker write, no paper-order submission, and no live capital.
 
-Current implementation target completed: the Phase 3 oracle path now emits Pattern Recognition and Strategy Collapse / Ambiguity Score results through a backend contract, currently `classical_fallback`, writes local Event Log/status records, exposes circuit/fingerprint/cadence validation in Mission Control, and still has no hardware scheduler, hardware jobs, broker writes, paper orders, or execution authority. The durable replay readiness target is now live on the Mac through OrbStack and local Timescale: `scripts/start_postgres_timescale_ingestion.sh` completes, strict ingestion/replay checks pass, the cockpit exports `durable_replay_ready`, and 35/35 canonical sources replay from `source_observation`. Phase 2 can now consume that durable replay layer through `scripts/run_phase2_shadow_cycle.py --durable-replay`, producing replayable non-executable Research Analyst and Strategy Lead packets from Timescale observations. If the local Docker runtime is closed later, the same checks still degrade safely without creating signals or orders.
+Note: the following implementation snapshots are retained as historical context.
+The latest `Update after Q6-17` note below is authoritative for the current Phase 6
+target.
+
+Historical implementation snapshot before Q5E-11: Phase 3A local provider/scheduler readiness certification passed on 2026-05-23, Q3-11 hardware enablement is documented as proposal-only, Q4-0 through Q4-12 Phase 4 implementation stages are recorded, Q5-0 through Q5-15 are implemented, Q5E-1 through Q5E-9 built and certified the guarded paper lifecycle, and Q5E-10 recorded the formal Phase 5 to Phase 6 handoff. This paragraph is retained for context only; the latest Phase 6 update below is authoritative for current Phase 6 state.
+
+Superseding current Q6 note: Q6-0 is complete in `docs/qadam-phase-6-q6-0-re-entry-gate-audit-2026-05-24.md`, Q6-1 is complete in `docs/qadam-phase-6-q6-1-artifact-schema-authority-ledger-audit-2026-05-24.md`, Q6-2 is complete in `docs/qadam-phase-6-q6-2-learning-source-intake-audit-2026-05-24.md`, Q6-3 is complete in `docs/qadam-phase-6-q6-3-closed-trade-outcome-schema-audit-2026-05-25.md`, Q6-4 is complete in `docs/qadam-phase-6-q6-4-postmortem-packet-contract-audit-2026-05-25.md`, Q6-5 is complete in `docs/qadam-phase-6-q6-5-postmortem-agent-draft-audit-2026-05-25.md`, Q6-6 is complete in `docs/qadam-phase-6-q6-6-analysis-packets-audit-2026-05-25.md`, Q6-7 is complete in `docs/qadam-phase-6-q6-7-reducer-review-gate-audit-2026-05-25.md`, Q6-8 is complete in `docs/qadam-phase-6-q6-8-outcome-linker-audit-2026-05-25.md`, Q6-9 is complete in `docs/qadam-phase-6-q6-9-learning-approval-ledger-audit-2026-05-25.md`, and Q6-10 is complete in `docs/qadam-phase-6-q6-10-knowledge-graph-staged-writes-audit-2026-05-25.md`. Q5-14 reports `paper_trade_drill_complete=True`, `phase5_paper_trade_drill_exit_gate_passed=True`, and `blocker_count=0`; Q5-15 reports `phase5_certified=True`, `phase5_exit_gate=True`, `phase6_handoff_allowed=True`, `phase7_planning_allowed=True`, and `phase7_proof_credit_allowed=False`; Q5E-10/Q5E-11 reports `phase6_learning_loop_plan_allowed=True`, `phase6_learning_loop_implementation_allowed=False`, `phase6_learning_write_allowed=False`, `phase6_knowledge_graph_write_allowed=False`, and `live_capital_enabled_count=0`. Q6-0 reports `phase6_re_entry_gate_passed=True`, `q6_1_artifact_schema_stage_allowed=True`, `phase6_learning_loop_implementation_allowed=False`, `phase6_postmortem_ingestion_allowed=False`, `phase6_learning_write_allowed=False`, `phase6_knowledge_graph_write_allowed=False`, `phase7_proof_credit_allowed=False`, `unsafe_write_counter_total=0`, and `blocker_count=0`. Q6-1 reports `phase6_artifact_schema_status=ok`, 17 artifact contracts, 20 false authority defaults, 15 zero unsafe counters, six required Event Log categories, validated source posture, validated provenance, and validated probes against hidden learning writes, policy mutation, live capital, local path leakage, and Phase 7 proof credit. Q6-2 reports one Q5E `postmortem_due` marker, 20 source refs, 11 required source refs present, nine optional source refs present, `phase5_hash_mutation_count=0`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. Q6-3 reports one normalized closed-trade outcome, `broker_truth_separated=True`, five unknown fields, six deferred fields, `source_hash_mutation_count=0`, `learning_write_allowed=False`, `knowledge_graph_write_created=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. Q6-4 reports 13 required packet sections, source refs or hypothesis markers required for assertions, narrative-only packets rejected, uncited conclusions rejected, `postmortem_draft_created=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. Q6-5 reports one deterministic backend-derived postmortem draft, 13 packet sections, 20 source-cited assertions, five unknown markers, six deferred markers, three missing broker-fill ref markers, `postmortem_approved=False`, `approval_state=not_requested`, `llm_used=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. Q6-6 reports five deterministic analysis packets for catalyst, pricing, regime, execution, and override readiness, `claim_count=10`, `all_claims_cited=True`, `confidence_packet_count=5`, `uncertainty_count=5`, `missing_evidence_count=9`, `postmortem_approved=False`, `approval_state=not_requested`, `llm_used=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. Q6-7 reports a review-required reduced postmortem with no approval or write authority, Q6-8 reports a complete reference-only outcome-link graph with no source mutation or copied payloads, Q6-9 reports a pending-review governance ledger with no default approval and all downstream learning advancement blocked, and Q6-10 reports a blocked Knowledge Graph staged-write gate with five blocked candidate actions, zero staged entries, no graph commits, no Chroma/backend graph writes, no destructive overwrite, and no proof credit. The current explicit build target is Q6-11: Knowledge Graph Read Path.
+
+Update after Q6-7: `docs/qadam-phase-6-q6-7-reducer-review-gate-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-7 added a review-required reduced postmortem, five proposed classifications, five review-queue items, and Event Log replay evidence while keeping `postmortem_approved=False`, `approval_state=not_requested`, `approval_logged=False`, `learning_action_count=0`, `learning_action_approved_count=0`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-8 - Outcome Linker.
+
+Update after Q6-8: `docs/qadam-phase-6-q6-8-outcome-linker-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-8 added a complete reference-only outcome-link artifact with 21 linked refs, all 12 required links present, all nine optional context links present, no copied raw/private payloads, no local path or secret ref exposure, no source artifact mutation, and Event Log replay evidence while keeping `link_write_allowed=False`, `postmortem_approved=False`, `approval_state=not_requested`, `approval_logged=False`, `learning_action_count=0`, `learning_action_approved_count=0`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-9 - Learning Approval Ledger.
+
+Update after Q6-9: `docs/qadam-phase-6-q6-9-learning-approval-ledger-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-9 added a pending-review governance ledger with five proposed actions deferred pending explicit reviewer/Event Log approval, no default approval, and all downstream learning advancement blocked while keeping `approved_action_count=0`, `learning_action_approved_count=0`, `downstream_advance_allowed=False`, `knowledge_graph_staged_write_allowed=False`, `model_weight_update_proposal_allowed=False`, `trust_score_update_proposal_allowed=False`, `strategy_learning_proposal_allowed=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-10 - Knowledge Graph Staged Writes.
+
+Update after Q6-10: `docs/qadam-phase-6-q6-10-knowledge-graph-staged-writes-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-10 added the Knowledge Graph staged-write gate and carried the five Q6-9 candidate actions forward as blocked records because the approval ledger is explicitly `deferred`. It keeps `staged_entry_count=0`, `staged_write_allowed=False`, `knowledge_graph_staged_write_allowed=False`, `missing_approval_blocks_staging=True`, `knowledge_graph_commit_allowed=False`, `chroma_write_allowed=False`, `graph_backend_write_allowed=False`, `actual_graph_commit_created=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `destructive_overwrite_allowed=False`, `phase5_source_artifacts_mutated=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-11 - Knowledge Graph Read Path.
+
+Update after Q6-11: `docs/qadam-phase-6-q6-11-knowledge-graph-read-path-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-11 added a read-only Knowledge Graph view over the blocked Q6-10 staging gate, returns one guarded Q5E seed-context result for `crude oil` and `paper lifecycle` searches, exposes cockpit-safe counts and states only, and keeps `approved_learning_entry_count=0`, `staged_result_count=0`, `write_allowed=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`, `chroma_write_created=False`, `graph_backend_write_created=False`, `phase5_source_artifacts_mutated=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-12 - Model Weight Update Proposals.
+
+Update after Q6-12: `docs/qadam-phase-6-q6-12-model-weight-update-proposals-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-12 added the model-weight update proposal gate over the blocked Q6-11 read path. Because Q6-9 approval is explicitly `deferred`, it records one blocked no-op proposal record with seven before/after model weights, zero delta, `active_proposal_count=0`, `approved_evidence_count=0`, `bayesian_update_count=0`, `model_weight_update_proposal_allowed=False`, `model_weight_update_proposed=False`, `apply_allowed=False`, `model_weight_update_applied=False`, `active_model_weight_mutated=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`, `chroma_write_created=False`, `graph_backend_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase5_source_artifacts_mutated=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-13 - Trust Score Update Proposals.
+
+Update after Q6-13: `docs/qadam-phase-6-q6-13-trust-score-update-proposals-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-13 added the trust-score update proposal gate over the blocked Q6-12 model-weight proposal gate. Because Q6-9 approval is explicitly `deferred`, it records 35 blocked no-op canonical source-score proposal records, two supplemental policy records for Yahoo Finance and Preference/PREF, `before_score=0.539143`, `after_score=0.539143`, zero score delta, `active_proposal_count=0`, `trust_score_update_count=0`, `trust_score_update_proposal_allowed=False`, `trust_score_update_proposed=False`, `apply_allowed=False`, `trust_score_update_applied=False`, `active_trust_score_mutated=False`, `canonical_rank_mutated=False`, `source_quorum_credit_granted=False`, `single_source_verdict_rejected=True`, `supplemental_only_verdict_rejected=True`, `yahoo_finance_score_included=False`, `preference_mcp_source_quorum_credit_allowed=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`, `chroma_write_created=False`, `graph_backend_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase5_source_artifacts_mutated=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-14 - Shadow Strategy Runner.
+
+Update after Q6-14: `docs/qadam-phase-6-q6-14-shadow-strategy-runner-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-14 added the shadow strategy replay gate over the blocked Q6-13 trust-score proposal gate. Because Q6-9 approval is explicitly `deferred`, it records three blocked no-op shadow replay variants, `active_replay_count=0`, `blocked_replay_count=3`, `evaluated_variant_count=0`, `actual_vs_hypothetical_comparison_count=3`, `evaluated_comparison_count=0`, `replay_output_exists=True`, `shadow_strategy_replay_allowed=False`, `shadow_strategy_replay_created=False`, `trade_candidate_creation_allowed=False`, `trade_candidate_created=False`, `trade_candidate_created_count=0`, `order_creation_allowed=False`, `paper_order_allowed=False`, `paper_order_allowed_count=0`, `paper_order_created=False`, `paper_order_created_count=0`, `execution_allowed=False`, `execution_allowed_count=0`, `execution_intent_created=False`, `execution_intent_created_count=0`, `broker_post_allowed=False`, `alpaca_post_allowed=False`, `broker_post_called_count=0`, `alpaca_post_called_count=0`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`, `chroma_write_created=False`, `graph_backend_write_created=False`, `model_weight_update_created=False`, `trust_score_update_created=False`, `policy_mutation_created=False`, `strategy_mutation_created=False`, `phase5_source_artifacts_mutated=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-15 - Architect Learning Summary.
+
+Update after Q6-15: `docs/qadam-phase-6-q6-15-architect-learning-summary-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-15 added the Architect learning summary over the blocked Q6-14 shadow replay gate. Because Q6-9 approval is explicitly `deferred`, it records four blocked recommendation records, `active_recommendation_count=0`, `blocked_recommendation_count=4`, `governance_pending_count=4`, one policy recommendation, one strategy recommendation, one risk-limit recommendation, one source/model/trust recommendation, `recommendation_apply_allowed=False`, `policy_mutation_allowed=False`, `policy_mutation_created=False`, `strategy_mutation_allowed=False`, `strategy_mutation_created=False`, `risk_limit_update_allowed=False`, `risk_limit_update_created=False`, `source_weight_update_allowed=False`, `source_weight_update_created=False`, `model_weight_update_allowed=False`, `model_weight_update_created=False`, `trust_score_update_allowed=False`, `trust_score_update_created=False`, `learning_write_created=False`, `knowledge_graph_write_created=False`, `knowledge_graph_commit_created=False`, `chroma_write_created=False`, `graph_backend_write_created=False`, `phase5_source_artifacts_mutated=False`, `phase5_test_trades_count_for_phase7=False`, `phase7_proof_credit_allowed=False`, and `unsafe_write_counter_total=0`. The current explicit build target is Q6-16 - Journal And Cockpit Visibility.
+
+Update after Q6-16: `docs/qadam-phase-6-q6-16-journal-cockpit-visibility-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-16 added the backend-derived cockpit/dashboard visibility layer through `orchestrator/phase6_cockpit_visibility.py`, `scripts/check_phase6_cockpit_visibility.py`, `orchestrator/cockpit_status.py`, `landing-page-repo/dashboard.js`, and `scripts/check_dashboard_phase6_learning_loop.js`. It writes `data/runtime/phase6_cockpit_learning_visibility.json`, exports `phase6_learning_loop` in the public cockpit snapshot, and renders the Q6-16 Learning Loop Journal Visibility panel from backend artifacts only. Current state is `status=visible`, `visibility_state=backend_derived_deferred_learning_visible`, `learning_state=deferred_learning_visible`, `backend_derived=True`, `ui_inferred_readiness_count=0`, `backend_parity_error_count=0`, `postmortem_due_count=1`, `postmortem_resolved_count=0`, `approval_state=deferred`, `pending_review_action_count=0`, `deferred_action_count=5`, `learning_actions_review_satisfied=True`, `staged_graph_entry_count=0`, `knowledge_graph_read_result_count=1`, `model_weight_proposal_count=1`, `trust_score_proposal_count=35`, `shadow_replay_variant_count=3`, `architect_recommendation_count=4`, `blocked_authority_count=20`, `unsafe_write_counter_total=0`, `raw_payload_exposed_count=0`, `local_path_exposed_count=0`, `secret_ref_exposed_count=0`, `broker_identifier_exposed_count=0`, `phase6_learning_write_allowed=False`, `phase6_knowledge_graph_write_allowed=False`, `phase6_model_weight_update_allowed=False`, `phase6_trust_score_update_allowed=False`, `phase6_architect_policy_mutation_allowed=False`, `phase7_proof_credit_allowed=False`, and `live_capital_enabled=False`. The current explicit build target is Q6-17 - Phase 6 Certification.
+
+Update after Q6-17: `docs/qadam-phase-6-q6-17-phase-6-certification-audit-2026-05-25.md` is now complete. This update supersedes the preceding Q6 current-target sentence. Q6-17 added the Phase 6 certification gate through `orchestrator/phase6_certification.py`, `scripts/check_phase6_certification.py`, `orchestrator/cockpit_status.py`, `landing-page-repo/dashboard.js`, and `scripts/check_dashboard_phase6_certification.js`. The follow-up unblock script `scripts/defer_phase6_learning_review_for_certification.py` records the explicit Fund Manager deferral for the pending Q6 learning approval/postmortem review, refreshes Q6-9 through Q6-17, and exports the certified cockpit snapshot. Current state is `status=certified`, `stage_status=phase6_certified`, `phase6_certified=True`, `phase6_exit_gate=True`, `phase7_demo_proof_planning_allowed=True`, `phase7_proof_credit_allowed=False`, `phase5_test_trades_count_for_phase7=False`, `input_gate_count=17`, `input_gate_passed_count=17`, `input_gate_blocked_count=0`, `certification_blocker_count=0`, `postmortem_due_count=1`, `postmortem_resolved_count=0`, `postmortem_explicitly_deferred_count=1`, `unresolved_postmortem_count=0`, `reviewed_postmortem_coverage_satisfied=True`, `approval_state=deferred`, `pending_review_action_count=0`, `explicitly_deferred_action_count=5`, `learning_actions_review_satisfied=True`, `knowledge_graph_requirement_satisfied=True`, `knowledge_graph_read_result_count=1`, `model_weight_proposal_count=1`, `trust_score_proposal_count=35`, `shadow_replay_variant_count=3`, `architect_recommendation_count=4`, `cockpit_visibility_status=visible`, `blocking_unsafe_count=0`, `unsafe_write_counter_total=0`, and `live_capital_enabled=False`. The current explicit build target is Phase 7 Demo Proof planning; Phase 7 proof credit remains blocked until a future Phase 7 gate earns it from Phase 7 evidence.
+
+Update after Q5-9: `docs/qadam-phase-5-q5-9-prediction-market-adapter-audit-2026-05-24.md` is now complete. Q5-9 added six read-only or disabled prediction-market route records, preserved Polymarket and Kalshi Preference/PREF MCP context as policy/risk caution only, kept source-quorum credit false, exposed cockpit and Mission Control status, and left Polymarket, Kalshi, Hyperliquid, dFlow, PriveX-style perps, paper-order, broker, live-endpoint, and live-capital write authority at zero. The next explicit build target is Q5-10 - Telegram Notifier.
+
+Update after Q5-10: `docs/qadam-phase-5-q5-10-telegram-notifier-audit-2026-05-24.md` is now complete. Q5-10 added nine state-matched Telegram notification records, writes nine Event Log entries, validates three current dry-run outbox messages for risk-blocked, kill-switch-change, and degraded-source-or-venue states, suppresses lifecycle alerts until matching backend state exists, exposes cockpit and Mission Control status, and keeps Telegram command handling, live sends, paper orders, broker writes, execution, prediction-market writes, and live capital at zero. The next explicit build target is Q5-11 - Position Monitor And Reconciliation Loop.
+
+Update after Q5-11: `docs/qadam-phase-5-q5-11-position-monitor-audit-2026-05-24.md` is now complete. Q5-11 added read-only position lifecycle monitoring and reconciliation records, writes two Event Log entries, currently records blocked sentinels because no submitted paper orders or positions exist, exposes cockpit and Mission Control status, and keeps submit, close, resize, cancel, broker-write, Alpaca POST, position-mutation, and live capital authority at zero.
+
+Update after Q5-12: `docs/qadam-phase-5-q5-12-signal-review-governance-actions-audit-2026-05-24.md` is now complete. Q5-12 added Signal Review UI and governance actions, records five public-safe review records, shows 45 backend-sourced decision-chain steps, writes five governance comment Event Log entries and five kill-switch action-intent Event Log entries, exposes cockpit and Mission Control status, renders in the dashboard Trade Layer, and keeps UI-inferred readiness plus approval, order, close, resize, cancel, broker-write, prediction-market-write, kill-switch-mutation, and live-capital authority at zero. The next explicit build target is Q5-13 - Functional System Map Dashboard.
+
+Update after Q5-13: `docs/qadam-phase-5-q5-13-functional-system-map-dashboard-audit-2026-05-24.md` is now complete. Q5-13 added a backend-sourced Functional System Map Dashboard with 27 nodes, six lanes, 10 Layer B nodes, exact display/backend parity, Event Log artifact recording, source posture badges for canonical/Yahoo Finance/Preference MCP, and guardrails proving the dashboard does not say Qadam is trading without submitted/open/closed backend state. It keeps UI-inferred readiness, unsafe controls, paper-submit path availability, broker writes, prediction-market writes, and live-capital authority at zero. The next explicit build target is Q5-14 - End-To-End Paper Trade Drill.
+
+Update after Q5-14: `docs/qadam-phase-5-q5-14-end-to-end-paper-trade-drill-audit-2026-05-24.md` is now complete for the implementation harness, and `docs/qadam-phase-5-q5-14-exit-unblock-approval-audit-2026-05-24.md` records the explicit guarded Alpaca paper-submit approval. Q5-14 added a dedicated guarded paper trade drill artifact, 13 backend-sourced lifecycle steps, 13 Event Log entries, cockpit and Mission Control visibility, dashboard rendering, display/backend parity checks, and blocker reporting across source context, Signal Integrity, approval policy, risk sizing, kill switches, execution adapter, staging, submit gate, broker receipt, position open, position close, postmortem due, and Telegram/dashboard sync. After Q5E-4, the current drill state is `blocked_prerequisites_missing`, with `paper_trade_drill_complete=False`, `phase5_paper_trade_drill_exit_gate_passed=False`, `paper_submit_approval_present=True`, `paper_submit_path_available_count=1`, `submitted_paper_order_count=0`, `open_position_count=0`, `closed_trade_count=0`, `postmortem_due_count=0`, `broker_post_called_count=0`, and `live_capital_enabled_count=0`.
+
+Update after Q5-15: `docs/qadam-phase-5-q5-15-phase-5-certification-audit-2026-05-24.md` is now complete for the certification evaluation. Q5-15 added a Phase 5 certification artifact, one certification Event Log entry, 15 backend-sourced input gates, cockpit and Mission Control visibility, dashboard rendering, display/backend parity checks, and probes against false certification, live capital, prediction-market writes, Phase 7 proof credit, and UI-inferred readiness. It correctly reports `status=blocked`, `phase5_certified=False`, `phase5_exit_gate=False`, `phase6_handoff_allowed=False`, `phase7_planning_allowed=False`, `phase7_proof_credit_allowed=False`, `input_gate_passed_count=14`, `input_gate_blocked_count=1`, `submitted_paper_order_count=0`, `open_position_count=0`, `closed_trade_count=0`, and `live_capital_enabled_count=0`. The next explicit build target is the upstream Q5-14 lifecycle unblock after risk sizing, staged-order, dry-run, guarded submit-path, and position lifecycle prerequisites exist.
+
+Update after Q5E-1 and Q5E-2: `docs/qadam-phase-5-q5e-1-risk-evidence-lift-audit-2026-05-24.md` and `docs/qadam-phase-5-q5e-2-paper-order-staging-audit-2026-05-24.md` are now complete. Q5E-1 added a non-executing evidence lift for `crude_oil_energy_security_disruption`: Signal Integrity reports `passed_to_risk_shadow`, non-Yahoo market confirmation is available, `pricing_gap=pass_pricing_gap_confirmed`, Yahoo Finance remains supplemental-only, and Q5-3 now reports `paper_size_eligible_count=1` with `target_proposed_risk_gbp=5.0` against `target_max_risk_gbp=10.0`. Q5E-2 then updated Q5-6 so that eligible Alpaca-paper risk review can create one staged paper-order object with `selected_venue=alpaca_paper`, `order_state=staged_ready_for_dry_run`, deterministic idempotency, `side=buy`, `quantity=1.0`, `order_type=market`, and `time_in_force=day`. Q5-6 now reports `staged_order_count=1` and `blocked_count=4`, while broker POST calls, paper-order submission, broker writes, positions, prediction-market writes, and live capital remain zero. The next explicit build target is Q5E-3: let Q5-7 create a dry-run request preview and simulated receipt from the staged paper order without submitting it.
+
+Update after Q5E-3: `docs/qadam-phase-5-q5e-3-alpaca-paper-dry-run-audit-2026-05-24.md` is now complete. Q5-7 now consumes the staged Alpaca paper-order record and reports `source_staged_order_count=1`, `request_preview_count=1`, and `dry_run_receipt_count=1`; the target record has `request_preview_allowed=True`, `dry_run_receipt_created=True`, `receipt_state=dry_run_receipt_preview_ready`, and deterministic Q5-7 idempotency present. Broker POST calls, Alpaca POST calls, broker writes, paper-order submission, real broker receipt creation, live endpoints, positions, and live capital remain zero. This unblocked Q5E-4.
+
+Update after Q5E-4: `docs/qadam-phase-5-q5e-4-paper-submit-path-audit-2026-05-24.md` is now complete. Q5-8 now consumes the Q5E-3 dry-run preview and explicit paper-submit approval, exposing one guarded Alpaca paper-submit path for `crude_oil_energy_security_disruption` with `submit_path_available_count=1`, `paper_submit_gate_state=ready_for_guarded_paper_submit`, `receipt_state=paper_submit_gate_ready`, `idempotency_key_allocated_for_submit=True`, `event_log_prewrite.prewrite_complete=True`, and `pre_trade_snapshot.captured=True`. This is guarded path readiness only: `broker_post_called_count=0`, `alpaca_post_called_count=0`, `paper_order_submitted_count=0`, `live_endpoint_allowed_count=0`, `prediction_market_write_allowed_count=0`, and `live_capital_enabled_count=0`. Q5-14 remains blocked because there is still no submitted paper order, broker receipt, mirrored submitted order, open position, closed trade, or postmortem due marker. Q5-15 remains blocked with `phase5_certified=False` and `phase6_handoff_allowed=False`. The next explicit build target is Q5E-5: create the guarded submitted paper-order plus broker-receipt state and mirror it into the position-monitor path without enabling live capital or Phase 7 proof credit.
+
+Update after Q5E-5: `docs/qadam-phase-5-q5e-5-submitted-paper-order-audit-2026-05-24.md` is now complete. Q5-8 now records one guarded local submitted paper-order and one local broker receipt for `crude_oil_energy_security_disruption`: `paper_order_submitted_count=1`, `broker_submit_receipt_created_count=1`, `submitted_order_ref=q5e5-paper-order-crude_oil_energy_security_disruption`, and `broker_receipt_ref=q5e5-local-broker-receipt-crude_oil_energy_security_disruption`. This is a local lifecycle state only: `broker_post_called_count=0`, `alpaca_post_called_count=0`, `live_endpoint_allowed_count=0`, `prediction_market_write_allowed_count=0`, `live_capital_enabled_count=0`, and `phase7_proof_credit_allowed=False`. Q5-11 now reports `submitted_order_count=1` and `mirrored_order_count=1`, while `open_position_count=0`, `closed_trade_count=0`, and `postmortem_due_count=0`. Q5-14 remains blocked with `closed_trade_missing`, `execution_adapter_not_staging_ready`, `open_position_missing`, and `postmortem_due_missing`. Q5-15 remains blocked with `phase5_certified=False` and `phase6_handoff_allowed=False`. The next explicit build target is Q5E-6: create the guarded open-position lifecycle state from the mirrored submitted order without enabling broker POST, live capital, autonomous position mutation, or Phase 7 proof credit.
+
+Update after Q5E-6: `docs/qadam-phase-5-q5e-6-open-position-audit-2026-05-24.md` is now complete. Q5E-6 records one guarded local open-position lifecycle state for `crude_oil_energy_security_disruption`: `status=open_position`, `source_order_ref=q5e5-paper-order-crude_oil_energy_security_disruption`, `position_ref=q5e6-open-position-crude_oil_energy_security_disruption`, `order_status_for_mirror=filled`, and `position_status_for_mirror=open_position`. Q5-11 now reports `submitted_order_count=1`, `mirrored_order_count=1`, and `open_position_count=1`, while `closed_trade_count=0` and `postmortem_due_count=0`. Q5-14 remains blocked with `closed_trade_missing`, `execution_adapter_not_staging_ready`, and `postmortem_due_missing`. Q5-15 remains blocked with `phase5_certified=False` and `phase6_handoff_allowed=False`. The next explicit build target is Q5E-7: create the guarded closed-trade lifecycle state from the Q5E-6 open position without enabling broker POST, live capital, autonomous position mutation, or Phase 7 proof credit.
+
+Update after Q5E-7: `docs/qadam-phase-5-q5e-7-closed-trade-audit-2026-05-24.md` is now complete. Q5E-7 records one guarded local closed-trade lifecycle state for `crude_oil_energy_security_disruption`: `status=closed_trade`, `source_position_ref=q5e6-open-position-crude_oil_energy_security_disruption`, `closed_trade_ref=q5e7-closed-trade-crude_oil_energy_security_disruption`, and `postmortem_status=postmortem_pending_marker`. Q5-11 now reports `submitted_order_count=1`, `mirrored_order_count=1`, `open_position_count=0`, `closed_trade_count=1`, and `postmortem_due_count=0`. Q5-14 remains blocked with `execution_adapter_not_staging_ready` and `postmortem_due_missing`. Q5-15 remains blocked with `phase5_certified=False` and `phase6_handoff_allowed=False`. The next explicit build target is Q5E-8: create the guarded postmortem due marker from the Q5E-7 closed trade without enabling broker POST, live capital, autonomous position mutation, or Phase 7 proof credit.
+
+Update after Q5E-8: `docs/qadam-phase-5-q5e-8-postmortem-due-audit-2026-05-24.md` is now complete. Q5E-8 records one guarded local postmortem-due marker for `crude_oil_energy_security_disruption`: `status=postmortem_due`, `source_closed_trade_ref=q5e7-closed-trade-crude_oil_energy_security_disruption`, `postmortem_due_ref=q5e8-postmortem-due-crude_oil_energy_security_disruption`, and `postmortem_status=postmortem_due`. Q5-11 now reports `submitted_order_count=1`, `mirrored_order_count=1`, `open_position_count=0`, `closed_trade_count=1`, and `postmortem_due_count=1`. Q5-14 remains blocked only with `execution_adapter_not_staging_ready`. Q5-15 remains blocked with `phase5_certified=False` and `phase6_handoff_allowed=False`. The next explicit build target is Q5E-9: resolve the remaining execution-adapter staging-readiness blocker without enabling broker POST, live capital, autonomous execution, or Phase 7 proof credit.
+
+Update after Q5E-9: `docs/qadam-phase-5-q5e-9-execution-adapter-readiness-audit-2026-05-24.md` is now complete. The execution adapter now reports exactly one guarded Alpaca paper staging-readiness signal with `downstream_staging_allowed_count=1`, `staging_readiness_scope=guarded_q5e_lifecycle_readiness`, and `guarded_postmortem_due_ready=True`. This is read-only readiness only: broker POST, Alpaca POST, broker writes, paper-order staging/submission authority, prediction-market writes, crypto-perps writes, live endpoints, live capital, and Phase 7 proof credit remain disabled. Q5-14 now reports `paper_trade_drill_complete=True`, `phase5_paper_trade_drill_exit_gate_passed=True`, and `blocker_count=0`. Q5-15 now reports `status=eligible`, `phase5_certified=True`, `phase5_exit_gate=True`, `phase6_handoff_allowed=True`, `phase7_planning_allowed=True`, `phase7_proof_credit_allowed=False`, `input_gate_passed_count=15`, and `input_gate_blocked_count=0`. The next explicit build target is the Phase 6 - Learning Loop implementation plan.
+
+Update after Q5E-10: `docs/qadam-phase-5-q5e-10-phase-6-handoff-closeout-audit-2026-05-24.md` is now complete. Q5E-10 added `orchestrator/phase5_phase6_handoff.py` and `scripts/check_phase5_phase6_handoff.py`, writes `data/runtime/phase5_phase6_handoff.json`, records one handoff Event Log entry, and reports `status=eligible`, `handoff_state=phase6_learning_loop_plan_ready`, `phase6_learning_loop_plan_allowed=True`, and `phase6_learning_loop_implementation_allowed=False`. It allows only Q6 planning: Phase 6 postmortem ingestion, learning writes, knowledge-graph writes, model-weight updates, trust-score updates, shadow-strategy runner activation, Architect policy mutation, broker POST, Alpaca POST, live endpoints, live capital, and Phase 7 proof credit remain disabled. The next explicit build target is Q6-0: the Phase 6 - Learning Loop implementation plan.
 
 This gets Qadam ready to think without letting prompts, tools, or future model calls accumulate hidden authority.

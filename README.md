@@ -12,7 +12,10 @@ Planning docs:
 - `docs/qadam-master-implementation-plan.md` - start here; this is the day-to-day control document.
 - `docs/qadam-dashboard-implementation-plan.md` - cockpit, system map, cognition view, trade layer, money/timeline, and phased dashboard build path.
 - `docs/qadam-telegram-bot-implementation-plan.md` - Telegram bot communications rail for member alerts, insights, trade lifecycle updates, and dashboard visibility.
-- `docs/qadam-user-guide.md` - founding-member user guide for reading and using the Qadam cockpit.
+- `docs/qadam-pre-phase-3-implementation-plan.md` - staged readiness plan for completing all pre-Phase-3 gates before quantum integration resumes beyond scaffold mode.
+- `docs/qadam-phase-3-implementation-plan.md` - staged Head of Quant provider/scheduler readiness plan after pre-Phase-3 certification.
+- `docs/qadam-pre-phase-3-operational-runbook.md` - repeatable local routine for startup, source refresh, durable replay, shadow intelligence, cockpit export, dashboard checks, and secret scanning.
+- `docs/qadam-user-guide.md` - full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries.
 - `docs/api-key-setup.md`
 - `docs/qadam-api-key-acquisition-plan.md`
 - `docs/api-specs.md` - full API/provider inventory, credential placeholders, source onboarding batches, and unresolved provider decisions.
@@ -146,7 +149,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 
 - Python orchestrator shell.
 - World Monitor 35-source registry.
-- API Specs appendix covering the 35 canonical data sources, model providers, quantum providers, broker rails, notification services, TradingView alert boundary, and optional providers discovered in the pasted `world-monitor/` reference codebase.
+- API Specs appendix covering the 35 canonical data sources, model providers, quantum providers, broker rails, notification services, TradingView alert boundary, Yahoo Finance/yfinance supplemental market-data consideration, and optional providers discovered in the pasted `world-monitor/` reference codebase.
 - Qadam resource registry from `specs/qadam-general-context.md`.
 - How The World Works integration note for the private esoteric edge corpus.
 - Structured world-model claim cards, all marked as private foundational priors.
@@ -155,6 +158,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Phase 1 data-spine acceptance gate for all 35 sources, all 5 pipelines, promoted adapter coverage, heartbeat consistency, and full deterministic ingestion.
 - Phase 1 read-only live adapter promotion layer for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
 - Alpaca paper-account mirror with GET-only balance, positions, orders, and P&L refresh through `scripts/check_alpaca_paper_mirror.py --live`.
+- Local `yahoo-finance-api/` reference checkout accepted as a supplemental read-only market-data capability pending live dependencies for OHLCV, volume, options-chain, market-status, quote-search, sector, screener, and news context. It is not a broker or execution venue.
 - Historical backfill planning and local sample-run contract for 12 priority sources, with credential-aware blocked/ready states.
 - Trust Score seed contract across all 35 sources: 22 sources currently score above 0.5 from priors/promoted adapters; real-data scoring remains pending.
 - Postgres/Timescale durable ingestion is live locally through OrbStack, with 35/35 canonical sources replayable from `source_observation`; it still degrades safely when the local Docker runtime is closed.
@@ -186,12 +190,21 @@ These are live or live-adjacent data feeds, not the full set of Qadam research/b
 
 The detailed source credential list lives in `docs/api-specs.md`. Qadam should onboard providers in batches: first NASA FIRMS, ACLED, UnusualWhales, Kalshi, Alpaca paper, Gemini, Supabase, and Telegram bot; then FRED, BLS, UN Comtrade, X, Reddit, Telegram MTProto, AIS, and Wingbits; then the lower-frequency physical, crypto, patent, GitHub, and quantum providers.
 
+Supplemental market confirmation: Yahoo Finance/yfinance from `yahoo-finance-api/` is accepted as `accepted_supplemental_pending_live_dependencies`. Treat it as a read-only market-data tool for price, volume, options-chain, market-status, and instrument metadata confirmation, not as a canonical 36th source unless the registry is deliberately changed.
+
 TradingView boundary:
 
 - A paid TradingView account does not provide a standard retail data API key for Qadam to pull market data directly.
 - TradingView MCP is useful as read-only market and technical-analysis tooling through Codex/MCP, and does not require a TradingView login.
 - TradingView paid-account alerts now have a local D7 intake contract: Qadam can represent an alert as an observed signal, deduplicate it, write a safe Event Log entry, and show it in the cockpit.
 - The public TradingView webhook URL remains later work. It requires a secure authenticated receiver and still cannot trigger execution.
+
+Yahoo Finance boundary:
+
+- The local `yahoo-finance-api/` checkout is useful for a Qadam wrapper around `yfinance`, especially while TradingView remains alert-only and UnusualWhales is missing.
+- Use it only as read-only market confirmation: OHLCV, volume, options chains, quote search, market status, sectors, screeners, and news context.
+- It now has a dormant Qadam wrapper in `orchestrator/yahoo_finance_adapter.py` and a sample/live-degraded check in `scripts/check_yahoo_finance_adapter.py`; live reads still need the yfinance dependency set installed into `.venv`.
+- It cannot provide broker execution, fill prices, order receipts, broker reconciliation, paper-order submission, or live-capital authority.
 
 ## Resource Registry
 
@@ -227,8 +240,9 @@ Current founding access list:
 1. Copy `.env.example` to `.env` and fill only the keys you have.
 2. Start or keep OrbStack/Docker running, then run `scripts/start_postgres_timescale_ingestion.sh` for the durable Timescale spine.
 3. Run `./start_qadam.sh` to verify the foundation.
-4. Set `QADAM_START_ORCHESTRATOR=1` when you want the local health endpoint to run.
-5. For cockpit login, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the cockpit environment, then open `/login`.
+4. For the complete pre-Phase-3 refresh path, run `./scripts/run_pre_phase3_operational_routine.sh --stage all`.
+5. Set `QADAM_START_ORCHESTRATOR=1` when you want the local health endpoint to run.
+6. For cockpit login, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the cockpit environment, then open `/login`.
 
 Supabase cockpit auth:
 

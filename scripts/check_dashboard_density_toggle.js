@@ -32,8 +32,8 @@ function assertIncludes(text, needle, label) {
     "aria-pressed=\"false\"",
     "Executive",
     "Terminal",
-    "/auth.css?v=20260521-nav-ux",
-    "/dashboard.js?v=20260521-nav-ux"
+    "/auth.css?v=20260526-paper-equity-chart",
+    "/dashboard.js?v=20260526-paper-equity-chart"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
 
 [

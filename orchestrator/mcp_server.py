@@ -471,7 +471,7 @@ def quantum_provider_registry() -> list[dict[str, object]]:
 
 def secret_registry_status() -> dict[str, object]:
     settings = Settings.from_env()
-    keys = ("QCTRL_API_KEY", "IBM_QUANTUM_TOKEN", "AWS_ACCESS_KEY_ID")
+    keys = ("QCTRL_API_KEY", "IBM_QUANTUM_TOKEN", "AWS_ACCESS_KEY_ID", "PREFERENCE_API_KEY")
     return {
         "secret_file": validate_secret_file(settings.secrets_file),
         "secrets": secret_statuses(keys, settings),

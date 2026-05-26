@@ -10,6 +10,8 @@ Source hierarchy:
 2. `specs/Qadam - World Monitor Integration Reference.md` gives endpoint-level integration detail.
 3. `world_monitor/source_registry.py` is the canonical current 35-source implementation registry.
 4. `world-monitor/` is a pasted reference codebase. It is useful for patterns and optional providers, but it is not Qadam's canonical architecture.
+5. `yahoo-finance-api/` is a local `yfinance` reference checkout. It is useful for supplemental market confirmation, but it is not a broker, not an execution venue, and not automatically a canonical 36th source.
+6. Preference/PREF MCP is a registered supplemental multi-source data plane. It can enrich discovery and context across prediction markets and real-world signals, but it is not automatically a canonical source and must be gated through `docs/qadam-preference-mcp-integration-plan.md`.
 
 Rule: keep all real credentials out of Git, docs, screenshots, and chat. This file only uses placeholders.
 
@@ -39,6 +41,9 @@ Implemented locally:
 - Historical backfill planning and local sample-run records exist for ACLED, GDELT, NASA FIRMS, FRED, RSS, Polymarket, Kalshi, Alpaca, BLS, ECB, UN Comtrade, and SEC EDGAR.
 - Trust Score seed covers all 35 sources, but scores are priors until replaced by backtests and live observations.
 - Postgres/Timescale durable ingestion is coded as a local contract and is live only when the local database service is running. Use `scripts/start_postgres_timescale_ingestion.sh` for the Postgres-only bootstrap and `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` to verify replayable 35-source coverage.
+- Yahoo Finance / yfinance is accepted as a supplemental read-only market-data capability with classification `accepted_supplemental_pending_live_dependencies`. It has a dormant Qadam wrapper with sample mode and guarded live mode, but it should not be consumed by Phase 2 or Phase 3 until live dependencies, public-safe cockpit status, and corroboration policy checks pass.
+- Preference/PREF MCP is a registered supplemental read-only multi-source capability with status/catalog/sample/provenance/domain-pack/shadow-context checks first, not a canonical-source promotion. PREF-1 identity/status gating now exists in `orchestrator/preference_mcp_identity.py` and `scripts/check_preference_mcp_identity.py`; PREF-2 catalog/schema gating now exists in `orchestrator/preference_mcp_catalog.py` and `scripts/check_preference_tool_catalog.py`; PREF-3 offline sample adapter scaffolding now exists in `orchestrator/preference_mcp_adapter.py` and `scripts/check_preference_mcp_adapter.py`; PREF-4 status/catalog-only live smoke gating now exists behind `scripts/check_preference_mcp_adapter.py --live-status-only` and `--live-catalog-only`; PREF-5 provenance/source-quorum policy now exists in `orchestrator/preference_mcp_provenance.py` and `scripts/check_preference_provenance.py`; PREF-6 Resource Registry, Data Veracity, and Trust Score policy now keeps Preference as `supplemental_data_plane` with no canonical rank impact; PREF-7 domain-pack mapping now exists in `orchestrator/preference_mcp_domain_packs.py` and `scripts/check_preference_domain_packs.py`; PREF-8 shadow-intelligence enrichment now exists in `orchestrator/preference_mcp_shadow_context.py` and `scripts/check_preference_shadow_context.py`; PREF-9 cockpit/Mission Control visibility now exists in `orchestrator/cockpit_status.py`, `landing-page-repo/dashboard.js`, `scripts/check_cockpit_status.py`, `scripts/check_dashboard_renderer.js`, and `scripts/check_dashboard_mission_control.js`; PREF-10 Phase 4 re-manifestation now exists in `orchestrator/phase4_candidate_strategy_universe.py`, `orchestrator/phase4_manifested_strategy.py`, `scripts/check_phase4_candidate_strategy_universe.py`, `scripts/check_phase4_manifested_strategy.py`, and `docs/qadam-manifested-strategy.md`; PREF-11 Q4-10/Q4-12 approval and certification gating now exists in `orchestrator/phase4_approval_record.py`, `orchestrator/phase4_certification.py`, `scripts/check_phase4_approval_record.py`, and `scripts/check_phase4_certification.py`; PREF-12 upstream source-promotion decisions now exist in `orchestrator/preference_mcp_source_promotion.py` and `scripts/check_preference_source_promotion.py`. Current local live status is fail-closed until `PREFERENCE_MCP_ENABLED=true` and a local `PREFERENCE_API_KEY` are deliberately configured. Deterministic Preference sample context may be consumed by Phase 2, shown in the public cockpit, reflected in Phase 4 strategy manifestation, verified by Phase 4 certification, and scored by Data Veracity/Trust Score only as supplemental challenge/context; it cannot satisfy source quorum, create trade candidates, approve risk, route execution, create paper orders, write brokers, call quantum providers, enable schedulers, promote canonical sources, change canonical source count, or enable live capital.
+- Phase 4 data-source closeout now requires Q4-10 approval scope and Q4-12 certification to validate PREF-12 source-promotion status: zero promoted Preference upstreams, canonical source count 35, `preference_mcp_source_36=False`, and Yahoo Finance still `supplemental_market_confirmation_only`.
 
 Not yet proven live:
 
@@ -80,6 +85,8 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Provider | Placeholders | Why It Matters |
 | --- | --- | --- |
 | FRED | `FRED_API_KEY` | Official macro regime data; public CSV fallback exists. |
+| Yahoo Finance / yfinance | none by default; optional local runtime controls | Supplemental OHLCV, volume, options-chain, market-status, quote-search, sector, screener, and news context for market confirmation. Not a broker and not a canonical source until explicitly promoted. |
+| Preference / PREF MCP | `PREFERENCE_API_KEY` plus local runtime controls | Supplemental multi-source MCP data plane for prediction markets, orderbooks, weather, vessel/aircraft/satellite context, SEC filings, smart wallets, news, macro, and sports lines. Status/catalog/sample/provenance only first; no paid tools, execution, fills, receipts, reconciliation, broker writes, source-quorum credit, or canonical promotion without explicit approval. |
 | BLS | `BLS_API_KEY` | CPI, PPI, labour, and inflation surprise context. |
 | UN Comtrade | `COMTRADE_API_KEY` | Trade-flow and supply-chain rerouting context. |
 | X API v2 | `X_BEARER_TOKEN` | High-velocity narrative and breaking-news triage. |
@@ -157,6 +164,12 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 34 | Patent Filings | Social | 4 | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` optional | PatentsView and EPO OPS | Long-cycle R&D, semiconductor, defence, and technology inflection signals. |
 | 35 | GitHub API | Social | 4 | `GITHUB_TOKEN` | `https://api.github.com/` | Developer activity, release-cycle changes, and weak tech-sector precursor signals. |
 
+Supplemental market-confirmation capability, not counted in the 35-source registry until explicitly promoted:
+
+| Capability | Pipeline | Access | Endpoint / Access Pattern | Qadam Use |
+| --- | --- | --- | --- | --- |
+| Yahoo Finance / yfinance | Market | No key by default; local library wrapper | `yahoo-finance-api/` `Ticker`, `Tickers`, `download`, `Market`, `Search`, `Sector`, `Industry`, `screen` | Read-only market price, volume, options-chain, market-status, quote-search, sector, screener, and news context. Useful for `market_price_confirmation`, pricing-gap context, and volume/technical confirmation. Cannot execute, reconcile, or stand alone as trade evidence. |
+
 ## 4. Platform, Model, Broker, And Notification APIs
 
 These are not all World Monitor data sources, but they are required to make Qadam operate as a system.
@@ -171,6 +184,8 @@ These are not all World Monitor data sources, but they are required to make Qada
 | Quantum | IBM Quantum | `IBM_QUANTUM_TOKEN` | Optional hardware backend; classical fallback required. |
 | Quantum | AWS Braket | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | Optional hardware backend; restricted IAM only. |
 | Paper broker | Alpaca | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account only until live promotion review. |
+| Market data supplement | Yahoo Finance / yfinance | none by default; optional `YFINANCE_ENABLED`, `YFINANCE_CACHE_DIR`, `YFINANCE_REQUEST_BUDGET_PER_RUN`, `YFINANCE_SYMBOL_ALLOWLIST` | Read-only supplemental market confirmation. No broker execution, no fill prices, no receipts, no reconciliation truth. |
+| Multi-source data plane | Preference / PREF MCP | `PREFERENCE_API_KEY`, optional `PREFERENCE_MCP_ENABLED`, `PREFERENCE_MCP_ENDPOINT`, `PREFERENCE_RUN_CALL_BUDGET`, `PREFERENCE_DAILY_CALL_BUDGET`, `PREFERENCE_TOOL_ALLOWLIST`, `PREFERENCE_DOMAIN_ALLOWLIST` | Read-only supplemental world-data and prediction-market context. Registered as `supplemental_data_plane`, not source 36. Status/catalog/sample/provenance checks first; no anonymous identity, no paid tools unless approved, no broker execution, no fill prices, no receipts, no reconciliation truth, no source-quorum credit, no canonical rank impact, and no canonical source promotion without a registry decision for a specific upstream source. |
 | Prediction markets | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Read-only first; guarded execution later. |
 | Prediction markets | Polymarket / pmxt / Polyrouter | `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER_ADDRESS`, `POLYMARKET_CHAIN_ID`, `POLYROUTER_API_KEY`, `PMXT_CONFIG_PATH` | Disabled until paper/sandbox-safe path is explicit. |
 | Charts / alerts | TradingView | `TRADINGVIEW_WEBHOOK_SECRET`, `TRADINGVIEW_ALERT_RECEIVER_URL` | Paid-account alerts become observed signals only. No normal retail market-data API key. |
@@ -294,6 +309,10 @@ UNUSUAL_WHALES_API_KEY=
 RAPIDAPI_KEY=
 COINGLASS_API_KEY=
 ETH_RPC_URL=
+YFINANCE_ENABLED=false
+YFINANCE_CACHE_DIR=data/runtime/yfinance-cache
+YFINANCE_REQUEST_BUDGET_PER_RUN=25
+YFINANCE_SYMBOL_ALLOWLIST=CL=F,BZ=F,USO,XLE,SI=F,SLV,SIL,PAAS,ITA,XAR,LMT,RTX,NOC,SMH,SOXX,NVDA,TSM,ASML,AMD,SPY,QQQ,TLT,HYG,^VIX,DX-Y.NYB
 
 # Social / narrative pipeline
 RSS_FEED_CONFIG_PATH=
@@ -365,6 +384,7 @@ These need to stay visible in the implementation plan:
 - Space-Track / CelesTrak is a combined registry source. Space-Track requires an account; CelesTrak is public. The adapter should support public fallback where possible.
 - STOCK Act filings need a concrete provider or official source selection.
 - TradingView has account value through alerts and charting, not a normal retail market-data API key.
+- Yahoo Finance / yfinance is resolved for now as a supplemental market-confirmation tool, not a canonical source-registry change. The dormant wrapper and sample check exist; live mode still requires deliberate dependency installation, `YFINANCE_ENABLED=true`, public-safe cockpit status, and no execution/reconciliation authority.
 - The pasted `world-monitor/` cloud stack uses Redis, Railway, Convex, Clerk, Dodo, and Cloudflare. Qadam may reuse data-access ideas, but v1 must remain local-first and Supabase-authenticated.
 
 ## 8. Adapter Acceptance Rules
@@ -377,6 +397,7 @@ Every source adapter must ship with:
 - Raw payload archive with local retention rules.
 - Normalized observation schema.
 - Degraded-state handling for missing keys, quota errors, timeout, parse failure, stale data, and provider outage.
+- For public/scraped market-data libraries such as yfinance, explicit terms-of-use, caching, request budget, and stale-data boundaries.
 - Trust Score seed and future monthly update path.
 - Event Log write for every ingest attempt, success, degradation, and adapter error.
 - Dashboard status that answers: live, degraded, unavailable, deferred, blocked, or local-only.

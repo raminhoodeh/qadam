@@ -21,6 +21,14 @@ from orchestrator.secrets import secret_status, secret_value
 
 PAPER_ACCOUNT_SCHEMA_VERSION = 1
 MATURITY_CLOSED_TRADE_TARGET = 100
+POSTMORTEM_PENDING_MARKER_STATUS = "postmortem_pending_marker"
+POSTMORTEM_STATUSES = frozenset(
+    {
+        POSTMORTEM_PENDING_MARKER_STATUS,
+        "postmortem_due",
+        "postmortem_complete",
+    }
+)
 ALPACA_PAPER_BASE_URL = "https://paper-api.alpaca.markets/v2"
 ALPACA_READONLY_PATHS = frozenset(
     {
@@ -183,7 +191,7 @@ def validate_position(position: PaperPosition) -> None:
 def validate_closed_trade(trade: ClosedPaperTrade) -> None:
     if trade.schema_version != PAPER_ACCOUNT_SCHEMA_VERSION:
         raise ValueError("closed paper trade schema version mismatch")
-    if trade.postmortem_status not in {"postmortem_due", "postmortem_complete"}:
+    if trade.postmortem_status not in POSTMORTEM_STATUSES:
         raise ValueError(f"invalid postmortem status: {trade.postmortem_status}")
 
 

@@ -47,6 +47,44 @@ def main() -> int:
     print(f"phase2_shadow_cycle_live_local_llm={report['live_local_llm']}")
     print(f"phase2_shadow_cycle_source_count={report['source_count']}")
     print(f"phase2_shadow_cycle_source_degraded_count={report['source_degraded_count']}")
+    print(f"phase2_shadow_cycle_preference_mcp_status={report['preference_mcp_shadow_context_status']}")
+    print(f"phase2_shadow_cycle_preference_mcp_role={report['preference_mcp_shadow_context_role']}")
+    print(
+        "phase2_shadow_cycle_preference_mcp_shadow_observation_count="
+        f"{report['preference_mcp_shadow_observation_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_preference_mcp_active_required_challenge_count="
+        f"{report['preference_mcp_active_required_challenge_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_preference_mcp_source_quorum_credit_allowed="
+        f"{report['preference_mcp_source_quorum_credit_allowed']}"
+    )
+    print(
+        "phase2_shadow_cycle_preference_mcp_trade_candidate_creation_allowed="
+        f"{report['preference_mcp_trade_candidate_creation_allowed']}"
+    )
+    print(
+        "phase2_shadow_cycle_preference_mcp_risk_handoff_allowed="
+        f"{report['preference_mcp_risk_handoff_allowed']}"
+    )
+    print(f"phase2_shadow_cycle_preference_mcp_execution_allowed={report['preference_mcp_execution_allowed']}")
+    print(
+        "phase2_shadow_cycle_preference_mcp_broker_write_allowed="
+        f"{report['preference_mcp_broker_write_allowed']}"
+    )
+    print(f"phase2_shadow_cycle_strategy_research_intake_status={report['strategy_research_intake_status']}")
+    print(f"phase2_shadow_cycle_strategy_research_candidate_count={report['strategy_research_candidate_count']}")
+    print(f"phase2_shadow_cycle_strategy_research_challenge_count={report['strategy_research_challenge_count']}")
+    print(
+        "phase2_shadow_cycle_strategy_research_trade_candidate_creation_allowed="
+        f"{report['strategy_research_trade_candidate_creation_allowed']}"
+    )
+    print(f"phase2_shadow_cycle_strategy_research_risk_handoff_allowed={report['strategy_research_risk_handoff_allowed']}")
+    print(f"phase2_shadow_cycle_strategy_research_execution_allowed={report['strategy_research_execution_allowed']}")
+    print(f"phase2_shadow_cycle_strategy_research_paper_order_allowed={report['strategy_research_paper_order_allowed']}")
+    print(f"phase2_shadow_cycle_strategy_research_broker_write_allowed={report['strategy_research_broker_write_allowed']}")
     print(f"phase2_shadow_cycle_queued_packet_count={report['queued_packet_count']}")
     print(f"phase2_shadow_cycle_durable_replay_requested={report['durable_replay_requested']}")
     print(f"phase2_shadow_cycle_durable_replay_status={report['durable_replay_status']}")
@@ -219,6 +257,26 @@ def main() -> int:
     print(f"phase2_shadow_cycle_strategy_lead_review_mode={report['strategy_lead_review_mode']}")
     print(f"phase2_shadow_cycle_strategy_lead_evidence_pressure={report['strategy_lead_evidence_pressure']}")
     print(f"phase2_shadow_cycle_strategy_lead_required_challenge_count={report['strategy_lead_required_challenge_count']}")
+    print(
+        "phase2_shadow_cycle_strategy_lead_preference_mcp_context_status="
+        f"{report['strategy_lead_preference_mcp_context_status']}"
+    )
+    print(
+        "phase2_shadow_cycle_strategy_lead_preference_mcp_challenge_count="
+        f"{report['strategy_lead_preference_mcp_challenge_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_strategy_lead_strategy_research_context_status="
+        f"{report['strategy_lead_strategy_research_context_status']}"
+    )
+    print(
+        "phase2_shadow_cycle_strategy_lead_strategy_research_candidate_count="
+        f"{report['strategy_lead_strategy_research_candidate_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_strategy_lead_strategy_research_challenge_count="
+        f"{report['strategy_lead_strategy_research_challenge_count']}"
+    )
     print(f"phase2_shadow_cycle_strategy_lead_risk_handoff_allowed={report['strategy_lead_risk_handoff_allowed']}")
     print(f"phase2_shadow_cycle_strategy_lead_trade_candidate_allowed={report['strategy_lead_trade_candidate_allowed']}")
     print(f"phase2_shadow_cycle_report_path={report['report_path']}")
@@ -249,6 +307,44 @@ def main() -> int:
     if report["durable_replay_write_authority"] or report["durable_replay_signal_authority"]:
         return 1
     if report["durable_replay_order_authority"]:
+        return 1
+    if report["preference_mcp_shadow_context_status"] != "challenge_only_ready":
+        return 1
+    if report["preference_mcp_shadow_context_role"] != "read_only_shadow_challenge_context":
+        return 1
+    if report["preference_mcp_shadow_observation_count"] < 1:
+        return 1
+    if report["preference_mcp_active_required_challenge_count"] < 1:
+        return 1
+    if report["preference_mcp_source_quorum_credit_allowed"]:
+        return 1
+    if report["preference_mcp_trade_candidate_creation_allowed"]:
+        return 1
+    if report["preference_mcp_risk_handoff_allowed"]:
+        return 1
+    if report["preference_mcp_execution_allowed"] or report["preference_mcp_broker_write_allowed"]:
+        return 1
+    if report["strategy_research_intake_status"] != "ready_for_strategy_review":
+        return 1
+    if report["strategy_research_candidate_count"] != 4:
+        return 1
+    if report["strategy_research_challenge_count"] < 4:
+        return 1
+    if report["strategy_research_trade_candidate_creation_allowed"]:
+        return 1
+    if report["strategy_research_risk_handoff_allowed"]:
+        return 1
+    if report["strategy_research_execution_allowed"]:
+        return 1
+    if report["strategy_research_paper_order_allowed"]:
+        return 1
+    if report["strategy_research_broker_write_allowed"]:
+        return 1
+    if report["strategy_lead_strategy_research_context_status"] != "ready_for_strategy_review":
+        return 1
+    if report["strategy_lead_strategy_research_candidate_count"] != 4:
+        return 1
+    if report["strategy_lead_strategy_research_challenge_count"] < 4:
         return 1
     if report["strategy_lead_execution_allowed"] or report["strategy_lead_paper_order_allowed"]:
         return 1

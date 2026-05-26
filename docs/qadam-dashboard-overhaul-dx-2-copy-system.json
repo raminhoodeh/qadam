@@ -1,0 +1,427 @@
+{
+  "contract_id": "qadam_dashboard_overhaul_dx_2_copy_system",
+  "contract_version": "2026-05-25.dx2",
+  "status": "active",
+  "route": "/dashboard/",
+  "authority_boundary": "Read-only copy and terminology contract only. This copy system cannot approve trades, create candidates, stage orders, submit paper orders, write brokers, send Telegram commands, call live capital, mutate data sources, or change runtime status.",
+  "source_contracts": [
+    "docs/qadam-dashboard-overhaul-dx-1-ia-contract.json"
+  ],
+  "primary_view_copy_policy": {
+    "view_order": [
+      "overview",
+      "trades",
+      "sources",
+      "reasoning",
+      "performance",
+      "operations",
+      "governance"
+    ],
+    "default_rule": "Use plain operating labels in primary copy. Internal stage codes and implementation labels are diagnostic metadata, not onboarding language.",
+    "overview_rule": "Overview must answer what is happening now without unexplained D-codes, Q-codes, phase-first labels, static-snapshot jargon, secure-bridge jargon, or shadow-toggle jargon.",
+    "operations_rule": "Operations may show internal codes and runtime terms only as labeled diagnostics with a plain explanation beside them.",
+    "phase_rule": "Phase labels are allowed only as secondary diagnostics. Primary labels must use operating-state language.",
+    "safety_rule": "Safety copy must stay explicit: read-only, paper/demo only, live capital disabled, broker writes blocked, and candidate is not an order."
+  },
+  "view_rules": {
+    "overview": {
+      "plain_label": "Overview",
+      "primary_copy_style": "plain operating state",
+      "disallowed_primary_terms": [
+        "D0",
+        "D1",
+        "D5",
+        "D7",
+        "D9",
+        "Q4",
+        "Q5",
+        "Q5E",
+        "Q6",
+        "Q7",
+        "Phase 4",
+        "Phase 5",
+        "Phase 6",
+        "Phase 7",
+        "static snapshot",
+        "secure bridge",
+        "shadow toggles"
+      ],
+      "required_plain_topics": [
+        "paper/demo only",
+        "live capital disabled",
+        "source health",
+        "trade lifecycle",
+        "safety state",
+        "action needed"
+      ]
+    },
+    "trades": {
+      "plain_label": "Trades",
+      "primary_copy_style": "trade lifecycle language",
+      "primary_terms": [
+        "observed signal",
+        "qualified setup",
+        "candidate",
+        "draft paper order",
+        "submitted paper order",
+        "open position",
+        "closed paper trade",
+        "postmortem due"
+      ],
+      "diagnostic_codes_allowed": false
+    },
+    "sources": {
+      "plain_label": "Sources",
+      "primary_copy_style": "feed freshness and provenance language",
+      "primary_terms": [
+        "live feed",
+        "supplemental feed",
+        "source quorum",
+        "freshness",
+        "provenance"
+      ],
+      "diagnostic_codes_allowed": false
+    },
+    "reasoning": {
+      "plain_label": "Reasoning",
+      "primary_copy_style": "why-this-matters language",
+      "primary_terms": [
+        "worldview prior",
+        "hypothesis",
+        "evidence gap",
+        "research review",
+        "strategy review",
+        "quant review"
+      ],
+      "diagnostic_codes_allowed": false
+    },
+    "performance": {
+      "plain_label": "Performance",
+      "primary_copy_style": "paper/demo proof language",
+      "primary_terms": [
+        "paper account",
+        "demo-proof run",
+        "closed paper trade",
+        "closed proof trade",
+        "drawdown",
+        "postmortem"
+      ],
+      "diagnostic_codes_allowed": false
+    },
+    "operations": {
+      "plain_label": "Operations",
+      "primary_copy_style": "runtime and diagnostics language",
+      "diagnostic_codes_allowed": true,
+      "diagnostic_explanation_required": true,
+      "primary_terms": [
+        "runtime health",
+        "read-only live status connection",
+        "saved status snapshot",
+        "exporter state",
+        "system map",
+        "safety plumbing"
+      ]
+    },
+    "governance": {
+      "plain_label": "Governance",
+      "primary_copy_style": "human review and approval language",
+      "primary_terms": [
+        "Fund Manager review",
+        "approval record",
+        "comment",
+        "notification",
+        "audit handoff"
+      ],
+      "diagnostic_codes_allowed": false
+    }
+  },
+  "terminology": [
+    {
+      "term": "D0",
+      "category": "internal_code",
+      "plain_label": "browser dashboard preview",
+      "primary_copy": "Browser dashboard preview",
+      "user_explanation": "A static dashboard surface that cannot operate Qadam or call local runtime tools.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "D1",
+      "category": "internal_code",
+      "plain_label": "public-safe status snapshot",
+      "primary_copy": "Public-safe status snapshot",
+      "user_explanation": "The sanitized read-only status payload shown in the browser.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "D5",
+      "category": "internal_code",
+      "plain_label": "trade intent store",
+      "primary_copy": "Trade intent store",
+      "user_explanation": "The local store for observed signals and candidate state. It is not an order route.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "D7",
+      "category": "internal_code",
+      "plain_label": "observed alert feed",
+      "primary_copy": "Observed alert feed",
+      "user_explanation": "A source of observed signals only. It cannot trade.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "D9",
+      "category": "internal_code",
+      "plain_label": "read-only live status connection",
+      "primary_copy": "Read-only live status connection",
+      "user_explanation": "The authenticated browser path that reads Qadam status without command authority.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Q4",
+      "category": "internal_code",
+      "plain_label": "strategy governance",
+      "primary_copy": "Strategy governance",
+      "user_explanation": "The strategy approval and visibility workstream.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Q5",
+      "category": "internal_code",
+      "plain_label": "paper trade orchestration",
+      "primary_copy": "Paper trade orchestration",
+      "user_explanation": "The paper-only workflow for reviewing, staging, reconciling, and monitoring paper trades.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Q5E",
+      "category": "internal_code",
+      "plain_label": "paper trade exit closeout",
+      "primary_copy": "Paper trade exit closeout",
+      "user_explanation": "The closeout work that proved the paper lifecycle before the learning loop.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Q6",
+      "category": "internal_code",
+      "plain_label": "learning review loop",
+      "primary_copy": "Learning review loop",
+      "user_explanation": "The review workflow for postmortems and proposed learning updates.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Q7",
+      "category": "internal_code",
+      "plain_label": "30-day demo-proof run",
+      "primary_copy": "30-day demo-proof run",
+      "user_explanation": "The 30 consecutive calendar day paper proof harness.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Phase 4",
+      "category": "phase_label",
+      "plain_label": "strategy governance",
+      "primary_copy": "Strategy governance",
+      "user_explanation": "Use this for strategy approval state. Show the phase label only as secondary diagnostic metadata.",
+      "secondary_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Phase 5",
+      "category": "phase_label",
+      "plain_label": "paper trade orchestration",
+      "primary_copy": "Paper trade orchestration",
+      "user_explanation": "Use this for paper lifecycle orchestration. Show the phase label only as secondary diagnostic metadata.",
+      "secondary_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Phase 6",
+      "category": "phase_label",
+      "plain_label": "learning review loop",
+      "primary_copy": "Learning review loop",
+      "user_explanation": "Use this for postmortems and learning proposals. Show the phase label only as secondary diagnostic metadata.",
+      "secondary_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "Phase 7",
+      "category": "phase_label",
+      "plain_label": "30-day demo-proof run",
+      "primary_copy": "30-day demo-proof run",
+      "user_explanation": "Use this for the demo-proof harness. Show the phase label only as secondary diagnostic metadata.",
+      "secondary_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "static snapshot",
+      "category": "runtime_jargon",
+      "plain_label": "saved status snapshot",
+      "primary_copy": "Saved status snapshot",
+      "user_explanation": "A read-only fallback copy of the latest public-safe status.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "secure bridge",
+      "category": "runtime_jargon",
+      "plain_label": "read-only live status connection",
+      "primary_copy": "Read-only live status connection",
+      "user_explanation": "The browser can read current status through the bridge, but cannot command Qadam.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "shadow toggles",
+      "category": "runtime_jargon",
+      "plain_label": "review-only strategy visibility",
+      "primary_copy": "Review-only strategy visibility",
+      "user_explanation": "A visible strategy mode that cannot create candidates, orders, or broker actions.",
+      "operations_diagnostic_allowed": true,
+      "primary_allowed": false
+    },
+    {
+      "term": "live capital",
+      "category": "safety_term",
+      "plain_label": "real-money trading",
+      "primary_copy": "Live capital disabled",
+      "user_explanation": "Qadam is not allowed to trade real money from this dashboard or paper/demo workflow.",
+      "must_remain_explicit": true,
+      "primary_allowed": true
+    },
+    {
+      "term": "broker write",
+      "category": "safety_term",
+      "plain_label": "broker order submission",
+      "primary_copy": "Broker writes blocked",
+      "user_explanation": "The browser has no route to submit, modify, or close broker orders.",
+      "must_remain_explicit": true,
+      "primary_allowed": true
+    },
+    {
+      "term": "candidate",
+      "category": "trade_lifecycle_term",
+      "plain_label": "possible trade idea",
+      "primary_copy": "Candidate",
+      "user_explanation": "A candidate is a possible trade idea after checks. It is not an order.",
+      "must_remain_explicit": true,
+      "primary_allowed": true
+    },
+    {
+      "term": "staged paper order",
+      "category": "trade_lifecycle_term",
+      "plain_label": "draft paper order",
+      "primary_copy": "Draft paper order",
+      "user_explanation": "A paper-only order draft that still cannot touch live capital.",
+      "must_remain_explicit": true,
+      "primary_allowed": true
+    },
+    {
+      "term": "submitted paper order",
+      "category": "trade_lifecycle_term",
+      "plain_label": "submitted paper order",
+      "primary_copy": "Submitted paper order",
+      "user_explanation": "A paper-account order state, separate from live trading.",
+      "must_remain_explicit": true,
+      "primary_allowed": true
+    },
+    {
+      "term": "paper order",
+      "category": "trade_lifecycle_term",
+      "plain_label": "paper-account order",
+      "primary_copy": "Paper-account order",
+      "user_explanation": "An order in the paper account workflow. It is not live capital.",
+      "must_remain_explicit": true,
+      "primary_allowed": true
+    }
+  ],
+  "replacement_rules": [
+    {
+      "rule": "internal_code_primary_copy",
+      "from": "D0, D1, D5, D7, D9, Q4, Q5, Q5E, Q6, Q7",
+      "to": "Use the entry's plain label in primary copy. Show the code only in Operations diagnostics with the plain label."
+    },
+    {
+      "rule": "phase_first_copy",
+      "from": "Phase-first labels such as Phase 4 strategy or Q5-14 drill",
+      "to": "Lead with the operating state, then include the phase/stage code only as secondary metadata."
+    },
+    {
+      "rule": "runtime_jargon",
+      "from": "static snapshot, secure bridge, shadow toggles",
+      "to": "saved status snapshot, read-only live status connection, review-only strategy visibility"
+    },
+    {
+      "rule": "safety_terms",
+      "from": "soft or implied safety language",
+      "to": "Use explicit labels: read-only, paper/demo only, live capital disabled, broker writes blocked, candidate is not an order."
+    }
+  ],
+  "empty_states": {
+    "normal_no_setup": {
+      "title": "No qualified setup right now",
+      "body": "Qadam has not found a setup that meets the current source and risk requirements. This is normal when the market is quiet or evidence is incomplete.",
+      "tone": "neutral"
+    },
+    "normal_no_trade": {
+      "title": "No paper trade right now",
+      "body": "There is no active paper trade. Qadam may still be watching sources, forming hypotheses, or waiting for stronger evidence.",
+      "tone": "neutral"
+    },
+    "normal_no_position": {
+      "title": "No open paper position",
+      "body": "The paper account has no open position in the current snapshot.",
+      "tone": "neutral"
+    },
+    "normal_no_postmortem": {
+      "title": "No postmortem due",
+      "body": "There is no closed paper trade waiting for review.",
+      "tone": "neutral"
+    },
+    "blocked": {
+      "title": "Action blocked",
+      "body": "Qadam is blocked by a safety, source, risk, or approval rule. The dashboard remains read-only and cannot bypass the block.",
+      "tone": "blocked"
+    },
+    "stale": {
+      "title": "Status may be stale",
+      "body": "The latest status is older than expected. Treat the readout as informational until the status refreshes.",
+      "tone": "warning"
+    },
+    "degraded": {
+      "title": "Some inputs are degraded",
+      "body": "One or more feeds, models, or runtime checks are unavailable. Qadam should reduce confidence until the degraded input recovers.",
+      "tone": "warning"
+    },
+    "missing": {
+      "title": "Status unavailable",
+      "body": "The dashboard has no public-safe status for this panel yet. This does not create trading authority.",
+      "tone": "neutral"
+    }
+  },
+  "required_safety_phrases": [
+    "read-only",
+    "paper/demo only",
+    "live capital disabled",
+    "broker writes blocked",
+    "candidate is not an order"
+  ],
+  "acceptance": {
+    "copy_system_defined": true,
+    "internal_codes_diagnostic_only": true,
+    "phase_labels_secondary_only": true,
+    "overview_primary_copy_bans_internal_codes": true,
+    "empty_states_defined": true,
+    "safety_boundaries_explicit": true,
+    "authority_unchanged": true
+  }
+}

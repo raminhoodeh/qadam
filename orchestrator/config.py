@@ -54,6 +54,26 @@ class Settings:
     live_bridge_max_age_seconds: int
     live_bridge_stale_after_seconds: int
     live_bridge_rate_limit_per_minute: int
+    yfinance_enabled: bool
+    yfinance_cache_dir: str
+    yfinance_request_budget_per_run: int
+    yfinance_symbol_allowlist: tuple[str, ...]
+    preference_mcp_enabled: bool
+    preference_mcp_endpoint: str
+    preference_mcp_transport: str
+    preference_mcp_daily_call_budget: int
+    preference_mcp_run_call_budget: int
+    preference_mcp_paid_tools_allowed: bool
+    preference_mcp_tool_allowlist: tuple[str, ...]
+    preference_mcp_domain_allowlist: tuple[str, ...]
+    preference_mcp_timeout_seconds: int
+    paper_operational_enabled: bool
+    alpaca_paper_submit_enabled: bool
+    alpaca_paper_exit_enabled: bool
+    live_capital_enabled: bool
+    paper_operational_max_notional_gbp: int
+    quantum_paper_parity_required: bool
+    qctrl_paper_consultation_enabled: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -91,4 +111,40 @@ class Settings:
             live_bridge_max_age_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_MAX_AGE_SECONDS", "15")),
             live_bridge_stale_after_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_STALE_AFTER_SECONDS", "60")),
             live_bridge_rate_limit_per_minute=int(os.getenv("QADAM_STATUS_BRIDGE_RATE_LIMIT_PER_MINUTE", "60")),
+            yfinance_enabled=_bool_env("YFINANCE_ENABLED", False),
+            yfinance_cache_dir=os.getenv("YFINANCE_CACHE_DIR", "./data/runtime/yfinance-cache"),
+            yfinance_request_budget_per_run=int(os.getenv("YFINANCE_REQUEST_BUDGET_PER_RUN", "25")),
+            yfinance_symbol_allowlist=_csv_tuple(
+                os.getenv(
+                    "YFINANCE_SYMBOL_ALLOWLIST",
+                    "CL=F,BZ=F,USO,XLE,SI=F,SLV,SIL,PAAS,ITA,XAR,LMT,RTX,NOC,"
+                    "SMH,SOXX,NVDA,TSM,ASML,AMD,SPY,QQQ,TLT,HYG,^VIX,DX-Y.NYB",
+                )
+            ),
+            preference_mcp_enabled=_bool_env("PREFERENCE_MCP_ENABLED", False),
+            preference_mcp_endpoint=os.getenv("PREFERENCE_MCP_ENDPOINT", "https://pref.trade/mcp"),
+            preference_mcp_transport=os.getenv("PREFERENCE_MCP_TRANSPORT", "streamable-http"),
+            preference_mcp_daily_call_budget=int(os.getenv("PREFERENCE_DAILY_CALL_BUDGET", "250")),
+            preference_mcp_run_call_budget=int(os.getenv("PREFERENCE_RUN_CALL_BUDGET", "10")),
+            preference_mcp_paid_tools_allowed=_bool_env("PREFERENCE_PAID_TOOLS_ALLOWED", False),
+            preference_mcp_tool_allowlist=_csv_tuple(os.getenv("PREFERENCE_TOOL_ALLOWLIST", "")),
+            preference_mcp_domain_allowlist=_csv_tuple(
+                os.getenv(
+                    "PREFERENCE_DOMAIN_ALLOWLIST",
+                    "prediction_markets,physical_movement,filings_corporate,"
+                    "macro_commodities,crypto_wallets,news_narrative",
+                )
+            ),
+            preference_mcp_timeout_seconds=int(os.getenv("PREFERENCE_MCP_TIMEOUT_SECONDS", "15")),
+            paper_operational_enabled=_bool_env("QADAM_PAPER_OPERATIONAL_ENABLED", False),
+            alpaca_paper_submit_enabled=_bool_env("QADAM_ALPACA_PAPER_SUBMIT_ENABLED", False),
+            alpaca_paper_exit_enabled=_bool_env("QADAM_ALPACA_PAPER_EXIT_ENABLED", False),
+            live_capital_enabled=_bool_env("QADAM_LIVE_CAPITAL_ENABLED", False),
+            paper_operational_max_notional_gbp=int(
+                os.getenv("QADAM_PAPER_OPERATIONAL_MAX_NOTIONAL_GBP", "1000")
+            ),
+            quantum_paper_parity_required=_bool_env("QADAM_QUANTUM_PAPER_PARITY_REQUIRED", True),
+            qctrl_paper_consultation_enabled=_bool_env(
+                "QADAM_QCTRL_PAPER_CONSULTATION_ENABLED", False
+            ),
         )

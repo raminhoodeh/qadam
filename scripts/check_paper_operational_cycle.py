@@ -1,0 +1,361 @@
+#!/usr/bin/env python3
+"""Validate the PaperOps-1 operational cycle runner."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from orchestrator.config import Settings  # noqa: E402
+from orchestrator.event_log import EventLog  # noqa: E402
+from scripts.run_paper_operational_cycle import (  # noqa: E402
+    COMMANDS,
+    PAPER_OPS_CYCLE_SCHEMA_VERSION,
+    build_paper_operational_cycle,
+    validate_paper_operational_cycle,
+    write_paper_operational_cycle,
+)
+
+
+def main() -> int:
+    errors: list[str] = []
+    settings = Settings.from_env()
+    artifact = build_paper_operational_cycle(settings)
+    output_path, history_path, event_path, written = write_paper_operational_cycle(
+        artifact,
+        settings,
+    )
+    validation_errors = validate_paper_operational_cycle(written)
+    replay = EventLog(event_path, echo=False).replay()
+
+    live_capital_probe = deepcopy(written)
+    live_capital_probe["live_capital_enabled"] = True
+    live_capital_errors = validate_paper_operational_cycle(live_capital_probe)
+
+    broker_probe = deepcopy(written)
+    broker_probe["broker_post_called_count"] = 1
+    broker_probe["alpaca_post_called_count"] = 1
+    broker_probe["unsafe_write_counter_total"] = 2
+    broker_errors = validate_paper_operational_cycle(broker_probe)
+
+    alpaca_live_endpoint_probe = deepcopy(written)
+    alpaca_live_endpoint_probe["alpaca_paper_post_live_endpoint_called_count"] = 1
+    alpaca_live_endpoint_probe["unsafe_write_counter_total"] = 1
+    alpaca_live_endpoint_errors = validate_paper_operational_cycle(alpaca_live_endpoint_probe)
+
+    lifecycle_poller_probe = deepcopy(written)
+    lifecycle_poller_probe["paper_lifecycle_poller_live_endpoint_called_count"] = 1
+    lifecycle_poller_probe["paper_lifecycle_poller_broker_post_called_count"] = 1
+    lifecycle_poller_probe["unsafe_write_counter_total"] = 2
+    lifecycle_poller_errors = validate_paper_operational_cycle(lifecycle_poller_probe)
+
+    exit_path_probe = deepcopy(written)
+    exit_path_probe["paper_exit_path_live_endpoint_called_count"] = 1
+    exit_path_probe["paper_exit_path_broker_post_called_count"] = 1
+    exit_path_probe["paper_exit_path_order_cancel_called_count"] = 1
+    exit_path_probe["unsafe_write_counter_total"] = 3
+    exit_path_errors = validate_paper_operational_cycle(exit_path_probe)
+
+    notification_probe = deepcopy(written)
+    notification_probe["notification_review_live_send_allowed_count"] = 1
+    notification_probe["notification_review_command_path_enabled_count"] = 1
+    notification_probe["notification_review_broker_write_allowed_count"] = 1
+    notification_probe["unsafe_write_counter_total"] = 3
+    notification_errors = validate_paper_operational_cycle(notification_probe)
+
+    operations_probe = deepcopy(written)
+    operations_probe["paperops_30_day_operations_unsafe_write_counter_total"] = 1
+    operations_probe["unsafe_write_counter_total"] = 1
+    operations_errors = validate_paper_operational_cycle(operations_probe)
+
+    qctrl_probe = deepcopy(written)
+    qctrl_probe["qctrl_provider_call_count"] = 1
+    qctrl_probe["qctrl_paper_consultation_provider_call_recorded"] = False
+    qctrl_errors = validate_paper_operational_cycle(qctrl_probe)
+
+    failed_command_probe = deepcopy(written)
+    failed_command_probe["command_failed_count"] = 1
+    failed_command_probe["command_passed_count"] = max(0, written["command_passed_count"] - 1)
+    failed_command_probe["failed_commands"] = ["probe_failed_command"]
+    failed_command_errors = validate_paper_operational_cycle(failed_command_probe)
+
+    event_probe = deepcopy(written)
+    event_probe["event_log_written"] = False
+    event_probe["event_log_event_count"] = 0
+    event_errors = validate_paper_operational_cycle(event_probe)
+
+    print(f"paper_ops_cycle_check_status={written['status']}")
+    print(f"paper_ops_cycle_check_schema_version={PAPER_OPS_CYCLE_SCHEMA_VERSION}")
+    print(f"paper_ops_cycle_check_artifact_path={output_path}")
+    print(f"paper_ops_cycle_check_history_path={history_path}")
+    print(f"paper_ops_cycle_check_event_log_path={event_path}")
+    print(f"paper_ops_cycle_check_stage={written['stage']}")
+    print(f"paper_ops_cycle_check_command_count={written['command_count']}")
+    print(f"paper_ops_cycle_check_command_passed_count={written['command_passed_count']}")
+    print(f"paper_ops_cycle_check_command_failed_count={written['command_failed_count']}")
+    print(f"paper_ops_cycle_check_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
+    print(f"paper_ops_cycle_check_full_paper_operational_ready={written['full_paper_operational_ready']}")
+    print(f"paper_ops_cycle_check_blocker_count={written['blocker_count']}")
+    print(f"paper_ops_cycle_check_blockers={','.join(written['blockers'])}")
+    print(f"paper_ops_cycle_check_hard_safety_failure_count={written['hard_safety_failure_count']}")
+    print(f"paper_ops_cycle_check_qualified_setup_count={written['qualified_setup_count']}")
+    print(f"paper_ops_cycle_check_submitted_paper_order_count={written['submitted_paper_order_count']}")
+    print(f"paper_ops_cycle_check_closed_proof_trade_count={written['closed_proof_trade_count']}")
+    print(f"paper_ops_cycle_check_broker_post_called_count={written['broker_post_called_count']}")
+    print(f"paper_ops_cycle_check_alpaca_post_called_count={written['alpaca_post_called_count']}")
+    print(
+        "paper_ops_cycle_check_alpaca_paper_post_gate_status="
+        f"{written['alpaca_paper_post_gate_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_alpaca_paper_post_called_count="
+        f"{written['alpaca_paper_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_alpaca_paper_post_live_endpoint_called_count="
+        f"{written['alpaca_paper_post_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_lifecycle_poller_status="
+        f"{written['paper_lifecycle_poller_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_lifecycle_poller_source_submitted_order_count="
+        f"{written['paper_lifecycle_poller_source_submitted_paper_order_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_lifecycle_poller_order_poll_called_count="
+        f"{written['paper_lifecycle_poller_order_poll_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_lifecycle_poller_broker_get_called_count="
+        f"{written['paper_lifecycle_poller_broker_get_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_lifecycle_poller_broker_post_called_count="
+        f"{written['paper_lifecycle_poller_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_lifecycle_poller_live_endpoint_called_count="
+        f"{written['paper_lifecycle_poller_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_exit_path_status="
+        f"{written['paper_exit_path_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_exit_path_open_position_readback_count="
+        f"{written['paper_exit_path_open_position_readback_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_exit_path_close_called_count="
+        f"{written['paper_exit_path_close_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_exit_path_broker_write_called_count="
+        f"{written['paper_exit_path_broker_write_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_exit_path_broker_post_called_count="
+        f"{written['paper_exit_path_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_exit_path_live_endpoint_called_count="
+        f"{written['paper_exit_path_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_notification_review_status="
+        f"{written['notification_review_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_notification_review_record_count="
+        f"{written['notification_review_record_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_notification_review_live_send_allowed_count="
+        f"{written['notification_review_live_send_allowed_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_notification_review_command_path_enabled_count="
+        f"{written['notification_review_command_path_enabled_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_notification_review_broker_write_allowed_count="
+        f"{written['notification_review_broker_write_allowed_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_status="
+        f"{written['paperops_30_day_operations_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_scheduler_status="
+        f"{written['paperops_30_day_operations_scheduler_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_automation_active="
+        f"{written['paperops_30_day_operations_automation_active']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_automation_prompt_paperops_bound="
+        f"{written['paperops_30_day_operations_automation_prompt_paperops_bound']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_cycle_command_count="
+        f"{written['paperops_30_day_operations_cycle_command_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_dashboard_mirror_public_safe="
+        f"{written['paperops_30_day_operations_dashboard_mirror_public_safe']}"
+    )
+    print(
+        "paper_ops_cycle_check_paperops_30_day_operations_unsafe_write_counter_total="
+        f"{written['paperops_30_day_operations_unsafe_write_counter_total']}"
+    )
+    print(
+        "paper_ops_cycle_check_qctrl_paper_consultation_status="
+        f"{written['qctrl_paper_consultation_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_qctrl_paper_consultation_provider_call_recorded="
+        f"{written['qctrl_paper_consultation_provider_call_recorded']}"
+    )
+    print(f"paper_ops_cycle_check_qctrl_provider_call_count={written['qctrl_provider_call_count']}")
+    print(f"paper_ops_cycle_check_recommended_next_stage={written['recommended_next_stage']}")
+    print(f"paper_ops_cycle_check_event_log_events={replay['total_events']}")
+    print(f"paper_ops_cycle_check_validation_errors={validation_errors}")
+
+    if validation_errors:
+        errors.append(f"cycle validation failed: {validation_errors}")
+    if replay["total_events"] != 1:
+        errors.append("cycle event log did not record exactly one event")
+    if written["status"] != "paper_cycle_safe_blocked_pending_enablement":
+        errors.append("unexpected current PaperOps-1 status")
+    if written["command_count"] != len(COMMANDS) or written["command_passed_count"] != len(
+        COMMANDS
+    ):
+        errors.append(f"PaperOps-1 runner did not pass all {len(COMMANDS)} commands")
+    if written["safe_to_continue_paper_only"] is not True:
+        errors.append("PaperOps-1 is not safe to continue in paper-only mode")
+    if written["full_paper_operational_ready"] is not False:
+        errors.append("PaperOps-1 should remain blocked pending later enablement")
+    if written["broker_post_called_count"] != 0 or written["alpaca_post_called_count"] != 0:
+        errors.append("PaperOps-1 called broker/Alpaca POST")
+    if written["alpaca_paper_post_live_endpoint_called_count"] != 0:
+        errors.append("PaperOps-1 called a live endpoint through PaperOps-2")
+    if written["paper_lifecycle_poller_broker_post_called_count"] != 0:
+        errors.append("PaperOps-1 called broker POST through PaperOps-3")
+    if written["paper_lifecycle_poller_live_endpoint_called_count"] != 0:
+        errors.append("PaperOps-1 called live endpoint through PaperOps-3")
+    if written["paper_exit_path_close_called_count"] != 0:
+        errors.append("PaperOps-1 closed a paper position through PaperOps-4")
+    if written["paper_exit_path_broker_post_called_count"] != 0:
+        errors.append("PaperOps-1 called broker POST through PaperOps-4")
+    if written["paper_exit_path_live_endpoint_called_count"] != 0:
+        errors.append("PaperOps-1 called live endpoint through PaperOps-4")
+    if written["notification_review_live_send_allowed_count"] != 0:
+        errors.append("PaperOps-1 allowed live Telegram send through PaperOps-5")
+    if written["notification_review_command_path_enabled_count"] != 0:
+        errors.append("PaperOps-1 enabled Telegram command path through PaperOps-5")
+    if written["notification_review_broker_write_allowed_count"] != 0:
+        errors.append("PaperOps-1 allowed broker write through PaperOps-5")
+    if written["paperops_30_day_operations_status"] != "operations_active":
+        errors.append("PaperOps-1 did not include active PaperOps-6 operations")
+    if written["paperops_30_day_operations_automation_active"] is not True:
+        errors.append("PaperOps-1 saw inactive PaperOps-6 automation")
+    if written["paperops_30_day_operations_automation_prompt_paperops_bound"] is not True:
+        errors.append("PaperOps-1 saw unbound PaperOps-6 automation prompt")
+    if written["paperops_30_day_operations_dashboard_mirror_public_safe"] is not True:
+        errors.append("PaperOps-1 saw unsafe PaperOps-6 dashboard mirror")
+    if written["paperops_30_day_operations_unsafe_write_counter_total"] != 0:
+        errors.append("PaperOps-1 saw nonzero PaperOps-6 unsafe counter")
+    if written["qctrl_provider_call_count"] and not written[
+        "qctrl_paper_consultation_provider_call_recorded"
+    ]:
+        errors.append("PaperOps-1 has an unrecorded Q-CTRL provider call")
+    if (
+        written["recommended_next_stage"]
+        != "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
+    ):
+        errors.append("PaperOps-1 did not route next unblock to PaperOps-Q product access")
+    if written["hard_safety_failure_count"] != 0:
+        errors.append("PaperOps-1 has hard safety failures")
+    if "paper_ops_cycle_live_capital_enabled" not in live_capital_errors:
+        errors.append("live-capital probe was not rejected")
+    if "paper_ops_cycle_unsafe_counter_nonzero:broker_post_called_count" not in broker_errors:
+        errors.append("broker POST probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:alpaca_paper_post_live_endpoint_called_count"
+        not in alpaca_live_endpoint_errors
+    ):
+        errors.append("Alpaca live-endpoint probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:paper_lifecycle_poller_live_endpoint_called_count"
+        not in lifecycle_poller_errors
+    ):
+        errors.append("PaperOps lifecycle poller live-endpoint probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:paper_lifecycle_poller_broker_post_called_count"
+        not in lifecycle_poller_errors
+    ):
+        errors.append("PaperOps lifecycle poller broker-POST probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:paper_exit_path_live_endpoint_called_count"
+        not in exit_path_errors
+    ):
+        errors.append("PaperOps exit path live-endpoint probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:paper_exit_path_broker_post_called_count"
+        not in exit_path_errors
+    ):
+        errors.append("PaperOps exit path broker-POST probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:paper_exit_path_order_cancel_called_count"
+        not in exit_path_errors
+    ):
+        errors.append("PaperOps exit path order-cancel probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:notification_review_live_send_allowed_count"
+        not in notification_errors
+    ):
+        errors.append("PaperOps notification live-send probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "notification_review_command_path_enabled_count"
+        not in notification_errors
+    ):
+        errors.append("PaperOps notification command-path probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "notification_review_broker_write_allowed_count"
+        not in notification_errors
+    ):
+        errors.append("PaperOps notification broker-write probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "paperops_30_day_operations_unsafe_write_counter_total"
+        not in operations_errors
+    ):
+        errors.append("PaperOps-6 unsafe-counter probe was not rejected")
+    if "paper_ops_cycle_qctrl_provider_call_unrecorded_by_paperops_q" not in qctrl_errors:
+        errors.append("Q-CTRL provider-call probe was not rejected")
+    if "paper_ops_cycle_failed_commands_present" not in failed_command_errors:
+        errors.append("failed-command probe was not rejected")
+    if "paper_ops_cycle_event_log_missing" not in event_errors:
+        errors.append("missing-event-log probe was not rejected")
+
+    if errors:
+        print("paper_operational_cycle_contract_check=failed")
+        for error in errors:
+            print(f"error={error}")
+        return 1
+    print("paper_operational_cycle_contract_check=ok")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
