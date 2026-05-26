@@ -47,6 +47,10 @@ from orchestrator.paperops_paper_lifecycle_polling_enablement import (
 from orchestrator.paperops_guarded_paper_exit_enablement import (
     paperops_guarded_paper_exit_enablement_public_status,
 )
+from orchestrator.paperops_active_paper_trading_automation import (
+    PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
+    paperops_active_paper_trading_automation_public_status,
+)
 from orchestrator.paperops_paper_exit_path import paperops_paper_exit_path_public_status
 from orchestrator.paperops_notification_review import (
     paperops_notification_review_public_status,
@@ -1250,6 +1254,34 @@ PAPEROPS_GUARDED_EXIT_ENABLEMENT_PUBLIC_REQUIRED_FIELDS = {
     "runtime_artifact_override_enabled",
     "schema_version",
     "settings_alpaca_paper_exit_enabled",
+    "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_REQUIRED_FIELDS = {
+    "active_paper_trading_automation_effective",
+    "active_paper_trading_automation_enabled",
+    "automation_active",
+    "automation_prompt_active_trade_bound",
+    "boundary",
+    "direct_broker_shortcut_allowed",
+    "event_log_event_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_endpoint_confirmed",
+    "paper_exit_step_allowed",
+    "paper_poll_step_allowed",
+    "paper_submit_step_allowed",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "qctrl_consultation_hold_active",
+    "qctrl_direct_execution_allowed",
+    "recorded",
+    "schema_version",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -4573,6 +4605,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_active_automation = payload.get(
+        "paperops_active_paper_trading_automation",
+        {},
+    )
     paperops_qualified_setup_production = payload.get(
         "paperops_qualified_setup_production",
         {},
@@ -4798,6 +4834,21 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_30_day_operations_active_day_number": (
                 paperops_30_day_operations.get("active_day_number")
+            ),
+            "paperops_active_paper_trading_automation": (
+                paperops_active_automation.get("status", "not_run")
+            ),
+            "paperops_active_paper_trading_automation_enabled": (
+                paperops_active_automation.get(
+                    "active_paper_trading_automation_enabled",
+                    False,
+                )
+            ),
+            "paperops_active_paper_trading_qctrl_hold": (
+                paperops_active_automation.get("qctrl_consultation_hold_active", False)
+            ),
+            "paperops_active_paper_trading_submit_allowed": (
+                paperops_active_automation.get("paper_submit_step_allowed", False)
             ),
             "paperops_qualified_setup_production": (
                 paperops_qualified_setup_production.get("status", "not_run")
@@ -5909,6 +5960,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_paper_exit_path": paperops_paper_exit_path_public_status(settings),
         "paperops_notification_review": paperops_notification_review_public_status(settings),
         "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
+        "paperops_active_paper_trading_automation": (
+            paperops_active_paper_trading_automation_public_status(settings)
+        ),
         "paperops_qualified_setup_production": (
             paperops_qualified_setup_production_public_status(settings)
         ),
@@ -6026,6 +6080,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_paper_exit_path",
         "paperops_notification_review",
         "paperops_30_day_operations",
+        "paperops_active_paper_trading_automation",
         "paperops_qualified_setup_production",
         "paperops_auto_approval_staged_order",
         "yahoo_finance",
@@ -6528,6 +6583,87 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in operations_boundary:
             raise ValueError("PaperOps 30-day operations boundary is weak")
+    paperops_active_automation = payload["paperops_active_paper_trading_automation"]
+    missing_paperops_active = sorted(
+        PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_REQUIRED_FIELDS
+        - set(paperops_active_automation)
+    )
+    if missing_paperops_active:
+        raise ValueError(
+            "PaperOps active paper automation public status missing fields: "
+            f"{missing_paperops_active}"
+        )
+    if paperops_active_automation.get("status") not in {
+        "not_run",
+        "blocked_active_automation_safety_or_binding",
+        "invalid",
+        *PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
+    }:
+        raise ValueError("PaperOps active paper automation status is invalid")
+    if paperops_active_automation.get("public_safe") is not True:
+        raise ValueError("PaperOps active paper automation must be public-safe")
+    if paperops_active_automation.get("status") != "not_run":
+        if paperops_active_automation.get("recorded") is not True:
+            raise ValueError("PaperOps active paper automation must be recorded")
+        if paperops_active_automation.get("event_log_written") is not True:
+            raise ValueError("PaperOps active paper automation event log missing")
+        if paperops_active_automation.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps active paper automation event count mismatch")
+        if paperops_active_automation.get("validation_error_count") != 0:
+            raise ValueError("PaperOps active paper automation validation errors present")
+    if paperops_active_automation.get("status") in PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES:
+        if (
+            paperops_active_automation.get(
+                "active_paper_trading_automation_enabled"
+            )
+            is not True
+        ):
+            raise ValueError("PaperOps active paper automation enabled flag is false")
+        if (
+            paperops_active_automation.get(
+                "active_paper_trading_automation_effective"
+            )
+            is not True
+        ):
+            raise ValueError("PaperOps active paper automation effective flag is false")
+        if paperops_active_automation.get("automation_active") is not True:
+            raise ValueError("PaperOps active paper automation scheduler inactive")
+        if (
+            paperops_active_automation.get("automation_prompt_active_trade_bound")
+            is not True
+        ):
+            raise ValueError("PaperOps active paper automation prompt is not bound")
+        if paperops_active_automation.get("paper_endpoint_confirmed") is not True:
+            raise ValueError("PaperOps active paper automation missing paper endpoint")
+    if (
+        paperops_active_automation.get("qctrl_consultation_hold_active") is True
+        and paperops_active_automation.get("paper_submit_step_allowed") is True
+    ):
+        raise ValueError("PaperOps active paper automation bypassed Q-CTRL hold")
+    for key in (
+        "direct_broker_shortcut_allowed",
+        "qctrl_direct_execution_allowed",
+        "forced_trades_allowed",
+        "phase7_proof_credit_allowed",
+        "live_capital_enabled",
+    ):
+        if paperops_active_automation.get(key) is not False:
+            raise ValueError(f"PaperOps active paper automation forbidden: {key}")
+    for key in ("live_endpoint_called_count", "unsafe_write_counter_total"):
+        if int(paperops_active_automation.get(key, 0) or 0) != 0:
+            raise ValueError(
+                f"PaperOps active paper automation unsafe count nonzero: {key}"
+            )
+    active_boundary = str(paperops_active_automation.get("boundary") or "")
+    for phrase in (
+        "PT-8 binds the hourly PaperOps automation",
+        "PaperOps-2, PaperOps-3, and PaperOps-4",
+        "Q-CTRL paper consultation hold",
+        "only submit to Alpaca paper",
+        "cannot enable live capital",
+    ):
+        if phrase not in active_boundary:
+            raise ValueError("PaperOps active paper automation boundary is weak")
     paperops_qualified_setup = payload["paperops_qualified_setup_production"]
     missing_qualified_setup = sorted(
         PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS

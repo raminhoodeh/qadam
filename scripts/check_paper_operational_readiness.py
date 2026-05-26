@@ -307,6 +307,35 @@ def main() -> int:
     operations_unsafe_probe["paperops_30_day_operations_unsafe_write_counter_total"] = 1
     operations_unsafe_errors = validate_paper_operational_readiness(operations_unsafe_probe)
 
+    active_automation_probe = deepcopy(written)
+    active_automation_probe[
+        "active_paper_trading_automation_live_endpoint_called_count"
+    ] = 1
+    active_automation_probe[
+        "active_paper_trading_automation_unsafe_write_counter_total"
+    ] = 1
+    active_automation_probe["unsafe_write_counter_total"] = 1
+    active_automation_errors = validate_paper_operational_readiness(
+        active_automation_probe
+    )
+
+    active_automation_qctrl_probe = deepcopy(written)
+    active_automation_qctrl_probe["active_paper_trading_automation_qctrl_hold"] = True
+    active_automation_qctrl_probe[
+        "active_paper_trading_automation_submit_step_allowed"
+    ] = True
+    active_automation_qctrl_errors = validate_paper_operational_readiness(
+        active_automation_qctrl_probe
+    )
+
+    active_automation_shortcut_probe = deepcopy(written)
+    active_automation_shortcut_probe[
+        "active_paper_trading_automation_direct_broker_shortcut_allowed"
+    ] = True
+    active_automation_shortcut_errors = validate_paper_operational_readiness(
+        active_automation_shortcut_probe
+    )
+
     lifecycle_polling_probe = deepcopy(written)
     lifecycle_polling_probe[
         "paper_lifecycle_polling_enablement_live_endpoint_called_count"
@@ -910,6 +939,50 @@ def main() -> int:
         "paper_ops_30_day_operations_unsafe_write_counter_total="
         f"{written['paperops_30_day_operations_unsafe_write_counter_total']}"
     )
+    print(
+        "paper_ops_active_paper_automation_status="
+        f"{written['active_paper_trading_automation_status']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_enabled="
+        f"{written['active_paper_trading_automation_enabled']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_effective="
+        f"{written['active_paper_trading_automation_effective']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_prompt_bound="
+        f"{written['active_paper_trading_automation_prompt_bound']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_qctrl_hold="
+        f"{written['active_paper_trading_automation_qctrl_hold']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_submit_step_allowed="
+        f"{written['active_paper_trading_automation_submit_step_allowed']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_poll_step_allowed="
+        f"{written['active_paper_trading_automation_poll_step_allowed']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_exit_step_allowed="
+        f"{written['active_paper_trading_automation_exit_step_allowed']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_submit_hold_reason="
+        f"{written['active_paper_trading_automation_submit_hold_reason']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_live_endpoint_called_count="
+        f"{written['active_paper_trading_automation_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_active_paper_automation_unsafe_write_counter_total="
+        f"{written['active_paper_trading_automation_unsafe_write_counter_total']}"
+    )
     print(f"paper_ops_live_capital_enabled={written['live_capital_enabled']}")
     print(f"paper_ops_blocker_count={written['blocker_count']}")
     print(f"paper_ops_blockers={','.join(written['blockers'])}")
@@ -926,6 +999,27 @@ def main() -> int:
         errors.append("paper ops must run in paper mode")
     if written["live_capital_enabled"] is not False:
         errors.append("paper ops enabled live capital")
+    if written["active_paper_trading_automation_status"] not in {
+        "active_automation_enabled_idle",
+        "active_automation_enabled_qctrl_hold",
+        "active_automation_ready_to_submit",
+        "active_automation_ready_to_poll",
+        "active_automation_ready_to_exit",
+    }:
+        errors.append("PT-8 active automation is not enabled")
+    if written["active_paper_trading_automation_enabled"] is not True:
+        errors.append("PT-8 active automation flag is not true")
+    if written["active_paper_trading_automation_prompt_bound"] is not True:
+        errors.append("PT-8 automation prompt is not bound")
+    if (
+        written["active_paper_trading_automation_qctrl_hold"] is True
+        and written["active_paper_trading_automation_submit_step_allowed"] is True
+    ):
+        errors.append("PT-8 allowed submit while Q-CTRL hold is active")
+    if written["active_paper_trading_automation_live_endpoint_called_count"] != 0:
+        errors.append("PT-8 active automation called a live endpoint")
+    if written["active_paper_trading_automation_unsafe_write_counter_total"] != 0:
+        errors.append("PT-8 active automation unsafe counter is nonzero")
     if written["paper_live_activation_approved"] is not True:
         errors.append("paper-live activation approval missing")
     if written["paper_trading_system_approval_logged"] is not True:
@@ -1276,6 +1370,22 @@ def main() -> int:
         not in operations_unsafe_errors
     ):
         errors.append("PaperOps-6 unsafe-counter probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "active_paper_trading_automation_live_endpoint_called_count"
+        not in active_automation_errors
+    ):
+        errors.append("PT-8 live-endpoint probe was not rejected")
+    if (
+        "paper_ops_active_paper_automation_qctrl_bypass"
+        not in active_automation_qctrl_errors
+    ):
+        errors.append("PT-8 Q-CTRL hold probe was not rejected")
+    if (
+        "paper_ops_active_paper_automation_direct_broker_shortcut"
+        not in active_automation_shortcut_errors
+    ):
+        errors.append("PT-8 direct broker shortcut probe was not rejected")
     if "paper_ops_mode_not_paper" not in mode_errors:
         errors.append("live mode probe was not rejected")
     if "paper_ops_quantum_provider_execution_prerequisite" not in quantum_errors:

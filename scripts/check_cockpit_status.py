@@ -19,6 +19,9 @@ from orchestrator.cockpit_status import (
 )  # noqa: E402
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.paper_account import MATURITY_CLOSED_TRADE_TARGET  # noqa: E402
+from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E402
+    PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
+)
 from orchestrator.phase6_cockpit_visibility import (
     PUBLIC_STATUS_FIELDS as PHASE6_LEARNING_LOOP_REQUIRED_FIELDS,
 )  # noqa: E402
@@ -1902,6 +1905,10 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_30_day_operations",
     "paperops_30_day_operations_scheduler_status",
     "paperops_30_day_operations_active_day_number",
+    "paperops_active_paper_trading_automation",
+    "paperops_active_paper_trading_automation_enabled",
+    "paperops_active_paper_trading_qctrl_hold",
+    "paperops_active_paper_trading_submit_allowed",
     "paperops_qualified_setup_production",
     "paperops_qualified_setup_production_qualified_count",
     "paperops_qualified_setup_production_ready_to_stage",
@@ -2195,6 +2202,34 @@ PAPEROPS_GUARDED_EXIT_ENABLEMENT_REQUIRED_FIELDS = {
     "runtime_artifact_override_enabled",
     "schema_version",
     "settings_alpaca_paper_exit_enabled",
+    "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_ACTIVE_AUTOMATION_REQUIRED_FIELDS = {
+    "active_paper_trading_automation_effective",
+    "active_paper_trading_automation_enabled",
+    "automation_active",
+    "automation_prompt_active_trade_bound",
+    "boundary",
+    "direct_broker_shortcut_allowed",
+    "event_log_event_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_endpoint_confirmed",
+    "paper_exit_step_allowed",
+    "paper_poll_step_allowed",
+    "paper_submit_step_allowed",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "qctrl_consultation_hold_active",
+    "qctrl_direct_execution_allowed",
+    "recorded",
+    "schema_version",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -2925,6 +2960,10 @@ def main() -> int:
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_active_automation = payload.get(
+        "paperops_active_paper_trading_automation",
+        {},
+    )
     paperops_qualified_setup_production = payload.get(
         "paperops_qualified_setup_production",
         {},
@@ -3132,6 +3171,42 @@ def main() -> int:
     print(
         "cockpit_status_paperops_30_day_operations_unsafe_write_counter_total="
         f"{paperops_30_day_operations.get('unsafe_write_counter_total')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_status="
+        f"{paperops_active_automation.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_enabled="
+        f"{paperops_active_automation.get('active_paper_trading_automation_enabled')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_prompt_bound="
+        f"{paperops_active_automation.get('automation_prompt_active_trade_bound')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_qctrl_hold="
+        f"{paperops_active_automation.get('qctrl_consultation_hold_active')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_submit_allowed="
+        f"{paperops_active_automation.get('paper_submit_step_allowed')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_poll_allowed="
+        f"{paperops_active_automation.get('paper_poll_step_allowed')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_exit_allowed="
+        f"{paperops_active_automation.get('paper_exit_step_allowed')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_live_endpoint_called_count="
+        f"{paperops_active_automation.get('live_endpoint_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_unsafe_write_counter_total="
+        f"{paperops_active_automation.get('unsafe_write_counter_total')}"
     )
     print(
         "cockpit_status_paperops_qualified_setup_production_status="
@@ -6674,6 +6749,26 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_30_day_day_mismatch=true")
         return 1
+    if mission_stack.get("paperops_active_paper_trading_automation") != (
+        paperops_active_automation.get("status")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_automation_enabled") != (
+        paperops_active_automation.get("active_paper_trading_automation_enabled")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_enabled_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_qctrl_hold") != (
+        paperops_active_automation.get("qctrl_consultation_hold_active")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_qctrl_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_submit_allowed") != (
+        paperops_active_automation.get("paper_submit_step_allowed")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_submit_mismatch=true")
+        return 1
     if mission_stack.get("paperops_qualified_setup_production") != (
         paperops_qualified_setup_production.get("status")
     ):
@@ -6909,6 +7004,87 @@ def main() -> int:
         return 1
     if "cannot force trades" not in paperops_30_day_operations.get("boundary", ""):
         print("cockpit_status_paperops_30_day_operations_boundary_weak=true")
+        return 1
+    missing_active_automation_fields = sorted(
+        PAPEROPS_ACTIVE_AUTOMATION_REQUIRED_FIELDS - set(paperops_active_automation)
+    )
+    if missing_active_automation_fields:
+        print(
+            "cockpit_status_paperops_active_automation_fields_missing="
+            + ",".join(missing_active_automation_fields)
+        )
+        return 1
+    if paperops_active_automation.get("status") not in (
+        PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES
+    ):
+        print("cockpit_status_paperops_active_automation_not_ready=true")
+        return 1
+    if paperops_active_automation.get("public_safe") is not True:
+        print("cockpit_status_paperops_active_automation_not_public_safe=true")
+        return 1
+    if paperops_active_automation.get("recorded") is not True:
+        print("cockpit_status_paperops_active_automation_not_recorded=true")
+        return 1
+    if paperops_active_automation.get("event_log_written") is not True:
+        print("cockpit_status_paperops_active_automation_event_log_not_written=true")
+        return 1
+    if paperops_active_automation.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_active_automation_event_count_mismatch=true")
+        return 1
+    if paperops_active_automation.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_active_automation_validation_errors=true")
+        return 1
+    if (
+        paperops_active_automation.get("active_paper_trading_automation_enabled")
+        is not True
+    ):
+        print("cockpit_status_paperops_active_automation_enabled_false=true")
+        return 1
+    if (
+        paperops_active_automation.get("active_paper_trading_automation_effective")
+        is not True
+    ):
+        print("cockpit_status_paperops_active_automation_effective_false=true")
+        return 1
+    if paperops_active_automation.get("automation_active") is not True:
+        print("cockpit_status_paperops_active_automation_scheduler_inactive=true")
+        return 1
+    if paperops_active_automation.get("automation_prompt_active_trade_bound") is not True:
+        print("cockpit_status_paperops_active_automation_prompt_not_bound=true")
+        return 1
+    if paperops_active_automation.get("paper_endpoint_confirmed") is not True:
+        print("cockpit_status_paperops_active_automation_paper_endpoint_missing=true")
+        return 1
+    if (
+        paperops_active_automation.get("qctrl_consultation_hold_active") is True
+        and paperops_active_automation.get("paper_submit_step_allowed") is True
+    ):
+        print("cockpit_status_paperops_active_automation_qctrl_bypass=true")
+        return 1
+    for key in (
+        "direct_broker_shortcut_allowed",
+        "qctrl_direct_execution_allowed",
+        "forced_trades_allowed",
+        "phase7_proof_credit_allowed",
+        "live_capital_enabled",
+    ):
+        if paperops_active_automation.get(key) is not False:
+            print(f"cockpit_status_paperops_active_automation_forbidden={key}")
+            return 1
+    for key in ("live_endpoint_called_count", "unsafe_write_counter_total"):
+        if int(paperops_active_automation.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paperops_active_automation_unsafe_counter={key}")
+            return 1
+    active_automation_boundary = paperops_active_automation.get("boundary", "")
+    if (
+        "PT-8 binds the hourly PaperOps automation" not in active_automation_boundary
+        or "PaperOps-2, PaperOps-3, and PaperOps-4"
+        not in active_automation_boundary
+        or "Q-CTRL paper consultation hold" not in active_automation_boundary
+        or "only submit to Alpaca paper" not in active_automation_boundary
+        or "cannot enable live capital" not in active_automation_boundary
+    ):
+        print("cockpit_status_paperops_active_automation_boundary_weak=true")
         return 1
     missing_qualified_setup_fields = sorted(
         PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS

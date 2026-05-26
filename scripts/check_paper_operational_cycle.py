@@ -122,6 +122,21 @@ def main() -> int:
         guarded_exit_enablement_probe
     )
 
+    active_automation_probe = deepcopy(written)
+    active_automation_probe["active_paper_automation_live_endpoint_called_count"] = 1
+    active_automation_probe["active_paper_automation_unsafe_write_counter_total"] = 1
+    active_automation_probe["unsafe_write_counter_total"] = 2
+    active_automation_errors = validate_paper_operational_cycle(
+        active_automation_probe
+    )
+
+    active_automation_qctrl_probe = deepcopy(written)
+    active_automation_qctrl_probe["active_paper_automation_qctrl_hold"] = True
+    active_automation_qctrl_probe["active_paper_automation_submit_step_allowed"] = True
+    active_automation_qctrl_errors = validate_paper_operational_cycle(
+        active_automation_qctrl_probe
+    )
+
     exit_path_probe = deepcopy(written)
     exit_path_probe["paper_exit_path_live_endpoint_called_count"] = 1
     exit_path_probe["paper_exit_path_broker_post_called_count"] = 1
@@ -322,6 +337,42 @@ def main() -> int:
     print(
         "paper_ops_cycle_check_guarded_exit_enablement_live_endpoint_called_count="
         f"{written['guarded_exit_enablement_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_status="
+        f"{written['active_paper_automation_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_enabled="
+        f"{written['active_paper_automation_enabled']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_prompt_bound="
+        f"{written['active_paper_automation_prompt_bound']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_qctrl_hold="
+        f"{written['active_paper_automation_qctrl_hold']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_submit_step_allowed="
+        f"{written['active_paper_automation_submit_step_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_poll_step_allowed="
+        f"{written['active_paper_automation_poll_step_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_exit_step_allowed="
+        f"{written['active_paper_automation_exit_step_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_live_endpoint_called_count="
+        f"{written['active_paper_automation_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_active_paper_automation_unsafe_write_counter_total="
+        f"{written['active_paper_automation_unsafe_write_counter_total']}"
     )
     print(f"paper_ops_cycle_check_full_paper_operational_ready={written['full_paper_operational_ready']}")
     print(f"paper_ops_cycle_check_blocker_count={written['blocker_count']}")
@@ -544,6 +595,27 @@ def main() -> int:
         errors.append("PaperOps-1 closed a paper position through PT-7 enablement")
     if written["guarded_exit_enablement_live_endpoint_called_count"] != 0:
         errors.append("PaperOps-1 called live endpoint through PT-7")
+    if written["active_paper_automation_status"] not in {
+        "active_automation_enabled_idle",
+        "active_automation_enabled_qctrl_hold",
+        "active_automation_ready_to_submit",
+        "active_automation_ready_to_poll",
+        "active_automation_ready_to_exit",
+    }:
+        errors.append("PaperOps-1 did not include PT-8 active automation")
+    if written["active_paper_automation_enabled"] is not True:
+        errors.append("PaperOps-1 did not enable PT-8 active paper automation")
+    if written["active_paper_automation_prompt_bound"] is not True:
+        errors.append("PaperOps-1 saw PT-8 automation prompt unbound")
+    if (
+        written["active_paper_automation_qctrl_hold"] is True
+        and written["active_paper_automation_submit_step_allowed"] is True
+    ):
+        errors.append("PaperOps-1 allowed PT-8 submit under Q-CTRL hold")
+    if written["active_paper_automation_live_endpoint_called_count"] != 0:
+        errors.append("PaperOps-1 called live endpoint through PT-8")
+    if written["active_paper_automation_unsafe_write_counter_total"] != 0:
+        errors.append("PaperOps-1 saw nonzero PT-8 unsafe counter")
     if written["full_paper_operational_ready"] is not False:
         errors.append("PaperOps-1 should remain blocked pending later enablement")
     if written["broker_post_called_count"] != 0 or written["alpaca_post_called_count"] != 0:
@@ -680,6 +752,17 @@ def main() -> int:
         not in guarded_exit_enablement_errors
     ):
         errors.append("PT-7 guarded exit live-endpoint probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "active_paper_automation_live_endpoint_called_count"
+        not in active_automation_errors
+    ):
+        errors.append("PT-8 active automation live-endpoint probe was not rejected")
+    if (
+        "paper_ops_cycle_active_paper_automation_submit_bypassed_qctrl"
+        not in active_automation_qctrl_errors
+    ):
+        errors.append("PT-8 Q-CTRL hold probe was not rejected")
     if (
         "paper_ops_cycle_unsafe_counter_nonzero:paper_exit_path_live_endpoint_called_count"
         not in exit_path_errors

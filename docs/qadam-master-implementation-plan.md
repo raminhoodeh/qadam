@@ -1216,20 +1216,30 @@ Current PaperOps status:
   public-safe operating mirror, and rejects backfill, simulated time, forced
   trades, broker writes, live endpoints, live credentials, live capital,
   Telegram command paths, live notification sends, and Phase 7 proof credit.
+- PT-8 active paper trading automation is implemented in
+  `orchestrator/paperops_active_paper_trading_automation.py`,
+  `scripts/check_paperops_active_paper_trading_automation.py`, and
+  `scripts/run_active_paper_trading_automation.py`. It binds the hourly
+  PaperOps runner to the existing PaperOps-2 submit, PaperOps-3 poll, and
+  PaperOps-4 exit gates without creating a direct broker shortcut. Current
+  status is `active_automation_enabled_qctrl_hold`, with
+  `paper_submit_step_allowed=False` because Q-CTRL paper consultation product
+  access is not ready.
 - External trading strategy notes are now integrated as decision context through
   `orchestrator/strategy_research_intake.py`, Strategy Lead shadow review, the
   Phase 4 candidate strategy universe, and PaperOps readiness. This gives Qadam
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  31/31 commands passing: paper mode is safe to continue, PT-0 approval is
+  32/32 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
   setup candidate ready for guarded paper handoff, PT-4 auto-approves and
   stages one PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit
   path, PT-6 runtime-enables active read-only lifecycle polling, PT-7
-  runtime-enables the guarded paper-exit path, the Phase 7 run is active, the
-  Head-of-Quant oracle can run in its current non-provider mode,
+  runtime-enables the guarded paper-exit path, PT-8 binds active paper
+  automation but holds submit behind Q-CTRL product access, the Phase 7 run is
+  active, the Head-of-Quant oracle can run in its current non-provider mode,
   broker/Alpaca POST counters remain zero, PaperOps-2 reports
   `ready_pending_explicit_execute`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
@@ -1245,14 +1255,15 @@ Current PaperOps status:
   order, but it has not been submitted, counted as Phase 7 proof, or written
   into Q7 source artifacts.
 - The existing hourly automation is now `Qadam PaperOps 30-Day Runner`, remains
-  `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PaperOps-6
-  operations check, Phase 7 demo-run check, Phase 7 certification check,
-  live-promotion review, and cockpit status export.
+  `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PT-8
+  active automation check, guarded PT-8 active runner, PaperOps-6 operations
+  check, Phase 7 demo-run check, Phase 7 certification check, live-promotion
+  review, and cockpit status export.
 - The next operational step is to keep the PaperOps runner active through the
   actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, resolve PaperOps-Q product access, then use
-  PaperOps-2/PaperOps-4 only when the explicit paper-submit or paper-exit CLI
-  flags and source prerequisites exist.
+  where Q7-qualified setups exist, resolve PaperOps-Q product access, then let
+  PT-8 delegate only to PaperOps-2/PaperOps-3/PaperOps-4 when their explicit
+  paper-only gates and source prerequisites exist.
 
 Build:
 

@@ -75,6 +75,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         "scripts/check_paperops_guarded_paper_exit_enablement.py",
         True,
     ),
+    (
+        "paperops_active_paper_trading_automation",
+        "scripts/check_paperops_active_paper_trading_automation.py",
+        True,
+    ),
     ("paperops_paper_exit_path", "scripts/check_paperops_paper_exit_path.py", True),
     ("paperops_notification_review", "scripts/check_paperops_notification_review.py", True),
     ("phase7_lifecycle", "scripts/check_phase7_proof_lifecycle_monitor.py", True),
@@ -97,7 +102,9 @@ PAPER_OPS_CYCLE_BOUNDARY = (
     "orders PaperOps-2 has successfully submitted, while the standalone "
     "PaperOps-3 checker remains in non-poll mode. The PaperOps-4 exit path "
     "may consume PT-7 guarded paper-exit runtime enablement, but still runs "
-    "only in non-exit mode. PaperOps-5 may render "
+    "only in non-exit mode. PT-8 may verify that the hourly automation is "
+    "bound to the active paper runner, but the cycle itself cannot pass the "
+    "active runner execute flag. PaperOps-5 may render "
     "notification review records only; it cannot send live Telegram messages "
     "or accept Telegram commands. PaperOps-6 may verify scheduler binding for "
     "the active 30-day paper run only. The cycle cannot pass the paper-submit, "
@@ -268,6 +275,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    active_paper_automation = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_active_paper_trading_automation"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -305,8 +320,13 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_lifecycle_polling_enablement_live_endpoint_called_count",
             "paper_ops_exit_runtime_enablement_close_called_count",
             "paper_ops_exit_runtime_enablement_live_endpoint_called_count",
+            "paper_ops_active_automation_live_endpoint_called_count",
+            "paper_ops_active_automation_unsafe_write_counter_total",
         )
-    ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
+    ) + int(
+        operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0")
+        or 0
+    )
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
     full_ready = readiness.get("paper_ops_full_paper_operational_ready") == "True"
     status = "paper_cycle_ok"
@@ -738,6 +758,59 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             )
             or 0
         ),
+        "active_paper_automation_status": active_paper_automation.get(
+            "paperops_active_automation_status"
+        ),
+        "active_paper_automation_enabled": (
+            active_paper_automation.get("paperops_active_automation_enabled") == "True"
+        ),
+        "active_paper_automation_effective": (
+            active_paper_automation.get("paperops_active_automation_effective")
+            == "True"
+        ),
+        "active_paper_automation_prompt_bound": (
+            active_paper_automation.get("paperops_active_automation_prompt_bound")
+            == "True"
+        ),
+        "active_paper_automation_qctrl_hold": (
+            active_paper_automation.get("paperops_active_automation_qctrl_hold")
+            == "True"
+        ),
+        "active_paper_automation_submit_step_allowed": (
+            active_paper_automation.get(
+                "paperops_active_automation_submit_step_allowed"
+            )
+            == "True"
+        ),
+        "active_paper_automation_poll_step_allowed": (
+            active_paper_automation.get(
+                "paperops_active_automation_poll_step_allowed"
+            )
+            == "True"
+        ),
+        "active_paper_automation_exit_step_allowed": (
+            active_paper_automation.get(
+                "paperops_active_automation_exit_step_allowed"
+            )
+            == "True"
+        ),
+        "active_paper_automation_submit_hold_reason": active_paper_automation.get(
+            "paperops_active_automation_submit_hold_reason"
+        ),
+        "active_paper_automation_live_endpoint_called_count": int(
+            active_paper_automation.get(
+                "paperops_active_automation_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "active_paper_automation_unsafe_write_counter_total": int(
+            active_paper_automation.get(
+                "paperops_active_automation_unsafe_write_counter_total",
+                "0",
+            )
+            or 0
+        ),
         "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
         "quantum_paper_parity_required": settings.quantum_paper_parity_required,
         "qctrl_paper_consultation_enabled": settings.qctrl_paper_consultation_enabled,
@@ -1144,6 +1217,8 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "guarded_exit_enablement_close_called_count",
         "guarded_exit_enablement_live_endpoint_called_count",
         "guarded_exit_enablement_unsafe_write_counter_total",
+        "active_paper_automation_live_endpoint_called_count",
+        "active_paper_automation_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
         try:
@@ -1285,6 +1360,25 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_guarded_exit_enablement_called_close")
     if artifact.get("guarded_exit_enablement_live_endpoint_called_count") != 0:
         errors.append("paper_ops_cycle_guarded_exit_enablement_live_endpoint_called")
+    if artifact.get("active_paper_automation_status") not in {
+        "active_automation_enabled_idle",
+        "active_automation_enabled_qctrl_hold",
+        "active_automation_ready_to_submit",
+        "active_automation_ready_to_poll",
+        "active_automation_ready_to_exit",
+    }:
+        errors.append("paper_ops_cycle_active_paper_automation_not_enabled")
+    if artifact.get("active_paper_automation_enabled") is not True:
+        errors.append("paper_ops_cycle_active_paper_automation_inactive")
+    if artifact.get("active_paper_automation_prompt_bound") is not True:
+        errors.append("paper_ops_cycle_active_paper_automation_prompt_not_bound")
+    if (
+        artifact.get("active_paper_automation_qctrl_hold") is True
+        and artifact.get("active_paper_automation_submit_step_allowed") is True
+    ):
+        errors.append("paper_ops_cycle_active_paper_automation_submit_bypassed_qctrl")
+    if artifact.get("active_paper_automation_live_endpoint_called_count") != 0:
+        errors.append("paper_ops_cycle_active_paper_automation_live_endpoint_called")
     qctrl_provider_call_count = int(artifact.get("qctrl_provider_call_count", 0) or 0)
     if (
         qctrl_provider_call_count
@@ -1403,6 +1497,18 @@ def write_paper_operational_cycle(
             ],
             "guarded_exit_enablement_close_called_count": written[
                 "guarded_exit_enablement_close_called_count"
+            ],
+            "active_paper_automation_status": written[
+                "active_paper_automation_status"
+            ],
+            "active_paper_automation_enabled": written[
+                "active_paper_automation_enabled"
+            ],
+            "active_paper_automation_qctrl_hold": written[
+                "active_paper_automation_qctrl_hold"
+            ],
+            "active_paper_automation_submit_step_allowed": written[
+                "active_paper_automation_submit_step_allowed"
             ],
             "paper_exit_path_status": written["paper_exit_path_status"],
             "paper_exit_path_close_called_count": written[
@@ -1679,6 +1785,30 @@ def main() -> int:
     print(
         "paper_ops_cycle_lifecycle_polling_enablement_live_endpoint_called_count="
         f"{written['lifecycle_polling_enablement_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_active_paper_automation_status="
+        f"{written['active_paper_automation_status']}"
+    )
+    print(
+        "paper_ops_cycle_active_paper_automation_enabled="
+        f"{written['active_paper_automation_enabled']}"
+    )
+    print(
+        "paper_ops_cycle_active_paper_automation_prompt_bound="
+        f"{written['active_paper_automation_prompt_bound']}"
+    )
+    print(
+        "paper_ops_cycle_active_paper_automation_qctrl_hold="
+        f"{written['active_paper_automation_qctrl_hold']}"
+    )
+    print(
+        "paper_ops_cycle_active_paper_automation_submit_step_allowed="
+        f"{written['active_paper_automation_submit_step_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_active_paper_automation_live_endpoint_called_count="
+        f"{written['active_paper_automation_live_endpoint_called_count']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

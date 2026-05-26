@@ -35,6 +35,8 @@ SELF_OBSERVER_CYCLE_FAILURE_LABELS = frozenset(
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     "scripts/check_paper_operational_cycle.py",
+    "scripts/check_paperops_active_paper_trading_automation.py",
+    "scripts/run_active_paper_trading_automation.py --execute-paper-automation",
     "scripts/check_paperops_30_day_operations.py",
     "scripts/check_phase7_demo_proof_run.py",
     "scripts/check_phase7_certification.py",
@@ -50,6 +52,8 @@ REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
     "do not load live credentials",
     "do not enable live capital",
     "do not call broker live endpoints",
+    "only submit to Alpaca paper",
+    "respect the Q-CTRL paper consultation hold",
     "do not grant Phase 7 proof credit",
 )
 
@@ -126,6 +130,11 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops_notification_live_send_allowed_count",
     "paperops_notification_command_path_enabled_count",
     "paperops_notification_broker_write_allowed_count",
+    "paperops_active_automation_status",
+    "paperops_active_automation_enabled",
+    "paperops_active_automation_qctrl_hold",
+    "paperops_active_automation_submit_step_allowed",
+    "paperops_active_automation_live_endpoint_called_count",
     "live_capital_enabled",
     "live_credentials_loaded",
     "phase7_proof_credit_allowed",
@@ -145,11 +154,14 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
 PAPEROPS_30_DAY_BOUNDARY = (
     "PaperOps-6 operates the actual 30 consecutive calendar day Phase 7 paper "
     "run by verifying the hourly scheduler, PaperOps cycle, and public-safe "
-    "dashboard mirror. It cannot backfill days, cannot simulate elapsed time, "
-    "cannot force trades, cannot create trades without Q7-qualified setups, "
-    "cannot submit broker orders, cannot call live endpoints, cannot send live "
-    "Telegram messages, cannot load live credentials, cannot grant Phase 7 "
-    "proof credit, and cannot enable live capital."
+    "dashboard mirror. It may bind the scheduler to the PT-8 active paper "
+    "runner, but only through Alpaca paper and the recorded PaperOps gates. It "
+    "cannot backfill days, cannot simulate elapsed time, cannot force trades, "
+    "cannot create trades without qualified setups, cannot submit broker "
+    "orders outside the guarded PaperOps gates, cannot call live endpoints, "
+    "cannot send live Telegram messages, cannot load live credentials, cannot "
+    "bypass the Q-CTRL paper consultation hold, cannot grant Phase 7 proof "
+    "credit, and cannot enable live capital."
 )
 
 
@@ -282,6 +294,9 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "cycle": _read_json(runtime / "paper_operational_cycle.json"),
         "readiness": _read_json(runtime / "paper_operational_readiness.json"),
         "notification_review": _read_json(runtime / "paperops_notification_review.json"),
+        "active_automation": _read_json(
+            runtime / "paperops_active_paper_trading_automation.json"
+        ),
         "cockpit": _read_json(runtime / "cockpit-status.json"),
     }
 
@@ -427,6 +442,7 @@ def build_paperops_30_day_operations(
     demo_run = snapshot["demo_run"]
     cycle = snapshot["cycle"]
     notification_review = snapshot["notification_review"]
+    active_automation = snapshot["active_automation"]
     automation = _automation_status(_automation_config(), settings)
     dashboard = _dashboard_mirror_status(snapshot["cockpit"])
     cycle_summary = _cycle_status(cycle)
@@ -440,6 +456,9 @@ def build_paperops_30_day_operations(
     notification_broker_write_count = _int(
         notification_review.get("broker_write_allowed_count")
     )
+    active_automation_live_endpoint_count = _int(
+        active_automation.get("live_endpoint_called_count")
+    )
     unsafe_total = sum(
         _int(value)
         for value in (
@@ -449,6 +468,7 @@ def build_paperops_30_day_operations(
             notification_live_send_count,
             notification_command_count,
             notification_broker_write_count,
+            active_automation_live_endpoint_count,
             cycle_summary["paper_operational_cycle_unsafe_write_counter_total"],
         )
     )
@@ -515,6 +535,22 @@ def build_paperops_30_day_operations(
         "paperops_notification_live_send_allowed_count": notification_live_send_count,
         "paperops_notification_command_path_enabled_count": notification_command_count,
         "paperops_notification_broker_write_allowed_count": notification_broker_write_count,
+        "paperops_active_automation_status": active_automation.get(
+            "status",
+            "missing",
+        ),
+        "paperops_active_automation_enabled": (
+            active_automation.get("active_paper_trading_automation_enabled") is True
+        ),
+        "paperops_active_automation_qctrl_hold": (
+            active_automation.get("qctrl_consultation_hold_active") is True
+        ),
+        "paperops_active_automation_submit_step_allowed": (
+            active_automation.get("paper_submit_step_allowed") is True
+        ),
+        "paperops_active_automation_live_endpoint_called_count": (
+            active_automation_live_endpoint_count
+        ),
         "live_capital_enabled": settings.live_capital_enabled,
         "live_credentials_loaded": _safe_bool(demo_run.get("live_credentials_loaded")),
         "phase7_proof_credit_allowed": (
@@ -645,11 +681,27 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         "paperops_notification_live_send_allowed_count",
         "paperops_notification_command_path_enabled_count",
         "paperops_notification_broker_write_allowed_count",
+        "paperops_active_automation_live_endpoint_called_count",
         "paper_operational_cycle_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paperops_30_day_operations_unsafe_counter_nonzero:{key}")
+    if artifact.get("paperops_active_automation_status") not in {
+        "active_automation_enabled_idle",
+        "active_automation_enabled_qctrl_hold",
+        "active_automation_ready_to_submit",
+        "active_automation_ready_to_poll",
+        "active_automation_ready_to_exit",
+    }:
+        errors.append("paperops_30_day_operations_active_automation_not_enabled")
+    if artifact.get("paperops_active_automation_enabled") is not True:
+        errors.append("paperops_30_day_operations_active_automation_disabled")
+    if (
+        artifact.get("paperops_active_automation_qctrl_hold") is True
+        and artifact.get("paperops_active_automation_submit_step_allowed") is True
+    ):
+        errors.append("paperops_30_day_operations_active_automation_qctrl_bypass")
     if (
         artifact.get("recorded") is True
         and artifact.get("event_log_required") is True

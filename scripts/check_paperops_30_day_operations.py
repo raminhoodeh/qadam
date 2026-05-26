@@ -94,6 +94,20 @@ def main() -> int:
     notification_probe["unsafe_write_counter_total"] = 3
     notification_errors = validate_paperops_30_day_operations(notification_probe)
 
+    active_automation_probe = deepcopy(written)
+    active_automation_probe["paperops_active_automation_live_endpoint_called_count"] = 1
+    active_automation_probe["unsafe_write_counter_total"] = 1
+    active_automation_errors = validate_paperops_30_day_operations(
+        active_automation_probe
+    )
+
+    active_automation_qctrl_probe = deepcopy(written)
+    active_automation_qctrl_probe["paperops_active_automation_qctrl_hold"] = True
+    active_automation_qctrl_probe["paperops_active_automation_submit_step_allowed"] = True
+    active_automation_qctrl_errors = validate_paperops_30_day_operations(
+        active_automation_qctrl_probe
+    )
+
     dashboard_probe = deepcopy(written)
     dashboard_probe["dashboard_mirror_public_safe"] = False
     dashboard_probe["dashboard_mirror_trigger_trading_allowed"] = True
@@ -226,6 +240,26 @@ def main() -> int:
         "paperops_30_day_operations_broker_write_allowed_count="
         f"{written['broker_write_allowed_count']}"
     )
+    print(
+        "paperops_30_day_operations_active_automation_status="
+        f"{written['paperops_active_automation_status']}"
+    )
+    print(
+        "paperops_30_day_operations_active_automation_enabled="
+        f"{written['paperops_active_automation_enabled']}"
+    )
+    print(
+        "paperops_30_day_operations_active_automation_qctrl_hold="
+        f"{written['paperops_active_automation_qctrl_hold']}"
+    )
+    print(
+        "paperops_30_day_operations_active_automation_submit_step_allowed="
+        f"{written['paperops_active_automation_submit_step_allowed']}"
+    )
+    print(
+        "paperops_30_day_operations_active_automation_live_endpoint_called_count="
+        f"{written['paperops_active_automation_live_endpoint_called_count']}"
+    )
     print(f"paperops_30_day_operations_live_capital_enabled={written['live_capital_enabled']}")
     print(
         "paperops_30_day_operations_phase7_proof_credit_allowed="
@@ -297,6 +331,17 @@ def main() -> int:
         not in notification_errors
     ):
         errors.append("notification live-send probe was not rejected")
+    if (
+        "paperops_30_day_operations_unsafe_counter_nonzero:"
+        "paperops_active_automation_live_endpoint_called_count"
+        not in active_automation_errors
+    ):
+        errors.append("active automation live-endpoint probe was not rejected")
+    if (
+        "paperops_30_day_operations_active_automation_qctrl_bypass"
+        not in active_automation_qctrl_errors
+    ):
+        errors.append("active automation Q-CTRL-hold probe was not rejected")
     if "paperops_30_day_operations_dashboard_not_public_safe" not in dashboard_errors:
         errors.append("dashboard probe was not rejected")
     if "paperops_30_day_operations_event_log_missing" not in event_errors:

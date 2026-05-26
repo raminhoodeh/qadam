@@ -31,6 +31,9 @@ from orchestrator.paperops_paper_lifecycle_polling_enablement import (
 from orchestrator.paperops_guarded_paper_exit_enablement import (
     validate_paperops_guarded_paper_exit_enablement,
 )
+from orchestrator.paperops_active_paper_trading_automation import (
+    validate_paperops_active_paper_trading_automation,
+)
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -112,6 +115,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "paperops_30_day_operations_active",
         "The hourly PaperOps runner must be bound to the active 30-day paper window.",
+    ),
+    (
+        "active_paper_trading_automation_connected",
+        "PT-8 must bind the hourly runner to the guarded active paper-trading controller.",
     ),
     ("telegram_notify_only_connected", "Telegram may notify members but cannot approve or place trades."),
     ("learning_loop_review_only", "Learning/postmortems may review outcomes without mutating policy silently."),
@@ -212,6 +219,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "paper_exit_path": _read_json(runtime / "paperops_paper_exit_path.json"),
         "notification_review": _read_json(runtime / "paperops_notification_review.json"),
         "paperops_30_day_operations": _read_json(runtime / "paperops_30_day_operations.json"),
+        "active_paper_trading_automation": _read_json(
+            runtime / "paperops_active_paper_trading_automation.json"
+        ),
         "lifecycle": _read_json(runtime / "phase7_proof_lifecycle_monitor.json"),
         "telegram": _read_json(runtime / "phase5_telegram_notifier.json"),
         "learning": _read_json(runtime / "phase6_certification.json"),
@@ -248,6 +258,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     paper_exit_path = snapshot["paper_exit_path"]
     notification_review = snapshot["notification_review"]
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
+    active_paper_trading_automation = snapshot["active_paper_trading_automation"]
     lifecycle = snapshot["lifecycle"]
     telegram = snapshot["telegram"]
     learning = snapshot["learning"]
@@ -599,6 +610,63 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and paperops_30_day_operations.get("live_capital_enabled") is False
         and paperops_30_day_operations.get("phase7_proof_credit_allowed") is False
     )
+    active_paper_trading_automation_ready = (
+        active_paper_trading_automation.get("status")
+        in {
+            "active_automation_enabled_idle",
+            "active_automation_enabled_qctrl_hold",
+            "active_automation_ready_to_submit",
+            "active_automation_ready_to_poll",
+            "active_automation_ready_to_exit",
+        }
+        and active_paper_trading_automation.get("recorded") is True
+        and active_paper_trading_automation.get("event_log_written") is True
+        and _int(active_paper_trading_automation.get("event_log_event_count")) == 1
+        and active_paper_trading_automation.get(
+            "active_paper_trading_automation_enabled"
+        )
+        is True
+        and active_paper_trading_automation.get(
+            "active_paper_trading_automation_effective"
+        )
+        is True
+        and active_paper_trading_automation.get("automation_active") is True
+        and active_paper_trading_automation.get("automation_prompt_active_trade_bound")
+        is True
+        and active_paper_trading_automation.get("paperops_safe_to_continue") is True
+        and active_paper_trading_automation.get("paper_endpoint_confirmed") is True
+        and active_paper_trading_automation.get("live_capital_enabled") is False
+        and active_paper_trading_automation.get("live_endpoint_allowed") is False
+        and active_paper_trading_automation.get("direct_broker_shortcut_allowed")
+        is False
+        and active_paper_trading_automation.get(
+            "paper_order_submission_allowed_without_paperops2"
+        )
+        is False
+        and active_paper_trading_automation.get("qctrl_direct_execution_allowed")
+        is False
+        and active_paper_trading_automation.get("qctrl_broker_post_allowed") is False
+        and active_paper_trading_automation.get("forced_trades_allowed") is False
+        and active_paper_trading_automation.get("phase7_proof_credit_allowed")
+        is False
+        and _int(
+            active_paper_trading_automation.get("live_endpoint_called_count")
+        )
+        == 0
+        and _int(
+            active_paper_trading_automation.get("unsafe_write_counter_total")
+        )
+        == 0
+        and not (
+            active_paper_trading_automation.get("qctrl_consultation_hold_active")
+            is True
+            and active_paper_trading_automation.get("paper_submit_step_allowed")
+            is True
+        )
+        and not validate_paperops_active_paper_trading_automation(
+            active_paper_trading_automation
+        )
+    )
 
     return [
         {
@@ -872,6 +940,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "required_for_full_paper_ops": True,
         },
         {
+            "key": "active_paper_trading_automation_connected",
+            "ready": active_paper_trading_automation_ready,
+            "status": str(active_paper_trading_automation.get("status") or "missing"),
+            "detail": (
+                f"enabled={active_paper_trading_automation.get('active_paper_trading_automation_enabled')}; "
+                f"qctrl_hold={active_paper_trading_automation.get('qctrl_consultation_hold_active')}; "
+                f"submit_allowed={active_paper_trading_automation.get('paper_submit_step_allowed')}; "
+                f"live_endpoints={_int(active_paper_trading_automation.get('live_endpoint_called_count'))}"
+            ),
+            "required_for_full_paper_ops": True,
+        },
+        {
             "key": "telegram_notify_only_connected",
             "ready": telegram.get("command_path_enabled_count", 0) == 0,
             "status": str(telegram.get("mode") or telegram.get("status") or "missing"),
@@ -927,6 +1007,8 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Run PT-2 global PaperOps runtime mode enablement"
     if "paperops_30_day_operations_active_not_ready" in blockers:
         return "Run PaperOps-6 30-day paper operations scheduler binding"
+    if "active_paper_trading_automation_connected_not_ready" in blockers:
+        return "Run PT-8 active paper-trading automation binding"
     if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
         return "Run PT-4 auto-approval and staged paper-order handoff"
     if "paper_lifecycle_polling_runtime_enablement_connected_not_ready" in blockers:
@@ -969,6 +1051,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paper_exit_path = snapshot["paper_exit_path"]
     notification_review = snapshot["notification_review"]
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
+    active_paper_trading_automation = snapshot["active_paper_trading_automation"]
     strategy_research = snapshot["strategy_research"]
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
@@ -1737,6 +1820,53 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "paperops_30_day_operations_phase7_proof_credit_allowed": (
             paperops_30_day_operations.get("phase7_proof_credit_allowed") is True
         ),
+        "active_paper_trading_automation_status": (
+            active_paper_trading_automation.get("status", "missing")
+        ),
+        "active_paper_trading_automation_enabled": (
+            active_paper_trading_automation.get(
+                "active_paper_trading_automation_enabled"
+            )
+            is True
+        ),
+        "active_paper_trading_automation_effective": (
+            active_paper_trading_automation.get(
+                "active_paper_trading_automation_effective"
+            )
+            is True
+        ),
+        "active_paper_trading_automation_prompt_bound": (
+            active_paper_trading_automation.get(
+                "automation_prompt_active_trade_bound"
+            )
+            is True
+        ),
+        "active_paper_trading_automation_qctrl_hold": (
+            active_paper_trading_automation.get("qctrl_consultation_hold_active")
+            is True
+        ),
+        "active_paper_trading_automation_submit_step_allowed": (
+            active_paper_trading_automation.get("paper_submit_step_allowed") is True
+        ),
+        "active_paper_trading_automation_poll_step_allowed": (
+            active_paper_trading_automation.get("paper_poll_step_allowed") is True
+        ),
+        "active_paper_trading_automation_exit_step_allowed": (
+            active_paper_trading_automation.get("paper_exit_step_allowed") is True
+        ),
+        "active_paper_trading_automation_submit_hold_reason": (
+            active_paper_trading_automation.get("submit_hold_reason", "missing")
+        ),
+        "active_paper_trading_automation_direct_broker_shortcut_allowed": (
+            active_paper_trading_automation.get("direct_broker_shortcut_allowed")
+            is True
+        ),
+        "active_paper_trading_automation_live_endpoint_called_count": _int(
+            active_paper_trading_automation.get("live_endpoint_called_count")
+        ),
+        "active_paper_trading_automation_unsafe_write_counter_total": _int(
+            active_paper_trading_automation.get("unsafe_write_counter_total")
+        ),
         "prediction_market_write_allowed_count": _int(
             submit.get("prediction_market_write_allowed_count")
         ),
@@ -1831,6 +1961,8 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_exit_runtime_enablement_close_called_count",
         "paper_exit_runtime_enablement_live_endpoint_called_count",
         "paper_exit_runtime_enablement_unsafe_write_counter_total",
+        "active_paper_trading_automation_live_endpoint_called_count",
+        "active_paper_trading_automation_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -2104,6 +2236,27 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_30_day_operations_live_capital_enabled")
     if artifact.get("paperops_30_day_operations_phase7_proof_credit_allowed") is not False:
         errors.append("paper_ops_30_day_operations_proof_credit_allowed")
+    if artifact.get("active_paper_trading_automation_status") not in {
+        "active_automation_enabled_idle",
+        "active_automation_enabled_qctrl_hold",
+        "active_automation_ready_to_submit",
+        "active_automation_ready_to_poll",
+        "active_automation_ready_to_exit",
+    }:
+        errors.append("paper_ops_active_paper_automation_not_enabled")
+    if artifact.get("active_paper_trading_automation_enabled") is not True:
+        errors.append("paper_ops_active_paper_automation_flag_false")
+    if artifact.get("active_paper_trading_automation_effective") is not True:
+        errors.append("paper_ops_active_paper_automation_effective_false")
+    if artifact.get("active_paper_trading_automation_prompt_bound") is not True:
+        errors.append("paper_ops_active_paper_automation_prompt_not_bound")
+    if artifact.get("active_paper_trading_automation_direct_broker_shortcut_allowed") is not False:
+        errors.append("paper_ops_active_paper_automation_direct_broker_shortcut")
+    if (
+        artifact.get("active_paper_trading_automation_qctrl_hold") is True
+        and artifact.get("active_paper_trading_automation_submit_step_allowed") is True
+    ):
+        errors.append("paper_ops_active_paper_automation_qctrl_bypass")
     if artifact.get("quantum_provider_required_as_execution_prerequisite") is not False:
         errors.append("paper_ops_quantum_provider_execution_prerequisite")
     if artifact.get("qctrl_execution_allowed") is not False:
