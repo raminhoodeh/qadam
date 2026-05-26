@@ -115,8 +115,8 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260526-d11e-overview-rebuild",
-    "/dashboard.js?v=20260526-d11e-overview-rebuild"
+    "/auth.css?v=20260526-d11g-evidence-view",
+    "/dashboard.js?v=20260526-d11g-evidence-view"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
