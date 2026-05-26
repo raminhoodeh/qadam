@@ -1266,6 +1266,23 @@ function buildTradesModel(status = {}) {
             risk_decision: riskReference,
             broker_receipt: brokerReference
         },
+        consolidated_review_groups: [
+            {
+                id: "proof_lifecycle",
+                label: "Proof and paper lifecycle",
+                summary: "Paper drill, Phase 5 certification, Phase 6 handoff and learning state, Phase 6 certification, and Phase 7 proof visibility."
+            },
+            {
+                id: "gate_chain",
+                label: "Gate chain and broker readiness",
+                summary: "Signal review, risk policy, execution policy, staging, reconciliation, and dry-run receipt readiness."
+            },
+            {
+                id: "signal_records",
+                label: "Signals, candidates, and paper states",
+                summary: "TradingView observations, candidate records, blocked ideas, and explicit paper lifecycle states."
+            }
+        ],
         proof_credit: {
             backend_reported_allowed: Boolean(phase7.phase7_proof_credit_allowed),
             display_allowed: proofCreditSafe,
@@ -6778,26 +6795,35 @@ function renderTrades(status) {
 
     target.innerHTML = `
         ${renderTradeLifecycleWorkspace(tradesModel)}
-        ${renderPanelBrief({
-            id: "trade_layer",
-            question: "Where are ideas on the paper-trade ladder?",
-            state: `${candidates.length} candidates`,
-            tone: blocked.length ? "blocked" : (candidates.length ? "pending" : "online"),
-            primary: `${observedSignals.length} observed signals, ${candidates.length} candidates, ${blocked.length} blocked trades, and ${(asArray(tradeLayer.staged_orders).length + asArray(tradeLayer.submitted_orders).length)} staged/submitted paper orders are in the current snapshot.`,
-            secondary: "Candidates without risk checks, blocked reasons, staged/submitted paper orders, open positions, and postmortems due.",
-            boundary: tradeLayer.boundary || "Candidate is not order. Live capital stays disabled; only explicit paper state counts."
-        })}
-        <div class="summary-strip">${rows.map(([label, items]) => renderMetric(label, items.length)).join("")}</div>
-        <p class="empty-state">${htmlText(tradeLayer.boundary, "D5 trade intent is local and non-executing.")}</p>
-        <div class="trade-board-meta">
-            ${renderInlineBadge(`store ${summary.status || tradeLayer.store_status || "unknown"}`, tradeLayer.store_status === "ok" ? "online" : "degraded")}
-            ${renderInlineBadge(`${summary.intent_count || 0} local records`, summary.intent_count ? "online" : "pending")}
-            ${renderInlineBadge(`${summary.observed_signal_count || observedSignals.length || 0} observed signals`, observedSignals.length ? "online" : "pending")}
-            ${renderInlineBadge(`${summary.candidate_count || candidates.length || 0} candidates`, candidates.length ? "pending" : "online")}
-            ${renderInlineBadge(`${summary.blocked_count || blocked.length || 0} blocked`, blocked.length ? "blocked" : "online")}
-            ${renderInlineBadge(`${summary.execution_allowed_count || 0} execution allowed`, summary.execution_allowed_count ? "blocked" : "online")}
-            ${renderInlineBadge(`${summary.paper_order_allowed_count || 0} paper orders allowed`, summary.paper_order_allowed_count ? "blocked" : "online")}
-        </div>
+        <section class="trade-consolidated-snapshot ${statusClass(blocked.length ? "blocked" : (candidates.length ? "pending" : "online"))}" data-trade-consolidated-snapshot>
+            <div>
+                <p class="label">Consolidated trade readout</p>
+                <h3>${htmlText(tradesModel.summary)}</h3>
+                <p>${htmlText(tradeLayer.boundary, "No broker order path exists. Candidate is not an order.")}</p>
+            </div>
+            <div class="trade-consolidated-metrics">
+                ${renderMetric("Observed signals", observedSignals.length)}
+                ${renderMetric("Candidates", candidates.length)}
+                ${renderMetric("Blocked trades", blocked.length)}
+                ${renderMetric("Submitted paper", tradesModel.counts.submitted_paper_order)}
+                ${renderMetric("Closed paper", tradesModel.counts.closed_paper_trade)}
+                ${renderMetric("Postmortems due", tradesModel.counts.postmortem_due)}
+            </div>
+            <div class="tag-row">
+                ${renderInlineBadge("Candidate is not order", "pending")}
+                ${renderInlineBadge(`store ${summary.status || tradeLayer.store_status || "unknown"}`, tradeLayer.store_status === "ok" ? "online" : "degraded")}
+                ${renderInlineBadge(`${summary.intent_count || 0} local records`, summary.intent_count ? "online" : "pending")}
+                ${renderInlineBadge(`${summary.execution_allowed_count || 0} execution allowed`, summary.execution_allowed_count ? "blocked" : "online")}
+                ${renderInlineBadge(`${summary.paper_order_allowed_count || 0} paper orders allowed`, summary.paper_order_allowed_count ? "blocked" : "online")}
+            </div>
+        </section>
+        <div class="trade-diagnostic-groups" data-trade-diagnostic-groups>
+            <details class="trade-review-group" open data-trade-review-group="proof_lifecycle">
+                <summary>
+                    <strong>Proof and paper lifecycle</strong>
+                    <span>Paper drill, certification, learning, and Phase 7 proof visibility live together here.</span>
+                </summary>
+                <div class="trade-review-group-body">
         <section class="trade-intent-section" data-phase5-paper-trade-drill>
             <p class="label">Q5-14 End-To-End Paper Trade Drill</p>
             <div class="summary-strip compact">
@@ -7036,6 +7062,14 @@ function renderTrades(status) {
             <p class="mini">${htmlText(phase7DemoProof.boundary, "Q7-15 is backend-derived visibility only and cannot infer readiness or enable live capital.")}</p>
             <p class="mini">Next: ${htmlText(phase7DemoProof.recommended_next_stage, "Q7-16 Weekly Review Pack")}</p>
         </section>
+                </div>
+            </details>
+            <details class="trade-review-group" data-trade-review-group="gate_chain">
+                <summary>
+                    <strong>Gate chain and broker readiness</strong>
+                    <span>Signal review, risk, execution policy, staging, reconciliation, and dry-run receipt diagnostics.</span>
+                </summary>
+                <div class="trade-review-group-body">
         <section class="trade-intent-section" data-phase5-signal-review>
             <p class="label">Signal Review UI and governance actions</p>
             <div class="summary-strip compact">
@@ -7159,6 +7193,14 @@ function renderTrades(status) {
                 : `<article class="trade-intent-card"><h3>No dry-run paper-submit reviews yet</h3><p>The dry-run receipt gate has not reviewed any broker reconciliation records.</p></article>`
             }</div>
         </section>
+                </div>
+            </details>
+            <details class="trade-review-group" data-trade-review-group="signal_records">
+                <summary>
+                    <strong>Signals, candidates, and paper states</strong>
+                    <span>TradingView observations, candidates, blocked ideas, and explicit paper lifecycle states.</span>
+                </summary>
+                <div class="trade-review-group-body">
         <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
@@ -7199,6 +7241,9 @@ function renderTrades(status) {
             <p class="label">Paper lifecycle states</p>
             <ul class="status-list trade-state-list">${orderStateHtml}</ul>
         </section>
+                </div>
+            </details>
+        </div>
     `;
     initTradeLifecycleFilters(target);
 }

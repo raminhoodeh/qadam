@@ -2817,27 +2817,6 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     line-height: 1.45;
 }
 
-.trade-route {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    margin-top: 16px;
-}
-
-.trade-route span {
-    align-items: center;
-    border: 1px solid rgba(var(--amber-rgb), 0.35);
-    border-radius: 6px;
-    background: rgba(var(--amber-rgb), 0.045);
-    color: var(--text);
-    display: flex;
-    font-size: 13px;
-    justify-content: center;
-    min-height: 56px;
-    padding: 8px;
-    text-align: center;
-}
-
 .trades-workspace {
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -3136,6 +3115,105 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     flex-wrap: wrap;
     gap: 7px;
     margin-top: 12px;
+}
+
+.trade-consolidated-snapshot,
+.trade-review-group {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.trade-consolidated-snapshot {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    margin-bottom: 14px;
+    padding: 14px;
+}
+
+.trade-consolidated-snapshot.online {
+    border-color: rgba(var(--green-rgb), 0.3);
+}
+
+.trade-consolidated-snapshot.pending,
+.trade-consolidated-snapshot.degraded {
+    border-color: rgba(var(--amber-rgb), 0.32);
+}
+
+.trade-consolidated-snapshot.blocked {
+    border-color: rgba(var(--coral-rgb), 0.36);
+}
+
+.trade-consolidated-snapshot h3 {
+    font-size: 17px;
+    line-height: 1.25;
+    margin: 0;
+}
+
+.trade-consolidated-snapshot p {
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 5px 0 0;
+}
+
+.trade-consolidated-metrics {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.trade-diagnostic-groups {
+    display: grid;
+    gap: 10px;
+}
+
+.trade-review-group {
+    overflow: clip;
+}
+
+.trade-review-group summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 6px;
+    grid-template-columns: minmax(0, 0.45fr) minmax(0, 0.55fr) auto;
+    list-style: none;
+    min-height: 48px;
+    padding: 12px 14px;
+}
+
+.trade-review-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.trade-review-group summary strong {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.25;
+}
+
+.trade-review-group summary span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.trade-review-group summary::after {
+    color: var(--cyan);
+    content: "+";
+    font-family: var(--font-mono);
+}
+
+.trade-review-group[open] summary::after {
+    content: "-";
+}
+
+.trade-review-group-body {
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 12px;
+    padding: 12px;
 }
 
 .paper-account-meta {
@@ -3798,6 +3876,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .governance-status-grid,
 .governance-target-grid,
 .governance-record-grid,
+.trade-consolidated-metrics,
 .trade-proof-partitions,
 .trade-evidence-links {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
@@ -4437,19 +4516,6 @@ summary {
         padding-top: 8px;
     }
 
-    .trade-route {
-        gap: 6px;
-        grid-template-columns: repeat(7, minmax(72px, 1fr));
-        margin-top: 0;
-        min-width: 610px;
-    }
-
-    .trade-route span {
-        font-size: 11px;
-        min-height: 34px;
-        padding: 6px;
-    }
-
     .console-feed {
         gap: 7px;
         margin-top: 0;
@@ -4504,6 +4570,9 @@ summary {
     .overview-feed-strip,
     .overview-next-links,
     .trades-workspace-head,
+    .trade-consolidated-snapshot,
+    .trade-consolidated-metrics,
+    .trade-review-group summary,
     .trade-proof-partitions,
     .trade-evidence-links,
     .sources-workspace-head,
@@ -4659,10 +4728,6 @@ summary {
         color: var(--muted);
         display: block;
         text-align: center;
-    }
-
-    .trade-route {
-        grid-template-columns: 1fr;
     }
 
     .trade-lifecycle-strip {

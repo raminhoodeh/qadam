@@ -781,8 +781,8 @@
                 <article id="trade-layer" class="panel-card trade-intent-panel" aria-label="Trade layer" data-dashboard-view-section="trades" data-cockpit-section="Trade Layer" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Trade layer</p>
-                            <h2>Intent board</h2>
+                            <p class="label">Trades</p>
+                            <h2>Trade lifecycle and paper-state review</h2>
                         </div>
                         <div class="info-hover">
                             <button class="info-button" type="button" aria-label="About Trade Layer">i</button>
@@ -798,15 +798,6 @@
                         </div>
                     </div>
                     <div class="panel-scroll">
-                        <div class="trade-route">
-                            <span>Signal</span>
-                            <span>Risk check</span>
-                            <span>Candidate</span>
-                            <span>Paper order</span>
-                            <span>Open</span>
-                            <span>Exit</span>
-                            <span>Postmortem</span>
-                        </div>
                         <div data-trade-layer>
                             <section class="trades-workspace" data-trades-workspace>
                                 <div class="trades-workspace-head">
@@ -821,25 +812,22 @@
                                     </div>
                                 </div>
                             </section>
-                            <section class="panel-brief pending" data-panel-brief="trade_layer">
-                                <div class="panel-brief-main">
-                                    <p class="label">Panel readout</p>
-                                    <h3>Where are ideas on the paper-trade ladder?</h3>
-                                    <p>Static fallback separates signals, candidates, risk checks, paper orders, positions, exits, and postmortems.</p>
-                                </div>
-                                <dl class="panel-brief-facts">
-                                    <div><dt>State</dt><dd><span class="inline-badge pending">No live records</span></dd></div>
-                                    <div><dt>Watch</dt><dd>Candidates without risk checks, blocked reasons, staged/submitted paper orders, and postmortems due.</dd></div>
-                                    <div><dt>Boundary</dt><dd>A candidate is not an order. Live capital stays disabled; only explicit paper state counts.</dd></div>
-                                </dl>
+                            <section class="trade-consolidated-snapshot pending" data-trade-consolidated-snapshot>
+                                <p class="label">Consolidated trade readout</p>
+                                <h3>Loading trade lifecycle</h3>
+                                <p>The lifecycle board is the primary trade view. Diagnostic records are grouped below by review purpose.</p>
                             </section>
-                            <div class="summary-strip">
-                                <div class="metric"><span>Observed</span><strong>0</strong></div>
-                                <div class="metric"><span>Candidates</span><strong>0</strong></div>
-                                <div class="metric"><span>Orders</span><strong>0</strong></div>
-                                <div class="metric"><span>Open</span><strong>0</strong></div>
+                            <div class="trade-diagnostic-groups" data-trade-diagnostic-groups>
+                                <details class="trade-review-group" open data-trade-review-group="proof_lifecycle">
+                                    <summary><strong>Proof and paper lifecycle</strong><span>Loading proof and paper-state diagnostics.</span></summary>
+                                </details>
+                                <details class="trade-review-group" data-trade-review-group="gate_chain">
+                                    <summary><strong>Gate chain and broker readiness</strong><span>Loading risk, execution, and broker-readiness diagnostics.</span></summary>
+                                </details>
+                                <details class="trade-review-group" data-trade-review-group="signal_records">
+                                    <summary><strong>Signals, candidates, and paper states</strong><span>Loading signal and candidate diagnostics.</span></summary>
+                                </details>
                             </div>
-                            <p class="empty-state">D0 shows the intended trade ladder only. A candidate is not an order, and no paper order exists unless backend state says staged or submitted.</p>
                         </div>
                     </div>
                 </article>
