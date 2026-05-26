@@ -1198,12 +1198,12 @@ function tradeLifecycleCountRecord(kind, count, options = {}) {
     });
 }
 
-function buildTradesModel(status = {}) {
+function buildTradesModel(status = {}, sharedModels = {}) {
     const tradeLayer = status.trade_layer || {};
     const capital = status.capital || {};
     const phase7 = status.phase7_demo_proof || {};
     const phase5Drill = status.phase5_paper_trade_drill || {};
-    const sourceModel = buildSourcesModel(status);
+    const sourceModel = sharedModels.sources_model || buildSourcesModel(status);
     const observed = asArray(tradeLayer.watching);
     const candidates = asArray(tradeLayer.candidates);
     const blocked = asArray(tradeLayer.blocked);
@@ -1375,6 +1375,9 @@ function buildTradesModel(status = {}) {
             closed_proof_trade_count: modelNumber(phase7.closed_proof_trade_count, 0),
             mature_benchmark: modelNumber(phase7.mature_benchmark, 100),
             phase5_test_trades_count_for_phase7: Boolean(phase7.phase5_test_trades_count_for_phase7)
+        },
+        model_dependencies: {
+            sources_model: sourceModel.id || "sources"
         },
         empty_state: observed.length || candidates.length || submittedLifecycle.length || openPositions.length || closedTrades.length
             ? null
@@ -2100,15 +2103,15 @@ function buildSystemConnectivityModel(status = {}) {
     };
 }
 
-function buildOperationsModel(status = {}, source = {}) {
+function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
     const liveBridge = status.live_bridge || {};
     const d1Snapshot = status.d1_snapshot || {};
     const d0Shell = status.d0_shell || {};
     const processEvents = asArray(status.process_console);
     const forbiddenActions = asArray(status.forbidden_actions);
-    const connectivity = buildSystemConnectivityModel(status);
+    const connectivity = sharedModels.system_connectivity_model || buildSystemConnectivityModel(status);
     const roleSpine = buildOperationsRoleSpine(connectivity);
-    const governance = buildGovernanceModel(status);
+    const governance = sharedModels.governance_model || buildGovernanceModel(status);
     const communicationsAudit = governance.communications || {};
     const authorityFlags = collectAuthorityFlags(status);
     const readinessWarnings = collectReadinessWarnings(status);
@@ -2193,6 +2196,10 @@ function buildOperationsModel(status = {}, source = {}) {
         system_connectivity_model: connectivity,
         role_spine: roleSpine,
         operations_review_groups: reviewGroups,
+        model_dependencies: {
+            system_connectivity_model: connectivity.id || "system_connectivity_model",
+            governance_model: governance.id || "governance"
+        },
         forbidden_actions: forbiddenActions.slice(0, 8).map((action) => ({
             key: dashboardText(action.key, "safety stop"),
             reason: dashboardText(action.reason, "No reason exported.")
@@ -2548,12 +2555,12 @@ function buildGovernanceModel(status = {}) {
     };
 }
 
-function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
-    const sources = buildSourcesModel(status);
-    const trades = buildTradesModel(status);
-    const reasoning = buildReasoningModel(status);
-    const performance = buildPerformanceModel(status);
-    const operations = sharedOperations || buildOperationsModel(status, source);
+function buildOverviewModel(status = {}, source = {}, sharedOperations = null, sharedModels = {}) {
+    const sources = sharedModels.sources_model || buildSourcesModel(status);
+    const trades = sharedModels.trades_model || buildTradesModel(status, { sources_model: sources });
+    const reasoning = sharedModels.reasoning_model || buildReasoningModel(status);
+    const performance = sharedModels.performance_model || buildPerformanceModel(status);
+    const operations = sharedModels.operations_model || sharedOperations || buildOperationsModel(status, source, sharedModels);
     const phase7 = status.phase7_demo_proof || {};
     const actionNeeded = [];
     if (sources.quorum.status !== "ok") actionNeeded.push("Review source quorum");
@@ -2707,6 +2714,14 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
         },
         system_summary: "Live feeds -> Python COO -> model research -> quant/risk gates -> paper lifecycle -> learning loop.",
         scope_note: "Use the single safety strip for authority state. Overview only answers what changed and which deeper view to open next.",
+        model_dependencies: {
+            sources_model: sources.id || "sources",
+            trades_model: trades.id || "trades",
+            reasoning_model: reasoning.id || "reasoning",
+            performance_model: performance.id || "performance",
+            operations_model: operations.id || "operations",
+            system_connectivity_model: operations.system_connectivity_model?.id || "system_connectivity_model"
+        },
         boundary: "Overview is a read-only triage surface. It cannot approve, place, modify, close, fund, or grant proof credit for trades."
     };
 }
@@ -2746,24 +2761,76 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
 }
 
 function buildQadamDashboardViewModels(status = {}, source = {}) {
-    const operations = buildOperationsModel(status, source);
-    const overview = buildOverviewModel(status, source, operations);
+    const sources = buildSourcesModel(status);
+    const trades = buildTradesModel(status, { sources_model: sources });
+    const reasoning = buildReasoningModel(status);
     const performance = buildPerformanceModel(status);
+    const governance = buildGovernanceModel(status);
+    const systemConnectivity = buildSystemConnectivityModel(status);
+    const operations = buildOperationsModel(status, source, {
+        system_connectivity_model: systemConnectivity,
+        governance_model: governance
+    });
+    const sharedModels = {
+        sources_model: sources,
+        trades_model: trades,
+        reasoning_model: reasoning,
+        performance_model: performance,
+        system_connectivity_model: systemConnectivity,
+        operations_model: operations,
+        governance_model: governance
+    };
+    const overview = buildOverviewModel(status, source, operations, sharedModels);
+    const safetyStrip = buildDashboardSafetyStripModel(status, {
+        operations_model: operations,
+        performance_model: performance
+    });
+    const modelGraph = {
+        contract: "single_shared_dashboard_view_model_bundle",
+        build_order: [
+            "sources_model",
+            "trades_model",
+            "reasoning_model",
+            "performance_model",
+            "governance_model",
+            "system_connectivity_model",
+            "operations_model",
+            "overview_model",
+            "safety_strip_model"
+        ],
+        shared_dependencies: {
+            trades_model: ["sources_model"],
+            operations_model: ["system_connectivity_model", "governance_model"],
+            overview_model: [
+                "sources_model",
+                "trades_model",
+                "reasoning_model",
+                "performance_model",
+                "operations_model",
+                "system_connectivity_model"
+            ],
+            safety_strip_model: ["operations_model", "performance_model"]
+        },
+        renderer_entrypoint: "renderQadamDashboardStatus",
+        renderer_uses_shared_bundle: true
+    };
     return {
         schema_version: "dashboard_view_models.v1",
+        model_contract_version: "dashboard_view_models.d11k.shared_bundle.v1",
         generated_at: status.generated_at || null,
         status_source: source?.key || "unknown",
         public_safe: true,
         authority_boundary: "View models are read-only projections of the public-safe cockpit status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
-        safety_strip_model: buildDashboardSafetyStripModel(status, { operations_model: operations, performance_model: performance }),
+        model_graph: modelGraph,
+        safety_strip_model: safetyStrip,
         overview_model: overview,
-        trades_model: buildTradesModel(status),
-        sources_model: buildSourcesModel(status),
-        reasoning_model: buildReasoningModel(status),
+        trades_model: trades,
+        sources_model: sources,
+        reasoning_model: reasoning,
         performance_model: performance,
-        system_connectivity_model: operations.system_connectivity_model,
+        system_connectivity_model: systemConnectivity,
         operations_model: operations,
-        governance_model: buildGovernanceModel(status),
+        governance_model: governance,
         safety_model: {
             authority_flags: operations.safety.authority_flags,
             readiness_warnings: operations.safety.readiness_warnings,
@@ -5251,10 +5318,10 @@ function renderPhase4Strategy(status) {
     `;
 }
 
-function renderWatching(status) {
+function renderWatching(status, viewModels = {}) {
     const watching = asArray(status.watching);
     const pipelineSummary = asArray(status.source_pipeline_summary);
-    const sourcesModel = buildSourcesModel(status);
+    const sourcesModel = viewModels?.sources_model || buildSourcesModel(status);
     const yahooFinance = status.yahoo_finance || {};
     const preferenceMcp = status.preference_mcp || {};
     const summaryByPipeline = new Map(pipelineSummary.map((pipeline) => [pipeline.pipeline, pipeline]));
@@ -5777,12 +5844,12 @@ function renderReasoningWorkspace(model) {
     `;
 }
 
-function renderCognition(status) {
+function renderCognition(status, viewModels = {}) {
     const target = dashboardQuery("[data-cognition]");
     if (!target) return;
 
     const cognition = status.cognition || {};
-    const reasoning = buildReasoningModel(status);
+    const reasoning = viewModels?.reasoning_model || buildReasoningModel(status);
     const hypotheses = asArray(cognition.hypotheses);
     const evidencePackets = asArray(cognition.evidence_packets);
     const shadowPackets = asArray(cognition.shadow_packets);
@@ -6563,7 +6630,7 @@ function tradeStateLabel(status) {
     return labels[status] || dashboardText(status, "Trade state unknown");
 }
 
-function renderTrades(status) {
+function renderTrades(status, viewModels = {}) {
     const target = dashboardQuery("[data-trade-layer]");
     if (!target) return;
     const tradeLayer = status.trade_layer || {};
@@ -6591,7 +6658,7 @@ function renderTrades(status) {
     const summary = tradeLayer.summary || {};
     const philosophy = status.decision_philosophy || {};
     const worldviewBlock = renderDecisionWorldviewBlock(philosophy);
-    const tradesModel = buildTradesModel(status);
+    const tradesModel = viewModels?.trades_model || buildTradesModel(status, viewModels);
     const rows = [
         ["Observed signals", asArray(tradeLayer.watching)],
         ["Candidates", asArray(tradeLayer.candidates)],
@@ -8012,12 +8079,12 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
     `;
 }
 
-function renderCapital(status) {
+function renderCapital(status, viewModels = {}) {
     const target = dashboardQuery("[data-capital]");
     if (!target) return;
     const capital = status.capital || {};
     const phase7DemoProof = status.phase7_demo_proof || {};
-    const performance = buildPerformanceModel(status);
+    const performance = viewModels?.performance_model || buildPerformanceModel(status);
     const maturityTarget = Number(capital.maturity_closed_trade_target || 100);
     const maturityCount = Number(capital.maturity_closed_trade_count || 0);
     const maturityPct = maturityTarget ? Math.round((maturityCount / maturityTarget) * 100) : 0;
@@ -8168,10 +8235,10 @@ function renderCapital(status) {
     `;
 }
 
-function renderFundManagerNotes(status) {
+function renderFundManagerNotes(status, viewModels = {}) {
     const commentsTarget = dashboardQuery("[data-comments-list]");
     const notes = status.fund_manager_notes || {};
-    const governance = buildGovernanceModel(status);
+    const governance = viewModels?.governance_model || buildGovernanceModel(status);
     const comments = asArray(notes.recent_comments);
     const workspace = dashboardQuery("[data-governance-workspace]");
     if (workspace) {
@@ -8280,14 +8347,14 @@ async function renderQadamDashboardStatus(session) {
         renderPhase4Strategy(status);
         renderFundModel(status, source);
         renderFlowMap(status, source, viewModels);
-        renderWatching(status);
-        renderCognition(status);
+        renderWatching(status, viewModels);
+        renderCognition(status, viewModels);
         renderWorldview(status);
         renderForbidden(status);
         renderCommunications(status);
-        renderTrades(status);
-        renderCapital(status);
-        renderFundManagerNotes(status);
+        renderTrades(status, viewModels);
+        renderCapital(status, viewModels);
+        renderFundManagerNotes(status, viewModels);
         renderConsole(status);
         if (document.documentElement) {
             document.documentElement.dataset.dashboardStatus = "rendered";
