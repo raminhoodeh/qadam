@@ -178,7 +178,7 @@ async function main() {
         "No forced trade pressure",
         "Backend source records",
         "no UI inference",
-        "live capital disabled",
+        "Live capital off",
         "Is the paper account proving or losing trust?"
     ].forEach((needle) => assert(performanceHtml.includes(needle), `rendered performance workspace missing ${needle}`));
 

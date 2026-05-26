@@ -58,7 +58,7 @@ function staticBriefBlock(id) {
     "function replacePanelBrief",
     "data-panel-brief",
     "Are Qadam's inputs healthy enough to trust?",
-    "What is Qadam thinking about, and why is it blocked?",
+    "What is Qadam thinking about, and what is still missing?",
     "Where are ideas on the paper-trade ladder?",
     "Is the paper account proving or losing trust?",
     "What did Qadam last report about itself?"
@@ -80,7 +80,7 @@ assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
 (async () => {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-cognition]", "Panel readout");
-    assertIncludes(rendered, "[data-cognition]", "What is Qadam thinking about, and why is it blocked?");
+    assertIncludes(rendered, "[data-cognition]", "What is Qadam thinking about, and what is still missing?");
     assertIncludes(rendered, "[data-worldview]", "Which private priors are shaping the questions?");
     assertIncludes(rendered, "[data-communications]", "What has Qadam told founding members?");
     assertIncludes(rendered, "[data-trade-layer]", "Where are ideas on the paper-trade ladder?");

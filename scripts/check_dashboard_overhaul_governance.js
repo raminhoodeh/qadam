@@ -89,7 +89,7 @@ async function main() {
         "comments governance-only",
         "approvals audit-only",
         "Telegram outbound-only",
-        "live capital disabled"
+        "Live capital off"
     ], "Governance workspace static shell");
     assert(!dashboardHtml.includes("placeholder=\"trade_layer\""), "raw reference-key text placeholder still present");
     assert(dashboardHtml.includes("<select name=\"target_key\" data-comment-target-select required>"), "comment target assisted selector missing");
@@ -162,7 +162,7 @@ async function main() {
         "comments governance-only",
         "approvals audit-only",
         "Telegram outbound-only",
-        "live capital disabled",
+        "Live capital off",
         "Contextual comment entry points",
         "Trade candidate:",
         "Observed signal:",

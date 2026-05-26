@@ -1109,7 +1109,32 @@ Outcome:
 
 Next stage:
 
-- D11C - Reduce Panel Count And Merge Duplicate Surfaces.
+- D11C - Canonical Status Language.
+
+### D11C - Canonical Status Language
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11c-canonical-status-language-2026-05-26.md`
+- `scripts/check_dashboard_d11c_canonical_status_language.js`
+
+Outcome:
+
+- The dashboard now has a canonical display vocabulary for Current,
+  Read-only, Paper only, Live capital off, Dry run, Waiting for evidence,
+  Missing setup, Degraded, Local only, Non-executable, Safety stop, and Fault.
+- Generic status pills no longer need to expose raw `Blocked`, `Pending`, or
+  `Online` language when a clearer canonical label exists.
+- Exact raw status-token badges are normalized where safe, while
+  domain-specific lifecycle labels such as `Blocked idea` remain intact.
+- Existing backend status values, CSS tone classes, readiness gates, provider
+  calls, broker routes, Telegram posture, and live-capital state are unchanged.
+
+Next stage:
+
+- D11D - Reduce Panel Count And Merge Duplicate Surfaces.
 
 ## 8. Implementation Order
 
