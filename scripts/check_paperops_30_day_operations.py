@@ -131,6 +131,18 @@ def main() -> int:
         cockpit_notification_qctrl_probe
     )
 
+    paper_live_probe = deepcopy(written)
+    paper_live_probe["paper_live_certification_unsafe_write_counter_total"] = 1
+    paper_live_probe["unsafe_write_counter_total"] = 1
+    paper_live_errors = validate_paperops_30_day_operations(paper_live_probe)
+
+    paper_live_certified_probe = deepcopy(written)
+    paper_live_certified_probe["paper_live_certification_paper_live_certified"] = True
+    paper_live_certified_probe["paper_live_certification_operation_allowed"] = True
+    paper_live_certified_errors = validate_paperops_30_day_operations(
+        paper_live_certified_probe
+    )
+
     dashboard_probe = deepcopy(written)
     dashboard_probe["dashboard_mirror_public_safe"] = False
     dashboard_probe["dashboard_mirror_trigger_trading_allowed"] = True
@@ -327,6 +339,46 @@ def main() -> int:
         "paperops_30_day_operations_cockpit_notification_unsafe_write_counter_total="
         f"{written['paperops_cockpit_notification_unsafe_write_counter_total']}"
     )
+    print(
+        "paperops_30_day_operations_paper_live_certification_status="
+        f"{written['paper_live_certification_status']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_control_plane_certified="
+        f"{written['paper_live_certification_control_plane_certified']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_certified="
+        f"{written['paper_live_certification_paper_live_certified']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_operation_allowed="
+        f"{written['paper_live_certification_operation_allowed']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_blocker_count="
+        f"{written['paper_live_certification_blocker_count']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_qctrl_hold_visible="
+        f"{written['paper_live_certification_qctrl_hold_visible']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_submit_visible_as_held="
+        f"{written['paper_live_certification_submit_visible_as_held']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_phase7_30_day_run_complete="
+        f"{written['paper_live_certification_phase7_30_day_run_complete']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_phase7_demo_proof_certified="
+        f"{written['paper_live_certification_phase7_demo_proof_certified']}"
+    )
+    print(
+        "paperops_30_day_operations_paper_live_unsafe_write_counter_total="
+        f"{written['paper_live_certification_unsafe_write_counter_total']}"
+    )
     print(f"paperops_30_day_operations_live_capital_enabled={written['live_capital_enabled']}")
     print(
         "paperops_30_day_operations_phase7_proof_credit_allowed="
@@ -437,6 +489,37 @@ def main() -> int:
         not in cockpit_notification_qctrl_errors
     ):
         errors.append("PT-9 Q-CTRL hold visibility probe was not rejected")
+    if written["paper_live_certification_status"] not in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        errors.append("PT-10 paper-live certification is not evaluated")
+    if written["paper_live_certification_control_plane_certified"] is not True:
+        errors.append("PT-10 paper-live control plane is not certified")
+    if written["paper_live_certification_paper_live_certified"] is not False:
+        errors.append("PT-10 unexpectedly certified paper-live")
+    if written["paper_live_certification_operation_allowed"] is not False:
+        errors.append("PT-10 unexpectedly allowed paper-live operation")
+    if written["paper_live_certification_blocker_count"] < 1:
+        errors.append("PT-10 certification blockers are missing")
+    if (
+        written["paper_live_certification_qctrl_hold_visible"] is True
+        and written["paper_live_certification_submit_visible_as_held"] is not True
+    ):
+        errors.append("PT-10 Q-CTRL hold is not surfaced")
+    if written["paper_live_certification_unsafe_write_counter_total"] != 0:
+        errors.append("PT-10 unsafe counter is nonzero")
+    if (
+        "paperops_30_day_operations_unsafe_counter_nonzero:"
+        "paper_live_certification_unsafe_write_counter_total"
+        not in paper_live_errors
+    ):
+        errors.append("PT-10 unsafe probe was not rejected")
+    if (
+        "paperops_30_day_operations_paper_live_certified_unexpected"
+        not in paper_live_certified_errors
+    ):
+        errors.append("PT-10 false certified probe was not rejected")
     if "paperops_30_day_operations_dashboard_not_public_safe" not in dashboard_errors:
         errors.append("dashboard probe was not rejected")
     if "paperops_30_day_operations_event_log_missing" not in event_errors:

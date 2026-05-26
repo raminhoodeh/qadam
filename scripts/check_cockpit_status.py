@@ -25,6 +25,9 @@ from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E40
 from orchestrator.paperops_cockpit_notification_upgrade import (  # noqa: E402
     PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_REQUIRED_FIELDS,
 )
+from orchestrator.paper_live_certification import (  # noqa: E402
+    PT10_PUBLIC_FIELDS as PAPER_LIVE_CERTIFICATION_REQUIRED_FIELDS,
+)
 from orchestrator.phase6_cockpit_visibility import (
     PUBLIC_STATUS_FIELDS as PHASE6_LEARNING_LOOP_REQUIRED_FIELDS,
 )  # noqa: E402
@@ -1913,6 +1916,11 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_cockpit_notification_readout_count",
     "paperops_cockpit_notification_qctrl_hold",
     "paperops_cockpit_notification_live_send_allowed_count",
+    "paper_live_certification",
+    "paper_live_control_plane_certified",
+    "paper_live_certified",
+    "paper_live_certification_blocker_count",
+    "paper_live_operation_allowed",
     "paperops_active_paper_trading_automation",
     "paperops_active_paper_trading_automation_enabled",
     "paperops_active_paper_trading_qctrl_hold",
@@ -2972,6 +2980,7 @@ def main() -> int:
         "paperops_cockpit_notification_upgrade",
         {},
     )
+    paper_live_certification = payload.get("paper_live_certification", {})
     paperops_active_automation = payload.get(
         "paperops_active_paper_trading_automation",
         {},
@@ -3215,6 +3224,50 @@ def main() -> int:
     print(
         "cockpit_status_paperops_cockpit_notification_unsafe_write_counter_total="
         f"{paperops_cockpit_notification.get('unsafe_write_counter_total')}"
+    )
+    print(
+        "cockpit_status_paper_live_certification_status="
+        f"{paper_live_certification.get('status')}"
+    )
+    print(
+        "cockpit_status_paper_live_control_plane_certified="
+        f"{paper_live_certification.get('paper_live_control_plane_certified')}"
+    )
+    print(
+        "cockpit_status_paper_live_certified="
+        f"{paper_live_certification.get('paper_live_certified')}"
+    )
+    print(
+        "cockpit_status_paper_live_operation_allowed="
+        f"{paper_live_certification.get('paper_live_operation_allowed')}"
+    )
+    print(
+        "cockpit_status_paper_live_certification_blocker_count="
+        f"{paper_live_certification.get('certification_blocker_count')}"
+    )
+    print(
+        "cockpit_status_paper_live_qctrl_hold_active="
+        f"{paper_live_certification.get('qctrl_hold_active')}"
+    )
+    print(
+        "cockpit_status_paper_live_qctrl_hold_visible="
+        f"{paper_live_certification.get('qctrl_hold_visible')}"
+    )
+    print(
+        "cockpit_status_paper_live_submit_visible_as_held="
+        f"{paper_live_certification.get('paper_submit_visible_as_held')}"
+    )
+    print(
+        "cockpit_status_paper_live_phase7_30_day_run_complete="
+        f"{paper_live_certification.get('phase7_30_day_run_complete')}"
+    )
+    print(
+        "cockpit_status_paper_live_phase7_demo_proof_certified="
+        f"{paper_live_certification.get('phase7_demo_proof_certified')}"
+    )
+    print(
+        "cockpit_status_paper_live_unsafe_write_counter_total="
+        f"{paper_live_certification.get('unsafe_write_counter_total')}"
     )
     print(
         "cockpit_status_paperops_active_automation_status="
@@ -6818,6 +6871,31 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_pt9_live_send_mismatch=true")
         return 1
+    if mission_stack.get("paper_live_certification") != (
+        paper_live_certification.get("status")
+    ):
+        print("cockpit_status_mission_stack_pt10_status_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_control_plane_certified") != (
+        paper_live_certification.get("paper_live_control_plane_certified")
+    ):
+        print("cockpit_status_mission_stack_pt10_control_plane_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_certified") != (
+        paper_live_certification.get("paper_live_certified")
+    ):
+        print("cockpit_status_mission_stack_pt10_certified_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_certification_blocker_count") != (
+        paper_live_certification.get("certification_blocker_count")
+    ):
+        print("cockpit_status_mission_stack_pt10_blocker_count_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_operation_allowed") != (
+        paper_live_certification.get("paper_live_operation_allowed")
+    ):
+        print("cockpit_status_mission_stack_pt10_operation_allowed_mismatch=true")
+        return 1
     if mission_stack.get("paperops_active_paper_trading_automation") != (
         paperops_active_automation.get("status")
     ):
@@ -7142,6 +7220,79 @@ def main() -> int:
         not in paperops_cockpit_notification.get("boundary", "")
     ):
         print("cockpit_status_paperops_cockpit_notification_boundary_weak=true")
+        return 1
+    missing_paper_live_certification_fields = sorted(
+        set(PAPER_LIVE_CERTIFICATION_REQUIRED_FIELDS) - set(paper_live_certification)
+    )
+    if missing_paper_live_certification_fields:
+        print(
+            "cockpit_status_paper_live_certification_fields_missing="
+            + ",".join(missing_paper_live_certification_fields)
+        )
+        return 1
+    if paper_live_certification.get("status") not in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        print("cockpit_status_paper_live_certification_not_evaluated=true")
+        return 1
+    if paper_live_certification.get("public_safe") is not True:
+        print("cockpit_status_paper_live_certification_not_public_safe=true")
+        return 1
+    if paper_live_certification.get("recorded") is not True:
+        print("cockpit_status_paper_live_certification_not_recorded=true")
+        return 1
+    if paper_live_certification.get("event_log_written") is not True:
+        print("cockpit_status_paper_live_certification_event_log_not_written=true")
+        return 1
+    if paper_live_certification.get("event_log_event_count") != 1:
+        print("cockpit_status_paper_live_certification_event_count_mismatch=true")
+        return 1
+    if paper_live_certification.get("validation_error_count") != 0:
+        print("cockpit_status_paper_live_certification_validation_errors=true")
+        return 1
+    if paper_live_certification.get("paper_live_control_plane_certified") is not True:
+        print("cockpit_status_paper_live_control_plane_not_certified=true")
+        return 1
+    if paper_live_certification.get("paper_live_certified") is not False:
+        print("cockpit_status_paper_live_unexpectedly_certified=true")
+        return 1
+    if paper_live_certification.get("paper_live_operation_allowed") is not False:
+        print("cockpit_status_paper_live_operation_allowed=true")
+        return 1
+    if int(paper_live_certification.get("certification_blocker_count", 0) or 0) < 1:
+        print("cockpit_status_paper_live_certification_blockers_missing=true")
+        return 1
+    if (
+        paper_live_certification.get("qctrl_hold_active") is True
+        and paper_live_certification.get("paper_submit_visible_as_held") is not True
+    ):
+        print("cockpit_status_paper_live_submit_hold_hidden=true")
+        return 1
+    if paper_live_certification.get("live_capital_enabled") is not False:
+        print("cockpit_status_paper_live_certification_live_capital_enabled=true")
+        return 1
+    if paper_live_certification.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_paper_live_certification_proof_credit_allowed=true")
+        return 1
+    for key in (
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "broker_write_allowed_count",
+        "notification_live_send_allowed_count",
+        "telegram_command_path_enabled_count",
+        "outbox_message_written_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paper_live_certification.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paper_live_certification_unsafe_{key}=true")
+            return 1
+    if (
+        "cannot certify an incomplete 30-day proof run"
+        not in paper_live_certification.get("boundary", "")
+    ):
+        print("cockpit_status_paper_live_certification_boundary_weak=true")
         return 1
     missing_active_automation_fields = sorted(
         PAPEROPS_ACTIVE_AUTOMATION_REQUIRED_FIELDS - set(paperops_active_automation)

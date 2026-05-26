@@ -37,6 +37,7 @@ from orchestrator.paperops_active_paper_trading_automation import (
 from orchestrator.paperops_cockpit_notification_upgrade import (
     validate_paperops_cockpit_notification_upgrade,
 )
+from orchestrator.paper_live_certification import validate_paper_live_certification
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -126,6 +127,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "cockpit_notification_upgrade_connected",
         "PT-9 must expose active PaperOps state through public-safe cockpit and review-only notifications.",
+    ),
+    (
+        "paper_live_certification_gate_connected",
+        "PT-10 must evaluate paper-live certification without bypassing Q-CTRL or Phase 7 proof gates.",
     ),
     ("telegram_notify_only_connected", "Telegram may notify members but cannot approve or place trades."),
     ("learning_loop_review_only", "Learning/postmortems may review outcomes without mutating policy silently."),
@@ -232,6 +237,7 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "cockpit_notification_upgrade": _read_json(
             runtime / "paperops_cockpit_notification_upgrade.json"
         ),
+        "paper_live_certification": _read_json(runtime / "paper_live_certification.json"),
         "lifecycle": _read_json(runtime / "phase7_proof_lifecycle_monitor.json"),
         "telegram": _read_json(runtime / "phase5_telegram_notifier.json"),
         "learning": _read_json(runtime / "phase6_certification.json"),
@@ -270,6 +276,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
     active_paper_trading_automation = snapshot["active_paper_trading_automation"]
     cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
+    paper_live_certification = snapshot["paper_live_certification"]
     lifecycle = snapshot["lifecycle"]
     telegram = snapshot["telegram"]
     learning = snapshot["learning"]
@@ -720,6 +727,30 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             cockpit_notification_upgrade
         )
     )
+    paper_live_certification_ready = (
+        paper_live_certification.get("status")
+        in {
+            "blocked_pending_qctrl_and_phase7_proof",
+            "paper_live_certified",
+        }
+        and paper_live_certification.get("recorded") is True
+        and paper_live_certification.get("event_log_written") is True
+        and _int(paper_live_certification.get("event_log_event_count")) == 1
+        and paper_live_certification.get("paper_live_certification_gate_evaluated")
+        is True
+        and paper_live_certification.get("paper_live_control_plane_certified")
+        is True
+        and _int(paper_live_certification.get("control_plane_blocker_count")) == 0
+        and paper_live_certification.get("public_safe") is True
+        and paper_live_certification.get("live_capital_enabled") is False
+        and paper_live_certification.get("phase7_proof_credit_allowed") is False
+        and _int(paper_live_certification.get("unsafe_write_counter_total")) == 0
+        and not (
+            paper_live_certification.get("qctrl_hold_active") is True
+            and paper_live_certification.get("paper_submit_step_allowed") is True
+        )
+        and not validate_paper_live_certification(paper_live_certification)
+    )
 
     return [
         {
@@ -1017,6 +1048,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "required_for_full_paper_ops": True,
         },
         {
+            "key": "paper_live_certification_gate_connected",
+            "ready": paper_live_certification_ready,
+            "status": str(paper_live_certification.get("status") or "missing"),
+            "detail": (
+                f"control_plane={paper_live_certification.get('paper_live_control_plane_certified')}; "
+                f"certified={paper_live_certification.get('paper_live_certified')}; "
+                f"blockers={_int(paper_live_certification.get('certification_blocker_count'))}; "
+                f"unsafe={_int(paper_live_certification.get('unsafe_write_counter_total'))}"
+            ),
+            "required_for_full_paper_ops": True,
+        },
+        {
             "key": "telegram_notify_only_connected",
             "ready": telegram.get("command_path_enabled_count", 0) == 0,
             "status": str(telegram.get("mode") or telegram.get("status") or "missing"),
@@ -1076,6 +1119,8 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Run PT-8 active paper-trading automation binding"
     if "cockpit_notification_upgrade_connected_not_ready" in blockers:
         return "Run PT-9 cockpit and notification upgrade"
+    if "paper_live_certification_gate_connected_not_ready" in blockers:
+        return "Run PT-10 paper-live certification gate"
     if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
         return "Run PT-4 auto-approval and staged paper-order handoff"
     if "paper_lifecycle_polling_runtime_enablement_connected_not_ready" in blockers:
@@ -1120,6 +1165,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
     active_paper_trading_automation = snapshot["active_paper_trading_automation"]
     cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
+    paper_live_certification = snapshot["paper_live_certification"]
     strategy_research = snapshot["strategy_research"]
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
@@ -1987,6 +2033,67 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "cockpit_notification_upgrade_phase7_proof_credit_allowed": (
             cockpit_notification_upgrade.get("phase7_proof_credit_allowed") is True
         ),
+        "paper_live_certification_status": paper_live_certification.get(
+            "status",
+            "missing",
+        ),
+        "paper_live_certification_gate_evaluated": (
+            paper_live_certification.get("paper_live_certification_gate_evaluated")
+            is True
+        ),
+        "paper_live_control_plane_certified": (
+            paper_live_certification.get("paper_live_control_plane_certified")
+            is True
+        ),
+        "paper_live_certified": (
+            paper_live_certification.get("paper_live_certified") is True
+        ),
+        "paper_live_operation_allowed": (
+            paper_live_certification.get("paper_live_operation_allowed") is True
+        ),
+        "paper_live_submission_delegation_allowed": (
+            paper_live_certification.get("paper_live_submission_delegation_allowed")
+            is True
+        ),
+        "paper_live_certification_blocker_count": _int(
+            paper_live_certification.get("certification_blocker_count")
+        ),
+        "paper_live_certification_control_plane_blocker_count": _int(
+            paper_live_certification.get("control_plane_blocker_count")
+        ),
+        "paper_live_certification_input_gate_count": _int(
+            paper_live_certification.get("input_gate_count")
+        ),
+        "paper_live_certification_input_gate_passed_count": _int(
+            paper_live_certification.get("input_gate_passed_count")
+        ),
+        "paper_live_certification_qctrl_product_access_verified": (
+            paper_live_certification.get("qctrl_product_access_verified") is True
+        ),
+        "paper_live_certification_qctrl_hold_active": (
+            paper_live_certification.get("qctrl_hold_active") is True
+        ),
+        "paper_live_certification_qctrl_hold_visible": (
+            paper_live_certification.get("qctrl_hold_visible") is True
+        ),
+        "paper_live_certification_submit_visible_as_held": (
+            paper_live_certification.get("paper_submit_visible_as_held") is True
+        ),
+        "paper_live_certification_phase7_30_day_run_complete": (
+            paper_live_certification.get("phase7_30_day_run_complete") is True
+        ),
+        "paper_live_certification_phase7_demo_proof_certified": (
+            paper_live_certification.get("phase7_demo_proof_certified") is True
+        ),
+        "paper_live_certification_live_capital_enabled": (
+            paper_live_certification.get("live_capital_enabled") is True
+        ),
+        "paper_live_certification_phase7_proof_credit_allowed": (
+            paper_live_certification.get("phase7_proof_credit_allowed") is True
+        ),
+        "paper_live_certification_unsafe_write_counter_total": _int(
+            paper_live_certification.get("unsafe_write_counter_total")
+        ),
         "prediction_market_write_allowed_count": _int(
             submit.get("prediction_market_write_allowed_count")
         ),
@@ -2090,6 +2197,7 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "cockpit_notification_upgrade_live_endpoint_called_count",
         "cockpit_notification_upgrade_outbox_message_written_count",
         "cockpit_notification_upgrade_unsafe_write_counter_total",
+        "paper_live_certification_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -2406,6 +2514,39 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cockpit_notification_upgrade_qctrl_hold_not_visible")
     if artifact.get("cockpit_notification_upgrade_phase7_proof_credit_allowed") is not False:
         errors.append("paper_ops_cockpit_notification_upgrade_proof_credit_allowed")
+    if artifact.get("paper_live_certification_status") not in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        errors.append("paper_ops_paper_live_certification_not_evaluated")
+    if artifact.get("paper_live_certification_gate_evaluated") is not True:
+        errors.append("paper_ops_paper_live_certification_gate_not_evaluated")
+    if artifact.get("paper_live_control_plane_certified") is not True:
+        errors.append("paper_ops_paper_live_control_plane_not_certified")
+    if artifact.get("paper_live_certification_control_plane_blocker_count") != 0:
+        errors.append("paper_ops_paper_live_certification_control_blockers")
+    if artifact.get("paper_live_operation_allowed") is not False and artifact.get(
+        "paper_live_certified"
+    ) is not True:
+        errors.append("paper_ops_paper_live_operation_allowed_while_blocked")
+    if artifact.get("paper_live_submission_delegation_allowed") is not False and artifact.get(
+        "paper_live_certified"
+    ) is not True:
+        errors.append("paper_ops_paper_live_submission_allowed_while_blocked")
+    if (
+        artifact.get("paper_live_certification_qctrl_hold_active") is True
+        and artifact.get("paper_live_certification_qctrl_hold_visible") is not True
+    ):
+        errors.append("paper_ops_paper_live_qctrl_hold_not_visible")
+    if (
+        artifact.get("paper_live_certification_qctrl_hold_active") is True
+        and artifact.get("paper_live_certification_submit_visible_as_held") is not True
+    ):
+        errors.append("paper_ops_paper_live_submit_hold_not_visible")
+    if artifact.get("paper_live_certification_live_capital_enabled") is not False:
+        errors.append("paper_ops_paper_live_certification_live_capital_enabled")
+    if artifact.get("paper_live_certification_phase7_proof_credit_allowed") is not False:
+        errors.append("paper_ops_paper_live_certification_proof_credit_allowed")
     if artifact.get("quantum_provider_required_as_execution_prerequisite") is not False:
         errors.append("paper_ops_quantum_provider_execution_prerequisite")
     if artifact.get("qctrl_execution_allowed") is not False:

@@ -62,6 +62,10 @@ from orchestrator.paperops_cockpit_notification_upgrade import (
     PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_FIELDS,
     paperops_cockpit_notification_upgrade_public_status,
 )
+from orchestrator.paper_live_certification import (
+    PT10_PUBLIC_FIELDS as PAPER_LIVE_CERTIFICATION_PUBLIC_FIELDS,
+    paper_live_certification_public_status,
+)
 from orchestrator.paperops_qualified_setup_production import (
     paperops_qualified_setup_production_public_status,
 )
@@ -1119,6 +1123,9 @@ PAPEROPS_30_DAY_OPERATIONS_PUBLIC_REQUIRED_FIELDS = {
 
 PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_REQUIRED_FIELDS = set(
     PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_FIELDS
+)
+PAPER_LIVE_CERTIFICATION_PUBLIC_REQUIRED_FIELDS = set(
+    PAPER_LIVE_CERTIFICATION_PUBLIC_FIELDS
 )
 
 PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS = {
@@ -4617,6 +4624,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         "paperops_cockpit_notification_upgrade",
         {},
     )
+    paper_live_certification = payload.get("paper_live_certification", {})
     paperops_active_automation = payload.get(
         "paperops_active_paper_trading_automation",
         {},
@@ -4867,6 +4875,25 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                     "notification_live_send_allowed_count",
                     0,
                 )
+            ),
+            "paper_live_certification": paper_live_certification.get(
+                "status",
+                "not_run",
+            ),
+            "paper_live_control_plane_certified": paper_live_certification.get(
+                "paper_live_control_plane_certified",
+                False,
+            ),
+            "paper_live_certified": paper_live_certification.get(
+                "paper_live_certified",
+                False,
+            ),
+            "paper_live_certification_blocker_count": (
+                paper_live_certification.get("certification_blocker_count", 0)
+            ),
+            "paper_live_operation_allowed": paper_live_certification.get(
+                "paper_live_operation_allowed",
+                False,
             ),
             "paperops_active_paper_trading_automation": (
                 paperops_active_automation.get("status", "not_run")
@@ -5996,6 +6023,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_cockpit_notification_upgrade": (
             paperops_cockpit_notification_upgrade_public_status(settings)
         ),
+        "paper_live_certification": paper_live_certification_public_status(settings),
         "paperops_active_paper_trading_automation": (
             paperops_active_paper_trading_automation_public_status(settings)
         ),
@@ -6117,6 +6145,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_notification_review",
         "paperops_30_day_operations",
         "paperops_cockpit_notification_upgrade",
+        "paper_live_certification",
         "paperops_active_paper_trading_automation",
         "paperops_qualified_setup_production",
         "paperops_auto_approval_staged_order",
@@ -6693,6 +6722,89 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in pt9_boundary:
             raise ValueError("PaperOps cockpit notification boundary is weak")
+    paper_live_certification = payload["paper_live_certification"]
+    missing_pt10 = sorted(
+        PAPER_LIVE_CERTIFICATION_PUBLIC_REQUIRED_FIELDS
+        - set(paper_live_certification)
+    )
+    if missing_pt10:
+        raise ValueError(
+            "Paper-live certification public status missing fields: "
+            f"{missing_pt10}"
+        )
+    if paper_live_certification.get("status") not in {
+        "not_run",
+        "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_paper_live_control_plane",
+        "paper_live_certified",
+        "invalid",
+    }:
+        raise ValueError("Paper-live certification status is invalid")
+    if paper_live_certification.get("public_safe") is not True:
+        raise ValueError("Paper-live certification must be public-safe")
+    if paper_live_certification.get("live_capital_enabled") is not False:
+        raise ValueError("Paper-live certification enabled live capital")
+    if paper_live_certification.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("Paper-live certification granted Phase 7 proof credit")
+    if (
+        paper_live_certification.get("qctrl_hold_active") is True
+        and paper_live_certification.get("paper_submit_step_allowed") is True
+    ):
+        raise ValueError("Paper-live certification bypassed the Q-CTRL hold")
+    if (
+        paper_live_certification.get("qctrl_hold_active") is True
+        and paper_live_certification.get("paper_submit_visible_as_held") is not True
+    ):
+        raise ValueError("Paper-live certification hid the Q-CTRL submit hold")
+    for key in (
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "broker_write_allowed_count",
+        "notification_live_send_allowed_count",
+        "telegram_command_path_enabled_count",
+        "outbox_message_written_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paper_live_certification.get(key, 0) or 0) != 0:
+            raise ValueError(
+                "Paper-live certification unsafe count nonzero: "
+                f"{key}"
+            )
+    if paper_live_certification.get("status") in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        if paper_live_certification.get("recorded") is not True:
+            raise ValueError("Paper-live certification must be recorded")
+        if paper_live_certification.get("event_log_written") is not True:
+            raise ValueError("Paper-live certification event log missing")
+        if paper_live_certification.get("event_log_event_count") != 1:
+            raise ValueError("Paper-live certification event count mismatch")
+        if paper_live_certification.get("validation_error_count") != 0:
+            raise ValueError("Paper-live certification validation errors present")
+        if paper_live_certification.get("paper_live_certification_gate_evaluated") is not True:
+            raise ValueError("Paper-live certification gate not evaluated")
+        if paper_live_certification.get("paper_live_control_plane_certified") is not True:
+            raise ValueError("Paper-live control plane not certified")
+    if paper_live_certification.get("status") == "blocked_pending_qctrl_and_phase7_proof":
+        if paper_live_certification.get("paper_live_certified") is not False:
+            raise ValueError("Blocked paper-live certification reports certified")
+        if paper_live_certification.get("paper_live_operation_allowed") is not False:
+            raise ValueError("Blocked paper-live certification allows operation")
+        if int(paper_live_certification.get("certification_blocker_count", 0) or 0) < 1:
+            raise ValueError("Blocked paper-live certification has no blockers")
+    pt10_boundary = str(paper_live_certification.get("boundary") or "")
+    for phrase in (
+        "PT-10 is a paper-live certification gate only",
+        "cannot bypass Q-CTRL product access",
+        "cannot submit paper orders",
+        "cannot call brokers",
+        "cannot certify an incomplete 30-day proof run",
+        "cannot enable live capital",
+    ):
+        if phrase not in pt10_boundary:
+            raise ValueError("Paper-live certification boundary is weak")
     paperops_active_automation = payload["paperops_active_paper_trading_automation"]
     missing_paperops_active = sorted(
         PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_REQUIRED_FIELDS

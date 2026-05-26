@@ -1236,13 +1236,27 @@ Current PaperOps status:
   notification review records, zero Telegram live sends, zero Telegram command
   paths, zero outbox writes, zero broker writes, zero broker/live calls, zero
   live capital, and zero Phase 7 proof credit.
+- PT-10 paper-live certification is implemented in
+  `orchestrator/paper_live_certification.py` and
+  `scripts/check_paper_live_certification.py`. It records
+  `status=blocked_pending_qctrl_and_phase7_proof`,
+  `paper_live_certification_gate_evaluated=True`,
+  `paper_live_control_plane_certified=True`,
+  `paper_live_certified=False`, `paper_live_operation_allowed=False`, and
+  `paper_live_submission_delegation_allowed=False`. It is wired into PaperOps
+  readiness, the PaperOps cycle, PaperOps-6, cockpit status, Mission Control,
+  and the hourly automation prompt. Current certification blockers are
+  `qctrl_product_access_ready`, `qctrl_hold_cleared_for_submit`,
+  `paperops_full_readiness`, `phase7_30_day_run_complete`, and
+  `phase7_demo_proof_certified`; all unsafe write, broker, notification, live
+  capital, and Phase 7 proof-credit counters remain zero.
 - External trading strategy notes are now integrated as decision context through
   `orchestrator/strategy_research_intake.py`, Strategy Lead shadow review, the
   Phase 4 candidate strategy universe, and PaperOps readiness. This gives Qadam
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  33/33 commands passing: paper mode is safe to continue, PT-0 approval is
+  34/34 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
   setup candidate ready for guarded paper handoff, PT-4 auto-approves and
@@ -1256,8 +1270,11 @@ Current PaperOps status:
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `ready_no_exit_candidate`, PaperOps-5 reports `review_ready`, PaperOps-6
   reports `operations_active`, PT-9 reports
-  `cockpit_notification_upgrade_ready`, and the remaining blocker is Q-CTRL
-  paper-consultation product access required for full paper-reality parity.
+  `cockpit_notification_upgrade_ready`, PT-10 reports
+  `blocked_pending_qctrl_and_phase7_proof` with the paper-live control plane
+  certified, and the remaining blockers are Q-CTRL paper-consultation product
+  access, the active Q-CTRL submit hold, full PaperOps readiness, 30-day Phase 7
+  run completion, and Phase 7 demo-proof certification.
 - The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
   day `2`, with completed calendar days `1`, calendar days remaining `29`,
   `qualified_setup_count=0`, `submitted_paper_order_count=0`, and
@@ -1269,9 +1286,9 @@ Current PaperOps status:
 - The existing hourly automation is now `Qadam PaperOps 30-Day Runner`, remains
   `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PT-8
   active automation check, guarded PT-8 active runner, PT-9 cockpit
-  notification check, PaperOps-6 operations check, Phase 7 demo-run check,
-  Phase 7 certification check, live-promotion review, and cockpit status
-  export.
+  notification check, PT-10 paper-live certification check, PaperOps-6
+  operations check, Phase 7 demo-run check, Phase 7 certification check,
+  live-promotion review, and cockpit status export.
 - The next operational step is to keep the PaperOps runner active through the
   actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
   where Q7-qualified setups exist, resolve PaperOps-Q product access, then let

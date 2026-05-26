@@ -96,6 +96,7 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("phase7_maturity", "scripts/check_phase7_maturity_tracker.py", True),
     ("phase7_cockpit_visibility", "scripts/check_phase7_cockpit_visibility.py", True),
     ("paperops_30_day_operations", "scripts/check_paperops_30_day_operations.py", True),
+    ("paper_live_certification", "scripts/check_paper_live_certification.py", True),
     ("paper_ops_readiness", "scripts/check_paper_operational_readiness.py", True),
 )
 
@@ -117,7 +118,9 @@ PAPER_OPS_CYCLE_BOUNDARY = (
     "for the active 30-day paper run only. The cycle cannot pass the paper-submit, "
     "paper-poll, or paper-exit CLI flags, cannot call live broker endpoints, "
     "cannot write prediction-market or crypto-perps orders, cannot enable live "
-    "capital, and cannot promote the system to live money."
+    "capital, and cannot promote the system to live money. PT-10 may evaluate "
+    "paper-live certification only; it cannot bypass Q-CTRL, certify an "
+    "incomplete 30-day proof run, submit orders, or enable live capital."
 )
 
 
@@ -298,6 +301,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    paper_live_certification = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paper_live_certification"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -341,6 +352,7 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_cockpit_notification_upgrade_command_path_enabled_count",
             "paper_ops_cockpit_notification_upgrade_broker_write_allowed_count",
             "paper_ops_cockpit_notification_upgrade_unsafe_write_counter_total",
+            "paper_ops_paper_live_certification_unsafe_write_counter_total",
         )
     ) + int(
         operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0")
@@ -1179,6 +1191,76 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             )
             or 0
         ),
+        "paper_live_certification_status": paper_live_certification.get(
+            "paper_live_certification_status"
+        ),
+        "paper_live_certification_control_plane_certified": (
+            paper_live_certification.get(
+                "paper_live_certification_control_plane_certified"
+            )
+            == "True"
+        ),
+        "paper_live_certification_paper_live_certified": (
+            paper_live_certification.get(
+                "paper_live_certification_paper_live_certified"
+            )
+            == "True"
+        ),
+        "paper_live_certification_operation_allowed": (
+            paper_live_certification.get(
+                "paper_live_certification_operation_allowed"
+            )
+            == "True"
+        ),
+        "paper_live_certification_submission_delegation_allowed": (
+            paper_live_certification.get(
+                "paper_live_certification_submission_delegation_allowed"
+            )
+            == "True"
+        ),
+        "paper_live_certification_blocker_count": int(
+            paper_live_certification.get("paper_live_certification_blocker_count", "0")
+            or 0
+        ),
+        "paper_live_certification_qctrl_product_access_verified": (
+            paper_live_certification.get(
+                "paper_live_certification_qctrl_product_access_verified"
+            )
+            == "True"
+        ),
+        "paper_live_certification_qctrl_hold_active": (
+            paper_live_certification.get("paper_live_certification_qctrl_hold_active")
+            == "True"
+        ),
+        "paper_live_certification_qctrl_hold_visible": (
+            paper_live_certification.get("paper_live_certification_qctrl_hold_visible")
+            == "True"
+        ),
+        "paper_live_certification_submit_visible_as_held": (
+            paper_live_certification.get(
+                "paper_live_certification_paper_submit_visible_as_held"
+            )
+            == "True"
+        ),
+        "paper_live_certification_phase7_30_day_run_complete": (
+            paper_live_certification.get(
+                "paper_live_certification_phase7_30_day_run_complete"
+            )
+            == "True"
+        ),
+        "paper_live_certification_phase7_demo_proof_certified": (
+            paper_live_certification.get(
+                "paper_live_certification_phase7_demo_proof_certified"
+            )
+            == "True"
+        ),
+        "paper_live_certification_unsafe_write_counter_total": int(
+            paper_live_certification.get(
+                "paper_live_certification_unsafe_write_counter_total",
+                "0",
+            )
+            or 0
+        ),
         "paperops_30_day_operations_status": operations.get(
             "paperops_30_day_operations_status"
         ),
@@ -1286,6 +1368,7 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "cockpit_notification_upgrade_command_path_enabled_count",
         "cockpit_notification_upgrade_broker_write_allowed_count",
         "cockpit_notification_upgrade_unsafe_write_counter_total",
+        "paper_live_certification_unsafe_write_counter_total",
         "paperops_30_day_operations_unsafe_write_counter_total",
         "paper_live_activation_broker_post_called_count",
         "paper_live_activation_alpaca_post_called_count",
@@ -1487,6 +1570,31 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         is not True
     ):
         errors.append("paper_ops_cycle_cockpit_notification_upgrade_qctrl_not_visible")
+    if artifact.get("paper_live_certification_status") not in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        errors.append("paper_ops_cycle_paper_live_certification_not_evaluated")
+    if artifact.get("paper_live_certification_control_plane_certified") is not True:
+        errors.append("paper_ops_cycle_paper_live_control_plane_not_certified")
+    if artifact.get("paper_live_certification_paper_live_certified") is not False:
+        errors.append("paper_ops_cycle_paper_live_certified_unexpected")
+    if artifact.get("paper_live_certification_operation_allowed") is not False:
+        errors.append("paper_ops_cycle_paper_live_operation_allowed")
+    if artifact.get("paper_live_certification_submission_delegation_allowed") is not False:
+        errors.append("paper_ops_cycle_paper_live_submission_allowed")
+    if int(artifact.get("paper_live_certification_blocker_count", 0) or 0) < 1:
+        errors.append("paper_ops_cycle_paper_live_blockers_missing")
+    if (
+        artifact.get("paper_live_certification_qctrl_hold_active") is True
+        and artifact.get("paper_live_certification_qctrl_hold_visible") is not True
+    ):
+        errors.append("paper_ops_cycle_paper_live_qctrl_hold_not_visible")
+    if (
+        artifact.get("paper_live_certification_qctrl_hold_active") is True
+        and artifact.get("paper_live_certification_submit_visible_as_held") is not True
+    ):
+        errors.append("paper_ops_cycle_paper_live_submit_hold_not_visible")
     qctrl_provider_call_count = int(artifact.get("qctrl_provider_call_count", 0) or 0)
     if (
         qctrl_provider_call_count
@@ -2026,6 +2134,46 @@ def main() -> int:
     print(
         "paper_ops_cycle_notification_review_broker_write_allowed_count="
         f"{written['notification_review_broker_write_allowed_count']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_status="
+        f"{written['paper_live_certification_status']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_control_plane_certified="
+        f"{written['paper_live_certification_control_plane_certified']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_paper_live_certified="
+        f"{written['paper_live_certification_paper_live_certified']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_operation_allowed="
+        f"{written['paper_live_certification_operation_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_blocker_count="
+        f"{written['paper_live_certification_blocker_count']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_qctrl_hold_visible="
+        f"{written['paper_live_certification_qctrl_hold_visible']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_submit_visible_as_held="
+        f"{written['paper_live_certification_submit_visible_as_held']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_phase7_30_day_run_complete="
+        f"{written['paper_live_certification_phase7_30_day_run_complete']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_phase7_demo_proof_certified="
+        f"{written['paper_live_certification_phase7_demo_proof_certified']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_certification_unsafe_write_counter_total="
+        f"{written['paper_live_certification_unsafe_write_counter_total']}"
     )
     print(
         "paper_ops_cycle_paperops_30_day_operations_status="

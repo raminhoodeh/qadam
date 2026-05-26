@@ -33,6 +33,7 @@ SELF_OBSERVER_CYCLE_FAILURE_LABELS = frozenset(
     {
         "paperops_notification_review",
         "paperops_cockpit_notification_upgrade",
+        "paper_live_certification",
         "paperops_30_day_operations",
         "paper_ops_readiness",
     }
@@ -44,6 +45,7 @@ REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     "scripts/run_active_paper_trading_automation.py --execute-paper-automation",
     "scripts/check_paperops_cockpit_notification_upgrade.py",
     "scripts/check_paperops_30_day_operations.py",
+    "scripts/check_paper_live_certification.py",
     "scripts/check_phase7_demo_proof_run.py",
     "scripts/check_phase7_certification.py",
     "scripts/check_phase7_live_promotion_review.py",
@@ -152,6 +154,16 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops_cockpit_notification_command_path_enabled_count",
     "paperops_cockpit_notification_broker_write_allowed_count",
     "paperops_cockpit_notification_unsafe_write_counter_total",
+    "paper_live_certification_status",
+    "paper_live_certification_control_plane_certified",
+    "paper_live_certification_paper_live_certified",
+    "paper_live_certification_operation_allowed",
+    "paper_live_certification_blocker_count",
+    "paper_live_certification_qctrl_hold_visible",
+    "paper_live_certification_submit_visible_as_held",
+    "paper_live_certification_phase7_30_day_run_complete",
+    "paper_live_certification_phase7_demo_proof_certified",
+    "paper_live_certification_unsafe_write_counter_total",
     "live_capital_enabled",
     "live_credentials_loaded",
     "phase7_proof_credit_allowed",
@@ -180,6 +192,9 @@ PAPEROPS_30_DAY_BOUNDARY = (
     "bypass the Q-CTRL paper consultation hold, cannot grant Phase 7 proof "
     "credit, and cannot enable live capital. PT-9 cockpit and notification "
     "visibility remains public-safe and review-only."
+    " PT-10 paper-live certification may evaluate the state only; it cannot "
+    "bypass Q-CTRL, certify an incomplete proof run, submit orders, or enable "
+    "live capital."
 )
 
 
@@ -318,6 +333,7 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "cockpit_notification_upgrade": _read_json(
             runtime / "paperops_cockpit_notification_upgrade.json"
         ),
+        "paper_live_certification": _read_json(runtime / "paper_live_certification.json"),
         "cockpit": _read_json(runtime / "cockpit-status.json"),
     }
 
@@ -469,6 +485,7 @@ def build_paperops_30_day_operations(
     notification_review = snapshot["notification_review"]
     active_automation = snapshot["active_automation"]
     cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
+    paper_live_certification = snapshot["paper_live_certification"]
     automation = _automation_status(_automation_config(), settings)
     dashboard = _dashboard_mirror_status(snapshot["cockpit"])
     cycle_summary = _cycle_status(cycle)
@@ -497,6 +514,9 @@ def build_paperops_30_day_operations(
     cockpit_notification_unsafe_count = _int(
         cockpit_notification_upgrade.get("unsafe_write_counter_total")
     )
+    paper_live_certification_unsafe_count = _int(
+        paper_live_certification.get("unsafe_write_counter_total")
+    )
     unsafe_total = sum(
         _int(value)
         for value in (
@@ -511,6 +531,7 @@ def build_paperops_30_day_operations(
             cockpit_notification_command_count,
             cockpit_notification_broker_write_count,
             cockpit_notification_unsafe_count,
+            paper_live_certification_unsafe_count,
             cycle_summary["paper_operational_cycle_unsafe_write_counter_total"],
         )
     )
@@ -625,6 +646,37 @@ def build_paperops_30_day_operations(
         ),
         "paperops_cockpit_notification_unsafe_write_counter_total": (
             cockpit_notification_unsafe_count
+        ),
+        "paper_live_certification_status": paper_live_certification.get(
+            "status",
+            "missing",
+        ),
+        "paper_live_certification_control_plane_certified": (
+            paper_live_certification.get("paper_live_control_plane_certified") is True
+        ),
+        "paper_live_certification_paper_live_certified": (
+            paper_live_certification.get("paper_live_certified") is True
+        ),
+        "paper_live_certification_operation_allowed": (
+            paper_live_certification.get("paper_live_operation_allowed") is True
+        ),
+        "paper_live_certification_blocker_count": _int(
+            paper_live_certification.get("certification_blocker_count")
+        ),
+        "paper_live_certification_qctrl_hold_visible": (
+            paper_live_certification.get("qctrl_hold_visible") is True
+        ),
+        "paper_live_certification_submit_visible_as_held": (
+            paper_live_certification.get("paper_submit_visible_as_held") is True
+        ),
+        "paper_live_certification_phase7_30_day_run_complete": (
+            paper_live_certification.get("phase7_30_day_run_complete") is True
+        ),
+        "paper_live_certification_phase7_demo_proof_certified": (
+            paper_live_certification.get("phase7_demo_proof_certified") is True
+        ),
+        "paper_live_certification_unsafe_write_counter_total": (
+            paper_live_certification_unsafe_count
         ),
         "live_capital_enabled": settings.live_capital_enabled,
         "live_credentials_loaded": _safe_bool(demo_run.get("live_credentials_loaded")),
@@ -761,6 +813,7 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         "paperops_cockpit_notification_command_path_enabled_count",
         "paperops_cockpit_notification_broker_write_allowed_count",
         "paperops_cockpit_notification_unsafe_write_counter_total",
+        "paper_live_certification_unsafe_write_counter_total",
         "paper_operational_cycle_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
@@ -797,6 +850,24 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         is not True
     ):
         errors.append("paperops_30_day_operations_cockpit_notification_qctrl_not_visible")
+    if artifact.get("paper_live_certification_status") not in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        errors.append("paperops_30_day_operations_paper_live_certification_not_evaluated")
+    if artifact.get("paper_live_certification_control_plane_certified") is not True:
+        errors.append("paperops_30_day_operations_paper_live_control_plane_not_certified")
+    if artifact.get("paper_live_certification_paper_live_certified") is not False:
+        errors.append("paperops_30_day_operations_paper_live_certified_unexpected")
+    if artifact.get("paper_live_certification_operation_allowed") is not False:
+        errors.append("paperops_30_day_operations_paper_live_operation_allowed")
+    if _int(artifact.get("paper_live_certification_blocker_count")) < 1:
+        errors.append("paperops_30_day_operations_paper_live_blockers_missing")
+    if (
+        artifact.get("paper_live_certification_qctrl_hold_visible") is True
+        and artifact.get("paper_live_certification_submit_visible_as_held") is not True
+    ):
+        errors.append("paperops_30_day_operations_paper_live_submit_hold_not_visible")
     if (
         artifact.get("recorded") is True
         and artifact.get("event_log_required") is True

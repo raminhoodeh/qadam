@@ -363,6 +363,34 @@ def main() -> int:
         cockpit_notification_proof_probe
     )
 
+    paper_live_certification_probe = deepcopy(written)
+    paper_live_certification_probe[
+        "paper_live_certification_unsafe_write_counter_total"
+    ] = 1
+    paper_live_certification_probe["unsafe_write_counter_total"] = 1
+    paper_live_certification_errors = validate_paper_operational_readiness(
+        paper_live_certification_probe
+    )
+
+    paper_live_certification_hold_probe = deepcopy(written)
+    paper_live_certification_hold_probe[
+        "paper_live_certification_qctrl_hold_active"
+    ] = True
+    paper_live_certification_hold_probe[
+        "paper_live_certification_submit_visible_as_held"
+    ] = False
+    paper_live_certification_hold_errors = validate_paper_operational_readiness(
+        paper_live_certification_hold_probe
+    )
+
+    paper_live_certification_proof_probe = deepcopy(written)
+    paper_live_certification_proof_probe[
+        "paper_live_certification_phase7_proof_credit_allowed"
+    ] = True
+    paper_live_certification_proof_errors = validate_paper_operational_readiness(
+        paper_live_certification_proof_probe
+    )
+
     lifecycle_polling_probe = deepcopy(written)
     lifecycle_polling_probe[
         "paper_lifecycle_polling_enablement_live_endpoint_called_count"
@@ -1058,6 +1086,63 @@ def main() -> int:
         "paper_ops_cockpit_notification_upgrade_unsafe_write_counter_total="
         f"{written['cockpit_notification_upgrade_unsafe_write_counter_total']}"
     )
+    print(
+        "paper_ops_paper_live_certification_status="
+        f"{written['paper_live_certification_status']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_gate_evaluated="
+        f"{written['paper_live_certification_gate_evaluated']}"
+    )
+    print(
+        "paper_ops_paper_live_control_plane_certified="
+        f"{written['paper_live_control_plane_certified']}"
+    )
+    print(f"paper_ops_paper_live_certified={written['paper_live_certified']}")
+    print(
+        "paper_ops_paper_live_operation_allowed="
+        f"{written['paper_live_operation_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_blocker_count="
+        f"{written['paper_live_certification_blocker_count']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_input_gate_count="
+        f"{written['paper_live_certification_input_gate_count']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_input_gate_passed_count="
+        f"{written['paper_live_certification_input_gate_passed_count']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_qctrl_product_access_verified="
+        f"{written['paper_live_certification_qctrl_product_access_verified']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_qctrl_hold_active="
+        f"{written['paper_live_certification_qctrl_hold_active']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_qctrl_hold_visible="
+        f"{written['paper_live_certification_qctrl_hold_visible']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_submit_visible_as_held="
+        f"{written['paper_live_certification_submit_visible_as_held']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_phase7_30_day_run_complete="
+        f"{written['paper_live_certification_phase7_30_day_run_complete']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_phase7_demo_proof_certified="
+        f"{written['paper_live_certification_phase7_demo_proof_certified']}"
+    )
+    print(
+        "paper_ops_paper_live_certification_unsafe_write_counter_total="
+        f"{written['paper_live_certification_unsafe_write_counter_total']}"
+    )
     print(f"paper_ops_live_capital_enabled={written['live_capital_enabled']}")
     print(f"paper_ops_blocker_count={written['blocker_count']}")
     print(f"paper_ops_blockers={','.join(written['blockers'])}")
@@ -1497,6 +1582,44 @@ def main() -> int:
         not in cockpit_notification_proof_errors
     ):
         errors.append("PT-9 proof-credit probe was not rejected")
+    if written["paper_live_certification_status"] not in {
+        "blocked_pending_qctrl_and_phase7_proof",
+        "paper_live_certified",
+    }:
+        errors.append("PT-10 paper-live certification is not evaluated")
+    if written["paper_live_certification_gate_evaluated"] is not True:
+        errors.append("PT-10 paper-live certification gate is not evaluated")
+    if written["paper_live_control_plane_certified"] is not True:
+        errors.append("PT-10 paper-live control plane is not certified")
+    if written["paper_live_certified"] is not False:
+        errors.append("PT-10 unexpectedly certified paper-live")
+    if written["paper_live_operation_allowed"] is not False:
+        errors.append("PT-10 unexpectedly allowed paper-live operation")
+    if written["paper_live_certification_blocker_count"] < 1:
+        errors.append("PT-10 certification blockers are missing")
+    if (
+        written["paper_live_certification_qctrl_hold_active"] is True
+        and written["paper_live_certification_submit_visible_as_held"] is not True
+    ):
+        errors.append("PT-10 Q-CTRL hold is not visible as a submit hold")
+    if written["paper_live_certification_unsafe_write_counter_total"] != 0:
+        errors.append("PT-10 unsafe counter is nonzero")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "paper_live_certification_unsafe_write_counter_total"
+        not in paper_live_certification_errors
+    ):
+        errors.append("PT-10 unsafe probe was not rejected")
+    if (
+        "paper_ops_paper_live_submit_hold_not_visible"
+        not in paper_live_certification_hold_errors
+    ):
+        errors.append("PT-10 hold visibility probe was not rejected")
+    if (
+        "paper_ops_paper_live_certification_proof_credit_allowed"
+        not in paper_live_certification_proof_errors
+    ):
+        errors.append("PT-10 proof-credit probe was not rejected")
     if "paper_ops_mode_not_paper" not in mode_errors:
         errors.append("live mode probe was not rejected")
     if "paper_ops_quantum_provider_execution_prerequisite" not in quantum_errors:

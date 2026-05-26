@@ -138,6 +138,11 @@ Implemented:
   current Q-CTRL hold, while keeping Telegram live-send, outbox writes, Telegram
   commands, broker calls, paper-order authority, live capital, and Phase 7 proof
   credit disabled.
+- PT-10 exists as the paper-live certification gate. It certifies the paper-live
+  control plane as safe and visible, but correctly blocks full paper-live
+  certification until Q-CTRL product access is active, the Q-CTRL submit hold is
+  cleared, full PaperOps readiness is achieved, and the actual 30-day Phase 7
+  proof run is complete and certified.
 
 Remaining paper-operational gaps:
 
@@ -172,6 +177,12 @@ Remaining paper-operational gaps:
   send-test gate, but no send-test approval is currently present. PT-9 surfaces
   that state in cockpit and notification readouts without creating a live-send
   or command path.
+- Full paper-live certification is not granted yet. PT-10 currently reports
+  `paper_live_control_plane_certified=True`, `paper_live_certified=False`,
+  `paper_live_operation_allowed=False`, and five explicit blockers:
+  `qctrl_product_access_ready`, `qctrl_hold_cleared_for_submit`,
+  `paperops_full_readiness`, `phase7_30_day_run_complete`, and
+  `phase7_demo_proof_certified`.
 
 ## New Runtime Gate
 
@@ -527,7 +538,7 @@ Status after implementation:
   `paper_poll_path_available=False` because PaperOps-2 has zero successful
   submitted paper orders.
 - PT-6 is wired into PaperOps-1, PaperOps readiness, PaperOps-6, and cockpit
-  Mission Control. After PT-9, the PaperOps cycle now passes 33/33 commands.
+  Mission Control. After PT-10, the PaperOps cycle now passes 34/34 commands.
 - PT-6 does not edit `.env`, submit orders, call broker POST routes, call live
   endpoints, close or resize positions, force trades, grant Phase 7 proof
   credit, expose credentials, or enable live capital.
@@ -551,7 +562,7 @@ Status after implementation:
 - The poller writes `data/runtime/paperops_paper_lifecycle_poller.json`,
   history, and event-log artifacts, and exposes public-safe status in cockpit
   Mission Control.
-- Current cycle result: 33/33 commands pass; PaperOps-3 reports zero broker
+- Current cycle result: 34/34 commands pass; PaperOps-3 reports zero broker
   GETs, zero broker/Alpaca POSTs, zero live endpoint calls, zero direct Q7
   lifecycle mutations, and zero Phase 7 proof credit.
 - Current next operational unblock: PaperOps remains blocked on Q-CTRL paper
@@ -603,7 +614,7 @@ Status after implementation:
 - The exit path writes `data/runtime/paperops_paper_exit_path.json`, history,
   and event-log artifacts, and exposes public-safe status in cockpit Mission
   Control.
-- Current cycle result: 33/33 commands pass; PaperOps-4 reports zero paper
+- Current cycle result: 34/34 commands pass; PaperOps-4 reports zero paper
   close calls, zero broker/Alpaca POSTs, zero live endpoint calls, zero order
   cancels, zero position resizes, zero direct Q7 lifecycle mutations, and zero
   Phase 7 proof credit.
@@ -637,7 +648,7 @@ Status after implementation:
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PT-9: 33/33 commands pass. PaperOps-5 reports ten
+- Current cycle result after PT-10: 34/34 commands pass. PaperOps-5 reports ten
   review records, six lifecycle notification types, five PT-9 required review
   types present, zero live-send allowance, zero command-path allowance, and zero
   broker-write allowance.
@@ -657,8 +668,11 @@ Status after implementation:
   in place and renamed `Qadam PaperOps 30-Day Runner`; it remains `ACTIVE` on
   `FREQ=HOURLY;INTERVAL=1`, bound to `/Users/raminhoodeh/Desktop/qadam`, and
   now runs the PaperOps cycle, PT-8 active automation checker, the guarded PT-8
-  active runner, PT-9 cockpit notification checker, PaperOps-6 checker, Phase 7
-  demo run, certification, live-promotion review, and cockpit status checks.
+  active runner, PT-9 cockpit notification checker, PT-10 paper-live
+  certification checker, PaperOps-6 checker, Phase 7 demo run, certification,
+  live-promotion review, and cockpit status checks.
+- The scheduler prompt now has ten required command fragments, including
+  `scripts/check_paper_live_certification.py`.
 - PaperOps-6 writes `data/runtime/paperops_30_day_operations.json`,
   `data/runtime/paperops_30_day_operations_history.jsonl`, and
   `data/runtime/paperops_30_day_operations_events.jsonl`.
@@ -668,9 +682,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 33/33 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 34/34 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=33`, and
+  `paper_operational_cycle_command_count=34`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,
@@ -749,7 +763,38 @@ Status after implementation:
   `qctrl_hold_visible=True` and `submit_visible_as_held=True`.
 - PT-9 is wired into PaperOps readiness, the PaperOps cycle, PaperOps-6, cockpit
   status, Mission Control, and the hourly PaperOps automation prompt.
-- The PaperOps cycle now reports 33/33 commands passing. PT-9 records zero
+- The PaperOps cycle now reports 34/34 commands passing. PT-9 records zero
   live-send allowances, zero command-path allowances, zero outbox writes, zero
   broker writes, zero broker/live calls, zero live capital, and zero Phase 7
   proof credit.
+
+### PT-10 - Paper-Live Certification
+
+Certify whether Qadam is ready for active paper-live operation while keeping the
+certification gate fail-closed until Q-CTRL product access and the full Phase 7
+proof evidence exist.
+
+Status after implementation:
+
+- `orchestrator/paper_live_certification.py` exists.
+- `scripts/check_paper_live_certification.py` exists.
+- The runtime artifact is `data/runtime/paper_live_certification.json`, with
+  history and Event Log artifacts beside it.
+- Current status is `blocked_pending_qctrl_and_phase7_proof`.
+- `paper_live_certification_gate_evaluated=True`.
+- `paper_live_control_plane_certified=True`.
+- `paper_live_certified=False`.
+- `paper_live_operation_allowed=False`.
+- `paper_live_submission_delegation_allowed=False`.
+- Current blockers are `qctrl_product_access_ready`,
+  `qctrl_hold_cleared_for_submit`, `paperops_full_readiness`,
+  `phase7_30_day_run_complete`, and `phase7_demo_proof_certified`.
+- PT-10 is wired into PaperOps readiness, the PaperOps cycle, PaperOps-6,
+  cockpit status, Mission Control, and the hourly PaperOps automation prompt.
+- The PaperOps cycle now reports 34/34 commands passing. PT-10 records zero
+  broker writes, zero broker/live calls, zero live notification sends, zero
+  Telegram command-path allowances, zero outbox writes, zero live capital, and
+  zero Phase 7 proof credit.
+- The cockpit exposes the PT-10 state to the Fund Manager with the Q-CTRL hold
+  visible: `qctrl_hold_active=True`, `qctrl_hold_visible=True`, and
+  `paper_submit_visible_as_held=True`.
