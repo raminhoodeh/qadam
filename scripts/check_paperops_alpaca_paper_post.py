@@ -15,6 +15,10 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.event_log import EventLog  # noqa: E402
+from orchestrator.paperops_alpaca_paper_submit_enablement import (  # noqa: E402
+    build_paperops_alpaca_paper_submit_enablement,
+    write_paperops_alpaca_paper_submit_enablement,
+)
 from orchestrator.paperops_alpaca_paper_post import (  # noqa: E402
     PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
     build_paperops_alpaca_paper_post,
@@ -44,6 +48,12 @@ def main() -> int:
     output_path, history_path, event_path = paperops_alpaca_paper_post_paths(settings)
     if event_path.exists():
         event_path.unlink()
+    submit_enablement = build_paperops_alpaca_paper_submit_enablement(settings=settings)
+    write_paperops_alpaca_paper_submit_enablement(
+        submit_enablement,
+        settings=settings,
+        record_event=True,
+    )
 
     artifact = build_paperops_alpaca_paper_post(
         settings=settings,
@@ -70,6 +80,8 @@ def main() -> int:
 
     no_flag_probe = deepcopy(written)
     no_flag_probe["alpaca_paper_submit_enabled"] = False
+    no_flag_probe["settings_alpaca_paper_submit_enabled"] = False
+    no_flag_probe["runtime_alpaca_paper_submit_enabled"] = False
     no_flag_probe["alpaca_paper_post_called_count"] = 1
     no_flag_errors = validate_paperops_alpaca_paper_post(no_flag_probe)
 
@@ -119,6 +131,19 @@ def main() -> int:
     print(f"paperops_alpaca_post_event_log_path={event_path}")
     print(f"paperops_alpaca_post_mode={written['mode']}")
     print(f"paperops_alpaca_post_submit_flag_enabled={written['alpaca_paper_submit_enabled']}")
+    print(
+        "paperops_alpaca_post_settings_submit_flag_enabled="
+        f"{written['settings_alpaca_paper_submit_enabled']}"
+    )
+    print(
+        "paperops_alpaca_post_runtime_submit_enabled="
+        f"{written['runtime_alpaca_paper_submit_enabled']}"
+    )
+    print(f"paperops_alpaca_post_submit_enablement_status={written['submit_enablement_status']}")
+    print(
+        "paperops_alpaca_post_submit_enablement_runtime_override="
+        f"{written['submit_enablement_runtime_override_enabled']}"
+    )
     print(f"paperops_alpaca_post_execute_requested={written['execute_post_requested']}")
     print(f"paperops_alpaca_post_path_available={written['paper_post_path_available']}")
     print(f"paperops_alpaca_post_endpoint_classification={written['endpoint_classification']}")
@@ -126,8 +151,13 @@ def main() -> int:
     print(f"paperops_alpaca_post_key_configured={written['alpaca_api_key_configured']}")
     print(f"paperops_alpaca_post_secret_configured={written['alpaca_api_secret_configured']}")
     print(f"paperops_alpaca_post_source_record_count={written['source_submit_record_count']}")
+    print(
+        "paperops_alpaca_post_source_pt4_staged_order_count="
+        f"{written['source_pt4_staged_order_count']}"
+    )
     print(f"paperops_alpaca_post_eligible_record_count={written['eligible_submit_record_count']}")
     print(f"paperops_alpaca_post_selected_record_count={written['selected_submit_record_count']}")
+    print(f"paperops_alpaca_post_selected_source_family={written['selected_source_family']}")
     print(
         "paperops_alpaca_post_source_prewrite_present_count="
         f"{written['source_event_log_prewrite_present_count']}"
@@ -177,11 +207,27 @@ def main() -> int:
         errors.append("PaperOps-2 enables live capital")
     if not args.submit_paper_order and written["alpaca_paper_post_called_count"] != 0:
         errors.append("PaperOps-2 posted without --submit-paper-order")
-    if written["alpaca_paper_submit_enabled"] is False:
-        if written["status"] != "disabled_pending_enablement":
-            errors.append("PaperOps-2 should stay disabled pending explicit enablement")
-        if written["alpaca_paper_post_called_count"] != 0:
-            errors.append("PaperOps-2 called Alpaca while disabled")
+    if written["alpaca_paper_submit_enabled"] is not True:
+        errors.append("PaperOps-2 effective submit flag is not enabled")
+    if written["settings_alpaca_paper_submit_enabled"] is not False:
+        errors.append("PaperOps-2 should be using PT-5 runtime enablement, not env flag")
+    if written["runtime_alpaca_paper_submit_enabled"] is not True:
+        errors.append("PaperOps-2 did not consume PT-5 runtime enablement")
+    if written["submit_enablement_status"] != "enabled_pending_explicit_submit":
+        errors.append("PaperOps-2 did not see PT-5 enablement")
+    if not args.submit_paper_order and written["status"] != "ready_pending_explicit_execute":
+        errors.append("PaperOps-2 should be ready pending explicit execute")
+    if args.submit_paper_order and written["status"] not in {
+        "submitted_to_alpaca_paper",
+        "broker_post_failed_sanitized",
+    }:
+        errors.append("PaperOps-2 submit mode returned an unexpected status")
+    if written["paper_post_path_available"] is not True:
+        errors.append("PaperOps-2 paper POST path is not available")
+    if written["eligible_submit_record_count"] < 1:
+        errors.append("PaperOps-2 did not find an eligible PT-4/Q7 paper order")
+    if written["selected_source_family"] != "paperops_pt4_staged_order":
+        errors.append("PaperOps-2 did not select the PT-4 staged order source")
     if written["alpaca_paper_post_called_count"] and args.submit_paper_order is not True:
         errors.append("PaperOps-2 called Alpaca without explicit CLI submit flag")
     if enabled_preview["execute_post_requested"] is not False:

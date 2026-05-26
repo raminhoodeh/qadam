@@ -21,6 +21,15 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.paper_account import ALPACA_PAPER_BASE_URL
+from orchestrator.paperops_alpaca_paper_submit_enablement import (
+    build_paperops_alpaca_paper_submit_enablement,
+    read_latest_paperops_alpaca_paper_submit_enablement,
+    validate_paperops_alpaca_paper_submit_enablement,
+)
+from orchestrator.paperops_auto_approval_staged_order import (
+    read_latest_paperops_auto_approval_staged_order,
+    validate_paperops_auto_approval_staged_order,
+)
 from orchestrator.phase7_guarded_alpaca_paper_submit import (
     build_phase7_guarded_alpaca_paper_submit_path,
     phase7_guarded_alpaca_submit_paths,
@@ -57,15 +66,16 @@ PAPEROPS_ALPACA_POST_AUTHORITY_FALSE_FIELDS = (
 PAPEROPS_ALPACA_POST_BOUNDARY = (
     "PaperOps-2 is the explicit Alpaca paper-only POST gate. It may call "
     "Alpaca /v2/orders only when QADAM_MODE=paper, live capital is disabled, "
-    "QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true, the endpoint is classified as "
-    "paper, paper API credentials are configured, a Q7 guarded submit record "
-    "exists, the Q7 source Event Log prewrite exists, a pre-trade snapshot "
-    "exists, the idempotency key is phase7_demo_proof scoped, and the caller "
-    "passes the explicit submit flag. It cannot call live endpoints, cannot "
-    "use live credentials, cannot submit non-Q7 orders, cannot submit "
-    "prediction-market or crypto-perps orders, cannot expose secrets or raw "
-    "broker payloads, cannot grant Phase 7 proof credit, and cannot enable "
-    "live capital."
+    "QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true or PT-5 runtime PaperOps "
+    "enablement is recorded, the endpoint is classified as paper, paper API "
+    "credentials are configured, a PT-4 staged paper order or Q7 guarded "
+    "submit record exists, the source Event Log prewrite exists, a pre-trade "
+    "snapshot exists, the idempotency key is phase7_demo_proof scoped, and "
+    "the caller passes the explicit submit flag. It cannot call live "
+    "endpoints, cannot use live credentials, cannot submit non-Q7/PaperOps "
+    "orders, cannot submit prediction-market or crypto-perps orders, cannot "
+    "expose secrets or raw broker payloads, cannot grant Phase 7 proof "
+    "credit, and cannot enable live capital."
 )
 
 PROHIBITED_VALUE_PATTERNS = (
@@ -78,6 +88,13 @@ PROHIBITED_VALUE_PATTERNS = (
     re.compile(r"[0-9]{6,}:[A-Za-z0-9_-]{20,}"),
     re.compile(r"(ALPACA_API_KEY|ALPACA_API_SECRET)=[A-Za-z0-9_-]{8,}"),
 )
+
+PAPEROPS_ALPACA_PAPER_PROXY_SYMBOLS = {
+    "crude_oil": "USO",
+    "defence": "ITA",
+    "semiconductors": "SMH",
+    "silver": "SLV",
+}
 
 
 def _now() -> str:
@@ -133,6 +150,13 @@ def _int(value: Any) -> int:
 
 def _bool(value: Any) -> bool:
     return value is True or str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _quantity_string(value: Any) -> str:
+    try:
+        return f"{float(value or 0.0):.8f}"
+    except (TypeError, ValueError):
+        return "0.00000000"
 
 
 def _endpoint_context(settings: Settings) -> dict[str, Any]:
@@ -195,6 +219,42 @@ def _source_guarded_submit(settings: Settings) -> dict[str, Any]:
     return build_phase7_guarded_alpaca_paper_submit_path(settings=settings)
 
 
+def _source_pt4_staged_order(settings: Settings) -> dict[str, Any]:
+    return read_latest_paperops_auto_approval_staged_order(settings)
+
+
+def _source_submit_enablement(settings: Settings) -> dict[str, Any]:
+    enablement = read_latest_paperops_alpaca_paper_submit_enablement(settings)
+    if enablement:
+        return enablement
+    return build_paperops_alpaca_paper_submit_enablement(settings=settings)
+
+
+def _runtime_submit_enabled(enablement: dict[str, Any]) -> bool:
+    return (
+        enablement.get("status") == "enabled_pending_explicit_submit"
+        and enablement.get("paper_submit_runtime_enablement_enabled") is True
+        and enablement.get("alpaca_paper_submit_effective") is True
+        and enablement.get("paper_post_path_available") is True
+        and enablement.get("explicit_submit_flag_required") is True
+        and _int(enablement.get("broker_post_called_count")) == 0
+        and _int(enablement.get("alpaca_post_called_count")) == 0
+        and _int(enablement.get("live_endpoint_called_count")) == 0
+        and not validate_paperops_alpaca_paper_submit_enablement(enablement)
+    )
+
+
+def _alpaca_symbol_for_record(record: dict[str, Any]) -> tuple[str, str]:
+    explicit_symbol = str(record.get("symbol") or record.get("alpaca_symbol") or "").upper()
+    if explicit_symbol:
+        return explicit_symbol, "source_record_symbol"
+    instrument = str(record.get("instrument") or "").strip().lower()
+    mapped = PAPEROPS_ALPACA_PAPER_PROXY_SYMBOLS.get(instrument, "")
+    if mapped:
+        return mapped, "paperops_proxy_symbol_map"
+    return "", "missing_symbol_mapping"
+
+
 def _source_record_errors(record: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     request = record.get("submit_request_payload", {})
@@ -249,6 +309,64 @@ def _source_record_errors(record: dict[str, Any]) -> list[str]:
     return sorted(set(errors))
 
 
+def _pt4_record_errors(record: dict[str, Any], *, source: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    pre_trade_snapshot = record.get("pre_trade_snapshot")
+    symbol, _ = _alpaca_symbol_for_record(record)
+    if source.get("status") != "staged_paper_order_ready":
+        errors.append("pt4_source_status_not_ready")
+    if source.get("ready_for_paperops2_submit") is not True:
+        errors.append("pt4_source_not_ready_for_paperops2")
+    if validate_paperops_auto_approval_staged_order(source):
+        errors.append("pt4_source_validation_errors")
+    if record.get("status") != "staged":
+        errors.append("pt4_record_status_not_staged")
+    if record.get("ready_for_paperops2_submit") is not True:
+        errors.append("pt4_record_not_ready_for_paperops2")
+    if record.get("selected_venue") != "alpaca_paper":
+        errors.append("pt4_record_venue_not_alpaca_paper")
+    if record.get("idempotency_namespace") != "phase7_demo_proof":
+        errors.append("pt4_record_idempotency_namespace_not_phase7")
+    if not str(record.get("idempotency_key") or "").startswith("q7-6-stage-"):
+        errors.append("pt4_record_idempotency_key_not_phase7")
+    if not str(record.get("event_log_prewrite_ref") or "").strip():
+        errors.append("pt4_record_event_log_prewrite_ref_missing")
+    if record.get("event_log_prewrite_written") is not True:
+        errors.append("pt4_record_event_log_prewrite_not_written")
+    if not isinstance(pre_trade_snapshot, dict) or not pre_trade_snapshot:
+        errors.append("pt4_record_pre_trade_snapshot_missing")
+    if not symbol:
+        errors.append("pt4_record_alpaca_symbol_missing")
+    if str(record.get("side") or "").lower() not in {"buy", "sell"}:
+        errors.append("pt4_record_side_invalid")
+    try:
+        if float(record.get("quantity") or 0.0) <= 0:
+            errors.append("pt4_record_quantity_not_positive")
+    except (TypeError, ValueError):
+        errors.append("pt4_record_quantity_invalid")
+    if str(record.get("order_type") or "").lower() not in {"market", "limit"}:
+        errors.append("pt4_record_order_type_invalid")
+    if str(record.get("time_in_force") or "").lower() not in {"day", "gtc"}:
+        errors.append("pt4_record_time_in_force_invalid")
+    for key in (
+        "paper_submit_allowed",
+        "paper_order_submission_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "broker_write_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "proof_credit_allowed",
+        "phase7_proof_credit_allowed",
+        "manual_trade_level_override_allowed",
+        "secret_value_exposed",
+        "raw_payload_exposed",
+    ):
+        if record.get(key) is not False and key in record:
+            errors.append(f"pt4_record_forbidden:{key}")
+    return sorted(set(errors))
+
+
 def _client_order_id(source_idempotency_key: str) -> str:
     digest = sha256(source_idempotency_key.encode("utf-8")).hexdigest()[:24]
     return f"q7-6-stage-{digest}"
@@ -268,6 +386,32 @@ def _request_preview(record: dict[str, Any]) -> dict[str, Any]:
         "side": str(request.get("side") or "").lower(),
         "type": str(request.get("type") or "market").lower(),
         "time_in_force": str(request.get("time_in_force") or "day").lower(),
+        "client_order_id": _client_order_id(source_key),
+        "source_idempotency_key": source_key,
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "base_url_exposed": False,
+        "authorization_header_included": False,
+        "raw_payload_exposed": False,
+        "broker_identifier_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+    }
+
+
+def _pt4_request_preview(record: dict[str, Any]) -> dict[str, Any]:
+    source_key = str(record.get("idempotency_key") or "")
+    symbol, symbol_source = _alpaca_symbol_for_record(record)
+    return {
+        "request_type": "paperops_alpaca_paper_order_post",
+        "method": "POST",
+        "path": "/v2/orders",
+        "symbol": symbol,
+        "symbol_source": symbol_source,
+        "instrument": record.get("instrument"),
+        "qty": _quantity_string(record.get("quantity")),
+        "side": str(record.get("side") or "").lower(),
+        "type": str(record.get("order_type") or "market").lower(),
+        "time_in_force": str(record.get("time_in_force") or "day").lower(),
         "client_order_id": _client_order_id(source_key),
         "source_idempotency_key": source_key,
         "idempotency_namespace": record.get("idempotency_namespace"),
@@ -302,6 +446,8 @@ def _source_record_to_submit_candidate(record: dict[str, Any]) -> dict[str, Any]
     return {
         "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
         "record_type": "paperops_alpaca_paper_post_candidate",
+        "source_family": "phase7_guarded_submit_record",
+        "source_phase": "Q7",
         "source_submit_record_artifact_id": record.get("artifact_id"),
         "source_staged_order_artifact_id": record.get("source_staged_order_artifact_id"),
         "source_proof_order_id": record.get("source_proof_order_id"),
@@ -336,14 +482,84 @@ def _source_record_to_submit_candidate(record: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def _eligible_submit_candidates(source_submit: dict[str, Any]) -> list[dict[str, Any]]:
+def _pt4_record_to_submit_candidate(
+    record: dict[str, Any],
+    *,
+    source: dict[str, Any],
+) -> dict[str, Any]:
+    source_errors = _pt4_record_errors(record, source=source)
+    preview = _pt4_request_preview(record)
+    source_key = str(record.get("idempotency_key") or "")
+    pre_trade_snapshot = record.get("pre_trade_snapshot")
+    snapshot_fingerprint = (
+        _fingerprint(pre_trade_snapshot) if isinstance(pre_trade_snapshot, dict) else None
+    )
+    return {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "record_type": "paperops_alpaca_paper_post_candidate",
+        "source_family": "paperops_pt4_staged_order",
+        "source_phase": "PT-4",
+        "source_submit_record_artifact_id": None,
+        "source_staged_order_artifact_id": record.get("artifact_id"),
+        "source_pt4_artifact_id": source.get("artifact_id"),
+        "source_proof_order_id": record.get("proof_order_id"),
+        "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
+        "source_setup_record_id": record.get("source_setup_record_id"),
+        "source_idempotency_key": source_key,
+        "idempotency_key": preview["client_order_id"],
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "source_event_log_prewrite_ref": record.get("event_log_prewrite_ref"),
+        "source_pre_trade_snapshot_present": isinstance(pre_trade_snapshot, dict)
+        and bool(pre_trade_snapshot),
+        "source_pre_trade_snapshot_fingerprint": snapshot_fingerprint,
+        "selected_venue": "alpaca_paper",
+        "endpoint_classification": "alpaca_paper_endpoint",
+        "instrument": record.get("instrument"),
+        "alpaca_symbol": preview["symbol"],
+        "alpaca_symbol_source": preview["symbol_source"],
+        "request_preview": preview,
+        "request_fingerprint": _fingerprint(preview),
+        "source_record_errors": source_errors,
+        "eligible_for_paper_post": not source_errors,
+        "status": "eligible" if not source_errors else "blocked_source_contract",
+        "broker_post_called": False,
+        "alpaca_paper_post_called": False,
+        "alpaca_paper_post_succeeded": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+        "manual_trade_level_override_allowed": False,
+    }
+
+
+def _eligible_submit_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [candidate for candidate in candidates if candidate["eligible_for_paper_post"]]
+
+
+def _q7_candidates(source_submit: dict[str, Any]) -> list[dict[str, Any]]:
     records = [
         record
         for record in source_submit.get("submit_records", []) or []
         if isinstance(record, dict)
     ]
-    candidates = [_source_record_to_submit_candidate(record) for record in records]
-    return [candidate for candidate in candidates if candidate["eligible_for_paper_post"]]
+    return [_source_record_to_submit_candidate(record) for record in records]
+
+
+def _pt4_candidates(source_pt4: dict[str, Any]) -> list[dict[str, Any]]:
+    records = [
+        record
+        for record in source_pt4.get("staged_order_records", []) or []
+        if isinstance(record, dict)
+    ]
+    return [
+        _pt4_record_to_submit_candidate(record, source=source_pt4)
+        for record in records
+    ]
 
 
 def _sanitize_broker_success(response_payload: dict[str, Any], *, submitted_at: str) -> dict[str, Any]:
@@ -428,7 +644,13 @@ def _post_to_alpaca_paper(
         }
 
 
-def _precondition_records(settings: Settings, endpoint: dict[str, Any]) -> list[dict[str, Any]]:
+def _precondition_records(
+    settings: Settings,
+    endpoint: dict[str, Any],
+    *,
+    effective_submit_enabled: bool,
+    runtime_submit_enabled: bool,
+) -> list[dict[str, Any]]:
     return [
         {
             "key": "mode_is_paper",
@@ -442,8 +664,11 @@ def _precondition_records(settings: Settings, endpoint: dict[str, Any]) -> list[
         },
         {
             "key": "paper_submit_flag_enabled",
-            "passed": settings.alpaca_paper_submit_enabled is True,
-            "detail": "QADAM_ALPACA_PAPER_SUBMIT_ENABLED",
+            "passed": effective_submit_enabled is True,
+            "detail": (
+                "QADAM_ALPACA_PAPER_SUBMIT_ENABLED or "
+                f"PT-5 runtime enablement={runtime_submit_enabled}"
+            ),
         },
         {
             "key": "alpaca_endpoint_classified_paper",
@@ -466,6 +691,7 @@ def _status(
     *,
     settings: Settings,
     endpoint: dict[str, Any],
+    effective_submit_enabled: bool,
     eligible_count: int,
     execute_post: bool,
     post_result: dict[str, Any] | None,
@@ -474,7 +700,7 @@ def _status(
         return "blocked_not_paper_mode"
     if settings.live_capital_enabled:
         return "blocked_live_capital_enabled"
-    if not settings.alpaca_paper_submit_enabled:
+    if not effective_submit_enabled:
         return "disabled_pending_enablement"
     if endpoint["paper_endpoint_confirmed"] is not True:
         return "blocked_non_paper_endpoint"
@@ -499,15 +725,28 @@ def build_paperops_alpaca_paper_post(
     generated_at = _now()
     endpoint = _endpoint_context(settings)
     source_submit = _source_guarded_submit(settings)
+    source_pt4 = _source_pt4_staged_order(settings)
+    submit_enablement = _source_submit_enablement(settings)
+    runtime_submit_enabled = _runtime_submit_enabled(submit_enablement)
+    effective_submit_enabled = (
+        settings.alpaca_paper_submit_enabled or runtime_submit_enabled
+    )
     source_validation_errors = validate_phase7_guarded_alpaca_paper_submit_path(source_submit)
-    all_candidates = [
-        _source_record_to_submit_candidate(record)
-        for record in source_submit.get("submit_records", []) or []
-        if isinstance(record, dict)
-    ]
-    eligible_candidates = _eligible_submit_candidates(source_submit)
+    source_pt4_validation_errors = validate_paperops_auto_approval_staged_order(source_pt4)
+    submit_enablement_validation_errors = (
+        validate_paperops_alpaca_paper_submit_enablement(submit_enablement)
+    )
+    q7_candidates = _q7_candidates(source_submit)
+    pt4_candidates = _pt4_candidates(source_pt4)
+    all_candidates = pt4_candidates + q7_candidates
+    eligible_candidates = _eligible_submit_candidates(all_candidates)
     selected_candidate = eligible_candidates[0] if eligible_candidates else None
-    preconditions = _precondition_records(settings, endpoint)
+    preconditions = _precondition_records(
+        settings,
+        endpoint,
+        effective_submit_enabled=effective_submit_enabled,
+        runtime_submit_enabled=runtime_submit_enabled,
+    )
     precondition_failures = [
         record["key"] for record in preconditions if record.get("passed") is not True
     ]
@@ -571,6 +810,7 @@ def build_paperops_alpaca_paper_post(
     status = _status(
         settings=settings,
         endpoint=endpoint,
+        effective_submit_enabled=effective_submit_enabled,
         eligible_count=len(eligible_candidates),
         execute_post=execute_post,
         post_result=post_result,
@@ -603,7 +843,21 @@ def build_paperops_alpaca_paper_post(
         "history_log_path": None,
         "mode": settings.mode,
         "paper_operational_enabled": settings.paper_operational_enabled,
-        "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
+        "alpaca_paper_submit_enabled": effective_submit_enabled,
+        "settings_alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
+        "runtime_alpaca_paper_submit_enabled": runtime_submit_enabled,
+        "submit_enablement_status": submit_enablement.get("status", "missing"),
+        "submit_enablement_artifact_id": submit_enablement.get("artifact_id"),
+        "submit_enablement_validation_error_count": len(
+            submit_enablement_validation_errors
+        ),
+        "submit_enablement_validation_errors": submit_enablement_validation_errors[:12],
+        "submit_enablement_runtime_override_enabled": (
+            submit_enablement.get("runtime_artifact_override_enabled") is True
+        ),
+        "submit_enablement_explicit_submit_flag_required": (
+            submit_enablement.get("explicit_submit_flag_required") is True
+        ),
         "live_capital_enabled": settings.live_capital_enabled,
         "execute_post_requested": execute_post,
         "explicit_submit_flag_required": True,
@@ -622,10 +876,27 @@ def build_paperops_alpaca_paper_post(
         "source_guarded_submit_status": source_submit.get("status"),
         "source_guarded_submit_validation_error_count": len(source_validation_errors),
         "source_guarded_submit_validation_errors": source_validation_errors[:12],
+        "source_guarded_submit_record_count": len(q7_candidates),
+        "source_pt4_staged_order_artifact_id": source_pt4.get("artifact_id"),
+        "source_pt4_staged_order_status": source_pt4.get("status"),
+        "source_pt4_ready_for_paperops2_submit": (
+            source_pt4.get("ready_for_paperops2_submit") is True
+        ),
+        "source_pt4_staged_order_count": len(pt4_candidates),
+        "source_pt4_staged_order_validation_error_count": len(
+            source_pt4_validation_errors
+        ),
+        "source_pt4_staged_order_validation_errors": source_pt4_validation_errors[:12],
         "source_submit_record_count": len(all_candidates),
         "eligible_submit_record_count": len(eligible_candidates),
         "blocked_source_record_count": len(all_candidates) - len(eligible_candidates),
         "selected_submit_record_count": len(submitted_records),
+        "selected_source_family": (
+            selected_candidate.get("source_family") if selected_candidate else None
+        ),
+        "selected_source_phase": (
+            selected_candidate.get("source_phase") if selected_candidate else None
+        ),
         "source_event_log_prewrite_present_count": source_event_log_prewrite_present_count,
         "pre_trade_snapshot_present_count": pre_trade_snapshot_present_count,
         "paperops_event_log_prewrite_required": bool(execute_post and selected_candidate),
@@ -670,7 +941,7 @@ def build_paperops_alpaca_paper_post(
         "recommended_next_stage": (
             "PaperOps-3 paper lifecycle poller"
             if status == "submitted_to_alpaca_paper"
-            else "Wait for eligible Q7 staged proof order and explicit paper-submit enablement"
+            else "Wait for eligible PT-4/Q7 staged paper order and explicit paper-submit execution"
         ),
         "boundary": PAPEROPS_ALPACA_POST_BOUNDARY,
     }
@@ -722,6 +993,11 @@ def _record_errors(record: dict[str, Any]) -> list[str]:
         errors.append("paperops_alpaca_record_endpoint_invalid")
     if record.get("idempotency_namespace") != "phase7_demo_proof":
         errors.append("paperops_alpaca_record_namespace_invalid")
+    if record.get("source_family") not in {
+        "phase7_guarded_submit_record",
+        "paperops_pt4_staged_order",
+    }:
+        errors.append("paperops_alpaca_record_source_family_invalid")
     if not str(record.get("source_idempotency_key") or "").startswith("q7-6-stage-"):
         errors.append("paperops_alpaca_record_source_idempotency_invalid")
     if not str(record.get("idempotency_key") or "").startswith("q7-6-stage-"):
@@ -730,6 +1006,8 @@ def _record_errors(record: dict[str, Any]) -> list[str]:
         errors.append("paperops_alpaca_record_source_prewrite_missing")
     if record.get("source_pre_trade_snapshot_present") is not True:
         errors.append("paperops_alpaca_record_pre_trade_snapshot_missing")
+    if not str(preview.get("symbol") or "").strip():
+        errors.append("paperops_alpaca_record_symbol_missing")
     if record.get("request_fingerprint") != _fingerprint(preview):
         errors.append("paperops_alpaca_record_request_fingerprint_mismatch")
     for key in (
@@ -961,8 +1239,15 @@ def write_paperops_alpaca_paper_post(
             payload={
                 "status": written["status"],
                 "execute_post_requested": written["execute_post_requested"],
+                "settings_alpaca_paper_submit_enabled": written[
+                    "settings_alpaca_paper_submit_enabled"
+                ],
+                "runtime_alpaca_paper_submit_enabled": written[
+                    "runtime_alpaca_paper_submit_enabled"
+                ],
                 "paper_post_path_available": written["paper_post_path_available"],
                 "eligible_submit_record_count": written["eligible_submit_record_count"],
+                "selected_source_family": written.get("selected_source_family"),
                 "alpaca_paper_post_called_count": written[
                     "alpaca_paper_post_called_count"
                 ],
@@ -993,9 +1278,16 @@ def write_paperops_alpaca_paper_post(
         "status": written.get("status"),
         "recorded_at": _now(),
         "alpaca_paper_submit_enabled": written.get("alpaca_paper_submit_enabled"),
+        "settings_alpaca_paper_submit_enabled": written.get(
+            "settings_alpaca_paper_submit_enabled"
+        ),
+        "runtime_alpaca_paper_submit_enabled": written.get(
+            "runtime_alpaca_paper_submit_enabled"
+        ),
         "execute_post_requested": written.get("execute_post_requested"),
         "paper_post_path_available": written.get("paper_post_path_available"),
         "eligible_submit_record_count": written.get("eligible_submit_record_count"),
+        "selected_source_family": written.get("selected_source_family"),
         "alpaca_paper_post_called_count": written.get("alpaca_paper_post_called_count"),
         "alpaca_paper_post_succeeded_count": written.get(
             "alpaca_paper_post_succeeded_count"
@@ -1018,8 +1310,15 @@ def paperops_alpaca_paper_post_public_status(
             "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
             "status": "not_run",
             "stage": "PaperOps-2",
+            "alpaca_paper_submit_enabled": False,
+            "settings_alpaca_paper_submit_enabled": False,
+            "runtime_alpaca_paper_submit_enabled": False,
+            "submit_enablement_status": "not_run",
+            "submit_enablement_runtime_override_enabled": False,
             "paper_post_path_available": False,
             "eligible_submit_record_count": 0,
+            "selected_source_family": None,
+            "source_pt4_staged_order_count": 0,
             "alpaca_paper_post_called_count": 0,
             "alpaca_paper_post_succeeded_count": 0,
             "live_endpoint_called_count": 0,
@@ -1034,6 +1333,16 @@ def paperops_alpaca_paper_post_public_status(
         "status": artifact.get("status"),
         "stage": artifact.get("stage"),
         "alpaca_paper_submit_enabled": artifact.get("alpaca_paper_submit_enabled"),
+        "settings_alpaca_paper_submit_enabled": artifact.get(
+            "settings_alpaca_paper_submit_enabled"
+        ),
+        "runtime_alpaca_paper_submit_enabled": artifact.get(
+            "runtime_alpaca_paper_submit_enabled"
+        ),
+        "submit_enablement_status": artifact.get("submit_enablement_status"),
+        "submit_enablement_runtime_override_enabled": artifact.get(
+            "submit_enablement_runtime_override_enabled"
+        ),
         "paper_post_path_available": artifact.get("paper_post_path_available"),
         "endpoint_classification": artifact.get("endpoint_classification"),
         "paper_endpoint_confirmed": artifact.get("paper_endpoint_confirmed"),
@@ -1042,6 +1351,12 @@ def paperops_alpaca_paper_post_public_status(
         "execute_post_requested": artifact.get("execute_post_requested"),
         "eligible_submit_record_count": artifact.get("eligible_submit_record_count", 0),
         "selected_submit_record_count": artifact.get("selected_submit_record_count", 0),
+        "selected_source_family": artifact.get("selected_source_family"),
+        "selected_source_phase": artifact.get("selected_source_phase"),
+        "source_pt4_staged_order_count": artifact.get(
+            "source_pt4_staged_order_count",
+            0,
+        ),
         "source_event_log_prewrite_present_count": artifact.get(
             "source_event_log_prewrite_present_count",
             0,

@@ -1883,6 +1883,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paper_operational_mode",
     "paper_operational_mode_effective",
     "paper_operational_mode_runtime_override",
+    "paperops_alpaca_submit_enablement",
+    "paperops_alpaca_submit_enablement_effective",
+    "paperops_alpaca_submit_enablement_path_available",
     "paperops_alpaca_paper_post",
     "paperops_alpaca_paper_post_called_count",
     "paperops_paper_lifecycle_poller",
@@ -2100,6 +2103,35 @@ PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_REQUIRED_FIELDS = {
     "source_pt3_status",
     "stage",
     "staged_order_count",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_ALPACA_SUBMIT_ENABLEMENT_REQUIRED_FIELDS = {
+    "alpaca_paper_submit_effective",
+    "alpaca_paper_submit_enabled",
+    "alpaca_post_called_count",
+    "boundary",
+    "broker_post_called_count",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "explicit_submit_flag_required",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_post_path_available",
+    "paper_submit_runtime_enablement_enabled",
+    "phase7_proof_credit_allowed",
+    "pt4_ready_for_paperops2_submit",
+    "pt4_staged_order_count",
+    "public_safe",
+    "recorded",
+    "runtime_artifact_override_enabled",
+    "schema_version",
+    "settings_alpaca_paper_submit_enabled",
+    "stage",
     "status",
     "unsafe_write_counter_total",
     "validation_error_count",
@@ -2812,6 +2844,10 @@ def main() -> int:
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
     paper_operational_mode = payload.get("paper_operational_mode", {})
+    paperops_alpaca_submit_enablement = payload.get(
+        "paperops_alpaca_paper_submit_enablement",
+        {},
+    )
     paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -2888,6 +2924,30 @@ def main() -> int:
     print(
         "cockpit_status_paper_operational_mode_broker_post_called_count="
         f"{paper_operational_mode.get('broker_post_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_alpaca_submit_enablement_status="
+        f"{paperops_alpaca_submit_enablement.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_alpaca_submit_enablement_effective="
+        f"{paperops_alpaca_submit_enablement.get('alpaca_paper_submit_effective')}"
+    )
+    print(
+        "cockpit_status_paperops_alpaca_submit_enablement_path_available="
+        f"{paperops_alpaca_submit_enablement.get('paper_post_path_available')}"
+    )
+    print(
+        "cockpit_status_paperops_alpaca_submit_enablement_pt4_staged_order_count="
+        f"{paperops_alpaca_submit_enablement.get('pt4_staged_order_count')}"
+    )
+    print(
+        "cockpit_status_paperops_alpaca_submit_enablement_broker_post_called_count="
+        f"{paperops_alpaca_submit_enablement.get('broker_post_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_alpaca_submit_enablement_alpaca_post_called_count="
+        f"{paperops_alpaca_submit_enablement.get('alpaca_post_called_count')}"
     )
     print(
         "cockpit_status_paperops_lifecycle_poller_status="
@@ -6410,6 +6470,21 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paper_operational_mode_override_mismatch=true")
         return 1
+    if mission_stack.get("paperops_alpaca_submit_enablement") != (
+        paperops_alpaca_submit_enablement.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_submit_enablement_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_alpaca_submit_enablement_effective") != (
+        paperops_alpaca_submit_enablement.get("alpaca_paper_submit_effective")
+    ):
+        print("cockpit_status_mission_stack_paperops_submit_enablement_effective_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_alpaca_submit_enablement_path_available") != (
+        paperops_alpaca_submit_enablement.get("paper_post_path_available")
+    ):
+        print("cockpit_status_mission_stack_paperops_submit_enablement_path_mismatch=true")
+        return 1
     if mission_stack.get("paperops_alpaca_paper_post") != paperops_alpaca_paper_post.get("status"):
         print("cockpit_status_mission_stack_paperops_alpaca_post_mismatch=true")
         return 1
@@ -6838,6 +6913,71 @@ def main() -> int:
         or "cannot force trades" not in pt4_boundary
     ):
         print("cockpit_status_paperops_auto_approval_staged_order_boundary_weak=true")
+        return 1
+    missing_submit_enablement_fields = sorted(
+        PAPEROPS_ALPACA_SUBMIT_ENABLEMENT_REQUIRED_FIELDS
+        - set(paperops_alpaca_submit_enablement)
+    )
+    if missing_submit_enablement_fields:
+        print(
+            "cockpit_status_paperops_alpaca_submit_enablement_fields_missing="
+            + ",".join(missing_submit_enablement_fields)
+        )
+        return 1
+    if paperops_alpaca_submit_enablement.get("status") != "enabled_pending_explicit_submit":
+        print("cockpit_status_paperops_alpaca_submit_enablement_not_enabled=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("public_safe") is not True:
+        print("cockpit_status_paperops_alpaca_submit_enablement_not_public_safe=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("recorded") is not True:
+        print("cockpit_status_paperops_alpaca_submit_enablement_not_recorded=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("event_log_written") is not True:
+        print("cockpit_status_paperops_alpaca_submit_enablement_event_log_not_written=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_alpaca_submit_enablement_event_count_mismatch=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_alpaca_submit_enablement_validation_errors=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("alpaca_paper_submit_effective") is not True:
+        print("cockpit_status_paperops_alpaca_submit_enablement_effective_false=true")
+        return 1
+    if paperops_alpaca_submit_enablement.get("paper_post_path_available") is not True:
+        print("cockpit_status_paperops_alpaca_submit_enablement_path_unavailable=true")
+        return 1
+    if int(paperops_alpaca_submit_enablement.get("pt4_staged_order_count", 0) or 0) < 1:
+        print("cockpit_status_paperops_alpaca_submit_enablement_pt4_order_missing=true")
+        return 1
+    for key in (
+        "env_file_edited",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+    ):
+        if paperops_alpaca_submit_enablement.get(key) is not False:
+            print(f"cockpit_status_paperops_alpaca_submit_enablement_forbidden={key}")
+            return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_alpaca_submit_enablement.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paperops_alpaca_submit_enablement_unsafe_counter={key}")
+            return 1
+    submit_enablement_boundary = paperops_alpaca_submit_enablement.get("boundary", "")
+    if (
+        "PT-5 records runtime Alpaca paper-submit enablement"
+        not in submit_enablement_boundary
+        or "explicit submit flag" not in submit_enablement_boundary
+        or "cannot call Alpaca" not in submit_enablement_boundary
+        or "cannot enable live capital" not in submit_enablement_boundary
+    ):
+        print("cockpit_status_paperops_alpaca_submit_enablement_boundary_weak=true")
         return 1
     if mission_stack.get("phase5_layer_b") != phase5_readiness.get("status"):
         print("cockpit_status_mission_stack_phase5_mismatch=true")

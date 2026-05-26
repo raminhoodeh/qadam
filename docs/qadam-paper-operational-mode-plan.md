@@ -102,10 +102,15 @@ Implemented:
 - PaperOps-Q exists as a Q-CTRL paper consultation gate. The SDK is importable,
   but the flagged provider probe currently fails safely because product access
   is not active for the configured identity.
+- PT-5 exists as a runtime Alpaca paper-submit enablement gate. It enables the
+  PaperOps-2 submit path through a public-safe artifact rather than editing
+  `.env`; the configured env flag remains false.
 - PaperOps-2 exists as an explicit Alpaca paper POST gate. The default check is
-  non-submit, and a paper order POST requires both
-  `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true` and the explicit
-  `--submit-paper-order` CLI flag.
+  non-submit, and a paper order POST requires paper mode, live capital disabled,
+  either `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true` or PT-5 runtime enablement,
+  paper endpoint classification, paper credentials, a PT-4/Q7 eligible staged
+  paper order, source prewrite, pre-trade snapshot, Phase 7 idempotency, and
+  the explicit `--submit-paper-order` CLI flag.
 - PaperOps-3 exists as a read-only paper lifecycle poller. It consumes only
   successful PaperOps-2 submitted paper orders and requires the explicit
   `--poll-paper-orders` CLI flag before any Alpaca paper GET.
@@ -126,15 +131,18 @@ Remaining paper-operational gaps:
 - `QADAM_PAPER_OPERATIONAL_ENABLED` is still false by default, but PT-2 now
   records an effective runtime artifact override:
   `paper_operational_mode_effective=True`.
-- `QADAM_ALPACA_PAPER_SUBMIT_ENABLED` is still false by default.
+- `QADAM_ALPACA_PAPER_SUBMIT_ENABLED` is still false by default, but PT-5 now
+  records `alpaca_paper_submit_effective=True` through a runtime artifact.
 - `QADAM_ALPACA_PAPER_EXIT_ENABLED` is still false by default.
 - `QADAM_QCTRL_PAPER_CONSULTATION_ENABLED` is still false by default.
 - Q7 currently has zero ledger-qualified setups, so no Phase 7 proof paper
   order can be submitted or credited. PT-3 finds one production-qualified setup
   and PT-4 has converted it into one PaperOps staged paper order, but both
   intentionally leave the Q7 source ledger count at zero.
-- The explicit Alpaca paper POST gate is disabled by default and currently has
-  zero eligible Q7 guarded submit records.
+- The explicit Alpaca paper POST gate is now runtime-enabled through PT-5 and
+  reports `ready_pending_explicit_execute` with one eligible PT-4 staged PaperOps
+  paper order. No Alpaca POST has been made because the explicit submit CLI flag
+  has not been used.
 - The paper lifecycle poller is implemented but idle because there are zero
   PaperOps-2 submitted paper orders to poll.
 - The guarded paper exit path is implemented but disabled and idle because
@@ -429,16 +437,35 @@ Status after implementation:
   product-access attempt as
   `blocked_qctrl_product_access_or_subscription`.
 
+### PT-5 - Alpaca Paper Submit Runtime Enablement
+
+Record a public-safe runtime artifact that enables the Alpaca paper-submit path
+without editing `.env` or calling the broker.
+
+Status after implementation:
+
+- `orchestrator/paperops_alpaca_paper_submit_enablement.py` exists.
+- `scripts/check_paperops_alpaca_paper_submit_enablement.py` exists.
+- The current artifact reports `status=enabled_pending_explicit_submit`,
+  `alpaca_paper_submit_effective=True`,
+  `settings_alpaca_paper_submit_enabled=False`,
+  `runtime_artifact_override_enabled=True`, and
+  `paper_post_path_available=True`.
+- PT-5 consumes the PT-3 qualified setup path and PT-4 staged paper order, then
+  exposes the submit path only for PaperOps-2. It does not call Alpaca, submit
+  orders, expose credentials, enable live capital, force trades, or grant Phase
+  7 proof credit.
+
 ### PaperOps-2 - Explicit Alpaca Paper POST Gate
 
 Implement a real Alpaca paper-only POST path behind all of these conditions:
 
 - `QADAM_MODE=paper`
 - `QADAM_LIVE_CAPITAL_ENABLED=false`
-- `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true`
+- `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true` or PT-5 runtime enablement
 - Alpaca endpoint classified as paper
 - paper API credentials only
-- Q7 staged proof order exists
+- PT-4 staged PaperOps paper order or Q7 staged proof order exists
 - Event Log prewrite exists
 - pre-trade snapshot exists
 - idempotency key is Phase 7 scoped
@@ -452,14 +479,14 @@ Status after implementation:
 - `scripts/check_paperops_alpaca_paper_post.py` exists.
 - `scripts/run_paper_operational_cycle.py` now runs the PaperOps-2 checker in
   non-submit mode.
-- The default safe gate remains `disabled_pending_enablement` because
-  `QADAM_ALPACA_PAPER_SUBMIT_ENABLED` is false by default.
-- An explicit enabled-preview probe with
-  `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true` reports
-  `ready_no_eligible_order`, `paper_post_path_available=True`, configured
-  paper credentials, paper endpoint classification, and zero broker POST calls.
-- No Alpaca POST was made during implementation because there is no eligible Q7
-  guarded submit record and the explicit submit CLI flag was not used.
+- The default safe gate now reports `ready_pending_explicit_execute` because
+  PT-5 provides runtime enablement while the env flag remains false.
+- The current PaperOps-2 record reports `paper_post_path_available=True`,
+  `eligible_submit_record_count=1`, `selected_source_family=paperops_pt4_staged_order`,
+  configured paper credentials, paper endpoint classification, and zero broker
+  POST calls.
+- No Alpaca POST was made during implementation because the explicit submit CLI
+  flag was not used.
 - PaperOps readiness and cockpit status now expose the PaperOps-2 gate while
   keeping live endpoint calls, live capital, raw broker payloads, broker order
   identifiers, and secrets blocked.

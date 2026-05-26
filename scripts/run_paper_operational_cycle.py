@@ -55,6 +55,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         "scripts/check_paperops_auto_approval_staged_order.py",
         True,
     ),
+    (
+        "paperops_alpaca_paper_submit_enablement",
+        "scripts/check_paperops_alpaca_paper_submit_enablement.py",
+        True,
+    ),
     ("phase7_auto_approval", "scripts/check_phase7_test_mode_auto_approval_router.py", True),
     ("phase7_order_staging", "scripts/check_phase7_proof_order_staging.py", True),
     ("phase7_guarded_paper_submit", "scripts/check_phase7_guarded_alpaca_paper_submit.py", True),
@@ -153,6 +158,8 @@ def recommended_next_stage(
         return "PT-2 global PaperOps runtime mode enablement"
     if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
         return "PT-4 auto-approval and staged paper-order handoff"
+    if "alpaca_paper_submit_runtime_enablement_connected_not_ready" in blockers:
+        return "PT-5 Alpaca paper-submit runtime enablement"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
         return "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:
@@ -224,6 +231,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    alpaca_submit_enablement = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_alpaca_paper_submit_enablement"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -254,6 +269,9 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_auto_approval_staged_order_broker_post_called_count",
             "paper_ops_auto_approval_staged_order_live_endpoint_called_count",
             "paper_ops_auto_approval_staged_order_unsafe_write_counter_total",
+            "paper_ops_alpaca_submit_enablement_broker_post_called_count",
+            "paper_ops_alpaca_submit_enablement_alpaca_post_called_count",
+            "paper_ops_alpaca_submit_enablement_live_endpoint_called_count",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -509,6 +527,49 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         "auto_approval_staged_order_unsafe_write_counter_total": int(
             auto_approval_staged_order.get(
                 "paperops_auto_approval_staged_order_unsafe_write_counter_total",
+                "0",
+            )
+            or 0
+        ),
+        "alpaca_submit_enablement_status": alpaca_submit_enablement.get(
+            "paperops_alpaca_submit_enablement_status"
+        ),
+        "alpaca_submit_enablement_effective": (
+            alpaca_submit_enablement.get(
+                "paperops_alpaca_submit_enablement_effective"
+            )
+            == "True"
+        ),
+        "alpaca_submit_enablement_path_available": (
+            alpaca_submit_enablement.get(
+                "paperops_alpaca_submit_enablement_path_available"
+            )
+            == "True"
+        ),
+        "alpaca_submit_enablement_pt4_staged_order_count": int(
+            alpaca_submit_enablement.get(
+                "paperops_alpaca_submit_enablement_pt4_staged_order_count",
+                "0",
+            )
+            or 0
+        ),
+        "alpaca_submit_enablement_broker_post_called_count": int(
+            alpaca_submit_enablement.get(
+                "paperops_alpaca_submit_enablement_broker_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "alpaca_submit_enablement_alpaca_post_called_count": int(
+            alpaca_submit_enablement.get(
+                "paperops_alpaca_submit_enablement_alpaca_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "alpaca_submit_enablement_live_endpoint_called_count": int(
+            alpaca_submit_enablement.get(
+                "paperops_alpaca_submit_enablement_live_endpoint_called_count",
                 "0",
             )
             or 0
@@ -912,6 +973,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "auto_approval_staged_order_broker_post_called_count",
         "auto_approval_staged_order_live_endpoint_called_count",
         "auto_approval_staged_order_unsafe_write_counter_total",
+        "alpaca_submit_enablement_broker_post_called_count",
+        "alpaca_submit_enablement_alpaca_post_called_count",
+        "alpaca_submit_enablement_live_endpoint_called_count",
         "unsafe_write_counter_total",
     ):
         try:
@@ -1341,6 +1405,34 @@ def main() -> int:
     print(
         "paper_ops_cycle_auto_approval_staged_order_unsafe_write_counter_total="
         f"{written['auto_approval_staged_order_unsafe_write_counter_total']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_status="
+        f"{written['alpaca_submit_enablement_status']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_effective="
+        f"{written['alpaca_submit_enablement_effective']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_path_available="
+        f"{written['alpaca_submit_enablement_path_available']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_pt4_staged_order_count="
+        f"{written['alpaca_submit_enablement_pt4_staged_order_count']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_broker_post_called_count="
+        f"{written['alpaca_submit_enablement_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_alpaca_post_called_count="
+        f"{written['alpaca_submit_enablement_alpaca_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_alpaca_submit_enablement_live_endpoint_called_count="
+        f"{written['alpaca_submit_enablement_live_endpoint_called_count']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

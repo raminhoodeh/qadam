@@ -1141,14 +1141,28 @@ Current PaperOps status:
   SDK importability is true; the explicit flagged provider probe records a
   sanitized provider-call attempt, but successful consultation remains blocked
   by Q-CTRL account/product subscription access.
+- PT-5 Alpaca paper-submit runtime enablement is implemented in
+  `orchestrator/paperops_alpaca_paper_submit_enablement.py` and
+  `scripts/check_paperops_alpaca_paper_submit_enablement.py`. It records
+  `status=enabled_pending_explicit_submit`,
+  `alpaca_paper_submit_effective=True`,
+  `settings_alpaca_paper_submit_enabled=False`,
+  `runtime_artifact_override_enabled=True`, and
+  `paper_post_path_available=True` without editing `.env`, submitting orders,
+  calling Alpaca, enabling live capital, forcing trades, exposing credentials,
+  or granting Phase 7 proof credit.
 - PaperOps-2 explicit Alpaca paper POST gate is implemented in
   `orchestrator/paperops_alpaca_paper_post.py` and
   `scripts/check_paperops_alpaca_paper_post.py`. The default path is
   non-submit; a real Alpaca paper POST requires paper mode, live capital
-  disabled, `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true`, paper endpoint
-  classification, paper credentials, an eligible Q7 guarded submit record,
-  source Event Log prewrite, pre-trade snapshot, Phase 7 idempotency, and the
-  explicit `--submit-paper-order` CLI flag.
+  disabled, `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true` or PT-5 runtime
+  enablement, paper endpoint classification, paper credentials, an eligible
+  PT-4 staged PaperOps paper order or Q7 guarded submit record, source Event
+  Log prewrite, pre-trade snapshot, Phase 7 idempotency, and the explicit
+  `--submit-paper-order` CLI flag. The current default check reports
+  `ready_pending_explicit_execute`, `eligible_submit_record_count=1`,
+  `selected_source_family=paperops_pt4_staged_order`, and zero Alpaca POST
+  calls.
 - PaperOps-3 paper lifecycle poller is implemented in
   `orchestrator/paperops_paper_lifecycle_poller.py` and
   `scripts/check_paperops_paper_lifecycle_poller.py`. It consumes only
@@ -1184,19 +1198,19 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  28/28 commands passing: paper mode is safe to continue, PT-0 approval is
+  29/29 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
   setup candidate ready for guarded paper handoff, PT-4 auto-approves and
-  stages one PaperOps paper order, the Phase 7 run is active, the Head-of-Quant
-  oracle can run in its current non-provider mode, broker/Alpaca POST counters
-  remain zero, PaperOps-2 reports
-  `disabled_pending_enablement`, PaperOps-3 reports
+  stages one PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit
+  path, the Phase 7 run is active, the Head-of-Quant oracle can run in its
+  current non-provider mode, broker/Alpaca POST counters remain zero,
+  PaperOps-2 reports
+  `ready_pending_explicit_execute`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
   PaperOps-6 reports `operations_active`, and the remaining blockers are the
-  disabled Alpaca paper POST path/no eligible Q7 guarded submit record, the
-  disabled Alpaca paper exit path/no PaperOps-3 open-position readback, and
+  disabled Alpaca paper exit path/no PaperOps-3 open-position readback and
   Q-CTRL paper-consultation product access required for full paper-reality
   parity.
 - The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active

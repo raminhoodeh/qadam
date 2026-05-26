@@ -34,6 +34,9 @@ from orchestrator.paper_live_qctrl_product_access import (
     paper_live_qctrl_product_access_public_status,
 )
 from orchestrator.paper_operational_mode import paper_operational_mode_public_status
+from orchestrator.paperops_alpaca_paper_submit_enablement import (
+    paperops_alpaca_paper_submit_enablement_public_status,
+)
 from orchestrator.paperops_alpaca_paper_post import paperops_alpaca_paper_post_public_status
 from orchestrator.paperops_paper_lifecycle_poller import (
     paperops_paper_lifecycle_poller_public_status,
@@ -1152,6 +1155,35 @@ PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_PUBLIC_REQUIRED_FIELDS = {
     "source_pt3_status",
     "stage",
     "staged_order_count",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_ALPACA_SUBMIT_ENABLEMENT_PUBLIC_REQUIRED_FIELDS = {
+    "alpaca_paper_submit_effective",
+    "alpaca_paper_submit_enabled",
+    "alpaca_post_called_count",
+    "boundary",
+    "broker_post_called_count",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "explicit_submit_flag_required",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_post_path_available",
+    "paper_submit_runtime_enablement_enabled",
+    "phase7_proof_credit_allowed",
+    "pt4_ready_for_paperops2_submit",
+    "pt4_staged_order_count",
+    "public_safe",
+    "recorded",
+    "runtime_artifact_override_enabled",
+    "schema_version",
+    "settings_alpaca_paper_submit_enabled",
+    "stage",
     "status",
     "unsafe_write_counter_total",
     "validation_error_count",
@@ -4457,6 +4489,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
     paper_operational_mode = payload.get("paper_operational_mode", {})
+    paperops_submit_enablement = payload.get(
+        "paperops_alpaca_paper_submit_enablement",
+        {},
+    )
     paperops_alpaca_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -4684,6 +4720,15 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                     "ready_for_paperops2_submit",
                     False,
                 )
+            ),
+            "paperops_alpaca_submit_enablement": (
+                paperops_submit_enablement.get("status", "not_run")
+            ),
+            "paperops_alpaca_submit_enablement_effective": (
+                paperops_submit_enablement.get("alpaca_paper_submit_effective", False)
+            ),
+            "paperops_alpaca_submit_enablement_path_available": (
+                paperops_submit_enablement.get("paper_post_path_available", False)
             ),
             "risk_gate": _module_status(payload, "risk_agent"),
             "market_confirmation": yahoo_finance.get("status", "not_configured"),
@@ -5749,6 +5794,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             settings
         ),
         "paper_operational_mode": paper_operational_mode_public_status(settings),
+        "paperops_alpaca_paper_submit_enablement": (
+            paperops_alpaca_paper_submit_enablement_public_status(settings)
+        ),
         "paperops_alpaca_paper_post": paperops_alpaca_paper_post_public_status(settings),
         "paperops_paper_lifecycle_poller": (
             paperops_paper_lifecycle_poller_public_status(settings)
@@ -5865,6 +5913,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paper_live_activation",
         "paper_live_qctrl_product_access",
         "paper_operational_mode",
+        "paperops_alpaca_paper_submit_enablement",
         "paperops_alpaca_paper_post",
         "paperops_paper_lifecycle_poller",
         "paperops_paper_exit_path",
@@ -6505,6 +6554,75 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in pt4_boundary:
             raise ValueError("PaperOps auto-approval staged order boundary is weak")
+    paperops_submit_enablement = payload["paperops_alpaca_paper_submit_enablement"]
+    missing_submit_enablement = sorted(
+        PAPEROPS_ALPACA_SUBMIT_ENABLEMENT_PUBLIC_REQUIRED_FIELDS
+        - set(paperops_submit_enablement)
+    )
+    if missing_submit_enablement:
+        raise ValueError(
+            "PaperOps Alpaca submit enablement public status missing fields: "
+            f"{missing_submit_enablement}"
+        )
+    if paperops_submit_enablement.get("status") not in {
+        "not_run",
+        "enabled_pending_explicit_submit",
+        "blocked_pending_prerequisites",
+        "blocked_alpaca_paper_endpoint_or_credentials",
+        "blocked_not_paper_mode",
+        "blocked_live_capital_enabled",
+        "invalid",
+    }:
+        raise ValueError("PaperOps Alpaca submit enablement status is invalid")
+    if paperops_submit_enablement.get("public_safe") is not True:
+        raise ValueError("PaperOps Alpaca submit enablement must be public-safe")
+    if paperops_submit_enablement.get("status") != "not_run":
+        if paperops_submit_enablement.get("recorded") is not True:
+            raise ValueError("PaperOps Alpaca submit enablement must be recorded")
+        if paperops_submit_enablement.get("event_log_written") is not True:
+            raise ValueError("PaperOps Alpaca submit enablement event log missing")
+        if paperops_submit_enablement.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps Alpaca submit enablement event count mismatch")
+        if paperops_submit_enablement.get("validation_error_count") != 0:
+            raise ValueError("PaperOps Alpaca submit enablement validation errors present")
+    if paperops_submit_enablement.get("status") == "enabled_pending_explicit_submit":
+        if paperops_submit_enablement.get("paper_submit_runtime_enablement_enabled") is not True:
+            raise ValueError("PaperOps Alpaca submit enablement flag is false")
+        if paperops_submit_enablement.get("alpaca_paper_submit_effective") is not True:
+            raise ValueError("PaperOps Alpaca submit effective flag is false")
+        if paperops_submit_enablement.get("paper_post_path_available") is not True:
+            raise ValueError("PaperOps Alpaca submit path is unavailable")
+        if int(paperops_submit_enablement.get("pt4_staged_order_count", 0) or 0) < 1:
+            raise ValueError("PaperOps Alpaca submit enablement has no PT-4 order")
+    for key in (
+        "env_file_edited",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+    ):
+        if paperops_submit_enablement.get(key) is not False:
+            raise ValueError(f"PaperOps Alpaca submit enablement forbidden: {key}")
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_submit_enablement.get(key, 0) or 0) != 0:
+            raise ValueError(
+                f"PaperOps Alpaca submit enablement unsafe count nonzero: {key}"
+            )
+    submit_enablement_boundary = str(paperops_submit_enablement.get("boundary") or "")
+    for phrase in (
+        "PT-5 records runtime Alpaca paper-submit enablement",
+        "explicit submit flag",
+        "cannot edit .env",
+        "cannot call Alpaca",
+        "cannot grant Phase 7 proof credit",
+        "cannot enable live capital",
+    ):
+        if phrase not in submit_enablement_boundary:
+            raise ValueError("PaperOps Alpaca submit enablement boundary is weak")
     phase4_strategy = payload["phase4_strategy"]
     missing_phase4 = sorted(PHASE4_STRATEGY_PUBLIC_REQUIRED_FIELDS - set(phase4_strategy))
     if missing_phase4:

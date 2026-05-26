@@ -22,6 +22,9 @@ from orchestrator.paperops_qualified_setup_production import (
 from orchestrator.paperops_auto_approval_staged_order import (
     validate_paperops_auto_approval_staged_order,
 )
+from orchestrator.paperops_alpaca_paper_submit_enablement import (
+    validate_paperops_alpaca_paper_submit_enablement,
+)
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -70,6 +73,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "paperops_auto_approval_staged_order_connected",
         "PT-4 must auto-approve and stage PaperOps paper orders without submit authority.",
+    ),
+    (
+        "alpaca_paper_submit_runtime_enablement_connected",
+        "PT-5 must enable the Alpaca paper-submit path through a runtime artifact.",
     ),
     ("qualified_setup_gate_connected", "Qualified setups must flow into Q7, even when count is zero."),
     ("auto_approval_connected", "Qualified setups must pass auto-approval without manual trade-level approval."),
@@ -169,6 +176,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "auto_approval_staged_order": _read_json(
             runtime / "paperops_auto_approval_staged_order.json"
         ),
+        "alpaca_paper_submit_enablement": _read_json(
+            runtime / "paperops_alpaca_paper_submit_enablement.json"
+        ),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -203,6 +213,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     paper_operational_mode = snapshot["paper_operational_mode"]
     qualified_setup_production = snapshot["qualified_setup_production"]
     auto_approval_staged_order = snapshot["auto_approval_staged_order"]
+    alpaca_paper_submit_enablement = snapshot["alpaca_paper_submit_enablement"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -340,6 +351,39 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             auto_approval_staged_order
         )
     )
+    alpaca_submit_enablement_ready = (
+        alpaca_paper_submit_enablement.get("status") == "enabled_pending_explicit_submit"
+        and alpaca_paper_submit_enablement.get("recorded") is True
+        and alpaca_paper_submit_enablement.get("event_log_written") is True
+        and _int(alpaca_paper_submit_enablement.get("event_log_event_count")) == 1
+        and alpaca_paper_submit_enablement.get("paper_submit_runtime_enablement_enabled")
+        is True
+        and alpaca_paper_submit_enablement.get("alpaca_paper_submit_effective") is True
+        and alpaca_paper_submit_enablement.get("runtime_artifact_override_enabled") is True
+        and alpaca_paper_submit_enablement.get("env_file_edited") is False
+        and alpaca_paper_submit_enablement.get("paper_post_path_available") is True
+        and alpaca_paper_submit_enablement.get("explicit_submit_flag_required") is True
+        and alpaca_paper_submit_enablement.get("execute_post_requested") is False
+        and alpaca_paper_submit_enablement.get("paper_endpoint_confirmed") is True
+        and alpaca_paper_submit_enablement.get("alpaca_api_key_configured") is True
+        and alpaca_paper_submit_enablement.get("alpaca_api_secret_configured") is True
+        and alpaca_paper_submit_enablement.get("pt4_ready_for_paperops2_submit") is True
+        and _int(alpaca_paper_submit_enablement.get("pt4_staged_order_count")) >= 1
+        and alpaca_paper_submit_enablement.get("paper_order_submission_allowed") is False
+        and alpaca_paper_submit_enablement.get("broker_post_allowed") is False
+        and alpaca_paper_submit_enablement.get("alpaca_post_allowed") is False
+        and alpaca_paper_submit_enablement.get("live_endpoint_allowed") is False
+        and alpaca_paper_submit_enablement.get("live_capital_enabled") is False
+        and alpaca_paper_submit_enablement.get("phase7_proof_credit_allowed") is False
+        and alpaca_paper_submit_enablement.get("forced_trades_allowed") is False
+        and _int(alpaca_paper_submit_enablement.get("broker_post_called_count")) == 0
+        and _int(alpaca_paper_submit_enablement.get("alpaca_post_called_count")) == 0
+        and _int(alpaca_paper_submit_enablement.get("live_endpoint_called_count")) == 0
+        and _int(alpaca_paper_submit_enablement.get("unsafe_write_counter_total")) == 0
+        and not validate_paperops_alpaca_paper_submit_enablement(
+            alpaca_paper_submit_enablement
+        )
+    )
     qctrl_consultation_ready = (
         settings.qctrl_paper_consultation_enabled
         and qctrl_consultation.get("status") == "consultation_recorded"
@@ -349,8 +393,11 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and qctrl_consultation.get("execution_allowed") is False
         and qctrl_consultation.get("broker_post_allowed") is False
     )
+    alpaca_paper_submit_effective = (
+        settings.alpaca_paper_submit_enabled or alpaca_submit_enablement_ready
+    )
     alpaca_paper_post_ready = (
-        settings.alpaca_paper_submit_enabled
+        alpaca_paper_submit_effective
         and alpaca_paper_post.get("paper_post_path_available") is True
         and alpaca_paper_post.get("endpoint_classification") == "alpaca_paper_endpoint"
         and alpaca_paper_post.get("paper_endpoint_confirmed") is True
@@ -358,9 +405,9 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and alpaca_paper_post.get("live_capital_enabled") is False
         and _int(alpaca_paper_post.get("live_endpoint_called_count")) == 0
         and _int(alpaca_paper_post.get("unsafe_live_endpoint_called_count")) == 0
+        and _int(alpaca_paper_post.get("eligible_submit_record_count")) >= 1
         and alpaca_paper_post.get("status")
         in {
-            "ready_no_eligible_order",
             "ready_pending_explicit_execute",
             "submitted_to_alpaca_paper",
         }
@@ -557,6 +604,19 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
                 f"staged={_int(auto_approval_staged_order.get('staged_order_count'))}; "
                 f"ready_for_paperops2={auto_approval_staged_order.get('ready_for_paperops2_submit')}; "
                 f"submit_allowed={auto_approval_staged_order.get('paper_order_submission_allowed')}"
+            ),
+            "required_for_full_paper_ops": True,
+        },
+        {
+            "key": "alpaca_paper_submit_runtime_enablement_connected",
+            "ready": alpaca_submit_enablement_ready,
+            "status": str(alpaca_paper_submit_enablement.get("status") or "missing"),
+            "detail": (
+                f"effective={alpaca_paper_submit_effective}; "
+                f"runtime={alpaca_paper_submit_enablement.get('paper_submit_runtime_enablement_enabled')}; "
+                f"override={alpaca_paper_submit_enablement.get('runtime_artifact_override_enabled')}; "
+                f"pt4_staged={_int(alpaca_paper_submit_enablement.get('pt4_staged_order_count'))}; "
+                f"execute_requested={alpaca_paper_submit_enablement.get('execute_post_requested')}"
             ),
             "required_for_full_paper_ops": True,
         },
@@ -763,6 +823,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paper_operational_mode = snapshot["paper_operational_mode"]
     qualified_setup_production = snapshot["qualified_setup_production"]
     auto_approval_staged_order = snapshot["auto_approval_staged_order"]
+    alpaca_paper_submit_enablement = snapshot["alpaca_paper_submit_enablement"]
     paper_operational_mode_ready = any(
         capability["key"] == "global_paper_operational_mode_enabled"
         and capability["ready"]
@@ -842,6 +903,58 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
             paper_operational_mode.get("qctrl_product_access_blocker", "missing")
         ),
         "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
+        "alpaca_paper_submit_effective": (
+            settings.alpaca_paper_submit_enabled
+            or any(
+                capability["key"] == "alpaca_paper_submit_runtime_enablement_connected"
+                and capability["ready"]
+                for capability in capabilities
+            )
+        ),
+        "alpaca_paper_submit_runtime_enablement_status": (
+            alpaca_paper_submit_enablement.get("status", "missing")
+        ),
+        "alpaca_paper_submit_runtime_enablement_enabled": (
+            alpaca_paper_submit_enablement.get("paper_submit_runtime_enablement_enabled")
+            is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_runtime_override_enabled": (
+            alpaca_paper_submit_enablement.get("runtime_artifact_override_enabled")
+            is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_env_file_edited": (
+            alpaca_paper_submit_enablement.get("env_file_edited") is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_path_available": (
+            alpaca_paper_submit_enablement.get("paper_post_path_available") is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_execute_post_requested": (
+            alpaca_paper_submit_enablement.get("execute_post_requested") is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_pt4_staged_order_count": _int(
+            alpaca_paper_submit_enablement.get("pt4_staged_order_count")
+        ),
+        "alpaca_paper_submit_runtime_enablement_broker_post_called_count": _int(
+            alpaca_paper_submit_enablement.get("broker_post_called_count")
+        ),
+        "alpaca_paper_submit_runtime_enablement_alpaca_post_called_count": _int(
+            alpaca_paper_submit_enablement.get("alpaca_post_called_count")
+        ),
+        "alpaca_paper_submit_runtime_enablement_live_endpoint_called_count": _int(
+            alpaca_paper_submit_enablement.get("live_endpoint_called_count")
+        ),
+        "alpaca_paper_submit_runtime_enablement_live_capital_enabled": (
+            alpaca_paper_submit_enablement.get("live_capital_enabled") is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_phase7_proof_credit_allowed": (
+            alpaca_paper_submit_enablement.get("phase7_proof_credit_allowed") is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_forced_trades_allowed": (
+            alpaca_paper_submit_enablement.get("forced_trades_allowed") is True
+        ),
+        "alpaca_paper_submit_runtime_enablement_unsafe_write_counter_total": _int(
+            alpaca_paper_submit_enablement.get("unsafe_write_counter_total")
+        ),
         "alpaca_paper_exit_enabled": settings.alpaca_paper_exit_enabled,
         "paper_operational_max_notional_gbp": settings.paper_operational_max_notional_gbp,
         "live_capital_enabled": settings.live_capital_enabled,
@@ -1420,6 +1533,10 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "auto_approval_staged_order_phase7_proof_credit_granted_count",
         "auto_approval_staged_order_forced_trade_count",
         "auto_approval_staged_order_unsafe_write_counter_total",
+        "alpaca_paper_submit_runtime_enablement_broker_post_called_count",
+        "alpaca_paper_submit_runtime_enablement_alpaca_post_called_count",
+        "alpaca_paper_submit_runtime_enablement_live_endpoint_called_count",
+        "alpaca_paper_submit_runtime_enablement_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -1517,6 +1634,32 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
     ):
         if artifact.get(key) is not False:
             errors.append(f"paper_ops_auto_approval_staged_order_forbidden:{key}")
+    if artifact.get("alpaca_paper_submit_runtime_enablement_status") != (
+        "enabled_pending_explicit_submit"
+    ):
+        errors.append("paper_ops_alpaca_submit_enablement_not_enabled")
+    if artifact.get("alpaca_paper_submit_effective") is not True:
+        errors.append("paper_ops_alpaca_submit_effective_false")
+    if artifact.get("alpaca_paper_submit_runtime_enablement_enabled") is not True:
+        errors.append("paper_ops_alpaca_submit_enablement_flag_false")
+    if (
+        artifact.get("alpaca_paper_submit_runtime_enablement_runtime_override_enabled")
+        is not True
+    ):
+        errors.append("paper_ops_alpaca_submit_enablement_runtime_override_false")
+    for key in (
+        "alpaca_paper_submit_runtime_enablement_env_file_edited",
+        "alpaca_paper_submit_runtime_enablement_execute_post_requested",
+        "alpaca_paper_submit_runtime_enablement_live_capital_enabled",
+        "alpaca_paper_submit_runtime_enablement_phase7_proof_credit_allowed",
+        "alpaca_paper_submit_runtime_enablement_forced_trades_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_alpaca_submit_enablement_forbidden:{key}")
+    if artifact.get("alpaca_paper_submit_runtime_enablement_path_available") is not True:
+        errors.append("paper_ops_alpaca_submit_enablement_path_not_available")
+    if _int(artifact.get("alpaca_paper_submit_runtime_enablement_pt4_staged_order_count")) < 1:
+        errors.append("paper_ops_alpaca_submit_enablement_no_pt4_order")
     if artifact.get("paper_live_activation_status") != "approved_pending_later_enablement":
         errors.append("paper_ops_paper_live_activation_not_approved")
     if artifact.get("paper_live_activation_approval_state") != "approved":

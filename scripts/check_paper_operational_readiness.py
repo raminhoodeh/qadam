@@ -112,6 +112,30 @@ def main() -> int:
         paper_operational_mode_broker_probe
     )
 
+    alpaca_submit_enablement_probe = deepcopy(written)
+    alpaca_submit_enablement_probe[
+        "alpaca_paper_submit_runtime_enablement_enabled"
+    ] = False
+    alpaca_submit_enablement_errors = validate_paper_operational_readiness(
+        alpaca_submit_enablement_probe
+    )
+
+    alpaca_submit_enablement_execute_probe = deepcopy(written)
+    alpaca_submit_enablement_execute_probe[
+        "alpaca_paper_submit_runtime_enablement_execute_post_requested"
+    ] = True
+    alpaca_submit_enablement_execute_errors = validate_paper_operational_readiness(
+        alpaca_submit_enablement_execute_probe
+    )
+
+    alpaca_submit_enablement_broker_probe = deepcopy(written)
+    alpaca_submit_enablement_broker_probe[
+        "alpaca_paper_submit_runtime_enablement_broker_post_called_count"
+    ] = 1
+    alpaca_submit_enablement_broker_errors = validate_paper_operational_readiness(
+        alpaca_submit_enablement_broker_probe
+    )
+
     qualified_setup_submit_probe = deepcopy(written)
     qualified_setup_submit_probe[
         "qualified_setup_production_paper_order_submission_allowed"
@@ -355,6 +379,39 @@ def main() -> int:
         f"{written['paper_operational_mode_qctrl_product_access_blocker']}"
     )
     print(f"paper_ops_alpaca_paper_submit_enabled={written['alpaca_paper_submit_enabled']}")
+    print(f"paper_ops_alpaca_paper_submit_effective={written['alpaca_paper_submit_effective']}")
+    print(
+        "paper_ops_alpaca_submit_enablement_status="
+        f"{written['alpaca_paper_submit_runtime_enablement_status']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_enabled="
+        f"{written['alpaca_paper_submit_runtime_enablement_enabled']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_runtime_override="
+        f"{written['alpaca_paper_submit_runtime_enablement_runtime_override_enabled']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_path_available="
+        f"{written['alpaca_paper_submit_runtime_enablement_path_available']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_pt4_staged_order_count="
+        f"{written['alpaca_paper_submit_runtime_enablement_pt4_staged_order_count']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_broker_post_called_count="
+        f"{written['alpaca_paper_submit_runtime_enablement_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_alpaca_post_called_count="
+        f"{written['alpaca_paper_submit_runtime_enablement_alpaca_post_called_count']}"
+    )
+    print(
+        "paper_ops_alpaca_submit_enablement_live_endpoint_called_count="
+        f"{written['alpaca_paper_submit_runtime_enablement_live_endpoint_called_count']}"
+    )
     print(f"paper_ops_paper_live_activation_status={written['paper_live_activation_status']}")
     print(
         "paper_ops_paper_live_activation_approval_state="
@@ -906,6 +963,20 @@ def main() -> int:
         not in paper_operational_mode_broker_errors
     ):
         errors.append("PT-2 broker-counter probe was not rejected")
+    if "paper_ops_alpaca_submit_enablement_flag_false" not in alpaca_submit_enablement_errors:
+        errors.append("PT-5 enablement-disabled probe was not rejected")
+    if (
+        "paper_ops_alpaca_submit_enablement_forbidden:"
+        "alpaca_paper_submit_runtime_enablement_execute_post_requested"
+        not in alpaca_submit_enablement_execute_errors
+    ):
+        errors.append("PT-5 enablement execute probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "alpaca_paper_submit_runtime_enablement_broker_post_called_count"
+        not in alpaca_submit_enablement_broker_errors
+    ):
+        errors.append("PT-5 enablement broker-counter probe was not rejected")
     if (
         "paper_ops_qualified_setup_production_forbidden:"
         "qualified_setup_production_paper_order_submission_allowed"
