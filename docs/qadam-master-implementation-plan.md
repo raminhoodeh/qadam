@@ -1099,6 +1099,17 @@ Current PaperOps status:
   cockpit Mission Control while keeping Q-CTRL advisory-only with no execution,
   paper-order, broker, live endpoint, live capital, forced-trade, hardware, raw
   response, secret, or Phase 7 proof-credit authority.
+- PT-2 global PaperOps runtime mode is implemented in
+  `orchestrator/paper_operational_mode.py` and
+  `scripts/check_paper_operational_mode.py`. It records
+  `status=enabled_pending_downstream_gates`,
+  `paper_operational_mode_enabled=True`,
+  `paper_operational_mode_effective=True`,
+  `settings_paper_operational_enabled=False`,
+  `runtime_artifact_override_enabled=True`, and
+  `paper_operational_flag_disabled=False` without editing `.env`, submitting
+  orders, calling brokers/live endpoints, enabling live capital, giving Q-CTRL
+  execution authority, forcing trades, or granting Phase 7 proof credit.
 - PaperOps-Q Q-CTRL paper consultation gate is implemented in
   `orchestrator/paperops_qctrl_consultation.py` and
   `scripts/check_paperops_qctrl_consultation.py`. Fire Opal is installed and
@@ -1148,18 +1159,19 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  25/25 commands passing: paper mode is safe to continue, PT-0 approval is
-  logged, PT-1 has recorded the Q-CTRL product-access blocker, the Phase 7 run
-  is active, the Head-of-Quant oracle can run in its current non-provider mode,
-  broker/Alpaca POST counters remain zero, PaperOps-2 reports
+  26/26 commands passing: paper mode is safe to continue, PT-0 approval is
+  logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
+  global PaperOps runtime mode effective, the Phase 7 run is active, the
+  Head-of-Quant oracle can run in its current non-provider mode, broker/Alpaca
+  POST counters remain zero, PaperOps-2 reports
   `disabled_pending_enablement`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
-  PaperOps-6 reports `operations_active`, and the remaining blockers include the
-  disabled PaperOps flag, the disabled Alpaca paper POST path/no eligible Q7
-  guarded submit record, the disabled Alpaca paper exit path/no PaperOps-3
-  open-position readback, and Q-CTRL paper-consultation product access required
-  for full paper-reality parity.
+  PaperOps-6 reports `operations_active`, and the remaining blockers are the
+  disabled Alpaca paper POST path/no eligible Q7 guarded submit record, the
+  disabled Alpaca paper exit path/no PaperOps-3 open-position readback, and
+  Q-CTRL paper-consultation product access required for full paper-reality
+  parity.
 - The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
   day `2`, with completed calendar days `1`, calendar days remaining `29`,
   `qualified_setup_count=0`, `submitted_paper_order_count=0`, and

@@ -1880,6 +1880,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paper_live_qctrl_product_access",
     "paper_live_qctrl_product_access_verified",
     "paper_live_qctrl_provider_call_count",
+    "paper_operational_mode",
+    "paper_operational_mode_effective",
+    "paper_operational_mode_runtime_override",
     "paperops_alpaca_paper_post",
     "paperops_alpaca_paper_post_called_count",
     "paperops_paper_lifecycle_poller",
@@ -1971,6 +1974,39 @@ PAPER_LIVE_QCTRL_PRODUCT_ACCESS_REQUIRED_FIELDS = {
     "recorded",
     "schema_version",
     "secret_value_exposed",
+    "stage",
+    "status",
+    "validation_error_count",
+}
+
+PAPER_OPERATIONAL_MODE_REQUIRED_FIELDS = {
+    "alpaca_post_called_count",
+    "boundary",
+    "broker_post_allowed",
+    "broker_post_called_count",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_credentials_loaded",
+    "live_endpoint_allowed",
+    "live_endpoint_called_count",
+    "paper_operational_flag_disabled",
+    "paper_operational_mode_effective",
+    "paper_operational_mode_enabled",
+    "paper_order_allowed",
+    "paper_order_submission_allowed",
+    "phase7_proof_credit_allowed",
+    "pt0_activation_approved",
+    "pt1_product_access_checked",
+    "public_safe",
+    "qctrl_broker_post_allowed",
+    "qctrl_direct_execution_allowed",
+    "recorded",
+    "runtime_artifact_override_enabled",
+    "schema_version",
     "stage",
     "status",
     "validation_error_count",
@@ -2712,6 +2748,7 @@ def main() -> int:
     phase6_certification = payload.get("phase6_certification", {})
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
+    paper_operational_mode = payload.get("paper_operational_mode", {})
     paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -2756,6 +2793,30 @@ def main() -> int:
     print(
         "cockpit_status_paper_live_qctrl_product_access_blocker="
         f"{paper_live_qctrl_product_access.get('product_access_blocker')}"
+    )
+    print(
+        "cockpit_status_paper_operational_mode_status="
+        f"{paper_operational_mode.get('status')}"
+    )
+    print(
+        "cockpit_status_paper_operational_mode_effective="
+        f"{paper_operational_mode.get('paper_operational_mode_effective')}"
+    )
+    print(
+        "cockpit_status_paper_operational_mode_settings_flag="
+        f"{paper_operational_mode.get('settings_paper_operational_enabled')}"
+    )
+    print(
+        "cockpit_status_paper_operational_mode_runtime_override="
+        f"{paper_operational_mode.get('runtime_artifact_override_enabled')}"
+    )
+    print(
+        "cockpit_status_paper_operational_mode_submit_allowed="
+        f"{paper_operational_mode.get('paper_order_submission_allowed')}"
+    )
+    print(
+        "cockpit_status_paper_operational_mode_broker_post_called_count="
+        f"{paper_operational_mode.get('broker_post_called_count')}"
     )
     print(
         "cockpit_status_paperops_lifecycle_poller_status="
@@ -6217,6 +6278,19 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paper_live_qctrl_call_count_mismatch=true")
         return 1
+    if mission_stack.get("paper_operational_mode") != paper_operational_mode.get("status"):
+        print("cockpit_status_mission_stack_paper_operational_mode_mismatch=true")
+        return 1
+    if mission_stack.get("paper_operational_mode_effective") != (
+        paper_operational_mode.get("paper_operational_mode_effective")
+    ):
+        print("cockpit_status_mission_stack_paper_operational_mode_effective_mismatch=true")
+        return 1
+    if mission_stack.get("paper_operational_mode_runtime_override") != (
+        paper_operational_mode.get("runtime_artifact_override_enabled")
+    ):
+        print("cockpit_status_mission_stack_paper_operational_mode_override_mismatch=true")
+        return 1
     if mission_stack.get("paperops_alpaca_paper_post") != paperops_alpaca_paper_post.get("status"):
         print("cockpit_status_mission_stack_paperops_alpaca_post_mismatch=true")
         return 1
@@ -6367,6 +6441,64 @@ def main() -> int:
     ):
         if int(paper_live_qctrl_product_access.get(key, 0) or 0) != 0:
             print(f"cockpit_status_paper_live_qctrl_unsafe_counter={key}")
+            return 1
+    missing_paper_operational_mode_fields = sorted(
+        PAPER_OPERATIONAL_MODE_REQUIRED_FIELDS - set(paper_operational_mode)
+    )
+    if missing_paper_operational_mode_fields:
+        print(
+            "cockpit_status_paper_operational_mode_fields_missing="
+            + ",".join(missing_paper_operational_mode_fields)
+        )
+        return 1
+    if paper_operational_mode.get("status") != "enabled_pending_downstream_gates":
+        print("cockpit_status_paper_operational_mode_not_enabled=true")
+        return 1
+    if paper_operational_mode.get("public_safe") is not True:
+        print("cockpit_status_paper_operational_mode_not_public_safe=true")
+        return 1
+    if paper_operational_mode.get("paper_operational_mode_effective") is not True:
+        print("cockpit_status_paper_operational_mode_not_effective=true")
+        return 1
+    if paper_operational_mode.get("paper_operational_flag_disabled") is not False:
+        print("cockpit_status_paper_operational_mode_flag_disabled=true")
+        return 1
+    if paper_operational_mode.get("validation_error_count") != 0:
+        print("cockpit_status_paper_operational_mode_validation_errors=true")
+        return 1
+    for key in (
+        "env_file_edited",
+        "env_mutation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "paper_order_submission_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "live_credentials_loaded",
+        "qctrl_direct_execution_allowed",
+        "qctrl_paper_order_allowed",
+        "qctrl_broker_post_allowed",
+        "hardware_submission_allowed",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "secret_value_exposed",
+        "raw_response_exposed",
+    ):
+        if paper_operational_mode.get(key) is not False:
+            print(f"cockpit_status_paper_operational_mode_unsafe_flag={key}")
+            return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+        "qctrl_broker_post_called_count",
+        "qctrl_alpaca_post_called_count",
+        "qctrl_live_endpoint_called_count",
+    ):
+        if int(paper_operational_mode.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paper_operational_mode_unsafe_counter={key}")
             return 1
     missing_paperops_30_day_fields = sorted(
         PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS - set(paperops_30_day_operations)

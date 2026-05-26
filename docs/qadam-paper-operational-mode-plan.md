@@ -76,6 +76,10 @@ Implemented:
   the explicit guarded PaperOps-Q provider path, recorded one sanitized provider
   call, and now reports the Q-CTRL product/subscription access blocker as a
   first-class operational state.
+- PT-2 global PaperOps runtime mode exists. It enables paper-operational mode
+  through `data/runtime/paper_operational_mode.json` without editing `.env`,
+  opening broker writes, granting Q-CTRL execution authority, or granting Phase
+  7 proof credit.
 - Phase 7 demo-proof run ledger is active.
 - Q7 qualified setup, auto-approval, staging, guarded submit, lifecycle,
   postmortem, performance, drawdown, override, signal-funnel, maturity, cockpit,
@@ -107,7 +111,9 @@ Implemented:
 
 Remaining paper-operational gaps:
 
-- `QADAM_PAPER_OPERATIONAL_ENABLED` is still false by default.
+- `QADAM_PAPER_OPERATIONAL_ENABLED` is still false by default, but PT-2 now
+  records an effective runtime artifact override:
+  `paper_operational_mode_effective=True`.
 - `QADAM_ALPACA_PAPER_SUBMIT_ENABLED` is still false by default.
 - `QADAM_ALPACA_PAPER_EXIT_ENABLED` is still false by default.
 - `QADAM_QCTRL_PAPER_CONSULTATION_ENABLED` is still false by default.
@@ -203,6 +209,33 @@ Status after implementation:
   hardware submission, forced trade, secret exposure, raw-response exposure, and
   Phase 7 proof-credit authorities remain false.
 
+### PT-2 - Enable Global Paper Operational Mode
+
+Enable Qadam's global paper-operational runtime mode without changing env files
+or opening any execution path by itself.
+
+Status after implementation:
+
+- `orchestrator/paper_operational_mode.py` exists.
+- `scripts/check_paper_operational_mode.py` exists.
+- The runtime artifact is `data/runtime/paper_operational_mode.json`, with
+  history and Event Log artifacts beside it.
+- Current status is `enabled_pending_downstream_gates`.
+- `paper_operational_mode_enabled=True` and
+  `paper_operational_mode_effective=True`.
+- `settings_paper_operational_enabled=False` remains visible, so the runtime
+  override is explicit rather than silently mutating `.env`.
+- `runtime_artifact_override_enabled=True`.
+- `paper_operational_flag_disabled=False` in the effective runtime view.
+- `env_file_edited=False`, `env_mutation_allowed=False`,
+  `paper_order_submission_allowed=False`, `broker_post_allowed=False`,
+  `live_endpoint_allowed=False`, `live_capital_enabled=False`,
+  `qctrl_direct_execution_allowed=False`, `qctrl_broker_post_allowed=False`,
+  `forced_trades_allowed=False`, and `phase7_proof_credit_allowed=False`.
+- Broker POST, Alpaca POST, live endpoint, and Q-CTRL broker counters are zero.
+- PT-2 is wired into PaperOps readiness, PaperOps-5 notification review,
+  PaperOps-1 cycle, PaperOps-6 operations, and cockpit Mission Control.
+
 ### PaperOps-1 - Operational Cycle Runner
 
 Create one command that runs the whole paper observation loop in order:
@@ -238,19 +271,17 @@ Status after implementation:
   `data/runtime/paper_operational_cycle_history.jsonl`, and
   `data/runtime/paper_operational_cycle_events.jsonl`.
 - Current result: `paper_cycle_safe_blocked_pending_enablement`.
-- Current blockers: `paper_operational_flag_disabled`,
-  `qctrl_paper_consultation_connected_not_ready`,
+- Current blockers: `qctrl_paper_consultation_connected_not_ready`,
   `external_alpaca_paper_post_enabled_not_ready`, and
   `paper_exit_path_connected_not_ready`.
-- Command result: 25/25 runner commands pass after PT-1 is
-  included.
+- Command result: 26/26 runner commands pass after PT-2 is included.
 - Broker POST and Alpaca POST counters remain zero.
 - The Phase 7 demo-proof checker now validates the actual preserved calendar
   window instead of assuming Day 1. Current observed run state is start date
   `2026-05-25`, end date `2026-06-23`, active day `2`, completed day count
   `1`, and no qualified setups.
 - PaperOps-Q, PaperOps-2, PaperOps-3, PaperOps-4, PaperOps-5, PaperOps-6,
-  PT-0, and PT-1 are now implemented. Current PaperOps unblock: `Resolve
+  PT-0, PT-1, and PT-2 are now implemented. Current PaperOps unblock: `Resolve
   PaperOps-Q Q-CTRL product access for successful paper consultation`.
 
 ### PaperOps-Q - Q-CTRL Paper Consultation Gate
@@ -429,7 +460,7 @@ Status after implementation:
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PT-1: 25/25 commands pass. PaperOps-5 reports
+- Current cycle result after PT-2: 26/26 commands pass. PaperOps-5 reports
   seven review records, six lifecycle notification types, zero live-send
   allowance, zero command-path allowance, and zero broker-write allowance.
 
@@ -458,9 +489,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 25/25 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 26/26 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=25`, and
+  `paper_operational_cycle_command_count=26`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,
@@ -470,7 +501,6 @@ Status after implementation:
   live credentials, live capital, Telegram command path, live notification
   send, broker write, and Phase 7 proof credit.
 - Current remaining full PaperOps blockers are
-  `paper_operational_flag_disabled`,
   `qctrl_paper_consultation_connected_not_ready`,
   `external_alpaca_paper_post_enabled_not_ready`, and
   `paper_exit_path_connected_not_ready`.

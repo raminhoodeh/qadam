@@ -33,6 +33,7 @@ from orchestrator.paper_live_activation import paper_live_activation_public_stat
 from orchestrator.paper_live_qctrl_product_access import (
     paper_live_qctrl_product_access_public_status,
 )
+from orchestrator.paper_operational_mode import paper_operational_mode_public_status
 from orchestrator.paperops_alpaca_paper_post import paperops_alpaca_paper_post_public_status
 from orchestrator.paperops_paper_lifecycle_poller import (
     paperops_paper_lifecycle_poller_public_status,
@@ -4392,6 +4393,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     phase7_demo_proof = payload.get("phase7_demo_proof", {})
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
+    paper_operational_mode = payload.get("paper_operational_mode", {})
     paperops_alpaca_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -4545,6 +4547,15 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paper_live_qctrl_provider_call_count": (
                 paper_live_qctrl_product_access.get("provider_call_count", 0)
+            ),
+            "paper_operational_mode": paper_operational_mode.get("status", "not_run"),
+            "paper_operational_mode_effective": paper_operational_mode.get(
+                "paper_operational_mode_effective",
+                False,
+            ),
+            "paper_operational_mode_runtime_override": paper_operational_mode.get(
+                "runtime_artifact_override_enabled",
+                False,
             ),
             "qctrl_paper_consultation": paperops_qctrl.get("status", "not_run"),
             "qctrl_paper_provider_call_count": paperops_qctrl.get("provider_call_count", 0),
@@ -5645,6 +5656,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paper_live_qctrl_product_access": paper_live_qctrl_product_access_public_status(
             settings
         ),
+        "paper_operational_mode": paper_operational_mode_public_status(settings),
         "paperops_alpaca_paper_post": paperops_alpaca_paper_post_public_status(settings),
         "paperops_paper_lifecycle_poller": (
             paperops_paper_lifecycle_poller_public_status(settings)
@@ -5754,6 +5766,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "phase5_system_map",
         "paper_live_activation",
         "paper_live_qctrl_product_access",
+        "paper_operational_mode",
         "paperops_alpaca_paper_post",
         "paperops_paper_lifecycle_poller",
         "paperops_paper_exit_path",
@@ -6000,6 +6013,60 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in qctrl_product_boundary:
             raise ValueError("PT-1 Q-CTRL product access boundary is weak")
+    paper_operational_mode = payload["paper_operational_mode"]
+    if paper_operational_mode.get("status") not in {
+        "not_run",
+        "enabled_pending_downstream_gates",
+        "invalid",
+    }:
+        raise ValueError("PT-2 paper operational mode status is invalid")
+    if paper_operational_mode.get("public_safe") is not True:
+        raise ValueError("PT-2 paper operational mode must be public-safe")
+    if paper_operational_mode.get("paper_operational_mode_effective") is not True:
+        raise ValueError("PT-2 paper operational mode must be effective")
+    if paper_operational_mode.get("paper_operational_flag_disabled") is not False:
+        raise ValueError("PT-2 paper operational mode flag must be effective")
+    for key in (
+        "env_file_edited",
+        "env_mutation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "paper_order_submission_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "live_credentials_loaded",
+        "qctrl_direct_execution_allowed",
+        "qctrl_paper_order_allowed",
+        "qctrl_broker_post_allowed",
+        "hardware_submission_allowed",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "secret_value_exposed",
+        "raw_response_exposed",
+    ):
+        if paper_operational_mode.get(key) is not False:
+            raise ValueError(f"PT-2 paper operational mode unsafe flag set: {key}")
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+        "qctrl_broker_post_called_count",
+        "qctrl_alpaca_post_called_count",
+        "qctrl_live_endpoint_called_count",
+    ):
+        if int(paper_operational_mode.get(key, 0) or 0) != 0:
+            raise ValueError(f"PT-2 paper operational mode unsafe count nonzero: {key}")
+    mode_boundary = str(paper_operational_mode.get("boundary") or "")
+    for phrase in (
+        "runtime PaperOps mode",
+        "does not edit .env",
+        "does not submit paper orders",
+        "does not grant Phase 7 proof credit",
+    ):
+        if phrase not in mode_boundary:
+            raise ValueError("PT-2 paper operational mode boundary is weak")
     paperops_alpaca = payload["paperops_alpaca_paper_post"]
     if paperops_alpaca.get("status") not in {
         "not_run",

@@ -15,6 +15,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.paper_operational_mode import validate_paper_operational_mode
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -43,6 +44,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "paper_live_qctrl_product_access_checked",
         "PT-1 must record the explicit Q-CTRL product-access consultation state.",
+    ),
+    (
+        "global_paper_operational_mode_enabled",
+        "PT-2 must enable runtime PaperOps mode without env edits or broker authority.",
     ),
     ("strategy_research_intake_connected", "External strategy notes must be structured as decision context."),
     ("phase7_run_active", "The 30-day demo-proof run ledger must be active."),
@@ -143,6 +148,7 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "paper_live_qctrl_product_access": _read_json(
             runtime / "paper_live_qctrl_product_access.json"
         ),
+        "paper_operational_mode": _read_json(runtime / "paper_operational_mode.json"),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -174,6 +180,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     portfolio = mission.get("portfolio", {}) if isinstance(mission, dict) else {}
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
+    paper_operational_mode = snapshot["paper_operational_mode"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -227,6 +234,28 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and _int(paper_live_qctrl_product_access.get("broker_post_called_count")) == 0
         and _int(paper_live_qctrl_product_access.get("alpaca_post_called_count")) == 0
         and _int(paper_live_qctrl_product_access.get("live_endpoint_called_count")) == 0
+    )
+    paper_operational_mode_ready = (
+        paper_operational_mode.get("status") == "enabled_pending_downstream_gates"
+        and paper_operational_mode.get("paper_operational_mode_enabled") is True
+        and paper_operational_mode.get("paper_operational_mode_effective") is True
+        and paper_operational_mode.get("paper_operational_enabled") is True
+        and paper_operational_mode.get("paper_operational_flag_disabled") is False
+        and paper_operational_mode.get("env_file_edited") is False
+        and paper_operational_mode.get("pt0_activation_approved") is True
+        and paper_operational_mode.get("pt1_product_access_checked") is True
+        and paper_operational_mode.get("paper_order_submission_allowed") is False
+        and paper_operational_mode.get("broker_post_allowed") is False
+        and paper_operational_mode.get("live_endpoint_allowed") is False
+        and paper_operational_mode.get("live_capital_enabled") is False
+        and paper_operational_mode.get("qctrl_direct_execution_allowed") is False
+        and paper_operational_mode.get("qctrl_broker_post_allowed") is False
+        and paper_operational_mode.get("phase7_proof_credit_allowed") is False
+        and paper_operational_mode.get("forced_trades_allowed") is False
+        and _int(paper_operational_mode.get("broker_post_called_count")) == 0
+        and _int(paper_operational_mode.get("alpaca_post_called_count")) == 0
+        and _int(paper_operational_mode.get("live_endpoint_called_count")) == 0
+        and not validate_paper_operational_mode(paper_operational_mode)
     )
     qctrl_consultation_ready = (
         settings.qctrl_paper_consultation_enabled
@@ -349,6 +378,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
                 f"blocker={paper_live_qctrl_product_access.get('product_access_blocker')}"
             ),
             "required_for_full_paper_ops": False,
+        },
+        {
+            "key": "global_paper_operational_mode_enabled",
+            "ready": paper_operational_mode_ready,
+            "status": str(paper_operational_mode.get("status") or "missing"),
+            "detail": (
+                f"effective={paper_operational_mode.get('paper_operational_mode_effective')}; "
+                f"settings_flag={paper_operational_mode.get('settings_paper_operational_enabled')}; "
+                f"override={paper_operational_mode.get('runtime_artifact_override_enabled')}; "
+                f"qctrl_blocker={paper_operational_mode.get('qctrl_product_access_blocker')}"
+            ),
+            "required_for_full_paper_ops": True,
         },
         {
             "key": "strategy_research_intake_connected",
@@ -546,7 +587,12 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
 
 def _blockers(settings: Settings, capabilities: list[dict[str, Any]]) -> list[str]:
     blockers: list[str] = []
-    if not settings.paper_operational_enabled:
+    runtime_mode_ready = any(
+        capability["key"] == "global_paper_operational_mode_enabled"
+        and capability["ready"]
+        for capability in capabilities
+    )
+    if not settings.paper_operational_enabled and not runtime_mode_ready:
         blockers.append("paper_operational_flag_disabled")
     for capability in capabilities:
         if capability["required_for_full_paper_ops"] and not capability["ready"]:
@@ -559,6 +605,11 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Restore paper-only safety before continuing"
     if "paper_live_activation_approved_not_ready" in blockers:
         return "Run PT-0 paper-live activation charter"
+    if (
+        "global_paper_operational_mode_enabled_not_ready" in blockers
+        or "paper_operational_flag_disabled" in blockers
+    ):
+        return "Run PT-2 global PaperOps runtime mode enablement"
     if "paperops_30_day_operations_active_not_ready" in blockers:
         return "Run PaperOps-6 30-day paper operations scheduler binding"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
@@ -569,8 +620,6 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Run PaperOps-3 paper lifecycle poller after PaperOps-2 has a submitted paper order"
     if "paper_exit_path_connected_not_ready" in blockers:
         return "Enable PaperOps-4 guarded paper exit path after open-position readback exists"
-    if "paper_operational_flag_disabled" in blockers:
-        return "PaperOps full-mode enablement review"
     return "Run PaperOps-1 operational cycle"
 
 
@@ -602,6 +651,15 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     strategy_research = snapshot["strategy_research"]
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
+    paper_operational_mode = snapshot["paper_operational_mode"]
+    paper_operational_mode_ready = any(
+        capability["key"] == "global_paper_operational_mode_enabled"
+        and capability["ready"]
+        for capability in capabilities
+    )
+    paper_operational_enabled_effective = (
+        settings.paper_operational_enabled or paper_operational_mode_ready
+    )
 
     artifact = {
         "schema_version": PAPER_OPS_SCHEMA_VERSION,
@@ -620,7 +678,58 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "runtime_artifact_path": None,
         "history_log_path": None,
         "mode": settings.mode,
-        "paper_operational_enabled": settings.paper_operational_enabled,
+        "paper_operational_enabled": paper_operational_enabled_effective,
+        "settings_paper_operational_enabled": settings.paper_operational_enabled,
+        "paper_operational_mode_status": paper_operational_mode.get("status", "missing"),
+        "paper_operational_mode_enabled": (
+            paper_operational_mode.get("paper_operational_mode_enabled") is True
+        ),
+        "paper_operational_mode_effective": paper_operational_mode_ready,
+        "paper_operational_mode_settings_flag": (
+            paper_operational_mode.get("settings_paper_operational_enabled") is True
+        ),
+        "paper_operational_mode_runtime_artifact_override_enabled": (
+            paper_operational_mode.get("runtime_artifact_override_enabled") is True
+        ),
+        "paper_operational_mode_flag_disabled": (
+            paper_operational_mode.get("paper_operational_flag_disabled") is True
+        ),
+        "paper_operational_mode_env_file_edited": (
+            paper_operational_mode.get("env_file_edited") is True
+        ),
+        "paper_operational_mode_paper_order_submission_allowed": (
+            paper_operational_mode.get("paper_order_submission_allowed") is True
+        ),
+        "paper_operational_mode_broker_post_allowed": (
+            paper_operational_mode.get("broker_post_allowed") is True
+        ),
+        "paper_operational_mode_broker_post_called_count": _int(
+            paper_operational_mode.get("broker_post_called_count")
+        ),
+        "paper_operational_mode_alpaca_post_called_count": _int(
+            paper_operational_mode.get("alpaca_post_called_count")
+        ),
+        "paper_operational_mode_live_endpoint_called_count": _int(
+            paper_operational_mode.get("live_endpoint_called_count")
+        ),
+        "paper_operational_mode_live_capital_enabled": (
+            paper_operational_mode.get("live_capital_enabled") is True
+        ),
+        "paper_operational_mode_qctrl_direct_execution_allowed": (
+            paper_operational_mode.get("qctrl_direct_execution_allowed") is True
+        ),
+        "paper_operational_mode_qctrl_broker_post_allowed": (
+            paper_operational_mode.get("qctrl_broker_post_allowed") is True
+        ),
+        "paper_operational_mode_phase7_proof_credit_allowed": (
+            paper_operational_mode.get("phase7_proof_credit_allowed") is True
+        ),
+        "paper_operational_mode_forced_trades_allowed": (
+            paper_operational_mode.get("forced_trades_allowed") is True
+        ),
+        "paper_operational_mode_qctrl_product_access_blocker": (
+            paper_operational_mode.get("qctrl_product_access_blocker", "missing")
+        ),
         "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
         "alpaca_paper_exit_enabled": settings.alpaca_paper_exit_enabled,
         "paper_operational_max_notional_gbp": settings.paper_operational_max_notional_gbp,
@@ -1025,9 +1134,32 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_live_qctrl_broker_post_called_count",
         "paper_live_qctrl_alpaca_post_called_count",
         "paper_live_qctrl_live_endpoint_called_count",
+        "paper_operational_mode_broker_post_called_count",
+        "paper_operational_mode_alpaca_post_called_count",
+        "paper_operational_mode_live_endpoint_called_count",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
+    if artifact.get("paper_operational_mode_status") != "enabled_pending_downstream_gates":
+        errors.append("paper_ops_paper_operational_mode_not_enabled")
+    if artifact.get("paper_operational_mode_enabled") is not True:
+        errors.append("paper_ops_paper_operational_mode_enabled_false")
+    if artifact.get("paper_operational_mode_effective") is not True:
+        errors.append("paper_ops_paper_operational_mode_not_effective")
+    if artifact.get("paper_operational_mode_flag_disabled") is not False:
+        errors.append("paper_ops_paper_operational_mode_flag_disabled")
+    for key in (
+        "paper_operational_mode_env_file_edited",
+        "paper_operational_mode_paper_order_submission_allowed",
+        "paper_operational_mode_broker_post_allowed",
+        "paper_operational_mode_live_capital_enabled",
+        "paper_operational_mode_qctrl_direct_execution_allowed",
+        "paper_operational_mode_qctrl_broker_post_allowed",
+        "paper_operational_mode_phase7_proof_credit_allowed",
+        "paper_operational_mode_forced_trades_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_paper_operational_mode_forbidden:{key}")
     if artifact.get("paper_live_activation_status") != "approved_pending_later_enablement":
         errors.append("paper_ops_paper_live_activation_not_approved")
     if artifact.get("paper_live_activation_approval_state") != "approved":

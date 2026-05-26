@@ -191,6 +191,7 @@ def read_latest_paperops_notification_review(
 def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
     runtime = _runtime_dir(settings)
     return {
+        "paper_operational_mode": _read_json(runtime / "paper_operational_mode.json"),
         "readiness": _read_json(runtime / "paper_operational_readiness.json"),
         "qctrl": _read_json(runtime / "paperops_qctrl_paper_consultation.json"),
         "alpaca_post": _read_json(runtime / "paperops_alpaca_paper_post.json"),
@@ -203,10 +204,19 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
 
 def _derived_blockers(settings: Settings, source: dict[str, dict[str, Any]]) -> list[str]:
     blockers: list[str] = []
+    paper_operational_mode = source["paper_operational_mode"]
     qctrl = source["qctrl"]
     alpaca_post = source["alpaca_post"]
     exit_path = source["exit_path"]
-    if not settings.paper_operational_enabled:
+    paper_operational_mode_effective = (
+        paper_operational_mode.get("status") == "enabled_pending_downstream_gates"
+        and paper_operational_mode.get("paper_operational_mode_effective") is True
+        and paper_operational_mode.get("paper_order_submission_allowed") is False
+        and paper_operational_mode.get("broker_post_allowed") is False
+        and paper_operational_mode.get("live_capital_enabled") is False
+        and paper_operational_mode.get("phase7_proof_credit_allowed") is False
+    )
+    if not settings.paper_operational_enabled and not paper_operational_mode_effective:
         blockers.append("paper_operational_flag_disabled")
     if (
         settings.quantum_paper_parity_required
@@ -571,7 +581,20 @@ def build_paperops_notification_review(settings: Settings | None = None) -> dict
         "runtime_artifact_path": None,
         "history_log_path": None,
         "mode": settings.mode,
-        "paper_operational_enabled": settings.paper_operational_enabled,
+        "paper_operational_enabled": (
+            settings.paper_operational_enabled
+            or source["paper_operational_mode"].get("paper_operational_mode_effective")
+            is True
+        ),
+        "settings_paper_operational_enabled": settings.paper_operational_enabled,
+        "paper_operational_mode_status": source["paper_operational_mode"].get(
+            "status",
+            "missing",
+        ),
+        "paper_operational_mode_effective": (
+            source["paper_operational_mode"].get("paper_operational_mode_effective")
+            is True
+        ),
         "live_capital_enabled": settings.live_capital_enabled,
         "telegram_status": telegram_status.get("status", "unknown"),
         "telegram_mode": telegram_status.get("mode", "unknown"),

@@ -39,6 +39,7 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         "scripts/check_paper_live_qctrl_product_access.py",
         True,
     ),
+    ("paper_operational_mode", "scripts/check_paper_operational_mode.py", True),
     ("quantum_provider_readiness", "scripts/check_quantum_provider_readiness.py", True),
     ("head_of_quant_oracle", "scripts/check_quantum_oracle.py", True),
     ("paperops_qctrl_consultation", "scripts/check_paperops_qctrl_consultation.py", True),
@@ -135,12 +136,15 @@ def recommended_next_stage(
 ) -> str:
     if not safe_to_continue:
         return "Fix failed PaperOps command or hard safety failure"
+    if (
+        "global_paper_operational_mode_enabled_not_ready" in blockers
+        or "paper_operational_flag_disabled" in blockers
+    ):
+        return "PT-2 global PaperOps runtime mode enablement"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
         return "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:
         return "PaperOps-2 explicit Alpaca paper POST gate"
-    if "paper_operational_flag_disabled" in blockers:
-        return "PaperOps full-mode enablement review"
     return "PaperOps-4 paper exit path"
 
 
@@ -184,6 +188,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    paper_operational_mode = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paper_operational_mode"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -208,6 +220,7 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_paper_live_qctrl_broker_post_called_count",
             "paper_ops_paper_live_qctrl_alpaca_post_called_count",
             "paper_ops_paper_live_qctrl_live_endpoint_called_count",
+            "paper_ops_paper_operational_mode_broker_post_called_count",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -237,7 +250,92 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         "runtime_artifact_path": None,
         "history_log_path": None,
         "mode": settings.mode,
-        "paper_operational_enabled": settings.paper_operational_enabled,
+        "paper_operational_enabled": (
+            readiness.get("paper_ops_enabled") == "True"
+            or settings.paper_operational_enabled
+        ),
+        "settings_paper_operational_enabled": settings.paper_operational_enabled,
+        "paper_operational_mode_status": paper_operational_mode.get(
+            "paper_operational_mode_status"
+        ),
+        "paper_operational_mode_enabled": (
+            paper_operational_mode.get("paper_operational_mode_enabled") == "True"
+        ),
+        "paper_operational_mode_effective": (
+            paper_operational_mode.get("paper_operational_mode_effective") == "True"
+        ),
+        "paper_operational_mode_settings_flag": (
+            paper_operational_mode.get("paper_operational_mode_settings_flag") == "True"
+        ),
+        "paper_operational_mode_runtime_artifact_override_enabled": (
+            paper_operational_mode.get(
+                "paper_operational_mode_runtime_artifact_override_enabled"
+            )
+            == "True"
+        ),
+        "paper_operational_mode_flag_disabled": (
+            paper_operational_mode.get("paper_operational_mode_flag_disabled") == "True"
+        ),
+        "paper_operational_mode_env_file_edited": (
+            paper_operational_mode.get("paper_operational_mode_env_file_edited")
+            == "True"
+        ),
+        "paper_operational_mode_paper_order_submission_allowed": (
+            paper_operational_mode.get(
+                "paper_operational_mode_paper_order_submission_allowed"
+            )
+            == "True"
+        ),
+        "paper_operational_mode_broker_post_called_count": int(
+            paper_operational_mode.get(
+                "paper_operational_mode_broker_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "paper_operational_mode_alpaca_post_called_count": int(
+            paper_operational_mode.get(
+                "paper_operational_mode_alpaca_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "paper_operational_mode_live_endpoint_called_count": int(
+            paper_operational_mode.get(
+                "paper_operational_mode_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "paper_operational_mode_live_capital_enabled": (
+            paper_operational_mode.get("paper_operational_mode_live_capital_enabled")
+            == "True"
+        ),
+        "paper_operational_mode_qctrl_direct_execution_allowed": (
+            paper_operational_mode.get(
+                "paper_operational_mode_qctrl_direct_execution_allowed"
+            )
+            == "True"
+        ),
+        "paper_operational_mode_qctrl_broker_post_allowed": (
+            paper_operational_mode.get("paper_operational_mode_qctrl_broker_post_allowed")
+            == "True"
+        ),
+        "paper_operational_mode_phase7_proof_credit_allowed": (
+            paper_operational_mode.get(
+                "paper_operational_mode_phase7_proof_credit_allowed"
+            )
+            == "True"
+        ),
+        "paper_operational_mode_forced_trades_allowed": (
+            paper_operational_mode.get("paper_operational_mode_forced_trades_allowed")
+            == "True"
+        ),
+        "paper_operational_mode_qctrl_product_access_blocker": (
+            paper_operational_mode.get(
+                "paper_operational_mode_qctrl_product_access_blocker"
+            )
+        ),
         "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
         "quantum_paper_parity_required": settings.quantum_paper_parity_required,
         "qctrl_paper_consultation_enabled": settings.qctrl_paper_consultation_enabled,
@@ -628,6 +726,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "paper_live_qctrl_broker_post_called_count",
         "paper_live_qctrl_alpaca_post_called_count",
         "paper_live_qctrl_live_endpoint_called_count",
+        "paper_operational_mode_broker_post_called_count",
+        "paper_operational_mode_alpaca_post_called_count",
+        "paper_operational_mode_live_endpoint_called_count",
         "unsafe_write_counter_total",
     ):
         try:
@@ -652,6 +753,25 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_paper_live_activation_qctrl_not_required")
     if artifact.get("paper_live_activation_qctrl_direct_execution_allowed") is not False:
         errors.append("paper_ops_cycle_paper_live_activation_qctrl_execution_authority")
+    if artifact.get("paper_operational_mode_status") != "enabled_pending_downstream_gates":
+        errors.append("paper_ops_cycle_paper_operational_mode_not_enabled")
+    if artifact.get("paper_operational_mode_enabled") is not True:
+        errors.append("paper_ops_cycle_paper_operational_mode_enabled_false")
+    if artifact.get("paper_operational_mode_effective") is not True:
+        errors.append("paper_ops_cycle_paper_operational_mode_not_effective")
+    if artifact.get("paper_operational_mode_flag_disabled") is not False:
+        errors.append("paper_ops_cycle_paper_operational_mode_flag_disabled")
+    for key in (
+        "paper_operational_mode_env_file_edited",
+        "paper_operational_mode_paper_order_submission_allowed",
+        "paper_operational_mode_live_capital_enabled",
+        "paper_operational_mode_qctrl_direct_execution_allowed",
+        "paper_operational_mode_qctrl_broker_post_allowed",
+        "paper_operational_mode_phase7_proof_credit_allowed",
+        "paper_operational_mode_forced_trades_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_cycle_paper_operational_mode_forbidden:{key}")
     if artifact.get("paper_live_qctrl_product_access_status") not in {
         "blocked_qctrl_product_access_or_subscription",
         "qctrl_paper_consultation_ready",
@@ -745,6 +865,10 @@ def write_paper_operational_cycle(
             ],
             "paper_live_qctrl_provider_call_count": written[
                 "paper_live_qctrl_provider_call_count"
+            ],
+            "paper_operational_mode_status": written["paper_operational_mode_status"],
+            "paper_operational_mode_effective": written[
+                "paper_operational_mode_effective"
             ],
             "alpaca_paper_post_gate_status": written["alpaca_paper_post_gate_status"],
             "alpaca_paper_post_called_count": written["alpaca_paper_post_called_count"],
@@ -857,6 +981,42 @@ def main() -> int:
     print(
         "paper_ops_cycle_paper_live_qctrl_product_access_blocker="
         f"{written['paper_live_qctrl_product_access_blocker']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_status="
+        f"{written['paper_operational_mode_status']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_enabled="
+        f"{written['paper_operational_mode_enabled']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_effective="
+        f"{written['paper_operational_mode_effective']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_settings_flag="
+        f"{written['paper_operational_mode_settings_flag']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_runtime_artifact_override_enabled="
+        f"{written['paper_operational_mode_runtime_artifact_override_enabled']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_flag_disabled="
+        f"{written['paper_operational_mode_flag_disabled']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_paper_order_submission_allowed="
+        f"{written['paper_operational_mode_paper_order_submission_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_broker_post_called_count="
+        f"{written['paper_operational_mode_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_paper_operational_mode_qctrl_product_access_blocker="
+        f"{written['paper_operational_mode_qctrl_product_access_blocker']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

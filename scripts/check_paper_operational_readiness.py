@@ -83,6 +83,35 @@ def main() -> int:
         paper_live_qctrl_counter_probe
     )
 
+    paper_operational_mode_disabled_probe = deepcopy(written)
+    paper_operational_mode_disabled_probe["paper_operational_mode_effective"] = False
+    paper_operational_mode_disabled_errors = validate_paper_operational_readiness(
+        paper_operational_mode_disabled_probe
+    )
+
+    paper_operational_mode_env_probe = deepcopy(written)
+    paper_operational_mode_env_probe["paper_operational_mode_env_file_edited"] = True
+    paper_operational_mode_env_errors = validate_paper_operational_readiness(
+        paper_operational_mode_env_probe
+    )
+
+    paper_operational_mode_submit_probe = deepcopy(written)
+    paper_operational_mode_submit_probe[
+        "paper_operational_mode_paper_order_submission_allowed"
+    ] = True
+    paper_operational_mode_submit_errors = validate_paper_operational_readiness(
+        paper_operational_mode_submit_probe
+    )
+
+    paper_operational_mode_broker_probe = deepcopy(written)
+    paper_operational_mode_broker_probe["paper_operational_mode_broker_post_allowed"] = True
+    paper_operational_mode_broker_probe[
+        "paper_operational_mode_broker_post_called_count"
+    ] = 1
+    paper_operational_mode_broker_errors = validate_paper_operational_readiness(
+        paper_operational_mode_broker_probe
+    )
+
     broker_post_probe = deepcopy(written)
     broker_post_probe["broker_post_called_count"] = 1
     broker_post_probe["alpaca_post_called_count"] = 1
@@ -197,6 +226,50 @@ def main() -> int:
     print(f"paper_ops_event_log_path={event_log_path}")
     print(f"paper_ops_mode={written['mode']}")
     print(f"paper_ops_enabled={written['paper_operational_enabled']}")
+    print(
+        "paper_ops_settings_paper_operational_enabled="
+        f"{written['settings_paper_operational_enabled']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_status="
+        f"{written['paper_operational_mode_status']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_enabled="
+        f"{written['paper_operational_mode_enabled']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_effective="
+        f"{written['paper_operational_mode_effective']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_settings_flag="
+        f"{written['paper_operational_mode_settings_flag']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_runtime_artifact_override_enabled="
+        f"{written['paper_operational_mode_runtime_artifact_override_enabled']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_flag_disabled="
+        f"{written['paper_operational_mode_flag_disabled']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_env_file_edited="
+        f"{written['paper_operational_mode_env_file_edited']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_paper_order_submission_allowed="
+        f"{written['paper_operational_mode_paper_order_submission_allowed']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_broker_post_called_count="
+        f"{written['paper_operational_mode_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_paper_operational_mode_qctrl_product_access_blocker="
+        f"{written['paper_operational_mode_qctrl_product_access_blocker']}"
+    )
     print(f"paper_ops_alpaca_paper_submit_enabled={written['alpaca_paper_submit_enabled']}")
     print(f"paper_ops_paper_live_activation_status={written['paper_live_activation_status']}")
     print(
@@ -544,6 +617,18 @@ def main() -> int:
         errors.append("PT-1 Q-CTRL product access gives broker authority")
     if written["paper_live_qctrl_phase7_proof_credit_allowed"] is not False:
         errors.append("PT-1 Q-CTRL product access grants proof credit")
+    if written["paper_operational_mode_status"] != "enabled_pending_downstream_gates":
+        errors.append("PT-2 global paper operational mode is not enabled")
+    if written["paper_operational_mode_effective"] is not True:
+        errors.append("PT-2 global paper operational mode is not effective")
+    if written["paper_operational_mode_flag_disabled"] is not False:
+        errors.append("PT-2 runtime paper operational flag remains disabled")
+    if written["paper_operational_mode_env_file_edited"] is not False:
+        errors.append("PT-2 edited the environment file")
+    if written["paper_operational_mode_paper_order_submission_allowed"] is not False:
+        errors.append("PT-2 opened paper-order submission authority")
+    if written["paper_operational_mode_broker_post_called_count"] != 0:
+        errors.append("PT-2 recorded broker POST calls")
     if written["safe_to_continue_paper_only"] is not True:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
@@ -596,6 +681,35 @@ def main() -> int:
         not in paper_live_qctrl_counter_errors
     ):
         errors.append("PT-1 Q-CTRL broker-counter probe was not rejected")
+    if (
+        "paper_ops_paper_operational_mode_not_effective"
+        not in paper_operational_mode_disabled_errors
+    ):
+        errors.append("PT-2 mode-disabled probe was not rejected")
+    if (
+        "paper_ops_paper_operational_mode_forbidden:"
+        "paper_operational_mode_env_file_edited"
+        not in paper_operational_mode_env_errors
+    ):
+        errors.append("PT-2 env-file probe was not rejected")
+    if (
+        "paper_ops_paper_operational_mode_forbidden:"
+        "paper_operational_mode_paper_order_submission_allowed"
+        not in paper_operational_mode_submit_errors
+    ):
+        errors.append("PT-2 submit-authority probe was not rejected")
+    if (
+        "paper_ops_paper_operational_mode_forbidden:"
+        "paper_operational_mode_broker_post_allowed"
+        not in paper_operational_mode_broker_errors
+    ):
+        errors.append("PT-2 broker-authority probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "paper_operational_mode_broker_post_called_count"
+        not in paper_operational_mode_broker_errors
+    ):
+        errors.append("PT-2 broker-counter probe was not rejected")
     if "paper_ops_unsafe_counter_nonzero:broker_post_called_count" not in broker_post_errors:
         errors.append("broker POST probe was not rejected")
     if (
