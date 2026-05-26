@@ -1220,7 +1220,35 @@ Outcome:
 
 Next stage:
 
-- D11G - Sources And Evidence Consolidation.
+- D11G - Evidence View Consolidation.
+
+### D11G - Evidence View Consolidation
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11g-evidence-view-consolidation-2026-05-26.md`
+- `scripts/check_dashboard_d11g_evidence_view_consolidation.js`
+
+Outcome:
+
+- The Evidence view now presents one consolidated source/evidence readout
+  instead of a repeated Watching panel brief plus separate source summary strip.
+- Source-to-setup links, source reliability, supplemental context, and factual
+  evidence packets are grouped into four review drawers.
+- The detailed source ledger remains available as an advanced diagnostic drawer
+  instead of dominating the first screen.
+- Yahoo Finance and Preference/PREF remain labelled as supplemental context,
+  not source quorum or proof.
+- Factual evidence packets stay separate from private priors and do not imply
+  trade, broker, proof-credit, or live-capital authority.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11H - Reasoning View Consolidation.
 
 ## 8. Implementation Order
 

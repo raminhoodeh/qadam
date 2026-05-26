@@ -36,7 +36,6 @@ function staticBriefBlock(id) {
 }
 
 [
-    "watching",
     "cognition",
     "forbidden_actions",
     "telegram_communications",
@@ -71,8 +70,8 @@ function staticBriefBlock(id) {
     ".panel-brief.blocked"
 ].forEach((needle) => assertText(css, needle, "panel redesign CSS"));
 
-assertText(html, "/auth.css?v=20260526-d11e-overview-rebuild", "stylesheet cache key");
-assertText(html, "/dashboard.js?v=20260526-d11e-overview-rebuild", "dashboard script cache key");
+assertText(html, "/auth.css?v=20260526-d11g-evidence-view", "stylesheet cache key");
+assertText(html, "/dashboard.js?v=20260526-d11g-evidence-view", "dashboard script cache key");
 assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
 
 (async () => {
