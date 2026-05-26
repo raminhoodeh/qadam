@@ -74,6 +74,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_d11l_visual_simplification.js",
     "scripts/check_dashboard_d11m_regression_acceptance.js",
     "scripts/check_dashboard_d11n_documentation_guide_alignment.js",
+    "scripts/check_dashboard_d11o_deployment_discipline.js",
     "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_durable_spine.js",
     "scripts/check_dashboard_renderer.js",

@@ -140,7 +140,8 @@ function assertPlanAndChecks() {
         "D11N - Documentation And Guide Alignment",
         "docs/qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md",
         "scripts/check_dashboard_d11n_documentation_guide_alignment.js",
-        "D11O - Performance View Consolidation"
+        "D11O - Deployment Discipline",
+        "D11P - Performance View Consolidation"
     ], "D11N master plan");
     includesAll(protectedGuideCheck, [
         "Overview view",
@@ -152,7 +153,8 @@ function assertPlanAndChecks() {
     ], "protected guide checker alignment");
     includesAll(d11mCheck, [
         "D11N - Documentation And Guide Alignment",
-        "D11O - Performance View Consolidation"
+        "D11O - Deployment Discipline",
+        "D11P - Performance View Consolidation"
     ], "D11M next-stage alignment");
     includesAll(preflight, [
         "node scripts/check_dashboard_d11m_regression_acceptance.js",
