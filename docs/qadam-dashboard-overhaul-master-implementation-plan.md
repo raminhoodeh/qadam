@@ -1420,13 +1420,43 @@ Outcome:
 - The dashboard preflight now runs the D11M checker, and the dashboard
   acceptance gate treats it as a required dependency.
 - Performance remains consolidated inside Trades for now; a deeper performance
-  cleanup has moved to D11N.
+  cleanup has moved to D11O.
 - Runtime authority, provider calls, broker writes, Telegram command behavior,
   proof-credit rules, and live-capital state are unchanged.
 
 Next stage:
 
-- D11N - Performance View Consolidation.
+- D11N - Documentation And Guide Alignment.
+
+### D11N - Documentation And Guide Alignment
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md`
+- `scripts/check_dashboard_d11n_documentation_guide_alignment.js`
+
+Outcome:
+
+- The protected User Guide now teaches the simplified five-view dashboard:
+  Overview, Trades, Evidence, Reasoning, and Operations.
+- The first tour and daily operating routine now start from Overview, read the
+  single safety strip first, and route deeper work through the same nav labels
+  the dashboard exposes.
+- Old panel names such as Mission Control, Watching, Cognition, Trade Layer,
+  Money, Forbidden, Process Console, Comments, and Communications are retained
+  only as implementation-term mappings.
+- The guide explains the two-level system map: Overview has the compact
+  mini-map, while Operations has the full expandable system map and diagnostics.
+- The protected guide checker and dashboard preflight now enforce the guide
+  alignment contract.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11O - Performance View Consolidation.
 
 ## 8. Implementation Order
 
