@@ -1192,7 +1192,35 @@ Outcome:
 
 Next stage:
 
-- D11F - Merge Duplicate Detail Panels.
+- D11F - Trades View Consolidation.
+
+### D11F - Trades View Consolidation
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11f-trades-view-consolidation-2026-05-26.md`
+- `scripts/check_dashboard_d11f_trades_view_consolidation.js`
+
+Outcome:
+
+- The Trades view now has one primary lifecycle board and one consolidated
+  trade readout before diagnostics.
+- The duplicate static trade-route strip and duplicate Trade Layer panel brief
+  are removed.
+- Detailed trade diagnostics are grouped into three review drawers: proof and
+  paper lifecycle, gate chain and broker readiness, and signals/candidates/
+  paper states.
+- Existing backend-derived phase diagnostics remain visible inside the grouped
+  review drawers.
+- Candidate/order and proof-credit boundaries remain explicit.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11G - Sources And Evidence Consolidation.
 
 ## 8. Implementation Order
 
