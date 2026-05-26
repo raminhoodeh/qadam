@@ -152,6 +152,50 @@ def main() -> int:
         qualified_setup_source_probe
     )
 
+    auto_approval_submit_probe = deepcopy(written)
+    auto_approval_submit_probe[
+        "auto_approval_staged_order_paper_order_submission_allowed"
+    ] = True
+    auto_approval_submit_errors = validate_paper_operational_readiness(
+        auto_approval_submit_probe
+    )
+
+    auto_approval_broker_probe = deepcopy(written)
+    auto_approval_broker_probe[
+        "auto_approval_staged_order_broker_post_called_count"
+    ] = 1
+    auto_approval_broker_errors = validate_paper_operational_readiness(
+        auto_approval_broker_probe
+    )
+
+    auto_approval_proof_probe = deepcopy(written)
+    auto_approval_proof_probe[
+        "auto_approval_staged_order_phase7_proof_credit_allowed"
+    ] = True
+    auto_approval_proof_errors = validate_paper_operational_readiness(
+        auto_approval_proof_probe
+    )
+
+    auto_approval_q7_mutation_probe = deepcopy(written)
+    auto_approval_q7_mutation_probe[
+        "auto_approval_staged_order_q7_source_ledger_mutation_performed"
+    ] = True
+    auto_approval_q7_mutation_errors = validate_paper_operational_readiness(
+        auto_approval_q7_mutation_probe
+    )
+
+    auto_approval_prewrite_probe = deepcopy(written)
+    auto_approval_prewrite_probe[
+        "auto_approval_staged_order_event_log_prewrite_written_count"
+    ] = max(
+        0,
+        int(written["auto_approval_staged_order_event_log_prewrite_written_count"])
+        - 1,
+    )
+    auto_approval_prewrite_errors = validate_paper_operational_readiness(
+        auto_approval_prewrite_probe
+    )
+
     broker_post_probe = deepcopy(written)
     broker_post_probe["broker_post_called_count"] = 1
     broker_post_probe["alpaca_post_called_count"] = 1
@@ -465,6 +509,58 @@ def main() -> int:
         "paper_ops_qualified_setup_production_unsafe_write_counter_total="
         f"{written['qualified_setup_production_unsafe_write_counter_total']}"
     )
+    print(
+        "paper_ops_auto_approval_staged_order_status="
+        f"{written['auto_approval_staged_order_status']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_source_pt3_status="
+        f"{written['auto_approval_staged_order_source_pt3_status']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_source_pt3_path_ready="
+        f"{written['auto_approval_staged_order_source_pt3_path_ready']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_auto_approved_setup_count="
+        f"{written['auto_approval_staged_order_auto_approved_setup_count']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_staged_order_count="
+        f"{written['auto_approval_staged_order_staged_order_count']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_ready_for_paperops2_submit="
+        f"{written['auto_approval_staged_order_ready_for_paperops2_submit']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_event_log_prewrite_written_count="
+        f"{written['auto_approval_staged_order_event_log_prewrite_written_count']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_q7_source_ledger_mutation_performed="
+        f"{written['auto_approval_staged_order_q7_source_ledger_mutation_performed']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_paper_order_submission_allowed="
+        f"{written['auto_approval_staged_order_paper_order_submission_allowed']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_broker_post_called_count="
+        f"{written['auto_approval_staged_order_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_live_endpoint_called_count="
+        f"{written['auto_approval_staged_order_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_phase7_proof_credit_allowed="
+        f"{written['auto_approval_staged_order_phase7_proof_credit_allowed']}"
+    )
+    print(
+        "paper_ops_auto_approval_staged_order_unsafe_write_counter_total="
+        f"{written['auto_approval_staged_order_unsafe_write_counter_total']}"
+    )
     print(f"paper_ops_strategy_research_intake_status={written['strategy_research_intake_status']}")
     print(f"paper_ops_strategy_research_candidate_count={written['strategy_research_candidate_count']}")
     print(
@@ -705,6 +801,30 @@ def main() -> int:
         errors.append("PT-2 opened paper-order submission authority")
     if written["paper_operational_mode_broker_post_called_count"] != 0:
         errors.append("PT-2 recorded broker POST calls")
+    if written["auto_approval_staged_order_status"] not in {
+        "staged_paper_order_ready",
+        "ready_no_current_auto_approved_setup",
+    }:
+        errors.append("PT-4 auto-approval staged-order handoff is not ready")
+    if written["auto_approval_staged_order_source_pt3_path_ready"] is not True:
+        errors.append("PT-4 source PT-3 path is not ready")
+    if written["auto_approval_staged_order_staged_order_count"] < 1:
+        errors.append("PT-4 did not stage a paper order from the PT-3 setup")
+    if written["auto_approval_staged_order_ready_for_paperops2_submit"] is not True:
+        errors.append("PT-4 staged order is not ready for PaperOps-2")
+    if (
+        written["auto_approval_staged_order_event_log_prewrite_written_count"]
+        != written["auto_approval_staged_order_staged_order_count"]
+    ):
+        errors.append("PT-4 event-log prewrite count mismatch")
+    if written["auto_approval_staged_order_paper_order_submission_allowed"] is not False:
+        errors.append("PT-4 opened submit authority")
+    if written["auto_approval_staged_order_q7_source_ledger_mutation_performed"] is not False:
+        errors.append("PT-4 mutated the Q7 source ledger")
+    if written["auto_approval_staged_order_phase7_proof_credit_allowed"] is not False:
+        errors.append("PT-4 granted Phase 7 proof credit")
+    if written["auto_approval_staged_order_unsafe_write_counter_total"] != 0:
+        errors.append("PT-4 unsafe write counter is nonzero")
     if written["safe_to_continue_paper_only"] is not True:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
@@ -816,6 +936,35 @@ def main() -> int:
         not in qualified_setup_source_errors
     ):
         errors.append("PT-3 source-quorum bypass probe was not rejected")
+    if (
+        "paper_ops_auto_approval_staged_order_forbidden:"
+        "auto_approval_staged_order_paper_order_submission_allowed"
+        not in auto_approval_submit_errors
+    ):
+        errors.append("PT-4 submit-authority probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "auto_approval_staged_order_broker_post_called_count"
+        not in auto_approval_broker_errors
+    ):
+        errors.append("PT-4 broker-counter probe was not rejected")
+    if (
+        "paper_ops_auto_approval_staged_order_forbidden:"
+        "auto_approval_staged_order_phase7_proof_credit_allowed"
+        not in auto_approval_proof_errors
+    ):
+        errors.append("PT-4 proof-credit probe was not rejected")
+    if (
+        "paper_ops_auto_approval_staged_order_forbidden:"
+        "auto_approval_staged_order_q7_source_ledger_mutation_performed"
+        not in auto_approval_q7_mutation_errors
+    ):
+        errors.append("PT-4 Q7-ledger mutation probe was not rejected")
+    if (
+        "paper_ops_auto_approval_staged_order_prewrite_count_mismatch"
+        not in auto_approval_prewrite_errors
+    ):
+        errors.append("PT-4 prewrite-count probe was not rejected")
     if "paper_ops_unsafe_counter_nonzero:broker_post_called_count" not in broker_post_errors:
         errors.append("broker POST probe was not rejected")
     if (

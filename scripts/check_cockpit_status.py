@@ -1897,6 +1897,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_qualified_setup_production",
     "paperops_qualified_setup_production_qualified_count",
     "paperops_qualified_setup_production_ready_to_stage",
+    "paperops_auto_approval_staged_order",
+    "paperops_auto_approval_staged_order_staged_count",
+    "paperops_auto_approval_staged_order_ready_for_submit",
     "phase5_layer_b",
     "phase5_alpaca_paper_dry_run",
     "phase5_execution_adapter",
@@ -2068,6 +2071,35 @@ PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS = {
     "schema_version",
     "source_qualified_setup_ledger_count",
     "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_REQUIRED_FIELDS = {
+    "auto_approved_setup_count",
+    "boundary",
+    "broker_post_allowed",
+    "broker_post_called_count",
+    "event_log_event_count",
+    "event_log_prewrite_written_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_allowed",
+    "paper_order_submission_allowed",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "q7_auto_approval_artifact_mutation_performed",
+    "q7_source_ledger_mutation_performed",
+    "q7_staging_artifact_mutation_performed",
+    "ready_for_paperops2_submit",
+    "recorded",
+    "schema_version",
+    "source_pt3_path_ready",
+    "source_pt3_status",
+    "stage",
+    "staged_order_count",
     "status",
     "unsafe_write_counter_total",
     "validation_error_count",
@@ -2789,6 +2821,10 @@ def main() -> int:
         "paperops_qualified_setup_production",
         {},
     )
+    paperops_auto_approval_staged_order = payload.get(
+        "paperops_auto_approval_staged_order",
+        {},
+    )
     phase4_approval = phase4_strategy.get("approval_event", {})
     phase4_toggles = phase4_strategy.get("strategy_toggles", {})
     phase4_certification = phase4_strategy.get("certification", {})
@@ -2948,6 +2984,30 @@ def main() -> int:
     print(
         "cockpit_status_paperops_qualified_setup_production_unsafe_write_counter_total="
         f"{paperops_qualified_setup_production.get('unsafe_write_counter_total')}"
+    )
+    print(
+        "cockpit_status_paperops_auto_approval_staged_order_status="
+        f"{paperops_auto_approval_staged_order.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_auto_approval_staged_order_auto_approved_count="
+        f"{paperops_auto_approval_staged_order.get('auto_approved_setup_count')}"
+    )
+    print(
+        "cockpit_status_paperops_auto_approval_staged_order_staged_count="
+        f"{paperops_auto_approval_staged_order.get('staged_order_count')}"
+    )
+    print(
+        "cockpit_status_paperops_auto_approval_staged_order_ready_for_paperops2="
+        f"{paperops_auto_approval_staged_order.get('ready_for_paperops2_submit')}"
+    )
+    print(
+        "cockpit_status_paperops_auto_approval_staged_order_submit_allowed="
+        f"{paperops_auto_approval_staged_order.get('paper_order_submission_allowed')}"
+    )
+    print(
+        "cockpit_status_paperops_auto_approval_staged_order_unsafe_write_counter_total="
+        f"{paperops_auto_approval_staged_order.get('unsafe_write_counter_total')}"
     )
     print(f"cockpit_status_phase4_stage_status={phase4_strategy.get('stage_status')}")
     print(
@@ -6417,6 +6477,21 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_qualified_setup_ready_mismatch=true")
         return 1
+    if mission_stack.get("paperops_auto_approval_staged_order") != (
+        paperops_auto_approval_staged_order.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_pt4_status_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_auto_approval_staged_order_staged_count") != (
+        paperops_auto_approval_staged_order.get("staged_order_count")
+    ):
+        print("cockpit_status_mission_stack_paperops_pt4_staged_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_auto_approval_staged_order_ready_for_submit") != (
+        paperops_auto_approval_staged_order.get("ready_for_paperops2_submit")
+    ):
+        print("cockpit_status_mission_stack_paperops_pt4_ready_mismatch=true")
+        return 1
     missing_paper_live_fields = sorted(
         PAPER_LIVE_ACTIVATION_REQUIRED_FIELDS - set(paper_live_activation)
     )
@@ -6691,6 +6766,78 @@ def main() -> int:
         or "cannot force trades" not in qualified_setup_boundary
     ):
         print("cockpit_status_paperops_qualified_setup_production_boundary_weak=true")
+        return 1
+    missing_pt4_fields = sorted(
+        PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_REQUIRED_FIELDS
+        - set(paperops_auto_approval_staged_order)
+    )
+    if missing_pt4_fields:
+        print(
+            "cockpit_status_paperops_auto_approval_staged_order_fields_missing="
+            + ",".join(missing_pt4_fields)
+        )
+        return 1
+    if paperops_auto_approval_staged_order.get("status") not in {
+        "staged_paper_order_ready",
+        "ready_no_current_auto_approved_setup",
+    }:
+        print("cockpit_status_paperops_auto_approval_staged_order_not_ready=true")
+        return 1
+    if paperops_auto_approval_staged_order.get("public_safe") is not True:
+        print("cockpit_status_paperops_auto_approval_staged_order_not_public_safe=true")
+        return 1
+    if paperops_auto_approval_staged_order.get("recorded") is not True:
+        print("cockpit_status_paperops_auto_approval_staged_order_not_recorded=true")
+        return 1
+    if paperops_auto_approval_staged_order.get("event_log_written") is not True:
+        print("cockpit_status_paperops_auto_approval_staged_order_event_log_not_written=true")
+        return 1
+    if paperops_auto_approval_staged_order.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_auto_approval_staged_order_event_count_mismatch=true")
+        return 1
+    if paperops_auto_approval_staged_order.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_auto_approval_staged_order_validation_errors=true")
+        return 1
+    if paperops_auto_approval_staged_order.get("source_pt3_path_ready") is not True:
+        print("cockpit_status_paperops_auto_approval_staged_order_source_not_ready=true")
+        return 1
+    if int(paperops_auto_approval_staged_order.get("staged_order_count", 0) or 0) < 1:
+        print("cockpit_status_paperops_auto_approval_staged_order_staged_missing=true")
+        return 1
+    if (
+        paperops_auto_approval_staged_order.get("ready_for_paperops2_submit")
+        is not True
+    ):
+        print("cockpit_status_paperops_auto_approval_staged_order_not_ready_for_paperops2=true")
+        return 1
+    for key in (
+        "paper_order_submission_allowed",
+        "broker_post_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "q7_source_ledger_mutation_performed",
+        "q7_auto_approval_artifact_mutation_performed",
+        "q7_staging_artifact_mutation_performed",
+    ):
+        if paperops_auto_approval_staged_order.get(key) is not False:
+            print(f"cockpit_status_paperops_auto_approval_staged_order_forbidden={key}")
+            return 1
+    for key in (
+        "broker_post_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_auto_approval_staged_order.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paperops_auto_approval_staged_order_unsafe_counter={key}")
+            return 1
+    pt4_boundary = paperops_auto_approval_staged_order.get("boundary", "")
+    if (
+        "guarded paper-only auto-approval" not in pt4_boundary
+        or "cannot mutate the Q7 source ledger" not in pt4_boundary
+        or "cannot force trades" not in pt4_boundary
+    ):
+        print("cockpit_status_paperops_auto_approval_staged_order_boundary_weak=true")
         return 1
     if mission_stack.get("phase5_layer_b") != phase5_readiness.get("status"):
         print("cockpit_status_mission_stack_phase5_mismatch=true")

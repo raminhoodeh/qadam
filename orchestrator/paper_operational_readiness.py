@@ -19,6 +19,9 @@ from orchestrator.paper_operational_mode import validate_paper_operational_mode
 from orchestrator.paperops_qualified_setup_production import (
     validate_paperops_qualified_setup_production,
 )
+from orchestrator.paperops_auto_approval_staged_order import (
+    validate_paperops_auto_approval_staged_order,
+)
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -63,6 +66,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "qualified_setup_production_path_connected",
         "PT-3 must classify production qualified setups without forcing trades.",
+    ),
+    (
+        "paperops_auto_approval_staged_order_connected",
+        "PT-4 must auto-approve and stage PaperOps paper orders without submit authority.",
     ),
     ("qualified_setup_gate_connected", "Qualified setups must flow into Q7, even when count is zero."),
     ("auto_approval_connected", "Qualified setups must pass auto-approval without manual trade-level approval."),
@@ -159,6 +166,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "qualified_setup_production": _read_json(
             runtime / "paperops_qualified_setup_production.json"
         ),
+        "auto_approval_staged_order": _read_json(
+            runtime / "paperops_auto_approval_staged_order.json"
+        ),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -192,6 +202,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
     paper_operational_mode = snapshot["paper_operational_mode"]
     qualified_setup_production = snapshot["qualified_setup_production"]
+    auto_approval_staged_order = snapshot["auto_approval_staged_order"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -295,6 +306,38 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and _int(qualified_setup_production.get("unsafe_write_counter_total")) == 0
         and not validate_paperops_qualified_setup_production(
             qualified_setup_production
+        )
+    )
+    auto_approval_staged_order_ready = (
+        auto_approval_staged_order.get("status")
+        in {
+            "staged_paper_order_ready",
+            "ready_no_current_auto_approved_setup",
+        }
+        and auto_approval_staged_order.get("recorded") is True
+        and auto_approval_staged_order.get("event_log_written") is True
+        and _int(auto_approval_staged_order.get("event_log_event_count")) == 1
+        and auto_approval_staged_order.get("source_pt3_path_ready") is True
+        and auto_approval_staged_order.get("paper_order_submission_allowed") is False
+        and auto_approval_staged_order.get("broker_post_allowed") is False
+        and auto_approval_staged_order.get("live_endpoint_allowed") is False
+        and auto_approval_staged_order.get("live_capital_enabled") is False
+        and auto_approval_staged_order.get("phase7_proof_credit_allowed") is False
+        and auto_approval_staged_order.get("forced_trades_allowed") is False
+        and auto_approval_staged_order.get("manual_trade_level_override_allowed") is False
+        and auto_approval_staged_order.get("q7_source_ledger_mutation_performed") is False
+        and auto_approval_staged_order.get("q7_auto_approval_artifact_mutation_performed") is False
+        and auto_approval_staged_order.get("q7_staging_artifact_mutation_performed") is False
+        and _int(auto_approval_staged_order.get("broker_post_called_count")) == 0
+        and _int(auto_approval_staged_order.get("alpaca_post_called_count")) == 0
+        and _int(auto_approval_staged_order.get("live_endpoint_called_count")) == 0
+        and _int(auto_approval_staged_order.get("phase7_proof_credit_granted_count")) == 0
+        and _int(auto_approval_staged_order.get("forced_trade_count")) == 0
+        and _int(auto_approval_staged_order.get("unsafe_write_counter_total")) == 0
+        and _int(auto_approval_staged_order.get("event_log_prewrite_written_count"))
+        == _int(auto_approval_staged_order.get("staged_order_count"))
+        and not validate_paperops_auto_approval_staged_order(
+            auto_approval_staged_order
         )
     )
     qctrl_consultation_ready = (
@@ -506,6 +549,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "required_for_full_paper_ops": True,
         },
         {
+            "key": "paperops_auto_approval_staged_order_connected",
+            "ready": auto_approval_staged_order_ready,
+            "status": str(auto_approval_staged_order.get("status") or "missing"),
+            "detail": (
+                f"auto_approved={_int(auto_approval_staged_order.get('auto_approved_setup_count'))}; "
+                f"staged={_int(auto_approval_staged_order.get('staged_order_count'))}; "
+                f"ready_for_paperops2={auto_approval_staged_order.get('ready_for_paperops2_submit')}; "
+                f"submit_allowed={auto_approval_staged_order.get('paper_order_submission_allowed')}"
+            ),
+            "required_for_full_paper_ops": True,
+        },
+        {
             "key": "paper_broker_read_connected",
             "ready": str(portfolio.get("connection_status") or "").startswith("alpaca_paper"),
             "status": str(portfolio.get("connection_status") or "missing"),
@@ -664,6 +719,8 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Run PT-2 global PaperOps runtime mode enablement"
     if "paperops_30_day_operations_active_not_ready" in blockers:
         return "Run PaperOps-6 30-day paper operations scheduler binding"
+    if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
+        return "Run PT-4 auto-approval and staged paper-order handoff"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
         return "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:
@@ -705,6 +762,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
     paper_operational_mode = snapshot["paper_operational_mode"]
     qualified_setup_production = snapshot["qualified_setup_production"]
+    auto_approval_staged_order = snapshot["auto_approval_staged_order"]
     paper_operational_mode_ready = any(
         capability["key"] == "global_paper_operational_mode_enabled"
         and capability["ready"]
@@ -977,6 +1035,82 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         ),
         "qualified_setup_production_unsafe_write_counter_total": _int(
             qualified_setup_production.get("unsafe_write_counter_total")
+        ),
+        "auto_approval_staged_order_status": auto_approval_staged_order.get(
+            "status",
+            "missing",
+        ),
+        "auto_approval_staged_order_source_pt3_status": (
+            auto_approval_staged_order.get("source_pt3_status", "missing")
+        ),
+        "auto_approval_staged_order_source_pt3_path_ready": (
+            auto_approval_staged_order.get("source_pt3_path_ready") is True
+        ),
+        "auto_approval_staged_order_auto_approved_setup_count": _int(
+            auto_approval_staged_order.get("auto_approved_setup_count")
+        ),
+        "auto_approval_staged_order_staged_order_count": _int(
+            auto_approval_staged_order.get("staged_order_count")
+        ),
+        "auto_approval_staged_order_ready_for_paperops2_submit": (
+            auto_approval_staged_order.get("ready_for_paperops2_submit") is True
+        ),
+        "auto_approval_staged_order_event_log_prewrite_written_count": _int(
+            auto_approval_staged_order.get("event_log_prewrite_written_count")
+        ),
+        "auto_approval_staged_order_q7_source_ledger_mutation_performed": (
+            auto_approval_staged_order.get("q7_source_ledger_mutation_performed")
+            is True
+        ),
+        "auto_approval_staged_order_q7_auto_approval_artifact_mutation_performed": (
+            auto_approval_staged_order.get(
+                "q7_auto_approval_artifact_mutation_performed"
+            )
+            is True
+        ),
+        "auto_approval_staged_order_q7_staging_artifact_mutation_performed": (
+            auto_approval_staged_order.get("q7_staging_artifact_mutation_performed")
+            is True
+        ),
+        "auto_approval_staged_order_paper_order_submission_allowed": (
+            auto_approval_staged_order.get("paper_order_submission_allowed") is True
+        ),
+        "auto_approval_staged_order_broker_post_allowed": (
+            auto_approval_staged_order.get("broker_post_allowed") is True
+        ),
+        "auto_approval_staged_order_live_endpoint_allowed": (
+            auto_approval_staged_order.get("live_endpoint_allowed") is True
+        ),
+        "auto_approval_staged_order_live_capital_enabled": (
+            auto_approval_staged_order.get("live_capital_enabled") is True
+        ),
+        "auto_approval_staged_order_phase7_proof_credit_allowed": (
+            auto_approval_staged_order.get("phase7_proof_credit_allowed") is True
+        ),
+        "auto_approval_staged_order_forced_trades_allowed": (
+            auto_approval_staged_order.get("forced_trades_allowed") is True
+        ),
+        "auto_approval_staged_order_manual_trade_level_override_allowed": (
+            auto_approval_staged_order.get("manual_trade_level_override_allowed")
+            is True
+        ),
+        "auto_approval_staged_order_broker_post_called_count": _int(
+            auto_approval_staged_order.get("broker_post_called_count")
+        ),
+        "auto_approval_staged_order_alpaca_post_called_count": _int(
+            auto_approval_staged_order.get("alpaca_post_called_count")
+        ),
+        "auto_approval_staged_order_live_endpoint_called_count": _int(
+            auto_approval_staged_order.get("live_endpoint_called_count")
+        ),
+        "auto_approval_staged_order_phase7_proof_credit_granted_count": _int(
+            auto_approval_staged_order.get("phase7_proof_credit_granted_count")
+        ),
+        "auto_approval_staged_order_forced_trade_count": _int(
+            auto_approval_staged_order.get("forced_trade_count")
+        ),
+        "auto_approval_staged_order_unsafe_write_counter_total": _int(
+            auto_approval_staged_order.get("unsafe_write_counter_total")
         ),
         "safe_to_continue_paper_only": safe_to_continue,
         "full_paper_operational_ready": ready,
@@ -1280,6 +1414,12 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "qualified_setup_production_alpaca_post_called_count",
         "qualified_setup_production_live_endpoint_called_count",
         "qualified_setup_production_unsafe_write_counter_total",
+        "auto_approval_staged_order_broker_post_called_count",
+        "auto_approval_staged_order_alpaca_post_called_count",
+        "auto_approval_staged_order_live_endpoint_called_count",
+        "auto_approval_staged_order_phase7_proof_credit_granted_count",
+        "auto_approval_staged_order_forced_trade_count",
+        "auto_approval_staged_order_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -1341,6 +1481,42 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         != "supplemental_multi_source_data_plane"
     ):
         errors.append("paper_ops_qualified_setup_production_preference_not_supplemental")
+    if artifact.get("auto_approval_staged_order_status") not in {
+        "staged_paper_order_ready",
+        "ready_no_current_auto_approved_setup",
+    }:
+        errors.append("paper_ops_auto_approval_staged_order_not_ready")
+    if artifact.get("auto_approval_staged_order_source_pt3_path_ready") is not True:
+        errors.append("paper_ops_auto_approval_staged_order_source_not_ready")
+    if (
+        artifact.get("auto_approval_staged_order_status") == "staged_paper_order_ready"
+        and _int(artifact.get("auto_approval_staged_order_staged_order_count")) < 1
+    ):
+        errors.append("paper_ops_auto_approval_staged_order_missing_staged_order")
+    if (
+        artifact.get("auto_approval_staged_order_status") == "staged_paper_order_ready"
+        and artifact.get("auto_approval_staged_order_ready_for_paperops2_submit")
+        is not True
+    ):
+        errors.append("paper_ops_auto_approval_staged_order_not_ready_for_paperops2")
+    if _int(
+        artifact.get("auto_approval_staged_order_event_log_prewrite_written_count")
+    ) != _int(artifact.get("auto_approval_staged_order_staged_order_count")):
+        errors.append("paper_ops_auto_approval_staged_order_prewrite_count_mismatch")
+    for key in (
+        "auto_approval_staged_order_paper_order_submission_allowed",
+        "auto_approval_staged_order_broker_post_allowed",
+        "auto_approval_staged_order_live_endpoint_allowed",
+        "auto_approval_staged_order_live_capital_enabled",
+        "auto_approval_staged_order_phase7_proof_credit_allowed",
+        "auto_approval_staged_order_forced_trades_allowed",
+        "auto_approval_staged_order_manual_trade_level_override_allowed",
+        "auto_approval_staged_order_q7_source_ledger_mutation_performed",
+        "auto_approval_staged_order_q7_auto_approval_artifact_mutation_performed",
+        "auto_approval_staged_order_q7_staging_artifact_mutation_performed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_auto_approval_staged_order_forbidden:{key}")
     if artifact.get("paper_live_activation_status") != "approved_pending_later_enablement":
         errors.append("paper_ops_paper_live_activation_not_approved")
     if artifact.get("paper_live_activation_approval_state") != "approved":

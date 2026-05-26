@@ -1123,6 +1123,18 @@ Current PaperOps status:
   and `source_qualified_setup_ledger_count=0` remain unchanged, and PT-3 keeps
   broker POST, Alpaca POST, live endpoint, forced-trade, Q-CTRL broker, live
   capital, and Phase 7 proof-credit counters at zero.
+- PT-4 auto-approval and staged paper-order handoff is implemented in
+  `orchestrator/paperops_auto_approval_staged_order.py` and
+  `scripts/check_paperops_auto_approval_staged_order.py`. It consumes the PT-3
+  production-qualified setup and currently reports
+  `status=staged_paper_order_ready`, `auto_approved_setup_count=1`,
+  `staged_order_count=1`, `ready_for_paperops2_submit=True`,
+  `idempotency_key_count=1`, `duplicate_idempotency_key_count=0`,
+  `event_log_prewrite_written_count=1`, and
+  `pre_trade_snapshot_present_count=1`. This is a PaperOps/PT-4 handoff only:
+  Q7 source ledger, Q7 auto-approval, and Q7 staging artifacts remain
+  unmutated, and broker POST, Alpaca POST, live endpoint, forced-trade, live
+  capital, and Phase 7 proof-credit counters remain zero.
 - PaperOps-Q Q-CTRL paper consultation gate is implemented in
   `orchestrator/paperops_qctrl_consultation.py` and
   `scripts/check_paperops_qctrl_consultation.py`. Fire Opal is installed and
@@ -1172,12 +1184,13 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  27/27 commands passing: paper mode is safe to continue, PT-0 approval is
+  28/28 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
-  setup candidate ready for Q7 consumption, the Phase 7 run is active, the
-  Head-of-Quant oracle can run in its current non-provider mode, broker/Alpaca
-  POST counters remain zero, PaperOps-2 reports
+  setup candidate ready for guarded paper handoff, PT-4 auto-approves and
+  stages one PaperOps paper order, the Phase 7 run is active, the Head-of-Quant
+  oracle can run in its current non-provider mode, broker/Alpaca POST counters
+  remain zero, PaperOps-2 reports
   `disabled_pending_enablement`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
@@ -1191,8 +1204,9 @@ Current PaperOps status:
   `qualified_setup_count=0`, `submitted_paper_order_count=0`, and
   `closed_proof_trade_count=0`. This is still a valid no-trade state because
   the Q7 proof ledger has no qualified setups yet; PT-3's one
-  production-qualified setup is only the upstream classification that the Q7
-  ledger/staging path must consume next.
+  production-qualified setup has now been converted into a PT-4 PaperOps staged
+  order, but it has not been submitted, counted as Phase 7 proof, or written
+  into Q7 source artifacts.
 - The existing hourly automation is now `Qadam PaperOps 30-Day Runner`, remains
   `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PaperOps-6
   operations check, Phase 7 demo-run check, Phase 7 certification check,

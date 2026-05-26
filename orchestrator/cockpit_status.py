@@ -48,6 +48,9 @@ from orchestrator.paperops_30_day_operations import (
 from orchestrator.paperops_qualified_setup_production import (
     paperops_qualified_setup_production_public_status,
 )
+from orchestrator.paperops_auto_approval_staged_order import (
+    paperops_auto_approval_staged_order_public_status,
+)
 from orchestrator.paperops_qctrl_consultation import paperops_qctrl_public_status
 from orchestrator.phase4_approval_record import (
     build_fund_manager_approval_event,
@@ -1120,6 +1123,35 @@ PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS = {
     "schema_version",
     "source_qualified_setup_ledger_count",
     "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_PUBLIC_REQUIRED_FIELDS = {
+    "auto_approved_setup_count",
+    "boundary",
+    "broker_post_allowed",
+    "broker_post_called_count",
+    "event_log_event_count",
+    "event_log_prewrite_written_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_allowed",
+    "paper_order_submission_allowed",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "q7_auto_approval_artifact_mutation_performed",
+    "q7_source_ledger_mutation_performed",
+    "q7_staging_artifact_mutation_performed",
+    "ready_for_paperops2_submit",
+    "recorded",
+    "schema_version",
+    "source_pt3_path_ready",
+    "source_pt3_status",
+    "stage",
+    "staged_order_count",
     "status",
     "unsafe_write_counter_total",
     "validation_error_count",
@@ -4434,6 +4466,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         "paperops_qualified_setup_production",
         {},
     )
+    paperops_auto_approval_staged_order = payload.get(
+        "paperops_auto_approval_staged_order",
+        {},
+    )
     paperops_qctrl = payload.get("paperops_qctrl_consultation", {})
 
     hypotheses = cognition.get("hypotheses", [])
@@ -4636,6 +4672,18 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_qualified_setup_production_ready_to_stage": (
                 paperops_qualified_setup_production.get("ready_to_stage_q7_order", False)
+            ),
+            "paperops_auto_approval_staged_order": (
+                paperops_auto_approval_staged_order.get("status", "not_run")
+            ),
+            "paperops_auto_approval_staged_order_staged_count": (
+                paperops_auto_approval_staged_order.get("staged_order_count", 0)
+            ),
+            "paperops_auto_approval_staged_order_ready_for_submit": (
+                paperops_auto_approval_staged_order.get(
+                    "ready_for_paperops2_submit",
+                    False,
+                )
             ),
             "risk_gate": _module_status(payload, "risk_agent"),
             "market_confirmation": yahoo_finance.get("status", "not_configured"),
@@ -5711,6 +5759,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_qualified_setup_production": (
             paperops_qualified_setup_production_public_status(settings)
         ),
+        "paperops_auto_approval_staged_order": (
+            paperops_auto_approval_staged_order_public_status(settings)
+        ),
         "paperops_qctrl_consultation": paperops_qctrl_public_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
@@ -5820,6 +5871,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_notification_review",
         "paperops_30_day_operations",
         "paperops_qualified_setup_production",
+        "paperops_auto_approval_staged_order",
         "yahoo_finance",
         "preference_mcp",
         "capital",
@@ -6380,6 +6432,79 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in setup_boundary:
             raise ValueError("PaperOps qualified setup production boundary is weak")
+    paperops_pt4 = payload["paperops_auto_approval_staged_order"]
+    missing_pt4 = sorted(
+        PAPEROPS_AUTO_APPROVAL_STAGED_ORDER_PUBLIC_REQUIRED_FIELDS
+        - set(paperops_pt4)
+    )
+    if missing_pt4:
+        raise ValueError(
+            "PaperOps auto-approval staged order public status missing fields: "
+            f"{missing_pt4}"
+        )
+    if paperops_pt4.get("status") not in {
+        "not_run",
+        "staged_paper_order_ready",
+        "ready_no_current_auto_approved_setup",
+        "blocked_pending_pt3_prerequisite",
+        "invalid",
+    }:
+        raise ValueError("PaperOps auto-approval staged order status is invalid")
+    if paperops_pt4.get("public_safe") is not True:
+        raise ValueError("PaperOps auto-approval staged order must be public-safe")
+    if paperops_pt4.get("status") != "not_run":
+        if paperops_pt4.get("recorded") is not True:
+            raise ValueError("PaperOps auto-approval staged order must be recorded")
+        if paperops_pt4.get("event_log_written") is not True:
+            raise ValueError("PaperOps auto-approval staged order event log missing")
+        if paperops_pt4.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps auto-approval staged order event count mismatch")
+        if paperops_pt4.get("validation_error_count") != 0:
+            raise ValueError("PaperOps auto-approval staged order validation errors present")
+    if paperops_pt4.get("status") == "staged_paper_order_ready":
+        if int(paperops_pt4.get("staged_order_count", 0) or 0) < 1:
+            raise ValueError("PaperOps auto-approval staged order ready without order")
+        if paperops_pt4.get("ready_for_paperops2_submit") is not True:
+            raise ValueError("PaperOps auto-approval staged order missing submit handoff")
+    if paperops_pt4.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps auto-approval staged order enabled live capital")
+    if paperops_pt4.get("paper_order_submission_allowed") is not False:
+        raise ValueError("PaperOps auto-approval staged order opened submit authority")
+    if paperops_pt4.get("broker_post_allowed") is not False:
+        raise ValueError("PaperOps auto-approval staged order opened broker POST authority")
+    if paperops_pt4.get("live_endpoint_allowed") is not False:
+        raise ValueError("PaperOps auto-approval staged order opened live endpoints")
+    if paperops_pt4.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps auto-approval staged order granted proof credit")
+    if paperops_pt4.get("forced_trades_allowed") is not False:
+        raise ValueError("PaperOps auto-approval staged order allowed forced trades")
+    for key in (
+        "q7_source_ledger_mutation_performed",
+        "q7_auto_approval_artifact_mutation_performed",
+        "q7_staging_artifact_mutation_performed",
+    ):
+        if paperops_pt4.get(key) is not False:
+            raise ValueError(f"PaperOps auto-approval staged order mutated Q7: {key}")
+    for key in (
+        "broker_post_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_pt4.get(key, 0) or 0) != 0:
+            raise ValueError(
+                f"PaperOps auto-approval staged order unsafe count nonzero: {key}"
+            )
+    pt4_boundary = str(paperops_pt4.get("boundary") or "")
+    for phrase in (
+        "guarded paper-only auto-approval",
+        "cannot mutate the Q7 source ledger",
+        "cannot submit paper orders",
+        "cannot call brokers",
+        "cannot grant Phase 7 proof credit",
+        "cannot force trades",
+        "cannot enable live capital",
+    ):
+        if phrase not in pt4_boundary:
+            raise ValueError("PaperOps auto-approval staged order boundary is weak")
     phase4_strategy = payload["phase4_strategy"]
     missing_phase4 = sorted(PHASE4_STRATEGY_PUBLIC_REQUIRED_FIELDS - set(phase4_strategy))
     if missing_phase4:

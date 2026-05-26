@@ -50,6 +50,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         "scripts/check_paperops_qualified_setup_production.py",
         True,
     ),
+    (
+        "paperops_auto_approval_staged_order",
+        "scripts/check_paperops_auto_approval_staged_order.py",
+        True,
+    ),
     ("phase7_auto_approval", "scripts/check_phase7_test_mode_auto_approval_router.py", True),
     ("phase7_order_staging", "scripts/check_phase7_proof_order_staging.py", True),
     ("phase7_guarded_paper_submit", "scripts/check_phase7_guarded_alpaca_paper_submit.py", True),
@@ -146,6 +151,8 @@ def recommended_next_stage(
         or "paper_operational_flag_disabled" in blockers
     ):
         return "PT-2 global PaperOps runtime mode enablement"
+    if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
+        return "PT-4 auto-approval and staged paper-order handoff"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
         return "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:
@@ -209,6 +216,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    auto_approval_staged_order = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_auto_approval_staged_order"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -236,6 +251,9 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_paper_operational_mode_broker_post_called_count",
             "paper_ops_qualified_setup_production_broker_post_called_count",
             "paper_ops_qualified_setup_production_unsafe_write_counter_total",
+            "paper_ops_auto_approval_staged_order_broker_post_called_count",
+            "paper_ops_auto_approval_staged_order_live_endpoint_called_count",
+            "paper_ops_auto_approval_staged_order_unsafe_write_counter_total",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -418,6 +436,79 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         "qualified_setup_production_unsafe_write_counter_total": int(
             qualified_setup_production.get(
                 "paperops_qualified_setup_unsafe_write_counter_total",
+                "0",
+            )
+            or 0
+        ),
+        "auto_approval_staged_order_status": auto_approval_staged_order.get(
+            "paperops_auto_approval_staged_order_status"
+        ),
+        "auto_approval_staged_order_source_pt3_status": (
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_source_pt3_status"
+            )
+        ),
+        "auto_approval_staged_order_source_pt3_path_ready": (
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_source_pt3_path_ready"
+            )
+            == "True"
+        ),
+        "auto_approval_staged_order_auto_approved_setup_count": int(
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_auto_approved_setup_count",
+                "0",
+            )
+            or 0
+        ),
+        "auto_approval_staged_order_staged_order_count": int(
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_staged_order_count",
+                "0",
+            )
+            or 0
+        ),
+        "auto_approval_staged_order_ready_for_paperops2_submit": (
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_ready_for_paperops2_submit"
+            )
+            == "True"
+        ),
+        "auto_approval_staged_order_q7_source_ledger_mutation_performed": (
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_q7_source_ledger_mutation_performed"
+            )
+            == "True"
+        ),
+        "auto_approval_staged_order_paper_order_submission_allowed": (
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_paper_order_submission_allowed"
+            )
+            == "True"
+        ),
+        "auto_approval_staged_order_broker_post_called_count": int(
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_broker_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "auto_approval_staged_order_live_endpoint_called_count": int(
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "auto_approval_staged_order_phase7_proof_credit_allowed": (
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_phase7_proof_credit_allowed"
+            )
+            == "True"
+        ),
+        "auto_approval_staged_order_unsafe_write_counter_total": int(
+            auto_approval_staged_order.get(
+                "paperops_auto_approval_staged_order_unsafe_write_counter_total",
                 "0",
             )
             or 0
@@ -818,6 +909,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "qualified_setup_production_broker_post_called_count",
         "qualified_setup_production_live_endpoint_called_count",
         "qualified_setup_production_unsafe_write_counter_total",
+        "auto_approval_staged_order_broker_post_called_count",
+        "auto_approval_staged_order_live_endpoint_called_count",
+        "auto_approval_staged_order_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
         try:
@@ -874,6 +968,31 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_qualified_setup_production_mutated_demo_run")
     if artifact.get("qualified_setup_production_q7_ledger_count") != 0:
         errors.append("paper_ops_cycle_qualified_setup_production_mutated_q7_ledger")
+    if artifact.get("auto_approval_staged_order_status") not in {
+        "staged_paper_order_ready",
+        "ready_no_current_auto_approved_setup",
+    }:
+        errors.append("paper_ops_cycle_auto_approval_staged_order_not_ready")
+    if artifact.get("auto_approval_staged_order_source_pt3_path_ready") is not True:
+        errors.append("paper_ops_cycle_auto_approval_staged_order_source_not_ready")
+    if (
+        artifact.get("auto_approval_staged_order_status") == "staged_paper_order_ready"
+        and artifact.get("auto_approval_staged_order_staged_order_count", 0) < 1
+    ):
+        errors.append("paper_ops_cycle_auto_approval_staged_order_missing_order")
+    if (
+        artifact.get("auto_approval_staged_order_status") == "staged_paper_order_ready"
+        and artifact.get("auto_approval_staged_order_ready_for_paperops2_submit")
+        is not True
+    ):
+        errors.append("paper_ops_cycle_auto_approval_staged_order_not_ready_for_paperops2")
+    for key in (
+        "auto_approval_staged_order_q7_source_ledger_mutation_performed",
+        "auto_approval_staged_order_paper_order_submission_allowed",
+        "auto_approval_staged_order_phase7_proof_credit_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_cycle_auto_approval_staged_order_forbidden:{key}")
     if artifact.get("paper_live_qctrl_product_access_status") not in {
         "blocked_qctrl_product_access_or_subscription",
         "blocked_missing_qctrl_sdk",
@@ -981,6 +1100,15 @@ def write_paper_operational_cycle(
             ],
             "qualified_setup_production_ready_to_stage_q7_order": written[
                 "qualified_setup_production_ready_to_stage_q7_order"
+            ],
+            "auto_approval_staged_order_status": written[
+                "auto_approval_staged_order_status"
+            ],
+            "auto_approval_staged_order_staged_order_count": written[
+                "auto_approval_staged_order_staged_order_count"
+            ],
+            "auto_approval_staged_order_ready_for_paperops2_submit": written[
+                "auto_approval_staged_order_ready_for_paperops2_submit"
             ],
             "alpaca_paper_post_gate_status": written["alpaca_paper_post_gate_status"],
             "alpaca_paper_post_called_count": written["alpaca_paper_post_called_count"],
@@ -1165,6 +1293,54 @@ def main() -> int:
     print(
         "paper_ops_cycle_qualified_setup_production_unsafe_write_counter_total="
         f"{written['qualified_setup_production_unsafe_write_counter_total']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_status="
+        f"{written['auto_approval_staged_order_status']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_source_pt3_status="
+        f"{written['auto_approval_staged_order_source_pt3_status']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_source_pt3_path_ready="
+        f"{written['auto_approval_staged_order_source_pt3_path_ready']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_auto_approved_setup_count="
+        f"{written['auto_approval_staged_order_auto_approved_setup_count']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_staged_order_count="
+        f"{written['auto_approval_staged_order_staged_order_count']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_ready_for_paperops2_submit="
+        f"{written['auto_approval_staged_order_ready_for_paperops2_submit']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_q7_source_ledger_mutation_performed="
+        f"{written['auto_approval_staged_order_q7_source_ledger_mutation_performed']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_paper_order_submission_allowed="
+        f"{written['auto_approval_staged_order_paper_order_submission_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_broker_post_called_count="
+        f"{written['auto_approval_staged_order_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_live_endpoint_called_count="
+        f"{written['auto_approval_staged_order_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_phase7_proof_credit_allowed="
+        f"{written['auto_approval_staged_order_phase7_proof_credit_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_auto_approval_staged_order_unsafe_write_counter_total="
+        f"{written['auto_approval_staged_order_unsafe_write_counter_total']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")
