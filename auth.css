@@ -336,6 +336,58 @@ option {
     z-index: 20;
 }
 
+.dashboard-safety-strip {
+    align-items: center;
+    background:
+        linear-gradient(135deg, rgba(var(--cyan-rgb), 0.075), rgba(var(--green-rgb), 0.055)),
+        rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(var(--green-rgb), 0.32);
+    border-radius: 8px;
+    box-shadow: 0 0 34px rgba(var(--green-rgb), 0.08);
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.6fr) auto;
+    margin-top: -4px;
+    padding: 14px;
+    position: sticky;
+    top: 72px;
+    z-index: 19;
+}
+
+.dashboard-safety-strip.blocked {
+    border-color: rgba(var(--coral-rgb), 0.44);
+    box-shadow: 0 0 36px rgba(var(--coral-rgb), 0.12);
+}
+
+.dashboard-safety-strip-main {
+    display: grid;
+    gap: 5px;
+}
+
+.dashboard-safety-strip-main h2 {
+    color: var(--text);
+    font-size: 18px;
+    line-height: 1.18;
+    margin: 0;
+}
+
+.dashboard-safety-strip-main p {
+    color: var(--muted);
+    line-height: 1.38;
+    margin: 0;
+}
+
+.dashboard-safety-strip-badges {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.safety-strip-info {
+    justify-self: end;
+}
+
 .cockpit-nav-head {
     border-right: 1px solid var(--line);
     display: grid;
@@ -841,8 +893,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-boundary-rail {
-    background: rgba(var(--coral-rgb), 0.06);
-    border-color: rgba(var(--coral-rgb), 0.28);
+    background: rgba(var(--cyan-rgb), 0.045);
+    border-color: rgba(var(--cyan-rgb), 0.18);
 }
 
 .overview-feed-strip {
@@ -1443,14 +1495,13 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     padding-top: 6px;
 }
 
-.operations-safety-rail {
-    align-items: center;
-    border: 1px solid rgba(var(--green-rgb), 0.28);
+.operations-safety-reference {
+    border: 1px solid rgba(var(--green-rgb), 0.24);
     border-radius: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 0;
+    padding: 10px 12px;
 }
 
 .operations-role-spine,
@@ -4409,6 +4460,7 @@ summary {
     .hero,
     .dashboard-hero,
     .dashboard-grid,
+    .dashboard-safety-strip,
     .dashboard-detail-flow,
     .dashboard-grid-live,
     .cockpit-grid,
@@ -4517,6 +4569,14 @@ summary {
     }
 
     .mode-info {
+        justify-self: start;
+    }
+
+    .dashboard-safety-strip {
+        position: static;
+    }
+
+    .safety-strip-info {
         justify-self: start;
     }
 

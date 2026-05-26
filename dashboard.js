@@ -2391,7 +2391,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
             label: "Mode",
             state: status.mode === "paper" ? "paper/demo only" : dashboardText(status.mode, "unknown mode"),
             tone: status.capital?.live_capital_enabled ? "blocked" : "online",
-            summary: status.capital?.live_capital_enabled ? "Live capital appears enabled in backend status." : "Live capital disabled; dashboard is read-only."
+            summary: status.capital?.live_capital_enabled ? "Authority review required in the single safety strip." : "Single safety strip owns dashboard authority state."
         },
         {
             id: "evidence",
@@ -2417,9 +2417,9 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
         {
             id: "safety",
             label: "Safety",
-            state: operations.safety.authority_flags.length ? "review required" : "live capital disabled",
+            state: operations.safety.authority_flags.length ? "review required" : "strip clear",
             tone: operations.tone,
-            summary: `${operations.safety.forbidden_action_count} hard blocks; ${operations.safety.authority_flags.length} authority flags.`
+            summary: `${operations.safety.forbidden_action_count} safety stops; ${operations.safety.authority_flags.length} authority flags; see the single safety strip.`
         },
         {
             id: "action_needed",
@@ -2482,20 +2482,56 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
     };
 }
 
+function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
+    const operations = viewModels.operations_model || buildOperationsModel(status);
+    const performance = viewModels.performance_model || buildPerformanceModel(status);
+    const capital = status.capital || performance.paper_account || {};
+    const safety = operations.safety || {};
+    const paperBalance = capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
+    const liveCapitalEnabled = Boolean(capital.live_capital_enabled || safety.live_capital_enabled);
+    const writeAuthority = Boolean(capital.write_authority);
+    const authorityFlags = asArray(safety.authority_flags);
+    const tone = liveCapitalEnabled || writeAuthority || authorityFlags.length ? "blocked" : "online";
+    const modeLabel = status.mode === "paper"
+        ? "Paper only"
+        : canonicalStatusLabel(status.mode, { fallback: "Mode unknown" });
+    return {
+        id: "dashboard_safety_strip",
+        tone,
+        headline: tone === "blocked"
+            ? "Review authority before reading the dashboard"
+            : "Paper only, read-only, live capital off",
+        summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off; no UI/LLM order path.`,
+        mode_label: modeLabel,
+        capital_label: `${formatMoney(paperBalance)} paper account`,
+        live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "Live capital off",
+        read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "Read-only",
+        ui_broker_label: "No UI-to-broker path",
+        llm_broker_label: "No LLM-to-broker path",
+        proof_label: "No proof-credit inference",
+        live_capital_enabled: liveCapitalEnabled,
+        write_authority: writeAuthority,
+        authority_flag_count: authorityFlags.length,
+        boundary: "Single display strip only. It cannot approve, place, modify, resize, close, fund, or grant proof credit for trades."
+    };
+}
+
 function buildQadamDashboardViewModels(status = {}, source = {}) {
     const operations = buildOperationsModel(status, source);
     const overview = buildOverviewModel(status, source, operations);
+    const performance = buildPerformanceModel(status);
     return {
         schema_version: "dashboard_view_models.v1",
         generated_at: status.generated_at || null,
         status_source: source?.key || "unknown",
         public_safe: true,
         authority_boundary: "View models are read-only projections of the public-safe cockpit status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
+        safety_strip_model: buildDashboardSafetyStripModel(status, { operations_model: operations, performance_model: performance }),
         overview_model: overview,
         trades_model: buildTradesModel(status),
         sources_model: buildSourcesModel(status),
         reasoning_model: buildReasoningModel(status),
-        performance_model: buildPerformanceModel(status),
+        performance_model: performance,
         system_connectivity_model: operations.system_connectivity_model,
         operations_model: operations,
         governance_model: buildGovernanceModel(status),
@@ -2895,14 +2931,7 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                 </article>
             </div>
 
-            <div class="operations-safety-rail" data-operations-safety-rail>
-                ${renderInlineBadge("Paper mode", "online")}
-                ${renderInlineBadge(safety.live_capital_enabled ? "Live capital enabled" : "Live capital disabled", safety.live_capital_enabled ? "blocked" : "online")}
-                ${renderInlineBadge("Read-only cockpit", bridgeTone)}
-                ${renderInlineBadge("No UI-to-broker path", "online")}
-                ${renderInlineBadge("No LLM-to-broker path", "online")}
-                ${renderInlineBadge("Persistent safety rail", "online")}
-            </div>
+            <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
 
             <section class="operations-role-spine" aria-label="Operations role spine">
                 <div class="overview-section-head">
@@ -3414,7 +3443,7 @@ function renderSnapshotMeta(status, source) {
     setText("[data-capital-label]", `${formatMoney(paperBalance)} paper account`);
     setText(
         "[data-live-capital-label]",
-        capital.live_capital_enabled ? "Live capital enabled" : "Live capital disabled"
+        capital.live_capital_enabled ? "Live capital enabled" : "Live capital off"
     );
     setText("[data-snapshot-meta]", `Snapshot ${generatedAt} · schema ${status.schema_version} · ${sourceLabel}`);
 
@@ -3428,6 +3457,45 @@ function renderSnapshotMeta(status, source) {
             <span>${status.boundary || "Read-only dashboard snapshot."}</span>
         `;
     }
+}
+
+function renderDashboardSafetyStrip(status, viewModels = {}) {
+    const strip = viewModels.safety_strip_model || buildDashboardSafetyStripModel(status, viewModels);
+    const target = dashboardQuery("[data-dashboard-safety-strip]");
+    setText("[data-mode-label]", strip.mode_label);
+    setText("[data-capital-label]", strip.capital_label);
+    setText("[data-live-capital-label]", strip.live_capital_label);
+    if (!target) return;
+    ["online", "pending", "degraded", "blocked"].forEach((name) => target.classList.remove(name));
+    target.classList.add(statusClass(strip.tone));
+    target.innerHTML = `
+        <div class="dashboard-safety-strip-main">
+            <p class="label">Single safety strip</p>
+            <h2>${htmlText(strip.headline)}</h2>
+            <p>${htmlText(strip.summary)}</p>
+        </div>
+        <div class="dashboard-safety-strip-badges">
+            <span class="inline-badge ${statusClass(strip.mode_label)}" data-mode-label>${htmlText(strip.mode_label)}</span>
+            <span class="inline-badge ${statusClass(strip.write_authority ? "blocked" : "online")}" data-capital-label>${htmlText(strip.capital_label)}</span>
+            <span class="inline-badge ${statusClass(strip.live_capital_enabled ? "blocked" : "online")}" data-live-capital-label>${htmlText(strip.live_capital_label)}</span>
+            ${renderInlineBadge(strip.read_only_label, strip.read_only_label === "Read-only" ? "online" : "blocked")}
+            ${renderInlineBadge(strip.ui_broker_label, "online")}
+            ${renderInlineBadge(strip.llm_broker_label, "online")}
+            ${renderInlineBadge(strip.proof_label, "online")}
+        </div>
+        <div class="info-hover safety-strip-info">
+            <button class="info-button" type="button" aria-label="About the single safety strip">i</button>
+            <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety">
+                <strong>Single Safety Strip</strong>
+                <p>${htmlText(strip.boundary)}</p>
+                <dl class="explainer-grid">
+                    <div><dt>Mode</dt><dd>${htmlText(strip.mode_label)}</dd></div>
+                    <div><dt>Capital</dt><dd>${htmlText(strip.live_capital_label)}</dd></div>
+                    <div><dt>Authority flags</dt><dd>${htmlText(strip.authority_flag_count)} active</dd></div>
+                </dl>
+            </div>
+        </div>
+    `;
 }
 
 function renderPriorityCard(label, value, body, meta, tone = "neutral") {
@@ -4228,7 +4296,7 @@ function renderOperatingSummary(status, source) {
             "Paper account",
             formatMoney(capital.current_balance_gbp),
             `${formatMoney(pnlTotal)} total P&L · ${formatPercent(capital.drawdown_pct)} drawdown · ${maturityCount}/${maturityTarget} closed paper trades`,
-            capital.live_capital_enabled ? "Live capital enabled" : "Live capital disabled",
+            "Authority shown in single safety strip",
             capital.live_capital_enabled ? "blocked" : "online"
         ),
         renderPriorityCard(
@@ -4262,10 +4330,10 @@ function renderOperatingSummary(status, source) {
             paperOrders ? "pending" : "online"
         ),
         renderPriorityCard(
-            "Safety state",
-            liveCapital ? "Live capital enabled" : "Live capital disabled",
-            `${forbiddenActions.length} hard blocks · broker writes ${brokerWriteBlocked ? "blocked" : "not recorded"} · browser read-only`,
-            "Fail closed before paper execution",
+            "Safety strip",
+            liveCapital ? "Authority review" : "Single strip clear",
+            `${forbiddenActions.length} safety stops · broker writes ${brokerWriteBlocked ? "stopped" : "not recorded"} · use the single strip for dashboard authority`,
+            "One authority readout for every view",
             liveCapital ? "blocked" : "online"
         ),
         renderPriorityCard(
@@ -4391,7 +4459,7 @@ function renderOverviewFirstScreen(viewModels) {
                 ${renderMetric("Lifecycle", trades.state || "no candidates")}
                 ${renderMetric("Paper account", paperMoneyText)}
                 ${renderMetric("Proof progress", proofText)}
-                ${renderMetric("Safety", safety.state || "live capital disabled")}
+                ${renderMetric("Safety", safety.state || "strip clear")}
             </div>
         `;
     }
@@ -4445,8 +4513,8 @@ function renderOverviewFirstScreen(viewModels) {
     const boundary = dashboardQuery("[data-overview-boundary-rail]");
     if (boundary) {
         boundary.innerHTML = `
-            <span>Safety boundary</span>
-            <p>${htmlText(overview.boundary)} Broker writes blocked; candidate is not an order; live capital disabled.</p>
+            <span>Reading rule</span>
+            <p>Use the single safety strip for authority state. ${htmlText(overview.boundary)} Candidate is not an order.</p>
         `;
     }
 
@@ -7713,6 +7781,7 @@ async function renderQadamDashboardStatus(session) {
             window.qadamDashboardViewModels = viewModels;
         }
         renderSnapshotMeta(status, source);
+        renderDashboardSafetyStrip(status, viewModels);
         renderMissionControl(status, source);
         renderOperatingSummary(status, source);
         renderOverviewFirstScreen(viewModels);
@@ -7757,6 +7826,7 @@ window.canonicalQadamDashboardStatus = canonicalStatusRecord;
 window.canonicalQadamDashboardStatusLabel = canonicalStatusLabel;
 window.canonicalQadamDashboardStatusTone = canonicalStatusTone;
 window.buildQadamDashboardViewModels = buildQadamDashboardViewModels;
+window.buildQadamDashboardSafetyStripModel = buildDashboardSafetyStripModel;
 window.buildQadamDashboardOverviewModel = buildOverviewModel;
 window.buildQadamDashboardTradesModel = buildTradesModel;
 window.buildQadamDashboardSourcesModel = buildSourcesModel;

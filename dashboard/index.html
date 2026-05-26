@@ -31,23 +31,9 @@
                     <h1>System Operating Map</h1>
                     <p class="copy">Logged in as <span data-user-email></span>. The homepage describes Qadam as a hedge fund team inside a laptop. This cockpit is that team in operating form: sources feed the COO, analysts turn evidence into hypotheses, quant and risk gate the ideas, and the paper desk records outcomes.</p>
                 </div>
-                <div class="mode-stack" aria-label="Operating mode">
+                <div class="mode-stack" aria-label="Cockpit status">
                     <span>D9 operating cockpit</span>
-                    <span><span class="dot"></span><span data-mode-label>Loading mode</span></span>
-                    <span data-capital-label>Loading paper account</span>
-                    <span data-live-capital-label>Checking live-capital state</span>
-                    <div class="info-hover mode-info">
-                        <button class="info-button" type="button" aria-label="About operating mode and safety">i</button>
-                        <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety">
-                            <strong>Status / Safety</strong>
-                            <p>Explains Qadam's operating mode before any source, model, or trade panel is interpreted.</p>
-                            <dl class="explainer-grid">
-                                <div><dt>Use it to</dt><dd>Confirm paper mode, test-account scope, live-capital state, and whether the dashboard has any command route.</dd></div>
-                                <div><dt>Watch for</dt><dd>Live capital enabled, broker writes, stale snapshots, or bridge failures, because those would change how every panel should be read.</dd></div>
-                                <div><dt>Boundary</dt><dd>This cockpit is read-only. The safety strip cannot approve, place, modify, resize, close, or fund trades.</dd></div>
-                            </dl>
-                        </div>
-                    </div>
+                    <span>Fund manager operating view</span>
                 </div>
             </section>
 
@@ -64,6 +50,35 @@
                     <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
                 </div>
             </nav>
+
+            <section class="dashboard-safety-strip online" aria-label="Single dashboard safety strip" data-dashboard-safety-strip>
+                <div class="dashboard-safety-strip-main">
+                    <p class="label">Single safety strip</p>
+                    <h2>Paper only · read-only · live capital off</h2>
+                    <p>One dashboard-wide authority state. Panels below explain evidence and context without repeating the control rail.</p>
+                </div>
+                <div class="dashboard-safety-strip-badges">
+                    <span class="inline-badge online"><span class="dot"></span><span data-mode-label>Paper only</span></span>
+                    <span class="inline-badge online" data-capital-label>Loading paper account</span>
+                    <span class="inline-badge online" data-live-capital-label>Live capital off</span>
+                    <span class="inline-badge online">Read-only</span>
+                    <span class="inline-badge online">No UI-to-broker path</span>
+                    <span class="inline-badge online">No LLM-to-broker path</span>
+                    <span class="inline-badge online">No proof-credit inference</span>
+                </div>
+                <div class="info-hover safety-strip-info">
+                    <button class="info-button" type="button" aria-label="About the single safety strip">i</button>
+                    <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety">
+                        <strong>Single Safety Strip</strong>
+                        <p>Explains Qadam's operating authority once before any source, model, or trade panel is interpreted.</p>
+                        <dl class="explainer-grid">
+                            <div><dt>Use it to</dt><dd>Confirm paper mode, test-account scope, live-capital state, and whether the dashboard has any command route.</dd></div>
+                            <div><dt>Watch for</dt><dd>Live capital enabled, broker writes, stale snapshots, or bridge failures, because those would change how every panel should be read.</dd></div>
+                            <div><dt>Boundary</dt><dd>This cockpit is read-only. The strip cannot approve, place, modify, resize, close, fund, or grant proof credit for trades.</dd></div>
+                        </dl>
+                    </div>
+                </div>
+            </section>
 
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
                 <div class="panel-heading">
@@ -139,8 +154,8 @@
                         <span>Loading system connectivity.</span>
                     </div>
                     <div class="overview-boundary-rail" data-overview-boundary-rail>
-                        <span>Safety boundary</span>
-                        <p>Read-only dashboard. No approval, order, close, or funding action is available here.</p>
+                        <span>Reading rule</span>
+                        <p>Use the single safety strip for authority state. Overview items are readouts, and candidates are not orders.</p>
                     </div>
                 </section>
 
@@ -268,14 +283,7 @@
                                 </ul>
                             </article>
                         </div>
-                        <div class="operations-safety-rail" data-operations-safety-rail>
-                            <span class="inline-badge online">Paper only</span>
-                            <span class="inline-badge online">Live capital off</span>
-                            <span class="inline-badge online">Read-only</span>
-                            <span class="inline-badge online">No UI-to-broker path</span>
-                            <span class="inline-badge online">No LLM-to-broker path</span>
-                            <span class="inline-badge online">Persistent safety rail</span>
-                        </div>
+                        <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
                         <section class="operations-role-spine" aria-label="Operations role spine">
                             <div class="overview-section-head">
                                 <span>First-class operating roles</span>
