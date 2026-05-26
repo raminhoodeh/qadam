@@ -139,15 +139,15 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260526-d11k-view-model-refactor",
-        "/dashboard.js?v=20260526-d11k-view-model-refactor"
+        "/auth.css?v=20260526-d11l-visual-simplification-layout",
+        "/dashboard.js?v=20260526-d11l-visual-simplification-layout"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");
     includesAll(plan, [
         "D11K - View Model Refactor",
         "scripts/check_dashboard_d11k_view_model_refactor.js",
-        "D11L - Performance View Consolidation"
+        "D11L - Visual Simplification"
     ], "D11K master plan");
 
     const payload = JSON.stringify(models);

@@ -1369,7 +1369,37 @@ Outcome:
 
 Next stage:
 
-- D11L - Performance View Consolidation.
+- D11L - Visual Simplification.
+
+### D11L - Visual Simplification
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11l-visual-simplification-2026-05-26.md`
+- `scripts/check_dashboard_d11l_visual_simplification.js`
+
+Outcome:
+
+- The dashboard visual layer now treats primary views as scrollable operating
+  sections separated by quiet dividers instead of nested floating cards.
+- The cockpit view switcher and single safety strip no longer stack as sticky
+  glass layers, reducing visual compression while preserving the same status
+  and authority copy.
+- High-saturation glow is reduced to status borders and compact accents; large
+  panel shadows and decorative gradients are removed from the visible dashboard
+  surfaces.
+- Metrics, review groups, paper-account cards, performance panels, and system
+  map containers share one quieter surface vocabulary.
+- The cache key was bumped so the simplified stylesheet is fetched by the
+  deployed dashboard.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11M - Performance View Consolidation.
 
 ## 8. Implementation Order
 
