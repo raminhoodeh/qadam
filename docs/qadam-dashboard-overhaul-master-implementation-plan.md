@@ -1399,7 +1399,34 @@ Outcome:
 
 Next stage:
 
-- D11M - Performance View Consolidation.
+- D11M - Regression And Acceptance Tests.
+
+### D11M - Regression And Acceptance Tests
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11m-regression-and-acceptance-tests-2026-05-26.md`
+- `scripts/check_dashboard_d11m_regression_acceptance.js`
+
+Outcome:
+
+- Added a cross-view regression checker for the D11A-D11L simplified dashboard
+  shell.
+- The checker verifies the canonical five-view navigation contract, the single
+  global safety strip, D11 consolidated view content, cache-key continuity, and
+  public-safe rendering boundaries.
+- The dashboard preflight now runs the D11M checker, and the dashboard
+  acceptance gate treats it as a required dependency.
+- Performance remains consolidated inside Trades for now; a deeper performance
+  cleanup has moved to D11N.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11N - Performance View Consolidation.
 
 ## 8. Implementation Order
 

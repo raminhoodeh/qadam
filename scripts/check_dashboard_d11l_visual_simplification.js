@@ -113,7 +113,7 @@ async function main() {
         "D11L - Visual Simplification",
         "docs/qadam-dashboard-d11l-visual-simplification-2026-05-26.md",
         "scripts/check_dashboard_d11l_visual_simplification.js",
-        "D11M - Performance View Consolidation"
+        "D11M - Regression And Acceptance Tests"
     ], "D11L master plan");
     assert(fs.existsSync(auditPath), "D11L audit document missing");
 
