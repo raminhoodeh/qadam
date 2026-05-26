@@ -163,7 +163,7 @@ async function main() {
     assert(fs.existsSync(auditPath), "D11F audit document missing");
     includesAll(plan, [
         "D11F - Trades View Consolidation",
-        "D11G - Sources And Evidence Consolidation"
+        "D11G - Evidence View Consolidation"
     ], "D11F master plan");
 
     console.log("dashboard_d11f_trades_view_consolidation=ok");
