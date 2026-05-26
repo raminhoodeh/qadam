@@ -44,7 +44,7 @@ const DASHBOARD_VIEW_SCROLL_KEY = "qadam.dashboard.view.scroll";
 const TRADE_WORKSPACE_FILTERS = [
     { id: "all", label: "All" },
     { id: "active", label: "Active" },
-    { id: "blocked", label: "Blocked" },
+    { id: "blocked", label: "Safety stops" },
     { id: "open", label: "Open" },
     { id: "closed", label: "Closed" },
     { id: "postmortem_due", label: "Postmortem due" }
@@ -139,6 +139,85 @@ const OPERATIONS_PIPELINE_LABELS = {
     market: "Markets, broker, and prediction markets",
     social: "Narrative, filings, social, and news"
 };
+const CANONICAL_STATUS_LANGUAGE = {
+    current: {
+        label: "Current",
+        tone: "online",
+        description: "Fresh enough to read as the current public-safe state.",
+        tokens: ["online", "ok", "ready", "connected", "available", "active", "configured", "validated", "certified", "approved", "passed", "complete", "written"]
+    },
+    "read-only": {
+        label: "Read-only",
+        tone: "online",
+        description: "Visible for monitoring only. It cannot mutate Qadam state.",
+        tokens: ["read-only", "read only", "read_only", "read-only ready", "read_only_ready"]
+    },
+    "paper-only": {
+        label: "Paper only",
+        tone: "online",
+        description: "Paper/demo state only. Live capital remains off.",
+        tokens: ["paper only", "paper/demo only", "paper mode", "paper"]
+    },
+    "live-capital-off": {
+        label: "Live capital off",
+        tone: "online",
+        description: "Real-money trading authority is off.",
+        tokens: ["live capital disabled", "live capital off"]
+    },
+    "dry-run": {
+        label: "Dry run",
+        tone: "pending",
+        description: "Prepared for simulation or notification testing without live send/write authority.",
+        tokens: ["dry run", "dry-run", "dry_run", "queued dry run", "dry-run planned"]
+    },
+    "waiting-for-evidence": {
+        label: "Waiting for evidence",
+        tone: "pending",
+        description: "Normal hold state while Qadam waits for source, model, risk, or review evidence.",
+        tokens: ["pending", "waiting", "not ready", "not_ready", "not run", "not-run", "not requested", "not_requested", "deferred", "planned"]
+    },
+    "missing-setup": {
+        label: "Missing setup",
+        tone: "degraded",
+        description: "Required configuration, credentials, source material, or exported status is missing.",
+        tokens: ["missing", "not exported", "missing credential", "credential missing", "status unavailable", "not connected", "unavailable"]
+    },
+    degraded: {
+        label: "Degraded",
+        tone: "degraded",
+        description: "Available but impaired, stale, partial, or lower confidence.",
+        tokens: ["degraded", "stale", "fallback", "partial", "weak"]
+    },
+    "local-only": {
+        label: "Local only",
+        tone: "local-only",
+        description: "Present only in local/private runtime context.",
+        tokens: ["local only", "local-only", "local_only"]
+    },
+    "non-executable": {
+        label: "Non-executable",
+        tone: "blocked",
+        description: "Can inform review, but cannot create or execute a trade action.",
+        tokens: ["non executable", "non-executable", "non_executable", "research only", "research-only", "context only", "prior only", "challenge only", "challenge-only"]
+    },
+    "safety-stop": {
+        label: "Safety stop",
+        tone: "blocked",
+        description: "A deliberate safety, authority, risk, or policy stop is holding the path.",
+        tokens: ["blocked", "blocked before", "blocked_by_policy", "disabled contract hold", "disabled_contract_hold", "hard block", "kill switch", "no-submit", "live blocked"]
+    },
+    fault: {
+        label: "Fault",
+        tone: "blocked",
+        description: "An unexpected failure or unsafe condition needs operator review.",
+        tokens: ["failed", "failure", "error", "fault", "unsafe", "write enabled", "live capital enabled", "display inferred", "ui inferred"]
+    }
+};
+const CANONICAL_STATUS_BY_TOKEN = Object.fromEntries(
+    Object.entries(CANONICAL_STATUS_LANGUAGE).flatMap(([key, record]) => (
+        record.tokens.map((token) => [String(token).toLowerCase().replaceAll("_", " ").replaceAll("-", " ").trim(), { key, ...record }])
+    ))
+);
 
 function dashboardQuery(selector) {
     return document.querySelector(selector);
@@ -289,6 +368,53 @@ function dashboardText(value, fallback = "Not connected yet") {
     return String(value).replaceAll("_", " ");
 }
 
+function normalizeCanonicalStatusToken(value) {
+    return String(value || "")
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+function canonicalStatusRecord(value, options = {}) {
+    const token = normalizeCanonicalStatusToken(dashboardText(value, options.fallback || "not exported"));
+    const exact = CANONICAL_STATUS_BY_TOKEN[token];
+    if (exact) return exact;
+    if (options.strict) return null;
+    if (/ui inferred|display inferred|unsafe|failed|failure|error|fault|write enabled|live capital enabled/.test(token)) return { key: "fault", ...CANONICAL_STATUS_LANGUAGE.fault };
+    if (/blocked|hard block|kill switch|no submit|disabled contract|live blocked/.test(token)) return { key: "safety-stop", ...CANONICAL_STATUS_LANGUAGE["safety-stop"] };
+    if (/missing|not exported|not connected|credential|unavailable/.test(token)) return { key: "missing-setup", ...CANONICAL_STATUS_LANGUAGE["missing-setup"] };
+    if (/degraded|stale|fallback|partial|weak/.test(token)) return { key: "degraded", ...CANONICAL_STATUS_LANGUAGE.degraded };
+    if (/pending|waiting|deferred|not ready|not run|planned/.test(token)) return { key: "waiting-for-evidence", ...CANONICAL_STATUS_LANGUAGE["waiting-for-evidence"] };
+    if (/dry run|queued/.test(token)) return { key: "dry-run", ...CANONICAL_STATUS_LANGUAGE["dry-run"] };
+    if (/read only|public safe|backend derived/.test(token)) return { key: "read-only", ...CANONICAL_STATUS_LANGUAGE["read-only"] };
+    if (/live capital disabled|live capital off/.test(token)) return { key: "live-capital-off", ...CANONICAL_STATUS_LANGUAGE["live-capital-off"] };
+    if (/paper/.test(token)) return { key: "paper-only", ...CANONICAL_STATUS_LANGUAGE["paper-only"] };
+    if (/local only/.test(token)) return { key: "local-only", ...CANONICAL_STATUS_LANGUAGE["local-only"] };
+    if (/non executable|research only|context only|prior only|challenge only/.test(token)) return { key: "non-executable", ...CANONICAL_STATUS_LANGUAGE["non-executable"] };
+    if (/online|ok|ready|connected|available|active|configured|validated|certified|approved|passed|complete|written/.test(token)) return { key: "current", ...CANONICAL_STATUS_LANGUAGE.current };
+    return {
+        key: "raw-status",
+        label: dashboardText(value, options.fallback || "Not exported"),
+        tone: "pending",
+        description: "Raw status value not yet mapped to the canonical dashboard language."
+    };
+}
+
+function canonicalStatusLabel(value, options = {}) {
+    const record = canonicalStatusRecord(value, options);
+    return record ? record.label : dashboardText(value, options.fallback || "Not exported");
+}
+
+function canonicalStatusTone(value, fallback = "pending") {
+    return canonicalStatusRecord(value, { fallback })?.tone || fallback;
+}
+
+function canonicalBadgeText(value) {
+    return canonicalStatusRecord(value, { strict: true })?.label || dashboardText(value);
+}
+
 function htmlText(value, fallback = "Not connected yet") {
     return dashboardText(value, fallback).replace(/[&<>"']/g, (char) => ({
         "&": "&amp;",
@@ -315,7 +441,8 @@ function asArray(value) {
 }
 
 function statusClass(status) {
-    return dashboardText(status, "pending")
+    const canonicalTone = canonicalStatusTone(status, status);
+    return dashboardText(canonicalTone, "pending")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || "pending";
@@ -363,7 +490,8 @@ function setText(selector, value) {
 }
 
 function renderStatusPill(status) {
-    return `<b class="node-status ${statusClass(status)}">${htmlText(status)}</b>`;
+    const record = canonicalStatusRecord(status);
+    return `<b class="node-status ${statusClass(record.tone)}" title="${htmlText(record.description)}">${htmlText(record.label)}</b>`;
 }
 
 function renderMetric(label, value) {
@@ -371,7 +499,7 @@ function renderMetric(label, value) {
 }
 
 function renderInlineBadge(value, status = "pending") {
-    return `<span class="inline-badge ${statusClass(status)}">${htmlText(value)}</span>`;
+    return `<span class="inline-badge ${statusClass(status)}">${htmlText(canonicalBadgeText(value))}</span>`;
 }
 
 function renderPanelBrief({ id, question, state, tone = "pending", primary, secondary, boundary }) {
@@ -523,7 +651,7 @@ const FLOW_NODE_DETAILS = {
         role: "Paper desk",
         input: "Approved intents",
         output: "Paper states",
-        authority: "Live blocked"
+        authority: "Live capital off"
     },
     telegram_bot: {
         role: "Member comms",
@@ -631,8 +759,8 @@ function dashboardModelEmptyState(key, count = 0, override = {}) {
             tone: "neutral"
         },
         blocked: {
-            title: "Action blocked",
-            body: "Qadam is blocked by a safety, source, risk, or approval rule. The dashboard remains read-only and cannot bypass the block.",
+            title: "Safety stop",
+            body: "Qadam is held by a safety, source, risk, or approval rule. The dashboard remains read-only and cannot bypass the stop.",
             tone: "blocked"
         },
         stale: {
@@ -646,7 +774,7 @@ function dashboardModelEmptyState(key, count = 0, override = {}) {
             tone: "warning"
         },
         missing: {
-            title: "Status unavailable",
+            title: "Missing setup",
             body: "The dashboard has no public-safe status for this panel yet. This does not create trading authority.",
             tone: "neutral"
         }
@@ -5435,11 +5563,11 @@ function renderCognition(status) {
         ${renderReasoningWorkspace(reasoning)}
         ${renderPanelBrief({
             id: "cognition",
-            question: "What is Qadam thinking about, and why is it blocked?",
+            question: "What is Qadam thinking about, and what is still missing?",
             state: `${hypotheses.length} hypotheses`,
             tone: executableHypotheses.length ? "blocked" : "pending",
             primary: `${shadowPackets.length} shadow packets, ${evidencePackets.length} evidence packets, ${localResearch.length} local assessments, ${strategyPackets.length} Strategy Lead packets, and ${activity.length} model activity records are in the current queue.`,
-            secondary: "Model-only reasoning, missing corroboration, stale evidence, blocked reasons, and whether anything unexpectedly claims execution permission.",
+            secondary: "Model-only reasoning, missing corroboration, stale evidence, safety-stop reasons, and whether anything unexpectedly claims execution permission.",
             boundary: cognition.boundary || "Research notebook only. A hypothesis is not a trade and cannot bypass risk."
         })}
         <section class="cognition-section">
@@ -5593,11 +5721,11 @@ function renderForbidden(status) {
     const actions = asArray(status.forbidden_actions);
     const brokerBlocked = actions.some((action) => /broker|write/i.test(`${action.key || ""} ${action.reason || ""}`));
     replacePanelBrief("forbidden_actions", {
-        question: "Which paths are deliberately blocked?",
-        state: `${actions.length} hard blocks`,
+        question: "Which paths have hard safety stops?",
+        state: `${actions.length} safety stops`,
         tone: actions.length ? "blocked" : "pending",
         primary: actions.length
-            ? `Qadam is carrying ${actions.length} explicit safety blocks in this snapshot. Broker writes are ${brokerBlocked ? "blocked" : "not separately recorded"}.`
+            ? `Qadam is carrying ${actions.length} explicit safety stops in this snapshot. Broker writes are ${brokerBlocked ? "stopped" : "not separately recorded"}.`
             : "No forbidden-action records have been exported into this snapshot.",
         secondary: "Live-capital, broker-write, stale-data, missing-credential, risk, and kill-switch boundaries.",
         boundary: "This panel reports hard stops only. It cannot unlock blocked authority or create an exception."
@@ -7625,6 +7753,9 @@ initCockpitNavigation();
 window.activateQadamDashboardView = activateDashboardView;
 window.activateQadamDashboardViewFromHash = activateDashboardViewFromHash;
 window.resolveQadamDashboardHash = resolveDashboardHash;
+window.canonicalQadamDashboardStatus = canonicalStatusRecord;
+window.canonicalQadamDashboardStatusLabel = canonicalStatusLabel;
+window.canonicalQadamDashboardStatusTone = canonicalStatusTone;
 window.buildQadamDashboardViewModels = buildQadamDashboardViewModels;
 window.buildQadamDashboardOverviewModel = buildOverviewModel;
 window.buildQadamDashboardTradesModel = buildTradesModel;

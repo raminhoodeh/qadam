@@ -174,7 +174,7 @@
                     <div class="metric"><span>Phase</span><strong>Q4</strong></div>
                     <div class="metric"><span>Stage</span><strong>Loading</strong></div>
                     <div class="metric"><span>Approval</span><strong>Checking</strong></div>
-                    <div class="metric"><span>Execution</span><strong>Blocked</strong></div>
+                    <div class="metric"><span>Execution</span><strong>Safety stop</strong></div>
                 </div>
                 <div class="panel-scroll" data-phase4-strategy>
                     <section class="panel-brief blocked" data-panel-brief="phase4_strategy">
@@ -269,9 +269,9 @@
                             </article>
                         </div>
                         <div class="operations-safety-rail" data-operations-safety-rail>
-                            <span class="inline-badge online">Paper mode</span>
-                            <span class="inline-badge online">Live capital disabled</span>
-                            <span class="inline-badge online">Read-only cockpit</span>
+                            <span class="inline-badge online">Paper only</span>
+                            <span class="inline-badge online">Live capital off</span>
+                            <span class="inline-badge online">Read-only</span>
                             <span class="inline-badge online">No UI-to-broker path</span>
                             <span class="inline-badge online">No LLM-to-broker path</span>
                             <span class="inline-badge online">Persistent safety rail</span>
@@ -305,11 +305,11 @@
                         <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
                             <div class="operations-edge-legend">
                                 <span>Edge state</span>
-                                <span class="inline-badge online">active</span>
+                                <span class="inline-badge online">Current</span>
                                 <span class="inline-badge shadow-context-only">shadow/context-only</span>
                                 <span class="inline-badge degraded">degraded</span>
-                                <span class="inline-badge pending">locked</span>
-                                <span class="inline-badge blocked">blocked</span>
+                                <span class="inline-badge pending">Read-only lock</span>
+                                <span class="inline-badge blocked">Safety stop</span>
                             </div>
                             <details class="operations-node-diagnostics">
                                 <summary>Expand diagnostics</summary>
@@ -333,7 +333,7 @@
                             </header>
                             <div class="flow-lane-track">
                                 <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Foundation</b><span>01 · Source desks</span></div>
+                                    <div class="node-topline"><b class="node-status pending">Waiting for evidence</b><span>01 · Source desks</span></div>
                                     <h3>Watched Sources</h3>
                                     <p class="flow-summary">Conflict, physical, macro, market, narrative, and TradingView-assisted observations.</p>
                                     <dl class="node-facts">
@@ -367,7 +367,7 @@
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>logged state</span></div>
                                 <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">D9</b><span>03 · Read-only bridge</span></div>
+                                    <div class="node-topline"><b class="node-status pending">Read-only</b><span>03 · Read-only bridge</span></div>
                                     <h3>Secure Live Bridge</h3>
                                     <p class="flow-summary">Authenticated read-only status endpoint with static snapshot fallback.</p>
                                     <dl class="node-facts">
@@ -390,7 +390,7 @@
                             </header>
                             <div class="flow-lane-track">
                                 <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Pending</b><span>04 · Research desk</span></div>
+                                    <div class="node-topline"><b class="node-status pending">Waiting for evidence</b><span>04 · Research desk</span></div>
                                     <h3>Research Analyst</h3>
                                     <p class="flow-summary">Filters noisy events locally and compresses evidence into shadow-only reasoning.</p>
                                     <dl class="node-facts">
@@ -401,7 +401,7 @@
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>shadow analysis</span></div>
                                 <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Pending</b><span>05 · Strategy desk</span></div>
+                                    <div class="node-topline"><b class="node-status pending">Waiting for evidence</b><span>05 · Strategy desk</span></div>
                                     <h3>Strategy Lead</h3>
                                     <p class="flow-summary">Challenges hypotheses and builds deeper strategy packets only after evidence exists.</p>
                                     <dl class="node-facts">
@@ -435,7 +435,7 @@
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>bounded oracle check</span></div>
                                 <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status blocked">Blocked</b><span>07 · Risk desk</span></div>
+                                    <div class="node-topline"><b class="node-status blocked">Safety stop</b><span>07 · Risk desk</span></div>
                                     <h3>Risk Agent</h3>
                                     <p class="flow-summary">Blocks oversize, stale, low-evidence, or unauthorized ideas before paper execution.</p>
                                     <dl class="node-facts">
@@ -465,7 +465,7 @@
                                         <div><dt>Input</dt><dd>Approved intents</dd></div>
                                         <div><dt>Output</dt><dd>Paper states</dd></div>
                                     </dl>
-                                    <span class="node-authority">Live blocked</span>
+                                    <span class="node-authority">Live capital off</span>
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>paper state</span></div>
                                 <article class="flow-node system-map-node">
@@ -660,7 +660,7 @@
                                     <p>Evidence packets and source trails load from the status snapshot.</p>
                                 </article>
                                 <article class="reasoning-lane-card blocked">
-                                    <b class="node-status blocked">Blocked</b>
+                                    <b class="node-status blocked">Safety stop</b>
                                     <h3>Missing corroboration</h3>
                                     <p>Missing corroboration is a normal hold condition before trade state.</p>
                                 </article>
@@ -669,8 +669,8 @@
                         <section class="panel-brief pending" data-panel-brief="cognition">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
-                                <h3>What is Qadam thinking about, and why is it blocked?</h3>
-                                <p>Static fallback explains the research path before live hypotheses, model activity, evidence packets, and blocked reasons load.</p>
+                                <h3>What is Qadam thinking about, and what is still missing?</h3>
+                                <p>Static fallback explains the research path before live hypotheses, model activity, evidence packets, and safety-stop reasons load.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">Waiting for snapshot</span></dd></div>
@@ -718,11 +718,11 @@
                         <section class="panel-brief blocked" data-panel-brief="forbidden_actions">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
-                                <h3>Which paths are deliberately blocked?</h3>
+                                <h3>Which paths have hard safety stops?</h3>
                                 <p>Static fallback lists the hard stops that keep the cockpit inside paper-mode authority.</p>
                             </div>
                             <dl class="panel-brief-facts">
-                                <div><dt>State</dt><dd><span class="inline-badge blocked">Hard blocks active</span></dd></div>
+                                <div><dt>State</dt><dd><span class="inline-badge blocked">Safety stops active</span></dd></div>
                                 <div><dt>Watch</dt><dd>Live-capital, broker-write, stale-data, missing-credential, risk, and kill-switch boundaries.</dd></div>
                                 <div><dt>Boundary</dt><dd>This panel reports hard stops only. It cannot unlock blocked authority or create an exception.</dd></div>
                             </dl>
@@ -1047,7 +1047,7 @@
                                     <span class="inline-badge online">comments governance-only</span>
                                     <span class="inline-badge pending">approvals audit-only</span>
                                     <span class="inline-badge online">Telegram outbound-only</span>
-                                    <span class="inline-badge online">live capital disabled</span>
+                                    <span class="inline-badge online">Live capital off</span>
                                     <p>Governance can record review context, but it cannot approve trades, place orders, send commands, or enable live capital.</p>
                                 </article>
                             </div>
