@@ -2385,48 +2385,74 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
             && modelNumber(phase7.closed_proof_trade_count, 0) >= modelNumber(phase7.mature_benchmark, 100)
             && modelNumber(phase7.completed_calendar_day_count, 0) >= modelNumber(phase7.phase7_harness_day_count, 30)
     };
-    const cards = [
+    const paperPnl = performance.paper_account.total_pnl_gbp || 0;
+    const reviewTone = actionNeeded[0] === "Continue monitoring" ? "online" : "blocked";
+    const readouts = [
         {
-            id: "mode",
-            label: "Mode",
-            state: status.mode === "paper" ? "paper/demo only" : dashboardText(status.mode, "unknown mode"),
-            tone: status.capital?.live_capital_enabled ? "blocked" : "online",
-            summary: status.capital?.live_capital_enabled ? "Authority review required in the single safety strip." : "Single safety strip owns dashboard authority state."
-        },
-        {
-            id: "evidence",
-            label: "Evidence",
+            id: "sources",
+            label: "Source health",
             state: `${sources.counts.online}/${sources.counts.total} online`,
             tone: sources.tone,
             summary: sources.summary
         },
         {
-            id: "trades",
-            label: "Trades",
+            id: "trade_path",
+            label: "Trade path",
             state: `${trades.counts.candidate} candidates`,
             tone: trades.tone,
-            summary: trades.summary
+            summary: `${trades.counts.qualified_setup} eligible setups; ${trades.counts.submitted_paper_order} submitted paper orders; ${trades.counts.postmortem_due} postmortems due.`
         },
         {
-            id: "paper_account",
-            label: "Paper Account",
-            state: `${formatMoney(performance.paper_account.current_balance_gbp)} paper`,
+            id: "proof_run",
+            label: "Proof run",
+            state: `${demoProof.completed_calendar_day_count}/${demoProof.required_calendar_day_count} days`,
             tone: performance.tone,
-            summary: performance.summary
+            summary: `Week ${demoProof.current_proof_week_number}/${demoProof.proof_week_count}; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} closed proof trades; ${formatMoney(paperPnl)} paper P&L.`
         },
         {
-            id: "safety",
-            label: "Safety",
-            state: operations.safety.authority_flags.length ? "review required" : "strip clear",
-            tone: operations.tone,
-            summary: `${operations.safety.forbidden_action_count} safety stops; ${operations.safety.authority_flags.length} authority flags; see the single safety strip.`
-        },
-        {
-            id: "action_needed",
-            label: "Action Needed",
+            id: "review_focus",
+            label: "Needs review",
             state: actionNeeded[0],
-            tone: actionNeeded[0] === "Continue monitoring" ? "online" : "blocked",
+            tone: reviewTone,
             summary: actionNeeded.join("; ")
+        }
+    ];
+    const statusChips = [
+        {
+            id: "proof_day",
+            label: "Proof window",
+            value: `Day ${demoProof.completed_calendar_day_count}/${demoProof.required_calendar_day_count}`,
+            tone: performance.tone
+        },
+        {
+            id: "proof_week",
+            label: "Weekly cadence",
+            value: `Week ${demoProof.current_proof_week_number}/${demoProof.proof_week_count}`,
+            tone: performance.tone
+        },
+        {
+            id: "eligible_setups",
+            label: "Eligible setups",
+            value: `${demoProof.eligible_setup_count}`,
+            tone: demoProof.eligible_setup_count ? "online" : "pending"
+        },
+        {
+            id: "candidates",
+            label: "Candidates",
+            value: `${trades.counts.candidate}`,
+            tone: trades.counts.candidate ? "pending" : "online"
+        },
+        {
+            id: "paper_orders",
+            label: "Submitted paper orders",
+            value: `${trades.counts.submitted_paper_order}`,
+            tone: trades.counts.submitted_paper_order ? "online" : "pending"
+        },
+        {
+            id: "postmortems",
+            label: "Postmortems due",
+            value: `${trades.counts.postmortem_due}`,
+            tone: trades.counts.postmortem_due ? "blocked" : "online"
         }
     ];
     const nextReviewLinks = [
@@ -2464,12 +2490,21 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
     return {
         id: "overview",
         label: "Overview",
-        question: "What should I know first?",
-        tone: cards.some((card) => card.tone === "blocked") ? "blocked" : (cards.some((card) => card.tone === "degraded") ? "degraded" : "online"),
-        summary: `${sources.counts.online}/${sources.counts.total} sources online; ${trades.counts.candidate} candidates; ${performance.demo_proof.closed_proof_trade_count}/${performance.demo_proof.mature_benchmark} proof trades; live capital ${status.capital?.live_capital_enabled ? "enabled" : "disabled"}.`,
-        cards,
+        question: "What is happening now?",
+        tone: readouts.some((item) => item.tone === "blocked") ? "blocked" : (readouts.some((item) => item.tone === "degraded") ? "degraded" : "online"),
+        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} eligible setups; ${trades.counts.candidate} candidates; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} closed proof trades; next review: ${actionNeeded[0]}.`,
+        cards: readouts,
+        readouts,
+        status_chips: statusChips,
+        review_focus: {
+            state: actionNeeded[0],
+            tone: reviewTone,
+            summary: actionNeeded.join("; "),
+            primary_href: nextReviewLinks[0]?.href || "#trades"
+        },
         demo_proof: demoProof,
         lifecycle: trades.lifecycle,
+        lifecycle_summary: `${trades.counts.qualified_setup} eligible setups, ${trades.counts.candidate} candidates, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.closed_paper_trade} closed paper trades.`,
         action_needed: actionNeeded,
         next_review_links: nextReviewLinks,
         mini_map: {
@@ -2478,7 +2513,9 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null) {
             node_keys: operations.system_connectivity_model.overview_scope.node_keys,
             health: operations.system_connectivity_model.authority_violations.length ? "blocked" : "online"
         },
-        boundary: "Overview is a read-only summary. It cannot approve, place, modify, close, or fund trades."
+        system_summary: "Live feeds -> Python COO -> model research -> quant/risk gates -> paper lifecycle -> learning loop.",
+        scope_note: "Use the single safety strip for authority state. Overview only answers what changed and which deeper view to open next.",
+        boundary: "Overview is a read-only triage surface. It cannot approve, place, modify, close, fund, or grant proof credit for trades."
     };
 }
 
@@ -4368,27 +4405,22 @@ const OVERVIEW_NODE_ROLES = {
     postmortem_loop: "Learning review"
 };
 
-function overviewCard(model, id) {
-    return asArray(model?.cards).find((card) => card.id === id) || {};
-}
-
-function renderOverviewStatusCard(label, value, body, tone = "pending") {
+function renderOverviewChip(chip) {
     return `
-        <article class="overview-status-card ${statusClass(tone)}">
-            <span>${htmlText(label)}</span>
-            <strong>${htmlText(value)}</strong>
-            <p>${htmlText(body)}</p>
-        </article>
+        <span class="overview-status-chip ${statusClass(chip.tone)}">
+            <strong>${htmlText(chip.value)}</strong>
+            <em>${htmlText(chip.label)}</em>
+        </span>
     `;
 }
 
-function renderOverviewMetricCard(card) {
+function renderOverviewReadout(item) {
     return `
-        <article class="overview-metric ${statusClass(card.tone)}">
-            <span>${htmlText(card.label)}</span>
-            <strong>${htmlText(card.state)}</strong>
-            <p>${htmlText(card.summary)}</p>
-        </article>
+        <div class="overview-readout ${statusClass(item.tone)}">
+            <span>${htmlText(item.label)}</span>
+            <strong>${htmlText(item.state)}</strong>
+            <p>${htmlText(item.summary)}</p>
+        </div>
     `;
 }
 
@@ -4421,58 +4453,63 @@ function renderOverviewFirstScreen(viewModels) {
     const connectivity = viewModels?.system_connectivity_model;
     if (!overview || !connectivity) return;
 
-    const mode = overviewCard(overview, "mode");
-    const sources = overviewCard(overview, "evidence");
-    const trades = overviewCard(overview, "trades");
-    const performance = overviewCard(overview, "paper_account");
-    const safety = overviewCard(overview, "safety");
-    const action = overviewCard(overview, "action_needed");
     const proof = overview.demo_proof || {};
-    const performanceModel = viewModels?.performance_model || {};
-    const paperAccount = performanceModel.paper_account || {};
-    const dayText = `Day ${proof.completed_calendar_day_count || 0}/${proof.required_calendar_day_count || 30}`;
-    const weekText = `Week ${proof.current_proof_week_number || 0}/${proof.proof_week_count || 5}`;
+    const readouts = asArray(overview.readouts || overview.cards);
+    const review = overview.review_focus || {};
     const setupText = `${proof.eligible_setup_count || 0} eligible setups`;
     const proofText = `${proof.closed_proof_trade_count || 0}/${proof.mature_benchmark || 100} closed proof trades`;
-    const targetText = `${proof.weekly_proof_trade_target || 3} per week where qualified setups exist`;
-    const paperMoneyText = formatMoney(paperAccount.equity_gbp || paperAccount.current_balance_gbp);
-    const paperSummaryText = `${formatMoney(paperAccount.total_pnl_gbp)} P&L · ${formatPercent(paperAccount.drawdown_pct)} drawdown · ${paperAccount.closed_paper_trade_count || 0} closed paper trades.`;
 
     const statusRail = dashboardQuery("[data-overview-status-rail]");
     if (statusRail) {
-        statusRail.innerHTML = [
-            renderOverviewStatusCard("Mode", mode.state === "paper/demo only" ? "Paper/demo only" : (mode.state || "paper/demo only"), mode.summary || "Read-only paper/demo scope.", mode.tone || "online"),
-            renderOverviewStatusCard("Paper account", paperMoneyText, paperSummaryText, paperAccount.live_capital_enabled || paperAccount.write_authority ? "blocked" : (paperAccount.drawdown_pct ? "degraded" : "online")),
-            renderOverviewStatusCard("Demo window", `${dayText} · ${weekText}`, `${setupText}; target ${targetText}.`, performance.tone || "pending"),
-            renderOverviewStatusCard("Action needed", action.state || "Continue monitoring", action.summary || "No immediate action visible.", action.tone || "online")
-        ].join("");
+        statusRail.innerHTML = asArray(overview.status_chips)
+            .map(renderOverviewChip)
+            .join("");
     }
 
     const hero = dashboardQuery("[data-overview-hero]");
     if (hero) {
         hero.innerHTML = `
-            <span>Current state</span>
+            <span>Fund Manager read</span>
             <h3>${htmlText(overview.summary)}</h3>
-            <p>${htmlText(overview.question)} ${htmlText(overview.boundary)}</p>
+            <p>${htmlText(overview.scope_note || overview.boundary)}</p>
             <div class="overview-hero-metrics" data-overview-hero-metrics>
-                ${renderMetric("Source health", sources.state || "not connected")}
-                ${renderMetric("Lifecycle", trades.state || "no candidates")}
-                ${renderMetric("Paper account", paperMoneyText)}
                 ${renderMetric("Proof progress", proofText)}
-                ${renderMetric("Safety", safety.state || "strip clear")}
+                ${renderMetric("Setups", setupText)}
+                ${renderMetric("Next review", review.state || "Continue monitoring")}
             </div>
+            <div class="overview-readout-list" data-overview-metrics>
+                ${readouts.slice(0, 4).map(renderOverviewReadout).join("")}
+            </div>
+        `;
+    }
+
+    const reviewCard = dashboardQuery("[data-overview-review-card]");
+    if (reviewCard) {
+        reviewCard.classList.remove("online", "pending", "degraded", "blocked");
+        reviewCard.classList.add(statusClass(review.tone || "online"));
+        reviewCard.innerHTML = `
+            <span>Needs review</span>
+            <strong data-overview-action-label>${htmlText(review.state || "Continue monitoring")}</strong>
+            <p data-overview-action-summary>${htmlText(review.summary || "No immediate action visible.")}</p>
+            <nav class="overview-next-links" aria-label="Next review links" data-overview-next-links>
+                ${asArray(overview.next_review_links).map((link) => `
+                    <a href="${htmlText(link.href)}">
+                        <strong>${htmlText(link.label)}</strong>
+                        <span>${htmlText(link.reason)}</span>
+                    </a>
+                `).join("")}
+            </nav>
         `;
     }
 
     const metrics = dashboardQuery("[data-overview-metrics]");
     if (metrics) {
-        metrics.innerHTML = [sources, trades, performance, safety]
-            .filter((card) => card.id)
-            .map(renderOverviewMetricCard)
+        metrics.innerHTML = readouts.slice(0, 4)
+            .map(renderOverviewReadout)
             .join("");
     }
 
-    setText("[data-overview-lifecycle-summary]", `${trades.summary || "Trade lifecycle loading."} ${setupText}.`);
+    setText("[data-overview-lifecycle-summary]", overview.lifecycle_summary || `${setupText}; ${proofText}.`);
     const lifecycle = dashboardQuery("[data-overview-lifecycle]");
     if (lifecycle) {
         lifecycle.innerHTML = asArray(overview.lifecycle)
@@ -4480,14 +4517,13 @@ function renderOverviewFirstScreen(viewModels) {
             .join("");
     }
 
-    const feeds = dashboardQuery("[data-overview-feed-strip]");
-    if (feeds) {
-        feeds.innerHTML = asArray(connectivity.feed_clusters).map((feed) => `
-            <span class="${statusClass(feed.status)}">
-                <strong>${htmlText(feed.label)}</strong>
-                ${htmlText(feed.status)} · ${htmlText(feed.count)} records
-            </span>
-        `).join("");
+    const oversight = dashboardQuery("[data-overview-oversight]");
+    if (oversight) {
+        oversight.innerHTML = `
+            <span>Fund Manager oversight</span>
+            <strong>You supervise the fund team</strong>
+            <p>${htmlText(overview.system_summary || "Live feeds, Python, models, gates, paper lifecycle, and learning loop stay visible from one map.")}</p>
+        `;
     }
 
     const miniMap = dashboardQuery("[data-overview-mini-map]");
@@ -4501,20 +4537,21 @@ function renderOverviewFirstScreen(viewModels) {
             : `<span>No system connectivity nodes are visible yet.</span>`;
     }
 
-    const oversight = dashboardQuery("[data-overview-oversight]");
-    if (oversight) {
-        oversight.innerHTML = `
-            <span>Fund Manager oversight</span>
-            <strong>One supervising Fund Manager oversees Qadam</strong>
-            <p>You sit above the chain. Python keeps the book, local and frontier models research, quantum checks challenge sizing, and gates decide what can appear as paper/demo state.</p>
-        `;
+    const feeds = dashboardQuery("[data-overview-feed-strip]");
+    if (feeds) {
+        feeds.innerHTML = asArray(connectivity.feed_clusters).slice(0, 3).map((feed) => `
+            <span class="${statusClass(feed.status)}">
+                <strong>${htmlText(feed.label)}</strong>
+                ${htmlText(feed.status)} · ${htmlText(feed.count)} records
+            </span>
+        `).join("");
     }
 
     const boundary = dashboardQuery("[data-overview-boundary-rail]");
     if (boundary) {
         boundary.innerHTML = `
             <span>Reading rule</span>
-            <p>Use the single safety strip for authority state. ${htmlText(overview.boundary)} Candidate is not an order.</p>
+            <p>${htmlText(overview.scope_note || "Use the single safety strip for authority state.")} Candidate is not an order.</p>
         `;
     }
 

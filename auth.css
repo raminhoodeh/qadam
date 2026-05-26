@@ -624,23 +624,28 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     gap: 12px;
 }
 
+.overview-command-surface,
 .overview-status-rail,
-.overview-metric-grid,
+.overview-readout-list,
 .overview-feed-strip,
+.overview-system-grid,
 .overview-next-links {
     display: grid;
     gap: 10px;
 }
 
-.overview-status-rail {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+.overview-command-surface {
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
 }
 
-.overview-status-card,
+.overview-status-rail {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+
 .overview-hero,
-.overview-metric,
-.overview-lifecycle-panel,
-.overview-system-panel,
+.overview-review-card,
+.overview-proof-flow,
+.overview-system-summary,
 .overview-mini-node,
 .overview-next-links a {
     border: 1px solid var(--line);
@@ -648,52 +653,56 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     background: var(--panel-soft);
 }
 
-.overview-status-card,
-.overview-metric,
-.overview-lifecycle-panel,
-.overview-system-panel,
+.overview-review-card,
+.overview-proof-flow,
+.overview-system-summary,
 .overview-next-links a {
     padding: 12px;
 }
 
-.overview-status-card {
+.overview-review-card {
     display: grid;
-    gap: 7px;
-    min-height: 116px;
+    gap: 10px;
+    min-height: 100%;
 }
 
-.overview-status-card.online,
-.overview-metric.online,
+.overview-review-card.online,
+.overview-readout.online,
+.overview-status-chip.online,
 .overview-mini-node.online {
     border-color: rgba(var(--green-rgb), 0.3);
     box-shadow: var(--glow-green);
 }
 
-.overview-status-card.pending,
-.overview-status-card.degraded,
-.overview-metric.pending,
-.overview-metric.degraded,
+.overview-review-card.pending,
+.overview-review-card.degraded,
+.overview-readout.pending,
+.overview-readout.degraded,
+.overview-status-chip.pending,
+.overview-status-chip.degraded,
 .overview-mini-node.pending,
 .overview-mini-node.degraded {
     border-color: rgba(var(--amber-rgb), 0.34);
     box-shadow: var(--glow-amber);
 }
 
-.overview-status-card.blocked,
-.overview-metric.blocked,
+.overview-review-card.blocked,
+.overview-readout.blocked,
+.overview-status-chip.blocked,
 .overview-mini-node.blocked {
     border-color: rgba(var(--coral-rgb), 0.4);
     box-shadow: var(--glow-coral);
 }
 
-.overview-status-card span,
-.overview-status-card p,
-.overview-metric span,
-.overview-metric p,
+.overview-review-card > span,
+.overview-review-card p,
+.overview-readout span,
+.overview-readout p,
 .overview-section-head span,
 .overview-lifecycle-strip span,
 .overview-lifecycle-strip em,
 .overview-feed-strip span,
+.overview-status-chip em,
 .overview-mini-node span,
 .overview-mini-node p,
 .overview-oversight span,
@@ -704,8 +713,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     color: var(--muted);
 }
 
-.overview-status-card span,
-.overview-metric span,
+.overview-review-card > span,
+.overview-readout span,
 .overview-section-head span,
 .overview-mini-node span,
 .overview-oversight span,
@@ -715,16 +724,18 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     text-transform: uppercase;
 }
 
-.overview-status-card strong,
-.overview-metric strong,
+.overview-review-card strong,
+.overview-readout strong,
+.overview-status-chip strong,
 .overview-section-head strong,
 .overview-oversight strong,
 .overview-next-links strong {
     color: var(--text);
 }
 
-.overview-status-card strong,
-.overview-metric strong {
+.overview-review-card strong,
+.overview-readout strong,
+.overview-status-chip strong {
     font-family: var(--font-mono);
     font-size: 17px;
     font-variant-numeric: tabular-nums;
@@ -742,8 +753,9 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .system-map-panel,
 .comments-panel,
 .communications-panel,
-.overview-status-card,
-.overview-metric,
+.overview-review-card,
+.overview-readout,
+.overview-status-chip,
 .overview-mini-node,
 .flow-node,
 .trade-lifecycle-card,
@@ -760,20 +772,14 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     overflow-wrap: anywhere;
 }
 
-.overview-status-card p,
-.overview-metric p,
+.overview-review-card p,
+.overview-readout p,
 .overview-mini-node p,
 .overview-oversight p,
 .overview-boundary-rail p,
 .overview-next-links span {
     line-height: 1.38;
     margin: 0;
-}
-
-.overview-snapshot-grid {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
 }
 
 .overview-hero {
@@ -805,17 +811,34 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-hero-metrics {
     display: grid;
     gap: 8px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.overview-metric-grid {
+.overview-readout-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.overview-metric {
+.overview-readout {
+    border: 1px solid var(--line);
+    border-radius: 8px;
     display: grid;
     gap: 7px;
-    min-height: 112px;
+    min-height: 92px;
+    padding: 10px;
+}
+
+.overview-status-chip {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    display: grid;
+    gap: 2px;
+    min-height: 56px;
+    padding: 9px 12px;
+}
+
+.overview-status-chip em {
+    font-style: normal;
+    line-height: 1.2;
 }
 
 .overview-section-head {
@@ -834,7 +857,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-lifecycle-strip {
     display: grid;
     gap: 8px;
-    grid-template-columns: repeat(9, minmax(92px, 1fr));
+    grid-template-columns: repeat(9, minmax(88px, 1fr));
     list-style: none;
     margin: 10px 0 0;
     padding: 0;
@@ -874,9 +897,14 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     font-variant-numeric: tabular-nums;
 }
 
-.overview-system-panel {
+.overview-proof-flow,
+.overview-system-summary {
     display: grid;
     gap: 10px;
+}
+
+.overview-system-grid {
+    grid-template-columns: minmax(240px, 0.45fr) minmax(0, 1fr);
 }
 
 .overview-oversight,
@@ -3757,8 +3785,9 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-status-rail,
 .overview-hero-metrics,
-.overview-metric-grid,
+.overview-readout-list,
 .overview-feed-strip,
+.overview-system-grid,
 .overview-next-links,
 .priority-grid,
 .performance-status-grid,
@@ -4468,9 +4497,10 @@ summary {
     .cognition-two-col,
     .fund-model-grid,
     .mission-control-grid,
+    .overview-command-surface,
     .overview-status-rail,
-    .overview-snapshot-grid,
-    .overview-metric-grid,
+    .overview-readout-list,
+    .overview-system-grid,
     .overview-feed-strip,
     .overview-next-links,
     .trades-workspace-head,

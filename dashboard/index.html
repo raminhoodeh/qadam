@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-d11b-nav-contract">
+    <link rel="stylesheet" href="/auth.css?v=20260526-d11e-overview-rebuild">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -90,80 +90,73 @@
                         <button class="info-button" type="button" aria-label="About the overview">i</button>
                         <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control">
                             <strong>Overview</strong>
-                            <p>Gives a one-pass operating read before deeper dashboard views.</p>
+                            <p>Gives the shortest fund-manager read before deeper dashboard views.</p>
                             <dl class="explainer-grid">
-                                <div><dt>Use it to</dt><dd>Confirm mode, live-capital state, source health, trade lifecycle, and the next review area.</dd></div>
-                                <div><dt>Watch for</dt><dd>Any authority flag, weak source quorum, due postmortem, or proof credit before the demo window matures.</dd></div>
+                                <div><dt>Use it to</dt><dd>See the current answer, the next review area, the proof window, and the compact system map.</dd></div>
+                                <div><dt>Watch for</dt><dd>Weak source quorum, eligible setups with no candidate, due postmortems, or anything escalated by the single safety strip.</dd></div>
                                 <div><dt>Boundary</dt><dd>This is a read-only summary. It cannot approve, place, modify, close, or fund trades.</dd></div>
                             </dl>
                         </div>
                     </div>
                 </div>
 
-                <div class="overview-status-rail" data-overview-status-rail>
-                    <article class="overview-status-card">
-                        <span>Mode</span>
-                        <strong>Loading</strong>
-                        <p>Checking paper/demo scope.</p>
-                    </article>
-                    <article class="overview-status-card">
-                        <span>Capital</span>
-                        <strong>Loading</strong>
-                        <p>Checking live-capital state.</p>
-                    </article>
-                    <article class="overview-status-card">
-                        <span>Demo window</span>
-                        <strong>Loading</strong>
-                        <p>Checking day, week, and proof-trade cadence.</p>
-                    </article>
-                    <article class="overview-status-card">
-                        <span>Action needed</span>
-                        <strong>Loading</strong>
-                        <p>Checking the next review area.</p>
-                    </article>
-                </div>
-
-                <div class="overview-snapshot-grid">
+                <section class="overview-command-surface" aria-label="Fund manager overview" data-overview-command-surface>
                     <article class="overview-hero" data-overview-hero data-mission-primary>
-                        <span>Current state</span>
+                        <span>Fund Manager read</span>
                         <h3>Loading Qadam overview</h3>
                         <p>Waiting for the public-safe cockpit snapshot.</p>
                         <div class="overview-hero-metrics" data-overview-hero-metrics></div>
+                        <div class="overview-readout-list" data-overview-metrics></div>
                     </article>
-                    <div class="overview-metric-grid" data-overview-metrics></div>
-                </div>
+                    <aside class="overview-review-card" data-overview-review-card>
+                        <span>Needs review</span>
+                        <strong data-overview-action-label>Loading</strong>
+                        <p data-overview-action-summary>Checking the next review area.</p>
+                        <nav class="overview-next-links" aria-label="Next review links" data-overview-next-links>
+                            <a href="#trades">Review trades</a>
+                            <a href="#evidence">Review evidence</a>
+                            <a href="#reasoning">Review reasoning</a>
+                            <a href="#operations">Review operations</a>
+                        </nav>
+                    </aside>
+                </section>
 
-                <section class="overview-lifecycle-panel" aria-label="Trade lifecycle summary">
+                <section class="overview-proof-flow" aria-label="Proof and trade lifecycle" data-overview-proof-flow>
                     <div class="overview-section-head">
-                        <span>Trade lifecycle</span>
+                        <span>Proof and trade path</span>
                         <strong data-overview-lifecycle-summary>Loading lifecycle</strong>
+                    </div>
+                    <div class="overview-status-rail" data-overview-status-rail>
+                        <span class="overview-status-chip"><strong>Loading</strong><em>Proof window</em></span>
+                        <span class="overview-status-chip"><strong>Loading</strong><em>Weekly cadence</em></span>
+                        <span class="overview-status-chip"><strong>Loading</strong><em>Eligible setups</em></span>
                     </div>
                     <ol class="overview-lifecycle-strip" data-overview-lifecycle>
                         <li>Loading trade lifecycle.</li>
                     </ol>
                 </section>
 
-                <section class="overview-system-panel" aria-label="System connectivity summary">
-                    <div class="overview-oversight" data-overview-oversight>
-                        <span>Fund Manager oversight</span>
-                        <strong>You supervise the system</strong>
-                        <p>Human oversight sits above the chain; it is not an automated execution node.</p>
+                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
+                    <div class="overview-section-head">
+                        <span>Compact system map</span>
+                        <strong>How observations become paper states</strong>
+                    </div>
+                    <div class="overview-system-grid">
+                        <div class="overview-oversight" data-overview-oversight>
+                            <span>Fund Manager oversight</span>
+                            <strong>You supervise the fund team</strong>
+                            <p>Human oversight sits above the chain; it is not an automated execution node.</p>
+                        </div>
+                        <div class="overview-mini-map" data-overview-mini-map>
+                            <span>Loading system connectivity.</span>
+                        </div>
                     </div>
                     <div class="overview-feed-strip" data-overview-feed-strip></div>
-                    <div class="overview-mini-map" data-overview-mini-map>
-                        <span>Loading system connectivity.</span>
-                    </div>
                     <div class="overview-boundary-rail" data-overview-boundary-rail>
                         <span>Reading rule</span>
                         <p>Use the single safety strip for authority state. Overview items are readouts, and candidates are not orders.</p>
                     </div>
                 </section>
-
-                <nav class="overview-next-links" aria-label="Next review links" data-overview-next-links>
-                    <a href="#trades">Review trades</a>
-                    <a href="#evidence">Review evidence</a>
-                    <a href="#reasoning">Review reasoning</a>
-                </nav>
             </section>
 
             <section id="strategy-manifestation" class="operating-review-panel" aria-label="Phase 4 strategy manifestation" data-dashboard-view-section="reasoning" data-cockpit-section="Strategy" hidden>
@@ -1159,7 +1152,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-d11b-nav-contract"></script>
+    <script src="/dashboard.js?v=20260526-d11e-overview-rebuild"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 
