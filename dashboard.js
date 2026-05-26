@@ -35,10 +35,10 @@ const DASHBOARD_LEGACY_HASH_TARGETS = {
     "trade-layer": { viewId: "trades", targetId: "trade-layer" },
     money: { viewId: "trades", targetId: "money" },
     "system-map": { viewId: "operations", targetId: "system-map" },
-    forbidden: { viewId: "operations", targetId: "forbidden" },
-    "process-console": { viewId: "operations", targetId: "process-console" },
-    communications: { viewId: "operations", targetId: "communications" },
-    governance: { viewId: "operations", targetId: "governance" }
+    forbidden: { viewId: "operations", targetId: "operations-readout" },
+    "process-console": { viewId: "operations", targetId: "operations-readout" },
+    communications: { viewId: "operations", targetId: "operations-readout" },
+    governance: { viewId: "operations", targetId: "operations-readout" }
 };
 const DASHBOARD_VIEW_SCROLL_KEY = "qadam.dashboard.view.scroll";
 const TRADE_WORKSPACE_FILTERS = [
@@ -291,14 +291,44 @@ function storeDashboardViewScrollPosition(viewId) {
     writeDashboardViewScrollState(state);
 }
 
+function dashboardStickyScrollOffset() {
+    if (typeof document === "undefined") return 0;
+    const stickySelectors = [".cockpit-nav", "[data-dashboard-safety-strip]"];
+    const measuredOffset = stickySelectors.reduce((offset, selector) => {
+        const node = document.querySelector?.(selector);
+        if (!node || typeof node.getBoundingClientRect !== "function") return offset;
+        const styles = typeof window !== "undefined" && window.getComputedStyle
+            ? window.getComputedStyle(node)
+            : null;
+        if (styles && styles.display === "none") return offset;
+        const rect = node.getBoundingClientRect();
+        return Math.max(offset, rect.bottom || 0);
+    }, 0) + 12;
+    const estimatedStickyStack = typeof window !== "undefined" && window.innerWidth < 700 ? 260 : 220;
+    return Math.max(measuredOffset, estimatedStickyStack);
+}
+
+function scrollDashboardTargetIntoView(target) {
+    if (!target || typeof window === "undefined") return false;
+    if (typeof target.getBoundingClientRect === "function" && typeof window.scrollTo === "function") {
+        const top = Math.max(0, (window.scrollY || 0) + target.getBoundingClientRect().top - dashboardStickyScrollOffset());
+        window.scrollTo({ top, behavior: "auto" });
+        return true;
+    }
+    if (target.scrollIntoView) {
+        target.scrollIntoView({ block: "start" });
+        return true;
+    }
+    return false;
+}
+
 function restoreDashboardViewScrollPosition(viewId, targetId, shouldScroll) {
     if (!shouldScroll || typeof window === "undefined") return;
     const restore = () => {
         const target = targetId && typeof document.getElementById === "function"
             ? document.getElementById(targetId)
             : null;
-        if (target?.scrollIntoView) {
-            target.scrollIntoView({ block: "start" });
+        if (scrollDashboardTargetIntoView(target)) {
             return;
         }
         const state = readDashboardViewScrollState();
@@ -2077,6 +2107,9 @@ function buildOperationsModel(status = {}, source = {}) {
     const processEvents = asArray(status.process_console);
     const forbiddenActions = asArray(status.forbidden_actions);
     const connectivity = buildSystemConnectivityModel(status);
+    const roleSpine = buildOperationsRoleSpine(connectivity);
+    const governance = buildGovernanceModel(status);
+    const communicationsAudit = governance.communications || {};
     const authorityFlags = collectAuthorityFlags(status);
     const readinessWarnings = collectReadinessWarnings(status);
     const moduleCounts = countBy(asArray(status.modules), "status");
@@ -2094,6 +2127,36 @@ function buildOperationsModel(status = {}, source = {}) {
             .filter((pipeline) => modelNumber(pipeline.missing_credential_count, 0) || modelNumber(pipeline.degraded_count, 0))
             .map((pipeline) => `${dashboardText(pipeline.pipeline)} pipeline degraded or missing credentials`),
         ...(processEvents.length ? [] : ["process console has no recent events"])
+    ];
+    const reviewGroups = [
+        {
+            id: "runtime_safety",
+            title: "Runtime, bridge, and safety",
+            summary: "Read-only bridge state, static fallback, exporter/cache posture, hard blocks, and kill-switch ledger.",
+            status: brokenItems.length ? "degraded" : "online",
+            count: 5 + forbiddenActions.length + brokenItems.length
+        },
+        {
+            id: "team_data_plumbing",
+            title: "Operating team and data plumbing",
+            summary: "The hedge-fund team roles and intelligence feed clusters that move observations into review.",
+            status: connectivity.feed_clusters.some((cluster) => cluster.status === "blocked") ? "blocked" : "online",
+            count: roleSpine.length + connectivity.feed_clusters.length
+        },
+        {
+            id: "system_map_event_trail",
+            title: "Full system map and event trail",
+            summary: "Node-by-node connectivity, handoff edge states, recent runtime events, and closed-loop logging rule.",
+            status: connectivity.authority_violations.length ? "blocked" : "online",
+            count: connectivity.node_count + processEvents.length
+        },
+        {
+            id: "governance_comms_audit",
+            title: "Governance and communications audit",
+            summary: "Fund Manager comments, approval records, weekly review state, and outbound-only Telegram notifications.",
+            status: communicationsAudit.command_path_enabled || communicationsAudit.live_send_allowed_count ? "blocked" : "pending",
+            count: modelNumber(governance.comments?.count, 0) + modelNumber(communicationsAudit.pending_queue_count, 0) + asArray(governance.open_actions).length
+        }
     ];
     return {
         id: "operations",
@@ -2128,7 +2191,39 @@ function buildOperationsModel(status = {}, source = {}) {
             live_capital_enabled: Boolean(status.capital?.live_capital_enabled)
         },
         system_connectivity_model: connectivity,
-        role_spine: buildOperationsRoleSpine(connectivity),
+        role_spine: roleSpine,
+        operations_review_groups: reviewGroups,
+        forbidden_actions: forbiddenActions.slice(0, 8).map((action) => ({
+            key: dashboardText(action.key, "safety stop"),
+            reason: dashboardText(action.reason, "No reason exported.")
+        })),
+        process_events: processEvents.slice(-6).map((event) => ({
+            timestamp: event.timestamp || event.created_at || event.generated_at,
+            message: dashboardText(event.message || event.event || event.status, "runtime event")
+        })),
+        communications_audit: {
+            status: communicationsAudit.telegram_status || "not exported",
+            pending_queue_count: modelNumber(communicationsAudit.pending_queue_count, 0),
+            dry_run_message_count: modelNumber(communicationsAudit.dry_run_message_count, 0),
+            failed_count: modelNumber(communicationsAudit.failed_count, 0),
+            suppressed_count: modelNumber(communicationsAudit.suppressed_count, 0),
+            live_send_allowed_count: modelNumber(communicationsAudit.live_send_allowed_count, 0),
+            command_path_enabled_count: modelNumber(communicationsAudit.command_path_enabled_count, 0),
+            command_path_enabled: Boolean(communicationsAudit.command_path_enabled),
+            send_gate: communicationsAudit.send_gate || "not exported",
+            boundary: communicationsAudit.boundary || "Telegram is outbound notify-only."
+        },
+        governance_audit: {
+            comments: modelNumber(governance.comments?.count, 0),
+            suggestions: modelNumber(governance.comments?.suggestion_count, 0),
+            accepted: modelNumber(governance.comments?.accepted_count, 0),
+            implemented: modelNumber(governance.comments?.implemented_count, 0),
+            approval: governance.approvals?.strategy_approval_state || "missing",
+            weekly_review: governance.review_packs?.weekly_review_pack_state || "not ready",
+            open_actions: asArray(governance.open_actions).slice(0, 4),
+            live_promotion: governance.live_promotion?.status || "not eligible",
+            boundary: governance.boundary || "Governance notes only. No trade approval, order placement, or local secret access."
+        },
         broken_summary: {
             status: brokenItems.length ? "degraded" : "online",
             item_count: brokenItems.length,
@@ -3112,136 +3207,246 @@ function renderOperationsDiagnosticCard(label, status, facts, tone = "pending") 
     `;
 }
 
+function renderOperationsReviewGroup(group = {}, bodyHtml = "", open = false) {
+    return `
+        <details class="operations-review-group ${statusClass(group.status)}" data-operations-review-group="${literalHtmlText(group.id)}" ${open ? "open" : ""}>
+            <summary>
+                <strong>${htmlText(group.title)}</strong>
+                <span>${htmlText(group.summary)}</span>
+                <em>${htmlText(group.count || 0)} records</em>
+            </summary>
+            <div class="operations-review-group-body">
+                ${bodyHtml}
+            </div>
+        </details>
+    `;
+}
+
 function renderOperationsWorkspace(model = {}, status = {}) {
     const connectivity = model.system_connectivity_model || {};
     const runtime = model.runtime || {};
     const safety = model.safety || {};
     const diagnostics = model.diagnostics || {};
     const broken = model.broken_summary || {};
+    const groupById = new Map(asArray(model.operations_review_groups).map((group) => [group.id, group]));
     const backendMap = status.phase5_system_map || {};
     const sourcePosture = backendMap.source_posture || {};
     const canonical = sourcePosture.canonical || {};
     const yahoo = sourcePosture.yahoo_finance || {};
     const preference = sourcePosture.preference_mcp || {};
     const guardrails = backendMap.guardrails || {};
+    const communications = model.communications_audit || {};
+    const governance = model.governance_audit || {};
     const bridgeTone = runtime.live_bridge_read_only && !safety.live_capital_enabled ? "online" : "blocked";
     const brokenItems = asArray(broken.items).length
         ? asArray(broken.items).map((item) => `<li>${htmlText(item)}</li>`).join("")
         : `<li>No broken operations path exported.</li>`;
+    const hardBlockRows = asArray(model.forbidden_actions).length
+        ? asArray(model.forbidden_actions).map((action) => `
+            <li>
+                <strong>${htmlText(action.key)}</strong>
+                <span>${htmlText(action.reason)}</span>
+            </li>
+        `).join("")
+        : `<li><strong>No hard blocks exported</strong><span>No forbidden-action records are in this snapshot.</span></li>`;
+    const eventRows = asArray(model.process_events).length
+        ? asArray(model.process_events).map((event) => `
+            <li>
+                <time>${formatTime(event.timestamp)}</time>
+                <span>${htmlText(event.message)}</span>
+            </li>
+        `).join("")
+        : `<li><time>Now</time><span>No recent runtime events are exported in this snapshot.</span></li>`;
+    const governanceActionRows = asArray(governance.open_actions).length
+        ? asArray(governance.open_actions).map((action) => `
+            <li>
+                <strong>${htmlText(action.label)}</strong>
+                <span>${htmlText(action.detail)}</span>
+            </li>
+        `).join("")
+        : `<li><strong>No open governance action</strong><span>No open Fund Manager action is exported in this snapshot.</span></li>`;
     return `
         <section class="operations-workspace" data-operations-workspace>
-            <div class="operations-workspace-head">
-                <div>
-                    <p class="label">Operations workspace</p>
-                    <h3>Read-only runtime diagnostics and full system connectivity</h3>
-                    <p>${htmlText(model.summary)} Full expandable System Operating Map, bridge and snapshot state, exporter and cache diagnostics, module health, phase/certification diagnostics, and kill-switch ledger health live here.</p>
+            <section id="operations-readout" class="operations-consolidated-readout" data-operations-consolidated-readout>
+                <div class="operations-workspace-head">
+                    <div>
+                        <p class="label">Operations workspace</p>
+                        <h3>Operations readout and full system map</h3>
+                        <p>${htmlText(model.summary)} This is the read-only runtime diagnostics and full system connectivity view: bridge health, safety stops, team roles, feed plumbing, map edges, event trail, governance, and outbound communications in one place.</p>
+                    </div>
+                    <article class="operations-broken-card ${statusClass(broken.status)}">
+                        <span>What is broken?</span>
+                        <strong>${broken.item_count || 0} items</strong>
+                        <ul>${brokenItems}</ul>
+                    </article>
                 </div>
-                <article class="operations-broken-card ${statusClass(broken.status)}">
-                    <span>What is broken?</span>
-                    <strong>${broken.item_count || 0} items</strong>
-                    <ul>${brokenItems}</ul>
-                </article>
-            </div>
-
-            <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
-
-            <section class="operations-role-spine" aria-label="Operations role spine">
-                <div class="overview-section-head">
-                    <span>First-class operating roles</span>
-                    <strong>Fund Manager, live data feeds, COO, analysts, quant, gates, paper lifecycle, and learning loop.</strong>
+                <div class="operations-consolidated-metrics">
+                    ${renderMetric("Nodes", connectivity.node_count || 0)}
+                    ${renderMetric("Bridge", runtime.live_bridge_read_only === false ? "review" : "read-only")}
+                    ${renderMetric("Events", asArray(model.process_events).length)}
+                    ${renderMetric("Hard blocks", safety.forbidden_action_count || 0)}
+                    ${renderMetric("Authority flags", safety.authority_flags?.length || 0)}
+                    ${renderMetric("Telegram queue", communications.pending_queue_count || 0)}
+                    ${renderMetric("Comments", governance.comments || 0)}
+                    ${renderMetric("Live capital", safety.live_capital_enabled ? "on" : "off")}
                 </div>
-                <div class="operations-role-grid">
-                    ${asArray(model.role_spine).map(renderOperationsRoleNode).join("")}
+                <div class="tag-row">
+                    ${renderInlineBadge("Read-only bridge", runtime.live_bridge_read_only === false ? "blocked" : "online")}
+                    ${renderInlineBadge("Static fallback safe", runtime.public_safe ? "online" : "blocked")}
+                    ${renderInlineBadge("No browser shell", "online")}
+                    ${renderInlineBadge(communications.command_path_enabled ? "Telegram command path enabled" : "No Telegram command path", communications.command_path_enabled ? "blocked" : "online")}
+                    ${renderInlineBadge(safety.live_capital_enabled ? "Live capital enabled" : "Live capital disabled", safety.live_capital_enabled ? "blocked" : "online")}
                 </div>
             </section>
 
-            <section class="operations-diagnostics-grid" aria-label="Operations diagnostics">
-                ${renderOperationsDiagnosticCard("Bridge and snapshot", runtime.live_bridge_status || "not exported", [
+            <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
+
+            <div class="operations-review-groups" data-operations-review-groups>
+                ${renderOperationsReviewGroup(groupById.get("runtime_safety"), `
+                    <section class="operations-diagnostics-grid" aria-label="Operations diagnostics">
+                        ${renderOperationsDiagnosticCard("Bridge and snapshot", runtime.live_bridge_status || "not exported", [
         ["Endpoint", runtime.endpoint || "not exported"],
         ["Source", runtime.status_source || "not exported"],
         ["Allowed", asArray(runtime.allowed_methods).join(", ") || "none"],
         ["Forbidden", asArray(runtime.forbidden_methods).join(", ") || "none"],
         ["D1", runtime.d1_snapshot_status || "not exported"]
     ], bridgeTone)}
-                ${renderOperationsDiagnosticCard("Exporter and cache", runtime.cache_mode || "not exported", [
+                        ${renderOperationsDiagnosticCard("Exporter and cache", runtime.cache_mode || "not exported", [
         ["Fallback", runtime.static_fallback || "not exported"],
         ["Max age", `${runtime.cache_max_age_seconds || 0}s`],
         ["Stale after", `${runtime.stale_after_seconds || 0}s`],
         ["Signature", runtime.signature_configured ? "configured" : runtime.publisher_status || "digest only"],
         ["Generated", formatTime(runtime.generated_at)]
     ], runtime.public_safe ? "online" : "blocked")}
-                ${renderOperationsDiagnosticCard("Module health", `${diagnostics.module_health?.total || 0} modules`, [
+                        ${renderOperationsDiagnosticCard("Module health", `${diagnostics.module_health?.total || 0} modules`, [
         ["Online", diagnostics.module_health?.online || 0],
         ["Degraded", diagnostics.module_health?.degraded || 0],
         ["Blocked", diagnostics.module_health?.blocked || 0],
         ["Pending", diagnostics.module_health?.pending || 0],
         ["Local-only", diagnostics.module_health?.local_only || 0]
     ], diagnostics.module_health?.blocked ? "blocked" : (diagnostics.module_health?.degraded ? "degraded" : "online"))}
-                ${renderOperationsDiagnosticCard("Phase/certification diagnostics", diagnostics.phase_certification?.phase7_visibility || "not exported", [
+                        ${renderOperationsDiagnosticCard("Phase/certification diagnostics", diagnostics.phase_certification?.phase7_visibility || "not exported", [
         ["Phase 4", diagnostics.phase_certification?.phase4_certified ? "certified" : diagnostics.phase_certification?.phase4_stage || "not exported"],
         ["Phase 5", diagnostics.phase_certification?.phase5_certified ? "certified" : "not certified"],
         ["Phase 6", diagnostics.phase_certification?.phase6_certified ? "certified" : "not certified"],
         ["Phase 7", diagnostics.phase_certification?.phase7_certified ? "certified" : diagnostics.phase_certification?.phase7_visibility || "visible"],
         ["Authority", "read-only diagnostics"]
     ], "pending")}
-                ${renderOperationsDiagnosticCard("Kill-switch ledger", diagnostics.kill_switch?.status || "not exported", [
+                        ${renderOperationsDiagnosticCard("Kill-switch ledger", diagnostics.kill_switch?.status || "not exported", [
         ["Total", diagnostics.kill_switch?.total_count || 0],
         ["Active", diagnostics.kill_switch?.active_count || 0],
         ["Blocking", diagnostics.kill_switch?.blocking_count || 0],
         ["Event Log", diagnostics.kill_switch?.event_log_written ? "written" : "not exported"],
         ["Boundary", "cannot mutate from dashboard"]
     ], diagnostics.kill_switch?.blocking_count ? "blocked" : "online")}
-            </section>
+                    </section>
+                    <section class="operations-safety-list">
+                        <div class="overview-section-head">
+                            <span>Hard safety stops</span>
+                            <strong>Safety stops are reported here, not unlocked here.</strong>
+                        </div>
+                        <ul class="status-list">${hardBlockRows}</ul>
+                    </section>
+                `, true)}
 
-            <section class="operations-feed-clusters" aria-label="Live data feed clusters">
-                <div class="overview-section-head">
-                    <span>Live data feed clusters</span>
-                    <strong>Five intelligence pipelines plus source provenance and supplemental adapters.</strong>
-                </div>
-                <div class="operations-feed-grid">
-                    ${asArray(connectivity.feed_clusters).map(renderOperationsFeedCluster).join("")}
-                </div>
-            </section>
+                ${renderOperationsReviewGroup(groupById.get("team_data_plumbing"), `
+                    <section class="operations-role-spine" aria-label="Operations role spine">
+                        <div class="overview-section-head">
+                            <span>First-class operating roles</span>
+                            <strong>Fund Manager, live data feeds, COO, analysts, quant, gates, paper lifecycle, and learning loop.</strong>
+                        </div>
+                        <div class="operations-role-grid">
+                            ${asArray(model.role_spine).map(renderOperationsRoleNode).join("")}
+                        </div>
+                    </section>
+                    <section class="operations-feed-clusters" aria-label="Live data feed clusters">
+                        <div class="overview-section-head">
+                            <span>Live data feed clusters</span>
+                            <strong>Five intelligence pipelines plus source provenance and supplemental adapters.</strong>
+                        </div>
+                        <div class="operations-feed-grid">
+                            ${asArray(connectivity.feed_clusters).map(renderOperationsFeedCluster).join("")}
+                        </div>
+                    </section>
+                `)}
 
-            <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
-                <div class="operations-full-map-head">
-                    <div>
-                        <p class="label">Q5-13 Functional System Map Dashboard</p>
-                        <h3>Full expandable System Operating Map</h3>
-                        <p>${htmlText(connectivity.boundary)} Advanced phase labels and raw operational terms are intentionally kept in Operations.</p>
-                    </div>
-                    <div class="summary-strip compact">
-                        ${renderMetric("Nodes", backendMap.node_count || connectivity.node_count || 0)}
-                        ${renderMetric("Layer B", backendMap.layer_b_node_count || 0)}
-                        ${renderMetric("Lanes", backendMap.lane_count || connectivity.lane_count || 0)}
-                        ${renderMetric("Backend parity", `${backendMap.backend_parity_error_count || 0} errors`)}
-                        ${renderMetric("Unsafe controls", backendMap.unsafe_control_count || 0)}
-                        ${renderMetric("Event Log", backendMap.event_log_written ? "written" : "pending")}
-                    </div>
-                </div>
-                <div class="tag-row">
-                    ${renderInlineBadge(`canonical sources ${canonical.replayed_source_count || 0}/${canonical.expected_source_count || 0}`, (canonical.missing_source_count || 0) ? "degraded" : "online")}
-                    ${renderInlineBadge(`Yahoo Finance ${dashboardText(yahoo.role || "supplemental market confirmation only")}`, "pending")}
-                    ${renderInlineBadge(`Preference/PREF MCP ${dashboardText(preference.status || "not exported")}`, preference.source_36 ? "blocked" : "pending")}
-                    ${renderInlineBadge(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled", guardrails.live_capital_enabled ? "blocked" : "online")}
-                    ${renderInlineBadge(`paper submit path ${guardrails.paper_submit_path_available_count || 0}`, guardrails.paper_submit_path_available_count ? "online" : "blocked")}
-                    ${renderInlineBadge(guardrails.dashboard_claims_trading_now ? "dashboard says trading" : "dashboard does not say trading", guardrails.dashboard_claims_trading_now ? "blocked" : "online")}
-                </div>
-                <div class="operations-edge-legend">
-                    <span>Edge state</span>
-                    ${["active", "shadow/context-only", "degraded", "locked", "blocked"].map((state) => renderInlineBadge(state, state)).join("")}
-                </div>
-                <ul class="operations-edge-list">
-                    ${asArray(connectivity.edges).slice(0, 14).map((edge) => renderOperationsEdge(edge, connectivity)).join("")}
-                </ul>
-                <div class="system-flow-diagram operations-flow-diagram">
-                    ${asArray(connectivity.lanes).map((lane, laneIndex) => renderOperationsLane(lane, connectivity, laneIndex)).join("")}
-                    <div class="flow-return-loop">
-                        <strong>Closed-loop rule</strong>
-                        <span>Every observation, hypothesis, risk decision, paper state, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
-                    </div>
-                </div>
-            </section>
+                ${renderOperationsReviewGroup(groupById.get("system_map_event_trail"), `
+                    <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
+                        <div class="operations-full-map-head">
+                            <div>
+                                <p class="label">Q5-13 Functional System Map Dashboard</p>
+                                <h3>Full expandable System Operating Map</h3>
+                                <p>${htmlText(connectivity.boundary)} Advanced phase labels and raw operational terms are intentionally kept in Operations.</p>
+                            </div>
+                            <div class="summary-strip compact">
+                                ${renderMetric("Nodes", backendMap.node_count || connectivity.node_count || 0)}
+                                ${renderMetric("Layer B", backendMap.layer_b_node_count || 0)}
+                                ${renderMetric("Lanes", backendMap.lane_count || connectivity.lane_count || 0)}
+                                ${renderMetric("Backend parity", `${backendMap.backend_parity_error_count || 0} errors`)}
+                                ${renderMetric("Unsafe controls", backendMap.unsafe_control_count || 0)}
+                                ${renderMetric("Event Log", backendMap.event_log_written ? "written" : "pending")}
+                            </div>
+                        </div>
+                        <div class="tag-row">
+                            ${renderInlineBadge(`canonical sources ${canonical.replayed_source_count || 0}/${canonical.expected_source_count || 0}`, (canonical.missing_source_count || 0) ? "degraded" : "online")}
+                            ${renderInlineBadge(`Yahoo Finance ${dashboardText(yahoo.role || "supplemental market confirmation only")}`, "pending")}
+                            ${renderInlineBadge(`Preference/PREF MCP ${dashboardText(preference.status || "not exported")}`, preference.source_36 ? "blocked" : "pending")}
+                            ${renderInlineBadge(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled", guardrails.live_capital_enabled ? "blocked" : "online")}
+                            ${renderInlineBadge(`paper submit path ${guardrails.paper_submit_path_available_count || 0}`, guardrails.paper_submit_path_available_count ? "online" : "blocked")}
+                            ${renderInlineBadge(guardrails.dashboard_claims_trading_now ? "dashboard says trading" : "dashboard does not say trading", guardrails.dashboard_claims_trading_now ? "blocked" : "online")}
+                        </div>
+                        <div class="operations-edge-legend">
+                            <span>Edge state</span>
+                            ${["active", "shadow/context-only", "degraded", "locked", "blocked"].map((state) => renderInlineBadge(state, state)).join("")}
+                        </div>
+                        <ul class="operations-edge-list">
+                            ${asArray(connectivity.edges).slice(0, 14).map((edge) => renderOperationsEdge(edge, connectivity)).join("")}
+                        </ul>
+                        <div class="system-flow-diagram operations-flow-diagram">
+                            ${asArray(connectivity.lanes).map((lane, laneIndex) => renderOperationsLane(lane, connectivity, laneIndex)).join("")}
+                            <div class="flow-return-loop">
+                                <strong>Closed-loop rule</strong>
+                                <span>Every observation, hypothesis, risk decision, paper state, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="operations-event-trail">
+                        <div class="overview-section-head">
+                            <span>Recent runtime events</span>
+                            <strong>Process console merged into Operations; still read-only and not shell access.</strong>
+                        </div>
+                        <ol class="console-feed">${eventRows}</ol>
+                    </section>
+                `, true)}
+
+                ${renderOperationsReviewGroup(groupById.get("governance_comms_audit"), `
+                    <section class="operations-governance-audit">
+                        <div class="overview-section-head">
+                            <span>Governance and outbound communications</span>
+                            <strong>Fund Manager review and Telegram state without separate duplicate cards.</strong>
+                        </div>
+                        <div class="summary-strip compact">
+                            ${renderMetric("Telegram", communications.status || "not exported")}
+                            ${renderMetric("Dry-run", communications.dry_run_message_count || 0)}
+                            ${renderMetric("Queued", communications.pending_queue_count || 0)}
+                            ${renderMetric("Failed", communications.failed_count || 0)}
+                            ${renderMetric("Suppressed", communications.suppressed_count || 0)}
+                            ${renderMetric("Live sends", communications.live_send_allowed_count || 0)}
+                            ${renderMetric("Comments", governance.comments || 0)}
+                            ${renderMetric("Approval", governance.approval || "missing")}
+                        </div>
+                        <div class="tag-row">
+                            ${renderInlineBadge(communications.command_path_enabled ? "command path enabled" : "outbound notify-only", communications.command_path_enabled ? "blocked" : "online")}
+                            ${renderInlineBadge(communications.live_send_allowed_count ? "live send allowed" : "live send disabled", communications.live_send_allowed_count ? "blocked" : "online")}
+                            ${renderInlineBadge(`send gate ${dashboardText(communications.send_gate || "not exported")}`, "pending")}
+                            ${renderInlineBadge(`weekly review ${dashboardText(governance.weekly_review || "not ready")}`, "pending")}
+                            ${renderInlineBadge(`live promotion ${dashboardText(governance.live_promotion || "not eligible")}`, "pending")}
+                        </div>
+                        <ul class="operations-action-list">${governanceActionRows}</ul>
+                        <p class="mini">${htmlText(communications.boundary)} ${htmlText(governance.boundary)}</p>
+                    </section>
+                `)}
+            </div>
 
             <p class="mini">${htmlText(model.boundary)}</p>
         </section>

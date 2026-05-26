@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-d11h-reasoning-view">
+    <link rel="stylesheet" href="/auth.css?v=20260526-d11i-operations-view-anchor">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -262,66 +262,66 @@
 
                 <div class="flow-map" data-flow-map>
                     <section class="operations-workspace" data-operations-workspace>
-                        <div class="operations-workspace-head">
-                            <div>
-                                <p class="label">Operations workspace</p>
-                                <h3>Read-only runtime diagnostics and full system connectivity</h3>
-                                <p>Full expandable System Operating Map, bridge and snapshot state, exporter and cache diagnostics, module health, phase/certification diagnostics, and kill-switch ledger health live here.</p>
+                        <section id="operations-readout" class="operations-consolidated-readout" data-operations-consolidated-readout>
+                            <div class="operations-workspace-head">
+                                <div>
+                                    <p class="label">Operations workspace</p>
+                                    <h3>Operations readout and full system map</h3>
+                                    <p>Read-only runtime diagnostics and full system connectivity load here: bridge health, safety stops, team roles, feed plumbing, map edges, event trail, governance, and outbound communications.</p>
+                                </div>
+                                <article class="operations-broken-card pending">
+                                    <span>What is broken?</span>
+                                    <strong>Loading</strong>
+                                    <ul>
+                                        <li>Waiting for the public-safe operations snapshot.</li>
+                                    </ul>
+                                </article>
                             </div>
-                            <article class="operations-broken-card pending">
-                                <span>What is broken?</span>
-                                <strong>Loading</strong>
-                                <ul>
-                                    <li>Waiting for the public-safe operations snapshot.</li>
-                                </ul>
-                            </article>
-                        </div>
+                            <div class="operations-consolidated-metrics">
+                                <div class="metric"><span>Nodes</span><strong>Loading</strong></div>
+                                <div class="metric"><span>Bridge</span><strong>Read-only</strong></div>
+                                <div class="metric"><span>Events</span><strong>Loading</strong></div>
+                                <div class="metric"><span>Hard blocks</span><strong>Loading</strong></div>
+                                <div class="metric"><span>Authority flags</span><strong>0</strong></div>
+                                <div class="metric"><span>Telegram queue</span><strong>Loading</strong></div>
+                                <div class="metric"><span>Comments</span><strong>Loading</strong></div>
+                                <div class="metric"><span>Live capital</span><strong>Off</strong></div>
+                            </div>
+                        </section>
                         <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
-                        <section class="operations-role-spine" aria-label="Operations role spine">
-                            <div class="overview-section-head">
-                                <span>First-class operating roles</span>
-                                <strong>Fund Manager, live data feeds, COO, analysts, quant, gates, paper lifecycle, and learning loop.</strong>
-                            </div>
-                            <div class="operations-role-grid">
-                                <article class="operations-role-node online">
-                                    <span>One overseeing Fund Manager</span>
-                                    <strong>Fund Manager supervisor</strong>
-                                    <p>Human review, challenge, governance comments, kill-switch review, and phase promotion decisions.</p>
-                                    <small>Supervisor only; not a manual trade-execution node.</small>
-                                </article>
-                                <article class="operations-role-node online">
-                                    <span>Intelligence pipelines</span>
-                                    <strong>Live data feed clusters</strong>
-                                    <p>Conflict/geopolitics, physical world, macro/rates, market/broker, and narrative/filings/social/news inputs.</p>
-                                    <small>Observation only; no source can create orders.</small>
-                                </article>
-                                <article class="operations-role-node online">
-                                    <span>Local orchestrator</span>
-                                    <strong>Python COO</strong>
-                                    <p>Keeps the book, exports public-safe state, and makes the dashboard read-only.</p>
-                                    <small>No browser shell or broker route.</small>
-                                </article>
-                            </div>
-                        </section>
-                        <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
-                            <div class="operations-edge-legend">
-                                <span>Edge state</span>
-                                <span class="inline-badge online">Current</span>
-                                <span class="inline-badge shadow-context-only">shadow/context-only</span>
-                                <span class="inline-badge degraded">degraded</span>
-                                <span class="inline-badge pending">Read-only lock</span>
-                                <span class="inline-badge blocked">Safety stop</span>
-                            </div>
-                            <details class="operations-node-diagnostics">
-                                <summary>Expand diagnostics</summary>
-                                <dl>
-                                    <div><dt>Latest heartbeat</dt><dd>Loads from backend snapshot.</dd></div>
-                                    <div><dt>Event Log references</dt><dd>Backend status paths and event-log markers.</dd></div>
-                                    <div><dt>Authority boundary</dt><dd>Read-only diagnostics only.</dd></div>
-                                    <div><dt>Related dashboard links</dt><dd>Operations, Sources, Trades, Reasoning, Performance, and Governance.</dd></div>
-                                </dl>
+                        <div class="operations-review-groups" data-operations-review-groups>
+                            <details class="operations-review-group" data-operations-review-group="runtime_safety" open>
+                                <summary><strong>Runtime, bridge, and safety</strong><span>Read-only bridge state, static fallback, exporter/cache posture, hard blocks, and kill-switch ledger.</span><em>Loading</em></summary>
                             </details>
-                        </section>
+                            <details class="operations-review-group" data-operations-review-group="team_data_plumbing">
+                                <summary><strong>Operating team and data plumbing</strong><span>The hedge-fund team roles and intelligence feed clusters that move observations into review.</span><em>Loading</em></summary>
+                            </details>
+                            <details class="operations-review-group" data-operations-review-group="system_map_event_trail" open>
+                                <summary><strong>Full system map and event trail</strong><span>Node-by-node connectivity, handoff edge states, recent runtime events, and closed-loop logging rule.</span><em>Loading</em></summary>
+                                <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
+                                    <div class="operations-edge-legend">
+                                        <span>Edge state</span>
+                                        <span class="inline-badge online">Current</span>
+                                        <span class="inline-badge shadow-context-only">shadow/context-only</span>
+                                        <span class="inline-badge degraded">degraded</span>
+                                        <span class="inline-badge pending">Read-only lock</span>
+                                        <span class="inline-badge blocked">Safety stop</span>
+                                    </div>
+                                    <details class="operations-node-diagnostics">
+                                        <summary>Expand diagnostics</summary>
+                                        <dl>
+                                            <div><dt>Latest heartbeat</dt><dd>Loads from backend snapshot.</dd></div>
+                                            <div><dt>Event Log references</dt><dd>Backend status paths and event-log markers.</dd></div>
+                                            <div><dt>Authority boundary</dt><dd>Read-only diagnostics only.</dd></div>
+                                            <div><dt>Related dashboard links</dt><dd>Operations, Evidence, Trades, Reasoning, and Overview.</dd></div>
+                                        </dl>
+                                    </details>
+                                </section>
+                            </details>
+                            <details class="operations-review-group" data-operations-review-group="governance_comms_audit">
+                                <summary><strong>Governance and communications audit</strong><span>Fund Manager comments, approval records, weekly review state, and outbound-only Telegram notifications.</span><em>Loading</em></summary>
+                            </details>
+                        </div>
                     </section>
                     <div class="system-flow-diagram">
                         <section class="flow-lane online">
@@ -716,7 +716,7 @@
                     </div>
                 </article>
 
-                <article id="forbidden" class="panel-card guardrail-panel" aria-label="Forbidden actions" data-dashboard-view-section="operations" data-cockpit-section="Safety" hidden>
+                <article id="forbidden" class="panel-card guardrail-panel legacy-operations-panel" aria-label="Forbidden actions" data-dashboard-view-section="operations" data-cockpit-section="Safety" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Forbidden</p>
@@ -756,7 +756,7 @@
                     </div>
                 </article>
 
-                <article id="communications" class="panel-card communications-panel" aria-label="Telegram communications" data-dashboard-view-section="operations" data-cockpit-section="Communications" hidden>
+                <article id="communications" class="panel-card communications-panel legacy-operations-panel" aria-label="Telegram communications" data-dashboard-view-section="operations" data-cockpit-section="Communications" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Communications</p>
@@ -940,7 +940,7 @@
                     </div>
                 </article>
 
-                <article id="process-console" class="panel-card process-panel" aria-label="Process console" data-dashboard-view-section="operations" data-cockpit-section="Process Console" hidden>
+                <article id="process-console" class="panel-card process-panel legacy-operations-panel" aria-label="Process console" data-dashboard-view-section="operations" data-cockpit-section="Process Console" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Process console</p>
@@ -1025,7 +1025,7 @@
                     </div>
                 </article>
 
-                <article id="governance" class="panel-card comments-panel" aria-label="Fund Manager comments" data-dashboard-view-section="operations" data-cockpit-section="Governance" hidden>
+                <article id="governance" class="panel-card comments-panel legacy-operations-panel" aria-label="Fund Manager comments" data-dashboard-view-section="operations" data-cockpit-section="Governance" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Fund Manager comments</p>
@@ -1160,7 +1160,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-d11h-reasoning-view"></script>
+    <script src="/dashboard.js?v=20260526-d11i-operations-view-anchor"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

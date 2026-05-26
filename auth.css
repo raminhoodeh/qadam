@@ -340,7 +340,7 @@ option {
     align-items: center;
     background:
         linear-gradient(135deg, rgba(var(--cyan-rgb), 0.075), rgba(var(--green-rgb), 0.055)),
-        rgba(255, 255, 255, 0.035);
+        rgba(8, 12, 15, 0.96);
     border: 1px solid rgba(var(--green-rgb), 0.32);
     border-radius: 8px;
     box-shadow: 0 0 34px rgba(var(--green-rgb), 0.08);
@@ -1443,6 +1443,116 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .operations-workspace {
     display: grid;
     gap: 14px;
+}
+
+.operations-consolidated-readout {
+    border: 1px solid rgba(var(--cyan-rgb), 0.22);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(var(--cyan-rgb), 0.08), transparent 42%),
+        rgba(255, 255, 255, 0.045);
+    box-shadow: var(--glow-cyan);
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+    scroll-margin-top: 180px;
+}
+
+.operations-consolidated-metrics,
+.operations-review-groups {
+    display: grid;
+    gap: 10px;
+}
+
+.operations-consolidated-metrics {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.operations-review-group {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    overflow: clip;
+    scroll-margin-top: 180px;
+}
+
+.operations-review-group summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(180px, 0.28fr) minmax(0, 1fr) auto;
+    padding: 14px;
+}
+
+.operations-review-group summary strong {
+    color: var(--text);
+    font-size: 17px;
+    line-height: 1.2;
+}
+
+.operations-review-group summary span {
+    color: var(--muted);
+    line-height: 1.4;
+}
+
+.operations-review-group summary em {
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.operations-review-group-body {
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+}
+
+.operations-safety-list,
+.operations-event-trail,
+.operations-governance-audit {
+    display: grid;
+    gap: 10px;
+}
+
+.operations-action-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.operations-action-list li {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.operations-action-list strong,
+.operations-action-list span {
+    display: block;
+}
+
+.operations-action-list strong {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.operations-action-list span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+html[data-dashboard-active-view="operations"] .legacy-operations-panel {
+    display: none;
 }
 
 .operations-workspace-head {
@@ -4098,6 +4208,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-next-links,
 .priority-grid,
 .performance-status-grid,
+.operations-consolidated-metrics,
 .operations-role-grid,
 .operations-diagnostics-grid,
 .operations-feed-grid,
@@ -4820,6 +4931,9 @@ summary {
     .performance-two-col,
     .paper-account-live-board,
     .paper-equity-chart-summary,
+    .operations-consolidated-readout,
+    .operations-consolidated-metrics,
+    .operations-review-group summary,
     .operations-workspace-head,
     .operations-full-map-head,
     .operations-role-grid,
@@ -5081,6 +5195,8 @@ summary {
     .overview-mini-map,
     .overview-lifecycle-strip,
     .trade-lifecycle-strip,
+    .operations-consolidated-metrics,
+    .operations-review-group summary,
     .operations-role-grid,
     .operations-diagnostics-grid,
     .operations-feed-grid,
