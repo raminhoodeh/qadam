@@ -6,7 +6,7 @@
     "broker_echo_verified_count": 0,
     "broker_write_allowed_count": 0,
     "by_status": {
-      "blocked_before_broker_reconciliation": 1001
+      "blocked_before_broker_reconciliation": 1021
     },
     "duplicate_order_guard_ready_count": 0,
     "event_log_prewrite_created_count": 0,
@@ -16,10 +16,10 @@
     "post_submit_reconciliation_ready_count": 0,
     "postmortem_link_ready_count": 0,
     "pre_trade_snapshot_created_count": 0,
-    "review_count": 1001,
+    "review_count": 1021,
     "reviews": [
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "source_staged_status",
           "broker_adapter_mode",
@@ -98,17 +98,17 @@
           "Define broker echo and post-submit reconciliation before broker writes.",
           "Keep paper-order submission, broker writes, and live capital disabled."
         ],
-        "review_id": "f0800a62-1024-4789-92d0-50b66258519c",
-        "reviewed_at": "2026-05-26T21:29:14.595524+00:00",
+        "review_id": "ff436e69-71bb-44c6-a3b3-2acc73776ed6",
+        "reviewed_at": "2026-05-26T21:45:09.121276+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_execution_policy_review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
-        "source_staged_paper_order_review_id": "496cda8f-54d1-4699-83b8-2a25e5d988f9",
+        "source_execution_policy_review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
+        "source_staged_paper_order_review_id": "a1d88b75-91ff-435c-85ab-5d2dcc2b2345",
         "status": "blocked_before_broker_reconciliation",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "source_staged_status",
           "broker_adapter_mode",
@@ -187,17 +187,17 @@
           "Define broker echo and post-submit reconciliation before broker writes.",
           "Keep paper-order submission, broker writes, and live capital disabled."
         ],
-        "review_id": "eb80a340-22f3-4651-917a-74398099b12d",
-        "reviewed_at": "2026-05-26T21:29:14.595794+00:00",
+        "review_id": "064b0595-570f-4fb8-ae43-d339868dc642",
+        "reviewed_at": "2026-05-26T21:45:09.121375+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_execution_policy_review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
-        "source_staged_paper_order_review_id": "26764146-ce83-4f8d-8555-4e1e57429ab4",
+        "source_execution_policy_review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
+        "source_staged_paper_order_review_id": "e078ded3-1bdc-446e-a574-57573a0936d7",
         "status": "blocked_before_broker_reconciliation",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "source_staged_status",
           "broker_adapter_mode",
@@ -276,17 +276,17 @@
           "Define broker echo and post-submit reconciliation before broker writes.",
           "Keep paper-order submission, broker writes, and live capital disabled."
         ],
-        "review_id": "2e268f78-5172-43d4-bd70-1618307dfd59",
-        "reviewed_at": "2026-05-26T21:29:14.595942+00:00",
+        "review_id": "d9ab072f-39aa-4758-836e-e60e33e9d4bb",
+        "reviewed_at": "2026-05-26T21:45:09.121432+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_execution_policy_review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
-        "source_staged_paper_order_review_id": "4283d14a-86d9-4010-adc1-ba1af987d562",
+        "source_execution_policy_review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
+        "source_staged_paper_order_review_id": "de85a4d9-d9e1-4463-b670-217f28aa3a54",
         "status": "blocked_before_broker_reconciliation",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "source_staged_status",
           "broker_adapter_mode",
@@ -365,17 +365,17 @@
           "Define broker echo and post-submit reconciliation before broker writes.",
           "Keep paper-order submission, broker writes, and live capital disabled."
         ],
-        "review_id": "24669725-eaa5-4dc6-b6bf-2df221525a90",
-        "reviewed_at": "2026-05-26T21:29:14.596058+00:00",
+        "review_id": "24a6a0e4-df48-4a72-92d7-1292b43dadf6",
+        "reviewed_at": "2026-05-26T21:45:09.121481+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
-        "source_execution_policy_review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
-        "source_staged_paper_order_review_id": "546a5c8e-4413-4465-8835-1f0468900909",
+        "source_execution_policy_review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
+        "source_staged_paper_order_review_id": "e4ea23aa-2995-46f7-a5d7-8f34e7633048",
         "status": "blocked_before_broker_reconciliation",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "source_staged_status",
           "broker_adapter_mode",
@@ -454,12 +454,12 @@
           "Define broker echo and post-submit reconciliation before broker writes.",
           "Keep paper-order submission, broker writes, and live capital disabled."
         ],
-        "review_id": "1cf00863-3bc5-4577-861c-43d986b573cf",
-        "reviewed_at": "2026-05-26T21:29:14.596265+00:00",
+        "review_id": "99d3f84e-0f89-44b3-a8f6-7236240e3898",
+        "reviewed_at": "2026-05-26T21:45:09.121527+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
-        "source_execution_policy_review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
-        "source_staged_paper_order_review_id": "ea220b35-65bd-4974-b0f7-1acee4de2e34",
+        "source_execution_policy_review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
+        "source_staged_paper_order_review_id": "a1194055-e8e8-4b54-843d-d3e4cbb8f603",
         "status": "blocked_before_broker_reconciliation",
         "venue_mode": "disabled"
       }
@@ -468,7 +468,7 @@
     "status": "ok"
   },
   "capital": {
-    "account_scope": "first_release_gbp_1000_trial",
+    "account_scope": "first_release_gbp_100000_paper",
     "boundary": "Q5E-8 read-only local mirror snapshot records a postmortem-due marker only. No broker write path exists, and it grants no close, resize, cancel, replace, or live-capital authority.",
     "broker": "alpaca_paper_readonly",
     "cash_gbp": 100000.0,
@@ -494,11 +494,6 @@
     "current_balance_gbp": 100000.0,
     "drawdown_pct": 0.0,
     "equity_curve": [
-      {
-        "drawdown_pct": 0.0,
-        "equity_gbp": 100000.0,
-        "observed_at": "2026-05-25T02:09:15.911097+00:00"
-      },
       {
         "drawdown_pct": 0.0,
         "equity_gbp": 100000.0,
@@ -593,6 +588,11 @@
         "drawdown_pct": 0.0,
         "equity_gbp": 100000.0,
         "observed_at": "2026-05-25T02:40:13.996073+00:00"
+      },
+      {
+        "drawdown_pct": 0.0,
+        "equity_gbp": 100000.0,
+        "observed_at": "2026-05-26T21:37:26.819443+00:00"
       }
     ],
     "equity_gbp": 100000.0,
@@ -601,7 +601,7 @@
     "maturity_closed_trade_target": 100,
     "max_drawdown_pct": 0.0,
     "mirror_status": "ok",
-    "observed_at": "2026-05-25T02:40:13.996073+00:00",
+    "observed_at": "2026-05-26T21:37:26.819443+00:00",
     "open_order_count": 0,
     "open_position_count": 0,
     "open_positions": [],
@@ -647,7 +647,7 @@
       }
     ],
     "realized_pnl_gbp": 0.0,
-    "starting_balance_gbp": 1000.0,
+    "starting_balance_gbp": 100000.0,
     "timeline_status": "q5e8_postmortem_due_marker_recorded",
     "unrealized_pnl_gbp": 0.0,
     "write_authority": false
@@ -688,7 +688,7 @@
       "Phase 2 durable replay: 6/6 sources replayed into shadow review",
       "local Research Analyst focus: prediction_markets",
       "checking paper account context without order authority: alpaca_paper_readonly_connected",
-      "Signal Integrity Gate: 5 recent reviews, 1248 held",
+      "Signal Integrity Gate: 5 recent reviews, 1269 held",
       "Head of Quant latest oracle: hold"
     ],
     "evidence_packets": [
@@ -840,7 +840,7 @@
     ],
     "hypotheses": [
       {
-        "blocked_reason": "shadow_only_pending_signal_integrity_gate",
+        "blocked_reason": "signal_integrity_gate_requires_risk_agent",
         "confidence": 0.82,
         "created_at": "2026-05-25T00:27:59.537614+00:00",
         "evidence_packet_id": "q5e-1-crude-oil-paper-sizing-evidence",
@@ -848,8 +848,8 @@
         "execution_allowed": false,
         "generated_by": "q5e_1_exit_risk_evidence_lift",
         "instrument_focus": "crude_oil_or_energy_transport",
-        "integrity_review_status": "not_reviewed",
-        "integrity_score": null,
+        "integrity_review_status": "passed_to_risk_shadow",
+        "integrity_score": 0.885,
         "invalidation": "Discard if non-Yahoo market confirmation, pricing-gap assumptions, shipping corroboration, paper-account mode, or kill-switch clear state fails.",
         "missing_correlations": [],
         "signal_id": "q5e-1-crude-oil-paper-sizing-evidence",
@@ -1066,7 +1066,7 @@
       }
     ],
     "paper_account_context": {
-      "account_scope": "first_release_gbp_1000_trial",
+      "account_scope": "first_release_gbp_100000_paper",
       "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
       "broker": "alpaca_paper_readonly",
       "capital_policy": "The first-release paper account has GBP 100,000 available. Any GBP 1,000 value is a separate single-order/notional risk cap, not the account balance.",
@@ -1081,7 +1081,7 @@
       "maturity_closed_trade_count": 1,
       "maturity_closed_trade_target": 100,
       "mode": "paper",
-      "observed_at": "2026-05-25T02:40:13.996073+00:00",
+      "observed_at": "2026-05-26T21:37:26.819443+00:00",
       "open_order_count": 0,
       "open_position_count": 0,
       "order_count": 1,
@@ -1149,10 +1149,10 @@
       "hardware_submitted_count": 0,
       "latest_backend": "classical_fallback",
       "latest_backend_status": "ok",
-      "latest_created_at": "2026-05-26T21:29:23.331182+00:00",
+      "latest_created_at": "2026-05-26T21:43:15.430212+00:00",
       "latest_durable_evidence_status": "not_available",
       "latest_input_contract_status": "accepted",
-      "latest_input_fingerprint": "a7b39bce6e52612efc4a99aac8eea778dff9e8ed5fad7c7920e080c5f47597c0",
+      "latest_input_fingerprint": "7e7c3895332f6240bbb2ef6b065b3f588ad437d5cd8c18147c82d57d4c92bb59",
       "latest_input_source_type": "signal_integrity_review",
       "latest_local_simulation_mode": "deterministic_classical_shadow",
       "latest_market_confirmation_status": "market_confirmation_corroboration_available",
@@ -1178,7 +1178,7 @@
         "execution_policy_approval_count": 0,
         "execution_policy_authority": false,
         "hardware_submission_allowed": false,
-        "job_id": "be148d18-3a60-4580-acc2-687156808bce",
+        "job_id": "59403f29-64ef-4998-8c99-e35283e1dab1",
         "job_type": "strategy_collapse",
         "paper_order_allowed": false,
         "paper_submit_receipt_authority": false,
@@ -1202,7 +1202,7 @@
           "read_allowed": true,
           "trade_candidate_allowed": false
         },
-        "source_ref": "519958a2-5543-4228-83a8-6347f1dbbfbb",
+        "source_ref": "40f85d51-6697-4edd-b14c-90a6ffc6cab6",
         "staged_paper_order_authority": false,
         "staged_paper_order_created_count": 0,
         "status": "shadow_annotation_ready",
@@ -1265,7 +1265,7 @@
         "status": "classical_fallback_ready",
         "trade_candidate_authority": false
       },
-      "next_due_at": "2026-06-02T21:29:23.331182+00:00",
+      "next_due_at": "2026-06-02T21:43:15.430212+00:00",
       "paper_order_allowed_count": 0,
       "provider_readiness": {
         "available_without_secret_count": 0,
@@ -1520,7 +1520,7 @@
       },
       "qiskit_aer_available": false,
       "qiskit_available": false,
-      "result_count": 176,
+      "result_count": 186,
       "scheduler_dry_run": {
         "autonomous_scheduler_enabled": false,
         "background_automation_created": false,
@@ -1594,8 +1594,8 @@
         "job_submission_allowed": false,
         "jobs_queued_count": 0,
         "jobs_submitted_count": 0,
-        "last_run_at": "2026-05-26T21:29:23.331182+00:00",
-        "next_due_at": "2026-06-02T21:29:23.331182+00:00",
+        "last_run_at": "2026-05-26T21:43:15.430212+00:00",
+        "next_due_at": "2026-06-02T21:43:15.430212+00:00",
         "paper_order_allowed": false,
         "provider_call_allowed": false,
         "public_safe": true,
@@ -1678,17 +1678,66 @@
       "boundary": "Signal Integrity Gate reviews are non-executable. They can block or hold, but cannot create candidates or orders.",
       "by_status": {
         "blocked": 199,
-        "hold_for_corroboration": 1248,
-        "passed_to_risk_shadow": 63
+        "hold_for_corroboration": 1269,
+        "passed_to_risk_shadow": 67
       },
       "execution_allowed_count": 0,
       "paper_order_allowed_count": 0,
-      "review_count": 1510,
+      "review_count": 1535,
       "schema_version": 3,
       "status": "ok",
       "trade_candidate_created_count": 0
     },
     "signal_integrity_reviews": [
+      {
+        "akber_filter": {
+          "approval_policy": "not_reached_risk_agent_absent",
+          "catalyst_identification": "pass",
+          "low_volatility": "missing_volatility_context",
+          "obv_volume": "missing_volume_confirmation",
+          "options_distribution_gap": "pass_pricing_gap_confirmed",
+          "technical_setup": "shadow_pass"
+        },
+        "average_trust_score": 0.83,
+        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
+        "evidence_item_count": 4,
+        "execution_allowed": false,
+        "failure_reasons": [],
+        "instrument_focus": "crude_oil_or_energy_transport",
+        "integrity_score": 0.885,
+        "market_confirmation_policy": {
+          "boundary": "Market confirmation is supplemental corroboration only. Yahoo Finance can inform price context but cannot create signals, orders, fills, receipts, or reconciliation truth.",
+          "broker_reconciliation_authority": false,
+          "latest_observed_at": "2026-05-25T00:27:59.537614+00:00",
+          "market_price_confirmation": "pass_supplemental_corroboration",
+          "max_age_seconds": 172800,
+          "order_authority": false,
+          "pricing_gap": "pass_pricing_gap_confirmed",
+          "providers": [
+            "market.cme_crude_reference"
+          ],
+          "signal_authority": false,
+          "single_source_hold": false,
+          "stale": false,
+          "status": "market_confirmation_corroboration_available",
+          "unavailable": false,
+          "uses_yahoo_finance": false
+        },
+        "min_trust_score": 0.78,
+        "missing_correlations": [],
+        "paper_order_allowed": false,
+        "required_next_steps": [
+          "Keep Risk Agent and broker-write routes blocked until later phases."
+        ],
+        "review_id": "f1cf48ec-81d1-4de5-8bd1-f0846293354b",
+        "reviewed_at": "2026-05-26T21:45:08.185158+00:00",
+        "signal_confidence": 0.82,
+        "source_count": 4,
+        "source_signal_id": "q5e-1-crude-oil-paper-sizing-evidence",
+        "status": "passed_to_risk_shadow",
+        "trade_candidate_created": false,
+        "worldview_prior_status": "private_prior_only_not_evidence"
+      },
       {
         "akber_filter": {
           "approval_policy": "not_reached_risk_agent_absent",
@@ -1739,8 +1788,8 @@
           "Attach pricing-gap and transaction-cost assumptions.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "74ffd7f5-e2ea-45d5-8225-c922f2f74beb",
-        "reviewed_at": "2026-05-26T21:29:11.296764+00:00",
+        "review_id": "1093579f-f343-46fb-af92-8abed66f49da",
+        "reviewed_at": "2026-05-26T21:45:08.185268+00:00",
         "signal_confidence": 0.54,
         "source_count": 1,
         "source_signal_id": "9788bba3-5682-4054-8591-12d7fdc3f151",
@@ -1798,8 +1847,8 @@
           "Attach pricing-gap and transaction-cost assumptions.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "e1056be5-e645-45e2-8ef5-0cad668a1690",
-        "reviewed_at": "2026-05-26T21:29:11.296854+00:00",
+        "review_id": "3d99bd45-488a-4bec-b3c7-d669f6d04349",
+        "reviewed_at": "2026-05-26T21:45:08.185330+00:00",
         "signal_confidence": 0.54,
         "source_count": 1,
         "source_signal_id": "1289ffdc-94e6-4112-b0b8-3d5582da7957",
@@ -1857,8 +1906,8 @@
           "Attach pricing-gap and transaction-cost assumptions.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "2f71d095-e02b-445f-a9f8-1f0b22292887",
-        "reviewed_at": "2026-05-26T21:29:11.296996+00:00",
+        "review_id": "b897afb3-3a9a-4544-9ec0-aaf632a1d196",
+        "reviewed_at": "2026-05-26T21:45:08.185376+00:00",
         "signal_confidence": 0.54,
         "source_count": 1,
         "source_signal_id": "51500218-1d4f-4158-8a94-da207b4f302f",
@@ -1916,64 +1965,11 @@
           "Attach pricing-gap and transaction-cost assumptions.",
           "Keep Risk Agent and broker-write routes blocked until later phases."
         ],
-        "review_id": "0a1545f0-369d-4cbd-bef9-702e4b21d5a3",
-        "reviewed_at": "2026-05-26T21:29:11.297098+00:00",
+        "review_id": "9c5c26fb-ed4f-40c2-9ac9-4fb25a399d32",
+        "reviewed_at": "2026-05-26T21:45:08.185419+00:00",
         "signal_confidence": 0.54,
         "source_count": 1,
         "source_signal_id": "3c12cf3f-9888-4a0d-b4fe-d3b69117333d",
-        "status": "hold_for_corroboration",
-        "trade_candidate_created": false,
-        "worldview_prior_status": "private_prior_only_not_evidence"
-      },
-      {
-        "akber_filter": {
-          "approval_policy": "not_reached_risk_agent_absent",
-          "catalyst_identification": "pass",
-          "low_volatility": "missing_volatility_context",
-          "obv_volume": "missing_volume_confirmation",
-          "options_distribution_gap": "hold_pricing_gap_required",
-          "technical_setup": "shadow_pass"
-        },
-        "average_trust_score": 0.74,
-        "boundary": "Signal Integrity Gate can block or hold shadow signals only. It cannot approve risk, create trade candidates, create paper orders, or access broker writes.",
-        "evidence_item_count": 3,
-        "execution_allowed": false,
-        "failure_reasons": [
-          "missing_pricing_gap"
-        ],
-        "instrument_focus": "semiconductors",
-        "integrity_score": 0.811,
-        "market_confirmation_policy": {
-          "boundary": "Market confirmation is supplemental corroboration only. Yahoo Finance can inform price context but cannot create signals, orders, fills, receipts, or reconciliation truth.",
-          "broker_reconciliation_authority": false,
-          "latest_observed_at": "2026-05-26T21:29:23.135271+00:00",
-          "market_price_confirmation": "pass_supplemental_corroboration",
-          "max_age_seconds": 172800,
-          "order_authority": false,
-          "pricing_gap": "hold_pricing_gap_required",
-          "providers": [
-            "market.alpaca_readonly",
-            "market.yahoo_finance"
-          ],
-          "signal_authority": false,
-          "single_source_hold": false,
-          "stale": false,
-          "status": "market_confirmation_corroboration_available",
-          "unavailable": false,
-          "uses_yahoo_finance": true
-        },
-        "min_trust_score": 0.72,
-        "missing_correlations": [],
-        "paper_order_allowed": false,
-        "required_next_steps": [
-          "Attach pricing-gap and transaction-cost assumptions.",
-          "Keep Risk Agent and broker-write routes blocked until later phases."
-        ],
-        "review_id": "519958a2-5543-4228-83a8-6347f1dbbfbb",
-        "reviewed_at": "2026-05-26T21:29:23.140525+00:00",
-        "signal_confidence": 0.71,
-        "source_count": 3,
-        "source_signal_id": "q3_6_quantum_oracle_input_probe",
         "status": "hold_for_corroboration",
         "trade_candidate_created": false,
         "worldview_prior_status": "private_prior_only_not_evidence"
@@ -1999,28 +1995,44 @@
         ],
         "packet_id": "73577fd0-c880-40b2-827d-147623c10a96",
         "paper_account_context": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
           "broker": "alpaca_paper_readonly",
-          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
-          "closed_trade_count": 0,
+          "capital_policy": "The first-release paper account has GBP 100,000 available. Any GBP 1,000 value is a separate single-order/notional risk cap, not the account balance.",
+          "cash_gbp": 100000.0,
+          "closed_trade_count": 1,
           "connection_status": "alpaca_paper_readonly_connected",
           "current_balance_gbp": 100000.0,
           "drawdown_pct": 0.0,
+          "equity_gbp": 100000.0,
           "execution_allowed": false,
           "live_capital_enabled": false,
-          "maturity_closed_trade_count": 0,
+          "maturity_closed_trade_count": 1,
           "maturity_closed_trade_target": 100,
           "mode": "paper",
+          "observed_at": "2026-05-26T21:37:26.819443+00:00",
           "open_order_count": 0,
           "open_position_count": 0,
-          "order_count": 0,
+          "order_count": 1,
+          "order_summaries": [
+            {
+              "direction": "buy",
+              "filled_quantity": 1.0,
+              "instrument": "crude_oil",
+              "notional_gbp": 5.0,
+              "order_type": "market",
+              "quantity": 1.0,
+              "status": "filled"
+            }
+          ],
           "paper_order_allowed": false,
+          "position_summaries": [],
           "realized_pnl_gbp": 0.0,
+          "schema_version": 1,
           "status": "ok",
-          "timeline_status": "alpaca_paper_readonly_mirrored",
-          "trial_allocation_gbp": 1000.0,
-          "unrealized_pnl_gbp": 0,
+          "timeline_status": "q5e8_postmortem_due_marker_recorded",
+          "trial_allocation_gbp": 100000.0,
+          "unrealized_pnl_gbp": 0.0,
           "write_authority": false
         },
         "paper_order_allowed": false,
@@ -2209,27 +2221,43 @@
         ],
         "packet_id": "5bd01393-8d62-4373-b5a5-9787aa60341d",
         "paper_account_context": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
           "broker": "alpaca_paper_readonly",
-          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
+          "capital_policy": "The first-release paper account has GBP 100,000 available. Any GBP 1,000 value is a separate single-order/notional risk cap, not the account balance.",
+          "cash_gbp": 100000.0,
           "closed_trade_count": 1,
           "connection_status": "alpaca_paper_readonly_connected",
           "current_balance_gbp": 100000.0,
           "drawdown_pct": 0.0,
+          "equity_gbp": 100000.0,
           "execution_allowed": false,
           "live_capital_enabled": false,
           "maturity_closed_trade_count": 1,
           "maturity_closed_trade_target": 100,
           "mode": "paper",
+          "observed_at": "2026-05-26T21:37:26.819443+00:00",
           "open_order_count": 0,
           "open_position_count": 0,
           "order_count": 1,
+          "order_summaries": [
+            {
+              "direction": "buy",
+              "filled_quantity": 1.0,
+              "instrument": "crude_oil",
+              "notional_gbp": 5.0,
+              "order_type": "market",
+              "quantity": 1.0,
+              "status": "filled"
+            }
+          ],
           "paper_order_allowed": false,
+          "position_summaries": [],
           "realized_pnl_gbp": 0.0,
+          "schema_version": 1,
           "status": "ok",
           "timeline_status": "q5e8_postmortem_due_marker_recorded",
-          "trial_allocation_gbp": 1000.0,
+          "trial_allocation_gbp": 100000.0,
           "unrealized_pnl_gbp": 0.0,
           "write_authority": false
         },
@@ -2480,27 +2508,43 @@
         ],
         "packet_id": "238008ad-2e4f-48a6-810d-995c5c595d38",
         "paper_account_context": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Paper account context is read-only state for shadow intelligence. It cannot approve, create, cancel, replace, close, resize, or fund orders.",
           "broker": "alpaca_paper_readonly",
-          "capital_policy": "The first-release policy allocation is GBP 1000 even if the connected paper broker reports a larger simulated account balance.",
+          "capital_policy": "The first-release paper account has GBP 100,000 available. Any GBP 1,000 value is a separate single-order/notional risk cap, not the account balance.",
+          "cash_gbp": 100000.0,
           "closed_trade_count": 1,
           "connection_status": "alpaca_paper_readonly_connected",
           "current_balance_gbp": 100000.0,
           "drawdown_pct": 0.0,
+          "equity_gbp": 100000.0,
           "execution_allowed": false,
           "live_capital_enabled": false,
           "maturity_closed_trade_count": 1,
           "maturity_closed_trade_target": 100,
           "mode": "paper",
+          "observed_at": "2026-05-26T21:37:26.819443+00:00",
           "open_order_count": 0,
           "open_position_count": 0,
           "order_count": 1,
+          "order_summaries": [
+            {
+              "direction": "buy",
+              "filled_quantity": 1.0,
+              "instrument": "crude_oil",
+              "notional_gbp": 5.0,
+              "order_type": "market",
+              "quantity": 1.0,
+              "status": "filled"
+            }
+          ],
           "paper_order_allowed": false,
+          "position_summaries": [],
           "realized_pnl_gbp": 0.0,
+          "schema_version": 1,
           "status": "ok",
           "timeline_status": "q5e8_postmortem_due_marker_recorded",
-          "trial_allocation_gbp": 1000.0,
+          "trial_allocation_gbp": 100000.0,
           "unrealized_pnl_gbp": 0.0,
           "write_authority": false
         },
@@ -2838,7 +2882,7 @@
   },
   "d1_snapshot": {
     "browser_authority": "read_only",
-    "generated_at": "2026-05-26T21:29:19.062068+00:00",
+    "generated_at": "2026-05-26T21:45:25.801354+00:00",
     "landing_copy": "landing-page-repo/status/cockpit-status.json",
     "local_orchestrator_exposed": false,
     "phase": "D1",
@@ -3086,13 +3130,13 @@
     "boundary": "Execution policy reviews are read-only. They can explain holds and kill-switch blocks, but cannot stage paper orders, create orders, enable live capital, or write to brokers.",
     "broker_write_allowed_count": 0,
     "by_status": {
-      "kill_switch_hold": 1197
+      "kill_switch_hold": 1217
     },
     "execution_allowed_count": 0,
-    "kill_switch_block_count": 1197,
+    "kill_switch_block_count": 1217,
     "live_capital_enabled_count": 0,
     "paper_order_created_count": 0,
-    "review_count": 1197,
+    "review_count": 1217,
     "reviews": [
       {
         "blocked_reasons": [
@@ -3142,11 +3186,11 @@
           "Keep broker-order routes disabled until paper-order reconciliation exists.",
           "Keep live capital disabled."
         ],
-        "review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
-        "reviewed_at": "2026-05-26T21:29:13.067452+00:00",
+        "review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
+        "reviewed_at": "2026-05-26T21:45:08.658244+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_risk_review_id": "560fbdda-4d22-411a-a268-0acd438f77e6",
+        "source_risk_review_id": "febe47f7-5437-43ef-acb3-d131563ea320",
         "staged_paper_order_allowed": false,
         "status": "kill_switch_hold",
         "venue_mode": "disabled"
@@ -3199,11 +3243,11 @@
           "Keep broker-order routes disabled until paper-order reconciliation exists.",
           "Keep live capital disabled."
         ],
-        "review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
-        "reviewed_at": "2026-05-26T21:29:13.067923+00:00",
+        "review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
+        "reviewed_at": "2026-05-26T21:45:08.658414+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_risk_review_id": "87b46fc8-1688-4180-9c51-d6ac0c97bc51",
+        "source_risk_review_id": "affa874c-0bff-4313-a0fa-cd3157abae1b",
         "staged_paper_order_allowed": false,
         "status": "kill_switch_hold",
         "venue_mode": "disabled"
@@ -3256,11 +3300,11 @@
           "Keep broker-order routes disabled until paper-order reconciliation exists.",
           "Keep live capital disabled."
         ],
-        "review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
-        "reviewed_at": "2026-05-26T21:29:13.068122+00:00",
+        "review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
+        "reviewed_at": "2026-05-26T21:45:08.658500+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_risk_review_id": "0337160b-0664-4f2d-906d-d55c8140ec44",
+        "source_risk_review_id": "71b15f70-91df-4994-af80-068d96938559",
         "staged_paper_order_allowed": false,
         "status": "kill_switch_hold",
         "venue_mode": "disabled"
@@ -3313,11 +3357,11 @@
           "Keep broker-order routes disabled until paper-order reconciliation exists.",
           "Keep live capital disabled."
         ],
-        "review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
-        "reviewed_at": "2026-05-26T21:29:13.068351+00:00",
+        "review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
+        "reviewed_at": "2026-05-26T21:45:08.658563+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
-        "source_risk_review_id": "1633915f-0412-4ad1-8531-5d8e99b3a634",
+        "source_risk_review_id": "46824fb7-af54-41a8-a8d3-bec070f10dd7",
         "staged_paper_order_allowed": false,
         "status": "kill_switch_hold",
         "venue_mode": "disabled"
@@ -3370,11 +3414,11 @@
           "Keep broker-order routes disabled until paper-order reconciliation exists.",
           "Keep live capital disabled."
         ],
-        "review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
-        "reviewed_at": "2026-05-26T21:29:13.073684+00:00",
+        "review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
+        "reviewed_at": "2026-05-26T21:45:08.658617+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
-        "source_risk_review_id": "fee9c2d5-24dd-4551-8ecb-12d62d6e09ca",
+        "source_risk_review_id": "ba2aa865-5e05-4452-bdba-d6fe90a68ddb",
         "staged_paper_order_allowed": false,
         "status": "kill_switch_hold",
         "venue_mode": "disabled"
@@ -3522,7 +3566,7 @@
     "supabase_table": "fund_manager_comments",
     "visibility": "founding_fund_managers"
   },
-  "generated_at": "2026-05-26T21:29:19.062068+00:00",
+  "generated_at": "2026-05-26T21:45:25.801354+00:00",
   "live_bridge": {
     "allowed_methods": [
       "GET",
@@ -3544,7 +3588,7 @@
       "PATCH",
       "DELETE"
     ],
-    "generated_at": "2026-05-26T21:29:19.062068+00:00",
+    "generated_at": "2026-05-26T21:45:25.801354+00:00",
     "health_checks": [
       "auth_required",
       "rate_limit_enforced",
@@ -3644,7 +3688,7 @@
       "hardware_submission_allowed_count": 0,
       "hardware_submitted_count": 0,
       "ibm_quantum_status": "missing_secret",
-      "latest_oracle_created_at": "2026-05-26T21:29:23.331182+00:00",
+      "latest_oracle_created_at": "2026-05-26T21:43:15.430212+00:00",
       "latest_output_route_type": "shadow_annotation",
       "latest_output_routing_status": "shadow_annotation_ready",
       "latest_output_storage_type": "oracle_review_result",
@@ -3655,7 +3699,7 @@
       "local_simulator_status": "classical_fallback_ready",
       "missing_optional_package_count": 1,
       "missing_secret_count": 2,
-      "next_due_at": "2026-06-02T21:29:23.331182+00:00",
+      "next_due_at": "2026-06-02T21:43:15.430212+00:00",
       "paper_order_allowed_count": 0,
       "phase": "Q3",
       "provider_count": 4,
@@ -3962,7 +4006,7 @@
       "weekly_proof_trade_target": 3
     },
     "portfolio": {
-      "account_scope": "first_release_gbp_1000_trial",
+      "account_scope": "first_release_gbp_100000_paper",
       "boundary": "Q5E-8 read-only local mirror snapshot records a postmortem-due marker only. No broker write path exists, and it grants no close, resize, cancel, replace, or live-capital authority.",
       "broker": "alpaca_paper_readonly",
       "closed_trade_count": 1,
@@ -4117,7 +4161,7 @@
         "Phase 2 durable replay: 6/6 sources replayed into shadow review",
         "local Research Analyst focus: prediction_markets",
         "checking paper account context without order authority: alpaca_paper_readonly_connected",
-        "Signal Integrity Gate: 5 recent reviews, 1248 held"
+        "Signal Integrity Gate: 5 recent reviews, 1269 held"
       ],
       "evidence_packet_count": 5,
       "hypothesis_count": 5,
@@ -4150,11 +4194,11 @@
       "broker_post_called_count": 0,
       "candidate_count": 1,
       "execution_allowed_count": 0,
-      "execution_policy_review_count": 1197,
+      "execution_policy_review_count": 1217,
       "observed_signal_count": 1,
       "paper_order_submitted_count": 0,
-      "paper_submit_receipt_review_count": 903,
-      "risk_review_count": 1771,
+      "paper_submit_receipt_review_count": 923,
+      "risk_review_count": 1799,
       "state": "candidate_review",
       "summary": "1 candidate ideas are waiting behind risk and execution gates.",
       "top_candidates": [
@@ -4198,7 +4242,7 @@
       "current_process": "supervising local modules",
       "key": "coo",
       "label": "COO",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Python Orchestrator",
       "raw_status": "registered",
@@ -4209,7 +4253,7 @@
       "current_process": "waiting for local LLM readiness",
       "key": "research_analyst",
       "label": "Research Analyst",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Local LLM",
       "raw_status": "pending",
@@ -4220,7 +4264,7 @@
       "current_process": "waiting for frontier model probe",
       "key": "strategy_lead",
       "label": "Strategy Lead",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Frontier LLM",
       "raw_status": "pending",
@@ -4231,7 +4275,7 @@
       "current_process": "weekly quantum/classical oracle check",
       "key": "head_of_quant",
       "label": "Head of Quant",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Quantum Compute",
       "raw_status": "oracle_ready",
@@ -4242,7 +4286,7 @@
       "current_process": "recording local audit trail",
       "key": "event_log",
       "label": "Event Log",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "Postgres/Timescale",
       "raw_status": "registered",
@@ -4253,7 +4297,7 @@
       "current_process": "holding local memory shell",
       "key": "knowledge_graph",
       "label": "Knowledge Graph",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "ChromaDB",
       "raw_status": "registered",
@@ -4264,7 +4308,7 @@
       "current_process": "execution disabled in foundation mode",
       "key": "execution_registry",
       "label": "Execution Registry",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Risk Agent",
       "raw_status": "disabled",
@@ -4275,7 +4319,7 @@
       "current_process": "registered",
       "key": "resource_registry",
       "label": "Resource Registry",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Reference Provenance",
       "raw_status": "registered",
@@ -4286,7 +4330,7 @@
       "current_process": "foundational prior",
       "key": "world_model",
       "label": "World-Model Lens",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "Private Corpus",
       "raw_status": "foundational_prior",
@@ -4297,7 +4341,7 @@
       "current_process": "manifest permissions available",
       "key": "agent_os",
       "label": "Agent OS",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Manifest Registry",
       "raw_status": "manifest_ready",
@@ -4308,7 +4352,7 @@
       "current_process": "broker-write tools blocked",
       "key": "agent_runtime",
       "label": "Agent Runtime",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Permission Gate",
       "raw_status": "enforced",
@@ -4319,7 +4363,7 @@
       "current_process": "shadow-only review packets available",
       "key": "shadow_intelligence",
       "label": "Shadow Intelligence",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Research Analyst",
       "raw_status": "shadow_ready",
@@ -4330,7 +4374,7 @@
       "current_process": "auditing shadow signals without trade authority",
       "key": "signal_integrity_gate",
       "label": "Signal Integrity Gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Signal Auditor",
       "raw_status": "shadow_ready",
@@ -4341,7 +4385,7 @@
       "current_process": "reviewing policy without order authority",
       "key": "risk_agent",
       "label": "Risk Agent",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Policy Router",
       "raw_status": "read_only_ready",
@@ -4352,7 +4396,7 @@
       "current_process": "checking kill switches without order authority",
       "key": "execution_policy",
       "label": "Execution Policy",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Kill Switches",
       "raw_status": "read_only_ready",
@@ -4363,7 +4407,7 @@
       "current_process": "describing disabled paper-order staging",
       "key": "staged_order_contract",
       "label": "Staged Order Contract",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Paper Order Gate",
       "raw_status": "read_only_ready",
@@ -4374,7 +4418,7 @@
       "current_process": "checking broker echo and reconciliation prerequisites",
       "key": "broker_reconciliation",
       "label": "Broker Reconciliation",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Paper Order Gate",
       "raw_status": "read_only_ready",
@@ -4385,7 +4429,7 @@
       "current_process": "checking dry-run paper-submit receipt prerequisites",
       "key": "paper_submit_receipt",
       "label": "Paper Submit Receipt",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Paper Order Gate",
       "raw_status": "dry_run",
@@ -4396,7 +4440,7 @@
       "current_process": "local",
       "key": "governance_forum",
       "label": "Governance Forum",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "Fund Managers",
       "raw_status": "local",
@@ -4407,7 +4451,7 @@
       "current_process": "outbound dry-run member communications",
       "key": "telegram_bot",
       "label": "Telegram Bot",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "Fund Manager Interface",
       "raw_status": "dry_run",
@@ -4418,7 +4462,7 @@
       "current_process": "serving authenticated public-safe status snapshots",
       "key": "live_bridge",
       "label": "Secure Live Bridge",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "qadam.trade API",
       "raw_status": "read_only_ready",
@@ -4429,7 +4473,7 @@
       "current_process": "test data ready",
       "key": "ingestion_spine",
       "label": "Test Ingestion Spine",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": true,
       "owner": "World Monitor Adapters",
       "raw_status": "test_data_ready",
@@ -4440,7 +4484,7 @@
       "current_process": "sample ready",
       "key": "gdelt_adapter",
       "label": "GDELT Adapter",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -4451,7 +4495,7 @@
       "current_process": "sample ready",
       "key": "oref_adapter",
       "label": "Oref Adapter",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Conflict Pipeline",
       "raw_status": "sample_ready",
@@ -4462,7 +4506,7 @@
       "current_process": "credential gated",
       "key": "nasa_firms_adapter",
       "label": "NASA FIRMS Adapter",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Physical Pipeline",
       "raw_status": "credential_gated",
@@ -4473,7 +4517,7 @@
       "current_process": "sample ready",
       "key": "fred_adapter",
       "label": "FRED Adapter",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Macro Pipeline",
       "raw_status": "sample_ready",
@@ -4484,7 +4528,7 @@
       "current_process": "sample ready",
       "key": "rss_adapter",
       "label": "RSS Adapter",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Narrative Pipeline",
       "raw_status": "sample_ready",
@@ -4495,7 +4539,7 @@
       "current_process": "supplemental market confirmation; live reads deferred until dependency gate is green",
       "key": "yahoo_finance_adapter",
       "label": "Yahoo Finance Adapter",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "Supplemental Market Confirmation",
       "raw_status": "deferred",
@@ -4506,7 +4550,7 @@
       "current_process": "static live shell frozen",
       "key": "cockpit",
       "label": "Cockpit",
-      "last_heartbeat": "2026-05-26T21:29:19.062068+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801354+00:00",
       "local_only": false,
       "owner": "qadam.trade",
       "raw_status": "shell",
@@ -4531,7 +4575,7 @@
     "event_log_prewrite_required": true,
     "event_log_written": true,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T21:29:19.652507+00:00",
+    "generated_at": "2026-05-26T21:43:14.687868+00:00",
     "idempotency_required": true,
     "live_capital_enabled": false,
     "live_credentials_loaded": false,
@@ -4861,7 +4905,7 @@
         "ui_inferred_readiness": false
       }
     ],
-    "generated_at": "2026-05-26T20:27:46.288856+00:00",
+    "generated_at": "2026-05-26T21:43:25.399718+00:00",
     "input_gate_blocked_count": 5,
     "input_gate_count": 22,
     "input_gate_passed_count": 17,
@@ -4884,9 +4928,13 @@
     "paper_operational_cycle_command_failed_count": 0,
     "paper_operational_cycle_command_passed_count": 34,
     "paper_operational_cycle_status": "paper_cycle_safe_blocked_pending_enablement",
-    "paper_operational_readiness_blocker_count": 1,
+    "paper_operational_readiness_blocker_count": 5,
     "paper_operational_readiness_blockers": [
-      "qctrl_paper_consultation_connected_not_ready"
+      "qctrl_paper_consultation_connected_not_ready",
+      "auto_approval_connected_not_ready",
+      "paper_order_staging_connected_not_ready",
+      "alpaca_paper_submit_contract_connected_not_ready",
+      "paper_lifecycle_connected_not_ready"
     ],
     "paper_operational_readiness_status": "blocked_pending_paper_ops",
     "paper_submit_step_allowed": false,
@@ -4940,7 +4988,7 @@
     "execution_allowed": false,
     "execution_policy_attachment_ready": true,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T21:29:20.022223+00:00",
+    "generated_at": "2026-05-26T21:43:14.845111+00:00",
     "hardware_submission_allowed": false,
     "head_of_quant_note_status": "provider_call_failed_sanitized",
     "live_capital_enabled": false,
@@ -4998,7 +5046,7 @@
     "event_log_written": true,
     "execution_allowed": false,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T21:29:20.682975+00:00",
+    "generated_at": "2026-05-26T21:43:14.981082+00:00",
     "hardware_submission_allowed": false,
     "live_capital_enabled": false,
     "live_credentials_loaded": false,
@@ -5048,15 +5096,15 @@
     "broker_post_called_count": 0,
     "broker_write_allowed_count": 0,
     "by_status": {
-      "blocked_before_dry_run_submit": 903
+      "blocked_before_dry_run_submit": 923
     },
     "dry_run_receipt_created_count": 0,
     "live_capital_enabled_count": 0,
     "paper_order_submitted_count": 0,
-    "review_count": 903,
+    "review_count": 923,
     "reviews": [
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "broker_reconciliation_status",
           "idempotency_key",
@@ -5089,7 +5137,7 @@
           "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
           "duplicate_detected": false,
           "duplicate_window_seconds": 86400,
-          "guard_key": "dryrun-528b86b4a86212d35b3bf5d4",
+          "guard_key": "dryrun-a16cc4cc6064332a2e344d78",
           "guard_write_performed": false,
           "lookup_performed": false,
           "lookup_sources": [
@@ -5104,7 +5152,7 @@
           "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
           "event_log_ref": "not_written",
           "event_type": "paper_order_prewrite_requested",
-          "idempotency_preview_key": "dryrun-528b86b4a86212d35b3bf5d4",
+          "idempotency_preview_key": "dryrun-a16cc4cc6064332a2e344d78",
           "required_fields": [
             "schema_version",
             "event_type",
@@ -5119,7 +5167,7 @@
             "pre_trade_snapshot_ref",
             "created_at"
           ],
-          "source_broker_reconciliation_review_id": "f0800a62-1024-4789-92d0-50b66258519c",
+          "source_broker_reconciliation_review_id": "ff436e69-71bb-44c6-a3b3-2acc73776ed6",
           "status": "schema_defined_not_written",
           "write_performed": false
         },
@@ -5152,14 +5200,14 @@
             "order_type",
             "notional_gbp"
           ],
-          "preview_key": "dryrun-528b86b4a86212d35b3bf5d4",
+          "preview_key": "dryrun-a16cc4cc6064332a2e344d78",
           "status": "designed_not_allocated"
         },
         "instrument": "prediction_markets",
         "live_capital_enabled": false,
         "paper_order_submitted": false,
         "pre_trade_snapshot_schema": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
           "capture_performed": false,
           "connection_status": "alpaca_paper_readonly_connected",
@@ -5215,8 +5263,8 @@
           "Create simulated receipt only after all reconciliation prerequisites pass.",
           "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
         ],
-        "review_id": "3fbaa7c8-4921-4312-9a2d-566254a45f4c",
-        "reviewed_at": "2026-05-26T21:29:15.269425+00:00",
+        "review_id": "4910a3d1-181b-41f9-b2a9-56fa222b59a3",
+        "reviewed_at": "2026-05-26T21:45:09.337384+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
         "simulated_receipt": {
@@ -5224,22 +5272,22 @@
           "broker_post_called": false,
           "client_order_id": "not_allocated",
           "external_order_id": "not_created",
-          "idempotency_preview_key": "dryrun-528b86b4a86212d35b3bf5d4",
+          "idempotency_preview_key": "dryrun-a16cc4cc6064332a2e344d78",
           "mode": "dry_run_only",
           "paper_order_submitted": false,
           "raw_broker_payload_stored": false,
           "status": "not_created",
           "venue": "prediction_market_router"
         },
-        "source_broker_reconciliation_review_id": "f0800a62-1024-4789-92d0-50b66258519c",
-        "source_execution_policy_review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
-        "source_staged_paper_order_review_id": "496cda8f-54d1-4699-83b8-2a25e5d988f9",
+        "source_broker_reconciliation_review_id": "ff436e69-71bb-44c6-a3b3-2acc73776ed6",
+        "source_execution_policy_review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
+        "source_staged_paper_order_review_id": "a1d88b75-91ff-435c-85ab-5d2dcc2b2345",
         "status": "blocked_before_dry_run_submit",
         "submitted_at": "not_submitted",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "broker_reconciliation_status",
           "idempotency_key",
@@ -5272,7 +5320,7 @@
           "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
           "duplicate_detected": false,
           "duplicate_window_seconds": 86400,
-          "guard_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+          "guard_key": "dryrun-12b6e0c627a052877691acab",
           "guard_write_performed": false,
           "lookup_performed": false,
           "lookup_sources": [
@@ -5287,7 +5335,7 @@
           "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
           "event_log_ref": "not_written",
           "event_type": "paper_order_prewrite_requested",
-          "idempotency_preview_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+          "idempotency_preview_key": "dryrun-12b6e0c627a052877691acab",
           "required_fields": [
             "schema_version",
             "event_type",
@@ -5302,7 +5350,7 @@
             "pre_trade_snapshot_ref",
             "created_at"
           ],
-          "source_broker_reconciliation_review_id": "eb80a340-22f3-4651-917a-74398099b12d",
+          "source_broker_reconciliation_review_id": "064b0595-570f-4fb8-ae43-d339868dc642",
           "status": "schema_defined_not_written",
           "write_performed": false
         },
@@ -5335,14 +5383,14 @@
             "order_type",
             "notional_gbp"
           ],
-          "preview_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+          "preview_key": "dryrun-12b6e0c627a052877691acab",
           "status": "designed_not_allocated"
         },
         "instrument": "prediction_markets",
         "live_capital_enabled": false,
         "paper_order_submitted": false,
         "pre_trade_snapshot_schema": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
           "capture_performed": false,
           "connection_status": "alpaca_paper_readonly_connected",
@@ -5398,8 +5446,8 @@
           "Create simulated receipt only after all reconciliation prerequisites pass.",
           "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
         ],
-        "review_id": "71e17e6f-a51b-4427-b7e9-4f3f022754e2",
-        "reviewed_at": "2026-05-26T21:29:15.270889+00:00",
+        "review_id": "0c1e610d-f156-4fc8-a503-0cc02107e6d9",
+        "reviewed_at": "2026-05-26T21:45:09.337674+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
         "simulated_receipt": {
@@ -5407,22 +5455,22 @@
           "broker_post_called": false,
           "client_order_id": "not_allocated",
           "external_order_id": "not_created",
-          "idempotency_preview_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+          "idempotency_preview_key": "dryrun-12b6e0c627a052877691acab",
           "mode": "dry_run_only",
           "paper_order_submitted": false,
           "raw_broker_payload_stored": false,
           "status": "not_created",
           "venue": "prediction_market_router"
         },
-        "source_broker_reconciliation_review_id": "eb80a340-22f3-4651-917a-74398099b12d",
-        "source_execution_policy_review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
-        "source_staged_paper_order_review_id": "26764146-ce83-4f8d-8555-4e1e57429ab4",
+        "source_broker_reconciliation_review_id": "064b0595-570f-4fb8-ae43-d339868dc642",
+        "source_execution_policy_review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
+        "source_staged_paper_order_review_id": "e078ded3-1bdc-446e-a574-57573a0936d7",
         "status": "blocked_before_dry_run_submit",
         "submitted_at": "not_submitted",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "broker_reconciliation_status",
           "idempotency_key",
@@ -5455,7 +5503,7 @@
           "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
           "duplicate_detected": false,
           "duplicate_window_seconds": 86400,
-          "guard_key": "dryrun-52a24f7ac89f2a208a13f918",
+          "guard_key": "dryrun-66af483dd3ea53a2c35d27f2",
           "guard_write_performed": false,
           "lookup_performed": false,
           "lookup_sources": [
@@ -5470,7 +5518,7 @@
           "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
           "event_log_ref": "not_written",
           "event_type": "paper_order_prewrite_requested",
-          "idempotency_preview_key": "dryrun-52a24f7ac89f2a208a13f918",
+          "idempotency_preview_key": "dryrun-66af483dd3ea53a2c35d27f2",
           "required_fields": [
             "schema_version",
             "event_type",
@@ -5485,7 +5533,7 @@
             "pre_trade_snapshot_ref",
             "created_at"
           ],
-          "source_broker_reconciliation_review_id": "2e268f78-5172-43d4-bd70-1618307dfd59",
+          "source_broker_reconciliation_review_id": "d9ab072f-39aa-4758-836e-e60e33e9d4bb",
           "status": "schema_defined_not_written",
           "write_performed": false
         },
@@ -5518,14 +5566,14 @@
             "order_type",
             "notional_gbp"
           ],
-          "preview_key": "dryrun-52a24f7ac89f2a208a13f918",
+          "preview_key": "dryrun-66af483dd3ea53a2c35d27f2",
           "status": "designed_not_allocated"
         },
         "instrument": "prediction_markets",
         "live_capital_enabled": false,
         "paper_order_submitted": false,
         "pre_trade_snapshot_schema": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
           "capture_performed": false,
           "connection_status": "alpaca_paper_readonly_connected",
@@ -5581,8 +5629,8 @@
           "Create simulated receipt only after all reconciliation prerequisites pass.",
           "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
         ],
-        "review_id": "5f2cb1f7-c453-422b-ad24-eac958791c0e",
-        "reviewed_at": "2026-05-26T21:29:15.271081+00:00",
+        "review_id": "311a6ea7-9742-49da-bebe-cc0fd546c892",
+        "reviewed_at": "2026-05-26T21:45:09.337844+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
         "simulated_receipt": {
@@ -5590,22 +5638,22 @@
           "broker_post_called": false,
           "client_order_id": "not_allocated",
           "external_order_id": "not_created",
-          "idempotency_preview_key": "dryrun-52a24f7ac89f2a208a13f918",
+          "idempotency_preview_key": "dryrun-66af483dd3ea53a2c35d27f2",
           "mode": "dry_run_only",
           "paper_order_submitted": false,
           "raw_broker_payload_stored": false,
           "status": "not_created",
           "venue": "prediction_market_router"
         },
-        "source_broker_reconciliation_review_id": "2e268f78-5172-43d4-bd70-1618307dfd59",
-        "source_execution_policy_review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
-        "source_staged_paper_order_review_id": "4283d14a-86d9-4010-adc1-ba1af987d562",
+        "source_broker_reconciliation_review_id": "d9ab072f-39aa-4758-836e-e60e33e9d4bb",
+        "source_execution_policy_review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
+        "source_staged_paper_order_review_id": "de85a4d9-d9e1-4463-b670-217f28aa3a54",
         "status": "blocked_before_dry_run_submit",
         "submitted_at": "not_submitted",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "broker_reconciliation_status",
           "idempotency_key",
@@ -5638,7 +5686,7 @@
           "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
           "duplicate_detected": false,
           "duplicate_window_seconds": 86400,
-          "guard_key": "dryrun-fe62f87941b027040cd61eff",
+          "guard_key": "dryrun-d4a80cc2f4ce774180d35615",
           "guard_write_performed": false,
           "lookup_performed": false,
           "lookup_sources": [
@@ -5653,7 +5701,7 @@
           "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
           "event_log_ref": "not_written",
           "event_type": "paper_order_prewrite_requested",
-          "idempotency_preview_key": "dryrun-fe62f87941b027040cd61eff",
+          "idempotency_preview_key": "dryrun-d4a80cc2f4ce774180d35615",
           "required_fields": [
             "schema_version",
             "event_type",
@@ -5668,7 +5716,7 @@
             "pre_trade_snapshot_ref",
             "created_at"
           ],
-          "source_broker_reconciliation_review_id": "24669725-eaa5-4dc6-b6bf-2df221525a90",
+          "source_broker_reconciliation_review_id": "24a6a0e4-df48-4a72-92d7-1292b43dadf6",
           "status": "schema_defined_not_written",
           "write_performed": false
         },
@@ -5701,14 +5749,14 @@
             "order_type",
             "notional_gbp"
           ],
-          "preview_key": "dryrun-fe62f87941b027040cd61eff",
+          "preview_key": "dryrun-d4a80cc2f4ce774180d35615",
           "status": "designed_not_allocated"
         },
         "instrument": "USO options watch",
         "live_capital_enabled": false,
         "paper_order_submitted": false,
         "pre_trade_snapshot_schema": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
           "capture_performed": false,
           "connection_status": "alpaca_paper_readonly_connected",
@@ -5764,8 +5812,8 @@
           "Create simulated receipt only after all reconciliation prerequisites pass.",
           "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
         ],
-        "review_id": "afff342f-b320-4746-8a10-62fa52d5f95a",
-        "reviewed_at": "2026-05-26T21:29:15.271263+00:00",
+        "review_id": "b67382b4-bb66-49b5-85b2-5ca904ef4001",
+        "reviewed_at": "2026-05-26T21:45:09.337978+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
         "simulated_receipt": {
@@ -5773,22 +5821,22 @@
           "broker_post_called": false,
           "client_order_id": "not_allocated",
           "external_order_id": "not_created",
-          "idempotency_preview_key": "dryrun-fe62f87941b027040cd61eff",
+          "idempotency_preview_key": "dryrun-d4a80cc2f4ce774180d35615",
           "mode": "dry_run_only",
           "paper_order_submitted": false,
           "raw_broker_payload_stored": false,
           "status": "not_created",
           "venue": "alpaca_paper"
         },
-        "source_broker_reconciliation_review_id": "24669725-eaa5-4dc6-b6bf-2df221525a90",
-        "source_execution_policy_review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
-        "source_staged_paper_order_review_id": "546a5c8e-4413-4465-8835-1f0468900909",
+        "source_broker_reconciliation_review_id": "24a6a0e4-df48-4a72-92d7-1292b43dadf6",
+        "source_execution_policy_review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
+        "source_staged_paper_order_review_id": "e4ea23aa-2995-46f7-a5d7-8f34e7633048",
         "status": "blocked_before_dry_run_submit",
         "submitted_at": "not_submitted",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "broker_reconciliation_status",
           "idempotency_key",
@@ -5821,7 +5869,7 @@
           "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
           "duplicate_detected": false,
           "duplicate_window_seconds": 86400,
-          "guard_key": "dryrun-4290f2a475f8560097e313cb",
+          "guard_key": "dryrun-62f23ddcfc2e81542d8db3be",
           "guard_write_performed": false,
           "lookup_performed": false,
           "lookup_sources": [
@@ -5836,7 +5884,7 @@
           "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
           "event_log_ref": "not_written",
           "event_type": "paper_order_prewrite_requested",
-          "idempotency_preview_key": "dryrun-4290f2a475f8560097e313cb",
+          "idempotency_preview_key": "dryrun-62f23ddcfc2e81542d8db3be",
           "required_fields": [
             "schema_version",
             "event_type",
@@ -5851,7 +5899,7 @@
             "pre_trade_snapshot_ref",
             "created_at"
           ],
-          "source_broker_reconciliation_review_id": "1cf00863-3bc5-4577-861c-43d986b573cf",
+          "source_broker_reconciliation_review_id": "99d3f84e-0f89-44b3-a8f6-7236240e3898",
           "status": "schema_defined_not_written",
           "write_performed": false
         },
@@ -5884,14 +5932,14 @@
             "order_type",
             "notional_gbp"
           ],
-          "preview_key": "dryrun-4290f2a475f8560097e313cb",
+          "preview_key": "dryrun-62f23ddcfc2e81542d8db3be",
           "status": "designed_not_allocated"
         },
         "instrument": "Semiconductor basket watch",
         "live_capital_enabled": false,
         "paper_order_submitted": false,
         "pre_trade_snapshot_schema": {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
           "capture_performed": false,
           "connection_status": "alpaca_paper_readonly_connected",
@@ -5947,8 +5995,8 @@
           "Create simulated receipt only after all reconciliation prerequisites pass.",
           "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
         ],
-        "review_id": "a2fc592d-ebb2-4b68-bdb3-685b49863103",
-        "reviewed_at": "2026-05-26T21:29:15.271510+00:00",
+        "review_id": "09444c2c-1f88-46fe-ae6b-3b0dc3453220",
+        "reviewed_at": "2026-05-26T21:45:09.338064+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
         "simulated_receipt": {
@@ -5956,16 +6004,16 @@
           "broker_post_called": false,
           "client_order_id": "not_allocated",
           "external_order_id": "not_created",
-          "idempotency_preview_key": "dryrun-4290f2a475f8560097e313cb",
+          "idempotency_preview_key": "dryrun-62f23ddcfc2e81542d8db3be",
           "mode": "dry_run_only",
           "paper_order_submitted": false,
           "raw_broker_payload_stored": false,
           "status": "not_created",
           "venue": "alpaca_paper"
         },
-        "source_broker_reconciliation_review_id": "1cf00863-3bc5-4577-861c-43d986b573cf",
-        "source_execution_policy_review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
-        "source_staged_paper_order_review_id": "ea220b35-65bd-4974-b0f7-1acee4de2e34",
+        "source_broker_reconciliation_review_id": "99d3f84e-0f89-44b3-a8f6-7236240e3898",
+        "source_execution_policy_review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
+        "source_staged_paper_order_review_id": "a1194055-e8e8-4b54-843d-d3e4cbb8f603",
         "status": "blocked_before_dry_run_submit",
         "submitted_at": "not_submitted",
         "venue_mode": "disabled"
@@ -6017,7 +6065,7 @@
     "end_date": "2026-06-23",
     "event_log_event_count": 1,
     "event_log_written": true,
-    "generated_at": "2026-05-26T20:27:44.235437+00:00",
+    "generated_at": "2026-05-26T21:43:37.761891+00:00",
     "live_capital_enabled": false,
     "live_credentials_loaded": false,
     "live_endpoint_called_count": 0,
@@ -6130,10 +6178,10 @@
     "env_file_edited": false,
     "event_log_event_count": 1,
     "event_log_written": true,
-    "execute_automation_requested": true,
+    "execute_automation_requested": false,
     "exit_hold_reason": "no_open_position_exit_candidate",
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T20:27:38.954790+00:00",
+    "generated_at": "2026-05-26T21:43:20.198419+00:00",
     "live_capital_enabled": false,
     "live_endpoint_allowed": false,
     "live_endpoint_called_count": 0,
@@ -6159,9 +6207,13 @@
     "paperops4_eligible_exit_record_count": 0,
     "paperops4_exit_path_available": false,
     "paperops4_status": "ready_no_exit_candidate",
-    "paperops_blocker_count": 1,
+    "paperops_blocker_count": 5,
     "paperops_blockers": [
-      "qctrl_paper_consultation_connected_not_ready"
+      "qctrl_paper_consultation_connected_not_ready",
+      "auto_approval_connected_not_ready",
+      "paper_order_staging_connected_not_ready",
+      "alpaca_paper_submit_contract_connected_not_ready",
+      "paper_lifecycle_connected_not_ready"
     ],
     "paperops_full_ready": false,
     "paperops_readiness_status": "blocked_pending_paper_ops",
@@ -6241,7 +6293,7 @@
     "execute_post_requested": false,
     "explicit_submit_flag_required": true,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T21:29:28.875327+00:00",
+    "generated_at": "2026-05-26T21:43:18.270954+00:00",
     "live_capital_enabled": false,
     "live_endpoint_allowed": false,
     "live_endpoint_called_count": 0,
@@ -6993,7 +7045,7 @@
     "event_log_written": true,
     "forced_trade_count": 0,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T21:29:28.401471+00:00",
+    "generated_at": "2026-05-26T21:43:17.037782+00:00",
     "idempotency_key_count": 1,
     "idempotency_namespace": "phase7_demo_proof",
     "live_capital_enabled": false,
@@ -7148,7 +7200,7 @@
           "time_in_force": "day"
         },
         "event_log_prewrite_ready": true,
-        "event_log_prewrite_ref": "9f5ba49d-aff7-4508-8a60-e0281f4addcc",
+        "event_log_prewrite_ref": "1b241bdb-46b5-4403-843d-88fbfa8eb3ae",
         "event_log_prewrite_required": true,
         "event_log_prewrite_written": true,
         "failed_check_count": 0,
@@ -7959,10 +8011,10 @@
         "key": "paperops_readiness",
         "label": "PaperOps readiness",
         "status": "blocked_pending_paper_ops",
-        "value": "safe=True; blockers=1"
+        "value": "safe=True; blockers=5"
       }
     ],
-    "generated_at": "2026-05-26T20:27:40.916713+00:00",
+    "generated_at": "2026-05-26T21:43:21.555441+00:00",
     "live_capital_enabled": false,
     "live_endpoint_called_count": 0,
     "mode": "paper",
@@ -8022,7 +8074,7 @@
     "execute_exit_requested": false,
     "explicit_exit_flag_required": true,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T20:27:32.325115+00:00",
+    "generated_at": "2026-05-26T21:43:19.704016+00:00",
     "guarded_paper_exit_enabled": true,
     "lifecycle_polling_enablement_ready": true,
     "lifecycle_polling_enablement_status": "enabled_pending_submitted_paper_orders",
@@ -8223,7 +8275,7 @@
     "event_log_written": true,
     "explicit_poll_flag_required": true,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T20:27:32.152305+00:00",
+    "generated_at": "2026-05-26T21:43:18.738529+00:00",
     "live_capital_enabled": false,
     "live_endpoint_allowed": false,
     "live_endpoint_called_count": 0,
@@ -8894,7 +8946,7 @@
     "execution_allowed": false,
     "forced_trade_count": 0,
     "forced_trades_allowed": false,
-    "generated_at": "2026-05-26T21:29:28.039167+00:00",
+    "generated_at": "2026-05-26T21:43:16.899891+00:00",
     "live_capital_enabled": false,
     "live_endpoint_allowed": false,
     "live_endpoint_called_count": 0,
@@ -9046,7 +9098,7 @@
     "schema_version": 1,
     "source_posture_canonical_source_count": 35,
     "source_qualified_setup_ledger_count": 0,
-    "source_qualified_setup_ledger_status": "blocked",
+    "source_qualified_setup_ledger_status": "read_only_no_q7_setups",
     "source_quorum_bypass_allowed": false,
     "stage": "PT-3",
     "staged_order_count": 1,
@@ -11404,7 +11456,7 @@
     "event_log_event_count": 1,
     "event_log_required": true,
     "event_log_written": true,
-    "generated_at": "2026-05-26T21:29:19.062068+00:00",
+    "generated_at": "2026-05-26T21:45:25.801354+00:00",
     "guardrails": {
       "boundary": "Dashboard may say Qadam is trading only when submitted, open, or closed paper lifecycle state exists in the backend.",
       "closed_trade_count": 1,
@@ -11778,7 +11830,7 @@
         "blockers": [],
         "broker_write_allowed": false,
         "counts": {},
-        "current_process": "1510 reviews; 3 Q5 records held",
+        "current_process": "1535 reviews; 3 Q5 records held",
         "display_status": "ok",
         "handoff": "block or hold",
         "input": "Shadow signals and source evidence",
@@ -13951,7 +14003,7 @@
     "expectancy_after_costs_gbp": null,
     "expectancy_after_costs_positive": false,
     "external_broker_post_performed_count": 0,
-    "generated_at": "2026-05-26T20:27:33.325347+00:00",
+    "generated_at": "2026-05-26T21:43:24.833585+00:00",
     "live_capital_enabled": false,
     "live_capital_enabled_count": 0,
     "live_endpoint_allowed_count": 0,
@@ -14258,7 +14310,7 @@
     "first_trading_universe_strategy_family_count": 5,
     "identity_gate_status": "blocked",
     "identity_status": "not_verified",
-    "last_check_at": "2026-05-26T21:29:19.062068+00:00",
+    "last_check_at": "2026-05-26T21:45:25.801354+00:00",
     "last_successful_catalog_check": "2026-05-24T06:07:18.476410+00:00",
     "last_successful_domain_pack_check": "2026-05-24T06:39:08.734931+00:00",
     "last_successful_provenance_check": "2026-05-24T15:50:40.924288+00:00",
@@ -14299,52 +14351,52 @@
   },
   "process_console": [
     {
-      "component": "paper_submit_receipt",
-      "message": "paper_submit_receipt: paper_submit_receipt_review_recorded (info)",
+      "component": "broker_reconciliation",
+      "message": "broker_reconciliation: broker_reconciliation_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-26T21:29:15.273514+00:00"
+      "timestamp": "2026-05-26T21:45:09.133227+00:00"
+    },
+    {
+      "component": "broker_reconciliation",
+      "message": "broker_reconciliation: broker_reconciliation_review_recorded (info)",
+      "severity": "info",
+      "timestamp": "2026-05-26T21:45:09.133598+00:00"
+    },
+    {
+      "component": "broker_reconciliation",
+      "message": "broker_reconciliation: broker_reconciliation_review_recorded (info)",
+      "severity": "info",
+      "timestamp": "2026-05-26T21:45:09.133885+00:00"
     },
     {
       "component": "paper_submit_receipt",
       "message": "paper_submit_receipt: paper_submit_receipt_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-26T21:29:15.274318+00:00"
+      "timestamp": "2026-05-26T21:45:09.349017+00:00"
     },
     {
       "component": "paper_submit_receipt",
       "message": "paper_submit_receipt: paper_submit_receipt_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-26T21:29:15.274815+00:00"
+      "timestamp": "2026-05-26T21:45:09.350078+00:00"
     },
     {
       "component": "paper_submit_receipt",
       "message": "paper_submit_receipt: paper_submit_receipt_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-26T21:29:15.275364+00:00"
+      "timestamp": "2026-05-26T21:45:09.351016+00:00"
     },
     {
       "component": "paper_submit_receipt",
       "message": "paper_submit_receipt: paper_submit_receipt_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-26T21:29:15.276024+00:00"
+      "timestamp": "2026-05-26T21:45:09.352201+00:00"
     },
     {
-      "component": "signal_integrity",
-      "message": "signal_integrity: signal_integrity_review_recorded (info)",
+      "component": "paper_submit_receipt",
+      "message": "paper_submit_receipt: paper_submit_receipt_review_recorded (info)",
       "severity": "info",
-      "timestamp": "2026-05-26T21:29:23.141654+00:00"
-    },
-    {
-      "component": "head_of_quant",
-      "message": "head_of_quant: quantum_oracle_result_recorded (info)",
-      "severity": "info",
-      "timestamp": "2026-05-26T21:29:23.333354+00:00"
-    },
-    {
-      "component": "head_of_quant",
-      "message": "head_of_quant: quantum_oracle_result_recorded (info)",
-      "severity": "info",
-      "timestamp": "2026-05-26T21:29:23.334915+00:00"
+      "timestamp": "2026-05-26T21:45:09.353025+00:00"
     }
   ],
   "quantum_oracle": {
@@ -14357,10 +14409,10 @@
     "hardware_submitted_count": 0,
     "latest_backend": "classical_fallback",
     "latest_backend_status": "ok",
-    "latest_created_at": "2026-05-26T21:29:23.331182+00:00",
+    "latest_created_at": "2026-05-26T21:43:15.430212+00:00",
     "latest_durable_evidence_status": "not_available",
     "latest_input_contract_status": "accepted",
-    "latest_input_fingerprint": "a7b39bce6e52612efc4a99aac8eea778dff9e8ed5fad7c7920e080c5f47597c0",
+    "latest_input_fingerprint": "7e7c3895332f6240bbb2ef6b065b3f588ad437d5cd8c18147c82d57d4c92bb59",
     "latest_input_source_type": "signal_integrity_review",
     "latest_local_simulation_mode": "deterministic_classical_shadow",
     "latest_market_confirmation_status": "market_confirmation_corroboration_available",
@@ -14386,7 +14438,7 @@
       "execution_policy_approval_count": 0,
       "execution_policy_authority": false,
       "hardware_submission_allowed": false,
-      "job_id": "be148d18-3a60-4580-acc2-687156808bce",
+      "job_id": "59403f29-64ef-4998-8c99-e35283e1dab1",
       "job_type": "strategy_collapse",
       "paper_order_allowed": false,
       "paper_submit_receipt_authority": false,
@@ -14410,7 +14462,7 @@
         "read_allowed": true,
         "trade_candidate_allowed": false
       },
-      "source_ref": "519958a2-5543-4228-83a8-6347f1dbbfbb",
+      "source_ref": "40f85d51-6697-4edd-b14c-90a6ffc6cab6",
       "staged_paper_order_authority": false,
       "staged_paper_order_created_count": 0,
       "status": "shadow_annotation_ready",
@@ -14473,7 +14525,7 @@
       "status": "classical_fallback_ready",
       "trade_candidate_authority": false
     },
-    "next_due_at": "2026-06-02T21:29:23.331182+00:00",
+    "next_due_at": "2026-06-02T21:43:15.430212+00:00",
     "paper_order_allowed_count": 0,
     "provider_readiness": {
       "available_without_secret_count": 0,
@@ -14728,7 +14780,7 @@
     },
     "qiskit_aer_available": false,
     "qiskit_available": false,
-    "result_count": 176,
+    "result_count": 186,
     "scheduler_dry_run": {
       "autonomous_scheduler_enabled": false,
       "background_automation_created": false,
@@ -14802,8 +14854,8 @@
       "job_submission_allowed": false,
       "jobs_queued_count": 0,
       "jobs_submitted_count": 0,
-      "last_run_at": "2026-05-26T21:29:23.331182+00:00",
-      "next_due_at": "2026-06-02T21:29:23.331182+00:00",
+      "last_run_at": "2026-05-26T21:43:15.430212+00:00",
+      "next_due_at": "2026-06-02T21:43:15.430212+00:00",
       "paper_order_allowed": false,
       "provider_call_allowed": false,
       "public_safe": true,
@@ -14825,13 +14877,13 @@
     "boundary": "Risk Agent policy reviews are read-only. They can block or hold, but cannot approve risk, create orders, or write to brokers.",
     "broker_write_allowed_count": 0,
     "by_status": {
-      "blocked_before_risk": 1771
+      "blocked_before_risk": 1799
     },
     "execution_allowed_count": 0,
     "max_risk_pct_per_idea": 1.0,
     "order_created_count": 0,
     "paper_order_allowed_count": 0,
-    "review_count": 1771,
+    "review_count": 1799,
     "reviews": [
       {
         "blocked_reasons": [
@@ -14877,10 +14929,10 @@
           "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
           "Keep broker writes and live capital disabled."
         ],
-        "review_id": "560fbdda-4d22-411a-a268-0acd438f77e6",
-        "reviewed_at": "2026-05-26T21:29:11.993332+00:00",
+        "review_id": "febe47f7-5437-43ef-acb3-d131563ea320",
+        "reviewed_at": "2026-05-26T21:45:08.402184+00:00",
         "signal_integrity_status": "hold_for_corroboration",
-        "source_ref": "e1056be5-e645-45e2-8ef5-0cad668a1690",
+        "source_ref": "3d99bd45-488a-4bec-b3c7-d669f6d04349",
         "source_type": "signal_integrity_review",
         "status": "blocked_before_risk"
       },
@@ -14928,10 +14980,10 @@
           "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
           "Keep broker writes and live capital disabled."
         ],
-        "review_id": "87b46fc8-1688-4180-9c51-d6ac0c97bc51",
-        "reviewed_at": "2026-05-26T21:29:11.993651+00:00",
+        "review_id": "affa874c-0bff-4313-a0fa-cd3157abae1b",
+        "reviewed_at": "2026-05-26T21:45:08.402223+00:00",
         "signal_integrity_status": "hold_for_corroboration",
-        "source_ref": "2f71d095-e02b-445f-a9f8-1f0b22292887",
+        "source_ref": "b897afb3-3a9a-4544-9ec0-aaf632a1d196",
         "source_type": "signal_integrity_review",
         "status": "blocked_before_risk"
       },
@@ -14979,10 +15031,10 @@
           "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
           "Keep broker writes and live capital disabled."
         ],
-        "review_id": "0337160b-0664-4f2d-906d-d55c8140ec44",
-        "reviewed_at": "2026-05-26T21:29:11.993856+00:00",
+        "review_id": "71b15f70-91df-4994-af80-068d96938559",
+        "reviewed_at": "2026-05-26T21:45:08.402263+00:00",
         "signal_integrity_status": "hold_for_corroboration",
-        "source_ref": "0a1545f0-369d-4cbd-bef9-702e4b21d5a3",
+        "source_ref": "9c5c26fb-ed4f-40c2-9ac9-4fb25a399d32",
         "source_type": "signal_integrity_review",
         "status": "blocked_before_risk"
       },
@@ -15027,8 +15079,8 @@
           "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
           "Keep broker writes and live capital disabled."
         ],
-        "review_id": "1633915f-0412-4ad1-8531-5d8e99b3a634",
-        "reviewed_at": "2026-05-26T21:29:11.993949+00:00",
+        "review_id": "46824fb7-af54-41a8-a8d3-bec070f10dd7",
+        "reviewed_at": "2026-05-26T21:45:08.402308+00:00",
         "signal_integrity_status": "not_reviewed",
         "source_ref": "d5-sample-candidate-crude-oil",
         "source_type": "trade_intent",
@@ -15077,8 +15129,8 @@
           "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
           "Keep broker writes and live capital disabled."
         ],
-        "review_id": "fee9c2d5-24dd-4551-8ecb-12d62d6e09ca",
-        "reviewed_at": "2026-05-26T21:29:11.994112+00:00",
+        "review_id": "ba2aa865-5e05-4452-bdba-d6fe90a68ddb",
+        "reviewed_at": "2026-05-26T21:45:08.402347+00:00",
         "signal_integrity_status": "not_reviewed",
         "source_ref": "d5-sample-blocked-semiconductor",
         "source_type": "trade_intent",
@@ -15263,16 +15315,16 @@
     "boundary": "Staged paper-order reviews are disabled and read-only. They can describe hypothetical staging and reconciliation requirements, but cannot create staged orders, submit paper orders, enable live capital, or write to brokers.",
     "broker_write_allowed_count": 0,
     "by_status": {
-      "blocked_before_staging": 1099
+      "blocked_before_staging": 1119
     },
     "execution_allowed_count": 0,
     "live_capital_enabled_count": 0,
     "paper_order_submittable_count": 0,
     "reconciliation_ready_count": 0,
-    "review_count": 1099,
+    "review_count": 1119,
     "reviews": [
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "execution_policy",
           "staging_contract",
@@ -15326,17 +15378,17 @@
           "Define broker echo reconciliation before any broker-write route exists.",
           "Keep staged paper-order creation, broker writes, and live capital disabled."
         ],
-        "review_id": "496cda8f-54d1-4699-83b8-2a25e5d988f9",
-        "reviewed_at": "2026-05-26T21:29:13.912838+00:00",
+        "review_id": "a1d88b75-91ff-435c-85ab-5d2dcc2b2345",
+        "reviewed_at": "2026-05-26T21:45:08.905060+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_execution_policy_review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
+        "source_execution_policy_review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
         "staged_paper_order_created": false,
         "status": "blocked_before_staging",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "execution_policy",
           "staging_contract",
@@ -15390,17 +15442,17 @@
           "Define broker echo reconciliation before any broker-write route exists.",
           "Keep staged paper-order creation, broker writes, and live capital disabled."
         ],
-        "review_id": "26764146-ce83-4f8d-8555-4e1e57429ab4",
-        "reviewed_at": "2026-05-26T21:29:13.912909+00:00",
+        "review_id": "e078ded3-1bdc-446e-a574-57573a0936d7",
+        "reviewed_at": "2026-05-26T21:45:08.905116+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_execution_policy_review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
+        "source_execution_policy_review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
         "staged_paper_order_created": false,
         "status": "blocked_before_staging",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "execution_policy",
           "staging_contract",
@@ -15454,17 +15506,17 @@
           "Define broker echo reconciliation before any broker-write route exists.",
           "Keep staged paper-order creation, broker writes, and live capital disabled."
         ],
-        "review_id": "4283d14a-86d9-4010-adc1-ba1af987d562",
-        "reviewed_at": "2026-05-26T21:29:13.912946+00:00",
+        "review_id": "de85a4d9-d9e1-4463-b670-217f28aa3a54",
+        "reviewed_at": "2026-05-26T21:45:08.905142+00:00",
         "schema_version": 1,
         "selected_venue": "prediction_market_router",
-        "source_execution_policy_review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
+        "source_execution_policy_review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
         "staged_paper_order_created": false,
         "status": "blocked_before_staging",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "execution_policy",
           "staging_contract",
@@ -15518,17 +15570,17 @@
           "Define broker echo reconciliation before any broker-write route exists.",
           "Keep staged paper-order creation, broker writes, and live capital disabled."
         ],
-        "review_id": "546a5c8e-4413-4465-8835-1f0468900909",
-        "reviewed_at": "2026-05-26T21:29:13.912976+00:00",
+        "review_id": "e4ea23aa-2995-46f7-a5d7-8f34e7633048",
+        "reviewed_at": "2026-05-26T21:45:08.905160+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
-        "source_execution_policy_review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
+        "source_execution_policy_review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
         "staged_paper_order_created": false,
         "status": "blocked_before_staging",
         "venue_mode": "disabled"
       },
       {
-        "account_scope": "first_release_gbp_1000_trial",
+        "account_scope": "first_release_gbp_100000_paper",
         "blocked_reasons": [
           "execution_policy",
           "staging_contract",
@@ -15582,11 +15634,11 @@
           "Define broker echo reconciliation before any broker-write route exists.",
           "Keep staged paper-order creation, broker writes, and live capital disabled."
         ],
-        "review_id": "ea220b35-65bd-4974-b0f7-1acee4de2e34",
-        "reviewed_at": "2026-05-26T21:29:13.913004+00:00",
+        "review_id": "a1194055-e8e8-4b54-843d-d3e4cbb8f603",
+        "reviewed_at": "2026-05-26T21:45:08.905178+00:00",
         "schema_version": 1,
         "selected_venue": "alpaca_paper",
-        "source_execution_policy_review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
+        "source_execution_policy_review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
         "staged_paper_order_created": false,
         "status": "blocked_before_staging",
         "venue_mode": "disabled"
@@ -15653,7 +15705,7 @@
       "broker_echo_verified_count": 0,
       "broker_write_allowed_count": 0,
       "by_status": {
-        "blocked_before_broker_reconciliation": 1001
+        "blocked_before_broker_reconciliation": 1021
       },
       "duplicate_order_guard_ready_count": 0,
       "event_log_prewrite_created_count": 0,
@@ -15663,10 +15715,10 @@
       "post_submit_reconciliation_ready_count": 0,
       "postmortem_link_ready_count": 0,
       "pre_trade_snapshot_created_count": 0,
-      "review_count": 1001,
+      "review_count": 1021,
       "reviews": [
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "source_staged_status",
             "broker_adapter_mode",
@@ -15745,17 +15797,17 @@
             "Define broker echo and post-submit reconciliation before broker writes.",
             "Keep paper-order submission, broker writes, and live capital disabled."
           ],
-          "review_id": "f0800a62-1024-4789-92d0-50b66258519c",
-          "reviewed_at": "2026-05-26T21:29:14.595524+00:00",
+          "review_id": "ff436e69-71bb-44c6-a3b3-2acc73776ed6",
+          "reviewed_at": "2026-05-26T21:45:09.121276+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_execution_policy_review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
-          "source_staged_paper_order_review_id": "496cda8f-54d1-4699-83b8-2a25e5d988f9",
+          "source_execution_policy_review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
+          "source_staged_paper_order_review_id": "a1d88b75-91ff-435c-85ab-5d2dcc2b2345",
           "status": "blocked_before_broker_reconciliation",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "source_staged_status",
             "broker_adapter_mode",
@@ -15834,17 +15886,17 @@
             "Define broker echo and post-submit reconciliation before broker writes.",
             "Keep paper-order submission, broker writes, and live capital disabled."
           ],
-          "review_id": "eb80a340-22f3-4651-917a-74398099b12d",
-          "reviewed_at": "2026-05-26T21:29:14.595794+00:00",
+          "review_id": "064b0595-570f-4fb8-ae43-d339868dc642",
+          "reviewed_at": "2026-05-26T21:45:09.121375+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_execution_policy_review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
-          "source_staged_paper_order_review_id": "26764146-ce83-4f8d-8555-4e1e57429ab4",
+          "source_execution_policy_review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
+          "source_staged_paper_order_review_id": "e078ded3-1bdc-446e-a574-57573a0936d7",
           "status": "blocked_before_broker_reconciliation",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "source_staged_status",
             "broker_adapter_mode",
@@ -15923,17 +15975,17 @@
             "Define broker echo and post-submit reconciliation before broker writes.",
             "Keep paper-order submission, broker writes, and live capital disabled."
           ],
-          "review_id": "2e268f78-5172-43d4-bd70-1618307dfd59",
-          "reviewed_at": "2026-05-26T21:29:14.595942+00:00",
+          "review_id": "d9ab072f-39aa-4758-836e-e60e33e9d4bb",
+          "reviewed_at": "2026-05-26T21:45:09.121432+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_execution_policy_review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
-          "source_staged_paper_order_review_id": "4283d14a-86d9-4010-adc1-ba1af987d562",
+          "source_execution_policy_review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
+          "source_staged_paper_order_review_id": "de85a4d9-d9e1-4463-b670-217f28aa3a54",
           "status": "blocked_before_broker_reconciliation",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "source_staged_status",
             "broker_adapter_mode",
@@ -16012,17 +16064,17 @@
             "Define broker echo and post-submit reconciliation before broker writes.",
             "Keep paper-order submission, broker writes, and live capital disabled."
           ],
-          "review_id": "24669725-eaa5-4dc6-b6bf-2df221525a90",
-          "reviewed_at": "2026-05-26T21:29:14.596058+00:00",
+          "review_id": "24a6a0e4-df48-4a72-92d7-1292b43dadf6",
+          "reviewed_at": "2026-05-26T21:45:09.121481+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
-          "source_execution_policy_review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
-          "source_staged_paper_order_review_id": "546a5c8e-4413-4465-8835-1f0468900909",
+          "source_execution_policy_review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
+          "source_staged_paper_order_review_id": "e4ea23aa-2995-46f7-a5d7-8f34e7633048",
           "status": "blocked_before_broker_reconciliation",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "source_staged_status",
             "broker_adapter_mode",
@@ -16101,12 +16153,12 @@
             "Define broker echo and post-submit reconciliation before broker writes.",
             "Keep paper-order submission, broker writes, and live capital disabled."
           ],
-          "review_id": "1cf00863-3bc5-4577-861c-43d986b573cf",
-          "reviewed_at": "2026-05-26T21:29:14.596265+00:00",
+          "review_id": "99d3f84e-0f89-44b3-a8f6-7236240e3898",
+          "reviewed_at": "2026-05-26T21:45:09.121527+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
-          "source_execution_policy_review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
-          "source_staged_paper_order_review_id": "ea220b35-65bd-4974-b0f7-1acee4de2e34",
+          "source_execution_policy_review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
+          "source_staged_paper_order_review_id": "a1194055-e8e8-4b54-843d-d3e4cbb8f603",
           "status": "blocked_before_broker_reconciliation",
           "venue_mode": "disabled"
         }
@@ -16186,13 +16238,13 @@
       "boundary": "Execution policy reviews are read-only. They can explain holds and kill-switch blocks, but cannot stage paper orders, create orders, enable live capital, or write to brokers.",
       "broker_write_allowed_count": 0,
       "by_status": {
-        "kill_switch_hold": 1197
+        "kill_switch_hold": 1217
       },
       "execution_allowed_count": 0,
-      "kill_switch_block_count": 1197,
+      "kill_switch_block_count": 1217,
       "live_capital_enabled_count": 0,
       "paper_order_created_count": 0,
-      "review_count": 1197,
+      "review_count": 1217,
       "reviews": [
         {
           "blocked_reasons": [
@@ -16242,11 +16294,11 @@
             "Keep broker-order routes disabled until paper-order reconciliation exists.",
             "Keep live capital disabled."
           ],
-          "review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
-          "reviewed_at": "2026-05-26T21:29:13.067452+00:00",
+          "review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
+          "reviewed_at": "2026-05-26T21:45:08.658244+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_risk_review_id": "560fbdda-4d22-411a-a268-0acd438f77e6",
+          "source_risk_review_id": "febe47f7-5437-43ef-acb3-d131563ea320",
           "staged_paper_order_allowed": false,
           "status": "kill_switch_hold",
           "venue_mode": "disabled"
@@ -16299,11 +16351,11 @@
             "Keep broker-order routes disabled until paper-order reconciliation exists.",
             "Keep live capital disabled."
           ],
-          "review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
-          "reviewed_at": "2026-05-26T21:29:13.067923+00:00",
+          "review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
+          "reviewed_at": "2026-05-26T21:45:08.658414+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_risk_review_id": "87b46fc8-1688-4180-9c51-d6ac0c97bc51",
+          "source_risk_review_id": "affa874c-0bff-4313-a0fa-cd3157abae1b",
           "staged_paper_order_allowed": false,
           "status": "kill_switch_hold",
           "venue_mode": "disabled"
@@ -16356,11 +16408,11 @@
             "Keep broker-order routes disabled until paper-order reconciliation exists.",
             "Keep live capital disabled."
           ],
-          "review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
-          "reviewed_at": "2026-05-26T21:29:13.068122+00:00",
+          "review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
+          "reviewed_at": "2026-05-26T21:45:08.658500+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_risk_review_id": "0337160b-0664-4f2d-906d-d55c8140ec44",
+          "source_risk_review_id": "71b15f70-91df-4994-af80-068d96938559",
           "staged_paper_order_allowed": false,
           "status": "kill_switch_hold",
           "venue_mode": "disabled"
@@ -16413,11 +16465,11 @@
             "Keep broker-order routes disabled until paper-order reconciliation exists.",
             "Keep live capital disabled."
           ],
-          "review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
-          "reviewed_at": "2026-05-26T21:29:13.068351+00:00",
+          "review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
+          "reviewed_at": "2026-05-26T21:45:08.658563+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
-          "source_risk_review_id": "1633915f-0412-4ad1-8531-5d8e99b3a634",
+          "source_risk_review_id": "46824fb7-af54-41a8-a8d3-bec070f10dd7",
           "staged_paper_order_allowed": false,
           "status": "kill_switch_hold",
           "venue_mode": "disabled"
@@ -16470,11 +16522,11 @@
             "Keep broker-order routes disabled until paper-order reconciliation exists.",
             "Keep live capital disabled."
           ],
-          "review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
-          "reviewed_at": "2026-05-26T21:29:13.073684+00:00",
+          "review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
+          "reviewed_at": "2026-05-26T21:45:08.658617+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
-          "source_risk_review_id": "fee9c2d5-24dd-4551-8ecb-12d62d6e09ca",
+          "source_risk_review_id": "ba2aa865-5e05-4452-bdba-d6fe90a68ddb",
           "staged_paper_order_allowed": false,
           "status": "kill_switch_hold",
           "venue_mode": "disabled"
@@ -16511,15 +16563,15 @@
       "broker_post_called_count": 0,
       "broker_write_allowed_count": 0,
       "by_status": {
-        "blocked_before_dry_run_submit": 903
+        "blocked_before_dry_run_submit": 923
       },
       "dry_run_receipt_created_count": 0,
       "live_capital_enabled_count": 0,
       "paper_order_submitted_count": 0,
-      "review_count": 903,
+      "review_count": 923,
       "reviews": [
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "broker_reconciliation_status",
             "idempotency_key",
@@ -16552,7 +16604,7 @@
             "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
             "duplicate_detected": false,
             "duplicate_window_seconds": 86400,
-            "guard_key": "dryrun-528b86b4a86212d35b3bf5d4",
+            "guard_key": "dryrun-a16cc4cc6064332a2e344d78",
             "guard_write_performed": false,
             "lookup_performed": false,
             "lookup_sources": [
@@ -16567,7 +16619,7 @@
             "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
             "event_log_ref": "not_written",
             "event_type": "paper_order_prewrite_requested",
-            "idempotency_preview_key": "dryrun-528b86b4a86212d35b3bf5d4",
+            "idempotency_preview_key": "dryrun-a16cc4cc6064332a2e344d78",
             "required_fields": [
               "schema_version",
               "event_type",
@@ -16582,7 +16634,7 @@
               "pre_trade_snapshot_ref",
               "created_at"
             ],
-            "source_broker_reconciliation_review_id": "f0800a62-1024-4789-92d0-50b66258519c",
+            "source_broker_reconciliation_review_id": "ff436e69-71bb-44c6-a3b3-2acc73776ed6",
             "status": "schema_defined_not_written",
             "write_performed": false
           },
@@ -16615,14 +16667,14 @@
               "order_type",
               "notional_gbp"
             ],
-            "preview_key": "dryrun-528b86b4a86212d35b3bf5d4",
+            "preview_key": "dryrun-a16cc4cc6064332a2e344d78",
             "status": "designed_not_allocated"
           },
           "instrument": "prediction_markets",
           "live_capital_enabled": false,
           "paper_order_submitted": false,
           "pre_trade_snapshot_schema": {
-            "account_scope": "first_release_gbp_1000_trial",
+            "account_scope": "first_release_gbp_100000_paper",
             "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
             "capture_performed": false,
             "connection_status": "alpaca_paper_readonly_connected",
@@ -16678,8 +16730,8 @@
             "Create simulated receipt only after all reconciliation prerequisites pass.",
             "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
           ],
-          "review_id": "3fbaa7c8-4921-4312-9a2d-566254a45f4c",
-          "reviewed_at": "2026-05-26T21:29:15.269425+00:00",
+          "review_id": "4910a3d1-181b-41f9-b2a9-56fa222b59a3",
+          "reviewed_at": "2026-05-26T21:45:09.337384+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
           "simulated_receipt": {
@@ -16687,22 +16739,22 @@
             "broker_post_called": false,
             "client_order_id": "not_allocated",
             "external_order_id": "not_created",
-            "idempotency_preview_key": "dryrun-528b86b4a86212d35b3bf5d4",
+            "idempotency_preview_key": "dryrun-a16cc4cc6064332a2e344d78",
             "mode": "dry_run_only",
             "paper_order_submitted": false,
             "raw_broker_payload_stored": false,
             "status": "not_created",
             "venue": "prediction_market_router"
           },
-          "source_broker_reconciliation_review_id": "f0800a62-1024-4789-92d0-50b66258519c",
-          "source_execution_policy_review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
-          "source_staged_paper_order_review_id": "496cda8f-54d1-4699-83b8-2a25e5d988f9",
+          "source_broker_reconciliation_review_id": "ff436e69-71bb-44c6-a3b3-2acc73776ed6",
+          "source_execution_policy_review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
+          "source_staged_paper_order_review_id": "a1d88b75-91ff-435c-85ab-5d2dcc2b2345",
           "status": "blocked_before_dry_run_submit",
           "submitted_at": "not_submitted",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "broker_reconciliation_status",
             "idempotency_key",
@@ -16735,7 +16787,7 @@
             "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
             "duplicate_detected": false,
             "duplicate_window_seconds": 86400,
-            "guard_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+            "guard_key": "dryrun-12b6e0c627a052877691acab",
             "guard_write_performed": false,
             "lookup_performed": false,
             "lookup_sources": [
@@ -16750,7 +16802,7 @@
             "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
             "event_log_ref": "not_written",
             "event_type": "paper_order_prewrite_requested",
-            "idempotency_preview_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+            "idempotency_preview_key": "dryrun-12b6e0c627a052877691acab",
             "required_fields": [
               "schema_version",
               "event_type",
@@ -16765,7 +16817,7 @@
               "pre_trade_snapshot_ref",
               "created_at"
             ],
-            "source_broker_reconciliation_review_id": "eb80a340-22f3-4651-917a-74398099b12d",
+            "source_broker_reconciliation_review_id": "064b0595-570f-4fb8-ae43-d339868dc642",
             "status": "schema_defined_not_written",
             "write_performed": false
           },
@@ -16798,14 +16850,14 @@
               "order_type",
               "notional_gbp"
             ],
-            "preview_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+            "preview_key": "dryrun-12b6e0c627a052877691acab",
             "status": "designed_not_allocated"
           },
           "instrument": "prediction_markets",
           "live_capital_enabled": false,
           "paper_order_submitted": false,
           "pre_trade_snapshot_schema": {
-            "account_scope": "first_release_gbp_1000_trial",
+            "account_scope": "first_release_gbp_100000_paper",
             "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
             "capture_performed": false,
             "connection_status": "alpaca_paper_readonly_connected",
@@ -16861,8 +16913,8 @@
             "Create simulated receipt only after all reconciliation prerequisites pass.",
             "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
           ],
-          "review_id": "71e17e6f-a51b-4427-b7e9-4f3f022754e2",
-          "reviewed_at": "2026-05-26T21:29:15.270889+00:00",
+          "review_id": "0c1e610d-f156-4fc8-a503-0cc02107e6d9",
+          "reviewed_at": "2026-05-26T21:45:09.337674+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
           "simulated_receipt": {
@@ -16870,22 +16922,22 @@
             "broker_post_called": false,
             "client_order_id": "not_allocated",
             "external_order_id": "not_created",
-            "idempotency_preview_key": "dryrun-d9ea423337cf0adcd43ea2a8",
+            "idempotency_preview_key": "dryrun-12b6e0c627a052877691acab",
             "mode": "dry_run_only",
             "paper_order_submitted": false,
             "raw_broker_payload_stored": false,
             "status": "not_created",
             "venue": "prediction_market_router"
           },
-          "source_broker_reconciliation_review_id": "eb80a340-22f3-4651-917a-74398099b12d",
-          "source_execution_policy_review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
-          "source_staged_paper_order_review_id": "26764146-ce83-4f8d-8555-4e1e57429ab4",
+          "source_broker_reconciliation_review_id": "064b0595-570f-4fb8-ae43-d339868dc642",
+          "source_execution_policy_review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
+          "source_staged_paper_order_review_id": "e078ded3-1bdc-446e-a574-57573a0936d7",
           "status": "blocked_before_dry_run_submit",
           "submitted_at": "not_submitted",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "broker_reconciliation_status",
             "idempotency_key",
@@ -16918,7 +16970,7 @@
             "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
             "duplicate_detected": false,
             "duplicate_window_seconds": 86400,
-            "guard_key": "dryrun-52a24f7ac89f2a208a13f918",
+            "guard_key": "dryrun-66af483dd3ea53a2c35d27f2",
             "guard_write_performed": false,
             "lookup_performed": false,
             "lookup_sources": [
@@ -16933,7 +16985,7 @@
             "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
             "event_log_ref": "not_written",
             "event_type": "paper_order_prewrite_requested",
-            "idempotency_preview_key": "dryrun-52a24f7ac89f2a208a13f918",
+            "idempotency_preview_key": "dryrun-66af483dd3ea53a2c35d27f2",
             "required_fields": [
               "schema_version",
               "event_type",
@@ -16948,7 +17000,7 @@
               "pre_trade_snapshot_ref",
               "created_at"
             ],
-            "source_broker_reconciliation_review_id": "2e268f78-5172-43d4-bd70-1618307dfd59",
+            "source_broker_reconciliation_review_id": "d9ab072f-39aa-4758-836e-e60e33e9d4bb",
             "status": "schema_defined_not_written",
             "write_performed": false
           },
@@ -16981,14 +17033,14 @@
               "order_type",
               "notional_gbp"
             ],
-            "preview_key": "dryrun-52a24f7ac89f2a208a13f918",
+            "preview_key": "dryrun-66af483dd3ea53a2c35d27f2",
             "status": "designed_not_allocated"
           },
           "instrument": "prediction_markets",
           "live_capital_enabled": false,
           "paper_order_submitted": false,
           "pre_trade_snapshot_schema": {
-            "account_scope": "first_release_gbp_1000_trial",
+            "account_scope": "first_release_gbp_100000_paper",
             "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
             "capture_performed": false,
             "connection_status": "alpaca_paper_readonly_connected",
@@ -17044,8 +17096,8 @@
             "Create simulated receipt only after all reconciliation prerequisites pass.",
             "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
           ],
-          "review_id": "5f2cb1f7-c453-422b-ad24-eac958791c0e",
-          "reviewed_at": "2026-05-26T21:29:15.271081+00:00",
+          "review_id": "311a6ea7-9742-49da-bebe-cc0fd546c892",
+          "reviewed_at": "2026-05-26T21:45:09.337844+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
           "simulated_receipt": {
@@ -17053,22 +17105,22 @@
             "broker_post_called": false,
             "client_order_id": "not_allocated",
             "external_order_id": "not_created",
-            "idempotency_preview_key": "dryrun-52a24f7ac89f2a208a13f918",
+            "idempotency_preview_key": "dryrun-66af483dd3ea53a2c35d27f2",
             "mode": "dry_run_only",
             "paper_order_submitted": false,
             "raw_broker_payload_stored": false,
             "status": "not_created",
             "venue": "prediction_market_router"
           },
-          "source_broker_reconciliation_review_id": "2e268f78-5172-43d4-bd70-1618307dfd59",
-          "source_execution_policy_review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
-          "source_staged_paper_order_review_id": "4283d14a-86d9-4010-adc1-ba1af987d562",
+          "source_broker_reconciliation_review_id": "d9ab072f-39aa-4758-836e-e60e33e9d4bb",
+          "source_execution_policy_review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
+          "source_staged_paper_order_review_id": "de85a4d9-d9e1-4463-b670-217f28aa3a54",
           "status": "blocked_before_dry_run_submit",
           "submitted_at": "not_submitted",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "broker_reconciliation_status",
             "idempotency_key",
@@ -17101,7 +17153,7 @@
             "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
             "duplicate_detected": false,
             "duplicate_window_seconds": 86400,
-            "guard_key": "dryrun-fe62f87941b027040cd61eff",
+            "guard_key": "dryrun-d4a80cc2f4ce774180d35615",
             "guard_write_performed": false,
             "lookup_performed": false,
             "lookup_sources": [
@@ -17116,7 +17168,7 @@
             "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
             "event_log_ref": "not_written",
             "event_type": "paper_order_prewrite_requested",
-            "idempotency_preview_key": "dryrun-fe62f87941b027040cd61eff",
+            "idempotency_preview_key": "dryrun-d4a80cc2f4ce774180d35615",
             "required_fields": [
               "schema_version",
               "event_type",
@@ -17131,7 +17183,7 @@
               "pre_trade_snapshot_ref",
               "created_at"
             ],
-            "source_broker_reconciliation_review_id": "24669725-eaa5-4dc6-b6bf-2df221525a90",
+            "source_broker_reconciliation_review_id": "24a6a0e4-df48-4a72-92d7-1292b43dadf6",
             "status": "schema_defined_not_written",
             "write_performed": false
           },
@@ -17164,14 +17216,14 @@
               "order_type",
               "notional_gbp"
             ],
-            "preview_key": "dryrun-fe62f87941b027040cd61eff",
+            "preview_key": "dryrun-d4a80cc2f4ce774180d35615",
             "status": "designed_not_allocated"
           },
           "instrument": "USO options watch",
           "live_capital_enabled": false,
           "paper_order_submitted": false,
           "pre_trade_snapshot_schema": {
-            "account_scope": "first_release_gbp_1000_trial",
+            "account_scope": "first_release_gbp_100000_paper",
             "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
             "capture_performed": false,
             "connection_status": "alpaca_paper_readonly_connected",
@@ -17227,8 +17279,8 @@
             "Create simulated receipt only after all reconciliation prerequisites pass.",
             "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
           ],
-          "review_id": "afff342f-b320-4746-8a10-62fa52d5f95a",
-          "reviewed_at": "2026-05-26T21:29:15.271263+00:00",
+          "review_id": "b67382b4-bb66-49b5-85b2-5ca904ef4001",
+          "reviewed_at": "2026-05-26T21:45:09.337978+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
           "simulated_receipt": {
@@ -17236,22 +17288,22 @@
             "broker_post_called": false,
             "client_order_id": "not_allocated",
             "external_order_id": "not_created",
-            "idempotency_preview_key": "dryrun-fe62f87941b027040cd61eff",
+            "idempotency_preview_key": "dryrun-d4a80cc2f4ce774180d35615",
             "mode": "dry_run_only",
             "paper_order_submitted": false,
             "raw_broker_payload_stored": false,
             "status": "not_created",
             "venue": "alpaca_paper"
           },
-          "source_broker_reconciliation_review_id": "24669725-eaa5-4dc6-b6bf-2df221525a90",
-          "source_execution_policy_review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
-          "source_staged_paper_order_review_id": "546a5c8e-4413-4465-8835-1f0468900909",
+          "source_broker_reconciliation_review_id": "24a6a0e4-df48-4a72-92d7-1292b43dadf6",
+          "source_execution_policy_review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
+          "source_staged_paper_order_review_id": "e4ea23aa-2995-46f7-a5d7-8f34e7633048",
           "status": "blocked_before_dry_run_submit",
           "submitted_at": "not_submitted",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "broker_reconciliation_status",
             "idempotency_key",
@@ -17284,7 +17336,7 @@
             "boundary": "Duplicate-order guard is specified but not executed and cannot write broker or order state.",
             "duplicate_detected": false,
             "duplicate_window_seconds": 86400,
-            "guard_key": "dryrun-4290f2a475f8560097e313cb",
+            "guard_key": "dryrun-62f23ddcfc2e81542d8db3be",
             "guard_write_performed": false,
             "lookup_performed": false,
             "lookup_sources": [
@@ -17299,7 +17351,7 @@
             "boundary": "Prewrite schema is defined for later auditability, but this dry-run layer writes no order event.",
             "event_log_ref": "not_written",
             "event_type": "paper_order_prewrite_requested",
-            "idempotency_preview_key": "dryrun-4290f2a475f8560097e313cb",
+            "idempotency_preview_key": "dryrun-62f23ddcfc2e81542d8db3be",
             "required_fields": [
               "schema_version",
               "event_type",
@@ -17314,7 +17366,7 @@
               "pre_trade_snapshot_ref",
               "created_at"
             ],
-            "source_broker_reconciliation_review_id": "1cf00863-3bc5-4577-861c-43d986b573cf",
+            "source_broker_reconciliation_review_id": "99d3f84e-0f89-44b3-a8f6-7236240e3898",
             "status": "schema_defined_not_written",
             "write_performed": false
           },
@@ -17347,14 +17399,14 @@
               "order_type",
               "notional_gbp"
             ],
-            "preview_key": "dryrun-4290f2a475f8560097e313cb",
+            "preview_key": "dryrun-62f23ddcfc2e81542d8db3be",
             "status": "designed_not_allocated"
           },
           "instrument": "Semiconductor basket watch",
           "live_capital_enabled": false,
           "paper_order_submitted": false,
           "pre_trade_snapshot_schema": {
-            "account_scope": "first_release_gbp_1000_trial",
+            "account_scope": "first_release_gbp_100000_paper",
             "boundary": "Pre-trade snapshot schema is defined, but no order snapshot is captured by the dry-run layer.",
             "capture_performed": false,
             "connection_status": "alpaca_paper_readonly_connected",
@@ -17410,8 +17462,8 @@
             "Create simulated receipt only after all reconciliation prerequisites pass.",
             "Keep Alpaca POST, broker writes, paper-order submission, and live capital disabled."
           ],
-          "review_id": "a2fc592d-ebb2-4b68-bdb3-685b49863103",
-          "reviewed_at": "2026-05-26T21:29:15.271510+00:00",
+          "review_id": "09444c2c-1f88-46fe-ae6b-3b0dc3453220",
+          "reviewed_at": "2026-05-26T21:45:09.338064+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
           "simulated_receipt": {
@@ -17419,16 +17471,16 @@
             "broker_post_called": false,
             "client_order_id": "not_allocated",
             "external_order_id": "not_created",
-            "idempotency_preview_key": "dryrun-4290f2a475f8560097e313cb",
+            "idempotency_preview_key": "dryrun-62f23ddcfc2e81542d8db3be",
             "mode": "dry_run_only",
             "paper_order_submitted": false,
             "raw_broker_payload_stored": false,
             "status": "not_created",
             "venue": "alpaca_paper"
           },
-          "source_broker_reconciliation_review_id": "1cf00863-3bc5-4577-861c-43d986b573cf",
-          "source_execution_policy_review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
-          "source_staged_paper_order_review_id": "ea220b35-65bd-4974-b0f7-1acee4de2e34",
+          "source_broker_reconciliation_review_id": "99d3f84e-0f89-44b3-a8f6-7236240e3898",
+          "source_execution_policy_review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
+          "source_staged_paper_order_review_id": "a1194055-e8e8-4b54-843d-d3e4cbb8f603",
           "status": "blocked_before_dry_run_submit",
           "submitted_at": "not_submitted",
           "venue_mode": "disabled"
@@ -17461,13 +17513,13 @@
       "boundary": "Risk Agent policy reviews are read-only. They can block or hold, but cannot approve risk, create orders, or write to brokers.",
       "broker_write_allowed_count": 0,
       "by_status": {
-        "blocked_before_risk": 1771
+        "blocked_before_risk": 1799
       },
       "execution_allowed_count": 0,
       "max_risk_pct_per_idea": 1.0,
       "order_created_count": 0,
       "paper_order_allowed_count": 0,
-      "review_count": 1771,
+      "review_count": 1799,
       "reviews": [
         {
           "blocked_reasons": [
@@ -17513,10 +17565,10 @@
             "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
             "Keep broker writes and live capital disabled."
           ],
-          "review_id": "560fbdda-4d22-411a-a268-0acd438f77e6",
-          "reviewed_at": "2026-05-26T21:29:11.993332+00:00",
+          "review_id": "febe47f7-5437-43ef-acb3-d131563ea320",
+          "reviewed_at": "2026-05-26T21:45:08.402184+00:00",
           "signal_integrity_status": "hold_for_corroboration",
-          "source_ref": "e1056be5-e645-45e2-8ef5-0cad668a1690",
+          "source_ref": "3d99bd45-488a-4bec-b3c7-d669f6d04349",
           "source_type": "signal_integrity_review",
           "status": "blocked_before_risk"
         },
@@ -17564,10 +17616,10 @@
             "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
             "Keep broker writes and live capital disabled."
           ],
-          "review_id": "87b46fc8-1688-4180-9c51-d6ac0c97bc51",
-          "reviewed_at": "2026-05-26T21:29:11.993651+00:00",
+          "review_id": "affa874c-0bff-4313-a0fa-cd3157abae1b",
+          "reviewed_at": "2026-05-26T21:45:08.402223+00:00",
           "signal_integrity_status": "hold_for_corroboration",
-          "source_ref": "2f71d095-e02b-445f-a9f8-1f0b22292887",
+          "source_ref": "b897afb3-3a9a-4544-9ec0-aaf632a1d196",
           "source_type": "signal_integrity_review",
           "status": "blocked_before_risk"
         },
@@ -17615,10 +17667,10 @@
             "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
             "Keep broker writes and live capital disabled."
           ],
-          "review_id": "0337160b-0664-4f2d-906d-d55c8140ec44",
-          "reviewed_at": "2026-05-26T21:29:11.993856+00:00",
+          "review_id": "71b15f70-91df-4994-af80-068d96938559",
+          "reviewed_at": "2026-05-26T21:45:08.402263+00:00",
           "signal_integrity_status": "hold_for_corroboration",
-          "source_ref": "0a1545f0-369d-4cbd-bef9-702e4b21d5a3",
+          "source_ref": "9c5c26fb-ed4f-40c2-9ac9-4fb25a399d32",
           "source_type": "signal_integrity_review",
           "status": "blocked_before_risk"
         },
@@ -17663,8 +17715,8 @@
             "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
             "Keep broker writes and live capital disabled."
           ],
-          "review_id": "1633915f-0412-4ad1-8531-5d8e99b3a634",
-          "reviewed_at": "2026-05-26T21:29:11.993949+00:00",
+          "review_id": "46824fb7-af54-41a8-a8d3-bec070f10dd7",
+          "reviewed_at": "2026-05-26T21:45:08.402308+00:00",
           "signal_integrity_status": "not_reviewed",
           "source_ref": "d5-sample-candidate-crude-oil",
           "source_type": "trade_intent",
@@ -17713,8 +17765,8 @@
             "Implement deterministic execution policy, kill-switch, and broker-order contracts before paper orders.",
             "Keep broker writes and live capital disabled."
           ],
-          "review_id": "fee9c2d5-24dd-4551-8ecb-12d62d6e09ca",
-          "reviewed_at": "2026-05-26T21:29:11.994112+00:00",
+          "review_id": "ba2aa865-5e05-4452-bdba-d6fe90a68ddb",
+          "reviewed_at": "2026-05-26T21:45:08.402347+00:00",
           "signal_integrity_status": "not_reviewed",
           "source_ref": "d5-sample-blocked-semiconductor",
           "source_type": "trade_intent",
@@ -17730,16 +17782,16 @@
       "boundary": "Staged paper-order reviews are disabled and read-only. They can describe hypothetical staging and reconciliation requirements, but cannot create staged orders, submit paper orders, enable live capital, or write to brokers.",
       "broker_write_allowed_count": 0,
       "by_status": {
-        "blocked_before_staging": 1099
+        "blocked_before_staging": 1119
       },
       "execution_allowed_count": 0,
       "live_capital_enabled_count": 0,
       "paper_order_submittable_count": 0,
       "reconciliation_ready_count": 0,
-      "review_count": 1099,
+      "review_count": 1119,
       "reviews": [
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "execution_policy",
             "staging_contract",
@@ -17793,17 +17845,17 @@
             "Define broker echo reconciliation before any broker-write route exists.",
             "Keep staged paper-order creation, broker writes, and live capital disabled."
           ],
-          "review_id": "496cda8f-54d1-4699-83b8-2a25e5d988f9",
-          "reviewed_at": "2026-05-26T21:29:13.912838+00:00",
+          "review_id": "a1d88b75-91ff-435c-85ab-5d2dcc2b2345",
+          "reviewed_at": "2026-05-26T21:45:08.905060+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_execution_policy_review_id": "bd19d36b-eabd-4383-b6e3-f62f6157f402",
+          "source_execution_policy_review_id": "b1d78082-ee40-4c62-b770-5de8e44bebf0",
           "staged_paper_order_created": false,
           "status": "blocked_before_staging",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "execution_policy",
             "staging_contract",
@@ -17857,17 +17909,17 @@
             "Define broker echo reconciliation before any broker-write route exists.",
             "Keep staged paper-order creation, broker writes, and live capital disabled."
           ],
-          "review_id": "26764146-ce83-4f8d-8555-4e1e57429ab4",
-          "reviewed_at": "2026-05-26T21:29:13.912909+00:00",
+          "review_id": "e078ded3-1bdc-446e-a574-57573a0936d7",
+          "reviewed_at": "2026-05-26T21:45:08.905116+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_execution_policy_review_id": "53a859ea-dfb5-41f0-aa4d-0b137cab1694",
+          "source_execution_policy_review_id": "9f1a26a0-0964-4254-b5f6-6a11621d80bb",
           "staged_paper_order_created": false,
           "status": "blocked_before_staging",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "execution_policy",
             "staging_contract",
@@ -17921,17 +17973,17 @@
             "Define broker echo reconciliation before any broker-write route exists.",
             "Keep staged paper-order creation, broker writes, and live capital disabled."
           ],
-          "review_id": "4283d14a-86d9-4010-adc1-ba1af987d562",
-          "reviewed_at": "2026-05-26T21:29:13.912946+00:00",
+          "review_id": "de85a4d9-d9e1-4463-b670-217f28aa3a54",
+          "reviewed_at": "2026-05-26T21:45:08.905142+00:00",
           "schema_version": 1,
           "selected_venue": "prediction_market_router",
-          "source_execution_policy_review_id": "9b25d686-c8ed-492f-9c42-63bb7267bc32",
+          "source_execution_policy_review_id": "f05301ae-5173-431c-b2fd-6e5525749e85",
           "staged_paper_order_created": false,
           "status": "blocked_before_staging",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "execution_policy",
             "staging_contract",
@@ -17985,17 +18037,17 @@
             "Define broker echo reconciliation before any broker-write route exists.",
             "Keep staged paper-order creation, broker writes, and live capital disabled."
           ],
-          "review_id": "546a5c8e-4413-4465-8835-1f0468900909",
-          "reviewed_at": "2026-05-26T21:29:13.912976+00:00",
+          "review_id": "e4ea23aa-2995-46f7-a5d7-8f34e7633048",
+          "reviewed_at": "2026-05-26T21:45:08.905160+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
-          "source_execution_policy_review_id": "4f121ea5-fbf7-423b-b18b-f4c5e1217891",
+          "source_execution_policy_review_id": "f7be1340-3bf8-4877-adce-0bb67df83763",
           "staged_paper_order_created": false,
           "status": "blocked_before_staging",
           "venue_mode": "disabled"
         },
         {
-          "account_scope": "first_release_gbp_1000_trial",
+          "account_scope": "first_release_gbp_100000_paper",
           "blocked_reasons": [
             "execution_policy",
             "staging_contract",
@@ -18049,11 +18101,11 @@
             "Define broker echo reconciliation before any broker-write route exists.",
             "Keep staged paper-order creation, broker writes, and live capital disabled."
           ],
-          "review_id": "ea220b35-65bd-4974-b0f7-1acee4de2e34",
-          "reviewed_at": "2026-05-26T21:29:13.913004+00:00",
+          "review_id": "a1194055-e8e8-4b54-843d-d3e4cbb8f603",
+          "reviewed_at": "2026-05-26T21:45:08.905178+00:00",
           "schema_version": 1,
           "selected_venue": "alpaca_paper",
-          "source_execution_policy_review_id": "1c34fefc-f633-45a5-9c5f-02423fc8d8b6",
+          "source_execution_policy_review_id": "f575834d-0026-4796-be1e-b2f3bfb23f9a",
           "staged_paper_order_created": false,
           "status": "blocked_before_staging",
           "venue_mode": "disabled"
@@ -18158,7 +18210,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -18180,7 +18232,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -18202,7 +18254,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -18224,7 +18276,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -18246,7 +18298,7 @@
       "degraded_reason": null,
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "conflict",
@@ -18268,7 +18320,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18290,7 +18342,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18312,7 +18364,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18334,7 +18386,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18356,7 +18408,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18378,7 +18430,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18400,7 +18452,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "physical",
@@ -18422,7 +18474,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -18444,7 +18496,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -18466,7 +18518,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -18488,7 +18540,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -18510,7 +18562,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -18532,7 +18584,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "macro",
@@ -18554,7 +18606,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18576,7 +18628,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18598,7 +18650,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18620,7 +18672,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18642,7 +18694,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18664,7 +18716,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18686,7 +18738,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18708,7 +18760,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18730,7 +18782,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "market",
@@ -18752,7 +18804,7 @@
       "degraded_reason": null,
       "endpoint_count": 3,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18774,7 +18826,7 @@
       "degraded_reason": null,
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18796,7 +18848,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18818,7 +18870,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18840,7 +18892,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18862,7 +18914,7 @@
       "degraded_reason": "needs_clarity",
       "endpoint_count": 0,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18884,7 +18936,7 @@
       "degraded_reason": null,
       "endpoint_count": 2,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18906,7 +18958,7 @@
       "degraded_reason": "missing_credentials",
       "endpoint_count": 1,
       "influence_boundary": "blocked_until_signal_integrity_gate",
-      "last_heartbeat": "2026-05-26T21:29:19.062096+00:00",
+      "last_heartbeat": "2026-05-26T21:45:25.801366+00:00",
       "last_payload_time": null,
       "latency_ms": null,
       "pipeline": "social",
@@ -18957,7 +19009,7 @@
     "degraded_reason": "disabled:YFINANCE_ENABLED_false",
     "enabled": false,
     "fill_confirmation_authority": false,
-    "last_check_at": "2026-05-26T21:29:19.062068+00:00",
+    "last_check_at": "2026-05-26T21:45:25.801354+00:00",
     "live_capital_authority": false,
     "live_read_deferred": true,
     "live_read_enabled": false,

@@ -4529,7 +4529,7 @@ function fallbackMissionControl(status, source) {
             boundary: tradeLayer.boundary || "Candidate is not order; no broker route exists."
         },
         portfolio: {
-            account_scope: capital.account_scope || "first_release_gbp_1000_trial",
+            account_scope: capital.account_scope || "first_release_gbp_100000_paper",
             broker: capital.broker || "paper_broker",
             connection_status: capital.connection_status || "pending",
             current_balance_gbp: capital.current_balance_gbp || capital.starting_balance_gbp || 0,
@@ -6076,7 +6076,7 @@ function renderCognition(status, viewModels = {}) {
                 <p class="label">${htmlText(accountContext.connection_status, "paper mirror")}</p>
             </div>
             <h3>Paper account context</h3>
-            <p>${htmlText(accountContext.capital_policy, "The first-release policy allocation is GBP 1000; paper broker balance is context only.")}</p>
+            <p>${htmlText(accountContext.capital_policy, "The first-release paper account has GBP 100,000 available. GBP 1,000 is only a single-order/notional risk cap when shown.")}</p>
             <div class="summary-strip compact">
                 ${renderMetric("Trial policy", formatMoney(accountContext.trial_allocation_gbp))}
                 ${renderMetric("Broker mirror", formatMoney(accountContext.current_balance_gbp))}

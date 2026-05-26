@@ -112,10 +112,14 @@
 
             <section>
                 <h2>Current Operating Mode</h2>
-                <p>Qadam is operating in paper/demo-proof mode. The Phase 7 harness collects proof trades only where
-                    Q7-qualified setups exist. No trades are forced, Phase 5 test trades do not count as Phase 7 proof
-                    trades, Phase 7 proof credit remains blocked until earned by Phase 7 evidence, and live capital is
-                    disabled.</p>
+                <p>Qadam is operating in paper/demo-proof mode with GBP 100,000 available in the paper account. GBP
+                    1,000 may appear only as a separate single-order/notional risk cap. The Phase 7 harness collects
+                    proof trades only where Q7-qualified setups exist. No trades are forced, Phase 5 test trades do not
+                    count as Phase 7 proof trades, and Phase 7 proof credit remains blocked until earned by Phase 7
+                    evidence.</p>
+                <p>The paper-live control plane is certified, visible, and guarded, but full paper submission remains
+                    held until Q-CTRL and proof gates clear. Q-CTRL product access is currently a blocker, not active
+                    quantum execution. Live capital and broker live endpoints remain disabled.</p>
             </section>
 
             <section>
@@ -223,6 +227,11 @@
                     <div><strong>Notify-only</strong><span>A module can communicate status but cannot approve or create trade actions.</span></div>
                     <div><strong>Certified</strong><span>A phase gate has passed its explicit checker.</span></div>
                     <div><strong>Eligible</strong><span>A stage can proceed under guardrails. It is not live trading approval.</span></div>
+                    <div><strong>Paper mode</strong><span>Paper account mode with live capital disabled.</span></div>
+                    <div><strong>Paper-live control plane certified</strong><span>The guarded route, logs, checks, and dashboard visibility exist. This is not active submission.</span></div>
+                    <div><strong>Paper-live certified</strong><span>Full paper-live operation is allowed only when PT-10 reports paper_live_certified=true.</span></div>
+                    <div><strong>Q-CTRL hold</strong><span>Paper submission remains held while Q-CTRL product access or consultation is unresolved.</span></div>
+                    <div><strong>Phase 7 proof credit</strong><span>Credit for the 30-day proof sample; granted only by backend Phase 7 proof artifacts.</span></div>
                 </div>
             </section>
 
@@ -361,10 +370,7 @@
 
             <section>
                 <h2>Communications / Telegram</h2>
-                <p>Telegram is Qadam's outbound member notification rail. It cannot place, approve, reject, modify,
-                    close, or resize trades. It should never show bot tokens, chat IDs, handles or chat IDs, raw message
-                    payloads, or local paths.</p>
-                <p>Telegram cannot place, approve, reject, modify, close, or resize trades.</p>
+                <p>Telegram is Qadam's outbound member notification rail. Telegram cannot place, approve, reject, modify, close, or resize trades. It should never show bot tokens, handles or chat IDs, raw message payloads, or local paths.</p>
             </section>
 
             <section>
