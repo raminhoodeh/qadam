@@ -91,6 +91,12 @@ function assertModelShape(models) {
     assert(models.overview_model.readouts.length === 4, "Overview model should expose exactly four readouts");
     assert(models.overview_model.status_chips.length === 6, "Overview model should expose six compact status chips");
     assert(models.overview_model.review_focus.state, "Overview model should expose review focus");
+    assert(models.overview_model.system_status.length === 4, "Overview model should expose plain system status");
+    assert(models.overview_model.data_sources_connected.length >= 3, "Overview model should expose connected source groups");
+    assert(models.overview_model.trading_strategies.length >= 5, "Overview model should expose trading strategy families");
+    assert(models.overview_model.thought_feed.length >= 4, "Overview model should expose Qadam thought feed");
+    assert(models.overview_model.trade_considerations.length >= 2, "Overview model should expose trade considerations");
+    assert(models.overview_model.paper_capacity.total_gbp === 100000, "Overview model should expose GBP 100,000 paper capacity");
     assert(models.trades_model.lifecycle.length >= 8, "Trades model should expose lifecycle states");
     assert(models.system_connectivity_model.id === "system_connectivity_model", "connectivity model id mismatch");
     assert(models.system_connectivity_model.nodes.length > 0, "connectivity model has no nodes");

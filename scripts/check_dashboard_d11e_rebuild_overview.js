@@ -91,13 +91,20 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-overview-command-surface",
         "data-overview-review-card",
+        "data-overview-cockpit-grid",
+        "data-overview-system-status",
+        "data-overview-paper-capacity",
         "data-overview-proof-flow",
         "data-overview-system-summary",
         "data-overview-status-rail",
         "data-overview-metrics",
         "data-overview-mini-map",
+        "data-overview-data-sources",
+        "data-overview-trading-strategies",
+        "data-overview-thought-feed",
+        "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260526-d11l-visual-simplification-layout"
+        "20260526-overview-operating-map"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -110,8 +117,14 @@ async function main() {
     includesAll(css, [
         ".overview-command-surface",
         ".overview-review-card",
+        ".overview-cockpit-grid",
+        ".overview-system-status-panel",
+        ".overview-paper-capacity-panel",
         ".overview-proof-flow",
         ".overview-system-summary",
+        ".overview-plain-grid",
+        ".overview-plain-card",
+        ".overview-capacity-line",
         ".overview-status-chip",
         ".overview-readout-list",
         ".overview-system-grid"
@@ -127,8 +140,15 @@ async function main() {
         "status_chips",
         "review_focus",
         "readouts",
+        "system_status",
+        "data_sources_connected",
+        "trading_strategies",
+        "thought_feed",
+        "trade_considerations",
+        "paper_capacity",
         "function renderOverviewChip",
         "function renderOverviewReadout",
+        "function renderOverviewCapacityChart",
         "Use the single safety strip for authority state",
         "Overview only answers what changed and which deeper view to open next"
     ], "D11E overview renderer");
@@ -143,12 +163,24 @@ async function main() {
     assert(overview.review_focus.state, "Overview review focus missing state");
     assert(overview.scope_note.includes("single safety strip"), "Overview scope note must reference the single safety strip");
     assert(!overview.summary.toLowerCase().includes("live capital"), "Overview summary must not duplicate live-capital safety copy");
+    assert(overview.system_status.length === 4, "Overview should expose four plain system status cards");
+    assert(overview.data_sources_connected.length >= 3, "Overview should expose connected source groups");
+    assert(overview.trading_strategies.length >= 5, "Overview should expose approved trading strategy families");
+    assert(overview.thought_feed.length >= 4, "Overview should expose Qadam thought feed");
+    assert(overview.trade_considerations.length >= 2, "Overview should expose observed/candidate trade considerations");
+    assert(overview.paper_capacity.total_gbp === 100000, "Overview should expose GBP 100,000 paper capacity");
 
     const rendered = await renderWithStatus(status);
     const statusRail = html(rendered, "[data-overview-status-rail]");
     const hero = html(rendered, "[data-overview-hero]");
     const metrics = html(rendered, "[data-overview-metrics]");
     const review = html(rendered, "[data-overview-review-card]");
+    const systemStatus = html(rendered, "[data-overview-system-status]");
+    const paperCapacity = html(rendered, "[data-overview-paper-capacity]");
+    const dataSources = html(rendered, "[data-overview-data-sources]");
+    const strategies = html(rendered, "[data-overview-trading-strategies]");
+    const thoughtFeed = html(rendered, "[data-overview-thought-feed]");
+    const tradeConsiderations = html(rendered, "[data-overview-trade-considerations]");
     const system = [
         html(rendered, "[data-overview-oversight]"),
         html(rendered, "[data-overview-mini-map]"),
@@ -194,6 +226,47 @@ async function main() {
         "#reasoning",
         "#operations"
     ], "rendered D11E review card");
+
+    includesAll(systemStatus, [
+        "System status",
+        "Paper trading",
+        "Read-only bridge",
+        "Trade desk"
+    ], "rendered D11E system status");
+
+    includesAll(paperCapacity, [
+        "Paper capacity",
+        "£0 of £100,000 deployed",
+        "data-paper-capacity-line",
+        "P&amp;L"
+    ], "rendered D11E paper capacity");
+
+    includesAll(dataSources, [
+        "Data sources connected",
+        "Conflict and geopolitics",
+        "Markets, broker, and prediction markets"
+    ], "rendered D11E data sources");
+
+    includesAll(strategies, [
+        "Trading strategies",
+        "Crude Oil Energy Security Disruption",
+        "Silver Macro Liquidity Stress",
+        "Active for paper research"
+    ], "rendered D11E trading strategies");
+
+    includesAll(thoughtFeed, [
+        "Qadam's thoughts",
+        "Current reasoning feed",
+        "Research Analyst",
+        "Head of Quant"
+    ], "rendered D11E thought feed");
+
+    includesAll(tradeConsiderations, [
+        "Trades being considered",
+        "Observed signal",
+        "Candidate, not order",
+        "USO options watch"
+    ], "rendered D11E trade considerations");
 
     includesAll(system, [
         "You supervise the fund team",

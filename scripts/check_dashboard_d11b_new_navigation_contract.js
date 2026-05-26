@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-d11l-visual-simplification-layout",
-    "/dashboard.js?v=20260526-d11l-visual-simplification-layout"
+    "/auth.css?v=20260526-overview-operating-map",
+    "/dashboard.js?v=20260526-overview-operating-map"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [

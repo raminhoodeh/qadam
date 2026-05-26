@@ -81,6 +81,9 @@ async function main() {
         "data-overview-first-screen",
         "data-overview-command-surface",
         "data-overview-review-card",
+        "data-overview-cockpit-grid",
+        "data-overview-system-status",
+        "data-overview-paper-capacity",
         "data-overview-proof-flow",
         "data-overview-system-summary",
         "data-overview-status-rail",
@@ -91,6 +94,10 @@ async function main() {
         "data-overview-feed-strip",
         "data-overview-mini-map",
         "data-overview-boundary-rail",
+        "data-overview-data-sources",
+        "data-overview-trading-strategies",
+        "data-overview-thought-feed",
+        "data-overview-trade-considerations",
         "data-overview-next-links"
     ], "Overview first-screen HTML");
 
@@ -98,8 +105,14 @@ async function main() {
         ".overview-first-screen",
         ".overview-command-surface",
         ".overview-review-card",
+        ".overview-cockpit-grid",
+        ".overview-system-status-panel",
+        ".overview-paper-capacity-panel",
         ".overview-proof-flow",
         ".overview-system-summary",
+        ".overview-plain-grid",
+        ".overview-plain-card-grid",
+        ".overview-capacity-line",
         ".overview-status-rail",
         ".overview-readout-list",
         ".overview-lifecycle-strip",
@@ -115,6 +128,12 @@ async function main() {
         "overview.status_chips",
         "overview.review_focus",
         "overview.next_review_links",
+        "overview.system_status",
+        "overview.data_sources_connected",
+        "overview.trading_strategies",
+        "overview.thought_feed",
+        "overview.trade_considerations",
+        "overview.paper_capacity",
         "OVERVIEW_NODE_LABELS",
         "Fund Manager oversight",
         "Use the single safety strip for authority state"
@@ -131,6 +150,12 @@ async function main() {
     assert(overview.lifecycle.length >= 8, "Overview lifecycle strip must expose trade lifecycle states");
     assert(overview.next_review_links.length === 4, "Overview must expose four next-review links after D11B");
     assert(overview.mini_map.source_model === "system_connectivity_model", "Overview mini-map must use shared connectivity model");
+    assert(overview.system_status.length === 4, "Overview must expose plain system status");
+    assert(overview.data_sources_connected.length >= 3, "Overview must expose source groups on the main page");
+    assert(overview.trading_strategies.length >= 5, "Overview must expose the approved strategy families on the main page");
+    assert(overview.thought_feed.length >= 4, "Overview must expose Qadam's thought feed on the main page");
+    assert(overview.trade_considerations.length >= 2, "Overview must expose trade considerations on the main page");
+    assert(overview.paper_capacity.total_gbp === 100000, "Overview must expose the GBP 100,000 paper capacity");
     assert(models.system_connectivity_model.overview_scope.placement === "overview-mini-map", "Mini-map placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
@@ -148,6 +173,11 @@ async function main() {
     assertIncludes(rendered, "[data-overview-hero]", "Fund Manager read");
     assertIncludes(rendered, "[data-overview-hero]", "Use the single safety strip");
     assertIncludes(rendered, "[data-overview-review-card]", "Needs review");
+    assertIncludes(rendered, "[data-overview-system-status]", "System status");
+    assertIncludes(rendered, "[data-overview-system-status]", "Paper trading");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper capacity");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "£0 of £100,000 deployed");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
     assertIncludes(rendered, "[data-overview-metrics]", "Source health");
     assertIncludes(rendered, "[data-overview-metrics]", "Trade path");
     assertIncludes(rendered, "[data-overview-metrics]", "Proof run");
@@ -161,6 +191,14 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mini-map]", "Quantum computer");
     assertIncludes(rendered, "[data-overview-boundary-rail]", "Use the single safety strip for authority state");
     assertIncludes(rendered, "[data-overview-boundary-rail]", "Candidate is not an order");
+    assertIncludes(rendered, "[data-overview-data-sources]", "Data sources connected");
+    assertIncludes(rendered, "[data-overview-data-sources]", "Markets, broker, and prediction markets");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategies");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
+    assertIncludes(rendered, "[data-overview-thought-feed]", "Qadam's thoughts");
+    assertIncludes(rendered, "[data-overview-thought-feed]", "Head of Quant");
+    assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
+    assertIncludes(rendered, "[data-overview-trade-considerations]", "Candidate, not order");
     assertIncludes(rendered, "[data-overview-next-links]", "#trades");
     assertIncludes(rendered, "[data-overview-next-links]", "#operations");
 
@@ -169,10 +207,16 @@ async function main() {
         html(rendered, "[data-overview-hero]"),
         html(rendered, "[data-overview-metrics]"),
         html(rendered, "[data-overview-review-card]"),
+        html(rendered, "[data-overview-system-status]"),
+        html(rendered, "[data-overview-paper-capacity]"),
         html(rendered, "[data-overview-lifecycle]"),
         html(rendered, "[data-overview-oversight]"),
         html(rendered, "[data-overview-mini-map]"),
         html(rendered, "[data-overview-boundary-rail]"),
+        html(rendered, "[data-overview-data-sources]"),
+        html(rendered, "[data-overview-trading-strategies]"),
+        html(rendered, "[data-overview-thought-feed]"),
+        html(rendered, "[data-overview-trade-considerations]"),
         html(rendered, "[data-overview-next-links]")
     ].join(" ");
     [
