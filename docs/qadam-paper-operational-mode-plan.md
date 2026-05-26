@@ -68,6 +68,10 @@ The current runtime is safe but not fully paper-operational yet.
 
 Implemented:
 
+- PT-0 paper-live activation charter exists and records explicit Fund Manager
+  system-level approval for Alpaca paper-only operation after later PT gates
+  pass. It does not approve live capital, live endpoints, forced trades,
+  per-trade manual bypasses, or immediate broker submission.
 - Phase 7 demo-proof run ledger is active.
 - Q7 qualified setup, auto-approval, staging, guarded submit, lifecycle,
   postmortem, performance, drawdown, override, signal-funnel, maturity, cockpit,
@@ -93,6 +97,9 @@ Implemented:
   PaperOps lifecycle notification review records, but it does not send Telegram
   live messages, accept Telegram commands, approve trades, write brokers, close
   positions, or grant proof credit.
+- PaperOps-6 exists as the active 30-day paper run operations binding. It keeps
+  the hourly PaperOps runner active through the actual Phase 7 window and
+  preserves the no-forced-trades rule.
 
 Remaining paper-operational gaps:
 
@@ -133,6 +140,33 @@ The gate separates:
 
 ## Next Stages
 
+### PT-0 - Paper-Live Activation Charter
+
+Record explicit Fund Manager approval for active paper-live operation without
+turning on broker submission by itself.
+
+Status after implementation:
+
+- `orchestrator/paper_live_activation.py` exists.
+- `scripts/check_paper_live_activation.py` exists.
+- The runtime artifact is `data/runtime/paper_live_activation.json`, with
+  history and Event Log artifacts beside it.
+- Current status is `approved_pending_later_enablement`.
+- `approval_state=approved`, `approval_logged=True`,
+  `paper_live_activation_approved=True`, and
+  `paper_trading_system_approval_logged=True`.
+- `per_trade_manual_approval_required=False`; Qadam no longer needs a separate
+  manual trade-level approval for every future paper trade once later guarded
+  PT gates pass.
+- `paper_order_submission_allowed=False`, `live_capital_enabled=False`,
+  `live_endpoint_allowed=False`, `forced_trades_allowed=False`,
+  `phase7_proof_credit_allowed=False`, `qctrl_direct_execution_allowed=False`,
+  and `qctrl_broker_post_allowed=False`.
+- PT-0 requires Q-CTRL consultation as an advisory input for paper-reality
+  parity, but Q-CTRL has no broker, risk, execution, or order authority.
+- Broker POST, Alpaca POST, and live endpoint counters are all zero.
+- The cockpit now exposes the PT-0 public-safe status in Mission Control.
+
 ### PaperOps-1 - Operational Cycle Runner
 
 Create one command that runs the whole paper observation loop in order:
@@ -172,16 +206,16 @@ Status after implementation:
   `qctrl_paper_consultation_connected_not_ready`,
   `external_alpaca_paper_post_enabled_not_ready`, and
   `paper_exit_path_connected_not_ready`.
-- Command result: 22/22 runner commands pass after PaperOps-5 notification
-  review is included.
+- Command result: 24/24 runner commands pass after PT-0 and PaperOps-6 are
+  included.
 - Broker POST and Alpaca POST counters remain zero.
 - The Phase 7 demo-proof checker now validates the actual preserved calendar
   window instead of assuming Day 1. Current observed run state is start date
   `2026-05-25`, end date `2026-06-23`, active day `2`, completed day count
   `1`, and no qualified setups.
-- PaperOps-Q is now implemented. Current next code stage: `PaperOps-2 -
-  Explicit Alpaca Paper POST Gate`. Current PaperOps unblock:
-  `Resolve PaperOps-Q Q-CTRL product access for successful paper consultation`.
+- PaperOps-Q, PaperOps-2, PaperOps-3, PaperOps-4, PaperOps-5, PaperOps-6, and
+  PT-0 are now implemented. Current PaperOps unblock: `Resolve PaperOps-Q
+  Q-CTRL product access for successful paper consultation`.
 
 ### PaperOps-Q - Q-CTRL Paper Consultation Gate
 
@@ -357,9 +391,9 @@ Status after implementation:
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PaperOps-6: 23/23 commands pass. PaperOps-5 reports seven review
-  records, six lifecycle notification types, zero live-send allowance, zero
-  command-path allowance, and zero broker-write allowance.
+- Current cycle result after PT-0: 24/24 commands pass. PaperOps-5 reports
+  seven review records, six lifecycle notification types, zero live-send
+  allowance, zero command-path allowance, and zero broker-write allowance.
 
 ### PaperOps-6 - 30-Day Paper Run Operations
 
@@ -386,9 +420,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 23/23 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 24/24 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=23`, and
+  `paper_operational_cycle_command_count=24`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,
@@ -404,6 +438,5 @@ Status after implementation:
   `paper_exit_path_connected_not_ready`.
 - Current operational next step: keep the hourly PaperOps runner active through
   the actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, and resolve PaperOps-Q product access plus
-  PaperOps-2/PaperOps-4 enablement only after their explicit prerequisites
-  exist.
+  where Q7-qualified setups exist, resolve PaperOps-Q product access, then
+  enable PaperOps-2/PaperOps-4 only after their explicit prerequisites exist.

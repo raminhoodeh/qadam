@@ -1874,6 +1874,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "frontier_llm",
     "local_llm",
     "paper_account",
+    "paper_live_activation",
+    "paper_live_activation_approved",
+    "paper_live_activation_system_approval_logged",
     "paperops_alpaca_paper_post",
     "paperops_alpaca_paper_post_called_count",
     "paperops_paper_lifecycle_poller",
@@ -1904,6 +1907,36 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "quant_oracle",
     "risk_gate",
     "telegram",
+}
+
+PAPER_LIVE_ACTIVATION_REQUIRED_FIELDS = {
+    "approval_logged",
+    "approval_scope",
+    "approval_state",
+    "alpaca_post_called_count",
+    "boundary",
+    "broker_post_called_count",
+    "broker_scope",
+    "daily_trade_cap",
+    "event_log_event_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_allowed",
+    "max_order_notional_gbp",
+    "paper_live_activation_approved",
+    "paper_live_mode",
+    "paper_order_submission_allowed",
+    "paper_trading_system_approval_logged",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "qctrl_consultation_required",
+    "qctrl_direct_execution_allowed",
+    "recorded",
+    "schema_version",
+    "stage",
+    "status",
+    "validation_error_count",
 }
 
 PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS = {
@@ -2640,6 +2673,7 @@ def main() -> int:
     phase5_system_map = payload.get("phase5_system_map", {})
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     phase6_certification = payload.get("phase6_certification", {})
+    paper_live_activation = payload.get("paper_live_activation", {})
     paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -2653,6 +2687,22 @@ def main() -> int:
         {},
     )
     print(f"cockpit_status_phase4_stage={phase4_strategy.get('stage')}")
+    print(
+        "cockpit_status_paper_live_activation_status="
+        f"{paper_live_activation.get('status')}"
+    )
+    print(
+        "cockpit_status_paper_live_activation_approved="
+        f"{paper_live_activation.get('paper_live_activation_approved')}"
+    )
+    print(
+        "cockpit_status_paper_live_activation_system_approval_logged="
+        f"{paper_live_activation.get('paper_trading_system_approval_logged')}"
+    )
+    print(
+        "cockpit_status_paper_live_activation_submit_allowed="
+        f"{paper_live_activation.get('paper_order_submission_allowed')}"
+    )
     print(
         "cockpit_status_paperops_lifecycle_poller_status="
         f"{paperops_paper_lifecycle_poller.get('status')}"
@@ -6085,6 +6135,19 @@ def main() -> int:
     if mission_stack.get("preference_mcp") != preference_mcp.get("status"):
         print("cockpit_status_mission_stack_preference_mcp_mismatch=true")
         return 1
+    if mission_stack.get("paper_live_activation") != paper_live_activation.get("status"):
+        print("cockpit_status_mission_stack_paper_live_activation_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_activation_approved") != (
+        paper_live_activation.get("paper_live_activation_approved")
+    ):
+        print("cockpit_status_mission_stack_paper_live_activation_approval_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_activation_system_approval_logged") != (
+        paper_live_activation.get("paper_trading_system_approval_logged")
+    ):
+        print("cockpit_status_mission_stack_paper_live_activation_logged_mismatch=true")
+        return 1
     if mission_stack.get("paperops_alpaca_paper_post") != paperops_alpaca_paper_post.get("status"):
         print("cockpit_status_mission_stack_paperops_alpaca_post_mismatch=true")
         return 1
@@ -6137,6 +6200,53 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_30_day_day_mismatch=true")
         return 1
+    missing_paper_live_fields = sorted(
+        PAPER_LIVE_ACTIVATION_REQUIRED_FIELDS - set(paper_live_activation)
+    )
+    if missing_paper_live_fields:
+        print(
+            "cockpit_status_paper_live_activation_fields_missing="
+            + ",".join(missing_paper_live_fields)
+        )
+        return 1
+    if paper_live_activation.get("status") != "approved_pending_later_enablement":
+        print("cockpit_status_paper_live_activation_not_approved=true")
+        return 1
+    if paper_live_activation.get("public_safe") is not True:
+        print("cockpit_status_paper_live_activation_not_public_safe=true")
+        return 1
+    if paper_live_activation.get("approval_state") != "approved":
+        print("cockpit_status_paper_live_activation_approval_state_invalid=true")
+        return 1
+    if paper_live_activation.get("approval_logged") is not True:
+        print("cockpit_status_paper_live_activation_approval_not_logged=true")
+        return 1
+    if paper_live_activation.get("paper_live_activation_approved") is not True:
+        print("cockpit_status_paper_live_activation_approved_false=true")
+        return 1
+    if paper_live_activation.get("paper_trading_system_approval_logged") is not True:
+        print("cockpit_status_paper_live_activation_system_approval_missing=true")
+        return 1
+    if paper_live_activation.get("paper_order_submission_allowed") is not False:
+        print("cockpit_status_paper_live_activation_submit_authority=true")
+        return 1
+    if paper_live_activation.get("live_capital_enabled") is not False:
+        print("cockpit_status_paper_live_activation_live_capital_enabled=true")
+        return 1
+    if paper_live_activation.get("forced_trades_allowed") is not False:
+        print("cockpit_status_paper_live_activation_forced_trades_allowed=true")
+        return 1
+    if paper_live_activation.get("qctrl_direct_execution_allowed") is not False:
+        print("cockpit_status_paper_live_activation_qctrl_execution_authority=true")
+        return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+    ):
+        if int(paper_live_activation.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paper_live_activation_unsafe_counter={key}")
+            return 1
     missing_paperops_30_day_fields = sorted(
         PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS - set(paperops_30_day_operations)
     )

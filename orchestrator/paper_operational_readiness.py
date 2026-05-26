@@ -36,6 +36,10 @@ PAPER_OPS_BOUNDARY = (
 
 TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     ("paper_mode_enforced", "QADAM_MODE must be paper and live capital must stay false."),
+    (
+        "paper_live_activation_approved",
+        "Fund Manager approval must explicitly authorize system-level paper-live operation.",
+    ),
     ("strategy_research_intake_connected", "External strategy notes must be structured as decision context."),
     ("phase7_run_active", "The 30-day demo-proof run ledger must be active."),
     ("source_spine_available", "Durable replay and current source status must be readable."),
@@ -131,6 +135,7 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         strategy_research = {"status": "error", "error": str(exc)}
     return {
         "cockpit": _read_json(runtime / "cockpit-status.json"),
+        "paper_live_activation": _read_json(runtime / "paper_live_activation.json"),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -160,6 +165,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     mission = cockpit.get("mission_control", {}) if isinstance(cockpit, dict) else {}
     durable = mission.get("durable_spine", {}) if isinstance(mission, dict) else {}
     portfolio = mission.get("portfolio", {}) if isinstance(mission, dict) else {}
+    paper_live_activation = snapshot["paper_live_activation"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -178,6 +184,23 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     qctrl_consultation = snapshot["qctrl_consultation"]
     quantum_summary = snapshot["quantum_summary"]
     strategy_research = snapshot["strategy_research"]
+    paper_live_activation_ready = (
+        paper_live_activation.get("status") == "approved_pending_later_enablement"
+        and paper_live_activation.get("approval_state") == "approved"
+        and paper_live_activation.get("approval_logged") is True
+        and paper_live_activation.get("paper_live_activation_approved") is True
+        and paper_live_activation.get("paper_trading_system_approval_logged") is True
+        and paper_live_activation.get("paper_live_mode") == "alpaca_paper_only"
+        and paper_live_activation.get("live_capital_enabled") is False
+        and paper_live_activation.get("live_endpoint_allowed") is False
+        and paper_live_activation.get("paper_order_submission_allowed") is False
+        and paper_live_activation.get("phase7_proof_credit_allowed") is False
+        and paper_live_activation.get("forced_trades_allowed") is False
+        and paper_live_activation.get("qctrl_consultation_required") is True
+        and _int(paper_live_activation.get("broker_post_called_count")) == 0
+        and _int(paper_live_activation.get("alpaca_post_called_count")) == 0
+        and _int(paper_live_activation.get("live_endpoint_called_count")) == 0
+    )
     qctrl_consultation_ready = (
         settings.qctrl_paper_consultation_enabled
         and qctrl_consultation.get("status") == "consultation_recorded"
@@ -274,6 +297,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "ready": settings.mode == "paper" and not settings.live_capital_enabled,
             "status": "ready" if settings.mode == "paper" and not settings.live_capital_enabled else "blocked",
             "detail": f"mode={settings.mode}; live_capital_enabled={settings.live_capital_enabled}",
+            "required_for_full_paper_ops": True,
+        },
+        {
+            "key": "paper_live_activation_approved",
+            "ready": paper_live_activation_ready,
+            "status": str(paper_live_activation.get("status") or "missing"),
+            "detail": (
+                f"approval={paper_live_activation.get('approval_state')}; "
+                f"logged={paper_live_activation.get('paper_trading_system_approval_logged')}; "
+                f"submit_allowed={paper_live_activation.get('paper_order_submission_allowed')}; "
+                f"qctrl_required={paper_live_activation.get('qctrl_consultation_required')}"
+            ),
             "required_for_full_paper_ops": True,
         },
         {
@@ -483,6 +518,8 @@ def _blockers(settings: Settings, capabilities: list[dict[str, Any]]) -> list[st
 def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
     if not safe_to_continue:
         return "Restore paper-only safety before continuing"
+    if "paper_live_activation_approved_not_ready" in blockers:
+        return "Run PT-0 paper-live activation charter"
     if "paperops_30_day_operations_active_not_ready" in blockers:
         return "Run PaperOps-6 30-day paper operations scheduler binding"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
@@ -524,6 +561,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     notification_review = snapshot["notification_review"]
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
     strategy_research = snapshot["strategy_research"]
+    paper_live_activation = snapshot["paper_live_activation"]
 
     artifact = {
         "schema_version": PAPER_OPS_SCHEMA_VERSION,
@@ -547,6 +585,57 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "alpaca_paper_exit_enabled": settings.alpaca_paper_exit_enabled,
         "paper_operational_max_notional_gbp": settings.paper_operational_max_notional_gbp,
         "live_capital_enabled": settings.live_capital_enabled,
+        "paper_live_activation_status": paper_live_activation.get("status", "missing"),
+        "paper_live_activation_approval_state": paper_live_activation.get(
+            "approval_state",
+            "missing",
+        ),
+        "paper_live_activation_approval_logged": (
+            paper_live_activation.get("approval_logged") is True
+        ),
+        "paper_live_activation_approved": (
+            paper_live_activation.get("paper_live_activation_approved") is True
+        ),
+        "paper_trading_system_approval_logged": (
+            paper_live_activation.get("paper_trading_system_approval_logged") is True
+        ),
+        "paper_live_activation_mode": paper_live_activation.get("paper_live_mode", "missing"),
+        "paper_live_activation_per_trade_manual_approval_required": (
+            paper_live_activation.get("per_trade_manual_approval_required") is True
+        ),
+        "paper_live_activation_paper_order_submission_allowed": (
+            paper_live_activation.get("paper_order_submission_allowed") is True
+        ),
+        "paper_live_activation_forced_trades_allowed": (
+            paper_live_activation.get("forced_trades_allowed") is True
+        ),
+        "paper_live_activation_qctrl_consultation_required": (
+            paper_live_activation.get("qctrl_consultation_required") is True
+        ),
+        "paper_live_activation_qctrl_execution_allowed": (
+            paper_live_activation.get("qctrl_direct_execution_allowed") is True
+        ),
+        "paper_live_activation_qctrl_broker_post_allowed": (
+            paper_live_activation.get("qctrl_broker_post_allowed") is True
+        ),
+        "paper_live_activation_phase7_proof_credit_allowed": (
+            paper_live_activation.get("phase7_proof_credit_allowed") is True
+        ),
+        "paper_live_activation_max_order_notional_gbp": _int(
+            paper_live_activation.get("max_order_notional_gbp")
+        ),
+        "paper_live_activation_daily_trade_cap": _int(
+            paper_live_activation.get("daily_trade_cap")
+        ),
+        "paper_live_activation_broker_post_called_count": _int(
+            paper_live_activation.get("broker_post_called_count")
+        ),
+        "paper_live_activation_alpaca_post_called_count": _int(
+            paper_live_activation.get("alpaca_post_called_count")
+        ),
+        "paper_live_activation_live_endpoint_called_count": _int(
+            paper_live_activation.get("live_endpoint_called_count")
+        ),
         "quantum_paper_parity_required": settings.quantum_paper_parity_required,
         "qctrl_paper_consultation_enabled": settings.qctrl_paper_consultation_enabled,
         "qctrl_paper_consultation_required_for_full_parity": settings.quantum_paper_parity_required,
@@ -839,9 +928,38 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_exit_path_position_resize_called_count",
         "paper_exit_path_live_endpoint_called_count",
         "paperops_30_day_operations_unsafe_write_counter_total",
+        "paper_live_activation_broker_post_called_count",
+        "paper_live_activation_alpaca_post_called_count",
+        "paper_live_activation_live_endpoint_called_count",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
+    if artifact.get("paper_live_activation_status") != "approved_pending_later_enablement":
+        errors.append("paper_ops_paper_live_activation_not_approved")
+    if artifact.get("paper_live_activation_approval_state") != "approved":
+        errors.append("paper_ops_paper_live_activation_approval_state_invalid")
+    if artifact.get("paper_live_activation_approval_logged") is not True:
+        errors.append("paper_ops_paper_live_activation_approval_not_logged")
+    if artifact.get("paper_live_activation_approved") is not True:
+        errors.append("paper_ops_paper_live_activation_approved_false")
+    if artifact.get("paper_trading_system_approval_logged") is not True:
+        errors.append("paper_ops_paper_trading_system_approval_not_logged")
+    if artifact.get("paper_live_activation_mode") != "alpaca_paper_only":
+        errors.append("paper_ops_paper_live_activation_mode_invalid")
+    if artifact.get("paper_live_activation_per_trade_manual_approval_required") is not False:
+        errors.append("paper_ops_paper_live_activation_manual_approval_required")
+    if artifact.get("paper_live_activation_paper_order_submission_allowed") is not False:
+        errors.append("paper_ops_paper_live_activation_submit_authority")
+    if artifact.get("paper_live_activation_forced_trades_allowed") is not False:
+        errors.append("paper_ops_paper_live_activation_forced_trades_allowed")
+    if artifact.get("paper_live_activation_qctrl_consultation_required") is not True:
+        errors.append("paper_ops_paper_live_activation_qctrl_not_required")
+    if artifact.get("paper_live_activation_qctrl_execution_allowed") is not False:
+        errors.append("paper_ops_paper_live_activation_qctrl_execution_authority")
+    if artifact.get("paper_live_activation_qctrl_broker_post_allowed") is not False:
+        errors.append("paper_ops_paper_live_activation_qctrl_broker_authority")
+    if artifact.get("paper_live_activation_phase7_proof_credit_allowed") is not False:
+        errors.append("paper_ops_paper_live_activation_proof_credit_allowed")
     if artifact.get("phase7_proof_credit_allowed") is not False:
         errors.append("paper_ops_phase7_proof_credit_allowed")
     if artifact.get("paper_lifecycle_poller_phase7_proof_credit_allowed") is not False:

@@ -29,6 +29,7 @@ from orchestrator.intelligence import (
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
+from orchestrator.paper_live_activation import paper_live_activation_public_status
 from orchestrator.paperops_alpaca_paper_post import paperops_alpaca_paper_post_public_status
 from orchestrator.paperops_paper_lifecycle_poller import (
     paperops_paper_lifecycle_poller_public_status,
@@ -4386,6 +4387,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     phase5_system_map = payload.get("phase5_system_map", {})
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     phase7_demo_proof = payload.get("phase7_demo_proof", {})
+    paper_live_activation = payload.get("paper_live_activation", {})
     paperops_alpaca_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -4521,6 +4523,15 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "quant_oracle_backend": quantum_oracle.get("latest_backend", "classical_fallback"),
             "quant_oracle_mode": quantum_oracle.get("latest_local_simulation_mode", "not_run"),
             "quant_oracle_recommendation": quantum_oracle.get("latest_recommendation", "not_run"),
+            "paper_live_activation": paper_live_activation.get("status", "not_run"),
+            "paper_live_activation_approved": paper_live_activation.get(
+                "paper_live_activation_approved",
+                False,
+            ),
+            "paper_live_activation_system_approval_logged": paper_live_activation.get(
+                "paper_trading_system_approval_logged",
+                False,
+            ),
             "qctrl_paper_consultation": paperops_qctrl.get("status", "not_run"),
             "qctrl_paper_provider_call_count": paperops_qctrl.get("provider_call_count", 0),
             "paperops_alpaca_paper_post": paperops_alpaca_post.get("status", "not_run"),
@@ -5616,6 +5627,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "broker_reconciliation": _broker_reconciliation_status(settings),
         "paper_submit_receipt": _paper_submit_receipt_status(settings),
         "quantum_oracle": quantum_oracle,
+        "paper_live_activation": paper_live_activation_public_status(settings),
         "paperops_alpaca_paper_post": paperops_alpaca_paper_post_public_status(settings),
         "paperops_paper_lifecycle_poller": (
             paperops_paper_lifecycle_poller_public_status(settings)
@@ -5723,6 +5735,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "phase6_certification",
         "phase7_demo_proof",
         "phase5_system_map",
+        "paper_live_activation",
         "paperops_alpaca_paper_post",
         "paperops_paper_lifecycle_poller",
         "paperops_paper_exit_path",
@@ -5875,6 +5888,49 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     for phrase in ("read-only", "without secrets", "cannot satisfy source quorum", "create trade candidates"):
         if phrase not in preference_boundary:
             raise ValueError(f"Preference MCP public boundary missing: {phrase}")
+    paper_live_activation = payload["paper_live_activation"]
+    if paper_live_activation.get("status") not in {
+        "not_run",
+        "approved_pending_later_enablement",
+        "invalid",
+    }:
+        raise ValueError("Paper-live activation public status is invalid")
+    if paper_live_activation.get("public_safe") is not True:
+        raise ValueError("Paper-live activation status must be public-safe")
+    if paper_live_activation.get("live_capital_enabled") is not False:
+        raise ValueError("Paper-live activation must keep live capital disabled")
+    if paper_live_activation.get("live_endpoint_allowed") is not False:
+        raise ValueError("Paper-live activation must block live endpoints")
+    if paper_live_activation.get("paper_order_submission_allowed") is not False:
+        raise ValueError("Paper-live activation must not open paper submit authority")
+    if paper_live_activation.get("forced_trades_allowed") is not False:
+        raise ValueError("Paper-live activation must not allow forced trades")
+    if paper_live_activation.get("qctrl_direct_execution_allowed") is not False:
+        raise ValueError("Paper-live activation must keep Q-CTRL non-executing")
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+    ):
+        if int(paper_live_activation.get(key, 0) or 0) != 0:
+            raise ValueError(f"Paper-live activation unsafe count nonzero: {key}")
+    if paper_live_activation.get("status") == "approved_pending_later_enablement":
+        if paper_live_activation.get("approval_state") != "approved":
+            raise ValueError("Paper-live activation approval state mismatch")
+        if paper_live_activation.get("approval_logged") is not True:
+            raise ValueError("Paper-live activation approval must be logged")
+        if paper_live_activation.get("paper_live_activation_approved") is not True:
+            raise ValueError("Paper-live activation approval flag missing")
+        if paper_live_activation.get("paper_trading_system_approval_logged") is not True:
+            raise ValueError("Paper-live system approval must be logged")
+    paper_live_boundary = str(paper_live_activation.get("boundary") or "")
+    for phrase in (
+        "Alpaca paper-only",
+        "cannot submit paper orders by itself",
+        "cannot enable live capital",
+    ):
+        if phrase not in paper_live_boundary:
+            raise ValueError("Paper-live activation boundary is weak")
     paperops_alpaca = payload["paperops_alpaca_paper_post"]
     if paperops_alpaca.get("status") not in {
         "not_run",

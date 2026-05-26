@@ -44,6 +44,26 @@ def main() -> int:
     live_capital_probe["live_capital_enabled_count"] = 1
     live_capital_errors = validate_paper_operational_readiness(live_capital_probe)
 
+    paper_live_submit_probe = deepcopy(written)
+    paper_live_submit_probe["paper_live_activation_paper_order_submission_allowed"] = True
+    paper_live_submit_errors = validate_paper_operational_readiness(paper_live_submit_probe)
+
+    paper_live_manual_probe = deepcopy(written)
+    paper_live_manual_probe["paper_live_activation_per_trade_manual_approval_required"] = True
+    paper_live_manual_errors = validate_paper_operational_readiness(paper_live_manual_probe)
+
+    paper_live_qctrl_probe = deepcopy(written)
+    paper_live_qctrl_probe["paper_live_activation_qctrl_execution_allowed"] = True
+    paper_live_qctrl_errors = validate_paper_operational_readiness(paper_live_qctrl_probe)
+
+    paper_live_forced_probe = deepcopy(written)
+    paper_live_forced_probe["paper_live_activation_forced_trades_allowed"] = True
+    paper_live_forced_errors = validate_paper_operational_readiness(paper_live_forced_probe)
+
+    paper_live_broker_probe = deepcopy(written)
+    paper_live_broker_probe["paper_live_activation_broker_post_called_count"] = 1
+    paper_live_broker_errors = validate_paper_operational_readiness(paper_live_broker_probe)
+
     broker_post_probe = deepcopy(written)
     broker_post_probe["broker_post_called_count"] = 1
     broker_post_probe["alpaca_post_called_count"] = 1
@@ -159,6 +179,51 @@ def main() -> int:
     print(f"paper_ops_mode={written['mode']}")
     print(f"paper_ops_enabled={written['paper_operational_enabled']}")
     print(f"paper_ops_alpaca_paper_submit_enabled={written['alpaca_paper_submit_enabled']}")
+    print(f"paper_ops_paper_live_activation_status={written['paper_live_activation_status']}")
+    print(
+        "paper_ops_paper_live_activation_approval_state="
+        f"{written['paper_live_activation_approval_state']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_approval_logged="
+        f"{written['paper_live_activation_approval_logged']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_approved="
+        f"{written['paper_live_activation_approved']}"
+    )
+    print(
+        "paper_ops_paper_trading_system_approval_logged="
+        f"{written['paper_trading_system_approval_logged']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_mode="
+        f"{written['paper_live_activation_mode']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_paper_order_submission_allowed="
+        f"{written['paper_live_activation_paper_order_submission_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_per_trade_manual_approval_required="
+        f"{written['paper_live_activation_per_trade_manual_approval_required']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_forced_trades_allowed="
+        f"{written['paper_live_activation_forced_trades_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_qctrl_consultation_required="
+        f"{written['paper_live_activation_qctrl_consultation_required']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_qctrl_execution_allowed="
+        f"{written['paper_live_activation_qctrl_execution_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_activation_max_order_notional_gbp="
+        f"{written['paper_live_activation_max_order_notional_gbp']}"
+    )
     print(f"paper_ops_quantum_paper_parity_required={written['quantum_paper_parity_required']}")
     print(f"paper_ops_qctrl_paper_consultation_enabled={written['qctrl_paper_consultation_enabled']}")
     print(f"paper_ops_head_of_quant_oracle_result_count={written['head_of_quant_oracle_result_count']}")
@@ -382,6 +447,18 @@ def main() -> int:
         errors.append("paper ops must run in paper mode")
     if written["live_capital_enabled"] is not False:
         errors.append("paper ops enabled live capital")
+    if written["paper_live_activation_approved"] is not True:
+        errors.append("paper-live activation approval missing")
+    if written["paper_trading_system_approval_logged"] is not True:
+        errors.append("paper-live system approval missing")
+    if written["paper_live_activation_paper_order_submission_allowed"] is not False:
+        errors.append("paper-live activation opened submit authority")
+    if written["paper_live_activation_per_trade_manual_approval_required"] is not False:
+        errors.append("paper-live activation requires per-trade manual approval")
+    if written["paper_live_activation_forced_trades_allowed"] is not False:
+        errors.append("paper-live activation allows forced trades")
+    if written["paper_live_activation_qctrl_execution_allowed"] is not False:
+        errors.append("paper-live activation gives Q-CTRL execution authority")
     if written["safe_to_continue_paper_only"] is not True:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
@@ -393,6 +470,31 @@ def main() -> int:
         errors.append("paper ops next unblock should be PaperOps-Q product access")
     if "paper_ops_live_capital_enabled" not in live_capital_errors:
         errors.append("live capital probe was not rejected")
+    if (
+        "paper_ops_paper_live_activation_submit_authority"
+        not in paper_live_submit_errors
+    ):
+        errors.append("paper-live submit-authority probe was not rejected")
+    if (
+        "paper_ops_paper_live_activation_manual_approval_required"
+        not in paper_live_manual_errors
+    ):
+        errors.append("paper-live manual-approval probe was not rejected")
+    if (
+        "paper_ops_paper_live_activation_qctrl_execution_authority"
+        not in paper_live_qctrl_errors
+    ):
+        errors.append("paper-live Q-CTRL execution probe was not rejected")
+    if (
+        "paper_ops_paper_live_activation_forced_trades_allowed"
+        not in paper_live_forced_errors
+    ):
+        errors.append("paper-live forced-trade probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:paper_live_activation_broker_post_called_count"
+        not in paper_live_broker_errors
+    ):
+        errors.append("paper-live broker-POST probe was not rejected")
     if "paper_ops_unsafe_counter_nonzero:broker_post_called_count" not in broker_post_errors:
         errors.append("broker POST probe was not rejected")
     if (

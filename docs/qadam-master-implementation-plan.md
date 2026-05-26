@@ -1075,6 +1075,17 @@ Current PaperOps status:
   `scripts/check_paper_operational_readiness.py`.
 - PaperOps-1 cycle runner is implemented in
   `scripts/run_paper_operational_cycle.py`.
+- PT-0 paper-live activation charter is implemented in
+  `orchestrator/paper_live_activation.py` and
+  `scripts/check_paper_live_activation.py`. It records explicit Fund Manager
+  system-level approval for Alpaca paper-only operation after later PT gates
+  pass: `approval_state=approved`, `approval_logged=True`,
+  `paper_live_activation_approved=True`, and
+  `paper_trading_system_approval_logged=True`. It also keeps
+  `per_trade_manual_approval_required=False`,
+  `paper_order_submission_allowed=False`, `live_capital_enabled=False`,
+  `forced_trades_allowed=False`, `qctrl_direct_execution_allowed=False`, and
+  all broker/Alpaca/live endpoint counters at zero.
 - PaperOps-Q Q-CTRL paper consultation gate is implemented in
   `orchestrator/paperops_qctrl_consultation.py` and
   `scripts/check_paperops_qctrl_consultation.py`. Fire Opal is installed and
@@ -1124,10 +1135,10 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  23/23 commands passing: paper mode is safe to continue, the Phase 7 run is
-  active, the Head-of-Quant oracle can run in its current non-provider mode,
-  broker/Alpaca POST counters remain zero, PaperOps-2 reports
-  `disabled_pending_enablement`, PaperOps-3 reports
+  24/24 commands passing: paper mode is safe to continue, PT-0 approval is
+  logged, the Phase 7 run is active, the Head-of-Quant oracle can run in its
+  current non-provider mode, broker/Alpaca POST counters remain zero,
+  PaperOps-2 reports `disabled_pending_enablement`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
   PaperOps-6 reports `operations_active`, and the remaining blockers include the
@@ -1146,8 +1157,8 @@ Current PaperOps status:
   live-promotion review, and cockpit status export.
 - The next operational step is to keep the PaperOps runner active through the
   actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, and resolve PaperOps-Q product access plus
-  PaperOps-2/PaperOps-4 enablement only after the explicit paper-submit and
+  where Q7-qualified setups exist, resolve PaperOps-Q product access, then
+  enable PaperOps-2/PaperOps-4 only after the explicit paper-submit and
   paper-exit prerequisites exist.
 
 Build:
