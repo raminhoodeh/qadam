@@ -80,10 +80,12 @@ function loadRendererWindow() {
 async function main() {
     includesAll(dashboardHtml, [
         "Reasoning workspace",
-        "Priors, evidence, hypotheses, and blockers",
+        "Reasoning readout and review chain",
         "Prior, not evidence",
         "Hypothesis, not candidate",
         "No paper/order authority",
+        "data-reasoning-consolidated-readout",
+        "data-reasoning-review-groups",
         "Merged into Reasoning workspace"
     ], "Reasoning static shell");
 
@@ -91,6 +93,8 @@ async function main() {
         ".reasoning-workspace",
         ".reasoning-workspace-head",
         ".reasoning-boundary-card",
+        ".reasoning-consolidated-readout",
+        ".reasoning-review-group",
         ".reasoning-lane-grid",
         ".reasoning-prior-grid",
         ".reasoning-hypothesis-card",
