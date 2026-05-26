@@ -207,7 +207,7 @@ async function main() {
     assert(fs.existsSync(auditPath), "D11E audit document missing");
     includesAll(plan, [
         "D11E - Rebuild Overview",
-        "D11F - Merge Duplicate Detail Panels"
+        "D11F - Trades View Consolidation"
     ], "D11E master plan");
 
     console.log("dashboard_d11e_rebuild_overview=ok");
