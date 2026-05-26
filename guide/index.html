@@ -27,20 +27,28 @@
             <p class="eyebrow">Private user guide</p>
             <h1>How To Use Qadam</h1>
             <p class="lede">
-                Logged in as <span data-user-email></span>. This guide explains what every major dashboard panel means,
-                how Qadam moves from data to trade review, and what founding members can safely do.
+                Logged in as <span data-user-email></span>. This guide explains what Qadam is, how to read the
+                cockpit, how demo-proof trading works, what members can do, and which safety boundaries must never be
+                crossed.
             </p>
         </section>
 
         <article class="article">
             <section>
                 <h2>The Short Version</h2>
-                <p>Qadam is a local-first macro intelligence and paper-trading system. The dashboard is the operating
-                    mirror: it shows what Qadam is watching, what it is thinking about, what it is blocked from doing,
-                    which trade ideas exist, how the paper account is performing, and what the system has communicated
-                    to members.</p>
-                <p>The first release is a &pound;1000 paper/test-account trial. Qadam is allowed to become autonomous
-                    only inside the test account after the required gates exist. Live capital is out of scope.</p>
+                <p>Qadam is a local-first macro intelligence and paper-trading system. It watches world events and
+                    markets, builds trade hypotheses, checks them against evidence and risk rules, runs paper/demo-proof
+                    trades only when the gates allow it, and logs outcomes for review.</p>
+                <p>Qadam is not a public financial-advice product, not a signal channel, and not a live-capital trading
+                    bot. In the first-release workflow, live capital is disabled and the cockpit is a read-only operating
+                    mirror.</p>
+            </section>
+
+            <section>
+                <h2>Who Can Use Qadam</h2>
+                <p>First-release access is limited to the founding Fund Managers: Ramin, Troy, Akber, Anas, and Ion.
+                    The dashboard, guide, and settings routes are protected by Supabase login plus the Qadam allowlist.
+                    If your email is not allowlisted, you cannot use the private cockpit.</p>
             </section>
 
             <section>
@@ -49,7 +57,7 @@
                     <div class="guide-card">
                         <span>Human oversight</span>
                         <h3>Fund Managers</h3>
-                        <p>Ramin, Troy, Akber, Anas, and Ion review, comment, challenge, and improve the system.</p>
+                        <p>Review evidence, challenge assumptions, comment on outcomes, and improve the process.</p>
                     </div>
                     <div class="guide-card">
                         <span>COO</span>
@@ -57,29 +65,34 @@
                         <p>Coordinates modules, checks health, writes logs, and routes work through the system.</p>
                     </div>
                     <div class="guide-card">
-                        <span>Research Analyst</span>
+                        <span>Research</span>
                         <h3>Local LLM</h3>
                         <p>Filters noisy information locally before anything escalates to deeper research.</p>
                     </div>
                     <div class="guide-card">
-                        <span>Strategy Lead</span>
+                        <span>Strategy</span>
                         <h3>Frontier LLM</h3>
-                        <p>Builds and challenges deeper strategy packets once enough evidence exists.</p>
+                        <p>Builds and challenges strategy packets when enough evidence exists.</p>
                     </div>
                     <div class="guide-card">
-                        <span>Head of Quant</span>
+                        <span>Quant</span>
                         <h3>Quantum / Classical Oracle</h3>
                         <p>Runs bounded modelling checks. It informs decisions but cannot override risk controls.</p>
                     </div>
                     <div class="guide-card">
                         <span>Risk</span>
                         <h3>Risk Agent</h3>
-                        <p>Blocks oversize, stale, low-evidence, or unauthorized trades before paper execution.</p>
+                        <p>Blocks oversize, stale, low-evidence, or unauthorized ideas before execution.</p>
                     </div>
                     <div class="guide-card">
-                        <span>D9 bridge</span>
-                        <h3>Secure Live Bridge</h3>
-                        <p>Serves the public-safe status snapshot to the authenticated dashboard. It cannot run commands or trade.</p>
+                        <span>Memory</span>
+                        <h3>Event Log</h3>
+                        <p>Append-only system memory. If it is not logged, it did not happen.</p>
+                    </div>
+                    <div class="guide-card">
+                        <span>Dashboard</span>
+                        <h3>Cockpit</h3>
+                        <p>The readable operating view for members. It is not a command shell.</p>
                     </div>
                 </div>
             </section>
@@ -98,96 +111,118 @@
             </section>
 
             <section>
-                <h2>Mission Control</h2>
-                <p>This is the first read after login. It summarizes connected data sources, durable replay readiness, Qadam's current trading philosophy, the API/model/quant stack, current thinking, candidate or blocked trade ideas, paper-account holdings, P&amp;L, drawdown, and hard safety boundaries.</p>
-                <div class="guide-table">
-                    <div><strong>Sources</strong><span>Shows configured or connected feeds before you read the detailed Watching panel.</span></div>
-                    <div><strong>Durable replay</strong><span>Shows whether Postgres/Timescale can replay the 35-source observation set or is still waiting for the local service.</span></div>
-                    <div><strong>Philosophy</strong><span>Shows the private-prior trading lens and decision chain. It is context only, not proof.</span></div>
-                    <div><strong>Stack</strong><span>Shows how the COO, local LLM, Strategy Lead, quantum oracle, risk gates, paper account, and Telegram rail currently stand.</span></div>
-                    <div><strong>Trade intent</strong><span>Shows observed signals, candidates, blocks, and paper-order gate state. Candidate is not order.</span></div>
-                    <div><strong>Paper account</strong><span>Shows balance, P&amp;L, positions, orders, closed trades, and whether write authority remains blocked.</span></div>
-                </div>
-                <p>Mission Control is read-only. It cannot promote hypotheses, approve trades, submit paper orders, write to brokers, enable live capital, or turn durable observations into signals by itself.</p>
+                <h2>Current Operating Mode</h2>
+                <p>Qadam is operating in paper/demo-proof mode. The Phase 7 harness collects proof trades only where
+                    Q7-qualified setups exist. No trades are forced, Phase 5 test trades do not count as Phase 7 proof
+                    trades, Phase 7 proof credit remains blocked until earned by Phase 7 evidence, and live capital is
+                    disabled.</p>
+            </section>
+
+            <section>
+                <h2>First Login</h2>
+                <ol>
+                    <li>Open qadam.trade.</li>
+                    <li>Click Login.</li>
+                    <li>Sign in with your allowlisted email.</li>
+                    <li>If you do not have an account yet, use the sign-up route with your allowlisted email.</li>
+                    <li>After login, open /dashboard/.</li>
+                    <li>Open /guide/ from the dashboard whenever you need this guide.</li>
+                </ol>
+                <p>Do not paste API keys, broker secrets, Telegram tokens, or private credentials into comments, forms,
+                    chats, docs, or prompts.</p>
+            </section>
+
+            <section>
+                <h2>First 10-Minute Tour</h2>
+                <ol>
+                    <li>Start in the Overview view.</li>
+                    <li>Read the single safety strip first: it should say Paper only, Read-only, Live capital off, No UI-to-broker path, and No LLM-to-broker path.</li>
+                    <li>Use Overview's health readout and mini-map to understand whether Qadam is watching sources, forming hypotheses, seeing trade candidates, or blocked.</li>
+                    <li>Open Evidence to inspect source health, setup evidence, and supplemental context.</li>
+                    <li>Open Reasoning to separate private priors, factual evidence, hypotheses, missing corroboration, Strategy Lead review, and quant annotations.</li>
+                    <li>Open Trades to inspect observed signals, candidates, blocked trades, paper order state, paper-account performance, and Phase 7 proof status.</li>
+                    <li>Open Operations only when you need the full expandable system map, event trail, Telegram state, governance comments, or technical diagnostics.</li>
+                    <li>Treat a blocked/no-trade state as potentially healthy until the evidence says otherwise.</li>
+                </ol>
             </section>
 
             <section>
                 <h2>How To Read The Dashboard</h2>
+                <p>The dashboard now has five primary views. Do not hunt for old standalone panels; those implementation
+                    names have been consolidated into the views below.</p>
                 <div class="guide-grid">
                     <div class="guide-card">
-                        <span>First read</span>
-                        <h3>Mission Control</h3>
-                        <p>Shows the top-level state of sources, durable replay, philosophy, stack, trade intent, paper account, and safety before the detailed panels.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Replay spine</span>
-                        <h3>Durable Replay</h3>
-                        <p>Shows whether Postgres/Timescale can replay Qadam's 35-source observation set. Offline replay is expected until the local service is running.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Top map</span>
-                        <h3>System Operating Map</h3>
-                        <p>Shows which modules are online, pending, degraded, blocked, or local-only, and how data moves through Qadam.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Sources</span>
-                        <h3>Watching</h3>
-                        <p>Shows what Qadam is watching across conflict, physical, macro, market, and narrative pipelines.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Reasoning</span>
-                        <h3>Cognition</h3>
-                        <p>Shows active hypotheses, evidence packets, missing corroboration, and why ideas have not reached execution.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Private lens</span>
-                        <h3>Worldview</h3>
-                        <p>Shows which private prior is shaping the question. It is context, not evidence.</p>
+                        <span>Default view</span>
+                        <h3>Overview view</h3>
+                        <p>Shows the operating readout, current review state, compact system mini-map, and the single safety strip.</p>
                     </div>
                     <div class="guide-card">
                         <span>Trade review</span>
-                        <h3>Trade Layer</h3>
-                        <p>Shows observed signals, candidates, blocked trades, staged paper orders, open positions, closed trades, and postmortems.</p>
+                        <h3>Trades view</h3>
+                        <p>Shows signals, candidates, blocks, paper order state, paper-account performance, and Phase 7 proof status.</p>
                     </div>
                     <div class="guide-card">
-                        <span>Capital</span>
-                        <h3>Money</h3>
-                        <p>Shows the &pound;1000 paper account, P&amp;L, drawdown, open positions, and 100-trade maturity progress.</p>
+                        <span>Sources</span>
+                        <h3>Evidence view</h3>
+                        <p>Shows source posture, setup evidence, supplemental context, and whether corroboration is strong enough.</p>
                     </div>
                     <div class="guide-card">
-                        <span>Safety</span>
-                        <h3>Forbidden</h3>
-                        <p>Shows live-capital blocks, broker-write blocks, stale-data blocks, credential gaps, and kill-switch state.</p>
+                        <span>Reasoning</span>
+                        <h3>Reasoning view</h3>
+                        <p>Separates private priors, factual evidence, hypotheses, blockers, Strategy Lead review, and quant annotations.</p>
                     </div>
                     <div class="guide-card">
-                        <span>Runtime</span>
-                        <h3>Process Console</h3>
-                        <p>Shows recent checks and runtime events. It is read-only, not shell access.</p>
+                        <span>Diagnostics</span>
+                        <h3>Operations view</h3>
+                        <p>Shows the full expandable system map, event trail, safety diagnostics, Telegram state, and governance comments.</p>
                     </div>
-                    <div class="guide-card">
-                        <span>Members</span>
-                        <h3>Comments</h3>
-                        <p>Use comments to suggest improvements, challenge signals, flag sources, or add postmortem observations.</p>
-                    </div>
-                    <div class="guide-card">
-                        <span>Comms</span>
-                        <h3>Telegram</h3>
-                        <p>Shows the dry-run member communications rail: queue state, failed sends, suppressed messages, and delivery status. Telegram cannot trade.</p>
-                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Single Safety Strip</h2>
+                <p>The single safety strip is the dashboard's global authority summary. Read it before interpreting any panel.</p>
+                <div class="guide-table">
+                    <div><strong>Paper only</strong><span>Qadam is in paper/demo-proof mode, not live-capital mode.</span></div>
+                    <div><strong>Read-only</strong><span>The dashboard reads backend-derived status; it is not a command surface.</span></div>
+                    <div><strong>Live capital off</strong><span>No live money trading authority is available from the dashboard.</span></div>
+                    <div><strong>No UI-to-broker path</strong><span>The browser cannot place, approve, modify, close, or resize broker orders.</span></div>
+                    <div><strong>No LLM-to-broker path</strong><span>Models can inform reasoning, but cannot bypass risk gates or submit trades.</span></div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Old Implementation Terms</h2>
+                <p>You may still see older module names in code, event logs, or status metadata. Use this mapping when reading old notes.</p>
+                <div class="guide-table">
+                    <div><strong>Mission Control</strong><span>Overview.</span></div>
+                    <div><strong>System Operating Map</strong><span>Overview mini-map or Operations full map.</span></div>
+                    <div><strong>Watching</strong><span>Evidence.</span></div>
+                    <div><strong>Cognition</strong><span>Reasoning.</span></div>
+                    <div><strong>Worldview / Private Edge</strong><span>Reasoning prior context.</span></div>
+                    <div><strong>Trade Layer</strong><span>Trades.</span></div>
+                    <div><strong>Money / Paper Account Timeline</strong><span>Trades paper account and Phase 7 proof area.</span></div>
+                    <div><strong>Forbidden</strong><span>Operations safety diagnostics plus the single safety strip.</span></div>
+                    <div><strong>Process Console</strong><span>Operations event trail.</span></div>
+                    <div><strong>Fund Manager Comments</strong><span>Operations governance.</span></div>
+                    <div><strong>Communications / Telegram</strong><span>Operations communications.</span></div>
                 </div>
             </section>
 
             <section>
                 <h2>Status Labels</h2>
+                <p>Important labels:</p>
                 <div class="guide-table">
                     <div><strong>Online</strong><span>The module or source is available in the current snapshot.</span></div>
                     <div><strong>Pending</strong><span>The module exists but is waiting for a credential, process, or later phase.</span></div>
                     <div><strong>Degraded</strong><span>The module is partially available but has a known limitation.</span></div>
                     <div><strong>Blocked</strong><span>Qadam is deliberately prevented from using that path.</span></div>
                     <div><strong>Local-only</strong><span>The capability exists on the MacBook but is not exposed to the web.</span></div>
-                    <div><strong>Read-only ready</strong><span>The Secure Live Bridge can serve the public-safe snapshot, but cannot run commands or write trades.</span></div>
+                    <div><strong>Read-only ready</strong><span>The bridge can serve the public-safe snapshot, but cannot run commands or write trades.</span></div>
                     <div><strong>Dry-run</strong><span>Qadam can render or queue a message locally, but no live send is allowed.</span></div>
                     <div><strong>Notify-only</strong><span>A module can communicate status but cannot approve or create trade actions.</span></div>
+                    <div><strong>Certified</strong><span>A phase gate has passed its explicit checker.</span></div>
+                    <div><strong>Eligible</strong><span>A stage can proceed under guardrails. It is not live trading approval.</span></div>
                 </div>
             </section>
 
@@ -204,44 +239,68 @@
                     <div><strong>Postmortem due</strong><span>The result needs review.</span></div>
                     <div><strong>Postmortem complete</strong><span>The lesson has been logged.</span></div>
                 </div>
-                <p>The dry-run paper-submit receipt section can show an idempotency preview, Event Log prewrite schema, pre-trade snapshot schema, and duplicate-order guard schema. These are readiness checks only: Qadam cannot allocate a broker-usable order ID, write a pre-order event, submit to Alpaca, or create broker state.</p>
             </section>
 
             <section>
-                <h2>Secure Live Bridge</h2>
-                <p>The Secure Live Bridge lets the dashboard refresh from a protected read-only status endpoint, with static snapshot fallback if the endpoint is unavailable.</p>
-                <div class="guide-table">
-                    <div><strong>Allowed</strong><span>Serve the sanitized cockpit snapshot, expose health metadata, rate-limit reads, and use a detached signature or digest.</span></div>
-                    <div><strong>Blocked</strong><span>No shell access, no local orchestrator exposure, no secrets, no raw payloads, and no broker-write route.</span></div>
-                    <div><strong>Fallback</strong><span>If the bridge is unavailable, the dashboard reads /status/cockpit-status.json or fails closed.</span></div>
-                    <div><strong>Authority</strong><span>Browser authority remains read-only.</span></div>
+                <h2>How Qadam Makes A Trade</h2>
+                <div class="system-diagram compact-diagram" role="img" aria-label="Qadam trade lifecycle">
+                    <p class="diagram-title">Trade Lifecycle</p>
+                    <div class="flow">
+                        <div class="flow-card"><span class="flow-kicker">1</span><span class="flow-name">Source event</span><span class="flow-detail">Something changes in the world or market.</span></div>
+                        <div class="arrow" aria-hidden="true">&#8595;</div>
+                        <div class="flow-card"><span class="flow-kicker">2</span><span class="flow-name">Observation</span><span class="flow-detail">Qadam logs what happened.</span></div>
+                        <div class="arrow" aria-hidden="true">&#8595;</div>
+                        <div class="flow-card"><span class="flow-kicker">3</span><span class="flow-name">Research</span><span class="flow-detail">Local and frontier models build and challenge the thesis.</span></div>
+                        <div class="arrow" aria-hidden="true">&#8595;</div>
+                        <div class="flow-card primary"><span class="flow-kicker">4</span><span class="flow-name">Akber 6-stage filter</span><span class="flow-detail">Catalyst, distribution, setup, flow, risk, and judgment.</span></div>
+                        <div class="arrow" aria-hidden="true">&#8595;</div>
+                        <div class="flow-card risk"><span class="flow-kicker">5</span><span class="flow-name">Signal and Risk Gates</span><span class="flow-detail">Block stale, oversize, low-evidence, or unauthorized ideas.</span></div>
+                        <div class="arrow" aria-hidden="true">&#8595;</div>
+                        <div class="flow-card primary"><span class="flow-kicker">6</span><span class="flow-name">Paper Account</span><span class="flow-detail">Only paper trades are in scope for first release.</span></div>
+                        <div class="return-loop">Every outcome returns to the Event Log, postmortem loop, Knowledge Graph, and dashboard.</div>
+                    </div>
                 </div>
             </section>
 
             <section>
-                <h2>Communications</h2>
-                <p>The Communications panel shows Telegram as an outbound-only member notification rail. In D8A it is dry-run by default, with the send gate disabled until a later explicit private test.</p>
-                <div class="guide-table">
-                    <div><strong>Mode</strong><span>Dry-run means messages are rendered and queued locally without live delivery.</span></div>
-                    <div><strong>Members</strong><span>Verified, pending, and failed member counts show onboarding state without exposing handles or chat IDs.</span></div>
-                    <div><strong>Outbox</strong><span>Queued, sent, failed, retried, and suppressed counts show delivery state.</span></div>
-                    <div><strong>Boundary</strong><span>Telegram cannot place, approve, reject, modify, close, or resize trades.</span></div>
-                </div>
+                <h2>How To Review A Trade Idea</h2>
+                <ol>
+                    <li>Identify the catalyst.</li>
+                    <li>Identify the affected market or instrument.</li>
+                    <li>Check the expected time window.</li>
+                    <li>Check which sources support and contradict it.</li>
+                    <li>Separate private worldview context from live evidence.</li>
+                    <li>Check the market's current pricing or implied probability.</li>
+                    <li>Check Qadam's entry logic, invalidation, risk cap, and exit logic.</li>
+                    <li>Confirm the exact trade state before assuming anything can be traded.</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2>Demo-Proof Rules</h2>
+                <ul>
+                    <li>30 consecutive calendar days.</li>
+                    <li>3 proof trades per week only where qualified setups exist.</li>
+                    <li>No forced trades.</li>
+                    <li>No manual trade-level overrides during the proof sample.</li>
+                    <li>100 closed proof trades is the maturity benchmark.</li>
+                    <li>Postmortems are required for closed proof trades.</li>
+                    <li>Live capital remains disabled.</li>
+                </ul>
+                <p>If a day has no qualified setup, the correct action is to record the no-trade rationale.</p>
             </section>
 
             <section>
                 <h2>Daily Operating Routine</h2>
                 <ol>
-                    <li>Start with the System Operating Map.</li>
-                    <li>Confirm Qadam is in paper mode and live capital is disabled.</li>
-                    <li>Confirm the Secure Live Bridge is read-only ready or the static fallback is loaded.</li>
-                    <li>Open Watching and look for degraded or missing sources.</li>
-                    <li>Open Cognition and read current hypotheses.</li>
-                    <li>Check the Worldview lens to understand the question Qadam is asking.</li>
-                    <li>Open Trade Layer and separate observations from candidates, blocked trades, and real order states.</li>
-                    <li>Check Money to confirm paper account status.</li>
-                    <li>Check Forbidden before assuming anything should trade.</li>
-                    <li>Check Communications for dry-run Telegram queue, failed sends, suppressed messages, or stale member delivery state.</li>
+                    <li>Start with Overview.</li>
+                    <li>Read the single safety strip and confirm paper-only, read-only, live-capital off, no UI-to-broker path, and no LLM-to-broker path.</li>
+                    <li>Scan the Overview mini-map and review card for the current operating posture.</li>
+                    <li>Open Evidence and review degraded, missing, stale, or supplemental-only sources.</li>
+                    <li>Open Reasoning and separate priors, evidence, hypotheses, missing corroboration, and analyst review.</li>
+                    <li>Open Trades and separate observations, candidates, blocked ideas, paper order state, paper-account state, and Phase 7 proof status.</li>
+                    <li>Open Operations only for the full expandable system map, event trail, safety diagnostics, Telegram communications, or governance comments.</li>
+                    <li>Record a no-trade rationale when there is no qualified setup. Do not force a paper trade to satisfy cadence.</li>
                     <li>Add a comment if something looks wrong, unclear, or strategically important.</li>
                 </ol>
             </section>
@@ -257,7 +316,8 @@
                             <li>Read trade reasoning.</li>
                             <li>See blocked actions.</li>
                             <li>Comment on modules, sources, signals, trades, and postmortems.</li>
-                            <li>Review Telegram dry-run communications and receive messages once configured.</li>
+                            <li>Challenge assumptions and suggest improvements.</li>
+                            <li>Review Telegram communications once configured.</li>
                         </ul>
                     </div>
                     <div class="guide-card">
@@ -268,7 +328,7 @@
                             <li>Use Telegram to place trades.</li>
                             <li>Use Telegram to approve, reject, modify, close, or resize trades.</li>
                             <li>Use the Secure Live Bridge to run commands or trade.</li>
-                            <li>Bypass the Risk Agent.</li>
+                            <li>Bypass the Risk Agent or Signal Integrity Gate.</li>
                             <li>Bypass the Event Log.</li>
                             <li>Treat a candidate as an order.</li>
                             <li>Turn worldview priors into trade evidence.</li>
@@ -278,25 +338,42 @@
             </section>
 
             <section>
-                <h2>How Qadam Makes A Trade</h2>
-                <div class="system-diagram compact-diagram" role="img" aria-label="Qadam trade lifecycle">
-                    <p class="diagram-title">Trade Lifecycle</p>
-                    <div class="flow">
-                        <div class="flow-card"><span class="flow-kicker">1</span><span class="flow-name">Source event</span><span class="flow-detail">Something changes in the world or market.</span></div>
-                        <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card"><span class="flow-kicker">2</span><span class="flow-name">Observation</span><span class="flow-detail">Qadam logs what happened.</span></div>
-                        <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card"><span class="flow-kicker">3</span><span class="flow-name">Worldview lens</span><span class="flow-detail">The private prior shapes the question, not the proof.</span></div>
-                        <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card"><span class="flow-kicker">4</span><span class="flow-name">Research</span><span class="flow-detail">Local and frontier models build/challenge the thesis.</span></div>
-                        <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card primary"><span class="flow-kicker">5</span><span class="flow-name">Akber 6-stage filter</span><span class="flow-detail">Catalyst, distribution, setup, flow, risk, and judgment.</span></div>
-                        <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card risk"><span class="flow-kicker">6</span><span class="flow-name">Risk Agent</span><span class="flow-detail">Blocks stale, oversize, low-evidence, or unauthorized ideas.</span></div>
-                        <div class="arrow" aria-hidden="true">&#8595;</div>
-                        <div class="flow-card primary"><span class="flow-kicker">7</span><span class="flow-name">Paper account</span><span class="flow-detail">Only paper trades are in scope for first release.</span></div>
-                        <div class="return-loop">Every outcome returns to the Event Log, postmortem loop, Knowledge Graph, and dashboard.</div>
-                    </div>
+                <h2>Data Source Rules</h2>
+                <p>Qadam watches conflict, physical / OSINT, macro, market, and narrative / social pipelines.
+                    Supplemental capabilities such as Yahoo Finance and Preference/PREF MCP are read-only context unless
+                    Qadam's registry and trust policy explicitly promote them.</p>
+                <ul>
+                    <li>One source is rarely enough.</li>
+                    <li>Stale data should block or degrade a trade.</li>
+                    <li>Private priors are not evidence.</li>
+                    <li>Raw payloads and secrets must not appear in the cockpit.</li>
+                    <li>Broker data and order receipts are separate from market context.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Local Operator Instructions</h2>
+                <p>Most members do not operate the code. The local operator keeps real secrets out of Git, starts the
+                    runtime, refreshes the demo-proof harness, and validates the dashboard with the repo check scripts.
+                    The Phase 7 runner must not backfill calendar days, simulate elapsed time, force trades, load live
+                    credentials, enable live capital, call broker live endpoints, or grant proof credit prematurely.</p>
+            </section>
+
+            <section>
+                <h2>Communications / Telegram</h2>
+                <p>Telegram is Qadam's outbound member notification rail. It cannot place, approve, reject, modify,
+                    close, or resize trades. It should never show bot tokens, chat IDs, handles or chat IDs, raw message
+                    payloads, or local paths.</p>
+                <p>Telegram cannot place, approve, reject, modify, close, or resize trades.</p>
+            </section>
+
+            <section>
+                <h2>Troubleshooting</h2>
+                <div class="guide-table">
+                    <div><strong>Dashboard will not load</strong><span>Confirm login, allowlist status, and the static snapshot or read-only bridge.</span></div>
+                    <div><strong>Sources look stale</strong><span>Check Evidence for degraded reasons and treat affected signals as lower confidence.</span></div>
+                    <div><strong>Trade state looks wrong</strong><span>Check Trades, the single safety strip, and Operations before assuming anything traded.</span></div>
+                    <div><strong>Telegram contradicts dashboard</strong><span>Trust the backend-derived dashboard and inspect Operations communications.</span></div>
                 </div>
             </section>
 
@@ -313,20 +390,22 @@
                     <li>Telegram sends a message that does not match the dashboard.</li>
                     <li>The bridge claims write authority, broker authority, shell access, or local orchestrator exposure.</li>
                     <li>Any secret, token, chat ID, local path, or credential appears in the UI.</li>
+                    <li>Any screen implies live capital is enabled.</li>
                 </ul>
             </section>
 
             <section>
                 <h2>First Release Success</h2>
-                <p>Qadam is working when members can clearly answer:</p>
+                <p>Qadam is usable when a new founding member can clearly answer:</p>
                 <ul>
                     <li>What is Qadam watching?</li>
                     <li>What is Qadam thinking?</li>
                     <li>Why does Qadam care?</li>
                     <li>What is Qadam forbidden from doing?</li>
-                    <li>Which trades are ideas, blocked, staged, open, closed, or ready for postmortem?</li>
-                    <li>How is the &pound;1000 test account performing?</li>
+                    <li>Which trades are ideas, blocked, staged, submitted, open, closed, or ready for postmortem?</li>
+                    <li>How is the paper account performing?</li>
                     <li>What did Qadam learn?</li>
+                    <li>What should a human challenge or comment on next?</li>
                 </ul>
                 <p class="quote-line">Qadam should feel understandable before it feels powerful.</p>
             </section>
