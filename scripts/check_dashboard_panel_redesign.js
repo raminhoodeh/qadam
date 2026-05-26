@@ -36,7 +36,6 @@ function staticBriefBlock(id) {
 }
 
 [
-    "cognition",
     "forbidden_actions",
     "telegram_communications",
     "money",
@@ -56,7 +55,6 @@ function staticBriefBlock(id) {
     "function replacePanelBrief",
     "data-panel-brief",
     "Are Qadam's inputs healthy enough to trust?",
-    "What is Qadam thinking about, and what is still missing?",
     "Is the paper account proving or losing trust?",
     "What did Qadam last report about itself?"
 ].forEach((needle) => assertText(renderer, needle, "dashboard renderer"));
@@ -70,14 +68,14 @@ function staticBriefBlock(id) {
     ".panel-brief.blocked"
 ].forEach((needle) => assertText(css, needle, "panel redesign CSS"));
 
-assertText(html, "/auth.css?v=20260526-d11g-evidence-view", "stylesheet cache key");
-assertText(html, "/dashboard.js?v=20260526-d11g-evidence-view", "dashboard script cache key");
+assertText(html, "/auth.css?v=20260526-d11h-reasoning-view", "stylesheet cache key");
+assertText(html, "/dashboard.js?v=20260526-d11h-reasoning-view", "dashboard script cache key");
 assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
 
 (async () => {
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-cognition]", "Panel readout");
-    assertIncludes(rendered, "[data-cognition]", "What is Qadam thinking about, and what is still missing?");
+    assertIncludes(rendered, "[data-cognition]", "Reasoning readout");
+    assertIncludes(rendered, "[data-cognition]", "Can this idea move beyond research?");
     assertIncludes(rendered, "[data-worldview]", "Which private priors are shaping the questions?");
     assertIncludes(rendered, "[data-communications]", "What has Qadam told founding members?");
     assertIncludes(rendered, "[data-trade-layer]", "Consolidated trade readout");
