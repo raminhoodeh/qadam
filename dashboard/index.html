@@ -6,11 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260521-nav-ux">
+    <link rel="stylesheet" href="/auth.css?v=20260526-d11b-nav-contract">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
 <body>
+    <a class="skip-link" href="#dashboard-main">Skip to dashboard views</a>
     <main class="dashboard-shell">
         <header class="topbar">
             <a class="logo-link" href="/" aria-label="Qadam home">
@@ -23,7 +24,7 @@
             </nav>
         </header>
 
-        <section class="dashboard-workspace hidden" data-dashboard>
+        <section id="dashboard-main" class="dashboard-workspace hidden" data-dashboard tabindex="-1">
             <section class="dashboard-hero">
                 <div>
                     <p class="eyebrow">Qadam cockpit - D9 secure bridge</p>
@@ -35,10 +36,6 @@
                     <span><span class="dot"></span><span data-mode-label>Loading mode</span></span>
                     <span data-capital-label>Loading paper account</span>
                     <span data-live-capital-label>Checking live-capital state</span>
-                    <div class="density-toggle" role="group" aria-label="Dashboard density" data-density-toggle>
-                        <button type="button" data-density-option="executive" aria-pressed="true">Executive</button>
-                        <button type="button" data-density-option="terminal" aria-pressed="false">Terminal</button>
-                    </div>
                     <div class="info-hover mode-info">
                         <button class="info-button" type="button" aria-label="About operating mode and safety">i</button>
                         <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety">
@@ -54,116 +51,149 @@
                 </div>
             </section>
 
-            <nav class="cockpit-nav" aria-label="Cockpit section navigation" data-cockpit-nav>
+            <nav class="cockpit-nav dashboard-view-switcher" aria-label="Dashboard views" data-cockpit-nav data-dashboard-view-switcher>
                 <div class="cockpit-nav-head">
-                    <span>Navigate cockpit</span>
-                    <strong data-cockpit-nav-current>Mission Control</strong>
+                    <span>Dashboard view</span>
+                    <strong data-cockpit-nav-current data-dashboard-view-current>Overview</strong>
                 </div>
                 <div class="cockpit-nav-links">
-                    <a href="#mission-control" data-cockpit-nav-link data-target-section="mission-control">Mission</a>
-                    <a href="#system-map" data-cockpit-nav-link data-target-section="system-map">Map</a>
-                    <a href="#watching" data-cockpit-nav-link data-target-section="watching">Sources</a>
-                    <a href="#cognition" data-cockpit-nav-link data-target-section="cognition">Cognition</a>
-                    <a href="#trade-layer" data-cockpit-nav-link data-target-section="trade-layer">Trades</a>
-                    <a href="#money" data-cockpit-nav-link data-target-section="money">Money</a>
-                    <a href="#forbidden" data-cockpit-nav-link data-target-section="forbidden">Safety</a>
-                    <a href="#process-console" data-cockpit-nav-link data-target-section="process-console">Runtime</a>
-                    <a href="#governance" data-cockpit-nav-link data-target-section="governance">Governance</a>
+                    <a href="#overview" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
+                    <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
+                    <a href="#evidence" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
+                    <a href="#reasoning" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
+                    <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
                 </div>
             </nav>
 
-            <section id="mission-control" class="mission-control-panel operating-review-panel" aria-label="Qadam mission control" data-mission-control data-cockpit-section="Mission Control">
+            <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
                 <div class="panel-heading">
                     <div>
-                        <p class="label">Mission control</p>
-                        <h2>What Qadam is watching, thinking, planning, holding, and forbidden from doing</h2>
+                        <p class="label">Overview</p>
+                        <h2>What is happening now?</h2>
                     </div>
                     <div class="info-hover">
-                        <button class="info-button" type="button" aria-label="About mission control">i</button>
+                        <button class="info-button" type="button" aria-label="About the overview">i</button>
                         <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control">
-                            <strong>Mission Control</strong>
-                            <p>Gives a one-pass operating read before the system map and detailed panels.</p>
+                            <strong>Overview</strong>
+                            <p>Gives a one-pass operating read before deeper dashboard views.</p>
                             <dl class="explainer-grid">
-                                <div><dt>Use it to</dt><dd>See connected data sources, current trading philosophy, model/quant stack, trade candidates, paper holdings, P&L, and hard safety limits.</dd></div>
-                                <div><dt>Watch for</dt><dd>Weak sources, model-only reasoning, blocked candidates, paper-account drift, broker-write authority, or live capital accidentally becoming available.</dd></div>
-                                <div><dt>Boundary</dt><dd>This is a read-only summary. It cannot promote a hypothesis, create a candidate, submit an order, or change paper-account state.</dd></div>
+                                <div><dt>Use it to</dt><dd>Confirm mode, live-capital state, source health, trade lifecycle, and the next review area.</dd></div>
+                                <div><dt>Watch for</dt><dd>Any authority flag, weak source quorum, due postmortem, or proof credit before the demo window matures.</dd></div>
+                                <div><dt>Boundary</dt><dd>This is a read-only summary. It cannot approve, place, modify, close, or fund trades.</dd></div>
                             </dl>
                         </div>
                     </div>
                 </div>
-                <div class="mission-control-grid">
-                    <article class="mission-primary" data-mission-primary>
-                        <span>Operating thesis</span>
-                        <h3>Loading Qadam mission state</h3>
-                        <p>Waiting for the public-safe cockpit snapshot.</p>
+
+                <div class="overview-status-rail" data-overview-status-rail>
+                    <article class="overview-status-card">
+                        <span>Mode</span>
+                        <strong>Loading</strong>
+                        <p>Checking paper/demo scope.</p>
                     </article>
-                    <article class="mission-card" data-mission-sources>
-                        <span>Data sources</span>
-                        <h3>Loading</h3>
-                        <p>Checking configured and connected sources.</p>
+                    <article class="overview-status-card">
+                        <span>Capital</span>
+                        <strong>Loading</strong>
+                        <p>Checking live-capital state.</p>
                     </article>
-                    <article class="mission-card" data-mission-philosophy>
-                        <span>Trading philosophy</span>
-                        <h3>Loading</h3>
-                        <p>Checking worldview, evidence, model, quant, and gate boundaries.</p>
+                    <article class="overview-status-card">
+                        <span>Demo window</span>
+                        <strong>Loading</strong>
+                        <p>Checking day, week, and proof-trade cadence.</p>
                     </article>
-                    <article class="mission-card" data-mission-stack>
-                        <span>System stack</span>
-                        <h3>Loading</h3>
-                        <p>Checking API spine, local LLM, Strategy Lead, quantum oracle, and risk gates.</p>
-                    </article>
-                    <article class="mission-card" data-mission-trades>
-                        <span>Trade intent</span>
-                        <h3>Loading</h3>
-                        <p>Checking observed signals, candidates, blocks, and paper-order gates.</p>
-                    </article>
-                    <article class="mission-card" data-mission-portfolio>
-                        <span>Paper account</span>
-                        <h3>Loading</h3>
-                        <p>Checking current balance, P&L, open positions, orders, and closed trades.</p>
+                    <article class="overview-status-card">
+                        <span>Action needed</span>
+                        <strong>Loading</strong>
+                        <p>Checking the next review area.</p>
                     </article>
                 </div>
-                <div class="priority-grid mission-priority-grid" data-operating-summary>
-                    <article class="priority-card">
-                        <span>Paper account</span>
-                        <strong>Loading</strong>
-                        <p>Waiting for the read-only paper account mirror.</p>
-                        <small>Live capital must stay disabled</small>
+
+                <div class="overview-snapshot-grid">
+                    <article class="overview-hero" data-overview-hero data-mission-primary>
+                        <span>Current state</span>
+                        <h3>Loading Qadam overview</h3>
+                        <p>Waiting for the public-safe cockpit snapshot.</p>
+                        <div class="overview-hero-metrics" data-overview-hero-metrics></div>
                     </article>
-                    <article class="priority-card">
-                        <span>Source quality</span>
-                        <strong>Loading</strong>
-                        <p>Waiting for watched-source heartbeat state.</p>
-                        <small>Evidence strength depends on source health</small>
-                    </article>
-                    <article class="priority-card">
-                        <span>Cognition</span>
-                        <strong>Loading</strong>
-                        <p>Waiting for shadow analysis state.</p>
-                        <small>Hypotheses are not trades</small>
-                    </article>
-                    <article class="priority-card">
-                        <span>Trade layer</span>
-                        <strong>Loading</strong>
-                        <p>Waiting for observed signal and candidate state.</p>
-                        <small>Candidate is not order</small>
-                    </article>
-                    <article class="priority-card">
-                        <span>Safety state</span>
-                        <strong>Loading</strong>
-                        <p>Waiting for hard-block state.</p>
-                        <small>Fail closed</small>
-                    </article>
-                    <article class="priority-card">
-                        <span>Bridge</span>
-                        <strong>Loading</strong>
-                        <p>Waiting for secure bridge or static fallback.</p>
-                        <small>Read-only snapshot</small>
-                    </article>
+                    <div class="overview-metric-grid" data-overview-metrics></div>
+                </div>
+
+                <section class="overview-lifecycle-panel" aria-label="Trade lifecycle summary">
+                    <div class="overview-section-head">
+                        <span>Trade lifecycle</span>
+                        <strong data-overview-lifecycle-summary>Loading lifecycle</strong>
+                    </div>
+                    <ol class="overview-lifecycle-strip" data-overview-lifecycle>
+                        <li>Loading trade lifecycle.</li>
+                    </ol>
+                </section>
+
+                <section class="overview-system-panel" aria-label="System connectivity summary">
+                    <div class="overview-oversight" data-overview-oversight>
+                        <span>Fund Manager oversight</span>
+                        <strong>You supervise the system</strong>
+                        <p>Human oversight sits above the chain; it is not an automated execution node.</p>
+                    </div>
+                    <div class="overview-feed-strip" data-overview-feed-strip></div>
+                    <div class="overview-mini-map" data-overview-mini-map>
+                        <span>Loading system connectivity.</span>
+                    </div>
+                    <div class="overview-boundary-rail" data-overview-boundary-rail>
+                        <span>Safety boundary</span>
+                        <p>Read-only dashboard. No approval, order, close, or funding action is available here.</p>
+                    </div>
+                </section>
+
+                <nav class="overview-next-links" aria-label="Next review links" data-overview-next-links>
+                    <a href="#trades">Review trades</a>
+                    <a href="#evidence">Review evidence</a>
+                    <a href="#reasoning">Review reasoning</a>
+                </nav>
+            </section>
+
+            <section id="strategy-manifestation" class="operating-review-panel" aria-label="Phase 4 strategy manifestation" data-dashboard-view-section="reasoning" data-cockpit-section="Strategy" hidden>
+                <div class="panel-heading">
+                    <div>
+                        <p class="label">Strategy manifestation</p>
+                        <h2>Phase 4 status, approval gate, and shadow-only strategy toggles</h2>
+                    </div>
+                    <div class="info-hover">
+                        <button class="info-button" type="button" aria-label="About Phase 4 strategy manifestation">i</button>
+                        <div class="info-card section-explainer" role="tooltip" data-section-explainer="phase4_strategy">
+                            <strong>Phase 4 Strategy</strong>
+                            <p>Shows whether strategy families are documented, reviewed, and visible before any Phase 4 certification step.</p>
+                            <dl class="explainer-grid">
+                                <div><dt>Use it to</dt><dd>Confirm audit completion, document validation, Fund Manager approval state, strategy toggle state, and market-confirmation posture.</dd></div>
+                                <div><dt>Watch for</dt><dd>Missing explicit approval, approved-shadow toggles before approval, validation errors, or anything that implies paper/live readiness.</dd></div>
+                                <div><dt>Boundary</dt><dd>Strategy visibility is governance state only. It cannot create trade candidates, approve risk, stage orders, call providers, write brokers, or enable live capital.</dd></div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-strip compact" data-phase4-summary>
+                    <div class="metric"><span>Phase</span><strong>Q4</strong></div>
+                    <div class="metric"><span>Stage</span><strong>Loading</strong></div>
+                    <div class="metric"><span>Approval</span><strong>Checking</strong></div>
+                    <div class="metric"><span>Execution</span><strong>Blocked</strong></div>
+                </div>
+                <div class="panel-scroll" data-phase4-strategy>
+                    <section class="panel-brief blocked" data-panel-brief="phase4_strategy">
+                        <div class="panel-brief-main">
+                            <p class="label">Panel readout</p>
+                            <h3>Is Phase 4 visible but non-executable?</h3>
+                            <p>Static fallback shows the Phase 4 governance boundary while strategy status, approval state, and toggles load.</p>
+                        </div>
+                        <dl class="panel-brief-facts">
+                            <div><dt>State</dt><dd><span class="inline-badge blocked">Waiting for approval state</span></dd></div>
+                            <div><dt>Watch</dt><dd>Explicit Fund Manager approval, approved-shadow toggles, validation errors, and certification state.</dd></div>
+                            <div><dt>Boundary</dt><dd>No execution. Strategy visibility cannot create candidates, stage orders, write brokers, or enable live capital.</dd></div>
+                        </dl>
+                    </section>
+                    <p class="empty-state">Phase 4 strategy visibility is governance-only until the public-safe status snapshot renders the latest approval event.</p>
                 </div>
             </section>
 
-            <section id="system-map" class="system-map-panel" aria-label="Qadam system flow" data-cockpit-section="System Map">
+            <section id="system-map" class="system-map-panel" aria-label="Qadam system flow" data-dashboard-view-section="operations" data-cockpit-section="System Map" hidden>
                 <div class="map-title-row">
                     <div>
                         <p class="label">End-to-end flow</p>
@@ -223,6 +253,75 @@
                 </div>
 
                 <div class="flow-map" data-flow-map>
+                    <section class="operations-workspace" data-operations-workspace>
+                        <div class="operations-workspace-head">
+                            <div>
+                                <p class="label">Operations workspace</p>
+                                <h3>Read-only runtime diagnostics and full system connectivity</h3>
+                                <p>Full expandable System Operating Map, bridge and snapshot state, exporter and cache diagnostics, module health, phase/certification diagnostics, and kill-switch ledger health live here.</p>
+                            </div>
+                            <article class="operations-broken-card pending">
+                                <span>What is broken?</span>
+                                <strong>Loading</strong>
+                                <ul>
+                                    <li>Waiting for the public-safe operations snapshot.</li>
+                                </ul>
+                            </article>
+                        </div>
+                        <div class="operations-safety-rail" data-operations-safety-rail>
+                            <span class="inline-badge online">Paper mode</span>
+                            <span class="inline-badge online">Live capital disabled</span>
+                            <span class="inline-badge online">Read-only cockpit</span>
+                            <span class="inline-badge online">No UI-to-broker path</span>
+                            <span class="inline-badge online">No LLM-to-broker path</span>
+                            <span class="inline-badge online">Persistent safety rail</span>
+                        </div>
+                        <section class="operations-role-spine" aria-label="Operations role spine">
+                            <div class="overview-section-head">
+                                <span>First-class operating roles</span>
+                                <strong>Fund Manager, live data feeds, COO, analysts, quant, gates, paper lifecycle, and learning loop.</strong>
+                            </div>
+                            <div class="operations-role-grid">
+                                <article class="operations-role-node online">
+                                    <span>One overseeing Fund Manager</span>
+                                    <strong>Fund Manager supervisor</strong>
+                                    <p>Human review, challenge, governance comments, kill-switch review, and phase promotion decisions.</p>
+                                    <small>Supervisor only; not a manual trade-execution node.</small>
+                                </article>
+                                <article class="operations-role-node online">
+                                    <span>Intelligence pipelines</span>
+                                    <strong>Live data feed clusters</strong>
+                                    <p>Conflict/geopolitics, physical world, macro/rates, market/broker, and narrative/filings/social/news inputs.</p>
+                                    <small>Observation only; no source can create orders.</small>
+                                </article>
+                                <article class="operations-role-node online">
+                                    <span>Local orchestrator</span>
+                                    <strong>Python COO</strong>
+                                    <p>Keeps the book, exports public-safe state, and makes the dashboard read-only.</p>
+                                    <small>No browser shell or broker route.</small>
+                                </article>
+                            </div>
+                        </section>
+                        <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
+                            <div class="operations-edge-legend">
+                                <span>Edge state</span>
+                                <span class="inline-badge online">active</span>
+                                <span class="inline-badge shadow-context-only">shadow/context-only</span>
+                                <span class="inline-badge degraded">degraded</span>
+                                <span class="inline-badge pending">locked</span>
+                                <span class="inline-badge blocked">blocked</span>
+                            </div>
+                            <details class="operations-node-diagnostics">
+                                <summary>Expand diagnostics</summary>
+                                <dl>
+                                    <div><dt>Latest heartbeat</dt><dd>Loads from backend snapshot.</dd></div>
+                                    <div><dt>Event Log references</dt><dd>Backend status paths and event-log markers.</dd></div>
+                                    <div><dt>Authority boundary</dt><dd>Read-only diagnostics only.</dd></div>
+                                    <div><dt>Related dashboard links</dt><dd>Operations, Sources, Trades, Reasoning, Performance, and Governance.</dd></div>
+                                </dl>
+                            </details>
+                        </section>
+                    </section>
                     <div class="system-flow-diagram">
                         <section class="flow-lane online">
                             <header class="flow-lane-header">
@@ -414,11 +513,11 @@
                 </div>
             </section>
 
-            <section id="review-sequence" class="dashboard-section-intro" aria-label="Dashboard section order" data-cockpit-section="Review Sequence">
+            <section id="review-sequence" class="dashboard-section-intro overview-review-sequence" aria-label="Dashboard section order" data-dashboard-view-section="overview" data-cockpit-section="Review Sequence">
                 <div class="section-intro-heading">
                     <div>
-                        <p class="label">Operating detail</p>
-                        <h2>Review sequence: sources, cognition, trade state, money, safety, governance, runtime</h2>
+                        <p class="label">Next review</p>
+                        <h2>Use the view switcher when a first-screen item needs detail</h2>
                     </div>
                     <div class="info-hover">
                         <button class="info-button" type="button" aria-label="About operating detail sections">i</button>
@@ -433,11 +532,11 @@
                         </div>
                     </div>
                 </div>
-                <p class="mini">Each section answers one operating question from the sanitized cockpit snapshot. None of these panels can approve, place, modify, or close trades.</p>
+                <p class="mini">Trades explain lifecycle state, Sources explain input health, Reasoning explains hypotheses, Performance explains the paper account, Operations explains runtime health, and Governance explains approvals and comments.</p>
             </section>
 
             <section class="dashboard-detail-flow" aria-label="Dashboard operating detail">
-                <article id="watching" class="panel-card watching-panel" aria-label="What Qadam is watching" data-cockpit-section="Sources">
+                <article id="watching" class="panel-card watching-panel" aria-label="Evidence and source quality" data-dashboard-view-section="evidence" data-cockpit-section="Sources" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Watching</p>
@@ -457,6 +556,22 @@
                         </div>
                     </div>
                     <div class="panel-scroll">
+                        <div data-sources-workspace-slot>
+                            <section class="sources-workspace" data-sources-workspace>
+                                <div class="sources-workspace-head">
+                                    <div>
+                                        <p class="label">Sources workspace</p>
+                                        <h3>Source health and provenance</h3>
+                                        <p>Loading pipeline health, source quorum, supplemental inputs, and source-linked candidate state.</p>
+                                    </div>
+                                    <div class="source-quorum-card pending">
+                                        <span>Source quorum</span>
+                                        <strong>Loading</strong>
+                                        <p>Public-safe source status will render from the cockpit snapshot.</p>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
                         <section class="panel-brief pending" data-panel-brief="watching">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
@@ -498,19 +613,19 @@
                     </div>
                 </article>
 
-                <article id="cognition" class="panel-card cognition-panel" aria-label="What Qadam is thinking about" data-cockpit-section="Cognition">
+                <article id="cognition" class="panel-card cognition-panel" aria-label="Reasoning workspace" data-dashboard-view-section="reasoning" data-cockpit-section="Reasoning" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Cognition</p>
-                            <h2>Current analysis queue</h2>
+                            <p class="label">Reasoning</p>
+                            <h2>Priors, evidence, hypotheses, and blockers</h2>
                         </div>
                         <div class="info-hover">
-                            <button class="info-button" type="button" aria-label="About Cognition">i</button>
+                            <button class="info-button" type="button" aria-label="About Reasoning">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="cognition">
-                                <strong>Cognition</strong>
+                                <strong>Reasoning</strong>
                                 <p>Shows Qadam's current research notebook and why ideas have or have not advanced.</p>
                                 <dl class="explainer-grid">
-                                    <div><dt>Use it to</dt><dd>Read hypotheses, model activity, evidence packets, missing corroboration, and blocked reasons.</dd></div>
+                                    <div><dt>Use it to</dt><dd>Read private priors, hypotheses, factual evidence packets, missing corroboration, model reviews, and blocked reasons.</dd></div>
                                     <div><dt>Watch for</dt><dd>Model-only reasoning, stale evidence, low corroboration, or a hypothesis that has not reached the trade layer.</dd></div>
                                     <div><dt>Boundary</dt><dd>A hypothesis is not a trade. Model output cannot bypass risk or become an order by itself.</dd></div>
                                 </dl>
@@ -518,6 +633,39 @@
                         </div>
                     </div>
                     <div class="panel-scroll" data-cognition>
+                        <section class="reasoning-workspace" data-reasoning-workspace>
+                            <div class="reasoning-workspace-head">
+                                <div>
+                                    <p class="label">Reasoning workspace</p>
+                                    <h2>Why does Qadam care, and what is still missing?</h2>
+                                    <p>Static fallback separates worldview priors from factual evidence before live reasoning loads.</p>
+                                </div>
+                                <div class="reasoning-boundary-card">
+                                    <span class="inline-badge blocked">Research-only</span>
+                                    <span class="inline-badge blocked">Prior, not evidence</span>
+                                    <span class="inline-badge blocked">Hypothesis, not candidate</span>
+                                    <span class="inline-badge online">No paper/order authority</span>
+                                    <p>The browser cannot create candidates, stage paper orders, write brokers, or enable live capital.</p>
+                                </div>
+                            </div>
+                            <div class="reasoning-lane-grid">
+                                <article class="reasoning-lane-card pending">
+                                    <b class="node-status pending">Prior only</b>
+                                    <h3>Worldview prior</h3>
+                                    <p>Private priors shape questions; they are not evidence.</p>
+                                </article>
+                                <article class="reasoning-lane-card pending">
+                                    <b class="node-status pending">Waiting</b>
+                                    <h3>Factual evidence</h3>
+                                    <p>Evidence packets and source trails load from the status snapshot.</p>
+                                </article>
+                                <article class="reasoning-lane-card blocked">
+                                    <b class="node-status blocked">Blocked</b>
+                                    <h3>Missing corroboration</h3>
+                                    <p>Missing corroboration is a normal hold condition before trade state.</p>
+                                </article>
+                            </div>
+                        </section>
                         <section class="panel-brief pending" data-panel-brief="cognition">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
@@ -547,7 +695,7 @@
                     </div>
                 </article>
 
-                <article id="forbidden" class="panel-card guardrail-panel" aria-label="Forbidden actions" data-cockpit-section="Safety">
+                <article id="forbidden" class="panel-card guardrail-panel" aria-label="Forbidden actions" data-dashboard-view-section="operations" data-cockpit-section="Safety" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Forbidden</p>
@@ -587,7 +735,7 @@
                     </div>
                 </article>
 
-                <article id="communications" class="panel-card communications-panel" aria-label="Telegram communications" data-cockpit-section="Communications">
+                <article id="communications" class="panel-card communications-panel" aria-label="Telegram communications" data-dashboard-view-section="operations" data-cockpit-section="Communications" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Communications</p>
@@ -629,7 +777,7 @@
                     </div>
                 </article>
 
-                <article id="trade-layer" class="panel-card trade-intent-panel" aria-label="Trade layer" data-cockpit-section="Trade Layer">
+                <article id="trade-layer" class="panel-card trade-intent-panel" aria-label="Trade layer" data-dashboard-view-section="trades" data-cockpit-section="Trade Layer" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Trade layer</p>
@@ -659,6 +807,19 @@
                             <span>Postmortem</span>
                         </div>
                         <div data-trade-layer>
+                            <section class="trades-workspace" data-trades-workspace>
+                                <div class="trades-workspace-head">
+                                    <div>
+                                        <p class="label">Trades workspace</p>
+                                        <h3>Trade lifecycle board</h3>
+                                        <p>Loading observed signals, candidates, paper lifecycle state, and postmortems.</p>
+                                    </div>
+                                    <div class="trade-lifecycle-safety">
+                                        <strong>No UI proof credit</strong>
+                                        <span>Phase 5 test trades stay separate from Phase 7 proof trades.</span>
+                                    </div>
+                                </div>
+                            </section>
                             <section class="panel-brief pending" data-panel-brief="trade_layer">
                                 <div class="panel-brief-main">
                                     <p class="label">Panel readout</p>
@@ -682,26 +843,72 @@
                     </div>
                 </article>
 
-                <article id="money" class="panel-card capital-panel" aria-label="Money and timeline" data-cockpit-section="Money">
+                <article id="money" class="panel-card capital-panel" aria-label="Performance and paper account timeline" data-dashboard-view-section="trades" data-cockpit-section="Performance" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Money</p>
-                            <h2>Paper account timeline</h2>
+                            <p class="label">Performance</p>
+                            <h2>Demo proof and paper account timeline</h2>
                         </div>
                         <div class="info-hover">
-                            <button class="info-button" type="button" aria-label="About Money">i</button>
+                            <button class="info-button" type="button" aria-label="About Performance">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="money">
-                                <strong>Money</strong>
-                                <p>Shows the first-release paper/test-account mirror and whether the trial is maturing.</p>
+                                <strong>Performance</strong>
+                                <p>Shows the 30-day demo-proof run, paper/test-account mirror, drawdown state, and whether the trial is maturing.</p>
                                 <dl class="explainer-grid">
-                                    <div><dt>Use it to</dt><dd>Track £1,000 starting balance, current balance, P&amp;L, drawdown, positions, closed trades, and 100-trade maturity progress.</dd></div>
-                                    <div><dt>Watch for</dt><dd>Account drift, drawdown, open exposure, closed trades without postmortems, or stale paper-state mirrors.</dd></div>
+                                    <div><dt>Use it to</dt><dd>Track 30-day demo-proof progress, weekly proof cadence, qualified setups, P&amp;L, drawdown, positions, postmortems, and 100-trade maturity progress.</dd></div>
+                                    <div><dt>Watch for</dt><dd>Drawdown or halt state, missed qualified setups, proof-trade pressure, closed trades without postmortems, or stale paper-state mirrors.</dd></div>
                                     <div><dt>Boundary</dt><dd>This is a paper mirror only. It has no funding authority and no live broker-write authority.</dd></div>
                                 </dl>
                             </div>
                         </div>
                     </div>
                     <div class="panel-scroll" data-capital>
+                        <section class="performance-workspace" data-performance-workspace>
+                            <div class="performance-workspace-head">
+                                <div>
+                                    <p class="label">Performance workspace</p>
+                                    <h2>30-day demo proof and paper account performance</h2>
+                                    <p>Static fallback separates demo-proof operating completion from 100-trade maturity before the backend snapshot loads.</p>
+                                </div>
+                                <div class="performance-boundary-card">
+                                    <span class="inline-badge pending">30-day run separate from 100-trade maturity</span>
+                                    <span class="inline-badge online">No forced trades</span>
+                                    <span class="inline-badge online">Phase 5 trades excluded</span>
+                                    <span class="inline-badge online">No proof-credit inference</span>
+                                    <p>The dashboard cannot force trades, grant proof credit, write brokers, or enable live capital.</p>
+                                </div>
+                            </div>
+                            <div class="performance-status-grid">
+                                <article class="performance-progress-card pending">
+                                    <div class="performance-progress-head">
+                                        <div>
+                                            <p class="label">30-day operating window</p>
+                                            <h3>0/30</h3>
+                                        </div>
+                                        <span class="inline-badge pending">0%</span>
+                                    </div>
+                                    <div class="performance-progress-bar"><span style="width: 0%"></span></div>
+                                    <p>The 30 consecutive calendar-day run can complete before the 100-trade maturity sample is reached.</p>
+                                </article>
+                                <article class="performance-progress-card pending">
+                                    <div class="performance-progress-head">
+                                        <div>
+                                            <p class="label">100-trade maturity benchmark</p>
+                                            <h3>0/100</h3>
+                                        </div>
+                                        <span class="inline-badge pending">0%</span>
+                                    </div>
+                                    <div class="performance-progress-bar"><span style="width: 0%"></span></div>
+                                    <p>Statistical maturity is tracked separately and must not create pressure to force trades.</p>
+                                </article>
+                                <article class="performance-status-card online">
+                                    <b class="node-status online">Online</b>
+                                    <p class="label">Drawdown and halt state</p>
+                                    <h3>Within cap</h3>
+                                    <p>Drawdown and halt state load from backend Phase 7 visibility records.</p>
+                                </article>
+                            </div>
+                        </section>
                         <section class="panel-brief online" data-panel-brief="money">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
@@ -724,7 +931,7 @@
                     </div>
                 </article>
 
-                <article id="process-console" class="panel-card process-panel" aria-label="Process console" data-cockpit-section="Process Console">
+                <article id="process-console" class="panel-card process-panel" aria-label="Process console" data-dashboard-view-section="operations" data-cockpit-section="Process Console" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Process console</p>
@@ -764,11 +971,11 @@
                     </div>
                 </article>
 
-                <article id="worldview" class="panel-card worldview-panel" aria-label="Private edge layer" data-cockpit-section="Private Edge">
+                <article id="worldview" class="panel-card worldview-panel" aria-label="Private edge layer" data-dashboard-view-section="reasoning" data-cockpit-section="Private Edge" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Private edge layer</p>
-                            <h2>Worldview + strategy</h2>
+                            <h2>Prior index merged into Reasoning</h2>
                         </div>
                         <div class="info-hover">
                             <button class="info-button" type="button" aria-label="About Private Edge Layer">i</button>
@@ -784,6 +991,11 @@
                         </div>
                     </div>
                     <div class="panel-scroll" data-worldview>
+                        <section class="reasoning-merge-note">
+                            <p class="label">Merged into Reasoning workspace</p>
+                            <h3>Private Edge is prior context, not a separate proof layer</h3>
+                            <p>The main Reasoning workspace now separates private priors from factual evidence, hypotheses, missing corroboration, Strategy Lead review, and Head of Quant annotation.</p>
+                        </section>
                         <section class="panel-brief pending" data-panel-brief="private_edge_layer">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
@@ -804,7 +1016,7 @@
                     </div>
                 </article>
 
-                <article id="governance" class="panel-card comments-panel" aria-label="Fund Manager comments" data-cockpit-section="Governance">
+                <article id="governance" class="panel-card comments-panel" aria-label="Fund Manager comments" data-dashboard-view-section="operations" data-cockpit-section="Governance" hidden>
                     <div class="panel-heading">
                         <div>
                             <p class="label">Fund Manager comments</p>
@@ -824,6 +1036,45 @@
                         </div>
                     </div>
                     <div class="panel-scroll">
+                        <section class="governance-workspace" data-governance-workspace>
+                            <div class="governance-workspace-head">
+                                <div>
+                                    <p class="label">Governance workspace</p>
+                                    <h3>Comments, approvals, reviews, and outbound communications</h3>
+                                    <p>Static fallback groups Fund Manager comments, approval records, weekly review packs, live-promotion workflow state, and Telegram outbound state before the backend snapshot renders.</p>
+                                </div>
+                                <article class="governance-boundary-card">
+                                    <span class="inline-badge online">comments governance-only</span>
+                                    <span class="inline-badge pending">approvals audit-only</span>
+                                    <span class="inline-badge online">Telegram outbound-only</span>
+                                    <span class="inline-badge online">live capital disabled</span>
+                                    <p>Governance can record review context, but it cannot approve trades, place orders, send commands, or enable live capital.</p>
+                                </article>
+                            </div>
+                            <section class="governance-comment-targets">
+                                <div class="overview-section-head">
+                                    <span>Contextual comment entry points</span>
+                                    <strong>Comment without memorizing internal reference keys.</strong>
+                                </div>
+                                <div class="governance-target-grid">
+                                    <button type="button" class="governance-target-button" data-comment-target-button data-target-type="module" data-target-key="trade_layer">
+                                        <span>Trades</span>
+                                        <strong>Trade lifecycle board</strong>
+                                        <p>Comment on candidates, risk checks, blocks, paper states, or postmortems.</p>
+                                    </button>
+                                    <button type="button" class="governance-target-button" data-comment-target-button data-target-type="source" data-target-key="source_health">
+                                        <span>Sources</span>
+                                        <strong>Source health and provenance</strong>
+                                        <p>Comment on coverage, stale data, missing credentials, or source trust.</p>
+                                    </button>
+                                    <button type="button" class="governance-target-button" data-comment-target-button data-target-type="system" data-target-key="operations_health">
+                                        <span>Operations</span>
+                                        <strong>Operations health</strong>
+                                        <p>Comment on bridge, exporter, module health, map state, or safety rails.</p>
+                                    </button>
+                                </div>
+                            </section>
+                        </section>
                         <section class="panel-brief pending" data-panel-brief="fund_manager_comments">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
@@ -840,19 +1091,28 @@
                             <div class="comments-form-grid">
                                 <label>
                                     <span>Reference type</span>
-                                    <select name="target_type" required>
+                                    <select name="target_type" data-comment-target-type-select required>
                                         <option value="module">Module</option>
                                         <option value="source">Source</option>
                                         <option value="signal">Signal</option>
                                         <option value="trade_candidate">Trade candidate</option>
                                         <option value="postmortem">Postmortem</option>
+                                        <option value="resource">Resource</option>
                                         <option value="strategy">Strategy</option>
                                         <option value="system">System</option>
+                                        <option value="world_model">World model</option>
                                     </select>
                                 </label>
                                 <label>
-                                    <span>Reference key</span>
-                                    <input name="target_key" type="text" autocomplete="off" placeholder="trade_layer" required>
+                                    <span>Comment target</span>
+                                    <select name="target_key" data-comment-target-select required>
+                                        <option value="trade_layer" data-target-type="module">Trades - trade lifecycle board</option>
+                                        <option value="source_health" data-target-type="source">Sources - source health and provenance</option>
+                                        <option value="strategy_lead" data-target-type="strategy">Reasoning - Strategy Lead</option>
+                                        <option value="phase7_demo_proof" data-target-type="system">Performance - 30-day demo proof</option>
+                                        <option value="operations_health" data-target-type="system">Operations - runtime health</option>
+                                        <option value="phase4_strategy_approval" data-target-type="strategy">Governance - approval records</option>
+                                    </select>
                                 </label>
                                 <label>
                                     <span>Status</span>
@@ -891,7 +1151,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260521-nav-ux"></script>
+    <script src="/dashboard.js?v=20260526-d11b-nav-contract"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 
