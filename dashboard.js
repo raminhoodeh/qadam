@@ -23,6 +23,7 @@ const DASHBOARD_VIEWS = [
 const DASHBOARD_VIEW_IDS = new Set(DASHBOARD_VIEWS.map((view) => view.id));
 const DASHBOARD_STATUS_REFRESH_MS = 60000;
 let dashboardStatusRefreshTimer = null;
+const DASHBOARD_ADVANCED_DEBUG_KEY = "qadam.dashboard.advanced_debug";
 const DASHBOARD_LEGACY_HASH_TARGETS = {
     sources: { viewId: "evidence", targetId: "watching" },
     performance: { viewId: "trades", targetId: "money" },
@@ -250,6 +251,28 @@ function currentDashboardView() {
     return document.documentElement?.dataset.dashboardActiveView || "overview";
 }
 
+function readDashboardDebugPreference() {
+    if (typeof window === "undefined" || !window.localStorage) return false;
+    try {
+        return window.localStorage.getItem(DASHBOARD_ADVANCED_DEBUG_KEY) === "on";
+    } catch (_error) {
+        return false;
+    }
+}
+
+function writeDashboardDebugPreference(enabled) {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    try {
+        window.localStorage.setItem(DASHBOARD_ADVANCED_DEBUG_KEY, enabled ? "on" : "off");
+    } catch (_error) {
+        // Preference storage is optional; the in-page mode still updates.
+    }
+}
+
+function dashboardDebugModeEnabled() {
+    return document.documentElement?.dataset.dashboardDebug === "on";
+}
+
 function resolveDashboardHash(hash = "") {
     const target = String(hash || "").replace(/^#/, "");
     if (!target) return { viewId: "overview", targetId: "mission-control", legacy: false };
@@ -262,10 +285,16 @@ function resolveDashboardHash(hash = "") {
 
 function setDashboardViewSectionVisibility(viewId) {
     if (typeof document.querySelectorAll !== "function") return;
+    const debugEnabled = dashboardDebugModeEnabled();
     document.querySelectorAll("[data-dashboard-view-section]").forEach((section) => {
-        const active = section.dataset.dashboardViewSection === viewId;
+        const debugOnly = section.hasAttribute("data-dashboard-debug-only");
+        const active = section.dataset.dashboardViewSection === viewId && (!debugOnly || debugEnabled);
         section.hidden = !active;
         section.setAttribute("aria-hidden", active ? "false" : "true");
+    });
+    document.querySelectorAll("[data-dashboard-debug-only]:not([data-dashboard-view-section])").forEach((section) => {
+        section.hidden = !debugEnabled;
+        section.setAttribute("aria-hidden", debugEnabled ? "false" : "true");
     });
 }
 
@@ -282,6 +311,34 @@ function setDashboardViewNavigationState(viewId) {
             link.removeAttribute("aria-current");
         }
     });
+}
+
+function setDashboardDebugControls(enabled) {
+    if (typeof document.querySelectorAll !== "function") return;
+    document.querySelectorAll("[data-dashboard-debug-toggle]").forEach((button) => {
+        button.setAttribute("aria-pressed", enabled ? "true" : "false");
+        button.setAttribute("aria-expanded", enabled ? "true" : "false");
+        button.classList.toggle("active", enabled);
+        button.textContent = enabled ? "Hide Advanced / Debug" : "Advanced / Debug Mode";
+    });
+    document.querySelectorAll("[data-dashboard-advanced-links]").forEach((links) => {
+        links.hidden = !enabled;
+        links.setAttribute("aria-hidden", enabled ? "false" : "true");
+    });
+}
+
+function setDashboardDebugMode(enabled, options = {}) {
+    const nextEnabled = Boolean(enabled);
+    if (document.documentElement) {
+        document.documentElement.dataset.dashboardDebug = nextEnabled ? "on" : "off";
+    }
+    setDashboardDebugControls(nextEnabled);
+    if (options.persist !== false) writeDashboardDebugPreference(nextEnabled);
+    if (!nextEnabled && currentDashboardView() !== "overview") {
+        activateDashboardView("overview", { scroll: options.scroll !== false });
+        return;
+    }
+    setDashboardViewSectionVisibility(currentDashboardView());
 }
 
 function storeDashboardViewScrollPosition(viewId) {
@@ -345,6 +402,9 @@ function restoreDashboardViewScrollPosition(viewId, targetId, shouldScroll) {
 
 function activateDashboardView(viewId, options = {}) {
     const resolved = DASHBOARD_VIEW_IDS.has(viewId) ? viewId : "overview";
+    if (resolved !== "overview" && !dashboardDebugModeEnabled()) {
+        setDashboardDebugMode(true, { persist: options.persistDebug !== false, scroll: false });
+    }
     const previous = currentDashboardView();
     if (previous !== resolved) storeDashboardViewScrollPosition(previous);
     if (document.documentElement) {
@@ -368,6 +428,12 @@ function initCockpitNavigation() {
     if (typeof document.querySelectorAll !== "function") return;
     const links = Array.from(document.querySelectorAll("[data-dashboard-view-link]"));
     if (!links.length) return;
+    const initialHash = typeof window !== "undefined" ? window.location?.hash || "" : "";
+    const initialResolved = resolveDashboardHash(initialHash);
+    setDashboardDebugMode(readDashboardDebugPreference() || initialResolved.viewId !== "overview", {
+        persist: false,
+        scroll: false
+    });
 
     links.forEach((link) => {
         link.addEventListener("click", (event) => {
@@ -381,7 +447,13 @@ function initCockpitNavigation() {
         });
     });
 
-    activateDashboardViewFromHash(typeof window !== "undefined" ? window.location?.hash : "", { scroll: false });
+    document.querySelectorAll("[data-dashboard-debug-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+            setDashboardDebugMode(!dashboardDebugModeEnabled(), { persist: true, scroll: true });
+        });
+    });
+
+    activateDashboardViewFromHash(initialHash, { scroll: false });
 
     if (typeof window !== "undefined" && window.addEventListener) {
         window.addEventListener("hashchange", () => {
@@ -5269,53 +5341,59 @@ function renderOverviewFirstScreen(viewModels) {
 
     const dataSources = dashboardQuery("[data-overview-data-sources]");
     if (dataSources) {
+        const visibleSources = asArray(overview.data_sources_connected).slice(0, 4);
         dataSources.innerHTML = `
             <div class="overview-section-head">
                 <span>Data sources connected</span>
-                <strong>${htmlText((overview.data_sources_connected || []).length)} source groups</strong>
+                <strong>${htmlText(visibleSources.length)} source groups</strong>
             </div>
             <div class="overview-plain-card-grid">
-                ${asArray(overview.data_sources_connected).map(renderOverviewPlainCard).join("")}
+                ${visibleSources.map(renderOverviewPlainCard).join("")}
             </div>
         `;
     }
 
     const strategies = dashboardQuery("[data-overview-trading-strategies]");
     if (strategies) {
+        const visibleStrategies = asArray(overview.trading_strategies).slice(0, 5);
         strategies.innerHTML = `
             <div class="overview-section-head">
                 <span>Trading strategies</span>
-                <strong>${htmlText((overview.trading_strategies || []).length)} approved paper-research families</strong>
+                <strong>${htmlText(visibleStrategies.length)} paper-research families</strong>
             </div>
             <div class="overview-plain-card-grid strategy-grid">
-                ${asArray(overview.trading_strategies).map(renderOverviewPlainCard).join("")}
+                ${visibleStrategies.map(renderOverviewPlainCard).join("")}
             </div>
         `;
     }
 
     const thoughtFeed = dashboardQuery("[data-overview-thought-feed]");
     if (thoughtFeed) {
+        const visibleThoughts = asArray(overview.thought_feed)
+            .filter((item) => item.label !== "Current focus")
+            .slice(0, 4);
         thoughtFeed.innerHTML = `
             <div class="overview-section-head">
                 <span>Qadam's thoughts</span>
                 <strong>Current reasoning feed</strong>
             </div>
             <ol class="overview-thought-list">
-                ${asArray(overview.thought_feed).map(renderOverviewThoughtItem).join("")}
+                ${visibleThoughts.map(renderOverviewThoughtItem).join("")}
             </ol>
         `;
     }
 
     const tradeConsiderations = dashboardQuery("[data-overview-trade-considerations]");
     if (tradeConsiderations) {
+        const visibleTradeIdeas = asArray(overview.trade_considerations).slice(0, 3);
         tradeConsiderations.innerHTML = `
             <div class="overview-section-head">
                 <span>Trades being considered</span>
-                <strong>${htmlText((overview.trade_considerations || []).length)} live ideas</strong>
+                <strong>${htmlText(visibleTradeIdeas.length)} live ideas</strong>
             </div>
             <div class="overview-plain-card-grid">
-                ${asArray(overview.trade_considerations).length
-        ? asArray(overview.trade_considerations).map(renderOverviewPlainCard).join("")
+                ${visibleTradeIdeas.length
+        ? visibleTradeIdeas.map(renderOverviewPlainCard).join("")
         : `<article class="overview-plain-card online"><span>No active trade idea</span><strong>Monitoring only</strong><p>Qadam has not exported an observed signal or candidate in this snapshot.</p></article>`}
             </div>
             <p class="mini">A candidate is still only something Qadam is thinking about. It is not an order.</p>
@@ -8701,6 +8779,8 @@ initCockpitNavigation();
 window.activateQadamDashboardView = activateDashboardView;
 window.activateQadamDashboardViewFromHash = activateDashboardViewFromHash;
 window.resolveQadamDashboardHash = resolveDashboardHash;
+window.setQadamDashboardDebugMode = setDashboardDebugMode;
+window.qadamDashboardDebugModeEnabled = dashboardDebugModeEnabled;
 window.canonicalQadamDashboardStatus = canonicalStatusRecord;
 window.canonicalQadamDashboardStatusLabel = canonicalStatusLabel;
 window.canonicalQadamDashboardStatusTone = canonicalStatusTone;

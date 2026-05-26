@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-overview-operating-map">
+    <link rel="stylesheet" href="/auth.css?v=20260526-advanced-debug-overview">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -44,10 +44,15 @@
                 </div>
                 <div class="cockpit-nav-links">
                     <a href="#overview" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
-                    <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
-                    <a href="#evidence" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
-                    <a href="#reasoning" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
-                    <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
+                    <button class="dashboard-debug-toggle" type="button" data-dashboard-debug-toggle aria-pressed="false" aria-expanded="false" aria-controls="dashboard-debug-tabs">
+                        Advanced / Debug Mode
+                    </button>
+                    <span id="dashboard-debug-tabs" class="dashboard-debug-links" data-dashboard-advanced-links hidden>
+                        <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
+                        <a href="#evidence" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
+                        <a href="#reasoning" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
+                        <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
+                    </span>
                 </div>
             </nav>
 
@@ -122,7 +127,7 @@
                     </div>
                 </section>
 
-                <section class="overview-command-surface" aria-label="Fund manager overview" data-overview-command-surface>
+                <section class="overview-command-surface" aria-label="Fund manager overview" data-overview-command-surface data-dashboard-debug-only hidden>
                     <article class="overview-hero" data-overview-hero data-mission-primary>
                         <span>Fund Manager read</span>
                         <h3>Loading Qadam overview</h3>
@@ -158,7 +163,7 @@
                     </article>
                 </section>
 
-                <section class="overview-proof-flow" aria-label="Proof and trade lifecycle" data-overview-proof-flow>
+                <section class="overview-proof-flow" aria-label="Proof and trade lifecycle" data-overview-proof-flow data-dashboard-debug-only hidden>
                     <div class="overview-section-head">
                         <span>Proof and trade path</span>
                         <strong data-overview-lifecycle-summary>Loading lifecycle</strong>
@@ -559,7 +564,7 @@
                 </div>
             </section>
 
-            <section id="review-sequence" class="dashboard-section-intro overview-review-sequence" aria-label="Dashboard section order" data-dashboard-view-section="overview" data-cockpit-section="Review Sequence">
+            <section id="review-sequence" class="dashboard-section-intro overview-review-sequence" aria-label="Dashboard section order" data-dashboard-view-section="overview" data-cockpit-section="Review Sequence" data-dashboard-debug-only hidden>
                 <div class="section-intro-heading">
                     <div>
                         <p class="label">Next review</p>
@@ -1205,7 +1210,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-overview-operating-map"></script>
+    <script src="/dashboard.js?v=20260526-advanced-debug-overview"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

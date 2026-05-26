@@ -409,20 +409,31 @@ option {
     line-height: 1.2;
 }
 
-.cockpit-nav-links {
+.cockpit-nav-links,
+.dashboard-debug-links {
     display: flex;
     gap: 6px;
     min-width: 0;
+}
+
+.cockpit-nav-links {
     overflow-x: auto;
     padding-bottom: 1px;
     scrollbar-width: thin;
 }
 
-.cockpit-nav-links a {
+.dashboard-debug-links {
+    align-items: center;
+}
+
+.cockpit-nav-links a,
+.dashboard-debug-toggle {
     border: 1px solid var(--line);
     border-radius: 999px;
+    background: transparent;
     color: var(--muted);
     flex: 0 0 auto;
+    font-family: inherit;
     font-size: 12px;
     line-height: 1;
     padding: 9px 11px;
@@ -432,10 +443,22 @@ option {
 
 .cockpit-nav-links a:hover,
 .cockpit-nav-links a.active,
-.cockpit-nav-links a[aria-current="page"] {
+.cockpit-nav-links a[aria-current="page"],
+.dashboard-debug-toggle:hover,
+.dashboard-debug-toggle.active,
+.dashboard-debug-toggle[aria-expanded="true"] {
     background: rgba(var(--cyan-rgb), 0.1);
     border-color: rgba(var(--cyan-rgb), 0.38);
     color: var(--cyan);
+}
+
+.dashboard-debug-toggle {
+    cursor: pointer;
+}
+
+.dashboard-debug-links[hidden],
+[data-dashboard-debug-only][hidden] {
+    display: none !important;
 }
 
 [data-dashboard-view-section][hidden] {
@@ -5253,6 +5276,99 @@ summary {
 
     .cognition-facts div {
         grid-template-columns: 1fr;
+    }
+}
+
+/* D12 compact default cockpit: Overview first, debug detail on demand. */
+html[data-dashboard-debug="off"] .cockpit-nav {
+    grid-template-columns: minmax(130px, auto) minmax(0, 1fr);
+}
+
+html[data-dashboard-debug="off"] .dashboard-view-switcher {
+    margin-bottom: 0;
+}
+
+html[data-dashboard-debug="off"] .dashboard-safety-strip {
+    padding: 10px 12px;
+}
+
+html[data-dashboard-debug="off"] .dashboard-safety-strip-main p {
+    display: none;
+}
+
+html[data-dashboard-debug="off"] .dashboard-safety-strip-badges .inline-badge:nth-child(n+5) {
+    display: none;
+}
+
+html[data-dashboard-debug="off"] .overview-first-screen {
+    gap: 10px;
+}
+
+html[data-dashboard-debug="off"] .overview-system-summary,
+html[data-dashboard-debug="off"] .overview-system-status-panel,
+html[data-dashboard-debug="off"] .overview-paper-capacity-panel,
+html[data-dashboard-debug="off"] .overview-data-sources-panel,
+html[data-dashboard-debug="off"] .overview-strategies-panel,
+html[data-dashboard-debug="off"] .overview-thought-feed-panel,
+html[data-dashboard-debug="off"] .overview-trade-considerations-panel {
+    gap: 9px;
+    padding: 10px;
+}
+
+html[data-dashboard-debug="off"] .overview-system-grid,
+html[data-dashboard-debug="off"] .overview-cockpit-grid,
+html[data-dashboard-debug="off"] .overview-plain-grid,
+html[data-dashboard-debug="off"] .overview-plain-card-grid {
+    gap: 8px;
+}
+
+html[data-dashboard-debug="off"] .overview-plain-card,
+html[data-dashboard-debug="off"] .overview-mini-node,
+html[data-dashboard-debug="off"] .overview-thought-list li {
+    gap: 5px;
+    min-height: 0;
+    padding: 9px;
+}
+
+html[data-dashboard-debug="off"] .overview-plain-card p,
+html[data-dashboard-debug="off"] .overview-thought-list p,
+html[data-dashboard-debug="off"] .overview-mini-node p,
+html[data-dashboard-debug="off"] .overview-boundary-rail,
+html[data-dashboard-debug="off"] .overview-feed-strip {
+    display: none;
+}
+
+html[data-dashboard-debug="off"] .overview-capacity-line {
+    min-height: 92px;
+}
+
+html[data-dashboard-debug="off"] .overview-capacity-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+html[data-dashboard-debug="off"] .overview-mini-map {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 124px), 1fr));
+}
+
+html[data-dashboard-debug="off"] .overview-mini-node strong,
+html[data-dashboard-debug="off"] .overview-plain-card strong,
+html[data-dashboard-debug="off"] .overview-thought-list strong {
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    html[data-dashboard-debug="off"] .cockpit-nav {
+        grid-template-columns: 1fr;
+    }
+
+    html[data-dashboard-debug="off"] .dashboard-safety-strip-badges {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    html[data-dashboard-debug="off"] .overview-capacity-summary,
+    html[data-dashboard-debug="off"] .overview-mini-map {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
