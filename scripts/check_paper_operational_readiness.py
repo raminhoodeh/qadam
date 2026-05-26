@@ -316,6 +316,33 @@ def main() -> int:
         lifecycle_polling_probe
     )
 
+    exit_enablement_probe = deepcopy(written)
+    exit_enablement_probe["paper_exit_runtime_enablement_enabled"] = False
+    exit_enablement_probe["paper_exit_runtime_enablement_effective"] = False
+    exit_enablement_errors = validate_paper_operational_readiness(
+        exit_enablement_probe
+    )
+
+    exit_enablement_execute_probe = deepcopy(written)
+    exit_enablement_execute_probe[
+        "paper_exit_runtime_enablement_execute_exit_requested"
+    ] = True
+    exit_enablement_execute_errors = validate_paper_operational_readiness(
+        exit_enablement_execute_probe
+    )
+
+    exit_enablement_close_probe = deepcopy(written)
+    exit_enablement_close_probe[
+        "paper_exit_runtime_enablement_position_close_allowed"
+    ] = True
+    exit_enablement_close_probe[
+        "paper_exit_runtime_enablement_close_called_count"
+    ] = 1
+    exit_enablement_close_probe["unsafe_write_counter_total"] = 1
+    exit_enablement_close_errors = validate_paper_operational_readiness(
+        exit_enablement_close_probe
+    )
+
     mode_probe = deepcopy(written)
     mode_probe["mode"] = "live"
     mode_errors = validate_paper_operational_readiness(mode_probe)
@@ -448,6 +475,42 @@ def main() -> int:
     print(
         "paper_ops_lifecycle_polling_enablement_live_endpoint_called_count="
         f"{written['paper_lifecycle_polling_enablement_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_status="
+        f"{written['paper_exit_runtime_enablement_status']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_enabled="
+        f"{written['paper_exit_runtime_enablement_enabled']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_effective="
+        f"{written['paper_exit_runtime_enablement_effective']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_runtime_override="
+        f"{written['paper_exit_runtime_enablement_runtime_override_enabled']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_path_available="
+        f"{written['paper_exit_runtime_enablement_path_available']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_idle_until_open_position="
+        f"{written['paper_exit_runtime_enablement_idle_until_open_position']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_open_position_count="
+        f"{written['paper_exit_runtime_enablement_open_position_count']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_close_called_count="
+        f"{written['paper_exit_runtime_enablement_close_called_count']}"
+    )
+    print(
+        "paper_ops_exit_runtime_enablement_live_endpoint_called_count="
+        f"{written['paper_exit_runtime_enablement_live_endpoint_called_count']}"
     )
     print(f"paper_ops_paper_live_activation_status={written['paper_live_activation_status']}")
     print(
@@ -729,6 +792,8 @@ def main() -> int:
     )
     print(f"paper_ops_exit_path_status={written['paper_exit_path_status']}")
     print(f"paper_ops_exit_path_enabled={written['paper_exit_path_enabled']}")
+    print(f"paper_ops_exit_path_runtime_enabled={written['paper_exit_path_runtime_enabled']}")
+    print(f"paper_ops_alpaca_paper_exit_effective={written['alpaca_paper_exit_effective']}")
     print(f"paper_ops_exit_path_available={written['paper_exit_path_available']}")
     print(
         "paper_ops_exit_path_open_position_readback_count="
@@ -938,6 +1003,32 @@ def main() -> int:
         and written["paper_lifecycle_polling_enablement_path_available"] is not False
     ):
         errors.append("PT-6 exposed poll path without a submitted paper order")
+    if written["paper_exit_runtime_enablement_status"] not in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        errors.append("PT-7 guarded paper-exit runtime enablement is not ready")
+    if written["paper_exit_runtime_enablement_enabled"] is not True:
+        errors.append("PT-7 guarded paper-exit enablement is not active")
+    if written["paper_exit_runtime_enablement_effective"] is not True:
+        errors.append("PT-7 guarded paper-exit effective flag is not true")
+    if written["paper_exit_runtime_enablement_runtime_override_enabled"] is not True:
+        errors.append("PT-7 runtime override is not active")
+    if written["paper_exit_runtime_enablement_close_called_count"] != 0:
+        errors.append("PT-7 closed a paper position directly")
+    if written["paper_exit_runtime_enablement_live_endpoint_called_count"] != 0:
+        errors.append("PT-7 called a live endpoint")
+    if (
+        written["paper_exit_runtime_enablement_open_position_count"] == 0
+        and written["paper_exit_runtime_enablement_path_available"] is not False
+    ):
+        errors.append("PT-7 exposed exit path without open-position readback")
+    if written["alpaca_paper_exit_effective"] is not True:
+        errors.append("paper ops did not make Alpaca paper exit effective")
+    if written["paper_exit_path_enabled"] is not True:
+        errors.append("PaperOps-4 exit path is not enabled")
+    if written["paper_exit_path_runtime_enabled"] is not True:
+        errors.append("PaperOps-4 did not consume PT-7 runtime enablement")
     if written["safe_to_continue_paper_only"] is not True:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
@@ -1039,6 +1130,26 @@ def main() -> int:
         not in lifecycle_polling_errors
     ):
         errors.append("PT-6 lifecycle polling live-endpoint probe was not rejected")
+    if "paper_ops_exit_runtime_enablement_flag_false" not in exit_enablement_errors:
+        errors.append("PT-7 exit enablement disabled probe was not rejected")
+    if (
+        "paper_ops_exit_runtime_enablement_forbidden:"
+        "paper_exit_runtime_enablement_execute_exit_requested"
+        not in exit_enablement_execute_errors
+    ):
+        errors.append("PT-7 execute-exit probe was not rejected")
+    if (
+        "paper_ops_exit_runtime_enablement_forbidden:"
+        "paper_exit_runtime_enablement_position_close_allowed"
+        not in exit_enablement_close_errors
+    ):
+        errors.append("PT-7 close-authority probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "paper_exit_runtime_enablement_close_called_count"
+        not in exit_enablement_close_errors
+    ):
+        errors.append("PT-7 close-counter probe was not rejected")
     if (
         "paper_ops_qualified_setup_production_forbidden:"
         "qualified_setup_production_paper_order_submission_allowed"

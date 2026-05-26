@@ -26,6 +26,11 @@ from orchestrator.paperops_paper_lifecycle_poller import (
     read_latest_paperops_paper_lifecycle_poller,
     validate_paperops_paper_lifecycle_poller,
 )
+from orchestrator.paperops_guarded_paper_exit_enablement import (
+    PAPEROPS_GUARDED_EXIT_ENABLEMENT_READY_STATUSES,
+    read_latest_paperops_guarded_paper_exit_enablement,
+    validate_paperops_guarded_paper_exit_enablement,
+)
 
 
 PAPEROPS_EXIT_PATH_SCHEMA_VERSION = 1
@@ -61,16 +66,17 @@ PAPEROPS_EXIT_AUTHORITY_FALSE_FIELDS = (
 
 PAPEROPS_EXIT_BOUNDARY = (
     "PaperOps-4 is the guarded Alpaca paper-only exit path. It may close a "
-    "paper position only when QADAM_ALPACA_PAPER_EXIT_ENABLED=true, "
-    "QADAM_MODE=paper, live capital is disabled, the endpoint is classified "
-    "as Alpaca paper, paper credentials are configured, PaperOps-3 has a "
-    "valid open-position readback, an Event Log prewrite is recorded, and the "
-    "caller passes the explicit paper-exit CLI flag. It cannot call live "
-    "endpoints, cannot use live credentials, cannot cancel or resize orders, "
-    "cannot write prediction-market or crypto-perps orders, cannot expose "
-    "secrets, raw broker payloads, base URLs, authorization headers, or raw "
-    "broker identifiers, cannot grant Phase 7 proof credit, and cannot enable "
-    "live capital."
+    "paper position only when QADAM_ALPACA_PAPER_EXIT_ENABLED=true or PT-7 "
+    "guarded paper-exit runtime enablement is recorded, QADAM_MODE=paper, live "
+    "capital is disabled, the endpoint is classified as Alpaca paper, paper "
+    "credentials are configured, PaperOps-3 has a valid open-position readback, "
+    "an Event Log prewrite is recorded, and the caller passes the explicit "
+    "paper-exit CLI flag. It cannot call live endpoints, cannot use live "
+    "credentials, cannot cancel or resize orders, cannot write "
+    "prediction-market or crypto-perps orders, cannot expose secrets, raw "
+    "broker payloads, base URLs, authorization headers, or raw broker "
+    "identifiers, cannot grant Phase 7 proof credit, and cannot enable live "
+    "capital."
 )
 
 PROHIBITED_VALUE_PATTERNS = (
@@ -340,6 +346,7 @@ def _close_alpaca_paper_position(
 def _status(
     *,
     settings: Settings,
+    paper_exit_effective: bool,
     endpoint: dict[str, Any],
     source_present: bool,
     source_valid: bool,
@@ -351,7 +358,7 @@ def _status(
         return "blocked_not_paper_mode"
     if settings.live_capital_enabled:
         return "blocked_live_capital_enabled"
-    if not settings.alpaca_paper_exit_enabled:
+    if not paper_exit_effective:
         return "disabled_pending_enablement"
     if endpoint["paper_endpoint_confirmed"] is not True:
         return "blocked_non_paper_endpoint"
@@ -379,6 +386,24 @@ def build_paperops_paper_exit_path(
     settings = settings or Settings.from_env()
     generated_at = _now()
     endpoint = _endpoint_context(settings)
+    exit_enablement = read_latest_paperops_guarded_paper_exit_enablement(settings)
+    exit_enablement_validation_errors = (
+        validate_paperops_guarded_paper_exit_enablement(exit_enablement)
+        if exit_enablement
+        else []
+    )
+    runtime_exit_enabled = (
+        exit_enablement.get("status") in PAPEROPS_GUARDED_EXIT_ENABLEMENT_READY_STATUSES
+        and exit_enablement.get("guarded_paper_exit_enabled") is True
+        and exit_enablement.get("alpaca_paper_exit_effective") is True
+        and exit_enablement.get("live_capital_enabled") is False
+        and exit_enablement.get("phase7_proof_credit_allowed") is False
+        and _int(exit_enablement.get("paper_position_close_called_count")) == 0
+        and _int(exit_enablement.get("live_endpoint_called_count")) == 0
+        and _int(exit_enablement.get("unsafe_write_counter_total")) == 0
+        and not exit_enablement_validation_errors
+    )
+    paper_exit_effective = settings.alpaca_paper_exit_enabled or runtime_exit_enabled
     source = read_latest_paperops_paper_lifecycle_poller(settings)
     source_present = bool(source)
     source_validation_errors = (
@@ -390,7 +415,8 @@ def build_paperops_paper_exit_path(
     preconditions = {
         "mode_is_paper": settings.mode == "paper",
         "live_capital_disabled": settings.live_capital_enabled is False,
-        "paper_exit_flag_enabled": settings.alpaca_paper_exit_enabled is True,
+        "paper_exit_flag_enabled": paper_exit_effective is True,
+        "settings_paper_exit_flag_or_pt7_runtime_enablement": paper_exit_effective is True,
         "alpaca_endpoint_classified_paper": endpoint["paper_endpoint_confirmed"] is True,
         "alpaca_paper_credentials_configured": endpoint["alpaca_api_key_configured"] is True
         and endpoint["alpaca_api_secret_configured"] is True,
@@ -450,6 +476,7 @@ def build_paperops_paper_exit_path(
     close_succeeded = bool(close_result and close_result.get("close_succeeded"))
     status = _status(
         settings=settings,
+        paper_exit_effective=paper_exit_effective,
         endpoint=endpoint,
         source_present=source_present,
         source_valid=source_valid,
@@ -478,7 +505,38 @@ def build_paperops_paper_exit_path(
         "history_log_path": None,
         "mode": settings.mode,
         "paper_operational_enabled": settings.paper_operational_enabled,
-        "alpaca_paper_exit_enabled": settings.alpaca_paper_exit_enabled,
+        "alpaca_paper_exit_enabled": paper_exit_effective,
+        "alpaca_paper_exit_effective": paper_exit_effective,
+        "settings_alpaca_paper_exit_enabled": settings.alpaca_paper_exit_enabled,
+        "runtime_alpaca_paper_exit_enabled": runtime_exit_enabled,
+        "runtime_artifact_override_enabled": (
+            runtime_exit_enabled and not settings.alpaca_paper_exit_enabled
+        ),
+        "paper_exit_runtime_enablement_status": exit_enablement.get(
+            "status",
+            "missing",
+        ),
+        "paper_exit_runtime_enablement_validation_error_count": len(
+            exit_enablement_validation_errors
+        ),
+        "paper_exit_runtime_enablement_path_available": (
+            exit_enablement.get("paper_exit_path_available") is True
+        ),
+        "paper_exit_runtime_enablement_idle_until_open_position": (
+            exit_enablement.get("paper_exit_idle_until_open_position") is True
+        ),
+        "paper_exit_runtime_enablement_open_position_count": _int(
+            exit_enablement.get("paperops_3_open_position_count")
+        ),
+        "paper_exit_runtime_enablement_close_called_count": _int(
+            exit_enablement.get("paper_position_close_called_count")
+        ),
+        "paper_exit_runtime_enablement_live_endpoint_called_count": _int(
+            exit_enablement.get("live_endpoint_called_count")
+        ),
+        "paper_exit_runtime_enablement_unsafe_write_counter_total": _int(
+            exit_enablement.get("unsafe_write_counter_total")
+        ),
         "live_capital_enabled": settings.live_capital_enabled,
         "execute_exit_requested": execute_exit,
         "explicit_exit_flag_required": True,
@@ -640,6 +698,7 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
     required = {
         "alpaca_api_key_configured",
         "alpaca_api_secret_configured",
+        "alpaca_paper_exit_effective",
         "alpaca_paper_exit_enabled",
         "artifact_type",
         "base_url_exposed",
@@ -669,9 +728,12 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
         "raw_broker_payload_exposed",
         "raw_broker_payload_stored",
         "recorded",
+        "runtime_alpaca_paper_exit_enabled",
+        "runtime_artifact_override_enabled",
         "schema_version",
         "secret_value_exposed",
         "selected_exit_records",
+        "settings_alpaca_paper_exit_enabled",
         "source_paperops_3_artifact_present",
         "source_paperops_3_status",
         "stage",
@@ -711,9 +773,27 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
         "authorization_header_exposed_count",
         "base_url_exposed_count",
         "postmortem_due_marker_created_count",
+        "paper_exit_runtime_enablement_close_called_count",
+        "paper_exit_runtime_enablement_live_endpoint_called_count",
+        "paper_exit_runtime_enablement_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paperops_exit_unsafe_counter_nonzero:{key}")
+    if artifact.get("alpaca_paper_exit_enabled") is not artifact.get(
+        "alpaca_paper_exit_effective"
+    ):
+        errors.append("paperops_exit_effective_flag_mismatch")
+    if artifact.get("alpaca_paper_exit_enabled") is True:
+        if (
+            artifact.get("settings_alpaca_paper_exit_enabled") is not True
+            and artifact.get("runtime_alpaca_paper_exit_enabled") is not True
+        ):
+            errors.append("paperops_exit_enabled_without_settings_or_runtime")
+        if (
+            artifact.get("settings_alpaca_paper_exit_enabled") is not True
+            and artifact.get("runtime_artifact_override_enabled") is not True
+        ):
+            errors.append("paperops_exit_runtime_override_false")
     if artifact.get("explicit_exit_flag_required") is not True:
         errors.append("paperops_exit_explicit_flag_not_required")
     if artifact.get("q7_lifecycle_mutation_performed") is not False:
@@ -831,6 +911,10 @@ def write_paperops_paper_exit_path(
             payload={
                 "status": written["status"],
                 "execute_exit_requested": written["execute_exit_requested"],
+                "alpaca_paper_exit_effective": written["alpaca_paper_exit_effective"],
+                "runtime_alpaca_paper_exit_enabled": written[
+                    "runtime_alpaca_paper_exit_enabled"
+                ],
                 "paper_exit_path_available": written["paper_exit_path_available"],
                 "eligible_exit_record_count": written["eligible_exit_record_count"],
                 "paper_position_close_called_count": written[
@@ -863,6 +947,12 @@ def write_paperops_paper_exit_path(
         "status": written.get("status"),
         "recorded_at": _now(),
         "alpaca_paper_exit_enabled": written.get("alpaca_paper_exit_enabled"),
+        "settings_alpaca_paper_exit_enabled": written.get(
+            "settings_alpaca_paper_exit_enabled"
+        ),
+        "runtime_alpaca_paper_exit_enabled": written.get(
+            "runtime_alpaca_paper_exit_enabled"
+        ),
         "execute_exit_requested": written.get("execute_exit_requested"),
         "eligible_exit_record_count": written.get("eligible_exit_record_count"),
         "paper_position_close_called_count": written.get(
@@ -889,6 +979,14 @@ def paperops_paper_exit_path_public_status(
             "status": "not_run",
             "stage": "PaperOps-4",
             "alpaca_paper_exit_enabled": False,
+            "alpaca_paper_exit_effective": False,
+            "settings_alpaca_paper_exit_enabled": False,
+            "runtime_alpaca_paper_exit_enabled": False,
+            "runtime_artifact_override_enabled": False,
+            "paper_exit_runtime_enablement_status": "not_run",
+            "paper_exit_runtime_enablement_validation_error_count": 0,
+            "paper_exit_runtime_enablement_path_available": False,
+            "paper_exit_runtime_enablement_idle_until_open_position": False,
             "paper_exit_path_available": False,
             "eligible_exit_record_count": 0,
             "paper_position_close_called_count": 0,
@@ -910,6 +1008,29 @@ def paperops_paper_exit_path_public_status(
         "status": artifact.get("status"),
         "stage": artifact.get("stage"),
         "alpaca_paper_exit_enabled": artifact.get("alpaca_paper_exit_enabled"),
+        "alpaca_paper_exit_effective": artifact.get("alpaca_paper_exit_effective"),
+        "settings_alpaca_paper_exit_enabled": artifact.get(
+            "settings_alpaca_paper_exit_enabled"
+        ),
+        "runtime_alpaca_paper_exit_enabled": artifact.get(
+            "runtime_alpaca_paper_exit_enabled"
+        ),
+        "runtime_artifact_override_enabled": artifact.get(
+            "runtime_artifact_override_enabled"
+        ),
+        "paper_exit_runtime_enablement_status": artifact.get(
+            "paper_exit_runtime_enablement_status"
+        ),
+        "paper_exit_runtime_enablement_validation_error_count": artifact.get(
+            "paper_exit_runtime_enablement_validation_error_count",
+            0,
+        ),
+        "paper_exit_runtime_enablement_path_available": artifact.get(
+            "paper_exit_runtime_enablement_path_available"
+        ),
+        "paper_exit_runtime_enablement_idle_until_open_position": artifact.get(
+            "paper_exit_runtime_enablement_idle_until_open_position"
+        ),
         "execute_exit_requested": artifact.get("execute_exit_requested"),
         "paper_exit_path_available": artifact.get("paper_exit_path_available"),
         "endpoint_classification": artifact.get("endpoint_classification"),

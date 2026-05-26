@@ -44,6 +44,9 @@ from orchestrator.paperops_paper_lifecycle_poller import (
 from orchestrator.paperops_paper_lifecycle_polling_enablement import (
     paperops_paper_lifecycle_polling_enablement_public_status,
 )
+from orchestrator.paperops_guarded_paper_exit_enablement import (
+    paperops_guarded_paper_exit_enablement_public_status,
+)
 from orchestrator.paperops_paper_exit_path import paperops_paper_exit_path_public_status
 from orchestrator.paperops_notification_review import (
     paperops_notification_review_public_status,
@@ -1217,6 +1220,36 @@ PAPEROPS_LIFECYCLE_POLLING_ENABLEMENT_PUBLIC_REQUIRED_FIELDS = {
     "public_safe",
     "recorded",
     "schema_version",
+    "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_GUARDED_EXIT_ENABLEMENT_PUBLIC_REQUIRED_FIELDS = {
+    "alpaca_paper_exit_effective",
+    "boundary",
+    "broker_post_allowed",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "explicit_exit_flag_required",
+    "forced_trades_allowed",
+    "guarded_paper_exit_enabled",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_exit_idle_until_open_position",
+    "paper_exit_path_available",
+    "paper_position_close_called_count",
+    "paperops_3_open_position_count",
+    "paperops_3_source_valid",
+    "phase7_proof_credit_allowed",
+    "position_close_allowed",
+    "public_safe",
+    "recorded",
+    "runtime_artifact_override_enabled",
+    "schema_version",
+    "settings_alpaca_paper_exit_enabled",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -4533,6 +4566,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     paperops_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
+    paperops_guarded_exit_enablement = payload.get(
+        "paperops_guarded_paper_exit_enablement",
+        {},
+    )
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
@@ -4724,6 +4761,21 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_paper_lifecycle_poller_order_poll_called_count": (
                 paperops_lifecycle_poller.get("paper_order_poll_called_count", 0)
+            ),
+            "paperops_guarded_paper_exit_enablement": (
+                paperops_guarded_exit_enablement.get("status", "not_run")
+            ),
+            "paperops_guarded_paper_exit_effective": (
+                paperops_guarded_exit_enablement.get(
+                    "alpaca_paper_exit_effective",
+                    False,
+                )
+            ),
+            "paperops_guarded_paper_exit_close_called_count": (
+                paperops_guarded_exit_enablement.get(
+                    "paper_position_close_called_count",
+                    0,
+                )
             ),
             "paperops_paper_exit_path": paperops_exit_path.get("status", "not_run"),
             "paperops_paper_exit_path_close_called_count": paperops_exit_path.get(
@@ -5851,6 +5903,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_paper_lifecycle_poller": (
             paperops_paper_lifecycle_poller_public_status(settings)
         ),
+        "paperops_guarded_paper_exit_enablement": (
+            paperops_guarded_paper_exit_enablement_public_status(settings)
+        ),
         "paperops_paper_exit_path": paperops_paper_exit_path_public_status(settings),
         "paperops_notification_review": paperops_notification_review_public_status(settings),
         "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
@@ -5967,6 +6022,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_alpaca_paper_post",
         "paperops_paper_lifecycle_polling_enablement",
         "paperops_paper_lifecycle_poller",
+        "paperops_guarded_paper_exit_enablement",
         "paperops_paper_exit_path",
         "paperops_notification_review",
         "paperops_30_day_operations",
@@ -6779,6 +6835,87 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in lifecycle_polling_boundary:
             raise ValueError("PaperOps lifecycle polling enablement boundary is weak")
+    guarded_exit_enablement = payload["paperops_guarded_paper_exit_enablement"]
+    missing_guarded_exit_enablement = sorted(
+        PAPEROPS_GUARDED_EXIT_ENABLEMENT_PUBLIC_REQUIRED_FIELDS
+        - set(guarded_exit_enablement)
+    )
+    if missing_guarded_exit_enablement:
+        raise ValueError(
+            "PaperOps guarded paper-exit enablement public status missing fields: "
+            f"{missing_guarded_exit_enablement}"
+        )
+    if guarded_exit_enablement.get("status") not in {
+        "not_run",
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+        "blocked_pending_prerequisites",
+        "blocked_lifecycle_polling_enablement_not_ready",
+        "blocked_alpaca_paper_endpoint_or_credentials",
+        "blocked_not_paper_mode",
+        "blocked_live_capital_enabled",
+        "blocked_missing_paper_lifecycle_source",
+        "blocked_invalid_paper_lifecycle_source",
+        "invalid",
+    }:
+        raise ValueError("PaperOps guarded exit enablement status is invalid")
+    if guarded_exit_enablement.get("public_safe") is not True:
+        raise ValueError("PaperOps guarded exit enablement must be public-safe")
+    if guarded_exit_enablement.get("status") != "not_run":
+        if guarded_exit_enablement.get("recorded") is not True:
+            raise ValueError("PaperOps guarded exit enablement must be recorded")
+        if guarded_exit_enablement.get("event_log_written") is not True:
+            raise ValueError("PaperOps guarded exit enablement event log missing")
+        if guarded_exit_enablement.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps guarded exit enablement event count mismatch")
+        if guarded_exit_enablement.get("validation_error_count") != 0:
+            raise ValueError("PaperOps guarded exit enablement validation errors present")
+    if guarded_exit_enablement.get("status") in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        if guarded_exit_enablement.get("guarded_paper_exit_enabled") is not True:
+            raise ValueError("PaperOps guarded exit enablement flag is false")
+        if guarded_exit_enablement.get("alpaca_paper_exit_effective") is not True:
+            raise ValueError("PaperOps guarded exit effective flag is false")
+        if guarded_exit_enablement.get("runtime_artifact_override_enabled") is not True:
+            raise ValueError("PaperOps guarded exit runtime override is false")
+        if (
+            int(guarded_exit_enablement.get("paperops_3_open_position_count", 0) or 0)
+            == 0
+            and guarded_exit_enablement.get("paper_exit_path_available") is True
+        ):
+            raise ValueError("PaperOps guarded exit path is available without open position")
+    for key in (
+        "env_file_edited",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "broker_post_allowed",
+        "position_close_allowed",
+    ):
+        if guarded_exit_enablement.get(key) is not False:
+            raise ValueError(f"PaperOps guarded exit enablement forbidden: {key}")
+    for key in (
+        "paper_position_close_called_count",
+        "live_endpoint_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(guarded_exit_enablement.get(key, 0) or 0) != 0:
+            raise ValueError(
+                f"PaperOps guarded exit enablement unsafe count nonzero: {key}"
+            )
+    guarded_exit_boundary = str(guarded_exit_enablement.get("boundary") or "")
+    for phrase in (
+        "PT-7 records runtime guarded Alpaca paper-exit enablement",
+        "explicit paper-exit flag",
+        "cannot call Alpaca",
+        "cannot call live endpoints",
+        "cannot grant Phase 7 proof credit",
+        "cannot enable live capital",
+    ):
+        if phrase not in guarded_exit_boundary:
+            raise ValueError("PaperOps guarded exit enablement boundary is weak")
     phase4_strategy = payload["phase4_strategy"]
     missing_phase4 = sorted(PHASE4_STRATEGY_PUBLIC_REQUIRED_FIELDS - set(phase4_strategy))
     if missing_phase4:

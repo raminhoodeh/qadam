@@ -139,6 +139,27 @@ def main() -> int:
     print(f"paperops_exit_event_log_path={event_path}")
     print(f"paperops_exit_mode={written['mode']}")
     print(f"paperops_exit_enabled={written['alpaca_paper_exit_enabled']}")
+    print(f"paperops_exit_effective={written['alpaca_paper_exit_effective']}")
+    print(
+        "paperops_exit_settings_flag="
+        f"{written['settings_alpaca_paper_exit_enabled']}"
+    )
+    print(
+        "paperops_exit_runtime_enabled="
+        f"{written['runtime_alpaca_paper_exit_enabled']}"
+    )
+    print(
+        "paperops_exit_runtime_override="
+        f"{written['runtime_artifact_override_enabled']}"
+    )
+    print(
+        "paperops_exit_runtime_enablement_status="
+        f"{written['paper_exit_runtime_enablement_status']}"
+    )
+    print(
+        "paperops_exit_runtime_enablement_validation_error_count="
+        f"{written['paper_exit_runtime_enablement_validation_error_count']}"
+    )
     print(f"paperops_exit_execute_requested={written['execute_exit_requested']}")
     print(f"paperops_exit_path_available={written['paper_exit_path_available']}")
     print(f"paperops_exit_endpoint_classification={written['endpoint_classification']}")
@@ -200,11 +221,30 @@ def main() -> int:
         errors.append("PaperOps-4 enables live capital")
     if not args.execute_paper_exit and written["paper_position_close_called_count"] != 0:
         errors.append("PaperOps-4 closed a position without --execute-paper-exit")
-    if written["alpaca_paper_exit_enabled"] is False:
-        if written["status"] != "disabled_pending_enablement":
-            errors.append("PaperOps-4 should stay disabled pending explicit enablement")
+    if written["alpaca_paper_exit_enabled"] is not True:
+        errors.append("PaperOps-4 effective exit flag is not enabled")
+    if written["alpaca_paper_exit_effective"] is not True:
+        errors.append("PaperOps-4 effective exit field is not true")
+    if written["settings_alpaca_paper_exit_enabled"] is not False:
+        errors.append("PaperOps-4 expected PT-7 runtime override instead of env flag")
+    if written["runtime_alpaca_paper_exit_enabled"] is not True:
+        errors.append("PaperOps-4 did not consume PT-7 runtime enablement")
+    if written["runtime_artifact_override_enabled"] is not True:
+        errors.append("PaperOps-4 runtime override is not active")
+    if written["paper_exit_runtime_enablement_status"] not in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        errors.append("PaperOps-4 did not see ready PT-7 runtime enablement")
+    if written["paper_exit_runtime_enablement_validation_error_count"] != 0:
+        errors.append("PaperOps-4 saw invalid PT-7 runtime enablement")
+    if written["open_position_readback_count"] == 0:
+        if written["status"] != "ready_no_exit_candidate":
+            errors.append("PaperOps-4 should be ready but idle without open positions")
+        if written["paper_exit_path_available"] is not False:
+            errors.append("PaperOps-4 exposed exit path without open-position readback")
         if written["paper_position_close_called_count"] != 0:
-            errors.append("PaperOps-4 called Alpaca while disabled")
+            errors.append("PaperOps-4 called Alpaca without open-position readback")
     if enabled_preview["execute_exit_requested"] is not False:
         errors.append("PaperOps-4 enabled preview should not request execution")
     if enabled_preview["paper_position_close_called_count"] != 0:

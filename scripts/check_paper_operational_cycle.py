@@ -114,6 +114,14 @@ def main() -> int:
         lifecycle_polling_enablement_probe
     )
 
+    guarded_exit_enablement_probe = deepcopy(written)
+    guarded_exit_enablement_probe["guarded_exit_enablement_close_called_count"] = 1
+    guarded_exit_enablement_probe["guarded_exit_enablement_live_endpoint_called_count"] = 1
+    guarded_exit_enablement_probe["unsafe_write_counter_total"] = 2
+    guarded_exit_enablement_errors = validate_paper_operational_cycle(
+        guarded_exit_enablement_probe
+    )
+
     exit_path_probe = deepcopy(written)
     exit_path_probe["paper_exit_path_live_endpoint_called_count"] = 1
     exit_path_probe["paper_exit_path_broker_post_called_count"] = 1
@@ -286,6 +294,34 @@ def main() -> int:
     print(
         "paper_ops_cycle_check_lifecycle_polling_enablement_live_endpoint_called_count="
         f"{written['lifecycle_polling_enablement_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_status="
+        f"{written['guarded_exit_enablement_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_enabled="
+        f"{written['guarded_exit_enablement_enabled']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_effective="
+        f"{written['guarded_exit_enablement_effective']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_path_available="
+        f"{written['guarded_exit_enablement_path_available']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_open_position_count="
+        f"{written['guarded_exit_enablement_open_position_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_close_called_count="
+        f"{written['guarded_exit_enablement_close_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_guarded_exit_enablement_live_endpoint_called_count="
+        f"{written['guarded_exit_enablement_live_endpoint_called_count']}"
     )
     print(f"paper_ops_cycle_check_full_paper_operational_ready={written['full_paper_operational_ready']}")
     print(f"paper_ops_cycle_check_blocker_count={written['blocker_count']}")
@@ -490,6 +526,24 @@ def main() -> int:
         errors.append("PaperOps-1 called broker GET directly through PT-6 enablement")
     if written["lifecycle_polling_enablement_live_endpoint_called_count"] != 0:
         errors.append("PaperOps-1 called live endpoint through PT-6")
+    if written["guarded_exit_enablement_status"] not in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        errors.append("PaperOps-1 did not include PT-7 guarded exit enablement")
+    if written["guarded_exit_enablement_enabled"] is not True:
+        errors.append("PaperOps-1 did not activate PT-7 guarded exit enablement")
+    if written["guarded_exit_enablement_effective"] is not True:
+        errors.append("PaperOps-1 did not make PT-7 guarded exit effective")
+    if (
+        written["guarded_exit_enablement_open_position_count"] == 0
+        and written["guarded_exit_enablement_path_available"] is not False
+    ):
+        errors.append("PaperOps-1 exposed PT-7 exit path with no open position")
+    if written["guarded_exit_enablement_close_called_count"] != 0:
+        errors.append("PaperOps-1 closed a paper position through PT-7 enablement")
+    if written["guarded_exit_enablement_live_endpoint_called_count"] != 0:
+        errors.append("PaperOps-1 called live endpoint through PT-7")
     if written["full_paper_operational_ready"] is not False:
         errors.append("PaperOps-1 should remain blocked pending later enablement")
     if written["broker_post_called_count"] != 0 or written["alpaca_post_called_count"] != 0:
@@ -614,6 +668,18 @@ def main() -> int:
         not in lifecycle_polling_enablement_errors
     ):
         errors.append("PT-6 lifecycle polling live-endpoint probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "guarded_exit_enablement_close_called_count"
+        not in guarded_exit_enablement_errors
+    ):
+        errors.append("PT-7 guarded exit close-counter probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "guarded_exit_enablement_live_endpoint_called_count"
+        not in guarded_exit_enablement_errors
+    ):
+        errors.append("PT-7 guarded exit live-endpoint probe was not rejected")
     if (
         "paper_ops_cycle_unsafe_counter_nonzero:paper_exit_path_live_endpoint_called_count"
         not in exit_path_errors

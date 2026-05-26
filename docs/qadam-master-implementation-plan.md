@@ -1180,13 +1180,26 @@ Current PaperOps status:
   by itself, call broker POST routes, call live endpoints, close positions,
   force trades, grant Phase 7 proof credit, expose credentials, or enable live
   capital.
+- PT-7 guarded paper-exit runtime enablement is implemented in
+  `orchestrator/paperops_guarded_paper_exit_enablement.py` and
+  `scripts/check_paperops_guarded_paper_exit_enablement.py`. It records
+  `status=enabled_pending_open_position_readback`,
+  `guarded_paper_exit_enabled=True`, `alpaca_paper_exit_effective=True`,
+  `runtime_artifact_override_enabled=True`, and
+  `paper_exit_path_available=False` because PaperOps-3 has zero open-position
+  readbacks. It does not edit `.env`, request an exit, close positions, call
+  Alpaca, call broker POST routes, call live endpoints, force trades, grant
+  Phase 7 proof credit, expose credentials, or enable live capital.
 - PaperOps-4 guarded paper exit path is implemented in
   `orchestrator/paperops_paper_exit_path.py` and
   `scripts/check_paperops_paper_exit_path.py`. It consumes only PaperOps-3
-  open-position readbacks, writes a sanitized paper-exit artifact, and requires
-  `QADAM_ALPACA_PAPER_EXIT_ENABLED=true`, paper endpoint classification, paper
-  credentials, Event Log prewrite, and the explicit `--execute-paper-exit` CLI
-  flag before any Alpaca paper position close.
+  open-position readbacks, writes a sanitized paper-exit artifact, and now
+  consumes PT-7 runtime enablement while keeping
+  `QADAM_ALPACA_PAPER_EXIT_ENABLED=false`. It reports
+  `ready_no_exit_candidate` until PaperOps-3 has an open-position readback, and
+  still requires paper endpoint classification, paper credentials, Event Log
+  prewrite, and the explicit `--execute-paper-exit` CLI flag before any Alpaca
+  paper position close.
 - PaperOps-5 notification and review is implemented in
   `orchestrator/paperops_notification_review.py` and
   `scripts/check_paperops_notification_review.py`. It renders seven
@@ -1209,21 +1222,20 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  30/30 commands passing: paper mode is safe to continue, PT-0 approval is
+  31/31 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
   setup candidate ready for guarded paper handoff, PT-4 auto-approves and
   stages one PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit
-  path, PT-6 runtime-enables active read-only lifecycle polling, the Phase 7
-  run is active, the Head-of-Quant oracle can run in its current non-provider
-  mode, broker/Alpaca POST counters remain zero, PaperOps-2 reports
+  path, PT-6 runtime-enables active read-only lifecycle polling, PT-7
+  runtime-enables the guarded paper-exit path, the Phase 7 run is active, the
+  Head-of-Quant oracle can run in its current non-provider mode,
+  broker/Alpaca POST counters remain zero, PaperOps-2 reports
   `ready_pending_explicit_execute`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
-  `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
-  PaperOps-6 reports `operations_active`, and the remaining blockers are the
-  disabled Alpaca paper exit path/no PaperOps-3 open-position readback and
-  Q-CTRL paper-consultation product access required for full paper-reality
-  parity.
+  `ready_no_exit_candidate`, PaperOps-5 reports `review_ready`, PaperOps-6
+  reports `operations_active`, and the remaining blocker is Q-CTRL
+  paper-consultation product access required for full paper-reality parity.
 - The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
   day `2`, with completed calendar days `1`, calendar days remaining `29`,
   `qualified_setup_count=0`, `submitted_paper_order_count=0`, and
@@ -1238,9 +1250,9 @@ Current PaperOps status:
   live-promotion review, and cockpit status export.
 - The next operational step is to keep the PaperOps runner active through the
   actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, resolve PaperOps-Q product access, then
-  enable PaperOps-2/PaperOps-4 only after the explicit paper-submit and
-  paper-exit prerequisites exist.
+  where Q7-qualified setups exist, resolve PaperOps-Q product access, then use
+  PaperOps-2/PaperOps-4 only when the explicit paper-submit or paper-exit CLI
+  flags and source prerequisites exist.
 
 Build:
 

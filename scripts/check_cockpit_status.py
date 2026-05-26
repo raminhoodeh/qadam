@@ -1892,6 +1892,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_paper_lifecycle_polling_active",
     "paperops_paper_lifecycle_poller",
     "paperops_paper_lifecycle_poller_order_poll_called_count",
+    "paperops_guarded_paper_exit_enablement",
+    "paperops_guarded_paper_exit_effective",
+    "paperops_guarded_paper_exit_close_called_count",
     "paperops_paper_exit_path",
     "paperops_paper_exit_path_close_called_count",
     "paperops_notification_review",
@@ -2162,6 +2165,36 @@ PAPEROPS_LIFECYCLE_POLLING_ENABLEMENT_REQUIRED_FIELDS = {
     "public_safe",
     "recorded",
     "schema_version",
+    "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_GUARDED_EXIT_ENABLEMENT_REQUIRED_FIELDS = {
+    "alpaca_paper_exit_effective",
+    "boundary",
+    "broker_post_allowed",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "explicit_exit_flag_required",
+    "forced_trades_allowed",
+    "guarded_paper_exit_enabled",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_exit_idle_until_open_position",
+    "paper_exit_path_available",
+    "paper_position_close_called_count",
+    "paperops_3_open_position_count",
+    "paperops_3_source_valid",
+    "phase7_proof_credit_allowed",
+    "position_close_allowed",
+    "public_safe",
+    "recorded",
+    "runtime_artifact_override_enabled",
+    "schema_version",
+    "settings_alpaca_paper_exit_enabled",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -2885,6 +2918,10 @@ def main() -> int:
         {},
     )
     paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
+    paperops_guarded_exit_enablement = payload.get(
+        "paperops_guarded_paper_exit_enablement",
+        {},
+    )
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
@@ -3003,6 +3040,26 @@ def main() -> int:
     print(
         "cockpit_status_paperops_lifecycle_polling_enablement_broker_get_called_count="
         f"{paperops_lifecycle_polling_enablement.get('broker_get_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_guarded_exit_enablement_status="
+        f"{paperops_guarded_exit_enablement.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_guarded_exit_enablement_effective="
+        f"{paperops_guarded_exit_enablement.get('alpaca_paper_exit_effective')}"
+    )
+    print(
+        "cockpit_status_paperops_guarded_exit_enablement_path_available="
+        f"{paperops_guarded_exit_enablement.get('paper_exit_path_available')}"
+    )
+    print(
+        "cockpit_status_paperops_guarded_exit_enablement_open_position_count="
+        f"{paperops_guarded_exit_enablement.get('paperops_3_open_position_count')}"
+    )
+    print(
+        "cockpit_status_paperops_guarded_exit_enablement_close_called_count="
+        f"{paperops_guarded_exit_enablement.get('paper_position_close_called_count')}"
     )
     print(
         "cockpit_status_paperops_lifecycle_poller_status="
@@ -6569,6 +6626,21 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_lifecycle_poller_count_mismatch=true")
         return 1
+    if mission_stack.get("paperops_guarded_paper_exit_enablement") != (
+        paperops_guarded_exit_enablement.get("status")
+    ):
+        print("cockpit_status_mission_stack_guarded_exit_enablement_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_guarded_paper_exit_effective") != (
+        paperops_guarded_exit_enablement.get("alpaca_paper_exit_effective")
+    ):
+        print("cockpit_status_mission_stack_guarded_exit_effective_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_guarded_paper_exit_close_called_count") != (
+        paperops_guarded_exit_enablement.get("paper_position_close_called_count")
+    ):
+        print("cockpit_status_mission_stack_guarded_exit_close_count_mismatch=true")
+        return 1
     if mission_stack.get("paperops_paper_exit_path") != paperops_paper_exit_path.get("status"):
         print("cockpit_status_mission_stack_paperops_exit_path_mismatch=true")
         return 1
@@ -7134,6 +7206,79 @@ def main() -> int:
         or "cannot enable live capital" not in lifecycle_polling_boundary
     ):
         print("cockpit_status_paperops_lifecycle_polling_enablement_boundary_weak=true")
+        return 1
+    missing_guarded_exit_enablement_fields = sorted(
+        PAPEROPS_GUARDED_EXIT_ENABLEMENT_REQUIRED_FIELDS
+        - set(paperops_guarded_exit_enablement)
+    )
+    if missing_guarded_exit_enablement_fields:
+        print(
+            "cockpit_status_paperops_guarded_exit_enablement_fields_missing="
+            + ",".join(missing_guarded_exit_enablement_fields)
+        )
+        return 1
+    if paperops_guarded_exit_enablement.get("status") not in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        print("cockpit_status_paperops_guarded_exit_enablement_not_enabled=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("public_safe") is not True:
+        print("cockpit_status_paperops_guarded_exit_enablement_not_public_safe=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("recorded") is not True:
+        print("cockpit_status_paperops_guarded_exit_enablement_not_recorded=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("event_log_written") is not True:
+        print("cockpit_status_paperops_guarded_exit_enablement_event_log_not_written=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_guarded_exit_enablement_event_count_mismatch=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_guarded_exit_enablement_validation_errors=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("guarded_paper_exit_enabled") is not True:
+        print("cockpit_status_paperops_guarded_exit_enablement_flag_false=true")
+        return 1
+    if paperops_guarded_exit_enablement.get("alpaca_paper_exit_effective") is not True:
+        print("cockpit_status_paperops_guarded_exit_enablement_effective_false=true")
+        return 1
+    if (
+        int(paperops_guarded_exit_enablement.get("paperops_3_open_position_count", 0) or 0)
+        == 0
+        and paperops_guarded_exit_enablement.get("paper_exit_path_available") is True
+    ):
+        print("cockpit_status_paperops_guarded_exit_path_without_open_position=true")
+        return 1
+    for key in (
+        "env_file_edited",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "broker_post_allowed",
+        "position_close_allowed",
+    ):
+        if paperops_guarded_exit_enablement.get(key) is not False:
+            print(f"cockpit_status_paperops_guarded_exit_enablement_forbidden={key}")
+            return 1
+    for key in (
+        "paper_position_close_called_count",
+        "live_endpoint_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_guarded_exit_enablement.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paperops_guarded_exit_enablement_unsafe_counter={key}")
+            return 1
+    guarded_exit_boundary = paperops_guarded_exit_enablement.get("boundary", "")
+    if (
+        "PT-7 records runtime guarded Alpaca paper-exit enablement"
+        not in guarded_exit_boundary
+        or "explicit paper-exit flag" not in guarded_exit_boundary
+        or "cannot call Alpaca" not in guarded_exit_boundary
+        or "cannot enable live capital" not in guarded_exit_boundary
+    ):
+        print("cockpit_status_paperops_guarded_exit_enablement_boundary_weak=true")
         return 1
     if mission_stack.get("phase5_layer_b") != phase5_readiness.get("status"):
         print("cockpit_status_mission_stack_phase5_mismatch=true")

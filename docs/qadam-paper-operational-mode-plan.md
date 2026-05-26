@@ -512,7 +512,7 @@ Status after implementation:
   `paper_poll_path_available=False` because PaperOps-2 has zero successful
   submitted paper orders.
 - PT-6 is wired into PaperOps-1, PaperOps readiness, PaperOps-6, and cockpit
-  Mission Control. The PaperOps cycle now passes 30/30 commands.
+  Mission Control. After PT-7, the PaperOps cycle now passes 31/31 commands.
 - PT-6 does not edit `.env`, submit orders, call broker POST routes, call live
   endpoints, close or resize positions, force trades, grant Phase 7 proof
   credit, expose credentials, or enable live capital.
@@ -536,11 +536,35 @@ Status after implementation:
 - The poller writes `data/runtime/paperops_paper_lifecycle_poller.json`,
   history, and event-log artifacts, and exposes public-safe status in cockpit
   Mission Control.
-- Current cycle result: 30/30 commands pass; PaperOps-3 reports zero broker
+- Current cycle result: 31/31 commands pass; PaperOps-3 reports zero broker
   GETs, zero broker/Alpaca POSTs, zero live endpoint calls, zero direct Q7
   lifecycle mutations, and zero Phase 7 proof credit.
 - Current next code stage: PaperOps remains blocked on Q-CTRL paper
-  consultation product access and the disabled PaperOps-4 paper exit path.
+  consultation product access; the guarded paper-exit path is now runtime
+  enabled but idle because there is no PaperOps-3 open-position readback.
+
+### PT-7 - Guarded Paper Exit Runtime Enablement
+
+Record a public-safe runtime artifact that enables the guarded paper-only exit
+path without editing `.env`, closing positions, or calling Alpaca by itself.
+
+Status after implementation:
+
+- `orchestrator/paperops_guarded_paper_exit_enablement.py` exists.
+- `scripts/check_paperops_guarded_paper_exit_enablement.py` exists.
+- The current artifact reports
+  `status=enabled_pending_open_position_readback`,
+  `guarded_paper_exit_enabled=True`,
+  `alpaca_paper_exit_effective=True`,
+  `runtime_artifact_override_enabled=True`, and
+  `paper_exit_path_available=False` because PaperOps-3 has zero open-position
+  readbacks.
+- PT-7 is wired into PaperOps-4, PaperOps-1, PaperOps readiness, and cockpit
+  Mission Control. It keeps `QADAM_ALPACA_PAPER_EXIT_ENABLED=false` and uses
+  the recorded runtime artifact as the paper-only override.
+- PT-7 does not edit `.env`, request an exit, close positions, call Alpaca,
+  call broker POST routes, call live endpoints, force trades, grant Phase 7
+  proof credit, expose credentials, or enable live capital.
 
 ### PaperOps-4 - Paper Exit Path
 
@@ -551,24 +575,24 @@ Status after implementation:
 
 - `orchestrator/paperops_paper_exit_path.py` exists.
 - `scripts/check_paperops_paper_exit_path.py` exists.
-- The default safe gate remains `disabled_pending_enablement` because
-  `QADAM_ALPACA_PAPER_EXIT_ENABLED` is false by default.
-- An explicit enabled-preview probe with
-  `QADAM_ALPACA_PAPER_EXIT_ENABLED=true` reports `ready_no_exit_candidate`,
-  configured paper credentials, paper endpoint classification, and zero close
-  calls.
+- The default safe gate now consumes PT-7 runtime enablement and reports
+  `ready_no_exit_candidate` while `QADAM_ALPACA_PAPER_EXIT_ENABLED` remains
+  false. It is enabled but idle because no PaperOps-3 open-position readback
+  exists.
 - A paper position close requires paper mode, live capital disabled, Alpaca
-  paper endpoint classification, configured paper credentials, a valid
-  PaperOps-3 open-position readback, Event Log prewrite, and the explicit
-  `--execute-paper-exit` CLI flag.
+  paper endpoint classification, configured paper credentials, PT-7 runtime
+  enablement or the explicit env flag, a valid PaperOps-3 open-position
+  readback, Event Log prewrite, and the explicit `--execute-paper-exit` CLI
+  flag.
 - The exit path writes `data/runtime/paperops_paper_exit_path.json`, history,
   and event-log artifacts, and exposes public-safe status in cockpit Mission
   Control.
-- Current cycle result: 21/21 commands pass; PaperOps-4 reports zero paper
+- Current cycle result: 31/31 commands pass; PaperOps-4 reports zero paper
   close calls, zero broker/Alpaca POSTs, zero live endpoint calls, zero order
   cancels, zero position resizes, zero direct Q7 lifecycle mutations, and zero
   Phase 7 proof credit.
-- Current next code stage: `PaperOps-5 - Notification And Review`.
+- Current next code stage: resolve PaperOps-Q Q-CTRL product access for full
+  paper-reality parity.
 
 ### PaperOps-5 - Notification And Review
 
@@ -624,9 +648,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 30/30 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 31/31 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=30`, and
+  `paper_operational_cycle_command_count=31`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,
@@ -635,11 +659,10 @@ Status after implementation:
 - Safety counters remain zero for broker POST, Alpaca POST, live endpoints,
   live credentials, live capital, Telegram command path, live notification
   send, broker write, and Phase 7 proof credit.
-- Current remaining full PaperOps blockers are
-  `qctrl_paper_consultation_connected_not_ready`,
-  `external_alpaca_paper_post_enabled_not_ready`, and
-  `paper_exit_path_connected_not_ready`.
+- Current remaining full PaperOps blocker is
+  `qctrl_paper_consultation_connected_not_ready`.
 - Current operational next step: keep the hourly PaperOps runner active through
   the actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, resolve PaperOps-Q product access, then
-  enable PaperOps-2/PaperOps-4 only after their explicit prerequisites exist.
+  where Q7-qualified setups exist, resolve PaperOps-Q product access, and only
+  submit or exit through PaperOps-2/PaperOps-4 when their explicit CLI flags and
+  source prerequisites exist.

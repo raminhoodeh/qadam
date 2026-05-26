@@ -28,6 +28,9 @@ from orchestrator.paperops_alpaca_paper_submit_enablement import (
 from orchestrator.paperops_paper_lifecycle_polling_enablement import (
     validate_paperops_paper_lifecycle_polling_enablement,
 )
+from orchestrator.paperops_guarded_paper_exit_enablement import (
+    validate_paperops_guarded_paper_exit_enablement,
+)
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -84,6 +87,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "paper_lifecycle_polling_runtime_enablement_connected",
         "PT-6 must enable active read-only paper lifecycle polling through a runtime artifact.",
+    ),
+    (
+        "guarded_paper_exit_runtime_enablement_connected",
+        "PT-7 must enable the guarded paper-exit path through a runtime artifact.",
     ),
     ("qualified_setup_gate_connected", "Qualified setups must flow into Q7, even when count is zero."),
     ("auto_approval_connected", "Qualified setups must pass auto-approval without manual trade-level approval."),
@@ -189,6 +196,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "paper_lifecycle_polling_enablement": _read_json(
             runtime / "paperops_paper_lifecycle_polling_enablement.json"
         ),
+        "guarded_paper_exit_enablement": _read_json(
+            runtime / "paperops_guarded_paper_exit_enablement.json"
+        ),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -227,6 +237,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     paper_lifecycle_polling_enablement = snapshot[
         "paper_lifecycle_polling_enablement"
     ]
+    guarded_paper_exit_enablement = snapshot["guarded_paper_exit_enablement"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -446,6 +457,50 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             paper_lifecycle_polling_enablement
         )
     )
+    guarded_paper_exit_enablement_ready = (
+        guarded_paper_exit_enablement.get("status")
+        in {
+            "enabled_pending_open_position_readback",
+            "enabled_pending_explicit_exit",
+        }
+        and guarded_paper_exit_enablement.get("recorded") is True
+        and guarded_paper_exit_enablement.get("event_log_written") is True
+        and _int(guarded_paper_exit_enablement.get("event_log_event_count")) == 1
+        and guarded_paper_exit_enablement.get("guarded_paper_exit_enabled") is True
+        and guarded_paper_exit_enablement.get("alpaca_paper_exit_effective") is True
+        and guarded_paper_exit_enablement.get("runtime_artifact_override_enabled")
+        is True
+        and guarded_paper_exit_enablement.get("env_file_edited") is False
+        and guarded_paper_exit_enablement.get("explicit_exit_flag_required") is True
+        and guarded_paper_exit_enablement.get("execute_exit_requested") is False
+        and guarded_paper_exit_enablement.get("lifecycle_polling_enablement_ready")
+        is True
+        and guarded_paper_exit_enablement.get("paperops_3_source_valid") is True
+        and guarded_paper_exit_enablement.get("paper_endpoint_confirmed") is True
+        and guarded_paper_exit_enablement.get("alpaca_api_key_configured") is True
+        and guarded_paper_exit_enablement.get("alpaca_api_secret_configured") is True
+        and guarded_paper_exit_enablement.get("position_close_allowed") is False
+        and guarded_paper_exit_enablement.get("broker_write_allowed") is False
+        and guarded_paper_exit_enablement.get("broker_post_allowed") is False
+        and guarded_paper_exit_enablement.get("live_endpoint_allowed") is False
+        and guarded_paper_exit_enablement.get("live_capital_enabled") is False
+        and guarded_paper_exit_enablement.get("phase7_proof_credit_allowed") is False
+        and guarded_paper_exit_enablement.get("forced_trades_allowed") is False
+        and _int(
+            guarded_paper_exit_enablement.get("paper_position_close_called_count")
+        )
+        == 0
+        and _int(guarded_paper_exit_enablement.get("live_endpoint_called_count")) == 0
+        and _int(guarded_paper_exit_enablement.get("unsafe_write_counter_total")) == 0
+        and (
+            _int(guarded_paper_exit_enablement.get("paperops_3_open_position_count"))
+            > 0
+            or guarded_paper_exit_enablement.get("paper_exit_path_available") is False
+        )
+        and not validate_paperops_guarded_paper_exit_enablement(
+            guarded_paper_exit_enablement
+        )
+    )
     qctrl_consultation_ready = (
         settings.qctrl_paper_consultation_enabled
         and qctrl_consultation.get("status") == "consultation_recorded"
@@ -488,14 +543,20 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and paper_lifecycle_poller.get("phase7_proof_credit_allowed") is False
         and paper_lifecycle_poller.get("q7_lifecycle_mutation_performed") is False
     )
+    alpaca_paper_exit_effective = (
+        settings.alpaca_paper_exit_enabled or guarded_paper_exit_enablement_ready
+    )
     paper_exit_path_ready = (
-        settings.alpaca_paper_exit_enabled
+        alpaca_paper_exit_effective
         and paper_exit_path.get("status")
         in {
             "ready_no_exit_candidate",
             "ready_pending_explicit_execute",
             "paper_exit_close_recorded",
         }
+        and paper_exit_path.get("alpaca_paper_exit_enabled") is True
+        and paper_exit_path.get("alpaca_paper_exit_effective") is True
+        and paper_exit_path.get("runtime_alpaca_paper_exit_enabled") is True
         and paper_exit_path.get("live_capital_enabled") is False
         and _int(paper_exit_path.get("live_endpoint_called_count")) == 0
         and _int(paper_exit_path.get("broker_post_called_count")) == 0
@@ -695,6 +756,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "required_for_full_paper_ops": True,
         },
         {
+            "key": "guarded_paper_exit_runtime_enablement_connected",
+            "ready": guarded_paper_exit_enablement_ready,
+            "status": str(guarded_paper_exit_enablement.get("status") or "missing"),
+            "detail": (
+                f"effective={guarded_paper_exit_enablement.get('alpaca_paper_exit_effective')}; "
+                f"runtime={guarded_paper_exit_enablement.get('guarded_paper_exit_enabled')}; "
+                f"open_positions={_int(guarded_paper_exit_enablement.get('paperops_3_open_position_count'))}; "
+                f"direct_closes={_int(guarded_paper_exit_enablement.get('paper_position_close_called_count'))}"
+            ),
+            "required_for_full_paper_ops": True,
+        },
+        {
             "key": "paper_broker_read_connected",
             "ready": str(portfolio.get("connection_status") or "").startswith("alpaca_paper"),
             "status": str(portfolio.get("connection_status") or "missing"),
@@ -761,7 +834,8 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "ready": paper_exit_path_ready,
             "status": str(paper_exit_path.get("status") or "missing"),
             "detail": (
-                f"enabled={settings.alpaca_paper_exit_enabled}; "
+                f"effective={alpaca_paper_exit_effective}; "
+                f"runtime={paper_exit_path.get('runtime_alpaca_paper_exit_enabled')}; "
                 f"open_readbacks={_int(paper_exit_path.get('open_position_readback_count'))}; "
                 f"close_calls={_int(paper_exit_path.get('paper_position_close_called_count'))}"
             ),
@@ -857,6 +931,8 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Run PT-4 auto-approval and staged paper-order handoff"
     if "paper_lifecycle_polling_runtime_enablement_connected_not_ready" in blockers:
         return "Run PT-6 active paper lifecycle polling enablement"
+    if "guarded_paper_exit_runtime_enablement_connected_not_ready" in blockers:
+        return "Run PT-7 guarded paper-exit runtime enablement"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
         return "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:
@@ -903,6 +979,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paper_lifecycle_polling_enablement = snapshot[
         "paper_lifecycle_polling_enablement"
     ]
+    guarded_paper_exit_enablement = snapshot["guarded_paper_exit_enablement"]
     paper_operational_mode_ready = any(
         capability["key"] == "global_paper_operational_mode_enabled"
         and capability["ready"]
@@ -910,6 +987,14 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     )
     paper_operational_enabled_effective = (
         settings.paper_operational_enabled or paper_operational_mode_ready
+    )
+    guarded_paper_exit_enablement_ready = any(
+        capability["key"] == "guarded_paper_exit_runtime_enablement_connected"
+        and capability["ready"]
+        for capability in capabilities
+    )
+    alpaca_paper_exit_effective = (
+        settings.alpaca_paper_exit_enabled or guarded_paper_exit_enablement_ready
     )
 
     artifact = {
@@ -1081,7 +1166,74 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "paper_lifecycle_polling_enablement_unsafe_write_counter_total": _int(
             paper_lifecycle_polling_enablement.get("unsafe_write_counter_total")
         ),
+        "paper_exit_runtime_enablement_status": (
+            guarded_paper_exit_enablement.get("status", "missing")
+        ),
+        "paper_exit_runtime_enablement_enabled": (
+            guarded_paper_exit_enablement.get("guarded_paper_exit_enabled") is True
+        ),
+        "paper_exit_runtime_enablement_effective": (
+            guarded_paper_exit_enablement.get("alpaca_paper_exit_effective") is True
+        ),
+        "paper_exit_runtime_enablement_runtime_override_enabled": (
+            guarded_paper_exit_enablement.get("runtime_artifact_override_enabled")
+            is True
+        ),
+        "paper_exit_runtime_enablement_env_file_edited": (
+            guarded_paper_exit_enablement.get("env_file_edited") is True
+        ),
+        "paper_exit_runtime_enablement_path_available": (
+            guarded_paper_exit_enablement.get("paper_exit_path_available") is True
+        ),
+        "paper_exit_runtime_enablement_idle_until_open_position": (
+            guarded_paper_exit_enablement.get("paper_exit_idle_until_open_position")
+            is True
+        ),
+        "paper_exit_runtime_enablement_lifecycle_polling_ready": (
+            guarded_paper_exit_enablement.get("lifecycle_polling_enablement_ready")
+            is True
+        ),
+        "paper_exit_runtime_enablement_paperops3_source_valid": (
+            guarded_paper_exit_enablement.get("paperops_3_source_valid") is True
+        ),
+        "paper_exit_runtime_enablement_open_position_count": _int(
+            guarded_paper_exit_enablement.get("paperops_3_open_position_count")
+        ),
+        "paper_exit_runtime_enablement_execute_exit_requested": (
+            guarded_paper_exit_enablement.get("execute_exit_requested") is True
+        ),
+        "paper_exit_runtime_enablement_position_close_allowed": (
+            guarded_paper_exit_enablement.get("position_close_allowed") is True
+        ),
+        "paper_exit_runtime_enablement_broker_write_allowed": (
+            guarded_paper_exit_enablement.get("broker_write_allowed") is True
+        ),
+        "paper_exit_runtime_enablement_broker_post_allowed": (
+            guarded_paper_exit_enablement.get("broker_post_allowed") is True
+        ),
+        "paper_exit_runtime_enablement_live_endpoint_allowed": (
+            guarded_paper_exit_enablement.get("live_endpoint_allowed") is True
+        ),
+        "paper_exit_runtime_enablement_live_capital_enabled": (
+            guarded_paper_exit_enablement.get("live_capital_enabled") is True
+        ),
+        "paper_exit_runtime_enablement_phase7_proof_credit_allowed": (
+            guarded_paper_exit_enablement.get("phase7_proof_credit_allowed") is True
+        ),
+        "paper_exit_runtime_enablement_forced_trades_allowed": (
+            guarded_paper_exit_enablement.get("forced_trades_allowed") is True
+        ),
+        "paper_exit_runtime_enablement_close_called_count": _int(
+            guarded_paper_exit_enablement.get("paper_position_close_called_count")
+        ),
+        "paper_exit_runtime_enablement_live_endpoint_called_count": _int(
+            guarded_paper_exit_enablement.get("live_endpoint_called_count")
+        ),
+        "paper_exit_runtime_enablement_unsafe_write_counter_total": _int(
+            guarded_paper_exit_enablement.get("unsafe_write_counter_total")
+        ),
         "alpaca_paper_exit_enabled": settings.alpaca_paper_exit_enabled,
+        "alpaca_paper_exit_effective": alpaca_paper_exit_effective,
         "paper_operational_max_notional_gbp": settings.paper_operational_max_notional_gbp,
         "live_capital_enabled": settings.live_capital_enabled,
         "paper_live_activation_status": paper_live_activation.get("status", "missing"),
@@ -1435,7 +1587,18 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
             paper_lifecycle_poller.get("q7_lifecycle_mutation_performed") is True
         ),
         "paper_exit_path_status": paper_exit_path.get("status", "missing"),
-        "paper_exit_path_enabled": settings.alpaca_paper_exit_enabled,
+        "paper_exit_path_enabled": (
+            paper_exit_path.get("alpaca_paper_exit_enabled") is True
+        ),
+        "paper_exit_path_settings_flag": (
+            paper_exit_path.get("settings_alpaca_paper_exit_enabled") is True
+        ),
+        "paper_exit_path_runtime_enabled": (
+            paper_exit_path.get("runtime_alpaca_paper_exit_enabled") is True
+        ),
+        "paper_exit_path_runtime_override_enabled": (
+            paper_exit_path.get("runtime_artifact_override_enabled") is True
+        ),
         "paper_exit_path_available": paper_exit_path.get("paper_exit_path_available") is True,
         "paper_exit_path_open_position_readback_count": _int(
             paper_exit_path.get("open_position_readback_count")
@@ -1665,6 +1828,9 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "alpaca_paper_submit_runtime_enablement_unsafe_write_counter_total",
         "paper_lifecycle_polling_enablement_live_endpoint_called_count",
         "paper_lifecycle_polling_enablement_unsafe_write_counter_total",
+        "paper_exit_runtime_enablement_close_called_count",
+        "paper_exit_runtime_enablement_live_endpoint_called_count",
+        "paper_exit_runtime_enablement_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -1814,6 +1980,45 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
             errors.append(f"paper_ops_lifecycle_polling_enablement_forbidden:{key}")
     if _int(artifact.get("paper_lifecycle_polling_enablement_broker_get_called_count")) != 0:
         errors.append("paper_ops_lifecycle_polling_enablement_direct_get_called")
+    if artifact.get("paper_exit_runtime_enablement_status") not in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        errors.append("paper_ops_exit_runtime_enablement_not_enabled")
+    if artifact.get("paper_exit_runtime_enablement_enabled") is not True:
+        errors.append("paper_ops_exit_runtime_enablement_flag_false")
+    if artifact.get("paper_exit_runtime_enablement_effective") is not True:
+        errors.append("paper_ops_exit_runtime_enablement_effective_false")
+    if artifact.get("paper_exit_runtime_enablement_runtime_override_enabled") is not True:
+        errors.append("paper_ops_exit_runtime_enablement_runtime_override_false")
+    if artifact.get("paper_exit_runtime_enablement_lifecycle_polling_ready") is not True:
+        errors.append("paper_ops_exit_runtime_enablement_pt6_not_ready")
+    if artifact.get("paper_exit_runtime_enablement_paperops3_source_valid") is not True:
+        errors.append("paper_ops_exit_runtime_enablement_source_invalid")
+    if (
+        artifact.get("paper_exit_runtime_enablement_open_position_count") == 0
+        and artifact.get("paper_exit_runtime_enablement_path_available") is True
+    ):
+        errors.append("paper_ops_exit_runtime_enablement_path_without_open_position")
+    for key in (
+        "paper_exit_runtime_enablement_env_file_edited",
+        "paper_exit_runtime_enablement_execute_exit_requested",
+        "paper_exit_runtime_enablement_position_close_allowed",
+        "paper_exit_runtime_enablement_broker_write_allowed",
+        "paper_exit_runtime_enablement_broker_post_allowed",
+        "paper_exit_runtime_enablement_live_endpoint_allowed",
+        "paper_exit_runtime_enablement_live_capital_enabled",
+        "paper_exit_runtime_enablement_phase7_proof_credit_allowed",
+        "paper_exit_runtime_enablement_forced_trades_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_exit_runtime_enablement_forbidden:{key}")
+    if artifact.get("alpaca_paper_exit_effective") is not True:
+        errors.append("paper_ops_alpaca_paper_exit_effective_false")
+    if artifact.get("paper_exit_path_enabled") is not True:
+        errors.append("paper_ops_exit_path_not_enabled")
+    if artifact.get("paper_exit_path_runtime_enabled") is not True:
+        errors.append("paper_ops_exit_path_runtime_not_enabled")
     if artifact.get("paper_live_activation_status") != "approved_pending_later_enablement":
         errors.append("paper_ops_paper_live_activation_not_approved")
     if artifact.get("paper_live_activation_approval_state") != "approved":

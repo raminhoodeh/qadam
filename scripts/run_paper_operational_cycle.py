@@ -70,6 +70,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         True,
     ),
     ("paperops_paper_lifecycle_poller", "scripts/check_paperops_paper_lifecycle_poller.py", True),
+    (
+        "paperops_guarded_paper_exit_enablement",
+        "scripts/check_paperops_guarded_paper_exit_enablement.py",
+        True,
+    ),
     ("paperops_paper_exit_path", "scripts/check_paperops_paper_exit_path.py", True),
     ("paperops_notification_review", "scripts/check_paperops_notification_review.py", True),
     ("phase7_lifecycle", "scripts/check_phase7_proof_lifecycle_monitor.py", True),
@@ -91,7 +96,8 @@ PAPER_OPS_CYCLE_BOUNDARY = (
     "mode. PT-6 may invoke read-only Alpaca paper lifecycle polling only for "
     "orders PaperOps-2 has successfully submitted, while the standalone "
     "PaperOps-3 checker remains in non-poll mode. The PaperOps-4 exit path "
-    "runs only in non-exit mode. PaperOps-5 may render "
+    "may consume PT-7 guarded paper-exit runtime enablement, but still runs "
+    "only in non-exit mode. PaperOps-5 may render "
     "notification review records only; it cannot send live Telegram messages "
     "or accept Telegram commands. PaperOps-6 may verify scheduler binding for "
     "the active 30-day paper run only. The cycle cannot pass the paper-submit, "
@@ -254,6 +260,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    guarded_exit_enablement = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_guarded_paper_exit_enablement"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -289,6 +303,8 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_alpaca_submit_enablement_live_endpoint_called_count",
             "paper_ops_lifecycle_polling_enablement_broker_get_called_count",
             "paper_ops_lifecycle_polling_enablement_live_endpoint_called_count",
+            "paper_ops_exit_runtime_enablement_close_called_count",
+            "paper_ops_exit_runtime_enablement_live_endpoint_called_count",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -657,6 +673,67 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         "lifecycle_polling_enablement_live_endpoint_called_count": int(
             lifecycle_polling_enablement.get(
                 "paperops_lifecycle_polling_enablement_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "guarded_exit_enablement_status": guarded_exit_enablement.get(
+            "paperops_guarded_exit_enablement_status"
+        ),
+        "guarded_exit_enablement_enabled": (
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_enabled"
+            )
+            == "True"
+        ),
+        "guarded_exit_enablement_effective": (
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_effective"
+            )
+            == "True"
+        ),
+        "guarded_exit_enablement_runtime_override": (
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_runtime_override"
+            )
+            == "True"
+        ),
+        "guarded_exit_enablement_path_available": (
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_path_available"
+            )
+            == "True"
+        ),
+        "guarded_exit_enablement_idle_until_open_position": (
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_idle_until_open_position"
+            )
+            == "True"
+        ),
+        "guarded_exit_enablement_open_position_count": int(
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_paperops3_open_position_count",
+                "0",
+            )
+            or 0
+        ),
+        "guarded_exit_enablement_close_called_count": int(
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_close_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "guarded_exit_enablement_live_endpoint_called_count": int(
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "guarded_exit_enablement_unsafe_write_counter_total": int(
+            guarded_exit_enablement.get(
+                "paperops_guarded_exit_enablement_unsafe_write_counter_total",
                 "0",
             )
             or 0
@@ -1064,6 +1141,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "alpaca_submit_enablement_alpaca_post_called_count",
         "alpaca_submit_enablement_live_endpoint_called_count",
         "lifecycle_polling_enablement_live_endpoint_called_count",
+        "guarded_exit_enablement_close_called_count",
+        "guarded_exit_enablement_live_endpoint_called_count",
+        "guarded_exit_enablement_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
         try:
@@ -1185,6 +1265,26 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_called_get_directly")
     if artifact.get("lifecycle_polling_enablement_live_endpoint_called_count") != 0:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_live_endpoint_called")
+    if artifact.get("guarded_exit_enablement_status") not in {
+        "enabled_pending_open_position_readback",
+        "enabled_pending_explicit_exit",
+    }:
+        errors.append("paper_ops_cycle_guarded_exit_enablement_not_enabled")
+    if artifact.get("guarded_exit_enablement_enabled") is not True:
+        errors.append("paper_ops_cycle_guarded_exit_enablement_inactive")
+    if artifact.get("guarded_exit_enablement_effective") is not True:
+        errors.append("paper_ops_cycle_guarded_exit_enablement_not_effective")
+    if artifact.get("guarded_exit_enablement_runtime_override") is not True:
+        errors.append("paper_ops_cycle_guarded_exit_enablement_runtime_override_false")
+    if (
+        artifact.get("guarded_exit_enablement_open_position_count", 0) == 0
+        and artifact.get("guarded_exit_enablement_path_available") is True
+    ):
+        errors.append("paper_ops_cycle_guarded_exit_path_without_open_position")
+    if artifact.get("guarded_exit_enablement_close_called_count") != 0:
+        errors.append("paper_ops_cycle_guarded_exit_enablement_called_close")
+    if artifact.get("guarded_exit_enablement_live_endpoint_called_count") != 0:
+        errors.append("paper_ops_cycle_guarded_exit_enablement_live_endpoint_called")
     qctrl_provider_call_count = int(artifact.get("qctrl_provider_call_count", 0) or 0)
     if (
         qctrl_provider_call_count
@@ -1294,6 +1394,15 @@ def write_paper_operational_cycle(
             ],
             "paper_lifecycle_poller_live_endpoint_called_count": written[
                 "paper_lifecycle_poller_live_endpoint_called_count"
+            ],
+            "guarded_exit_enablement_status": written[
+                "guarded_exit_enablement_status"
+            ],
+            "guarded_exit_enablement_effective": written[
+                "guarded_exit_enablement_effective"
+            ],
+            "guarded_exit_enablement_close_called_count": written[
+                "guarded_exit_enablement_close_called_count"
             ],
             "paper_exit_path_status": written["paper_exit_path_status"],
             "paper_exit_path_close_called_count": written[
