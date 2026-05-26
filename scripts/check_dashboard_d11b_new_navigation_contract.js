@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-d11h-reasoning-view",
-    "/dashboard.js?v=20260526-d11h-reasoning-view"
+    "/auth.css?v=20260526-d11i-operations-view-anchor",
+    "/dashboard.js?v=20260526-d11i-operations-view-anchor"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [
@@ -166,7 +166,7 @@ includesAll(renderer, [
     "const DASHBOARD_LEGACY_HASH_TARGETS",
     "sources: { viewId: \"evidence\", targetId: \"watching\" }",
     "performance: { viewId: \"trades\", targetId: \"money\" }",
-    "communications: { viewId: \"operations\", targetId: \"communications\" }"
+    "communications: { viewId: \"operations\", targetId: \"operations-readout\" }"
 ], "D11B renderer contract");
 
 const window = loadRendererContext();
@@ -174,11 +174,11 @@ const window = loadRendererContext();
     ["#sources", "evidence", "watching"],
     ["#performance", "trades", "money"],
     ["#money", "trades", "money"],
-    ["#governance", "operations", "governance"],
-    ["#communications", "operations", "communications"],
+    ["#governance", "operations", "operations-readout"],
+    ["#communications", "operations", "operations-readout"],
     ["#system-map", "operations", "system-map"],
-    ["#process-console", "operations", "process-console"],
-    ["#forbidden", "operations", "forbidden"],
+    ["#process-console", "operations", "operations-readout"],
+    ["#forbidden", "operations", "operations-readout"],
     ["#worldview", "reasoning", "worldview"],
     ["#strategy-manifestation", "reasoning", "strategy-manifestation"]
 ].forEach(([hash, viewId, targetId]) => {

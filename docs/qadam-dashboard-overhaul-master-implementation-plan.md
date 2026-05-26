@@ -1276,7 +1276,39 @@ Outcome:
 
 Next stage:
 
-- D11I - Performance View Consolidation.
+- D11I - Operations View.
+
+### D11I - Operations View
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11i-operations-view-2026-05-26.md`
+- `scripts/check_dashboard_d11i_operations_view.js`
+
+Outcome:
+
+- The Operations view now starts with one consolidated operations readout
+  instead of separate visible runtime, hard-block, process-console,
+  communications, and governance cards.
+- Operations detail is grouped into four review drawers: runtime/bridge/safety,
+  operating team/data plumbing, full system map/event trail, and
+  governance/communications audit.
+- The full expandable System Operating Map remains the central Operations
+  artifact, with node diagnostics, edge states, and closed-loop Event Log
+  semantics.
+- Legacy operations panels remain available for compatibility and renderer
+  coverage, but they are hidden from the visible Operations tab to reduce
+  duplicate information.
+- Legacy hashes for communications, process console, hard blocks, and
+  governance now land on the consolidated Operations readout.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11J - Performance View Consolidation.
 
 ## 8. Implementation Order
 

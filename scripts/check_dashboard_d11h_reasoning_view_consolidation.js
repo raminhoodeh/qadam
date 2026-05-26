@@ -91,8 +91,8 @@ async function main() {
         "data-reasoning-review-group=\"hypotheses_blockers\"",
         "data-reasoning-review-group=\"review_chain\"",
         "data-reasoning-review-group=\"advanced_diagnostics\"",
-        "/auth.css?v=20260526-d11h-reasoning-view",
-        "/dashboard.js?v=20260526-d11h-reasoning-view"
+        "/auth.css?v=20260526-d11i-operations-view-anchor",
+        "/dashboard.js?v=20260526-d11i-operations-view-anchor"
     ], "D11H Reasoning static shell");
 
     excludesAll(dashboardHtml, [
@@ -180,7 +180,7 @@ async function main() {
     assert(fs.existsSync(auditPath), "D11H audit document missing");
     includesAll(plan, [
         "D11H - Reasoning View Consolidation",
-        "D11I - Performance View Consolidation",
+        "D11I - Operations View",
         "scripts/check_dashboard_d11h_reasoning_view_consolidation.js"
     ], "D11H master plan");
 
