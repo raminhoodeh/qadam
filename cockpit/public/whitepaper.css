@@ -68,6 +68,8 @@ a {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .nav-link {
@@ -187,6 +189,107 @@ li {
 
 .compact-list li {
     margin: 7px 0;
+}
+
+.guide-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 18px;
+}
+
+.guide-card,
+.guide-table div {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.guide-card {
+    padding: 16px;
+}
+
+.guide-card span,
+.guide-table strong {
+    color: var(--gold);
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.guide-card h3 {
+    margin: 0 0 9px;
+}
+
+.guide-card p,
+.guide-card li {
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.guide-card ul {
+    margin-top: 8px;
+}
+
+.guide-table {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.guide-table div {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 190px minmax(0, 1fr);
+    padding: 14px 16px;
+}
+
+.guide-table strong {
+    margin: 0;
+}
+
+.guide-table span {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.manual-states {
+    margin-top: 20px;
+}
+
+.manual-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid rgba(213, 184, 117, 0.3);
+    border-radius: 18px;
+    background: rgba(213, 184, 117, 0.08);
+}
+
+.manual-cta span {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.manual-cta p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.manual-cta .nav-link {
+    flex: 0 0 auto;
 }
 
 .system-diagram {
@@ -327,6 +430,19 @@ li {
 
     .article section {
         padding: 28px 0;
+    }
+
+    .guide-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .guide-table div {
+        grid-template-columns: 1fr;
+    }
+
+    .manual-cta {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     p,
