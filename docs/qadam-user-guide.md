@@ -133,101 +133,53 @@ into comments, forms, chats, docs, or prompts.
 
 Use this sequence the first time you open Qadam.
 
-1. Read Mission Control at the top of the dashboard.
-2. Confirm Qadam is in paper mode.
-3. Confirm live capital is disabled.
-4. Confirm the Secure Live Bridge or static snapshot is read-only.
-5. Open the System Operating Map to see how the fund is wired.
-6. Open Watching to see source health.
-7. Open Cognition to see current hypotheses.
-8. Open the Worldview or Private Edge panel to see private-prior context.
-9. Open the Trade Layer to separate observations from actual trade states.
-10. Open Money to inspect the paper account.
-11. Open Forbidden to see active blocks and kill-switch boundaries.
-12. Open Communications to see Telegram dry-run or delivery state.
-13. Add a comment only if you have a useful observation, concern, or proposed
+1. Start in the Overview view.
+2. Read the single safety strip first: it should say Paper only, Read-only,
+   Live capital off, No UI-to-broker path, and No LLM-to-broker path.
+3. Use Overview's health readout and mini-map to understand whether Qadam is
+   watching sources, forming hypotheses, seeing trade candidates, or blocked.
+4. Open Evidence to inspect source health, setup evidence, and supplemental
+   context.
+5. Open Reasoning to separate private priors, factual evidence, hypotheses,
+   missing corroboration, Strategy Lead review, and quant annotations.
+6. Open Trades to inspect observed signals, candidates, blocked trades, paper
+   order state, paper-account performance, and Phase 7 proof status.
+7. Open Operations only when you need the full expandable system map, event
+   trail, Telegram state, governance comments, or technical diagnostics.
+8. Treat a blocked/no-trade state as potentially healthy until the evidence
+   says otherwise.
+9. Add a comment only if you have a useful observation, concern, or proposed
     improvement.
 
 ## 9. How To Read The Dashboard
 
-### Mission Control
+The dashboard now has five primary views. Do not hunt for old standalone
+panels; those implementation names have been consolidated into the views below.
 
-Mission Control is the first read after login.
-
-Use it to answer:
-
-- how many sources are configured or connected
-- whether durable Postgres/Timescale replay is online
-- what trading philosophy Qadam is applying
-- whether the COO, local LLM, Strategy Lead, quantum oracle, risk gates, paper
-  account, and Telegram rail are healthy
-- whether Qadam currently has observed signals, candidates, blocked trades,
-  staged orders, submitted orders, positions, or postmortems
-- whether live capital and broker writes remain disabled
-
-Mission Control is a summary, not a command surface. It cannot promote
-hypotheses, approve trades, submit paper orders, write to brokers, or enable
-live capital.
-
-### System Operating Map
-
-The System Operating Map shows the architecture.
+### Overview
 
 Use it to answer:
 
-- which modules are online
-- which modules are pending, degraded, blocked, or local-only
-- how information moves from sources to reasoning to trade review
-- where Qadam intentionally stops before it can act
+- what changed since the last read
+- whether Qadam is in paper mode with live capital disabled
+- whether the live bridge or static snapshot is supplying the dashboard
+- whether sources, hypotheses, candidates, paper state, or safety gates need
+  attention
+- how the high-level system is wired through the compact mini-map
 
-### Watching
+Overview is a readout, not a command surface. It cannot promote hypotheses,
+approve trades, submit paper orders, write to brokers, or enable live capital.
 
-Watching shows the source registry.
+### Trades
 
-Pipeline groups:
+Use Trades to answer:
 
-- Conflict
-- Physical / OSINT
-- Macro
-- Market
-- Narrative / social
-
-Use this panel to check whether sources are online, missing credentials,
-degraded, or deferred. A degraded or pending source should not be treated as
-strong evidence.
-
-### Cognition
-
-Cognition is Qadam's research notebook.
-
-Use it to answer:
-
-- what Qadam is focused on
-- which hypotheses are active
-- which evidence packets exist
-- which model produced the current assessment
-- what corroboration is missing
-- why an idea has not reached the trade layer
-
-Do not treat Cognition as a trade recommendation.
-
-### Worldview / Private Edge Layer
-
-The private worldview is Qadam's hidden-incentive and power-map lens.
-
-It can help Qadam ask:
-
-- who benefits if a story is true
-- who benefits if a story is false
-- what the market is assuming
-- what observable signatures would confirm or kill the thesis
-
-The worldview is not evidence. It helps Qadam ask better questions, then live
-sources must corroborate any tradable implication.
-
-### Trade Layer
-
-The Trade Layer shows the trade lifecycle.
+- which observed signals exist
+- which candidates exist
+- which ideas are blocked and why
+- whether any staged, submitted, open, closed, or postmortem states exist
+- how the paper account is performing
+- whether Phase 7 proof status is active, blocked, incomplete, or mature
 
 Trade states:
 
@@ -247,38 +199,78 @@ The dashboard should never imply Qadam is trading unless the backend state says
 `staged_paper_order`, `submitted_paper_order`, `open_position`, or
 `closed_trade`.
 
-### Money / Paper Account Timeline
+### Evidence
 
-Money shows the paper account.
+Use Evidence to answer:
+
+- which source pipelines are online, degraded, pending, or missing credentials
+- which setup evidence exists
+- whether Yahoo Finance, Preference/PREF MCP, or other supplemental sources are
+  available only as context
+- whether an apparent signal has enough corroboration to matter
+
+- Conflict
+- Physical / OSINT
+- Macro
+- Market
+- Narrative / social
+
+Evidence is not a trade view. A degraded, stale, pending, or missing source
+should reduce confidence or block an idea until the source posture improves.
+
+### Reasoning
+
+Use Reasoning to answer:
+
+- what Qadam is focused on
+- which hypotheses are active
+- which evidence packets exist
+- which private priors are shaping the question
+- which factual evidence exists independently of those priors
+- which model or analyst produced the current assessment
+- what corroboration is missing
+- why an idea has not reached Trades
+
+The private worldview is Qadam's hidden-incentive and power-map lens. It can
+help Qadam ask:
+
+- who benefits if a story is true
+- who benefits if a story is false
+- what the market is assuming
+- what observable signatures would confirm or kill the thesis
+
+The worldview is not evidence. It helps Qadam ask better questions, then live
+sources must corroborate any tradable implication.
+
+### Operations
+
+Use Operations when you need diagnostics rather than a quick operating read:
+
+- the full expandable System Operating Map
+- event trail and process-console entries
+- hard safety boundaries and kill switches
+- Telegram notification state
+- governance comments and member review
+- bridge, runtime, and deployment diagnostics
+
+Operations is still read-only. The full system map explains how modules connect;
+its nodes are not controls.
+
+### Single Safety Strip
+
+The single safety strip is the dashboard's global authority summary. Read it
+before interpreting any panel.
 
 Use it to answer:
 
-- starting balance
-- current balance
-- realized P&L
-- unrealized P&L
-- drawdown
-- open positions
-- closed trades
-- progress toward the 100 closed proof-trade maturity benchmark
+- is Qadam paper only
+- is the bridge read-only
+- is live capital off
+- are UI-to-broker and LLM-to-broker paths blocked
+- is proof-credit inference blocked
 
-This panel is not a live-capital account. It is part of the paper/demo-proof
-trial.
-
-### Forbidden
-
-Forbidden shows the safety rails.
-
-Use it to answer:
-
-- is live capital blocked
-- are broker writes blocked
-- are prediction-market writes blocked
-- are stale-data checks blocking action
-- are missing credentials blocking action
-- are kill-switches active
-
-Do not treat blocks as bugs. Many blocks are intentional.
+If a deeper panel appears to contradict the safety strip, trust the backend
+state and investigate before acting.
 
 ### Secure Live Bridge
 
@@ -301,45 +293,28 @@ It cannot:
 - approve, create, modify, close, resize, or submit trades
 - call broker routes
 
-### Process Console
+### Old Implementation Terms
 
-Process Console shows recent checks and runtime events. It is not a shell.
+You may still see older module names in code, event logs, or status metadata.
+Use this mapping when reading old notes:
 
-### Fund Manager Comments
+| Old term | Read it now as |
+| --- | --- |
+| Mission Control | Overview |
+| System Operating Map | Overview mini-map or Operations full map |
+| Watching | Evidence |
+| Cognition | Reasoning |
+| Worldview / Private Edge | Reasoning prior context |
+| Trade Layer | Trades |
+| Money / Paper Account Timeline | Trades paper account and Phase 7 proof area |
+| Forbidden | Operations safety diagnostics plus the single safety strip |
+| Process Console | Operations event trail |
+| Fund Manager Comments | Operations governance |
+| Communications / Telegram | Operations communications |
 
-Use comments to:
-
-- challenge a hypothesis
-- flag a broken or stale source
-- suggest a new data source
-- question a trade candidate
-- add a postmortem observation
-- suggest a strategy-level improvement
-
-Comments are for governance and learning. They are not a way to manually manage
-each paper trade.
-
-### Communications / Telegram
-
-Telegram is Qadam's outbound member notification rail.
-
-It may show:
-
-- disabled, dry-run, configured, degraded, or blocked state
-- verified, pending, or failed member delivery state
-- queued, sent, failed, retried, and suppressed message counts
-- trade lifecycle messages
-- insight digests
-- system warnings
-- postmortem reminders
-
-Telegram cannot place, approve, reject, modify, close, or resize trades. It
-should never show bot tokens, chat IDs, handles, raw message payloads, or local
-paths.
-
-It should never show bot tokens, chat IDs, handles, raw message payloads, or local paths.
-
-It cannot place, approve, reject, modify, close, or resize trades.
+Telegram is an outbound member notification rail. It cannot place, approve,
+reject, modify, close, or resize trades, and it should never show bot tokens,
+chat IDs, handles, raw message payloads, or local paths.
 
 ## 10. Status Labels
 
@@ -438,21 +413,21 @@ rationale. Qadam should not trade just to satisfy a quota.
 
 Use this routine when checking Qadam.
 
-1. Start with Mission Control.
-2. Confirm paper mode.
-3. Confirm live capital is disabled.
-4. Confirm the Secure Live Bridge is read-only or the static fallback is loaded.
-5. Open Watching and review degraded or missing sources.
-6. Open Cognition and read current hypotheses.
-7. Check the Worldview lens to understand the question Qadam is asking.
-8. Open Trade Layer and separate observations from candidates, blocked trades,
-   and real order states.
-9. Check Money to confirm paper account status.
-10. Check Forbidden before assuming anything should trade.
-11. Check Communications for dry-run Telegram queue, failed sends, suppressed
-    messages, or stale member delivery state.
-12. Check Phase 7 demo-proof status if the 30-day harness is active.
-13. Add a comment if something looks wrong, unclear, or strategically important.
+1. Start with Overview.
+2. Read the single safety strip and confirm paper-only, read-only, live-capital
+   off, no UI-to-broker path, and no LLM-to-broker path.
+3. Scan the Overview mini-map and review card for the current operating posture.
+4. Open Evidence and review degraded, missing, stale, or supplemental-only
+   sources.
+5. Open Reasoning and separate priors, evidence, hypotheses, missing
+   corroboration, and analyst review.
+6. Open Trades and separate observations, candidates, blocked ideas, paper
+   order state, paper-account state, and Phase 7 proof status.
+7. Open Operations only for the full expandable system map, event trail,
+   safety diagnostics, Telegram communications, or governance comments.
+8. Record a no-trade rationale when there is no qualified setup. Do not force a
+   paper trade to satisfy cadence.
+9. Add a comment if something looks wrong, unclear, or strategically important.
 
 ## 16. What Members Can And Cannot Do
 
@@ -604,23 +579,23 @@ If the dashboard will not load:
 
 If sources look stale:
 
-1. Check Watching for degraded reasons.
+1. Check Evidence for degraded reasons.
 2. Check whether local durable replay is online.
 3. Check whether credentials are missing or deferred.
 4. Treat affected signals as lower confidence until source health recovers.
 
 If a trade state looks wrong:
 
-1. Check the Trade Layer state.
-2. Check Forbidden.
-3. Check the Event Log or process console entry.
+1. Check Trades for the exact lifecycle state.
+2. Check the single safety strip.
+3. Check Operations for the Event Log or process-console entry.
 4. Do not assume a candidate is an order.
-5. Add a comment with the exact panel and concern.
+5. Add a comment with the exact view and concern.
 
 If Telegram contradicts the dashboard:
 
 1. Trust the backend-derived dashboard state.
-2. Check Communications for dry-run, suppressed, failed, or stale messages.
+2. Check Operations for dry-run, suppressed, failed, or stale Telegram messages.
 3. Escalate with a comment.
 
 ## 20. Red Flags
@@ -648,7 +623,17 @@ Any secret, token, chat ID, local path, or credential appears in the UI.
 | Term | Meaning |
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
-| Mission Control | The top-level dashboard summary. |
+| Overview | The default dashboard view for the operating readout and compact system mini-map. |
+| Trades | The dashboard view for signals, candidates, paper states, paper-account performance, and Phase 7 proof. |
+| Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
+| Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |
+| Operations | The dashboard view for the full system map, event trail, communications, governance, and technical diagnostics. |
+| Single safety strip | The one global dashboard authority summary: paper only, read-only, live capital off, no UI-to-broker path, no LLM-to-broker path. |
+| Mission Control | Older implementation name now represented by Overview. |
+| Watching | Older implementation name now represented by Evidence. |
+| Cognition | Older implementation name now represented by Reasoning. |
+| Money | Older implementation name now represented inside Trades. |
+| Forbidden | Older implementation name now represented by the single safety strip plus Operations diagnostics. |
 | Paper mode | Test-account mode; no live capital. |
 | Demo proof | The Phase 7 proof window for observing Qadam under real calendar time. |
 | Qualified setup | A setup that passes the current evidence, strategy, and risk prerequisites. |

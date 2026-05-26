@@ -28,7 +28,7 @@ account, or operations contracts that make Qadam auditable.
 - `scripts/check_dashboard_acceptance.js` treats the D11M checker as an
   acceptance dependency.
 - The master dashboard overhaul plan records D11M as complete and moves the
-  next performance-focused work to D11N.
+  next performance-focused work to D11O.
 
 ## Authority Boundary
 

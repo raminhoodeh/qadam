@@ -64,16 +64,14 @@ assertIncludes(auth, "window.location.replace(`/login/?next=${encodeURIComponent
 assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
 
 [
+    "Overview view",
+    "Trades view",
+    "Evidence view",
+    "Reasoning view",
+    "Operations view",
+    "Single Safety Strip",
+    "Old Implementation Terms",
     "System Operating Map",
-    "Watching",
-    "Cognition",
-    "Worldview",
-    "Trade Layer",
-    "Money",
-    "Forbidden",
-    "Process Console",
-    "Comments",
-    "Communications",
     "Secure Live Bridge",
     "Telegram",
     "Status Labels",
@@ -85,16 +83,14 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
 ].forEach((needle) => assertIncludes(guideHtml, needle, "guide HTML"));
 
 [
+    "Overview",
+    "Trades",
+    "Evidence",
+    "Reasoning",
+    "Operations",
+    "Single safety strip",
+    "Old Implementation Terms",
     "System Operating Map",
-    "Watching",
-    "Cognition",
-    "Worldview",
-    "Trade Layer",
-    "Money / Paper Account Timeline",
-    "Forbidden",
-    "Process Console",
-    "Fund Manager Comments",
-    "Communications / Telegram",
     "Secure Live Bridge",
     "Important labels",
     "Trade states",
@@ -113,6 +109,11 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Read-only ready",
     "Dry-run",
     "Notify-only",
+    "Paper only",
+    "Read-only",
+    "Live capital off",
+    "No UI-to-broker path",
+    "No LLM-to-broker path",
     "Observed signal",
     "Candidate",
     "Staged paper order",
@@ -127,8 +128,9 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "A hypothesis is not a trade",
     "A candidate is not an order",
     "worldview is not evidence",
-    "It cannot place, approve, reject, modify, close, or resize trades",
-    "It should never show bot tokens, chat IDs, handles, raw message payloads, or local paths",
+    "approve, create, modify, close, resize, or submit trades",
+    "should never show bot tokens",
+    "raw message payloads, or local paths",
     "Use the Secure Live Bridge to run commands or trade",
     "The bridge claims write authority, broker authority, shell access, or local orchestrator exposure",
     "Use Telegram to approve, reject, modify, close, or resize trades",
@@ -146,7 +148,20 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Any secret, token, chat ID, local path, or credential appears in the UI"
 ].forEach((needle) => assertIncludes(guideHtml, needle, "guide HTML boundary"));
 
-assert(countMatches(guideHtml, /<h3>System Operating Map<\/h3>/g) === 1, "guide has duplicate System Operating Map card heading");
+[
+    "Open Watching",
+    "Open Cognition",
+    "Open Worldview",
+    "Open Trade Layer",
+    "Open Money",
+    "Open Forbidden",
+    "Start with Mission Control"
+].forEach((needle) => {
+    assert(!guideHtml.includes(needle), `guide HTML still tells users to hunt old panel: ${needle}`);
+    assert(!guideDoc.includes(needle), `guide markdown still tells users to hunt old panel: ${needle}`);
+});
+
+assert(countMatches(guideHtml, /<h3>Overview view<\/h3>/g) === 1, "guide has duplicate Overview view card heading");
 assert(!/<section>\s*<section>/.test(guideHtml), "guide has nested adjacent section tags");
 assert(!guideHtml.includes("Planned outbound-only"), "guide still describes Telegram as only planned");
 assertNoUnsafePublicText(guideHtml, "guide HTML");
