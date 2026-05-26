@@ -5260,3 +5260,367 @@ summary {
         min-height: auto;
     }
 }
+
+/* D11L visual simplification contract. */
+:root {
+    --surface-page: #0a0a0c;
+    --surface-rail: rgba(12, 15, 18, 0.92);
+    --surface-section: rgba(255, 255, 255, 0.026);
+    --surface-panel: rgba(255, 255, 255, 0.044);
+    --surface-panel-quiet: rgba(255, 255, 255, 0.032);
+    --line-quiet: rgba(215, 230, 240, 0.105);
+    --shadow-quiet: 0 8px 28px rgba(0, 0, 0, 0.2);
+    --section-gap: 28px;
+    --section-pad: 26px;
+}
+
+body:has(.dashboard-shell) {
+    background: var(--surface-page);
+}
+
+.dashboard-shell {
+    width: min(1480px, calc(100% - 32px));
+}
+
+.dashboard-workspace {
+    gap: var(--section-gap);
+}
+
+.dashboard-hero {
+    border-bottom: 1px solid var(--line-quiet);
+    margin-bottom: 0;
+    padding-bottom: 12px;
+}
+
+.dashboard-hero h1 {
+    font-size: 34px;
+}
+
+.dashboard-hero .copy {
+    color: rgba(226, 233, 240, 0.74);
+    max-width: 940px;
+}
+
+.button,
+button,
+.mode-stack > span,
+.cockpit-nav-links a,
+.inline-badge,
+.node-status,
+.metric,
+.mission-tag-row > span {
+    box-shadow: none;
+}
+
+.button,
+button,
+.mode-stack > span {
+    background: var(--surface-panel-quiet);
+}
+
+.button:hover,
+button:hover,
+.mission-primary:hover,
+.mission-card:hover,
+.operations-role-node:hover,
+.trade-lifecycle-links a:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.cockpit-nav,
+.dashboard-safety-strip {
+    backdrop-filter: none;
+    background: var(--surface-rail);
+    border-color: var(--line);
+    box-shadow: none;
+    position: static;
+    top: auto;
+}
+
+.dashboard-safety-strip {
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.7fr) auto;
+    margin-top: 0;
+}
+
+.dashboard-safety-strip-main h2 {
+    font-size: 17px;
+}
+
+.dashboard-safety-strip-main p {
+    max-width: 620px;
+}
+
+.dashboard-safety-strip-badges {
+    gap: 6px;
+}
+
+.mission-control-panel,
+.system-map-panel,
+.operating-review-panel,
+.panel-card,
+.comments-panel,
+.communications-panel {
+    backdrop-filter: none;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--line-quiet);
+    box-shadow: none;
+    padding: var(--section-pad) 0;
+}
+
+.panel-heading {
+    border-bottom-color: var(--line-quiet);
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.panel-scroll {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.overview-command-surface,
+.overview-proof-flow,
+.overview-system-summary,
+.trades-workspace,
+.sources-workspace,
+.reasoning-workspace,
+.performance-workspace,
+.operations-workspace,
+.governance-workspace {
+    gap: 14px;
+}
+
+.overview-hero,
+.overview-review-card,
+.overview-proof-flow,
+.overview-system-summary,
+.overview-mini-node,
+.overview-next-links a,
+.trade-consolidated-snapshot,
+.trade-review-group,
+.evidence-consolidated-readout,
+.evidence-review-group,
+.reasoning-consolidated-readout,
+.reasoning-review-group,
+.operations-consolidated-readout,
+.operations-review-group,
+.performance-workspace,
+.performance-status-card,
+.performance-progress-card,
+.paper-account-balance-card,
+.paper-equity-chart-card,
+.operations-full-map,
+.operations-role-node,
+.operations-diagnostic-card,
+.operations-feed-cluster,
+.governance-boundary-card,
+.governance-record-card,
+.governance-communications-card,
+.governance-weekly-card {
+    backdrop-filter: none;
+    background: var(--surface-panel);
+    border-color: var(--line-quiet);
+    box-shadow: none;
+}
+
+.overview-hero,
+.trade-consolidated-snapshot,
+.evidence-consolidated-readout,
+.reasoning-consolidated-readout,
+.operations-consolidated-readout,
+.performance-workspace {
+    background: var(--surface-section);
+}
+
+.overview-review-card.online,
+.overview-readout.online,
+.overview-status-chip.online,
+.overview-mini-node.online,
+.trade-consolidated-snapshot.online,
+.trade-lifecycle-card.online,
+.evidence-consolidated-readout.online,
+.reasoning-consolidated-readout.online,
+.operations-diagnostic-card.online,
+.performance-status-card.online,
+.performance-progress-card.online,
+.paper-account-balance-card.online {
+    border-color: rgba(var(--green-rgb), 0.24);
+    box-shadow: none;
+}
+
+.overview-review-card.pending,
+.overview-review-card.degraded,
+.overview-readout.pending,
+.overview-readout.degraded,
+.overview-status-chip.pending,
+.overview-status-chip.degraded,
+.overview-mini-node.pending,
+.overview-mini-node.degraded,
+.trade-consolidated-snapshot.pending,
+.trade-consolidated-snapshot.degraded,
+.trade-lifecycle-card.pending,
+.evidence-consolidated-readout.pending,
+.evidence-consolidated-readout.degraded,
+.reasoning-consolidated-readout.pending,
+.reasoning-consolidated-readout.neutral,
+.operations-diagnostic-card.pending,
+.operations-diagnostic-card.degraded,
+.performance-status-card.pending,
+.performance-progress-card.pending,
+.performance-status-card.degraded,
+.performance-progress-card.degraded,
+.paper-account-balance-card.degraded {
+    border-color: rgba(var(--amber-rgb), 0.26);
+    box-shadow: none;
+}
+
+.overview-review-card.blocked,
+.overview-readout.blocked,
+.overview-status-chip.blocked,
+.overview-mini-node.blocked,
+.trade-consolidated-snapshot.blocked,
+.trade-lifecycle-card.blocked,
+.evidence-consolidated-readout.blocked,
+.reasoning-consolidated-readout.blocked,
+.operations-diagnostic-card.blocked,
+.performance-status-card.blocked,
+.performance-progress-card.blocked,
+.paper-account-balance-card.blocked {
+    border-color: rgba(var(--coral-rgb), 0.3);
+    box-shadow: none;
+}
+
+.summary-strip,
+.summary-strip.compact,
+.trade-consolidated-metrics,
+.evidence-consolidated-metrics,
+.reasoning-consolidated-metrics,
+.operations-consolidated-metrics,
+.performance-summary-strip {
+    gap: 8px;
+}
+
+.metric {
+    background: var(--surface-panel-quiet);
+    border-color: var(--line-quiet);
+    min-height: 0;
+    padding: 10px;
+}
+
+.metric span {
+    color: var(--muted-soft);
+}
+
+.metric strong {
+    font-size: 20px;
+}
+
+.panel-brief {
+    background: var(--surface-section);
+    border-color: var(--line-quiet);
+    box-shadow: none;
+}
+
+.trade-review-group,
+.evidence-review-group,
+.reasoning-review-group,
+.operations-review-group {
+    overflow: hidden;
+}
+
+.trade-review-group summary,
+.evidence-review-group summary,
+.reasoning-review-group summary,
+.operations-review-group summary,
+.evidence-source-ledger > summary,
+.operations-node-diagnostics summary,
+.source-pipeline-card summary,
+.source-setup-panel summary,
+.pipeline-row summary {
+    background: transparent;
+    border-color: var(--line-quiet);
+    box-shadow: none;
+}
+
+.trade-review-group-body,
+.evidence-review-group-body,
+.reasoning-review-group-body,
+.operations-review-group-body,
+.operations-feed-body {
+    border-top-color: var(--line-quiet);
+}
+
+.info-card {
+    background: rgba(12, 15, 18, 0.96);
+    box-shadow: var(--shadow-quiet);
+}
+
+.performance-boundary-card,
+.reasoning-boundary-card,
+.operations-safety-reference,
+.trade-lifecycle-safety {
+    background: rgba(var(--amber-rgb), 0.046);
+    border-color: rgba(var(--amber-rgb), 0.22);
+}
+
+.performance-progress-bar,
+.paper-equity-chart {
+    box-shadow: none;
+}
+
+html[data-dashboard-active-view="trades"] .trade-intent-panel {
+    grid-column: 1 / -1;
+    order: 1;
+}
+
+html[data-dashboard-active-view="trades"] .capital-panel {
+    grid-column: 1 / -1;
+    order: 2;
+}
+
+@media (min-width: 901px) {
+    .dashboard-shell {
+        gap: 22px;
+        padding-top: 16px;
+        width: min(1480px, calc(100% - 32px));
+    }
+
+    .dashboard-workspace {
+        gap: var(--section-gap);
+    }
+
+    .dashboard-detail-flow,
+    .dashboard-grid-live {
+        gap: 24px;
+    }
+
+    .panel-card {
+        padding: var(--section-pad) 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-shell {
+        width: min(100% - 24px, 1120px);
+    }
+
+    .dashboard-hero h1 {
+        font-size: 32px;
+    }
+
+    .dashboard-safety-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .mission-control-panel,
+    .system-map-panel,
+    .operating-review-panel,
+    .panel-card,
+    .comments-panel,
+    .communications-panel {
+        padding: 22px 0;
+    }
+}
