@@ -31,13 +31,11 @@ function assertIncludes(text, needle, label) {
     "data-dashboard-view-link",
     "data-dashboard-view-target=\"overview\"",
     "data-dashboard-view-target=\"trades\"",
-    "data-dashboard-view-target=\"sources\"",
+    "data-dashboard-view-target=\"evidence\"",
     "data-dashboard-view-target=\"reasoning\"",
-    "data-dashboard-view-target=\"performance\"",
     "data-dashboard-view-target=\"operations\"",
-    "data-target-section=\"governance\"",
-    "/auth.css?v=20260526-paper-equity-chart",
-    "/dashboard.js?v=20260526-paper-equity-chart"
+    "/auth.css?v=20260526-d11b-nav-contract",
+    "/dashboard.js?v=20260526-d11b-nav-contract"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
 
 [
@@ -76,7 +74,7 @@ assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
     "function initCockpitNavigation",
     "data-dashboard-view-link",
     "data-cockpit-nav-current",
-    "DASHBOARD_LEGACY_SECTION_VIEWS",
+    "DASHBOARD_LEGACY_HASH_TARGETS",
     "resolveDashboardHash",
     "activateDashboardView",
     "classList.toggle(\"active\", active)",

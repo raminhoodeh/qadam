@@ -104,7 +104,7 @@ async function main() {
         ".governance-action-list",
         ".governance-communications-card",
         ".governance-weekly-card",
-        "html[data-dashboard-active-view=\"governance\"] .comments-panel"
+        "html[data-dashboard-active-view=\"operations\"] .comments-panel"
     ], "Governance workspace CSS");
 
     includesAll(renderer, [
@@ -136,7 +136,7 @@ async function main() {
     const approvals = governance.approvals?.records || [];
 
     assert(governance.id === "governance", "governance model id mismatch");
-    ["Trades", "Sources", "Reasoning", "Performance", "Operations", "Governance"].forEach((view) => {
+    ["Trades", "Evidence", "Reasoning", "Operations"].forEach((view) => {
         assert(targetViews.includes(view), `comment target missing view ${view}`);
     });
     assert(approvals.length >= 6, "approval/review records missing");

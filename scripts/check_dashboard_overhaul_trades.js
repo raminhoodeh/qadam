@@ -157,7 +157,7 @@ async function main() {
     assert(records.every((record) => record.phase7_proof_credit_allowed === false), "record-level proof credit must never be granted by UI model");
     assert(model.proof_partitions.phase5_test_lifecycle.counts_for_phase7_proof === false, "Phase 5 test lifecycle must not count for Phase 7 proof");
     assert(model.proof_credit.display_allowed === false, "proof credit display must remain off for non-mature status");
-    assert(model.evidence_links.source_quorum.href === "#sources", "source quorum link must point to Sources");
+    assert(model.evidence_links.source_quorum.href === "#evidence", "source quorum link must point to Evidence");
     assert(model.evidence_links.risk_decision.href === "#trade-risk-policy", "risk decision link must point to trade risk section");
     assert(model.evidence_links.broker_receipt.href === "#trade-broker-receipts", "broker receipt link must point to broker receipt section");
 

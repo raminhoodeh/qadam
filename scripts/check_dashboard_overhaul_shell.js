@@ -105,21 +105,21 @@ class FakeElement {
 }
 
 function loadShellHarness() {
-    const viewIds = ["overview", "trades", "sources", "reasoning", "performance", "operations", "governance"];
+    const viewIds = ["overview", "trades", "evidence", "reasoning", "operations"];
     const sectionMappings = {
         "mission-control": "overview",
         "review-sequence": "overview",
-        watching: "sources",
+        watching: "evidence",
         cognition: "reasoning",
         "strategy-manifestation": "reasoning",
         worldview: "reasoning",
         "trade-layer": "trades",
-        money: "performance",
+        money: "trades",
         "system-map": "operations",
         forbidden: "operations",
         "process-console": "operations",
-        communications: "governance",
-        governance: "governance"
+        communications: "operations",
+        governance: "operations"
     };
     const links = viewIds.map((viewId) => new FakeElement({
         text: viewId.replace(/^\w/, (char) => char.toUpperCase()),
@@ -144,7 +144,6 @@ function loadShellHarness() {
         querySelectorAll(selector) {
             if (selector === "[data-dashboard-view-link]" || selector === "[data-cockpit-nav-link]") return links;
             if (selector === "[data-dashboard-view-section]") return sections;
-            if (selector === "[data-density-option]") return [];
             return [];
         },
         getElementById(id) {
@@ -213,13 +212,13 @@ function loadShellHarness() {
     return { window, links, sections, current, byId, events };
 }
 
-const expectedViews = ["overview", "trades", "sources", "reasoning", "performance", "operations", "governance"];
-const expectedLabels = ["Overview", "Trades", "Sources", "Reasoning", "Performance", "Operations", "Governance"];
+const expectedViews = ["overview", "trades", "evidence", "reasoning", "operations"];
+const expectedLabels = ["Overview", "Trades", "Evidence", "Reasoning", "Operations"];
 const links = parseViewLinks(html);
 const sections = parseViewSections(html);
 const sectionById = new Map(sections.map((section) => [section.id, section]));
 
-assert(links.length === 7, `expected 7 dashboard view links, got ${links.length}`);
+assert(links.length === 5, `expected 5 dashboard view links, got ${links.length}`);
 assert(JSON.stringify(links.map((link) => link.target)) === JSON.stringify(expectedViews), "dashboard view link order mismatch");
 assert(JSON.stringify(links.map((link) => link.label)) === JSON.stringify(expectedLabels), "dashboard view labels mismatch");
 links.forEach((link) => {
@@ -232,16 +231,16 @@ assert(sections.length === 13, `expected 13 segmented dashboard sections, got ${
     ["mission-control", "overview"],
     ["review-sequence", "overview"],
     ["trade-layer", "trades"],
-    ["watching", "sources"],
+    ["watching", "evidence"],
     ["cognition", "reasoning"],
     ["strategy-manifestation", "reasoning"],
     ["worldview", "reasoning"],
-    ["money", "performance"],
+    ["money", "trades"],
     ["system-map", "operations"],
     ["forbidden", "operations"],
     ["process-console", "operations"],
-    ["communications", "governance"],
-    ["governance", "governance"]
+    ["communications", "operations"],
+    ["governance", "operations"]
 ].forEach(([id, view]) => {
     assert(sectionById.get(id)?.view === view, `${id} should map to ${view}`);
 });
@@ -264,7 +263,7 @@ includesAll(css, [
 
 includesAll(renderer, [
     "const DASHBOARD_VIEWS",
-    "const DASHBOARD_LEGACY_SECTION_VIEWS",
+    "const DASHBOARD_LEGACY_HASH_TARGETS",
     "function resolveDashboardHash",
     "function activateDashboardView",
     "function activateDashboardViewFromHash",
@@ -274,7 +273,10 @@ includesAll(renderer, [
 ], "segmented shell renderer");
 
 const harness = loadShellHarness();
-assert(harness.window.resolveQadamDashboardHash("#money").viewId === "performance", "legacy #money should resolve to Performance");
+assert(harness.window.resolveQadamDashboardHash("#sources").viewId === "evidence", "legacy #sources should resolve to Evidence");
+assert(harness.window.resolveQadamDashboardHash("#performance").viewId === "trades", "legacy #performance should resolve to Trades");
+assert(harness.window.resolveQadamDashboardHash("#governance").viewId === "operations", "legacy #governance should resolve to Operations");
+assert(harness.window.resolveQadamDashboardHash("#money").viewId === "trades", "legacy #money should resolve to Trades");
 assert(harness.window.resolveQadamDashboardHash("#system-map").viewId === "operations", "legacy #system-map should resolve to Operations");
 assert(harness.window.resolveQadamDashboardHash("#cognition").viewId === "reasoning", "legacy #cognition should resolve to Reasoning");
 assert(harness.window.resolveQadamDashboardHash("#trades").viewId === "trades", "#trades should resolve to Trades");
@@ -290,8 +292,8 @@ assert(harness.byId.get("mission-control").hidden === true, "overview should hid
 assert(harness.current.textContent === "Trades", "current view label should update to Trades");
 
 harness.window.activateQadamDashboardViewFromHash("#money", { scroll: true });
-assert(harness.window.document.documentElement.dataset.dashboardActiveView === "performance", "legacy #money should activate Performance");
-assert(harness.byId.get("money").hidden === false, "money should show for Performance");
+assert(harness.window.document.documentElement.dataset.dashboardActiveView === "trades", "legacy #money should activate Trades");
+assert(harness.byId.get("money").hidden === false, "money should show for Trades");
 assert(harness.byId.get("money").scrolled === true, "legacy #money should scroll to target");
 
 harness.window.activateQadamDashboardViewFromHash("#system-map", { scroll: false });
@@ -299,6 +301,8 @@ assert(harness.window.document.documentElement.dataset.dashboardActiveView === "
 assert(harness.byId.get("system-map").hidden === false, "system map should show for Operations");
 assert(harness.byId.get("forbidden").hidden === false, "safety should show for Operations");
 assert(harness.byId.get("process-console").hidden === false, "process console should show for Operations");
+assert(harness.byId.get("communications").hidden === false, "communications should show for Operations");
+assert(harness.byId.get("governance").hidden === false, "governance should show for Operations");
 
 [
     "DX-4 - Segmented Shell",
@@ -312,7 +316,7 @@ assert(harness.byId.get("process-console").hidden === false, "process console sh
 console.log("dashboard_overhaul_shell=ok");
 console.log("dashboard_default_view=overview");
 console.log("dashboard_segmented_views_enabled=True");
-console.log("dashboard_primary_view_count=7");
+console.log("dashboard_primary_view_count=5");
 console.log(`dashboard_segmented_section_count=${sections.length}`);
 console.log("dashboard_legacy_anchor_redirects=True");
 console.log("dashboard_mobile_tap_targets_stable=True");

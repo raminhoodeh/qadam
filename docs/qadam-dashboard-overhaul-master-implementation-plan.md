@@ -1082,6 +1082,35 @@ Next stage:
 
 - D11B - New Navigation Contract.
 
+### D11B - New Navigation Contract
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11b-new-navigation-contract-2026-05-26.md`
+- `scripts/check_dashboard_d11b_new_navigation_contract.js`
+
+Outcome:
+
+- The primary dashboard nav now has five views: Overview, Trades, Evidence,
+  Reasoning, and Operations.
+- `Sources` is renamed to `Evidence`.
+- `Performance` is merged into Trades at the navigation level.
+- `Governance` and Communications are merged into Operations at the navigation
+  level.
+- Legacy hashes such as `#sources`, `#performance`, `#money`, `#governance`,
+  `#communications`, `#system-map`, `#process-console`, and `#forbidden`
+  resolve into the new owner view while preserving target scrolling.
+- The obsolete `Executive / Terminal` density switcher was removed from HTML,
+  CSS, renderer state, and exported browser hooks.
+- No runtime authority, provider call, broker write, Telegram command, or
+  live-capital behavior changes in D11B.
+
+Next stage:
+
+- D11C - Reduce Panel Count And Merge Duplicate Surfaces.
+
 ## 8. Implementation Order
 
 Implement in this order:

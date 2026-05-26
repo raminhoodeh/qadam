@@ -46,6 +46,8 @@ node scripts/check_dashboard_overhaul_performance.js
 node scripts/check_dashboard_overhaul_operations.js
 node scripts/check_dashboard_overhaul_governance.js
 node scripts/check_dashboard_overhaul_responsive.js
+node scripts/check_dashboard_d11a_information_diet_audit.js
+node scripts/check_dashboard_d11b_new_navigation_contract.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
@@ -88,6 +90,8 @@ git diff --check -- \
   docs/qadam-dashboard-overhaul-dx-10-operations-audit-2026-05-25.md \
   docs/qadam-dashboard-overhaul-dx-11-governance-audit-2026-05-25.md \
   docs/qadam-dashboard-overhaul-dx-12-responsive-audit-2026-05-25.md \
+  docs/qadam-dashboard-d11a-information-diet-audit-2026-05-26.md \
+  docs/qadam-dashboard-d11b-new-navigation-contract-2026-05-26.md \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   scripts/check_dashboard_acceptance.js \
   scripts/check_dashboard_deployment_readiness.js \
@@ -108,6 +112,8 @@ git diff --check -- \
   scripts/check_dashboard_overhaul_operations.js \
   scripts/check_dashboard_overhaul_governance.js \
   scripts/check_dashboard_overhaul_responsive.js \
+  scripts/check_dashboard_d11a_information_diet_audit.js \
+  scripts/check_dashboard_d11b_new_navigation_contract.js \
   scripts/preflight_dashboard_deployment.sh
 
 say "Deployment preflight passed"

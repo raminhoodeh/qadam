@@ -13,28 +13,24 @@ const repoRoot = path.resolve(__dirname, "..");
 const htmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
 const cssPath = path.join(repoRoot, "landing-page-repo", "auth.css");
 const rendererPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
-const planPath = path.join(repoRoot, "docs", "qadam-dashboard-implementation-plan.md");
+const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11a-information-diet-audit-2026-05-26.md");
 
 const html = fs.readFileSync(htmlPath, "utf8");
 const css = fs.readFileSync(cssPath, "utf8");
 const renderer = fs.readFileSync(rendererPath, "utf8");
-const plan = fs.readFileSync(planPath, "utf8");
+const audit = fs.readFileSync(auditPath, "utf8");
 
-function assertIncludes(text, needle, label) {
-    assert(text.includes(needle), `${label} missing ${needle}`);
+function assertAbsent(text, needle, label) {
+    assert(!text.includes(needle), `${label} still contains obsolete density artifact: ${needle}`);
 }
 
 [
     "data-density-toggle",
-    "data-density-option=\"executive\"",
-    "data-density-option=\"terminal\"",
-    "aria-pressed=\"true\"",
-    "aria-pressed=\"false\"",
-    "Executive",
-    "Terminal",
-    "/auth.css?v=20260526-paper-equity-chart",
-    "/dashboard.js?v=20260526-paper-equity-chart"
-].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
+    "data-density-option",
+    "Dashboard density",
+    ">Executive<",
+    ">Terminal<"
+].forEach((needle) => assertAbsent(html, needle, "dashboard HTML"));
 
 [
     "DASHBOARD_DENSITY_KEY",
@@ -45,28 +41,26 @@ function assertIncludes(text, needle, label) {
     "document.documentElement.dataset.dashboardDensity",
     "window.setDashboardDensity",
     "data-density-option"
-].forEach((needle) => assertIncludes(renderer, needle, "dashboard renderer"));
+].forEach((needle) => assertAbsent(renderer, needle, "dashboard renderer"));
 
 [
     ".density-toggle",
-    ".density-toggle button[aria-pressed=\"true\"]",
-    "html[data-dashboard-density=\"terminal\"] .dashboard-shell",
-    "html[data-dashboard-density=\"terminal\"] .priority-grid",
-    "html[data-dashboard-density=\"terminal\"] .panel-brief",
-    "html[data-dashboard-density=\"terminal\"] .metric",
-    "html[data-dashboard-density=\"terminal\"] .trade-route span"
-].forEach((needle) => assertIncludes(css, needle, "density CSS"));
+    "data-dashboard-density",
+    "dashboard-density"
+].forEach((needle) => assertAbsent(css, needle, "dashboard CSS"));
 
-assertIncludes(plan, "Phase D10G - Executive / Terminal Density Toggle", "implementation plan");
+assert(
+    audit.includes("`Executive / Terminal` density toggle") && audit.includes("Delete from UI"),
+    "D11A audit must authorize deleting the density toggle"
+);
 
 (async () => {
     const rendered = await renderWithStatus(status);
     assert(
-        rendered.document.documentElement.dataset.dashboardDensity === "executive",
-        "dashboard density should default to executive in renderer contract"
+        rendered.document.documentElement.dataset.dashboardDensity === undefined,
+        "renderer should not set dashboard density after D11B"
     );
-    console.log("dashboard_density_toggle=ok");
-})().catch((error) => {
-    console.error(error);
-    process.exit(1);
-});
+    console.log("dashboard_density_toggle_removed=ok");
+    console.log("dashboard_density_toggle_present=False");
+    console.log("dashboard_density_renderer_state_present=False");
+})();

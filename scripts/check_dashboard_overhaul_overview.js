@@ -118,14 +118,14 @@ async function main() {
     assert(overview.demo_proof.weekly_proof_trade_target === 3, "Overview must expose 3 proof trades per week target");
     assert(typeof overview.demo_proof.eligible_setup_count === "number", "Overview must expose eligible setup count");
     assert(overview.lifecycle.length >= 8, "Overview lifecycle strip must expose trade lifecycle states");
-    assert(overview.next_review_links.length === 6, "Overview must expose six next-review links");
+    assert(overview.next_review_links.length === 4, "Overview must expose four next-review links after D11B");
     assert(overview.mini_map.source_model === "system_connectivity_model", "Overview mini-map must use shared connectivity model");
     assert(models.system_connectivity_model.overview_scope.placement === "overview-mini-map", "Mini-map placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
     const nextViews = overview.next_review_links.map((link) => link.view_id);
     assert(
-        JSON.stringify(nextViews) === JSON.stringify(["trades", "sources", "reasoning", "performance", "operations", "governance"]),
+        JSON.stringify(nextViews) === JSON.stringify(["trades", "evidence", "reasoning", "operations"]),
         "Overview next-review link order mismatch"
     );
 
@@ -195,7 +195,7 @@ async function main() {
     console.log("dashboard_overview_uses_view_model=True");
     console.log("dashboard_overview_demo_day_count=30");
     console.log("dashboard_overview_weekly_proof_trade_target=3");
-    console.log("dashboard_overview_next_review_links=6");
+    console.log("dashboard_overview_next_review_links=4");
     console.log("dashboard_overview_mini_map_shared_model=True");
     console.log("dashboard_authority_unchanged=True");
 }

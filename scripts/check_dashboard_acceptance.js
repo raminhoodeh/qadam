@@ -61,6 +61,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_panel_redesign.js",
     "scripts/check_dashboard_density_toggle.js",
     "scripts/check_dashboard_overhaul_overview.js",
+    "scripts/check_dashboard_d11b_new_navigation_contract.js",
     "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_durable_spine.js",
     "scripts/check_dashboard_renderer.js",
@@ -104,11 +105,9 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "data-density-toggle",
-    "data-density-option=\"executive\"",
-    "data-density-option=\"terminal\"",
-    "/auth.css?v=20260526-paper-equity-chart",
-    "/dashboard.js?v=20260526-paper-equity-chart"
+    "data-dashboard-view-target=\"evidence\"",
+    "/auth.css?v=20260526-d11b-nav-contract",
+    "/dashboard.js?v=20260526-d11b-nav-contract"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -138,9 +137,7 @@ function assertNoUnsafePublicText(text, label) {
     ".overview-mini-map",
     ".system-flow-diagram",
     ".panel-brief",
-    ".section-explainer",
-    ".density-toggle",
-    "html[data-dashboard-density=\"terminal\"] .dashboard-shell"
+    ".section-explainer"
 ].forEach((needle) => assertText(css, needle, "dashboard CSS"));
 
 [
@@ -150,11 +147,21 @@ function assertNoUnsafePublicText(text, label) {
     "function renderOverviewFirstScreen",
     "function renderFlowMap",
     "function renderOperatingSummary",
+    "DASHBOARD_LEGACY_HASH_TARGETS",
+    "renderQadamDashboardStatus"
+].forEach((needle) => assertText(renderer, needle, "dashboard renderer"));
+
+[
+    "data-density-toggle",
+    "data-density-option",
+    "DASHBOARD_DENSITY_KEY",
     "function initDashboardDensityToggle",
     "window.setDashboardDensity",
     "document.documentElement.dataset.dashboardDensity",
-    "renderQadamDashboardStatus"
-].forEach((needle) => assertText(renderer, needle, "dashboard renderer"));
+    "html[data-dashboard-density=\"terminal\"]"
+].forEach((needle) => {
+    assert(!`${html}\n${css}\n${renderer}`.includes(needle), `dashboard acceptance found obsolete density artifact ${needle}`);
+});
 
 assertNoUnsafePublicText(html, "dashboard HTML");
 assertNoUnsafePublicText(css, "dashboard CSS");
@@ -171,11 +178,6 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         rendered.document.documentElement.dataset.dashboardStatusSource === "live_bridge",
         "dashboard acceptance expected live bridge preference"
     );
-    assert(
-        rendered.document.documentElement.dataset.dashboardDensity === "executive",
-        "dashboard acceptance expected Executive density by default"
-    );
-
     [
         ["[data-status-banner]", "D1 public-safe snapshot loaded"],
         ["[data-status-banner]", "D9 live bridge connected"],

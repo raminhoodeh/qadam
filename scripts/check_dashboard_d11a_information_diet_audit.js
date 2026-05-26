@@ -98,12 +98,13 @@ includesAll(audit, [
     "`renderCapital`"
 ], "dynamic renderer inventory");
 
-assert(html.includes("data-density-toggle"), "current dashboard no longer has density toggle; D11A audit should be refreshed");
-assert(renderer.includes("function initDashboardDensityToggle"), "current renderer no longer has density toggle logic; D11A audit should be refreshed");
+assert(!html.includes("data-density-toggle"), "D11B should have removed the density toggle from current dashboard HTML");
+assert(!renderer.includes("function initDashboardDensityToggle"), "D11B should have removed density toggle logic from current renderer");
 
 console.log("dashboard_d11a_information_diet_audit=ok");
 console.log(`dashboard_d11a_static_section_count=${cockpitSections.length}`);
 console.log("dashboard_d11a_all_sections_have_fate=True");
 console.log("dashboard_d11a_duplicate_concepts_assigned=True");
 console.log("dashboard_d11a_density_toggle_marked_for_deletion=True");
+console.log("dashboard_d11a_density_toggle_deleted_by_d11b=True");
 console.log("dashboard_d11a_next_stage=D11B New Navigation Contract");

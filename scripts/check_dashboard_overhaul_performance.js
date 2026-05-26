@@ -101,7 +101,7 @@ async function main() {
         ".paper-equity-chart-card",
         ".paper-equity-chart",
         ".paper-equity-chart-summary",
-        "html[data-dashboard-active-view=\"performance\"] .capital-panel"
+        "html[data-dashboard-active-view=\"trades\"] .capital-panel"
     ], "Performance workspace CSS");
 
     includesAll(renderer, [
