@@ -53,6 +53,7 @@ function explainerBlock(id) {
 const requiredExplainers = [
     "status_safety",
     "mission_control",
+    "phase4_strategy",
     "system_operating_map",
     "operating_detail",
     "watching",
@@ -70,37 +71,53 @@ requiredExplainers.forEach((id) => {
     const block = explainerBlock(id);
     assertIncludes(block, "section-explainer", id);
     assertIncludes(block, "role=\"tooltip\"", id);
-    assertIncludes(block, "<dt>Use it to</dt>", id);
-    assertIncludes(block, "<dt>Watch for</dt>", id);
-    assertIncludes(block, "<dt>Boundary</dt>", id);
+    assertIncludes(block, "data-tooltip-contract=\"compact\"", id);
+    assertIncludes(block, "explainer-grid compact", id);
+    assertIncludes(block, "<dt>Shows</dt>", id);
+    assertIncludes(block, "<dt>Watch</dt>", id);
+    assertIncludes(block, "<dt>Limits</dt>", id);
     assertIncludes(block, "<dd>", id);
+    assert(!block.includes("<dt>Use it to</dt>"), `${id} still uses verbose Use it to label`);
+    assert(!block.includes("<dt>Watch for</dt>"), `${id} still uses verbose Watch for label`);
+    assert(!block.includes("<dt>Boundary</dt>"), `${id} still uses verbose Boundary label`);
+
+    const plainBlocks = [...block.matchAll(/<(p|dd)>(.*?)<\/\1>/g)].map((match) => (
+        match[2]
+            .replace(/<[^>]+>/g, "")
+            .replace(/&amp;/g, "&")
+            .replace(/\s+/g, " ")
+            .trim()
+    ));
+    plainBlocks.forEach((text) => {
+        assert(text.length <= 88, `${id} explainer text is too long: ${text}`);
+    });
 });
 
 [
-    "This cockpit is read-only",
-    "This is a read-only summary",
-    "No node is a command button",
-    "Every detail panel renders sanitized status only",
-    "A watched source is observation only",
-    "A hypothesis is not a trade",
-    "This panel cannot unlock them",
-    "Telegram is outbound notify-only",
-    "A candidate is not an order",
-    "paper mirror only",
-    "not shell access",
-    "Worldview is context only, not evidence",
-    "Comments are governance only"
+    "One place for mode, capital, and authority state.",
+    "The shortest answer before deeper review.",
+    "How nodes hand evidence into paper-state review.",
+    "Observation only; no order creation.",
+    "Hypothesis only; risk still decides.",
+    "Notify-only; no command path.",
+    "Candidate/order separation stays explicit.",
+    "Event stream only; not shell access.",
+    "Context only; requires live corroboration.",
+    "Governance only; no runtime or trade authority."
 ].forEach((needle) => assertIncludes(html, needle, "dashboard explainer boundary"));
 
 [
     ".section-explainer",
     ".explainer-grid",
+    ".explainer-grid.compact",
     ".explainer-grid dt",
     ".explainer-grid dd",
     ".section-intro-heading"
 ].forEach((needle) => assertIncludes(css, needle, "explainer CSS"));
 
-assertIncludes(html, "/auth.css?v=20260526-d11i-operations-view-anchor", "dashboard stylesheet cache key");
+assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
+assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
+assertIncludes(html, "/auth.css?v=20260526-d11j-tooltip-simplification", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

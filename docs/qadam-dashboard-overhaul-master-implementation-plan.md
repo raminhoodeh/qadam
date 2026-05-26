@@ -1308,7 +1308,36 @@ Outcome:
 
 Next stage:
 
-- D11J - Performance View Consolidation.
+- D11J - Tooltip Simplification.
+
+### D11J - Tooltip Simplification
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11j-tooltip-simplification-2026-05-26.md`
+- `scripts/check_dashboard_d11j_tooltip_simplification.js`
+
+Outcome:
+
+- Dashboard hover help now uses a compact `Shows / Watch / Limits` contract
+  instead of the longer `Use it to / Watch for / Boundary` onboarding pattern.
+- Every dashboard section tooltip has `data-tooltip-contract="compact"` so the
+  shorter contract is enforceable.
+- Tooltip copy is constrained to one short summary and three short rows, reducing
+  repeated safety paragraphs and keeping the dashboard itself responsible for
+  primary explanation.
+- The single safety strip renderer uses the same compact tooltip structure as
+  the static shell.
+- Tooltip styling is narrower and tighter so hover help behaves like quick
+  operator assistance, not another card layer.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11K - Performance View Consolidation.
 
 ## 8. Implementation Order
 
