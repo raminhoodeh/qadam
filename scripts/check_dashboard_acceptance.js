@@ -66,6 +66,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_d11d_single_safety_strip.js",
     "scripts/check_dashboard_d11e_rebuild_overview.js",
     "scripts/check_dashboard_d11f_trades_view_consolidation.js",
+    "scripts/check_dashboard_d11j_tooltip_simplification.js",
     "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_durable_spine.js",
     "scripts/check_dashboard_renderer.js",
@@ -115,20 +116,20 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260526-d11i-operations-view-anchor",
-    "/dashboard.js?v=20260526-d11i-operations-view-anchor"
+    "/auth.css?v=20260526-d11j-tooltip-simplification",
+    "/dashboard.js?v=20260526-d11j-tooltip-simplification"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
-    "This cockpit is read-only",
-    "No node is a command button",
+    "Status only; no approval or order path.",
+    "Map only; nodes are not controls.",
     "No command route",
-    "A candidate is not an order",
+    "Candidate/order separation stays explicit.",
     "live capital disabled",
-    "Telegram cannot place, approve, reject, modify, close, or resize trades",
-    "Worldview is context only, not evidence",
-    "not shell access",
-    "Read-only paper account mirror",
+    "Notify-only; no command path.",
+    "Context only; requires live corroboration.",
+    "Event stream only; not shell access.",
+    "Paper mirror; no funding authority.",
     "cannot originate trades or bypass risk"
 ].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
 

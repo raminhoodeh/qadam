@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-d11i-operations-view-anchor",
-    "/dashboard.js?v=20260526-d11i-operations-view-anchor"
+    "/auth.css?v=20260526-d11j-tooltip-simplification",
+    "/dashboard.js?v=20260526-d11j-tooltip-simplification"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [

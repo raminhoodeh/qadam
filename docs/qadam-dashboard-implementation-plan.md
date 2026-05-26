@@ -1008,6 +1008,10 @@ Objective: remove the fixed-height cockpit shell so the dashboard can be read as
 
 Status: implemented locally.
 
+Superseded in D11J by the compact tooltip contract. The D10E structure proved
+that every section had help; D11J shortened that help so it no longer carries
+the main onboarding burden.
+
 Implemented now:
 
 - The desktop dashboard no longer locks `body`, `.dashboard-shell`, or `.dashboard-workspace` to one viewport.
@@ -1101,7 +1105,7 @@ Status: implemented locally.
 
 Implemented now:
 
-- Upgraded the first-pass hoverovers into structured operator explainers with `Use it to`, `Watch for`, and `Boundary` rows.
+- Upgraded the first-pass hoverovers into structured operator explainers. D11J later simplified the row labels to `Shows`, `Watch`, and `Limits`.
 - Added an explainer to the Operating Detail divider so the review sequence itself is clear.
 - Aligned the explainer vocabulary with the protected User Guide: observations, hypotheses, candidates, paper states, worldview priors, hard blocks, notify-only Telegram, and read-only bridge boundaries.
 - Made execution authority explicit in every risky section: sources cannot create orders, hypotheses are not trades, candidates are not orders, Telegram is notify-only, comments are governance only, and the process console is not shell access.

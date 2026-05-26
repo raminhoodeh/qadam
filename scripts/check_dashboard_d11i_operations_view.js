@@ -97,8 +97,8 @@ async function main() {
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
         "legacy-operations-panel",
-        "/auth.css?v=20260526-d11i-operations-view-anchor",
-        "/dashboard.js?v=20260526-d11i-operations-view-anchor"
+        "/auth.css?v=20260526-d11j-tooltip-simplification",
+        "/dashboard.js?v=20260526-d11j-tooltip-simplification"
     ], "D11I Operations static shell");
 
     assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 4, "four legacy Operations panels should be hidden from visible Operations view");
@@ -188,7 +188,7 @@ async function main() {
     includesAll(plan, [
         "D11I - Operations View",
         "scripts/check_dashboard_d11i_operations_view.js",
-        "D11J - Performance View Consolidation"
+        "D11J - Tooltip Simplification"
     ], "D11I master plan");
 
     console.log("dashboard_d11i_operations_view=ok");
