@@ -139,8 +139,8 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260526-overview-operating-map",
-        "/dashboard.js?v=20260526-overview-operating-map"
+        "/auth.css?v=20260526-advanced-debug-overview",
+        "/dashboard.js?v=20260526-advanced-debug-overview"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");

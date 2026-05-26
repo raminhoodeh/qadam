@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260526-overview-operating-map",
-        "/dashboard.js?v=20260526-overview-operating-map"
+        "/auth.css?v=20260526-advanced-debug-overview",
+        "/dashboard.js?v=20260526-advanced-debug-overview"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -141,7 +141,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260526-overview-operating-map");
+    console.log("dashboard_d11l_cache_key=20260526-advanced-debug-overview");
     console.log("dashboard_authority_unchanged=True");
 }
 

@@ -147,8 +147,11 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-overview-operating-map",
-    "/dashboard.js?v=20260526-overview-operating-map"
+    "/auth.css?v=20260526-advanced-debug-overview",
+    "/dashboard.js?v=20260526-advanced-debug-overview",
+    "data-dashboard-debug-toggle",
+    "data-dashboard-advanced-links",
+    "data-dashboard-debug-only"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [
@@ -163,6 +166,9 @@ excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [
 ], "D11B codebase");
 
 includesAll(renderer, [
+    "const DASHBOARD_ADVANCED_DEBUG_KEY",
+    "function setDashboardDebugMode",
+    "window.setQadamDashboardDebugMode",
     "const DASHBOARD_LEGACY_HASH_TARGETS",
     "sources: { viewId: \"evidence\", targetId: \"watching\" }",
     "performance: { viewId: \"trades\", targetId: \"money\" }",
@@ -189,7 +195,8 @@ const window = loadRendererContext();
 });
 
 includesAll(contract, [
-    "The dashboard now has five first-level views",
+    "only Overview is visible",
+    "Advanced / Debug Mode",
     "`#evidence`",
     "`Executive / Terminal` density switcher is removed",
     "`#sources`",
@@ -207,12 +214,14 @@ includesAll(plan, [
 (async () => {
     const rendered = await renderWithStatus(status);
     assert(rendered.document.documentElement.dataset.dashboardDensity === undefined, "rendered dashboard must not set density state");
+    includesAll(dashboardHtml, ["data-dashboard-debug-toggle", "data-dashboard-advanced-links hidden"], "D11B advanced debug shell");
     const nextLinks = renderedHtml(rendered, "[data-overview-next-links]");
     includesAll(nextLinks, ["#trades", "#evidence", "#reasoning", "#operations"], "rendered overview next links");
     excludesAll(nextLinks, ["#sources", "#performance", "#governance"], "rendered overview next links");
     console.log("dashboard_d11b_new_navigation_contract=ok");
-    console.log("dashboard_d11b_primary_view_count=5");
-    console.log("dashboard_d11b_evidence_view_enabled=True");
+    console.log("dashboard_d11b_registered_view_count=5");
+    console.log("dashboard_d11b_default_visible_view=overview");
+    console.log("dashboard_d11b_advanced_debug_mode=True");
     console.log("dashboard_d11b_density_toggle_removed=True");
     console.log("dashboard_d11b_legacy_redirect_count=10");
     console.log("dashboard_authority_unchanged=True");

@@ -34,8 +34,10 @@ function assertIncludes(text, needle, label) {
     "data-dashboard-view-target=\"evidence\"",
     "data-dashboard-view-target=\"reasoning\"",
     "data-dashboard-view-target=\"operations\"",
-    "/auth.css?v=20260526-overview-operating-map",
-    "/dashboard.js?v=20260526-overview-operating-map"
+    "data-dashboard-debug-toggle",
+    "data-dashboard-advanced-links hidden",
+    "/auth.css?v=20260526-advanced-debug-overview",
+    "/dashboard.js?v=20260526-advanced-debug-overview"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
 
 [
@@ -59,6 +61,8 @@ assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
     "position: sticky",
     ".cockpit-nav-head",
     ".cockpit-nav-links",
+    ".dashboard-debug-toggle",
+    ".dashboard-debug-links",
     ".cockpit-nav-links a",
     ".cockpit-nav-links a.active",
     ".cockpit-nav-links a[aria-current=\"page\"]",

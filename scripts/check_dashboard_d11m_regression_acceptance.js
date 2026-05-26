@@ -91,6 +91,17 @@ function assertCanonicalViewNav() {
             `dashboard missing section for view ${view}`
         );
     });
+    includesAll(dashboardHtml, [
+        "data-dashboard-debug-toggle",
+        "data-dashboard-advanced-links hidden",
+        "Advanced / Debug Mode",
+        "data-dashboard-debug-only"
+    ], "advanced debug navigation shell");
+    includesAll(renderer, [
+        "function setDashboardDebugMode",
+        "window.setQadamDashboardDebugMode",
+        "dashboardDebugModeEnabled"
+    ], "advanced debug renderer");
     assert(!dashboardHtml.includes("data-dashboard-view-target=\"performance\""), "performance must remain consolidated into Trades");
     assert(!dashboardHtml.includes("data-dashboard-view-target=\"sources\""), "sources must remain consolidated into Evidence");
 }
@@ -217,8 +228,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260526-overview-operating-map",
-        "/dashboard.js?v=20260526-overview-operating-map"
+        "/auth.css?v=20260526-advanced-debug-overview",
+        "/dashboard.js?v=20260526-advanced-debug-overview"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();
@@ -232,6 +243,8 @@ async function main() {
 
     console.log("dashboard_d11m_regression_acceptance=ok");
     console.log("dashboard_d11m_views=overview,trades,evidence,reasoning,operations");
+    console.log("dashboard_d11m_default_mode=overview_only");
+    console.log("dashboard_d11m_advanced_debug_tabs_hidden=True");
     console.log("dashboard_d11m_single_safety_strip=True");
     console.log("dashboard_d11m_authority_unchanged=True");
 }

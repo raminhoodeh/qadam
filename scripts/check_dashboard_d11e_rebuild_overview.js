@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260526-overview-operating-map"
+        "20260526-advanced-debug-overview"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

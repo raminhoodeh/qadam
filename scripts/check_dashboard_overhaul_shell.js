@@ -76,11 +76,11 @@ class FakeClassList {
 }
 
 class FakeElement {
-    constructor({ id = "", text = "", dataset = {} } = {}) {
+    constructor({ id = "", text = "", dataset = {}, hidden = false } = {}) {
         this.id = id;
         this.textContent = text;
         this.dataset = dataset;
-        this.hidden = false;
+        this.hidden = hidden;
         this.attributes = {};
         this.classList = new FakeClassList();
         this.listeners = {};
@@ -93,6 +93,12 @@ class FakeElement {
 
     removeAttribute(name) {
         delete this.attributes[name];
+    }
+
+    hasAttribute(name) {
+        if (name === "data-dashboard-debug-only") return this.dataset.dashboardDebugOnly === "true";
+        if (name === "data-dashboard-view-section") return Boolean(this.dataset.dashboardViewSection);
+        return Object.prototype.hasOwnProperty.call(this.attributes, name);
     }
 
     addEventListener(name, handler) {
@@ -130,9 +136,18 @@ function loadShellHarness() {
     }));
     const sections = Object.entries(sectionMappings).map(([id, view]) => new FakeElement({
         id,
-        dataset: { dashboardViewSection: view }
+        dataset: {
+            dashboardViewSection: view,
+            dashboardDebugOnly: id === "review-sequence" ? "true" : undefined
+        }
     }));
     const current = new FakeElement({ text: "Overview" });
+    const debugToggle = new FakeElement({ text: "Advanced / Debug Mode" });
+    const advancedLinks = new FakeElement({ id: "dashboard-debug-tabs", hidden: true });
+    const standaloneDebug = [
+        new FakeElement({ id: "overview-command-surface", dataset: { dashboardDebugOnly: "true" }, hidden: true }),
+        new FakeElement({ id: "overview-proof-flow", dataset: { dashboardDebugOnly: "true" }, hidden: true })
+    ];
     const byId = new Map(sections.map((section) => [section.id, section]));
     const documentElement = { dataset: {} };
     const document = {
@@ -144,6 +159,9 @@ function loadShellHarness() {
         querySelectorAll(selector) {
             if (selector === "[data-dashboard-view-link]" || selector === "[data-cockpit-nav-link]") return links;
             if (selector === "[data-dashboard-view-section]") return sections;
+            if (selector === "[data-dashboard-debug-toggle]") return [debugToggle];
+            if (selector === "[data-dashboard-advanced-links]") return [advancedLinks];
+            if (selector === "[data-dashboard-debug-only]:not([data-dashboard-view-section])") return standaloneDebug;
             return [];
         },
         getElementById(id) {
@@ -153,6 +171,12 @@ function loadShellHarness() {
     const events = {};
     const window = {
         document,
+        localStorage: {
+            getItem() {
+                return null;
+            },
+            setItem() {}
+        },
         history: {
             pushed: [],
             pushState(_state, _title, url) {
@@ -197,12 +221,7 @@ function loadShellHarness() {
         console,
         document,
         fetch: async () => ({ ok: true, json: async () => ({}) }),
-        localStorage: {
-            getItem() {
-                return null;
-            },
-            setItem() {}
-        },
+        localStorage: window.localStorage,
         sessionStorage,
         window
     };
@@ -246,7 +265,7 @@ assert(sections.length === 13, `expected 13 segmented dashboard sections, got ${
 });
 sections.forEach((section) => {
     assert(expectedViews.includes(section.view), `${section.id} has invalid view ${section.view}`);
-    if (section.view === "overview") {
+    if (section.view === "overview" && section.id !== "review-sequence") {
         assert(section.hidden === false, `${section.id} should be visible by default`);
     } else {
         assert(section.hidden === true, `${section.id} should be hidden by default`);
@@ -256,6 +275,8 @@ sections.forEach((section) => {
 includesAll(css, [
     "[data-dashboard-view-section][hidden]",
     "html[data-dashboard-active-view=\"overview\"] .dashboard-detail-flow",
+    "data-dashboard-debug=\"off\"",
+    "dashboard-debug-toggle",
     ".dashboard-view-switcher",
     "min-height: 38px",
     ".cockpit-nav-links a[aria-current=\"page\"]"
@@ -267,8 +288,10 @@ includesAll(renderer, [
     "function resolveDashboardHash",
     "function activateDashboardView",
     "function activateDashboardViewFromHash",
+    "function setDashboardDebugMode",
     "data-dashboard-view-section",
     "data-dashboard-view-link",
+    "window.setQadamDashboardDebugMode",
     "window.activateQadamDashboardView"
 ], "segmented shell renderer");
 
@@ -281,12 +304,15 @@ assert(harness.window.resolveQadamDashboardHash("#system-map").viewId === "opera
 assert(harness.window.resolveQadamDashboardHash("#cognition").viewId === "reasoning", "legacy #cognition should resolve to Reasoning");
 assert(harness.window.resolveQadamDashboardHash("#trades").viewId === "trades", "#trades should resolve to Trades");
 assert(harness.window.document.documentElement.dataset.dashboardActiveView === "overview", "/dashboard/ should start on Overview");
+assert(harness.window.document.documentElement.dataset.dashboardDebug === "off", "/dashboard/ should start with debug mode off");
 assert(harness.byId.get("mission-control").hidden === false, "Overview mission control should be visible at startup");
+assert(harness.byId.get("review-sequence").hidden === true, "review sequence should be debug-only at startup");
 assert(harness.byId.get("trade-layer").hidden === true, "Trades panel should be hidden at startup");
 assert(harness.current.textContent === "Overview", "current view label should start at Overview");
 
 harness.window.activateQadamDashboardView("trades", { scroll: false });
 assert(harness.window.document.documentElement.dataset.dashboardActiveView === "trades", "activate trades failed");
+assert(harness.window.document.documentElement.dataset.dashboardDebug === "on", "activating Trades should enable debug mode");
 assert(harness.byId.get("trade-layer").hidden === false, "trade layer should show for Trades");
 assert(harness.byId.get("mission-control").hidden === true, "overview should hide for Trades");
 assert(harness.current.textContent === "Trades", "current view label should update to Trades");

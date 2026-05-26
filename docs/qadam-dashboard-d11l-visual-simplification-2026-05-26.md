@@ -19,7 +19,7 @@ a stack of competing cards.
 ## Acceptance
 
 - `landing-page-repo/auth.css` contains the D11L visual simplification contract.
-- `/dashboard/` uses the `20260526-overview-operating-map` cache key for the
+- `/dashboard/` uses the `20260526-advanced-debug-overview` cache key for the
   stylesheet and dashboard renderer.
 - Primary panels use transparent section containers with divider lines instead
   of nested glass-card treatment.

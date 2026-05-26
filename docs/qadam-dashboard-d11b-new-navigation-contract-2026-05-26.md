@@ -11,7 +11,9 @@ brokers, send Telegram commands, or enable live capital.
 
 ## Primary View Contract
 
-The dashboard now has five first-level views:
+The dashboard keeps five registered views, but only Overview is visible in the
+default cockpit. Trades, Evidence, Reasoning, and Operations are now Advanced /
+Debug views so the normal dashboard does not present technical tabs first.
 
 | Order | View | Hash | Purpose |
 | --- | --- | --- | --- |
@@ -22,14 +24,15 @@ The dashboard now has five first-level views:
 | 5 | Operations | `#operations` | Runtime, system map, safety counters, communications, governance, and diagnostics. |
 
 The `Executive / Terminal` density switcher is removed. The dashboard now uses
-view ownership rather than density modes to manage complexity.
+view ownership plus an explicit Advanced / Debug Mode toggle to manage
+complexity.
 
 ## Section Ownership
 
 | Section id | D11B owner view | Reason |
 | --- | --- | --- |
 | `mission-control` | Overview | First-read operating summary. |
-| `review-sequence` | Overview | Kept temporarily until later simplification removes or rewrites it. |
+| `review-sequence` | Overview, debug-only | Hidden in the default cockpit; available only when Advanced / Debug Mode is enabled. |
 | `trade-layer` | Trades | Canonical trade lifecycle. |
 | `money` | Trades | Paper account belongs with trade outcomes. |
 | `watching` | Evidence | Sources become evidence quality. |
@@ -61,7 +64,10 @@ Old links remain usable:
 
 ## Acceptance
 
-- The visible dashboard nav has exactly five links.
+- The visible default dashboard nav has Overview plus an Advanced / Debug Mode
+  toggle.
+- Advanced / Debug Mode reveals the Trades, Evidence, Reasoning, and Operations
+  links.
 - `Sources` is renamed to `Evidence`.
 - `Performance` is no longer a primary nav item.
 - `Governance` is no longer a primary nav item.
