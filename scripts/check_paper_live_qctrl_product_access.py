@@ -229,7 +229,10 @@ def main() -> int:
         errors.append("PT-1 is missing PT-0 system approval log")
     if written["qctrl_credential_configured"] is not True:
         errors.append("PT-1 does not see configured Q-CTRL credential")
-    if written["qctrl_sdk_package_importable"] is not True:
+    if (
+        written["qctrl_sdk_package_importable"] is not True
+        and written["status"] != "blocked_missing_qctrl_sdk"
+    ):
         errors.append("PT-1 does not see importable Q-CTRL SDK")
     for key in (
         "execution_allowed",

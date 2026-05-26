@@ -1894,6 +1894,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_30_day_operations",
     "paperops_30_day_operations_scheduler_status",
     "paperops_30_day_operations_active_day_number",
+    "paperops_qualified_setup_production",
+    "paperops_qualified_setup_production_qualified_count",
+    "paperops_qualified_setup_production_ready_to_stage",
     "phase5_layer_b",
     "phase5_alpaca_paper_dry_run",
     "phase5_execution_adapter",
@@ -2038,6 +2041,34 @@ PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS = {
     "stage",
     "status",
     "submitted_paper_order_count",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS = {
+    "boundary",
+    "broker_post_called_count",
+    "event_log_event_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "paper_operational_mode_effective",
+    "paper_order_submission_allowed",
+    "phase7_demo_qualified_setup_count",
+    "phase7_proof_credit_allowed",
+    "production_candidate_count",
+    "public_safe",
+    "qctrl_paper_consultation_connected",
+    "qctrl_paper_consultation_status",
+    "qualified_setup_count",
+    "qualified_setup_creation_forced",
+    "qualified_setup_production_path_ready",
+    "ready_to_stage_q7_order",
+    "recorded",
+    "schema_version",
+    "source_qualified_setup_ledger_count",
+    "stage",
+    "status",
     "unsafe_write_counter_total",
     "validation_error_count",
 }
@@ -2754,6 +2785,10 @@ def main() -> int:
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_qualified_setup_production = payload.get(
+        "paperops_qualified_setup_production",
+        {},
+    )
     phase4_approval = phase4_strategy.get("approval_event", {})
     phase4_toggles = phase4_strategy.get("strategy_toggles", {})
     phase4_certification = phase4_strategy.get("certification", {})
@@ -2889,6 +2924,30 @@ def main() -> int:
     print(
         "cockpit_status_paperops_30_day_operations_unsafe_write_counter_total="
         f"{paperops_30_day_operations.get('unsafe_write_counter_total')}"
+    )
+    print(
+        "cockpit_status_paperops_qualified_setup_production_status="
+        f"{paperops_qualified_setup_production.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_qualified_setup_production_candidate_count="
+        f"{paperops_qualified_setup_production.get('production_candidate_count')}"
+    )
+    print(
+        "cockpit_status_paperops_qualified_setup_production_qualified_count="
+        f"{paperops_qualified_setup_production.get('qualified_setup_count')}"
+    )
+    print(
+        "cockpit_status_paperops_qualified_setup_production_ready_to_stage="
+        f"{paperops_qualified_setup_production.get('ready_to_stage_q7_order')}"
+    )
+    print(
+        "cockpit_status_paperops_qualified_setup_production_qctrl_status="
+        f"{paperops_qualified_setup_production.get('qctrl_paper_consultation_status')}"
+    )
+    print(
+        "cockpit_status_paperops_qualified_setup_production_unsafe_write_counter_total="
+        f"{paperops_qualified_setup_production.get('unsafe_write_counter_total')}"
     )
     print(f"cockpit_status_phase4_stage_status={phase4_strategy.get('stage_status')}")
     print(
@@ -6343,6 +6402,21 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_30_day_day_mismatch=true")
         return 1
+    if mission_stack.get("paperops_qualified_setup_production") != (
+        paperops_qualified_setup_production.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_qualified_setup_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_qualified_setup_production_qualified_count") != (
+        paperops_qualified_setup_production.get("qualified_setup_count")
+    ):
+        print("cockpit_status_mission_stack_paperops_qualified_setup_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_qualified_setup_production_ready_to_stage") != (
+        paperops_qualified_setup_production.get("ready_to_stage_q7_order")
+    ):
+        print("cockpit_status_mission_stack_paperops_qualified_setup_ready_mismatch=true")
+        return 1
     missing_paper_live_fields = sorted(
         PAPER_LIVE_ACTIVATION_REQUIRED_FIELDS - set(paper_live_activation)
     )
@@ -6402,6 +6476,7 @@ def main() -> int:
         return 1
     if paper_live_qctrl_product_access.get("status") not in {
         "blocked_qctrl_product_access_or_subscription",
+        "blocked_missing_qctrl_sdk",
         "qctrl_paper_consultation_ready",
     }:
         print("cockpit_status_paper_live_qctrl_product_access_not_checked=true")
@@ -6547,6 +6622,75 @@ def main() -> int:
         return 1
     if "cannot force trades" not in paperops_30_day_operations.get("boundary", ""):
         print("cockpit_status_paperops_30_day_operations_boundary_weak=true")
+        return 1
+    missing_qualified_setup_fields = sorted(
+        PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS
+        - set(paperops_qualified_setup_production)
+    )
+    if missing_qualified_setup_fields:
+        print(
+            "cockpit_status_paperops_qualified_setup_production_fields_missing="
+            + ",".join(missing_qualified_setup_fields)
+        )
+        return 1
+    if paperops_qualified_setup_production.get("status") not in {
+        "production_path_ready_with_qualified_setup",
+        "production_path_ready_no_current_qualified_setup",
+    }:
+        print("cockpit_status_paperops_qualified_setup_production_not_ready=true")
+        return 1
+    if paperops_qualified_setup_production.get("public_safe") is not True:
+        print("cockpit_status_paperops_qualified_setup_production_not_public_safe=true")
+        return 1
+    if paperops_qualified_setup_production.get("recorded") is not True:
+        print("cockpit_status_paperops_qualified_setup_production_not_recorded=true")
+        return 1
+    if paperops_qualified_setup_production.get("event_log_written") is not True:
+        print("cockpit_status_paperops_qualified_setup_production_event_log_not_written=true")
+        return 1
+    if paperops_qualified_setup_production.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_qualified_setup_production_event_count_mismatch=true")
+        return 1
+    if paperops_qualified_setup_production.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_qualified_setup_production_validation_errors=true")
+        return 1
+    if paperops_qualified_setup_production.get("qualified_setup_production_path_ready") is not True:
+        print("cockpit_status_paperops_qualified_setup_production_path_not_ready=true")
+        return 1
+    if int(paperops_qualified_setup_production.get("production_candidate_count", 0) or 0) < 1:
+        print("cockpit_status_paperops_qualified_setup_production_candidates_missing=true")
+        return 1
+    if paperops_qualified_setup_production.get("live_capital_enabled") is not False:
+        print("cockpit_status_paperops_qualified_setup_production_live_capital_enabled=true")
+        return 1
+    if paperops_qualified_setup_production.get("paper_order_submission_allowed") is not False:
+        print("cockpit_status_paperops_qualified_setup_production_submit_authority=true")
+        return 1
+    if paperops_qualified_setup_production.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_paperops_qualified_setup_production_proof_credit_allowed=true")
+        return 1
+    if paperops_qualified_setup_production.get("forced_trades_allowed") is not False:
+        print("cockpit_status_paperops_qualified_setup_production_forced_trades_allowed=true")
+        return 1
+    if paperops_qualified_setup_production.get("qualified_setup_creation_forced") is not False:
+        print("cockpit_status_paperops_qualified_setup_production_forced_setup=true")
+        return 1
+    if int(paperops_qualified_setup_production.get("unsafe_write_counter_total", 0) or 0) != 0:
+        print("cockpit_status_paperops_qualified_setup_production_unsafe_counter_nonzero=true")
+        return 1
+    if int(paperops_qualified_setup_production.get("phase7_demo_qualified_setup_count", 0) or 0) != 0:
+        print("cockpit_status_paperops_qualified_setup_production_mutated_demo_count=true")
+        return 1
+    if int(paperops_qualified_setup_production.get("source_qualified_setup_ledger_count", 0) or 0) != 0:
+        print("cockpit_status_paperops_qualified_setup_production_mutated_q7_ledger=true")
+        return 1
+    qualified_setup_boundary = paperops_qualified_setup_production.get("boundary", "")
+    if (
+        "guarded qualified setup production path" not in qualified_setup_boundary
+        or "cannot mutate the Q7 ledger" not in qualified_setup_boundary
+        or "cannot force trades" not in qualified_setup_boundary
+    ):
+        print("cockpit_status_paperops_qualified_setup_production_boundary_weak=true")
         return 1
     if mission_stack.get("phase5_layer_b") != phase5_readiness.get("status"):
         print("cockpit_status_mission_stack_phase5_mismatch=true")

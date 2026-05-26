@@ -16,6 +16,9 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.paper_operational_mode import validate_paper_operational_mode
+from orchestrator.paperops_qualified_setup_production import (
+    validate_paperops_qualified_setup_production,
+)
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -56,6 +59,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "qctrl_paper_consultation_connected",
         "Q-CTRL consultation must be implemented for full paper-reality parity.",
+    ),
+    (
+        "qualified_setup_production_path_connected",
+        "PT-3 must classify production qualified setups without forcing trades.",
     ),
     ("qualified_setup_gate_connected", "Qualified setups must flow into Q7, even when count is zero."),
     ("auto_approval_connected", "Qualified setups must pass auto-approval without manual trade-level approval."),
@@ -149,6 +156,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
             runtime / "paper_live_qctrl_product_access.json"
         ),
         "paper_operational_mode": _read_json(runtime / "paper_operational_mode.json"),
+        "qualified_setup_production": _read_json(
+            runtime / "paperops_qualified_setup_production.json"
+        ),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -181,6 +191,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
     paper_operational_mode = snapshot["paper_operational_mode"]
+    qualified_setup_production = snapshot["qualified_setup_production"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -220,6 +231,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         paper_live_qctrl_product_access.get("status")
         in {
             "blocked_qctrl_product_access_or_subscription",
+            "blocked_missing_qctrl_sdk",
             "qctrl_paper_consultation_ready",
         }
         and paper_live_qctrl_product_access.get("pt0_activation_approved") is True
@@ -256,6 +268,34 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and _int(paper_operational_mode.get("alpaca_post_called_count")) == 0
         and _int(paper_operational_mode.get("live_endpoint_called_count")) == 0
         and not validate_paper_operational_mode(paper_operational_mode)
+    )
+    qualified_setup_production_ready = (
+        qualified_setup_production.get("status")
+        in {
+            "production_path_ready_with_qualified_setup",
+            "production_path_ready_no_current_qualified_setup",
+        }
+        and qualified_setup_production.get("recorded") is True
+        and qualified_setup_production.get("qualified_setup_production_path_ready")
+        is True
+        and _int(qualified_setup_production.get("production_candidate_count")) >= 1
+        and qualified_setup_production.get("paper_operational_mode_effective") is True
+        and qualified_setup_production.get("phase7_run_state") == "active"
+        and qualified_setup_production.get("paper_order_submission_allowed") is False
+        and qualified_setup_production.get("broker_post_allowed") is False
+        and qualified_setup_production.get("live_endpoint_allowed") is False
+        and qualified_setup_production.get("live_capital_enabled") is False
+        and qualified_setup_production.get("qctrl_direct_execution_allowed") is False
+        and qualified_setup_production.get("phase7_proof_credit_allowed") is False
+        and qualified_setup_production.get("forced_trades_allowed") is False
+        and qualified_setup_production.get("qualified_setup_creation_forced") is False
+        and _int(qualified_setup_production.get("broker_post_called_count")) == 0
+        and _int(qualified_setup_production.get("alpaca_post_called_count")) == 0
+        and _int(qualified_setup_production.get("live_endpoint_called_count")) == 0
+        and _int(qualified_setup_production.get("unsafe_write_counter_total")) == 0
+        and not validate_paperops_qualified_setup_production(
+            qualified_setup_production
+        )
     )
     qctrl_consultation_ready = (
         settings.qctrl_paper_consultation_enabled
@@ -452,6 +492,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
                 f"provider_calls={_int(qctrl_consultation.get('provider_call_count'))}"
             ),
             "required_for_full_paper_ops": settings.quantum_paper_parity_required,
+        },
+        {
+            "key": "qualified_setup_production_path_connected",
+            "ready": qualified_setup_production_ready,
+            "status": str(qualified_setup_production.get("status") or "missing"),
+            "detail": (
+                f"candidates={_int(qualified_setup_production.get('production_candidate_count'))}; "
+                f"qualified={_int(qualified_setup_production.get('qualified_setup_count'))}; "
+                f"ready_to_stage={qualified_setup_production.get('ready_to_stage_q7_order')}; "
+                f"qctrl={qualified_setup_production.get('qctrl_paper_consultation_status', 'missing')}"
+            ),
+            "required_for_full_paper_ops": True,
         },
         {
             "key": "paper_broker_read_connected",
@@ -652,6 +704,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
     paper_operational_mode = snapshot["paper_operational_mode"]
+    qualified_setup_production = snapshot["qualified_setup_production"]
     paper_operational_mode_ready = any(
         capability["key"] == "global_paper_operational_mode_enabled"
         and capability["ready"]
@@ -839,6 +892,92 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "quantum_paper_parity_required": settings.quantum_paper_parity_required,
         "qctrl_paper_consultation_enabled": settings.qctrl_paper_consultation_enabled,
         "qctrl_paper_consultation_required_for_full_parity": settings.quantum_paper_parity_required,
+        "qualified_setup_production_status": qualified_setup_production.get(
+            "status",
+            "missing",
+        ),
+        "qualified_setup_production_path_ready": (
+            qualified_setup_production.get("qualified_setup_production_path_ready")
+            is True
+        ),
+        "qualified_setup_production_candidate_count": _int(
+            qualified_setup_production.get("production_candidate_count")
+        ),
+        "qualified_setup_production_qualified_setup_count": _int(
+            qualified_setup_production.get("qualified_setup_count")
+        ),
+        "qualified_setup_production_blocked_candidate_count": _int(
+            qualified_setup_production.get("blocked_candidate_count")
+        ),
+        "qualified_setup_production_ready_to_stage_q7_order": (
+            qualified_setup_production.get("ready_to_stage_q7_order") is True
+        ),
+        "qualified_setup_production_no_trade_rationale": (
+            qualified_setup_production.get("no_trade_rationale")
+        ),
+        "qualified_setup_production_qctrl_paper_consultation_status": (
+            qualified_setup_production.get("qctrl_paper_consultation_status", "missing")
+        ),
+        "qualified_setup_production_qctrl_paper_consultation_connected": (
+            qualified_setup_production.get("qctrl_paper_consultation_connected") is True
+        ),
+        "qualified_setup_production_qctrl_product_access_status": (
+            qualified_setup_production.get("qctrl_product_access_status", "missing")
+        ),
+        "qualified_setup_production_qctrl_product_access_verified": (
+            qualified_setup_production.get("qctrl_product_access_verified") is True
+        ),
+        "qualified_setup_production_source_q7_ledger_count": _int(
+            qualified_setup_production.get("source_qualified_setup_ledger_count")
+        ),
+        "qualified_setup_production_source_quorum_bypass_allowed": (
+            qualified_setup_production.get("source_quorum_bypass_allowed") is True
+        ),
+        "qualified_setup_production_supplemental_source_bypass_allowed": (
+            qualified_setup_production.get("supplemental_source_bypass_allowed") is True
+        ),
+        "qualified_setup_production_yahoo_finance_role": (
+            qualified_setup_production.get("yahoo_finance_role", "missing")
+        ),
+        "qualified_setup_production_preference_mcp_role": (
+            qualified_setup_production.get("preference_mcp_role", "missing")
+        ),
+        "qualified_setup_production_paper_order_submission_allowed": (
+            qualified_setup_production.get("paper_order_submission_allowed") is True
+        ),
+        "qualified_setup_production_broker_post_allowed": (
+            qualified_setup_production.get("broker_post_allowed") is True
+        ),
+        "qualified_setup_production_live_endpoint_allowed": (
+            qualified_setup_production.get("live_endpoint_allowed") is True
+        ),
+        "qualified_setup_production_live_capital_enabled": (
+            qualified_setup_production.get("live_capital_enabled") is True
+        ),
+        "qualified_setup_production_qctrl_direct_execution_allowed": (
+            qualified_setup_production.get("qctrl_direct_execution_allowed") is True
+        ),
+        "qualified_setup_production_phase7_proof_credit_allowed": (
+            qualified_setup_production.get("phase7_proof_credit_allowed") is True
+        ),
+        "qualified_setup_production_forced_trades_allowed": (
+            qualified_setup_production.get("forced_trades_allowed") is True
+        ),
+        "qualified_setup_production_qualified_setup_creation_forced": (
+            qualified_setup_production.get("qualified_setup_creation_forced") is True
+        ),
+        "qualified_setup_production_broker_post_called_count": _int(
+            qualified_setup_production.get("broker_post_called_count")
+        ),
+        "qualified_setup_production_alpaca_post_called_count": _int(
+            qualified_setup_production.get("alpaca_post_called_count")
+        ),
+        "qualified_setup_production_live_endpoint_called_count": _int(
+            qualified_setup_production.get("live_endpoint_called_count")
+        ),
+        "qualified_setup_production_unsafe_write_counter_total": _int(
+            qualified_setup_production.get("unsafe_write_counter_total")
+        ),
         "safe_to_continue_paper_only": safe_to_continue,
         "full_paper_operational_ready": ready,
         "target_capability_count": target_count,
@@ -1137,6 +1276,10 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_operational_mode_broker_post_called_count",
         "paper_operational_mode_alpaca_post_called_count",
         "paper_operational_mode_live_endpoint_called_count",
+        "qualified_setup_production_broker_post_called_count",
+        "qualified_setup_production_alpaca_post_called_count",
+        "qualified_setup_production_live_endpoint_called_count",
+        "qualified_setup_production_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -1160,6 +1303,44 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
     ):
         if artifact.get(key) is not False:
             errors.append(f"paper_ops_paper_operational_mode_forbidden:{key}")
+    if artifact.get("qualified_setup_production_path_ready") is not True:
+        errors.append("paper_ops_qualified_setup_production_path_not_ready")
+    if artifact.get("qualified_setup_production_status") not in {
+        "production_path_ready_with_qualified_setup",
+        "production_path_ready_no_current_qualified_setup",
+    }:
+        errors.append("paper_ops_qualified_setup_production_status_not_ready")
+    if _int(artifact.get("qualified_setup_production_candidate_count")) < 1:
+        errors.append("paper_ops_qualified_setup_production_candidates_missing")
+    if (
+        artifact.get("qualified_setup_production_ready_to_stage_q7_order") is True
+        and _int(artifact.get("qualified_setup_production_qualified_setup_count")) == 0
+    ):
+        errors.append("paper_ops_qualified_setup_production_ready_without_setup")
+    for key in (
+        "qualified_setup_production_paper_order_submission_allowed",
+        "qualified_setup_production_broker_post_allowed",
+        "qualified_setup_production_live_endpoint_allowed",
+        "qualified_setup_production_live_capital_enabled",
+        "qualified_setup_production_qctrl_direct_execution_allowed",
+        "qualified_setup_production_phase7_proof_credit_allowed",
+        "qualified_setup_production_forced_trades_allowed",
+        "qualified_setup_production_qualified_setup_creation_forced",
+        "qualified_setup_production_source_quorum_bypass_allowed",
+        "qualified_setup_production_supplemental_source_bypass_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_qualified_setup_production_forbidden:{key}")
+    if (
+        artifact.get("qualified_setup_production_yahoo_finance_role")
+        != "supplemental_market_confirmation_only"
+    ):
+        errors.append("paper_ops_qualified_setup_production_yahoo_not_supplemental")
+    if (
+        artifact.get("qualified_setup_production_preference_mcp_role")
+        != "supplemental_multi_source_data_plane"
+    ):
+        errors.append("paper_ops_qualified_setup_production_preference_not_supplemental")
     if artifact.get("paper_live_activation_status") != "approved_pending_later_enablement":
         errors.append("paper_ops_paper_live_activation_not_approved")
     if artifact.get("paper_live_activation_approval_state") != "approved":
@@ -1188,6 +1369,7 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_paper_live_activation_proof_credit_allowed")
     if artifact.get("paper_live_qctrl_product_access_status") not in {
         "blocked_qctrl_product_access_or_subscription",
+        "blocked_missing_qctrl_sdk",
         "qctrl_paper_consultation_ready",
     }:
         errors.append("paper_ops_paper_live_qctrl_product_access_not_checked")

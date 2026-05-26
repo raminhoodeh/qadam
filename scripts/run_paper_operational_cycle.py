@@ -45,6 +45,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("paperops_qctrl_consultation", "scripts/check_paperops_qctrl_consultation.py", True),
     ("phase7_demo_run", "scripts/check_phase7_demo_proof_run.py", True),
     ("phase7_qualified_setups", "scripts/check_phase7_qualified_setup_ledger.py", True),
+    (
+        "paperops_qualified_setup_production",
+        "scripts/check_paperops_qualified_setup_production.py",
+        True,
+    ),
     ("phase7_auto_approval", "scripts/check_phase7_test_mode_auto_approval_router.py", True),
     ("phase7_order_staging", "scripts/check_phase7_proof_order_staging.py", True),
     ("phase7_guarded_paper_submit", "scripts/check_phase7_guarded_alpaca_paper_submit.py", True),
@@ -196,6 +201,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    qualified_setup_production = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_qualified_setup_production"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -221,6 +234,8 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_paper_live_qctrl_alpaca_post_called_count",
             "paper_ops_paper_live_qctrl_live_endpoint_called_count",
             "paper_ops_paper_operational_mode_broker_post_called_count",
+            "paper_ops_qualified_setup_production_broker_post_called_count",
+            "paper_ops_qualified_setup_production_unsafe_write_counter_total",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -335,6 +350,77 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             paper_operational_mode.get(
                 "paper_operational_mode_qctrl_product_access_blocker"
             )
+        ),
+        "qualified_setup_production_status": qualified_setup_production.get(
+            "paperops_qualified_setup_status"
+        ),
+        "qualified_setup_production_path_ready": (
+            qualified_setup_production.get("paperops_qualified_setup_path_ready")
+            == "True"
+        ),
+        "qualified_setup_production_candidate_count": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_production_candidate_count",
+                "0",
+            )
+            or 0
+        ),
+        "qualified_setup_production_qualified_setup_count": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_qualified_setup_count",
+                "0",
+            )
+            or 0
+        ),
+        "qualified_setup_production_ready_to_stage_q7_order": (
+            qualified_setup_production.get(
+                "paperops_qualified_setup_ready_to_stage_q7_order"
+            )
+            == "True"
+        ),
+        "qualified_setup_production_phase7_demo_qualified_setup_count": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_phase7_demo_qualified_setup_count",
+                "0",
+            )
+            or 0
+        ),
+        "qualified_setup_production_q7_ledger_count": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_q7_ledger_count",
+                "0",
+            )
+            or 0
+        ),
+        "qualified_setup_production_qctrl_status": qualified_setup_production.get(
+            "paperops_qualified_setup_qctrl_paper_consultation_status"
+        ),
+        "qualified_setup_production_qctrl_connected": (
+            qualified_setup_production.get(
+                "paperops_qualified_setup_qctrl_paper_consultation_connected"
+            )
+            == "True"
+        ),
+        "qualified_setup_production_broker_post_called_count": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_broker_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "qualified_setup_production_live_endpoint_called_count": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "qualified_setup_production_unsafe_write_counter_total": int(
+            qualified_setup_production.get(
+                "paperops_qualified_setup_unsafe_write_counter_total",
+                "0",
+            )
+            or 0
         ),
         "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
         "quantum_paper_parity_required": settings.quantum_paper_parity_required,
@@ -729,6 +815,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "paper_operational_mode_broker_post_called_count",
         "paper_operational_mode_alpaca_post_called_count",
         "paper_operational_mode_live_endpoint_called_count",
+        "qualified_setup_production_broker_post_called_count",
+        "qualified_setup_production_live_endpoint_called_count",
+        "qualified_setup_production_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
         try:
@@ -772,8 +861,22 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
     ):
         if artifact.get(key) is not False:
             errors.append(f"paper_ops_cycle_paper_operational_mode_forbidden:{key}")
+    if artifact.get("qualified_setup_production_status") not in {
+        "production_path_ready_with_qualified_setup",
+        "production_path_ready_no_current_qualified_setup",
+    }:
+        errors.append("paper_ops_cycle_qualified_setup_production_not_ready")
+    if artifact.get("qualified_setup_production_path_ready") is not True:
+        errors.append("paper_ops_cycle_qualified_setup_production_path_not_ready")
+    if int(artifact.get("qualified_setup_production_candidate_count", 0) or 0) < 1:
+        errors.append("paper_ops_cycle_qualified_setup_production_candidate_missing")
+    if artifact.get("qualified_setup_production_phase7_demo_qualified_setup_count") != 0:
+        errors.append("paper_ops_cycle_qualified_setup_production_mutated_demo_run")
+    if artifact.get("qualified_setup_production_q7_ledger_count") != 0:
+        errors.append("paper_ops_cycle_qualified_setup_production_mutated_q7_ledger")
     if artifact.get("paper_live_qctrl_product_access_status") not in {
         "blocked_qctrl_product_access_or_subscription",
+        "blocked_missing_qctrl_sdk",
         "qctrl_paper_consultation_ready",
     }:
         errors.append("paper_ops_cycle_paper_live_qctrl_product_access_not_checked")
@@ -869,6 +972,15 @@ def write_paper_operational_cycle(
             "paper_operational_mode_status": written["paper_operational_mode_status"],
             "paper_operational_mode_effective": written[
                 "paper_operational_mode_effective"
+            ],
+            "qualified_setup_production_status": written[
+                "qualified_setup_production_status"
+            ],
+            "qualified_setup_production_qualified_setup_count": written[
+                "qualified_setup_production_qualified_setup_count"
+            ],
+            "qualified_setup_production_ready_to_stage_q7_order": written[
+                "qualified_setup_production_ready_to_stage_q7_order"
             ],
             "alpaca_paper_post_gate_status": written["alpaca_paper_post_gate_status"],
             "alpaca_paper_post_called_count": written["alpaca_paper_post_called_count"],
@@ -1017,6 +1129,42 @@ def main() -> int:
     print(
         "paper_ops_cycle_paper_operational_mode_qctrl_product_access_blocker="
         f"{written['paper_operational_mode_qctrl_product_access_blocker']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_status="
+        f"{written['qualified_setup_production_status']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_path_ready="
+        f"{written['qualified_setup_production_path_ready']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_candidate_count="
+        f"{written['qualified_setup_production_candidate_count']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_qualified_setup_count="
+        f"{written['qualified_setup_production_qualified_setup_count']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_ready_to_stage_q7_order="
+        f"{written['qualified_setup_production_ready_to_stage_q7_order']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_qctrl_status="
+        f"{written['qualified_setup_production_qctrl_status']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_qctrl_connected="
+        f"{written['qualified_setup_production_qctrl_connected']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_broker_post_called_count="
+        f"{written['qualified_setup_production_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_qualified_setup_production_unsafe_write_counter_total="
+        f"{written['qualified_setup_production_unsafe_write_counter_total']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

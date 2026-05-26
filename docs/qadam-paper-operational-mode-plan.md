@@ -80,6 +80,12 @@ Implemented:
   through `data/runtime/paper_operational_mode.json` without editing `.env`,
   opening broker writes, granting Q-CTRL execution authority, or granting Phase
   7 proof credit.
+- PT-3 qualified setup production path exists. It reads the current Phase 5,
+  Phase 7, Signal Integrity, Risk Agent, execution-adapter, and paper-staging
+  evidence stack and classifies whether a PaperOps production setup is ready to
+  hand into the Q7 ledger and guarded staging path. It does not mutate the Q7
+  ledger, auto-approve trades, stage orders, submit to Alpaca, consult Q-CTRL
+  for execution, force trades, grant proof credit, or enable live capital.
 - Phase 7 demo-proof run ledger is active.
 - Q7 qualified setup, auto-approval, staging, guarded submit, lifecycle,
   postmortem, performance, drawdown, override, signal-funnel, maturity, cockpit,
@@ -117,7 +123,11 @@ Remaining paper-operational gaps:
 - `QADAM_ALPACA_PAPER_SUBMIT_ENABLED` is still false by default.
 - `QADAM_ALPACA_PAPER_EXIT_ENABLED` is still false by default.
 - `QADAM_QCTRL_PAPER_CONSULTATION_ENABLED` is still false by default.
-- Q7 currently has zero qualified setups, so no proof paper order can be staged.
+- Q7 currently has zero ledger-qualified setups, so no proof paper order can be
+  submitted. PT-3 currently finds one production-qualified setup candidate that
+  is ready to be consumed by the Q7 ledger/staging path, but it intentionally
+  leaves the source Q7 ledger count at zero until the downstream Q7 gate records
+  it.
 - The explicit Alpaca paper POST gate is disabled by default and currently has
   zero eligible Q7 guarded submit records.
 - The paper lifecycle poller is implemented but idle because there are zero
@@ -236,6 +246,41 @@ Status after implementation:
 - PT-2 is wired into PaperOps readiness, PaperOps-5 notification review,
   PaperOps-1 cycle, PaperOps-6 operations, and cockpit Mission Control.
 
+### PT-3 - Qualified Setup Production Path
+
+Classify production-ready paper setups from existing evidence without creating
+trades or mutating the Phase 7 proof ledger.
+
+Status after implementation:
+
+- `orchestrator/paperops_qualified_setup_production.py` exists.
+- `scripts/check_paperops_qualified_setup_production.py` exists.
+- The runtime artifact is
+  `data/runtime/paperops_qualified_setup_production.json`, with history and
+  Event Log artifacts beside it.
+- Current status is `production_path_ready_with_qualified_setup`.
+- Current production counters are `production_candidate_count=5`,
+  `qualified_setup_count=1`, `blocked_candidate_count=4`,
+  `paper_size_eligible_count=1`, `staged_order_count=1`, and
+  `ready_to_stage_q7_order=True`.
+- The source Q7 proof ledger remains untouched:
+  `phase7_demo_qualified_setup_count=0` and
+  `source_qualified_setup_ledger_count=0`.
+- The production gate passes all 13 required gates, including canonical source
+  posture, supplemental-source context-only posture, Signal Integrity, Risk
+  Agent paper sizing, kill switches, execution-adapter read readiness, paper
+  venue read availability, dry-run staged order presence, notional cap, broker
+  write block, and Phase 7 safety boundaries.
+- Yahoo Finance and Preference/PREF MCP remain supplemental data planes only;
+  they cannot bypass source quorum or canonical source requirements.
+- Q-CTRL remains required for full paper-reality parity, but current
+  consultation state is `disabled_pending_enablement` and product access is
+  still blocked by `qctrl_product_access_or_subscription_not_active`.
+- PT-3 is wired into PaperOps readiness, PaperOps-1 cycle, and cockpit Mission
+  Control.
+- Broker POST, Alpaca POST, live endpoint, Q-CTRL broker, forced-trade, and
+  Phase 7 proof-credit counters are zero.
+
 ### PaperOps-1 - Operational Cycle Runner
 
 Create one command that runs the whole paper observation loop in order:
@@ -249,6 +294,7 @@ Create one command that runs the whole paper observation loop in order:
 - Risk Agent
 - Execution Policy
 - Phase 7 setup ledger
+- PT-3 qualified setup production path
 - Q7 auto-approval
 - Q7 order staging
 - Q7 guarded paper submit readiness
@@ -274,15 +320,15 @@ Status after implementation:
 - Current blockers: `qctrl_paper_consultation_connected_not_ready`,
   `external_alpaca_paper_post_enabled_not_ready`, and
   `paper_exit_path_connected_not_ready`.
-- Command result: 26/26 runner commands pass after PT-2 is included.
+- Command result: 27/27 runner commands pass after PT-3 is included.
 - Broker POST and Alpaca POST counters remain zero.
 - The Phase 7 demo-proof checker now validates the actual preserved calendar
   window instead of assuming Day 1. Current observed run state is start date
   `2026-05-25`, end date `2026-06-23`, active day `2`, completed day count
   `1`, and no qualified setups.
 - PaperOps-Q, PaperOps-2, PaperOps-3, PaperOps-4, PaperOps-5, PaperOps-6,
-  PT-0, PT-1, and PT-2 are now implemented. Current PaperOps unblock: `Resolve
-  PaperOps-Q Q-CTRL product access for successful paper consultation`.
+  PT-0, PT-1, PT-2, and PT-3 are now implemented. Current PaperOps unblock:
+  `Resolve PaperOps-Q Q-CTRL product access for successful paper consultation`.
 
 ### PaperOps-Q - Q-CTRL Paper Consultation Gate
 
@@ -460,7 +506,7 @@ Status after implementation:
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PT-2: 26/26 commands pass. PaperOps-5 reports
+- Current cycle result after PT-3: 27/27 commands pass. PaperOps-5 reports
   seven review records, six lifecycle notification types, zero live-send
   allowance, zero command-path allowance, and zero broker-write allowance.
 
@@ -489,9 +535,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 26/26 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 27/27 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=26`, and
+  `paper_operational_cycle_command_count=27`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,

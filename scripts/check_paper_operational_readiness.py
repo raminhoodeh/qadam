@@ -112,6 +112,46 @@ def main() -> int:
         paper_operational_mode_broker_probe
     )
 
+    qualified_setup_submit_probe = deepcopy(written)
+    qualified_setup_submit_probe[
+        "qualified_setup_production_paper_order_submission_allowed"
+    ] = True
+    qualified_setup_submit_errors = validate_paper_operational_readiness(
+        qualified_setup_submit_probe
+    )
+
+    qualified_setup_broker_probe = deepcopy(written)
+    qualified_setup_broker_probe[
+        "qualified_setup_production_broker_post_called_count"
+    ] = 1
+    qualified_setup_broker_errors = validate_paper_operational_readiness(
+        qualified_setup_broker_probe
+    )
+
+    qualified_setup_proof_probe = deepcopy(written)
+    qualified_setup_proof_probe[
+        "qualified_setup_production_phase7_proof_credit_allowed"
+    ] = True
+    qualified_setup_proof_errors = validate_paper_operational_readiness(
+        qualified_setup_proof_probe
+    )
+
+    qualified_setup_forced_probe = deepcopy(written)
+    qualified_setup_forced_probe[
+        "qualified_setup_production_qualified_setup_creation_forced"
+    ] = True
+    qualified_setup_forced_errors = validate_paper_operational_readiness(
+        qualified_setup_forced_probe
+    )
+
+    qualified_setup_source_probe = deepcopy(written)
+    qualified_setup_source_probe[
+        "qualified_setup_production_source_quorum_bypass_allowed"
+    ] = True
+    qualified_setup_source_errors = validate_paper_operational_readiness(
+        qualified_setup_source_probe
+    )
+
     broker_post_probe = deepcopy(written)
     broker_post_probe["broker_post_called_count"] = 1
     broker_post_probe["alpaca_post_called_count"] = 1
@@ -389,6 +429,42 @@ def main() -> int:
         f"{written['qctrl_paper_consultation_head_note_status']}"
     )
     print(f"paper_ops_qctrl_provider_call_count={written['qctrl_provider_call_count']}")
+    print(
+        "paper_ops_qualified_setup_production_status="
+        f"{written['qualified_setup_production_status']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_path_ready="
+        f"{written['qualified_setup_production_path_ready']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_candidate_count="
+        f"{written['qualified_setup_production_candidate_count']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_qualified_setup_count="
+        f"{written['qualified_setup_production_qualified_setup_count']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_ready_to_stage_q7_order="
+        f"{written['qualified_setup_production_ready_to_stage_q7_order']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_qctrl_status="
+        f"{written['qualified_setup_production_qctrl_paper_consultation_status']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_qctrl_connected="
+        f"{written['qualified_setup_production_qctrl_paper_consultation_connected']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_broker_post_called_count="
+        f"{written['qualified_setup_production_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_qualified_setup_production_unsafe_write_counter_total="
+        f"{written['qualified_setup_production_unsafe_write_counter_total']}"
+    )
     print(f"paper_ops_strategy_research_intake_status={written['strategy_research_intake_status']}")
     print(f"paper_ops_strategy_research_candidate_count={written['strategy_research_candidate_count']}")
     print(
@@ -710,6 +786,36 @@ def main() -> int:
         not in paper_operational_mode_broker_errors
     ):
         errors.append("PT-2 broker-counter probe was not rejected")
+    if (
+        "paper_ops_qualified_setup_production_forbidden:"
+        "qualified_setup_production_paper_order_submission_allowed"
+        not in qualified_setup_submit_errors
+    ):
+        errors.append("PT-3 submit-authority probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "qualified_setup_production_broker_post_called_count"
+        not in qualified_setup_broker_errors
+    ):
+        errors.append("PT-3 broker-counter probe was not rejected")
+    if (
+        "paper_ops_qualified_setup_production_forbidden:"
+        "qualified_setup_production_phase7_proof_credit_allowed"
+        not in qualified_setup_proof_errors
+    ):
+        errors.append("PT-3 proof-credit probe was not rejected")
+    if (
+        "paper_ops_qualified_setup_production_forbidden:"
+        "qualified_setup_production_qualified_setup_creation_forced"
+        not in qualified_setup_forced_errors
+    ):
+        errors.append("PT-3 forced-setup probe was not rejected")
+    if (
+        "paper_ops_qualified_setup_production_forbidden:"
+        "qualified_setup_production_source_quorum_bypass_allowed"
+        not in qualified_setup_source_errors
+    ):
+        errors.append("PT-3 source-quorum bypass probe was not rejected")
     if "paper_ops_unsafe_counter_nonzero:broker_post_called_count" not in broker_post_errors:
         errors.append("broker POST probe was not rejected")
     if (

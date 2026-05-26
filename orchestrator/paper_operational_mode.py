@@ -155,6 +155,7 @@ def _pt1_product_access_checked(product_access: dict[str, Any]) -> bool:
         product_access.get("status")
         in {
             "blocked_qctrl_product_access_or_subscription",
+            "blocked_missing_qctrl_sdk",
             "qctrl_paper_consultation_ready",
         }
         and product_access.get("pt0_activation_approved") is True

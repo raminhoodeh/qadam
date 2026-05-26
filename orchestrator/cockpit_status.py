@@ -45,6 +45,9 @@ from orchestrator.paperops_notification_review import (
 from orchestrator.paperops_30_day_operations import (
     paperops_30_day_operations_public_status,
 )
+from orchestrator.paperops_qualified_setup_production import (
+    paperops_qualified_setup_production_public_status,
+)
 from orchestrator.paperops_qctrl_consultation import paperops_qctrl_public_status
 from orchestrator.phase4_approval_record import (
     build_fund_manager_approval_event,
@@ -1090,6 +1093,34 @@ PAPEROPS_30_DAY_OPERATIONS_PUBLIC_REQUIRED_FIELDS = {
     "stage",
     "status",
     "submitted_paper_order_count",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS = {
+    "boundary",
+    "broker_post_called_count",
+    "event_log_event_count",
+    "event_log_written",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "paper_operational_mode_effective",
+    "paper_order_submission_allowed",
+    "phase7_demo_qualified_setup_count",
+    "phase7_proof_credit_allowed",
+    "production_candidate_count",
+    "public_safe",
+    "qctrl_paper_consultation_connected",
+    "qctrl_paper_consultation_status",
+    "qualified_setup_count",
+    "qualified_setup_creation_forced",
+    "qualified_setup_production_path_ready",
+    "ready_to_stage_q7_order",
+    "recorded",
+    "schema_version",
+    "source_qualified_setup_ledger_count",
+    "stage",
+    "status",
     "unsafe_write_counter_total",
     "validation_error_count",
 }
@@ -4399,6 +4430,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_qualified_setup_production = payload.get(
+        "paperops_qualified_setup_production",
+        {},
+    )
     paperops_qctrl = payload.get("paperops_qctrl_consultation", {})
 
     hypotheses = cognition.get("hypotheses", [])
@@ -4592,6 +4627,15 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_30_day_operations_active_day_number": (
                 paperops_30_day_operations.get("active_day_number")
+            ),
+            "paperops_qualified_setup_production": (
+                paperops_qualified_setup_production.get("status", "not_run")
+            ),
+            "paperops_qualified_setup_production_qualified_count": (
+                paperops_qualified_setup_production.get("qualified_setup_count", 0)
+            ),
+            "paperops_qualified_setup_production_ready_to_stage": (
+                paperops_qualified_setup_production.get("ready_to_stage_q7_order", False)
             ),
             "risk_gate": _module_status(payload, "risk_agent"),
             "market_confirmation": yahoo_finance.get("status", "not_configured"),
@@ -5664,6 +5708,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_paper_exit_path": paperops_paper_exit_path_public_status(settings),
         "paperops_notification_review": paperops_notification_review_public_status(settings),
         "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
+        "paperops_qualified_setup_production": (
+            paperops_qualified_setup_production_public_status(settings)
+        ),
         "paperops_qctrl_consultation": paperops_qctrl_public_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
@@ -5772,6 +5819,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_paper_exit_path",
         "paperops_notification_review",
         "paperops_30_day_operations",
+        "paperops_qualified_setup_production",
         "yahoo_finance",
         "preference_mcp",
         "capital",
@@ -5967,6 +6015,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "not_run",
         "ready_for_explicit_qctrl_product_access_probe",
         "blocked_qctrl_product_access_or_subscription",
+        "blocked_missing_qctrl_sdk",
         "qctrl_paper_consultation_ready",
         "invalid",
     }:
@@ -5999,6 +6048,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError(f"PT-1 Q-CTRL product access unsafe count nonzero: {key}")
     if paper_live_qctrl.get("status") in {
         "blocked_qctrl_product_access_or_subscription",
+        "blocked_missing_qctrl_sdk",
         "qctrl_paper_consultation_ready",
     }:
         if paper_live_qctrl.get("provider_call_attempted") is not True:
@@ -6269,6 +6319,67 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in operations_boundary:
             raise ValueError("PaperOps 30-day operations boundary is weak")
+    paperops_qualified_setup = payload["paperops_qualified_setup_production"]
+    missing_qualified_setup = sorted(
+        PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS
+        - set(paperops_qualified_setup)
+    )
+    if missing_qualified_setup:
+        raise ValueError(
+            "PaperOps qualified setup production public status missing fields: "
+            f"{missing_qualified_setup}"
+        )
+    if paperops_qualified_setup.get("status") not in {
+        "not_run",
+        "production_path_ready_with_qualified_setup",
+        "production_path_ready_no_current_qualified_setup",
+        "blocked_pending_paperops_prerequisite",
+        "invalid",
+    }:
+        raise ValueError("PaperOps qualified setup production status is invalid")
+    if paperops_qualified_setup.get("public_safe") is not True:
+        raise ValueError("PaperOps qualified setup production must be public-safe")
+    if paperops_qualified_setup.get("status") != "not_run":
+        if paperops_qualified_setup.get("recorded") is not True:
+            raise ValueError("PaperOps qualified setup production must be recorded")
+        if paperops_qualified_setup.get("event_log_written") is not True:
+            raise ValueError("PaperOps qualified setup production event log missing")
+        if paperops_qualified_setup.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps qualified setup production event count mismatch")
+        if paperops_qualified_setup.get("validation_error_count") != 0:
+            raise ValueError("PaperOps qualified setup production validation errors present")
+    if paperops_qualified_setup.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps qualified setup production enabled live capital")
+    if paperops_qualified_setup.get("paper_order_submission_allowed") is not False:
+        raise ValueError("PaperOps qualified setup production opened submit authority")
+    if paperops_qualified_setup.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps qualified setup production granted proof credit")
+    if paperops_qualified_setup.get("forced_trades_allowed") is not False:
+        raise ValueError("PaperOps qualified setup production allowed forced trades")
+    if paperops_qualified_setup.get("qualified_setup_creation_forced") is not False:
+        raise ValueError("PaperOps qualified setup production forced a setup")
+    if int(paperops_qualified_setup.get("unsafe_write_counter_total", 0) or 0) != 0:
+        raise ValueError("PaperOps qualified setup production unsafe counter nonzero")
+    if paperops_qualified_setup.get("status") == "production_path_ready_with_qualified_setup":
+        if int(paperops_qualified_setup.get("qualified_setup_count", 0) or 0) < 1:
+            raise ValueError("PaperOps qualified setup production ready without setup")
+        if paperops_qualified_setup.get("ready_to_stage_q7_order") is not True:
+            raise ValueError("PaperOps qualified setup production missing stage handoff")
+    if int(paperops_qualified_setup.get("phase7_demo_qualified_setup_count", 0) or 0) != 0:
+        raise ValueError("PaperOps qualified setup production mutated Phase 7 demo count")
+    if int(paperops_qualified_setup.get("source_qualified_setup_ledger_count", 0) or 0) != 0:
+        raise ValueError("PaperOps qualified setup production mutated Q7 ledger")
+    setup_boundary = str(paperops_qualified_setup.get("boundary") or "")
+    for phrase in (
+        "guarded qualified setup production path",
+        "cannot mutate the Q7 ledger",
+        "cannot call brokers",
+        "cannot grant Phase 7 proof credit",
+        "cannot force trades",
+        "cannot enable live capital",
+    ):
+        if phrase not in setup_boundary:
+            raise ValueError("PaperOps qualified setup production boundary is weak")
     phase4_strategy = payload["phase4_strategy"]
     missing_phase4 = sorted(PHASE4_STRATEGY_PUBLIC_REQUIRED_FIELDS - set(phase4_strategy))
     if missing_phase4:

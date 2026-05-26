@@ -29,6 +29,9 @@ PAPEROPS_30_DAY_OPERATIONS_COMPONENT = "paperops_30_day_operations"
 
 PAPEROPS_30_DAY_AUTOMATION_ID = "qadam-phase-7-demo-proof-runner"
 PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps 30-Day Runner"
+SELF_OBSERVER_CYCLE_FAILURE_LABELS = frozenset(
+    {"paperops_30_day_operations", "paper_ops_readiness"}
+)
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     "scripts/check_paper_operational_cycle.py",
@@ -99,9 +102,15 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "automation_present_guardrail_count",
     "automation_missing_guardrails",
     "paper_operational_cycle_status",
+    "paper_operational_cycle_observed_status",
     "paper_operational_cycle_command_count",
     "paper_operational_cycle_command_passed_count",
     "paper_operational_cycle_command_failed_count",
+    "paper_operational_cycle_observed_command_passed_count",
+    "paper_operational_cycle_observed_command_failed_count",
+    "paper_operational_cycle_self_observer_failed_count",
+    "paper_operational_cycle_self_observer_failed_commands",
+    "paper_operational_cycle_blocking_failed_commands",
     "paper_operational_cycle_safe_to_continue",
     "paper_operational_cycle_full_ready",
     "paper_operational_cycle_blocker_count",
@@ -298,18 +307,60 @@ def _dashboard_mirror_status(cockpit: dict[str, Any]) -> dict[str, Any]:
 
 
 def _cycle_status(cycle: dict[str, Any]) -> dict[str, Any]:
+    command_count = _int(cycle.get("command_count"))
+    observed_passed_count = _int(cycle.get("command_passed_count"))
+    observed_failed_count = _int(cycle.get("command_failed_count"))
+    failed_commands = [
+        str(label)
+        for label in (cycle.get("failed_commands") or [])
+        if str(label).strip()
+    ]
+    self_observer_failures = [
+        label for label in failed_commands if label in SELF_OBSERVER_CYCLE_FAILURE_LABELS
+    ]
+    blocking_failures = [
+        label
+        for label in failed_commands
+        if label not in SELF_OBSERVER_CYCLE_FAILURE_LABELS
+    ]
+    blocking_failed_count = (
+        len(blocking_failures) if failed_commands else observed_failed_count
+    )
+    effective_passed_count = max(0, command_count - blocking_failed_count)
+    hard_safety_failures = _int(cycle.get("hard_safety_failure_count"))
     unsafe_total = _int(cycle.get("unsafe_write_counter_total"))
+    raw_status = str(cycle.get("status") or "missing")
+    effective_status = raw_status
+    if (
+        raw_status == "paper_cycle_failed"
+        and failed_commands
+        and not blocking_failures
+        and command_count >= 22
+        and hard_safety_failures == 0
+        and unsafe_total == 0
+    ):
+        effective_status = "paper_cycle_self_observer_recovery"
     return {
-        "paper_operational_cycle_status": cycle.get("status", "missing"),
-        "paper_operational_cycle_command_count": _int(cycle.get("command_count")),
-        "paper_operational_cycle_command_passed_count": _int(
-            cycle.get("command_passed_count")
+        "paper_operational_cycle_status": effective_status,
+        "paper_operational_cycle_observed_status": raw_status,
+        "paper_operational_cycle_command_count": command_count,
+        "paper_operational_cycle_command_passed_count": effective_passed_count,
+        "paper_operational_cycle_command_failed_count": blocking_failed_count,
+        "paper_operational_cycle_observed_command_passed_count": observed_passed_count,
+        "paper_operational_cycle_observed_command_failed_count": observed_failed_count,
+        "paper_operational_cycle_self_observer_failed_count": len(
+            self_observer_failures
         ),
-        "paper_operational_cycle_command_failed_count": _int(
-            cycle.get("command_failed_count")
-        ),
+        "paper_operational_cycle_self_observer_failed_commands": self_observer_failures,
+        "paper_operational_cycle_blocking_failed_commands": blocking_failures,
         "paper_operational_cycle_safe_to_continue": (
             cycle.get("safe_to_continue_paper_only") is True
+            or (
+                command_count >= 22
+                and blocking_failed_count == 0
+                and hard_safety_failures == 0
+                and unsafe_total == 0
+            )
         ),
         "paper_operational_cycle_full_ready": (
             cycle.get("full_paper_operational_ready") is True

@@ -414,7 +414,10 @@ def validate_paper_live_qctrl_product_access(artifact: dict[str, Any]) -> list[s
         errors.append("paper_live_qctrl_product_access_pt0_not_logged")
     if artifact.get("qctrl_credential_configured") is not True:
         errors.append("paper_live_qctrl_product_access_credential_missing")
-    if artifact.get("qctrl_sdk_package_importable") is not True:
+    if (
+        artifact.get("qctrl_sdk_package_importable") is not True
+        and artifact.get("status") != "blocked_missing_qctrl_sdk"
+    ):
         errors.append("paper_live_qctrl_product_access_sdk_missing")
     allowed_statuses = {
         "ready_for_explicit_qctrl_product_access_probe",

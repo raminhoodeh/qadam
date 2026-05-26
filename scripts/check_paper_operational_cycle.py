@@ -75,6 +75,19 @@ def main() -> int:
     pt2_submit_probe["paper_operational_mode_paper_order_submission_allowed"] = True
     pt2_submit_errors = validate_paper_operational_cycle(pt2_submit_probe)
 
+    qualified_setup_broker_probe = deepcopy(written)
+    qualified_setup_broker_probe["qualified_setup_production_broker_post_called_count"] = 1
+    qualified_setup_broker_probe["unsafe_write_counter_total"] = 1
+    qualified_setup_broker_errors = validate_paper_operational_cycle(
+        qualified_setup_broker_probe
+    )
+
+    qualified_setup_missing_probe = deepcopy(written)
+    qualified_setup_missing_probe["qualified_setup_production_path_ready"] = False
+    qualified_setup_missing_errors = validate_paper_operational_cycle(
+        qualified_setup_missing_probe
+    )
+
     broker_probe = deepcopy(written)
     broker_probe["broker_post_called_count"] = 1
     broker_probe["alpaca_post_called_count"] = 1
@@ -207,6 +220,38 @@ def main() -> int:
     print(
         "paper_ops_cycle_check_paper_operational_mode_broker_post_called_count="
         f"{written['paper_operational_mode_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_status="
+        f"{written['qualified_setup_production_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_path_ready="
+        f"{written['qualified_setup_production_path_ready']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_candidate_count="
+        f"{written['qualified_setup_production_candidate_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_qualified_setup_count="
+        f"{written['qualified_setup_production_qualified_setup_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_ready_to_stage_q7_order="
+        f"{written['qualified_setup_production_ready_to_stage_q7_order']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_qctrl_status="
+        f"{written['qualified_setup_production_qctrl_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_broker_post_called_count="
+        f"{written['qualified_setup_production_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_qualified_setup_production_unsafe_write_counter_total="
+        f"{written['qualified_setup_production_unsafe_write_counter_total']}"
     )
     print(f"paper_ops_cycle_check_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_check_full_paper_operational_ready={written['full_paper_operational_ready']}")
@@ -379,6 +424,21 @@ def main() -> int:
         errors.append("PaperOps-1 opened paper submit through PT-2")
     if written["paper_operational_mode_broker_post_called_count"] != 0:
         errors.append("PaperOps-1 called broker POST through PT-2")
+    if written["qualified_setup_production_status"] not in {
+        "production_path_ready_with_qualified_setup",
+        "production_path_ready_no_current_qualified_setup",
+    }:
+        errors.append("PaperOps-1 did not include ready PT-3 production path")
+    if written["qualified_setup_production_path_ready"] is not True:
+        errors.append("PaperOps-1 did not see PT-3 production path ready")
+    if written["qualified_setup_production_candidate_count"] < 1:
+        errors.append("PaperOps-1 did not see PT-3 candidates")
+    if written["qualified_setup_production_phase7_demo_qualified_setup_count"] != 0:
+        errors.append("PaperOps-1 saw PT-3 mutate Phase 7 demo setup count")
+    if written["qualified_setup_production_q7_ledger_count"] != 0:
+        errors.append("PaperOps-1 saw PT-3 mutate Q7 ledger")
+    if written["qualified_setup_production_broker_post_called_count"] != 0:
+        errors.append("PaperOps-1 called broker POST through PT-3")
     if written["full_paper_operational_ready"] is not False:
         errors.append("PaperOps-1 should remain blocked pending later enablement")
     if written["broker_post_called_count"] != 0 or written["alpaca_post_called_count"] != 0:
@@ -469,6 +529,17 @@ def main() -> int:
         not in pt2_submit_errors
     ):
         errors.append("PT-2 submit-authority probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "qualified_setup_production_broker_post_called_count"
+        not in qualified_setup_broker_errors
+    ):
+        errors.append("PT-3 broker-counter probe was not rejected")
+    if (
+        "paper_ops_cycle_qualified_setup_production_path_not_ready"
+        not in qualified_setup_missing_errors
+    ):
+        errors.append("PT-3 missing-path probe was not rejected")
     if "paper_ops_cycle_unsafe_counter_nonzero:broker_post_called_count" not in broker_errors:
         errors.append("broker POST probe was not rejected")
     if (
