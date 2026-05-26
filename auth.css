@@ -629,6 +629,9 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-readout-list,
 .overview-feed-strip,
 .overview-system-grid,
+.overview-cockpit-grid,
+.overview-plain-grid,
+.overview-plain-card-grid,
 .overview-next-links {
     display: grid;
     gap: 10px;
@@ -636,6 +639,22 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-command-surface {
     grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+}
+
+.overview-cockpit-grid {
+    grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+}
+
+.overview-plain-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overview-plain-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overview-plain-card-grid.strategy-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
 }
 
 .overview-status-rail {
@@ -646,6 +665,14 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card,
 .overview-proof-flow,
 .overview-system-summary,
+.overview-system-status-panel,
+.overview-paper-capacity-panel,
+.overview-data-sources-panel,
+.overview-strategies-panel,
+.overview-thought-feed-panel,
+.overview-trade-considerations-panel,
+.overview-plain-card,
+.overview-capacity-chart-card,
 .overview-mini-node,
 .overview-next-links a {
     border: 1px solid var(--line);
@@ -656,6 +683,14 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card,
 .overview-proof-flow,
 .overview-system-summary,
+.overview-system-status-panel,
+.overview-paper-capacity-panel,
+.overview-data-sources-panel,
+.overview-strategies-panel,
+.overview-thought-feed-panel,
+.overview-trade-considerations-panel,
+.overview-plain-card,
+.overview-capacity-chart-card,
 .overview-next-links a {
     padding: 12px;
 }
@@ -669,6 +704,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card.online,
 .overview-readout.online,
 .overview-status-chip.online,
+.overview-plain-card.online,
+.overview-capacity-chart-card.online,
 .overview-mini-node.online {
     border-color: rgba(var(--green-rgb), 0.3);
     box-shadow: var(--glow-green);
@@ -680,6 +717,10 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-readout.degraded,
 .overview-status-chip.pending,
 .overview-status-chip.degraded,
+.overview-plain-card.pending,
+.overview-plain-card.degraded,
+.overview-capacity-chart-card.pending,
+.overview-capacity-chart-card.degraded,
 .overview-mini-node.pending,
 .overview-mini-node.degraded {
     border-color: rgba(var(--amber-rgb), 0.34);
@@ -689,6 +730,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card.blocked,
 .overview-readout.blocked,
 .overview-status-chip.blocked,
+.overview-plain-card.blocked,
+.overview-capacity-chart-card.blocked,
 .overview-mini-node.blocked {
     border-color: rgba(var(--coral-rgb), 0.4);
     box-shadow: var(--glow-coral);
@@ -705,6 +748,10 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-status-chip em,
 .overview-mini-node span,
 .overview-mini-node p,
+.overview-plain-card span,
+.overview-plain-card p,
+.overview-thought-list span,
+.overview-thought-list p,
 .overview-oversight span,
 .overview-oversight p,
 .overview-boundary-rail span,
@@ -717,6 +764,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-readout span,
 .overview-section-head span,
 .overview-mini-node span,
+.overview-plain-card span,
+.overview-thought-list span,
 .overview-oversight span,
 .overview-boundary-rail span {
     font-size: 12px;
@@ -728,6 +777,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-readout strong,
 .overview-status-chip strong,
 .overview-section-head strong,
+.overview-plain-card strong,
+.overview-thought-list strong,
 .overview-oversight strong,
 .overview-next-links strong {
     color: var(--text);
@@ -756,6 +807,13 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card,
 .overview-readout,
 .overview-status-chip,
+.overview-plain-card,
+.overview-system-status-panel,
+.overview-paper-capacity-panel,
+.overview-data-sources-panel,
+.overview-strategies-panel,
+.overview-thought-feed-panel,
+.overview-trade-considerations-panel,
 .overview-mini-node,
 .flow-node,
 .trade-lifecycle-card,
@@ -775,6 +833,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card p,
 .overview-readout p,
 .overview-mini-node p,
+.overview-plain-card p,
+.overview-thought-list p,
 .overview-oversight p,
 .overview-boundary-rail p,
 .overview-next-links span {
@@ -825,6 +885,98 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     gap: 7px;
     min-height: 92px;
     padding: 10px;
+}
+
+.overview-plain-card {
+    display: grid;
+    gap: 7px;
+    min-height: 104px;
+}
+
+.overview-plain-card strong {
+    font-size: 17px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.overview-system-status-panel,
+.overview-paper-capacity-panel,
+.overview-data-sources-panel,
+.overview-strategies-panel,
+.overview-thought-feed-panel,
+.overview-trade-considerations-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.overview-paper-capacity-panel > p,
+.overview-trade-considerations-panel > p {
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.overview-capacity-chart-card {
+    display: grid;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.overview-capacity-line {
+    aspect-ratio: 16 / 4.5;
+    display: block;
+    min-height: 140px;
+    width: 100%;
+}
+
+.overview-capacity-bar {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(var(--green-rgb), 0.28);
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.overview-capacity-bar span {
+    background: linear-gradient(90deg, var(--green), rgba(var(--cyan-rgb), 0.72));
+    display: block;
+    height: 100%;
+    min-width: 2px;
+}
+
+.overview-capacity-summary {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.overview-thought-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.overview-thought-list li {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: grid;
+    gap: 7px;
+    padding: 10px;
+}
+
+.overview-thought-list li.online {
+    border-color: rgba(var(--green-rgb), 0.24);
+}
+
+.overview-thought-list li.pending,
+.overview-thought-list li.degraded {
+    border-color: rgba(var(--amber-rgb), 0.3);
+}
+
+.overview-thought-list li.blocked {
+    border-color: rgba(var(--coral-rgb), 0.36);
 }
 
 .overview-status-chip {
@@ -4914,6 +5066,10 @@ summary {
     .overview-status-rail,
     .overview-readout-list,
     .overview-system-grid,
+    .overview-cockpit-grid,
+    .overview-plain-grid,
+    .overview-plain-card-grid,
+    .overview-capacity-summary,
     .overview-feed-strip,
     .overview-next-links,
     .trades-workspace-head,
@@ -5384,6 +5540,8 @@ button:hover,
 .overview-command-surface,
 .overview-proof-flow,
 .overview-system-summary,
+.overview-cockpit-grid,
+.overview-plain-grid,
 .trades-workspace,
 .sources-workspace,
 .reasoning-workspace,
@@ -5397,6 +5555,14 @@ button:hover,
 .overview-review-card,
 .overview-proof-flow,
 .overview-system-summary,
+.overview-system-status-panel,
+.overview-paper-capacity-panel,
+.overview-data-sources-panel,
+.overview-strategies-panel,
+.overview-thought-feed-panel,
+.overview-trade-considerations-panel,
+.overview-plain-card,
+.overview-capacity-chart-card,
 .overview-mini-node,
 .overview-next-links a,
 .trade-consolidated-snapshot,
@@ -5438,6 +5604,8 @@ button:hover,
 .overview-review-card.online,
 .overview-readout.online,
 .overview-status-chip.online,
+.overview-plain-card.online,
+.overview-capacity-chart-card.online,
 .overview-mini-node.online,
 .trade-consolidated-snapshot.online,
 .trade-lifecycle-card.online,
@@ -5457,6 +5625,10 @@ button:hover,
 .overview-readout.degraded,
 .overview-status-chip.pending,
 .overview-status-chip.degraded,
+.overview-plain-card.pending,
+.overview-plain-card.degraded,
+.overview-capacity-chart-card.pending,
+.overview-capacity-chart-card.degraded,
 .overview-mini-node.pending,
 .overview-mini-node.degraded,
 .trade-consolidated-snapshot.pending,
@@ -5480,6 +5652,8 @@ button:hover,
 .overview-review-card.blocked,
 .overview-readout.blocked,
 .overview-status-chip.blocked,
+.overview-plain-card.blocked,
+.overview-capacity-chart-card.blocked,
 .overview-mini-node.blocked,
 .trade-consolidated-snapshot.blocked,
 .trade-lifecycle-card.blocked,

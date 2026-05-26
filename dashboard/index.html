@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-d11l-visual-simplification-layout">
+    <link rel="stylesheet" href="/auth.css?v=20260526-overview-operating-map">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -100,6 +100,28 @@
                     </div>
                 </div>
 
+                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
+                    <div class="overview-section-head">
+                        <span>System map</span>
+                        <strong>How observations become paper states</strong>
+                    </div>
+                    <div class="overview-system-grid">
+                        <div class="overview-oversight" data-overview-oversight>
+                            <span>Fund Manager oversight</span>
+                            <strong>You supervise the fund team</strong>
+                            <p>Human oversight sits above the chain; it is not an automated execution node.</p>
+                        </div>
+                        <div class="overview-mini-map" data-overview-mini-map>
+                            <span>Loading system connectivity.</span>
+                        </div>
+                    </div>
+                    <div class="overview-feed-strip" data-overview-feed-strip></div>
+                    <div class="overview-boundary-rail" data-overview-boundary-rail>
+                        <span>Reading rule</span>
+                        <p>Use the single safety strip for authority state. Overview items are readouts, and candidates are not orders.</p>
+                    </div>
+                </section>
+
                 <section class="overview-command-surface" aria-label="Fund manager overview" data-overview-command-surface>
                     <article class="overview-hero" data-overview-hero data-mission-primary>
                         <span>Fund Manager read</span>
@@ -121,6 +143,21 @@
                     </aside>
                 </section>
 
+                <section class="overview-cockpit-grid" aria-label="Current system state" data-overview-cockpit-grid>
+                    <article class="overview-system-status-panel" data-overview-system-status>
+                        <div class="overview-section-head">
+                            <span>System status</span>
+                            <strong>Loading runtime state</strong>
+                        </div>
+                    </article>
+                    <article class="overview-paper-capacity-panel" data-overview-paper-capacity>
+                        <div class="overview-section-head">
+                            <span>Paper capacity</span>
+                            <strong>Loading paper account</strong>
+                        </div>
+                    </article>
+                </section>
+
                 <section class="overview-proof-flow" aria-label="Proof and trade lifecycle" data-overview-proof-flow>
                     <div class="overview-section-head">
                         <span>Proof and trade path</span>
@@ -136,26 +173,34 @@
                     </ol>
                 </section>
 
-                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
-                    <div class="overview-section-head">
-                        <span>Compact system map</span>
-                        <strong>How observations become paper states</strong>
-                    </div>
-                    <div class="overview-system-grid">
-                        <div class="overview-oversight" data-overview-oversight>
-                            <span>Fund Manager oversight</span>
-                            <strong>You supervise the fund team</strong>
-                            <p>Human oversight sits above the chain; it is not an automated execution node.</p>
+                <section class="overview-plain-grid" aria-label="Connected sources and active strategies" data-overview-plain-grid>
+                    <article class="overview-data-sources-panel" data-overview-data-sources>
+                        <div class="overview-section-head">
+                            <span>Data sources connected</span>
+                            <strong>Loading source groups</strong>
                         </div>
-                        <div class="overview-mini-map" data-overview-mini-map>
-                            <span>Loading system connectivity.</span>
+                    </article>
+                    <article class="overview-strategies-panel" data-overview-trading-strategies>
+                        <div class="overview-section-head">
+                            <span>Trading strategies</span>
+                            <strong>Loading approved strategy families</strong>
                         </div>
-                    </div>
-                    <div class="overview-feed-strip" data-overview-feed-strip></div>
-                    <div class="overview-boundary-rail" data-overview-boundary-rail>
-                        <span>Reading rule</span>
-                        <p>Use the single safety strip for authority state. Overview items are readouts, and candidates are not orders.</p>
-                    </div>
+                    </article>
+                </section>
+
+                <section class="overview-plain-grid" aria-label="Reasoning and trade ideas" data-overview-thinking-grid>
+                    <article class="overview-thought-feed-panel" data-overview-thought-feed>
+                        <div class="overview-section-head">
+                            <span>Qadam's thoughts</span>
+                            <strong>Loading reasoning feed</strong>
+                        </div>
+                    </article>
+                    <article class="overview-trade-considerations-panel" data-overview-trade-considerations>
+                        <div class="overview-section-head">
+                            <span>Trades being considered</span>
+                            <strong>Loading candidate state</strong>
+                        </div>
+                    </article>
                 </section>
             </section>
 
@@ -1160,7 +1205,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-d11l-visual-simplification-layout"></script>
+    <script src="/dashboard.js?v=20260526-overview-operating-map"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

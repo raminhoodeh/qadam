@@ -2562,6 +2562,9 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const performance = sharedModels.performance_model || buildPerformanceModel(status);
     const operations = sharedModels.operations_model || sharedOperations || buildOperationsModel(status, source, sharedModels);
     const phase7 = status.phase7_demo_proof || {};
+    const capital = status.capital || {};
+    const tradeLayer = status.trade_layer || {};
+    const phase4 = status.phase4_strategy || {};
     const actionNeeded = [];
     if (sources.quorum.status !== "ok") actionNeeded.push("Review source quorum");
     if (trades.counts.postmortem_due > 0 || performance.paper_account.postmortem_due_count > 0) actionNeeded.push("Review due postmortem");
@@ -2686,6 +2689,161 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
                 : "Runtime is read-only from this dashboard."
         }
     ];
+    const systemStatus = [
+        {
+            id: "mode",
+            label: "Mode",
+            value: status.mode === "paper" ? "Paper trading" : canonicalStatusLabel(status.mode, { fallback: "Mode unknown" }),
+            tone: status.mode === "paper" ? "online" : "pending",
+            summary: "The dashboard is showing paper-account operation only."
+        },
+        {
+            id: "runtime",
+            label: "Runtime",
+            value: operations.runtime?.live_bridge_read_only === false ? "Review bridge" : "Read-only bridge",
+            tone: operations.runtime?.live_bridge_read_only === false ? "blocked" : "online",
+            summary: source?.key === "live_bridge"
+                ? "Protected status endpoint is serving the cockpit."
+                : "Static public-safe snapshot is serving the cockpit."
+        },
+        {
+            id: "sources",
+            label: "Sources",
+            value: `${sources.counts.online}/${sources.counts.total} connected`,
+            tone: sources.tone,
+            summary: `${sources.quorum.replayed_source_count}/${sources.quorum.expected_source_count} required sources replayed; ${sources.counts.missing_credentials} credentials missing.`
+        },
+        {
+            id: "trades",
+            label: "Trade desk",
+            value: `${trades.counts.candidate} candidates`,
+            tone: trades.counts.postmortem_due ? "blocked" : (trades.counts.candidate ? "pending" : "online"),
+            summary: `${trades.counts.observed_signal} observed signals, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.open_position} open positions.`
+        }
+    ];
+    const sourceGroups = asArray(sources.pipelines).slice(0, 5).map((pipeline) => ({
+        key: pipeline.pipeline,
+        label: OPERATIONS_PIPELINE_LABELS[pipeline.pipeline] || dashboardText(pipeline.label, "Source group"),
+        value: `${pipeline.online_count}/${pipeline.source_count} online`,
+        tone: pipeline.status,
+        summary: [
+            pipeline.degraded_count ? `${pipeline.degraded_count} degraded` : null,
+            pipeline.missing_credential_count ? `${pipeline.missing_credential_count} missing credentials` : null,
+            pipeline.signal_influencing_count ? `${pipeline.signal_influencing_count} can influence signals` : "observation only"
+        ].filter(Boolean).join("; ")
+    }));
+    const strategyToggles = asArray(phase4.strategy_toggles?.toggles);
+    const tradingStrategies = strategyToggles.length
+        ? strategyToggles.map((strategy) => ({
+            key: strategy.strategy_key,
+            label: dashboardText(strategy.label, strategy.strategy_key || "Strategy family"),
+            value: strategy.approval_state === "approved" ? "Active for paper research" : "Needs review",
+            tone: strategy.approval_state === "approved" ? "online" : "pending",
+            summary: "Visible to Qadam's research and risk workflow; not an order route."
+        }))
+        : [{
+            key: "strategy_status",
+            label: "Strategy families",
+            value: phase4.strategy_document_status === "validated" ? "Ready for review" : "Not exported",
+            tone: phase4.strategy_document_status === "validated" ? "online" : "pending",
+            summary: "Strategy-family metadata has not been exported in this snapshot."
+        }];
+    const latestLocalReview = asArray(reasoning.review_chain).find((review) => review.key === "research_analyst") || {};
+    const latestStrategyReview = asArray(reasoning.review_chain).find((review) => review.key === "strategy_lead") || {};
+    const latestSignalReview = asArray(reasoning.review_chain).find((review) => review.key === "signal_integrity") || {};
+    const quantReview = reasoning.quant_annotation || {};
+    const thoughtFeed = [
+        {
+            label: "Current focus",
+            value: `${reasoning.counts.hypotheses} hypotheses under review`,
+            tone: reasoning.tone,
+            summary: `${reasoning.counts.evidence_packets} evidence packets and ${reasoning.counts.shadow_packets} research packets are feeding the review queue.`
+        },
+        {
+            label: "Research Analyst",
+            value: dashboardText(latestLocalReview.status, "No local review exported"),
+            tone: latestLocalReview.status || "pending",
+            summary: dashboardText(latestLocalReview.summary, "No local assessment is exported yet.")
+        },
+        {
+            label: "Strategy Lead",
+            value: dashboardText(latestStrategyReview.status, "No strategy review exported"),
+            tone: latestStrategyReview.status || "pending",
+            summary: dashboardText(latestStrategyReview.summary, "No Strategy Lead review is exported yet.")
+        },
+        {
+            label: "Signal gate",
+            value: dashboardText(latestSignalReview.status, "No signal review exported"),
+            tone: latestSignalReview.status || "pending",
+            summary: dashboardText(latestSignalReview.summary, "No signal-gate review is exported yet.")
+        },
+        {
+            label: "Head of Quant",
+            value: dashboardText(quantReview.recommendation, "hold"),
+            tone: quantReview.status || "pending",
+            summary: `${dashboardText(quantReview.backend, "quant model")} check; ${dashboardText(quantReview.boundary, "annotation only")}.`
+        }
+    ];
+    const observedIdeas = asArray(tradeLayer.watching).map((item) => ({
+        id: item.alert_id || item.intent_id || item.instrument || "observed_signal",
+        label: item.instrument || item.symbol || "Observed signal",
+        value: "Observed signal",
+        tone: item.status || "pending",
+        summary: item.trigger || item.chart_context || "Qadam is watching this market event."
+    }));
+    const candidateIdeas = asArray(tradeLayer.candidates).map((item) => ({
+        id: item.intent_id || item.instrument || "candidate",
+        label: item.instrument || item.strategy || "Candidate",
+        value: "Candidate, not order",
+        tone: item.status || "pending",
+        summary: item.evidence_summary || item.catalyst || "Candidate needs review before any paper state."
+    }));
+    const blockedIdeas = asArray(tradeLayer.blocked).map((item) => ({
+        id: item.intent_id || item.instrument || "blocked",
+        label: item.instrument || item.strategy || "Blocked idea",
+        value: "Blocked",
+        tone: "blocked",
+        summary: item.blocked_reason || item.risk_state || "Held by evidence, policy, or risk checks."
+    }));
+    const tradeConsiderations = [...observedIdeas, ...candidateIdeas, ...blockedIdeas].slice(0, 5);
+    const paperTotal = modelNumber(
+        capital.starting_balance_gbp,
+        modelNumber(performance.paper_account.starting_balance_gbp, modelNumber(capital.current_balance_gbp, 100000))
+    );
+    const paperEquity = modelNumber(
+        capital.equity_gbp ?? capital.current_balance_gbp,
+        modelNumber(performance.paper_account.current_balance_gbp, paperTotal)
+    );
+    const paperCash = modelNumber(capital.cash_gbp, modelNumber(performance.paper_account.cash_gbp, paperEquity));
+    const openExposure = asArray(capital.open_positions).reduce(
+        (total, position) => total + modelNumber(position.notional_gbp ?? position.market_value_gbp ?? position.value_gbp, 0),
+        0
+    );
+    const pendingExposure = [
+        ...asArray(tradeLayer.staged_orders),
+        ...asArray(tradeLayer.submitted_orders),
+        ...asArray(capital.orders).filter((order) => !/filled|closed|cancelled|canceled/i.test(String(order.status || "")))
+    ].reduce((total, order) => total + modelNumber(order.notional_gbp ?? order.risk_size_gbp ?? order.value_gbp, 0), 0);
+    const deployedCapacity = openExposure + pendingExposure;
+    const capacityUsedFraction = paperTotal ? Math.min(1, Math.max(0, deployedCapacity / paperTotal)) : 0;
+    const paperCapacity = {
+        total_gbp: paperTotal,
+        equity_gbp: paperEquity,
+        cash_gbp: paperCash,
+        deployed_gbp: deployedCapacity,
+        available_gbp: Math.max(0, paperTotal - deployedCapacity),
+        used_fraction: capacityUsedFraction,
+        used_pct: Math.round(capacityUsedFraction * 1000) / 10,
+        total_pnl_gbp: performance.paper_account.total_pnl_gbp || 0,
+        drawdown_pct: performance.paper_account.drawdown_pct || capital.drawdown_pct || 0,
+        open_position_count: performance.paper_account.open_position_count || asArray(capital.open_positions).length,
+        order_count: performance.paper_account.order_count || asArray(capital.orders).length,
+        closed_trade_count: performance.paper_account.closed_paper_trade_count || asArray(capital.closed_trades).length,
+        observed_at: capital.observed_at || status.generated_at || null,
+        equity_curve: paperAccountEquityPoints(capital),
+        tone: deployedCapacity ? "pending" : "online",
+        summary: `${formatMoney(deployedCapacity)} deployed from ${formatMoney(paperTotal)} paper capacity; ${formatMoney(paperEquity)} current equity.`
+    };
     return {
         id: "overview",
         label: "Overview",
@@ -2702,6 +2860,12 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             primary_href: nextReviewLinks[0]?.href || "#trades"
         },
         demo_proof: demoProof,
+        system_status: systemStatus,
+        data_sources_connected: sourceGroups,
+        trading_strategies: tradingStrategies,
+        thought_feed: thoughtFeed,
+        trade_considerations: tradeConsiderations,
+        paper_capacity: paperCapacity,
         lifecycle: trades.lifecycle,
         lifecycle_summary: `${trades.counts.qualified_setup} eligible setups, ${trades.counts.candidate} candidates, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.closed_paper_trade} closed paper trades.`,
         action_needed: actionNeeded,
@@ -4895,6 +5059,81 @@ function renderOverviewMiniNode(node, index, total) {
     `;
 }
 
+function renderOverviewPlainCard(item) {
+    return `
+        <article class="overview-plain-card ${statusClass(item.tone || item.status)}">
+            <span>${htmlText(item.label)}</span>
+            <strong>${htmlText(item.value || item.state || item.status)}</strong>
+            <p>${htmlText(item.summary)}</p>
+        </article>
+    `;
+}
+
+function renderOverviewThoughtItem(item) {
+    return `
+        <li class="${statusClass(item.tone || item.status)}">
+            <span>${htmlText(item.label)}</span>
+            <strong>${htmlText(item.value || item.status)}</strong>
+            <p>${htmlText(item.summary)}</p>
+        </li>
+    `;
+}
+
+function renderOverviewCapacityChart(capacity = {}) {
+    const chartPoints = asArray(capacity.equity_curve).length
+        ? asArray(capacity.equity_curve)
+        : paperAccountEquityPoints({
+            current_balance_gbp: capacity.equity_gbp,
+            equity_gbp: capacity.equity_gbp,
+            observed_at: capacity.observed_at,
+            drawdown_pct: capacity.drawdown_pct
+        });
+    const stats = paperAccountEquityStats(chartPoints);
+    const width = 520;
+    const height = 150;
+    const left = 66;
+    const right = 16;
+    const top = 18;
+    const bottom = 28;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const rawMin = stats.min;
+    const rawMax = stats.max;
+    const range = rawMax - rawMin;
+    const padding = range > 0 ? range * 0.18 : Math.max(10, Math.abs(rawMax || 1000) * 0.01);
+    const min = rawMin - padding;
+    const max = rawMax + padding;
+    const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
+    const xFor = (index) => left + (chartPoints.length <= 1 ? plotWidth / 2 : (index / (chartPoints.length - 1)) * plotWidth);
+    const path = chartPoints
+        .map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
+        .join(" ");
+    const usedWidth = Math.round(Math.min(1, Math.max(0, Number(capacity.used_fraction || 0))) * 100);
+
+    return `
+        <div class="overview-capacity-chart-card ${statusClass(capacity.tone || "online")}">
+            <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account capacity line" preserveAspectRatio="none" data-paper-capacity-line>
+                <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
+                <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.max).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.max).toFixed(2)}"></line>
+                <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.min).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.min).toFixed(2)}"></line>
+                <path class="paper-equity-line" d="${path}"></path>
+                <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(formatMoney(stats.max))}</text>
+                <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(formatMoney(stats.min))}</text>
+                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(capacity.observed_at))}</text>
+            </svg>
+            <div class="overview-capacity-bar" aria-label="Paper capacity deployed">
+                <span style="width: ${usedWidth}%"></span>
+            </div>
+            <div class="overview-capacity-summary">
+                ${renderMetric("Deployed", formatMoney(capacity.deployed_gbp))}
+                ${renderMetric("Capacity", formatMoney(capacity.total_gbp))}
+                ${renderMetric("Equity", formatMoney(capacity.equity_gbp))}
+                ${renderMetric("P&L", formatMoney(capacity.total_pnl_gbp))}
+            </div>
+        </div>
+    `;
+}
+
 function renderOverviewFirstScreen(viewModels) {
     const overview = viewModels?.overview_model;
     const connectivity = viewModels?.system_connectivity_model;
@@ -4949,6 +5188,32 @@ function renderOverviewFirstScreen(viewModels) {
         `;
     }
 
+    const systemStatus = dashboardQuery("[data-overview-system-status]");
+    if (systemStatus) {
+        systemStatus.innerHTML = `
+            <div class="overview-section-head">
+                <span>System status</span>
+                <strong>Plain-language runtime state</strong>
+            </div>
+            <div class="overview-plain-card-grid">
+                ${asArray(overview.system_status).map(renderOverviewPlainCard).join("")}
+            </div>
+        `;
+    }
+
+    const paperCapacity = dashboardQuery("[data-overview-paper-capacity]");
+    if (paperCapacity) {
+        const capacity = overview.paper_capacity || {};
+        paperCapacity.innerHTML = `
+            <div class="overview-section-head">
+                <span>Paper capacity</span>
+                <strong>${formatMoney(capacity.deployed_gbp)} of ${formatMoney(capacity.total_gbp)} deployed</strong>
+            </div>
+            <p>${htmlText(capacity.summary, "Paper capacity has not loaded.")}</p>
+            ${renderOverviewCapacityChart(capacity)}
+        `;
+    }
+
     const metrics = dashboardQuery("[data-overview-metrics]");
     if (metrics) {
         metrics.innerHTML = readouts.slice(0, 4)
@@ -4999,6 +5264,61 @@ function renderOverviewFirstScreen(viewModels) {
         boundary.innerHTML = `
             <span>Reading rule</span>
             <p>${htmlText(overview.scope_note || "Use the single safety strip for authority state.")} Candidate is not an order.</p>
+        `;
+    }
+
+    const dataSources = dashboardQuery("[data-overview-data-sources]");
+    if (dataSources) {
+        dataSources.innerHTML = `
+            <div class="overview-section-head">
+                <span>Data sources connected</span>
+                <strong>${htmlText((overview.data_sources_connected || []).length)} source groups</strong>
+            </div>
+            <div class="overview-plain-card-grid">
+                ${asArray(overview.data_sources_connected).map(renderOverviewPlainCard).join("")}
+            </div>
+        `;
+    }
+
+    const strategies = dashboardQuery("[data-overview-trading-strategies]");
+    if (strategies) {
+        strategies.innerHTML = `
+            <div class="overview-section-head">
+                <span>Trading strategies</span>
+                <strong>${htmlText((overview.trading_strategies || []).length)} approved paper-research families</strong>
+            </div>
+            <div class="overview-plain-card-grid strategy-grid">
+                ${asArray(overview.trading_strategies).map(renderOverviewPlainCard).join("")}
+            </div>
+        `;
+    }
+
+    const thoughtFeed = dashboardQuery("[data-overview-thought-feed]");
+    if (thoughtFeed) {
+        thoughtFeed.innerHTML = `
+            <div class="overview-section-head">
+                <span>Qadam's thoughts</span>
+                <strong>Current reasoning feed</strong>
+            </div>
+            <ol class="overview-thought-list">
+                ${asArray(overview.thought_feed).map(renderOverviewThoughtItem).join("")}
+            </ol>
+        `;
+    }
+
+    const tradeConsiderations = dashboardQuery("[data-overview-trade-considerations]");
+    if (tradeConsiderations) {
+        tradeConsiderations.innerHTML = `
+            <div class="overview-section-head">
+                <span>Trades being considered</span>
+                <strong>${htmlText((overview.trade_considerations || []).length)} live ideas</strong>
+            </div>
+            <div class="overview-plain-card-grid">
+                ${asArray(overview.trade_considerations).length
+        ? asArray(overview.trade_considerations).map(renderOverviewPlainCard).join("")
+        : `<article class="overview-plain-card online"><span>No active trade idea</span><strong>Monitoring only</strong><p>Qadam has not exported an observed signal or candidate in this snapshot.</p></article>`}
+            </div>
+            <p class="mini">A candidate is still only something Qadam is thinking about. It is not an order.</p>
         `;
     }
 
