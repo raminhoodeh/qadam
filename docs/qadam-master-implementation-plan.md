@@ -1086,6 +1086,19 @@ Current PaperOps status:
   `paper_order_submission_allowed=False`, `live_capital_enabled=False`,
   `forced_trades_allowed=False`, `qctrl_direct_execution_allowed=False`, and
   all broker/Alpaca/live endpoint counters at zero.
+- PT-1 Q-CTRL product access and paper consultation is implemented in
+  `orchestrator/paper_live_qctrl_product_access.py` and
+  `scripts/check_paper_live_qctrl_product_access.py`. The explicit guarded
+  provider probe was run once through PaperOps-Q and reports
+  `status=blocked_qctrl_product_access_or_subscription`,
+  `product_access_verified=False`, `paper_consultation_ready=False`,
+  `provider_call_attempted=True`, `provider_call_succeeded=False`,
+  `provider_call_count=1`, and
+  `product_access_blocker=qctrl_product_access_or_subscription_not_active`.
+  It exposes this state in PaperOps readiness, PaperOps cycle, PaperOps-6, and
+  cockpit Mission Control while keeping Q-CTRL advisory-only with no execution,
+  paper-order, broker, live endpoint, live capital, forced-trade, hardware, raw
+  response, secret, or Phase 7 proof-credit authority.
 - PaperOps-Q Q-CTRL paper consultation gate is implemented in
   `orchestrator/paperops_qctrl_consultation.py` and
   `scripts/check_paperops_qctrl_consultation.py`. Fire Opal is installed and
@@ -1135,10 +1148,11 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  24/24 commands passing: paper mode is safe to continue, PT-0 approval is
-  logged, the Phase 7 run is active, the Head-of-Quant oracle can run in its
-  current non-provider mode, broker/Alpaca POST counters remain zero,
-  PaperOps-2 reports `disabled_pending_enablement`, PaperOps-3 reports
+  25/25 commands passing: paper mode is safe to continue, PT-0 approval is
+  logged, PT-1 has recorded the Q-CTRL product-access blocker, the Phase 7 run
+  is active, the Head-of-Quant oracle can run in its current non-provider mode,
+  broker/Alpaca POST counters remain zero, PaperOps-2 reports
+  `disabled_pending_enablement`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,
   PaperOps-6 reports `operations_active`, and the remaining blockers include the

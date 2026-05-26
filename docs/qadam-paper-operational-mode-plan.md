@@ -72,6 +72,10 @@ Implemented:
   system-level approval for Alpaca paper-only operation after later PT gates
   pass. It does not approve live capital, live endpoints, forced trades,
   per-trade manual bypasses, or immediate broker submission.
+- PT-1 Q-CTRL product access and paper consultation gate exists. It attempted
+  the explicit guarded PaperOps-Q provider path, recorded one sanitized provider
+  call, and now reports the Q-CTRL product/subscription access blocker as a
+  first-class operational state.
 - Phase 7 demo-proof run ledger is active.
 - Q7 qualified setup, auto-approval, staging, guarded submit, lifecycle,
   postmortem, performance, drawdown, override, signal-funnel, maturity, cockpit,
@@ -115,7 +119,8 @@ Remaining paper-operational gaps:
 - The guarded paper exit path is implemented but disabled and idle because
   there are zero PaperOps-3 open-position readbacks.
 - Q-CTRL consultation is not fully connected until product access is active and
-  the flagged provider call succeeds.
+  the flagged provider call succeeds. PT-1 currently records
+  `qctrl_product_access_or_subscription_not_active`.
 - Telegram remains notify-only and dry-run. PaperOps-5 exposes the separate
   send-test gate, but no send-test approval is currently present.
 
@@ -167,6 +172,37 @@ Status after implementation:
 - Broker POST, Alpaca POST, and live endpoint counters are all zero.
 - The cockpit now exposes the PT-0 public-safe status in Mission Control.
 
+### PT-1 - Q-CTRL Product Access And Paper Consultation
+
+Record whether Q-CTRL product access is actually available for paper-mode
+consultation through the guarded PaperOps-Q path.
+
+Status after implementation:
+
+- `orchestrator/paper_live_qctrl_product_access.py` exists.
+- `scripts/check_paper_live_qctrl_product_access.py` exists.
+- The runtime artifact is `data/runtime/paper_live_qctrl_product_access.json`,
+  with history and Event Log artifacts beside it.
+- The explicit PT-1 provider probe was run with
+  `--attempt-provider-consultation`.
+- Current status is `blocked_qctrl_product_access_or_subscription`.
+- `product_access_state=blocked_external_product_access`.
+- `product_access_verified=False`.
+- `paper_consultation_ready=False`.
+- `provider_call_attempted=True`.
+- `provider_call_succeeded=False`.
+- `provider_call_count=1`.
+- `product_access_blocker=qctrl_product_access_or_subscription_not_active`.
+- Q-CTRL credential and SDK/package posture are present:
+  `qctrl_credential_configured=True`,
+  `qctrl_sdk_package_importable=True`, and
+  `qctrl_sdk_module_selected=fireopal`.
+- PT-1 is wired into PaperOps readiness, the operational cycle, PaperOps-6, and
+  cockpit Mission Control.
+- Execution, paper-order, broker, Alpaca POST, live endpoint, live capital,
+  hardware submission, forced trade, secret exposure, raw-response exposure, and
+  Phase 7 proof-credit authorities remain false.
+
 ### PaperOps-1 - Operational Cycle Runner
 
 Create one command that runs the whole paper observation loop in order:
@@ -206,16 +242,16 @@ Status after implementation:
   `qctrl_paper_consultation_connected_not_ready`,
   `external_alpaca_paper_post_enabled_not_ready`, and
   `paper_exit_path_connected_not_ready`.
-- Command result: 24/24 runner commands pass after PT-0 and PaperOps-6 are
+- Command result: 25/25 runner commands pass after PT-1 is
   included.
 - Broker POST and Alpaca POST counters remain zero.
 - The Phase 7 demo-proof checker now validates the actual preserved calendar
   window instead of assuming Day 1. Current observed run state is start date
   `2026-05-25`, end date `2026-06-23`, active day `2`, completed day count
   `1`, and no qualified setups.
-- PaperOps-Q, PaperOps-2, PaperOps-3, PaperOps-4, PaperOps-5, PaperOps-6, and
-  PT-0 are now implemented. Current PaperOps unblock: `Resolve PaperOps-Q
-  Q-CTRL product access for successful paper consultation`.
+- PaperOps-Q, PaperOps-2, PaperOps-3, PaperOps-4, PaperOps-5, PaperOps-6,
+  PT-0, and PT-1 are now implemented. Current PaperOps unblock: `Resolve
+  PaperOps-Q Q-CTRL product access for successful paper consultation`.
 
 ### PaperOps-Q - Q-CTRL Paper Consultation Gate
 
@@ -277,7 +313,9 @@ Status after implementation:
   or enabled.
 - Current PaperOps readiness still blocks full paper-operational status on
   `qctrl_paper_consultation_connected_not_ready` until Q-CTRL product access is
-  active and the flagged provider call succeeds.
+  active and the flagged provider call succeeds. PT-1 records the last explicit
+  product-access attempt as
+  `blocked_qctrl_product_access_or_subscription`.
 
 ### PaperOps-2 - Explicit Alpaca Paper POST Gate
 
@@ -391,7 +429,7 @@ Status after implementation:
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PT-0: 24/24 commands pass. PaperOps-5 reports
+- Current cycle result after PT-1: 25/25 commands pass. PaperOps-5 reports
   seven review records, six lifecycle notification types, zero live-send
   allowance, zero command-path allowance, and zero broker-write allowance.
 
@@ -420,9 +458,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 24/24 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 25/25 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=24`, and
+  `paper_operational_cycle_command_count=25`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,

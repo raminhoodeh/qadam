@@ -64,6 +64,25 @@ def main() -> int:
     paper_live_broker_probe["paper_live_activation_broker_post_called_count"] = 1
     paper_live_broker_errors = validate_paper_operational_readiness(paper_live_broker_probe)
 
+    paper_live_qctrl_authority_probe = deepcopy(written)
+    paper_live_qctrl_authority_probe["paper_live_qctrl_execution_allowed"] = True
+    paper_live_qctrl_authority_probe["paper_live_qctrl_broker_post_allowed"] = True
+    paper_live_qctrl_authority_errors = validate_paper_operational_readiness(
+        paper_live_qctrl_authority_probe
+    )
+
+    paper_live_qctrl_proof_probe = deepcopy(written)
+    paper_live_qctrl_proof_probe["paper_live_qctrl_phase7_proof_credit_allowed"] = True
+    paper_live_qctrl_proof_errors = validate_paper_operational_readiness(
+        paper_live_qctrl_proof_probe
+    )
+
+    paper_live_qctrl_counter_probe = deepcopy(written)
+    paper_live_qctrl_counter_probe["paper_live_qctrl_broker_post_called_count"] = 1
+    paper_live_qctrl_counter_errors = validate_paper_operational_readiness(
+        paper_live_qctrl_counter_probe
+    )
+
     broker_post_probe = deepcopy(written)
     broker_post_probe["broker_post_called_count"] = 1
     broker_post_probe["alpaca_post_called_count"] = 1
@@ -223,6 +242,62 @@ def main() -> int:
     print(
         "paper_ops_paper_live_activation_max_order_notional_gbp="
         f"{written['paper_live_activation_max_order_notional_gbp']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_product_access_status="
+        f"{written['paper_live_qctrl_product_access_status']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_product_access_state="
+        f"{written['paper_live_qctrl_product_access_state']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_product_access_verified="
+        f"{written['paper_live_qctrl_product_access_verified']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_consultation_ready="
+        f"{written['paper_live_qctrl_consultation_ready']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_provider_call_attempted="
+        f"{written['paper_live_qctrl_provider_call_attempted']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_provider_call_succeeded="
+        f"{written['paper_live_qctrl_provider_call_succeeded']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_provider_call_count="
+        f"{written['paper_live_qctrl_provider_call_count']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_product_access_blocker="
+        f"{written['paper_live_qctrl_product_access_blocker']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_execution_allowed="
+        f"{written['paper_live_qctrl_execution_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_broker_post_allowed="
+        f"{written['paper_live_qctrl_broker_post_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_phase7_proof_credit_allowed="
+        f"{written['paper_live_qctrl_phase7_proof_credit_allowed']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_broker_post_called_count="
+        f"{written['paper_live_qctrl_broker_post_called_count']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_alpaca_post_called_count="
+        f"{written['paper_live_qctrl_alpaca_post_called_count']}"
+    )
+    print(
+        "paper_ops_paper_live_qctrl_live_endpoint_called_count="
+        f"{written['paper_live_qctrl_live_endpoint_called_count']}"
     )
     print(f"paper_ops_quantum_paper_parity_required={written['quantum_paper_parity_required']}")
     print(f"paper_ops_qctrl_paper_consultation_enabled={written['qctrl_paper_consultation_enabled']}")
@@ -459,6 +534,16 @@ def main() -> int:
         errors.append("paper-live activation allows forced trades")
     if written["paper_live_activation_qctrl_execution_allowed"] is not False:
         errors.append("paper-live activation gives Q-CTRL execution authority")
+    if written["paper_live_qctrl_provider_call_attempted"] is not True:
+        errors.append("PT-1 Q-CTRL product-access provider call was not attempted")
+    if written["paper_live_qctrl_provider_call_count"] < 1:
+        errors.append("PT-1 Q-CTRL product-access provider call count is missing")
+    if written["paper_live_qctrl_execution_allowed"] is not False:
+        errors.append("PT-1 Q-CTRL product access gives execution authority")
+    if written["paper_live_qctrl_broker_post_allowed"] is not False:
+        errors.append("PT-1 Q-CTRL product access gives broker authority")
+    if written["paper_live_qctrl_phase7_proof_credit_allowed"] is not False:
+        errors.append("PT-1 Q-CTRL product access grants proof credit")
     if written["safe_to_continue_paper_only"] is not True:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
@@ -495,6 +580,22 @@ def main() -> int:
         not in paper_live_broker_errors
     ):
         errors.append("paper-live broker-POST probe was not rejected")
+    if (
+        "paper_ops_paper_live_qctrl_forbidden:paper_live_qctrl_execution_allowed"
+        not in paper_live_qctrl_authority_errors
+    ):
+        errors.append("PT-1 Q-CTRL execution-authority probe was not rejected")
+    if (
+        "paper_ops_paper_live_qctrl_forbidden:"
+        "paper_live_qctrl_phase7_proof_credit_allowed"
+        not in paper_live_qctrl_proof_errors
+    ):
+        errors.append("PT-1 Q-CTRL proof-credit probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:paper_live_qctrl_broker_post_called_count"
+        not in paper_live_qctrl_counter_errors
+    ):
+        errors.append("PT-1 Q-CTRL broker-counter probe was not rejected")
     if "paper_ops_unsafe_counter_nonzero:broker_post_called_count" not in broker_post_errors:
         errors.append("broker POST probe was not rejected")
     if (

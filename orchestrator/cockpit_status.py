@@ -30,6 +30,9 @@ from orchestrator.live_bridge import live_bridge_contract, write_status_signatur
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
 from orchestrator.paper_live_activation import paper_live_activation_public_status
+from orchestrator.paper_live_qctrl_product_access import (
+    paper_live_qctrl_product_access_public_status,
+)
 from orchestrator.paperops_alpaca_paper_post import paperops_alpaca_paper_post_public_status
 from orchestrator.paperops_paper_lifecycle_poller import (
     paperops_paper_lifecycle_poller_public_status,
@@ -4388,6 +4391,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     phase7_demo_proof = payload.get("phase7_demo_proof", {})
     paper_live_activation = payload.get("paper_live_activation", {})
+    paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
     paperops_alpaca_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -4531,6 +4535,16 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "paper_live_activation_system_approval_logged": paper_live_activation.get(
                 "paper_trading_system_approval_logged",
                 False,
+            ),
+            "paper_live_qctrl_product_access": paper_live_qctrl_product_access.get(
+                "status",
+                "not_run",
+            ),
+            "paper_live_qctrl_product_access_verified": (
+                paper_live_qctrl_product_access.get("product_access_verified", False)
+            ),
+            "paper_live_qctrl_provider_call_count": (
+                paper_live_qctrl_product_access.get("provider_call_count", 0)
             ),
             "qctrl_paper_consultation": paperops_qctrl.get("status", "not_run"),
             "qctrl_paper_provider_call_count": paperops_qctrl.get("provider_call_count", 0),
@@ -5628,6 +5642,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paper_submit_receipt": _paper_submit_receipt_status(settings),
         "quantum_oracle": quantum_oracle,
         "paper_live_activation": paper_live_activation_public_status(settings),
+        "paper_live_qctrl_product_access": paper_live_qctrl_product_access_public_status(
+            settings
+        ),
         "paperops_alpaca_paper_post": paperops_alpaca_paper_post_public_status(settings),
         "paperops_paper_lifecycle_poller": (
             paperops_paper_lifecycle_poller_public_status(settings)
@@ -5736,6 +5753,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "phase7_demo_proof",
         "phase5_system_map",
         "paper_live_activation",
+        "paper_live_qctrl_product_access",
         "paperops_alpaca_paper_post",
         "paperops_paper_lifecycle_poller",
         "paperops_paper_exit_path",
@@ -5931,6 +5949,57 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in paper_live_boundary:
             raise ValueError("Paper-live activation boundary is weak")
+    paper_live_qctrl = payload["paper_live_qctrl_product_access"]
+    if paper_live_qctrl.get("status") not in {
+        "not_run",
+        "ready_for_explicit_qctrl_product_access_probe",
+        "blocked_qctrl_product_access_or_subscription",
+        "qctrl_paper_consultation_ready",
+        "invalid",
+    }:
+        raise ValueError("PT-1 Q-CTRL product access status is invalid")
+    if paper_live_qctrl.get("public_safe") is not True:
+        raise ValueError("PT-1 Q-CTRL product access must be public-safe")
+    for key in (
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "hardware_submission_allowed",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "secret_value_exposed",
+        "raw_response_exposed",
+        "raw_provider_response_persisted",
+        "provider_failure_message_persisted",
+    ):
+        if paper_live_qctrl.get(key) is not False:
+            raise ValueError(f"PT-1 Q-CTRL product access unsafe flag set: {key}")
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+    ):
+        if int(paper_live_qctrl.get(key, 0) or 0) != 0:
+            raise ValueError(f"PT-1 Q-CTRL product access unsafe count nonzero: {key}")
+    if paper_live_qctrl.get("status") in {
+        "blocked_qctrl_product_access_or_subscription",
+        "qctrl_paper_consultation_ready",
+    }:
+        if paper_live_qctrl.get("provider_call_attempted") is not True:
+            raise ValueError("PT-1 Q-CTRL product access provider call missing")
+        if int(paper_live_qctrl.get("provider_call_count", 0) or 0) < 1:
+            raise ValueError("PT-1 Q-CTRL product access provider call count missing")
+    qctrl_product_boundary = str(paper_live_qctrl.get("boundary") or "")
+    for phrase in (
+        "guarded PaperOps-Q",
+        "cannot call brokers",
+        "cannot grant Phase 7 proof credit",
+    ):
+        if phrase not in qctrl_product_boundary:
+            raise ValueError("PT-1 Q-CTRL product access boundary is weak")
     paperops_alpaca = payload["paperops_alpaca_paper_post"]
     if paperops_alpaca.get("status") not in {
         "not_run",

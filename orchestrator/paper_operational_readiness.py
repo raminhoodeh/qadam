@@ -40,6 +40,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
         "paper_live_activation_approved",
         "Fund Manager approval must explicitly authorize system-level paper-live operation.",
     ),
+    (
+        "paper_live_qctrl_product_access_checked",
+        "PT-1 must record the explicit Q-CTRL product-access consultation state.",
+    ),
     ("strategy_research_intake_connected", "External strategy notes must be structured as decision context."),
     ("phase7_run_active", "The 30-day demo-proof run ledger must be active."),
     ("source_spine_available", "Durable replay and current source status must be readable."),
@@ -136,6 +140,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
     return {
         "cockpit": _read_json(runtime / "cockpit-status.json"),
         "paper_live_activation": _read_json(runtime / "paper_live_activation.json"),
+        "paper_live_qctrl_product_access": _read_json(
+            runtime / "paper_live_qctrl_product_access.json"
+        ),
         "strategy_research": strategy_research,
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "qualified_setup": _read_json(runtime / "phase7_qualified_setup_ledger.json"),
@@ -166,6 +173,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     durable = mission.get("durable_spine", {}) if isinstance(mission, dict) else {}
     portfolio = mission.get("portfolio", {}) if isinstance(mission, dict) else {}
     paper_live_activation = snapshot["paper_live_activation"]
+    paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
     demo_run = snapshot["demo_run"]
     setup = snapshot["qualified_setup"]
     auto = snapshot["auto_approval"]
@@ -200,6 +208,25 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and _int(paper_live_activation.get("broker_post_called_count")) == 0
         and _int(paper_live_activation.get("alpaca_post_called_count")) == 0
         and _int(paper_live_activation.get("live_endpoint_called_count")) == 0
+    )
+    paper_live_qctrl_product_access_checked = (
+        paper_live_qctrl_product_access.get("status")
+        in {
+            "blocked_qctrl_product_access_or_subscription",
+            "qctrl_paper_consultation_ready",
+        }
+        and paper_live_qctrl_product_access.get("pt0_activation_approved") is True
+        and paper_live_qctrl_product_access.get("pt0_system_approval_logged") is True
+        and paper_live_qctrl_product_access.get("provider_call_attempted") is True
+        and _int(paper_live_qctrl_product_access.get("provider_call_count")) >= 1
+        and paper_live_qctrl_product_access.get("execution_allowed") is False
+        and paper_live_qctrl_product_access.get("paper_order_allowed") is False
+        and paper_live_qctrl_product_access.get("broker_post_allowed") is False
+        and paper_live_qctrl_product_access.get("live_capital_enabled") is False
+        and paper_live_qctrl_product_access.get("phase7_proof_credit_allowed") is False
+        and _int(paper_live_qctrl_product_access.get("broker_post_called_count")) == 0
+        and _int(paper_live_qctrl_product_access.get("alpaca_post_called_count")) == 0
+        and _int(paper_live_qctrl_product_access.get("live_endpoint_called_count")) == 0
     )
     qctrl_consultation_ready = (
         settings.qctrl_paper_consultation_enabled
@@ -310,6 +337,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
                 f"qctrl_required={paper_live_activation.get('qctrl_consultation_required')}"
             ),
             "required_for_full_paper_ops": True,
+        },
+        {
+            "key": "paper_live_qctrl_product_access_checked",
+            "ready": paper_live_qctrl_product_access_checked,
+            "status": str(paper_live_qctrl_product_access.get("status") or "missing"),
+            "detail": (
+                f"state={paper_live_qctrl_product_access.get('product_access_state')}; "
+                f"verified={paper_live_qctrl_product_access.get('product_access_verified')}; "
+                f"calls={_int(paper_live_qctrl_product_access.get('provider_call_count'))}; "
+                f"blocker={paper_live_qctrl_product_access.get('product_access_blocker')}"
+            ),
+            "required_for_full_paper_ops": False,
         },
         {
             "key": "strategy_research_intake_connected",
@@ -562,6 +601,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
     strategy_research = snapshot["strategy_research"]
     paper_live_activation = snapshot["paper_live_activation"]
+    paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
 
     artifact = {
         "schema_version": PAPER_OPS_SCHEMA_VERSION,
@@ -635,6 +675,57 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         ),
         "paper_live_activation_live_endpoint_called_count": _int(
             paper_live_activation.get("live_endpoint_called_count")
+        ),
+        "paper_live_qctrl_product_access_status": paper_live_qctrl_product_access.get(
+            "status",
+            "missing",
+        ),
+        "paper_live_qctrl_product_access_state": paper_live_qctrl_product_access.get(
+            "product_access_state",
+            "missing",
+        ),
+        "paper_live_qctrl_product_access_verified": (
+            paper_live_qctrl_product_access.get("product_access_verified") is True
+        ),
+        "paper_live_qctrl_consultation_ready": (
+            paper_live_qctrl_product_access.get("paper_consultation_ready") is True
+        ),
+        "paper_live_qctrl_provider_call_attempted": (
+            paper_live_qctrl_product_access.get("provider_call_attempted") is True
+        ),
+        "paper_live_qctrl_provider_call_succeeded": (
+            paper_live_qctrl_product_access.get("provider_call_succeeded") is True
+        ),
+        "paper_live_qctrl_provider_call_count": _int(
+            paper_live_qctrl_product_access.get("provider_call_count")
+        ),
+        "paper_live_qctrl_product_access_blocker": paper_live_qctrl_product_access.get(
+            "product_access_blocker",
+            "missing",
+        ),
+        "paper_live_qctrl_execution_allowed": (
+            paper_live_qctrl_product_access.get("execution_allowed") is True
+        ),
+        "paper_live_qctrl_paper_order_allowed": (
+            paper_live_qctrl_product_access.get("paper_order_allowed") is True
+        ),
+        "paper_live_qctrl_broker_post_allowed": (
+            paper_live_qctrl_product_access.get("broker_post_allowed") is True
+        ),
+        "paper_live_qctrl_live_capital_enabled": (
+            paper_live_qctrl_product_access.get("live_capital_enabled") is True
+        ),
+        "paper_live_qctrl_phase7_proof_credit_allowed": (
+            paper_live_qctrl_product_access.get("phase7_proof_credit_allowed") is True
+        ),
+        "paper_live_qctrl_broker_post_called_count": _int(
+            paper_live_qctrl_product_access.get("broker_post_called_count")
+        ),
+        "paper_live_qctrl_alpaca_post_called_count": _int(
+            paper_live_qctrl_product_access.get("alpaca_post_called_count")
+        ),
+        "paper_live_qctrl_live_endpoint_called_count": _int(
+            paper_live_qctrl_product_access.get("live_endpoint_called_count")
         ),
         "quantum_paper_parity_required": settings.quantum_paper_parity_required,
         "qctrl_paper_consultation_enabled": settings.qctrl_paper_consultation_enabled,
@@ -931,6 +1022,9 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_live_activation_broker_post_called_count",
         "paper_live_activation_alpaca_post_called_count",
         "paper_live_activation_live_endpoint_called_count",
+        "paper_live_qctrl_broker_post_called_count",
+        "paper_live_qctrl_alpaca_post_called_count",
+        "paper_live_qctrl_live_endpoint_called_count",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -960,6 +1054,24 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_paper_live_activation_qctrl_broker_authority")
     if artifact.get("paper_live_activation_phase7_proof_credit_allowed") is not False:
         errors.append("paper_ops_paper_live_activation_proof_credit_allowed")
+    if artifact.get("paper_live_qctrl_product_access_status") not in {
+        "blocked_qctrl_product_access_or_subscription",
+        "qctrl_paper_consultation_ready",
+    }:
+        errors.append("paper_ops_paper_live_qctrl_product_access_not_checked")
+    if artifact.get("paper_live_qctrl_provider_call_attempted") is not True:
+        errors.append("paper_ops_paper_live_qctrl_provider_call_not_attempted")
+    if _int(artifact.get("paper_live_qctrl_provider_call_count")) < 1:
+        errors.append("paper_ops_paper_live_qctrl_provider_call_count_missing")
+    for key in (
+        "paper_live_qctrl_execution_allowed",
+        "paper_live_qctrl_paper_order_allowed",
+        "paper_live_qctrl_broker_post_allowed",
+        "paper_live_qctrl_live_capital_enabled",
+        "paper_live_qctrl_phase7_proof_credit_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_paper_live_qctrl_forbidden:{key}")
     if artifact.get("phase7_proof_credit_allowed") is not False:
         errors.append("paper_ops_phase7_proof_credit_allowed")
     if artifact.get("paper_lifecycle_poller_phase7_proof_credit_allowed") is not False:

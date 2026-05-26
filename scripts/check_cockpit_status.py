@@ -1877,6 +1877,9 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paper_live_activation",
     "paper_live_activation_approved",
     "paper_live_activation_system_approval_logged",
+    "paper_live_qctrl_product_access",
+    "paper_live_qctrl_product_access_verified",
+    "paper_live_qctrl_provider_call_count",
     "paperops_alpaca_paper_post",
     "paperops_alpaca_paper_post_called_count",
     "paperops_paper_lifecycle_poller",
@@ -1934,6 +1937,40 @@ PAPER_LIVE_ACTIVATION_REQUIRED_FIELDS = {
     "qctrl_direct_execution_allowed",
     "recorded",
     "schema_version",
+    "stage",
+    "status",
+    "validation_error_count",
+}
+
+PAPER_LIVE_QCTRL_PRODUCT_ACCESS_REQUIRED_FIELDS = {
+    "alpaca_post_allowed",
+    "alpaca_post_called_count",
+    "boundary",
+    "broker_post_allowed",
+    "broker_post_called_count",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_allowed",
+    "live_endpoint_called_count",
+    "paper_consultation_ready",
+    "paper_order_allowed",
+    "phase7_proof_credit_allowed",
+    "product_access_blocker",
+    "product_access_state",
+    "product_access_verified",
+    "provider_call_attempted",
+    "provider_call_count",
+    "provider_call_succeeded",
+    "public_safe",
+    "qctrl_auth_status",
+    "raw_provider_response_persisted",
+    "raw_response_exposed",
+    "recorded",
+    "schema_version",
+    "secret_value_exposed",
     "stage",
     "status",
     "validation_error_count",
@@ -2674,6 +2711,7 @@ def main() -> int:
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     phase6_certification = payload.get("phase6_certification", {})
     paper_live_activation = payload.get("paper_live_activation", {})
+    paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
     paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
     paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
@@ -2702,6 +2740,22 @@ def main() -> int:
     print(
         "cockpit_status_paper_live_activation_submit_allowed="
         f"{paper_live_activation.get('paper_order_submission_allowed')}"
+    )
+    print(
+        "cockpit_status_paper_live_qctrl_product_access_status="
+        f"{paper_live_qctrl_product_access.get('status')}"
+    )
+    print(
+        "cockpit_status_paper_live_qctrl_product_access_verified="
+        f"{paper_live_qctrl_product_access.get('product_access_verified')}"
+    )
+    print(
+        "cockpit_status_paper_live_qctrl_provider_call_count="
+        f"{paper_live_qctrl_product_access.get('provider_call_count')}"
+    )
+    print(
+        "cockpit_status_paper_live_qctrl_product_access_blocker="
+        f"{paper_live_qctrl_product_access.get('product_access_blocker')}"
     )
     print(
         "cockpit_status_paperops_lifecycle_poller_status="
@@ -6148,6 +6202,21 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paper_live_activation_logged_mismatch=true")
         return 1
+    if mission_stack.get("paper_live_qctrl_product_access") != (
+        paper_live_qctrl_product_access.get("status")
+    ):
+        print("cockpit_status_mission_stack_paper_live_qctrl_status_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_qctrl_product_access_verified") != (
+        paper_live_qctrl_product_access.get("product_access_verified")
+    ):
+        print("cockpit_status_mission_stack_paper_live_qctrl_verified_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_qctrl_provider_call_count") != (
+        paper_live_qctrl_product_access.get("provider_call_count")
+    ):
+        print("cockpit_status_mission_stack_paper_live_qctrl_call_count_mismatch=true")
+        return 1
     if mission_stack.get("paperops_alpaca_paper_post") != paperops_alpaca_paper_post.get("status"):
         print("cockpit_status_mission_stack_paperops_alpaca_post_mismatch=true")
         return 1
@@ -6246,6 +6315,58 @@ def main() -> int:
     ):
         if int(paper_live_activation.get(key, 0) or 0) != 0:
             print(f"cockpit_status_paper_live_activation_unsafe_counter={key}")
+            return 1
+    missing_paper_live_qctrl_fields = sorted(
+        PAPER_LIVE_QCTRL_PRODUCT_ACCESS_REQUIRED_FIELDS
+        - set(paper_live_qctrl_product_access)
+    )
+    if missing_paper_live_qctrl_fields:
+        print(
+            "cockpit_status_paper_live_qctrl_product_access_fields_missing="
+            + ",".join(missing_paper_live_qctrl_fields)
+        )
+        return 1
+    if paper_live_qctrl_product_access.get("status") not in {
+        "blocked_qctrl_product_access_or_subscription",
+        "qctrl_paper_consultation_ready",
+    }:
+        print("cockpit_status_paper_live_qctrl_product_access_not_checked=true")
+        return 1
+    if paper_live_qctrl_product_access.get("public_safe") is not True:
+        print("cockpit_status_paper_live_qctrl_product_access_not_public_safe=true")
+        return 1
+    if paper_live_qctrl_product_access.get("provider_call_attempted") is not True:
+        print("cockpit_status_paper_live_qctrl_provider_call_not_attempted=true")
+        return 1
+    if int(paper_live_qctrl_product_access.get("provider_call_count", 0) or 0) < 1:
+        print("cockpit_status_paper_live_qctrl_provider_call_count_missing=true")
+        return 1
+    if paper_live_qctrl_product_access.get("validation_error_count") != 0:
+        print("cockpit_status_paper_live_qctrl_validation_errors=true")
+        return 1
+    for key in (
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "secret_value_exposed",
+        "raw_response_exposed",
+        "raw_provider_response_persisted",
+    ):
+        if paper_live_qctrl_product_access.get(key) is not False:
+            print(f"cockpit_status_paper_live_qctrl_unsafe_flag={key}")
+            return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+    ):
+        if int(paper_live_qctrl_product_access.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paper_live_qctrl_unsafe_counter={key}")
             return 1
     missing_paperops_30_day_fields = sorted(
         PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS - set(paperops_30_day_operations)

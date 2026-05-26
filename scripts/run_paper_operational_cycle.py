@@ -34,6 +34,11 @@ PAPER_OPS_CYCLE_COMPONENT = "paper_operational_cycle"
 COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("strategy_research_intake", "scripts/check_strategy_research_intake.py", True),
     ("paper_live_activation", "scripts/check_paper_live_activation.py", True),
+    (
+        "paper_live_qctrl_product_access",
+        "scripts/check_paper_live_qctrl_product_access.py",
+        True,
+    ),
     ("quantum_provider_readiness", "scripts/check_quantum_provider_readiness.py", True),
     ("head_of_quant_oracle", "scripts/check_quantum_oracle.py", True),
     ("paperops_qctrl_consultation", "scripts/check_paperops_qctrl_consultation.py", True),
@@ -171,6 +176,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    paper_live_qctrl_product_access = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paper_live_qctrl_product_access"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -192,6 +205,9 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_paper_live_activation_broker_post_called_count",
             "paper_ops_paper_live_activation_alpaca_post_called_count",
             "paper_ops_paper_live_activation_live_endpoint_called_count",
+            "paper_ops_paper_live_qctrl_broker_post_called_count",
+            "paper_ops_paper_live_qctrl_alpaca_post_called_count",
+            "paper_ops_paper_live_qctrl_live_endpoint_called_count",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -290,6 +306,90 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
                 "paper_live_activation_max_order_notional_gbp",
                 "0",
             )
+            or 0
+        ),
+        "paper_live_qctrl_product_access_status": paper_live_qctrl_product_access.get(
+            "paper_live_qctrl_product_access_status"
+        ),
+        "paper_live_qctrl_product_access_state": paper_live_qctrl_product_access.get(
+            "paper_live_qctrl_product_access_product_access_state"
+        ),
+        "paper_live_qctrl_product_access_verified": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_verified"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_consultation_ready": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_paper_consultation_ready"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_provider_call_attempted": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_provider_call_attempted"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_provider_call_succeeded": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_provider_call_succeeded"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_provider_call_count": int(
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_provider_call_count",
+                "0",
+            )
+            or 0
+        ),
+        "paper_live_qctrl_product_access_blocker": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_blocker"
+            )
+        ),
+        "paper_live_qctrl_execution_allowed": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_execution_allowed"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_paper_order_allowed": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_paper_order_allowed"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_broker_post_allowed": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_broker_post_allowed"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_live_capital_enabled": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_live_capital_enabled"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_phase7_proof_credit_allowed": (
+            paper_live_qctrl_product_access.get(
+                "paper_live_qctrl_product_access_phase7_proof_credit_allowed"
+            )
+            == "True"
+        ),
+        "paper_live_qctrl_broker_post_called_count": int(
+            readiness.get("paper_ops_paper_live_qctrl_broker_post_called_count", "0")
+            or 0
+        ),
+        "paper_live_qctrl_alpaca_post_called_count": int(
+            readiness.get("paper_ops_paper_live_qctrl_alpaca_post_called_count", "0")
+            or 0
+        ),
+        "paper_live_qctrl_live_endpoint_called_count": int(
+            readiness.get("paper_ops_paper_live_qctrl_live_endpoint_called_count", "0")
             or 0
         ),
         "safe_to_continue_paper_only": safe_to_continue,
@@ -525,6 +625,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "paper_live_activation_broker_post_called_count",
         "paper_live_activation_alpaca_post_called_count",
         "paper_live_activation_live_endpoint_called_count",
+        "paper_live_qctrl_broker_post_called_count",
+        "paper_live_qctrl_alpaca_post_called_count",
+        "paper_live_qctrl_live_endpoint_called_count",
         "unsafe_write_counter_total",
     ):
         try:
@@ -549,6 +652,24 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_paper_live_activation_qctrl_not_required")
     if artifact.get("paper_live_activation_qctrl_direct_execution_allowed") is not False:
         errors.append("paper_ops_cycle_paper_live_activation_qctrl_execution_authority")
+    if artifact.get("paper_live_qctrl_product_access_status") not in {
+        "blocked_qctrl_product_access_or_subscription",
+        "qctrl_paper_consultation_ready",
+    }:
+        errors.append("paper_ops_cycle_paper_live_qctrl_product_access_not_checked")
+    if artifact.get("paper_live_qctrl_provider_call_attempted") is not True:
+        errors.append("paper_ops_cycle_paper_live_qctrl_provider_call_not_attempted")
+    if int(artifact.get("paper_live_qctrl_provider_call_count", 0) or 0) < 1:
+        errors.append("paper_ops_cycle_paper_live_qctrl_provider_call_count_missing")
+    for key in (
+        "paper_live_qctrl_execution_allowed",
+        "paper_live_qctrl_paper_order_allowed",
+        "paper_live_qctrl_broker_post_allowed",
+        "paper_live_qctrl_live_capital_enabled",
+        "paper_live_qctrl_phase7_proof_credit_allowed",
+    ):
+        if artifact.get(key) is not False:
+            errors.append(f"paper_ops_cycle_paper_live_qctrl_forbidden:{key}")
     qctrl_provider_call_count = int(artifact.get("qctrl_provider_call_count", 0) or 0)
     if (
         qctrl_provider_call_count
@@ -615,6 +736,15 @@ def write_paper_operational_cycle(
             "paper_live_activation_approved": written["paper_live_activation_approved"],
             "paper_live_activation_system_approval_logged": written[
                 "paper_live_activation_system_approval_logged"
+            ],
+            "paper_live_qctrl_product_access_status": written[
+                "paper_live_qctrl_product_access_status"
+            ],
+            "paper_live_qctrl_product_access_verified": written[
+                "paper_live_qctrl_product_access_verified"
+            ],
+            "paper_live_qctrl_provider_call_count": written[
+                "paper_live_qctrl_provider_call_count"
             ],
             "alpaca_paper_post_gate_status": written["alpaca_paper_post_gate_status"],
             "alpaca_paper_post_called_count": written["alpaca_paper_post_called_count"],
@@ -699,6 +829,34 @@ def main() -> int:
     print(
         "paper_ops_cycle_paper_live_activation_qctrl_consultation_required="
         f"{written['paper_live_activation_qctrl_consultation_required']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_product_access_status="
+        f"{written['paper_live_qctrl_product_access_status']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_product_access_state="
+        f"{written['paper_live_qctrl_product_access_state']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_product_access_verified="
+        f"{written['paper_live_qctrl_product_access_verified']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_provider_call_attempted="
+        f"{written['paper_live_qctrl_provider_call_attempted']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_provider_call_succeeded="
+        f"{written['paper_live_qctrl_provider_call_succeeded']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_provider_call_count="
+        f"{written['paper_live_qctrl_provider_call_count']}"
+    )
+    print(
+        "paper_ops_cycle_paper_live_qctrl_product_access_blocker="
+        f"{written['paper_live_qctrl_product_access_blocker']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

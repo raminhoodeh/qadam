@@ -50,6 +50,18 @@ def main() -> int:
     paper_live_qctrl_probe["paper_live_activation_qctrl_direct_execution_allowed"] = True
     paper_live_qctrl_errors = validate_paper_operational_cycle(paper_live_qctrl_probe)
 
+    pt1_qctrl_authority_probe = deepcopy(written)
+    pt1_qctrl_authority_probe["paper_live_qctrl_execution_allowed"] = True
+    pt1_qctrl_authority_probe["paper_live_qctrl_broker_post_allowed"] = True
+    pt1_qctrl_authority_errors = validate_paper_operational_cycle(
+        pt1_qctrl_authority_probe
+    )
+
+    pt1_qctrl_counter_probe = deepcopy(written)
+    pt1_qctrl_counter_probe["paper_live_qctrl_broker_post_called_count"] = 1
+    pt1_qctrl_counter_probe["unsafe_write_counter_total"] = 1
+    pt1_qctrl_counter_errors = validate_paper_operational_cycle(pt1_qctrl_counter_probe)
+
     broker_probe = deepcopy(written)
     broker_probe["broker_post_called_count"] = 1
     broker_probe["alpaca_post_called_count"] = 1
@@ -126,6 +138,30 @@ def main() -> int:
     print(
         "paper_ops_cycle_check_paper_live_activation_submit_allowed="
         f"{written['paper_live_activation_paper_order_submission_allowed']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_qctrl_product_access_status="
+        f"{written['paper_live_qctrl_product_access_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_qctrl_product_access_verified="
+        f"{written['paper_live_qctrl_product_access_verified']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_qctrl_provider_call_attempted="
+        f"{written['paper_live_qctrl_provider_call_attempted']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_qctrl_provider_call_succeeded="
+        f"{written['paper_live_qctrl_provider_call_succeeded']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_qctrl_provider_call_count="
+        f"{written['paper_live_qctrl_provider_call_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_qctrl_product_access_blocker="
+        f"{written['paper_live_qctrl_product_access_blocker']}"
     )
     print(f"paper_ops_cycle_check_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_check_full_paper_operational_ready={written['full_paper_operational_ready']}")
@@ -278,6 +314,16 @@ def main() -> int:
         errors.append("PaperOps-1 opened paper submit through PT-0")
     if written["paper_live_activation_qctrl_direct_execution_allowed"] is not False:
         errors.append("PaperOps-1 gave Q-CTRL execution authority through PT-0")
+    if written["paper_live_qctrl_provider_call_attempted"] is not True:
+        errors.append("PaperOps-1 did not include PT-1 provider-call attempt")
+    if written["paper_live_qctrl_provider_call_count"] < 1:
+        errors.append("PaperOps-1 did not include PT-1 provider-call count")
+    if written["paper_live_qctrl_execution_allowed"] is not False:
+        errors.append("PaperOps-1 gave execution authority through PT-1")
+    if written["paper_live_qctrl_broker_post_allowed"] is not False:
+        errors.append("PaperOps-1 gave broker authority through PT-1")
+    if written["paper_live_qctrl_phase7_proof_credit_allowed"] is not False:
+        errors.append("PaperOps-1 granted proof credit through PT-1")
     if written["full_paper_operational_ready"] is not False:
         errors.append("PaperOps-1 should remain blocked pending later enablement")
     if written["broker_post_called_count"] != 0 or written["alpaca_post_called_count"] != 0:
@@ -339,6 +385,18 @@ def main() -> int:
         not in paper_live_qctrl_errors
     ):
         errors.append("paper-live Q-CTRL execution probe was not rejected")
+    if (
+        "paper_ops_cycle_paper_live_qctrl_forbidden:"
+        "paper_live_qctrl_execution_allowed"
+        not in pt1_qctrl_authority_errors
+    ):
+        errors.append("PT-1 Q-CTRL execution-authority probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "paper_live_qctrl_broker_post_called_count"
+        not in pt1_qctrl_counter_errors
+    ):
+        errors.append("PT-1 Q-CTRL broker-counter probe was not rejected")
     if "paper_ops_cycle_unsafe_counter_nonzero:broker_post_called_count" not in broker_errors:
         errors.append("broker POST probe was not rejected")
     if (
