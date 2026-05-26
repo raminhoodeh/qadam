@@ -1053,7 +1053,36 @@ Expected files:
 - `scripts/check_dashboard_overhaul_certification.js`
 - `docs/qadam-dashboard-overhaul-dx-14-certification-audit-YYYY-MM-DD.md`
 
-## 7. Implementation Order
+## 7. D11 Simplification Pass
+
+D11 is the second-pass simplification layer after the segmented dashboard
+exists. Its purpose is to reduce the number of primary views, remove duplicate
+status language, and collapse implementation-heavy sections into a smaller
+operating dashboard without weakening auditability.
+
+### D11A - Information Diet Audit
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11a-information-diet-audit-2026-05-26.md`
+- `scripts/check_dashboard_d11a_information_diet_audit.js`
+
+Outcome:
+
+- Every current static dashboard section has a D11 fate.
+- Every major dynamic renderer/model has a D11 fate.
+- Duplicate concepts have a single future owner.
+- `Executive / Terminal` is explicitly marked for deletion.
+- No runtime authority, provider call, broker write, or live-capital behavior
+  changes in D11A.
+
+Next stage:
+
+- D11B - New Navigation Contract.
+
+## 8. Implementation Order
 
 Implement in this order:
 
@@ -1077,7 +1106,7 @@ DX-3 through DX-5 are the highest-leverage stages. Once they are complete,
 `/dashboard/` should already feel materially simpler even before every detail
 workspace is refined.
 
-## 8. Success Definition
+## 9. Success Definition
 
 The overhaul is complete when:
 
