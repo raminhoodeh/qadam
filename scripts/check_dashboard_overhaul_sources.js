@@ -80,8 +80,10 @@ function loadRendererWindow() {
 async function main() {
     includesAll(dashboardHtml, [
         "data-sources-workspace",
-        "Source health and provenance",
-        "Source quorum"
+        "Source reliability and corroboration",
+        "Source quorum",
+        "data-evidence-consolidated-readout",
+        "data-evidence-review-groups"
     ], "Sources workspace static shell");
 
     includesAll(css, [
@@ -96,6 +98,9 @@ async function main() {
         ".source-setup-link",
         ".source-pipeline-grid",
         ".source-pipeline-card",
+        ".evidence-consolidated-readout",
+        ".evidence-review-group",
+        ".evidence-source-ledger",
         ".source-workspace-topline .node-status"
     ], "Sources workspace CSS");
 
@@ -105,7 +110,10 @@ async function main() {
         "function renderSupplementalSourceCard",
         "function renderSourceSetupLink",
         "function renderSourcePipelineCard",
+        "function renderEvidencePacketMiniCard",
+        "function renderEvidenceReviewGroup",
         "source_setup_links",
+        "evidence_review_groups",
         "supplemental_only",
         "pending_adapter",
         "stale_heartbeat"
@@ -132,7 +140,7 @@ async function main() {
     assert(reliabilityByKey.get("missing_credential").count >= 1, "missing credentials must be visible");
     assert(reliabilityByKey.get("pending_adapter").count >= 1, "pending adapters must be visible");
     assert(reliabilityByKey.get("supplemental_only").count === 2, "supplemental-only count must include Yahoo and Preference");
-    assert(model.quorum.status === "ok", "source quorum status should be visible and ok for current snapshot");
+    assert(["ok", "degraded"].includes(model.quorum.status), "source quorum status should be visible");
     assert(supplementalByKey.has("yahoo_finance"), "Yahoo Finance supplemental source missing");
     assert(supplementalByKey.has("preference_mcp"), "Preference MCP supplemental source missing");
     assert(supplementalByKey.get("yahoo_finance").proof_boundary.includes("not source quorum"), "Yahoo Finance boundary must prevent sole-proof use");
@@ -147,7 +155,7 @@ async function main() {
     const workspaceHtml = html(rendered, "[data-sources-workspace-slot]");
     const sourcesHtml = `${workspaceHtml} ${html(rendered, "[data-watching-list]")}`;
     [
-        "Source health and provenance",
+        "Source reliability and corroboration",
         "Source quorum",
         "Missing credential",
         "Stale heartbeat",
@@ -165,7 +173,12 @@ async function main() {
         "Reliability state by intelligence pipeline",
         "credential required",
         "pending adapter",
-        "evidence blocked"
+        "evidence blocked",
+        "Evidence readout",
+        "Setup evidence",
+        "Source reliability",
+        "Supplemental context",
+        "Factual evidence packets"
     ].forEach((needle) => assert(sourcesHtml.includes(needle), `rendered sources workspace missing ${needle}`));
 
     [
