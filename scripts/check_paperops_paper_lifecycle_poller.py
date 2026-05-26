@@ -76,6 +76,30 @@ def main() -> int:
     no_source_probe["paper_order_poll_called_count"] = 1
     no_source_errors = validate_paperops_paper_lifecycle_poller(no_source_probe)
 
+    no_pt6_probe = deepcopy(written)
+    no_pt6_probe["source_submitted_paper_order_count"] = 1
+    no_pt6_probe["poll_candidate_records"] = [
+        {
+            "eligible_for_lifecycle_poll": True,
+            "idempotency_namespace": "phase7_demo_proof",
+            "client_order_id": "q7-6-stage-test",
+            "broker_order_id_hash": "hash",
+            "base_url_exposed": False,
+            "authorization_header_included": False,
+            "authorization_header_exposed": False,
+            "raw_broker_payload_stored": False,
+            "raw_broker_payload_exposed": False,
+            "broker_order_identifier_exposed": False,
+            "secret_value_exposed": False,
+            "live_endpoint_allowed": False,
+            "live_capital_enabled": False,
+        }
+    ]
+    no_pt6_probe["poll_candidate_count"] = 1
+    no_pt6_probe["active_lifecycle_polling_enabled"] = False
+    no_pt6_probe["status"] = "ready_pending_explicit_poll"
+    no_pt6_errors = validate_paperops_paper_lifecycle_poller(no_pt6_probe)
+
     live_endpoint_probe = deepcopy(written)
     live_endpoint_probe["endpoint_classification"] = "alpaca_live_endpoint"
     live_endpoint_probe["paper_endpoint_confirmed"] = False
@@ -118,6 +142,14 @@ def main() -> int:
     print(f"paperops_lifecycle_poller_event_log_path={event_path}")
     print(f"paperops_lifecycle_poller_mode={written['mode']}")
     print(f"paperops_lifecycle_poller_poll_requested={written['poll_paper_orders_requested']}")
+    print(
+        "paperops_lifecycle_poller_active_polling_enabled="
+        f"{written['active_lifecycle_polling_enabled']}"
+    )
+    print(
+        "paperops_lifecycle_poller_enablement_status="
+        f"{written['lifecycle_polling_enablement_status']}"
+    )
     print(f"paperops_lifecycle_poller_path_available={written['paper_poll_path_available']}")
     print(f"paperops_lifecycle_poller_endpoint_classification={written['endpoint_classification']}")
     print(f"paperops_lifecycle_poller_paper_endpoint_confirmed={written['paper_endpoint_confirmed']}")
@@ -217,6 +249,11 @@ def main() -> int:
         errors.append("poll-without-explicit-flag probe was not rejected")
     if "paperops_lifecycle_poll_called_without_submitted_source_order" not in no_source_errors:
         errors.append("poll-without-source-order probe was not rejected")
+    if (
+        "paperops_lifecycle_submitted_source_without_pt6_enablement"
+        not in no_pt6_errors
+    ):
+        errors.append("submitted-source-without-PT-6 probe was not rejected")
     if "paperops_lifecycle_poll_called_without_paper_endpoint" not in live_endpoint_errors:
         errors.append("live-endpoint poll probe was not rejected")
     if "paperops_lifecycle_unsafe_counter_nonzero:broker_post_called_count" not in broker_post_errors:

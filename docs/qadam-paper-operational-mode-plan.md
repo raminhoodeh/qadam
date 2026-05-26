@@ -112,8 +112,12 @@ Implemented:
   paper order, source prewrite, pre-trade snapshot, Phase 7 idempotency, and
   the explicit `--submit-paper-order` CLI flag.
 - PaperOps-3 exists as a read-only paper lifecycle poller. It consumes only
-  successful PaperOps-2 submitted paper orders and requires the explicit
-  `--poll-paper-orders` CLI flag before any Alpaca paper GET.
+  successful PaperOps-2 submitted paper orders and now requires PT-6 runtime
+  lifecycle polling enablement before any active Alpaca paper GET.
+- PT-6 exists as active PaperOps paper lifecycle polling enablement. It records
+  `active_lifecycle_polling_enabled=True` and
+  `status=enabled_pending_submitted_paper_orders`, then keeps the polling path
+  idle until PaperOps-2 has a successful submitted paper order.
 - PaperOps-4 exists as a guarded Alpaca paper-only exit path. The default check
   is non-exit, and a paper position close requires both
   `QADAM_ALPACA_PAPER_EXIT_ENABLED=true` and the explicit
@@ -143,8 +147,9 @@ Remaining paper-operational gaps:
   reports `ready_pending_explicit_execute` with one eligible PT-4 staged PaperOps
   paper order. No Alpaca POST has been made because the explicit submit CLI flag
   has not been used.
-- The paper lifecycle poller is implemented but idle because there are zero
-  PaperOps-2 submitted paper orders to poll.
+- Active paper lifecycle polling is runtime-enabled through PT-6, but the
+  PaperOps-3 poller is still idle because there are zero PaperOps-2 submitted
+  paper orders to poll.
 - The guarded paper exit path is implemented but disabled and idle because
   there are zero PaperOps-3 open-position readbacks.
 - Q-CTRL consultation is not fully connected until product access is active and
@@ -491,6 +496,27 @@ Status after implementation:
   keeping live endpoint calls, live capital, raw broker payloads, broker order
   identifiers, and secrets blocked.
 
+### PT-6 - Active Paper Lifecycle Polling
+
+Record a public-safe runtime artifact that enables the active PaperOps lifecycle
+polling path without submitting orders or calling Alpaca by itself.
+
+Status after implementation:
+
+- `orchestrator/paperops_paper_lifecycle_polling_enablement.py` exists.
+- `scripts/check_paperops_paper_lifecycle_polling_enablement.py` exists.
+- The current artifact reports
+  `status=enabled_pending_submitted_paper_orders`,
+  `active_lifecycle_polling_enabled=True`,
+  `paper_lifecycle_polling_effective=True`, and
+  `paper_poll_path_available=False` because PaperOps-2 has zero successful
+  submitted paper orders.
+- PT-6 is wired into PaperOps-1, PaperOps readiness, PaperOps-6, and cockpit
+  Mission Control. The PaperOps cycle now passes 30/30 commands.
+- PT-6 does not edit `.env`, submit orders, call broker POST routes, call live
+  endpoints, close or resize positions, force trades, grant Phase 7 proof
+  credit, expose credentials, or enable live capital.
+
 ### PaperOps-3 - Paper Lifecycle Poller
 
 Poll Alpaca paper for the specific submitted proof orders and mirror order,
@@ -504,16 +530,17 @@ Status after implementation:
   `ready_no_submitted_paper_orders` because PaperOps-2 has zero successful
   submitted paper orders.
 - A paper lifecycle GET requires paper mode, live capital disabled, Alpaca
-  paper endpoint classification, configured paper credentials, a valid
-  PaperOps-2 submitted paper order, and the explicit `--poll-paper-orders` CLI
-  flag.
+  paper endpoint classification, configured paper credentials, PT-6 active
+  lifecycle polling enablement, a valid PaperOps-2 submitted paper order, and
+  the explicit active-poll handoff.
 - The poller writes `data/runtime/paperops_paper_lifecycle_poller.json`,
   history, and event-log artifacts, and exposes public-safe status in cockpit
   Mission Control.
-- Current cycle result: 20/20 commands pass; PaperOps-3 reports zero broker
+- Current cycle result: 30/30 commands pass; PaperOps-3 reports zero broker
   GETs, zero broker/Alpaca POSTs, zero live endpoint calls, zero direct Q7
   lifecycle mutations, and zero Phase 7 proof credit.
-- Current next code stage: `PaperOps-4 - Paper Exit Path`.
+- Current next code stage: PaperOps remains blocked on Q-CTRL paper
+  consultation product access and the disabled PaperOps-4 paper exit path.
 
 ### PaperOps-4 - Paper Exit Path
 
@@ -568,7 +595,7 @@ Status after implementation:
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PT-4: 28/28 commands pass. PaperOps-5 reports
+- Current cycle result after PT-6: 30/30 commands pass. PaperOps-5 reports
   seven review records, six lifecycle notification types, zero live-send
   allowance, zero command-path allowance, and zero broker-write allowance.
 
@@ -597,9 +624,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 28/28 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 30/30 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=28`, and
+  `paper_operational_cycle_command_count=30`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,

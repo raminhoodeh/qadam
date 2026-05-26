@@ -27,6 +27,10 @@ from orchestrator.paperops_alpaca_paper_post import (
     read_latest_paperops_alpaca_paper_post,
     validate_paperops_alpaca_paper_post,
 )
+from orchestrator.paperops_paper_lifecycle_polling_enablement import (
+    read_latest_paperops_paper_lifecycle_polling_enablement,
+    validate_paperops_paper_lifecycle_polling_enablement,
+)
 
 
 PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION = 1
@@ -86,6 +90,13 @@ READBACK_READY_STATUSES = frozenset(
         "ready_no_submitted_paper_orders",
         "ready_pending_explicit_poll",
         "paper_lifecycle_poll_recorded",
+    }
+)
+
+PAPEROPS_LIFECYCLE_ENABLEMENT_READY_STATUSES = frozenset(
+    {
+        "enabled_pending_submitted_paper_orders",
+        "enabled_pending_explicit_poll",
     }
 )
 
@@ -287,6 +298,24 @@ def _source_poll_candidates(source: dict[str, Any]) -> tuple[list[dict[str, Any]
     candidates = [_source_record_to_poll_candidate(record) for record in records]
     eligible = [candidate for candidate in candidates if candidate["eligible_for_lifecycle_poll"]]
     return candidates, eligible
+
+
+def _lifecycle_polling_enablement_ready(enablement: dict[str, Any]) -> bool:
+    return (
+        enablement.get("status") in PAPEROPS_LIFECYCLE_ENABLEMENT_READY_STATUSES
+        and enablement.get("active_lifecycle_polling_enabled") is True
+        and enablement.get("paper_lifecycle_polling_effective") is True
+        and enablement.get("paper_endpoint_confirmed") is True
+        and enablement.get("paperops_2_source_valid") is True
+        and enablement.get("live_capital_enabled") is False
+        and enablement.get("broker_post_allowed") is False
+        and enablement.get("live_endpoint_allowed") is False
+        and enablement.get("phase7_proof_credit_allowed") is False
+        and _int(enablement.get("broker_get_called_count")) == 0
+        and _int(enablement.get("live_endpoint_called_count")) == 0
+        and _int(enablement.get("unsafe_write_counter_total")) == 0
+        and not validate_paperops_paper_lifecycle_polling_enablement(enablement)
+    )
 
 
 def _sanitize_order_response(payload: dict[str, Any], *, polled_at: str) -> dict[str, Any]:
@@ -534,6 +563,19 @@ def build_paperops_paper_lifecycle_poller(
     )
     source_valid = source_present and not source_validation_errors
     all_candidates, eligible_candidates = _source_poll_candidates(source)
+    lifecycle_polling_enablement = read_latest_paperops_paper_lifecycle_polling_enablement(
+        settings
+    )
+    lifecycle_polling_enablement_validation_errors = (
+        validate_paperops_paper_lifecycle_polling_enablement(
+            lifecycle_polling_enablement
+        )
+        if lifecycle_polling_enablement
+        else ["paperops_lifecycle_polling_enablement_missing"]
+    )
+    lifecycle_polling_runtime_enabled = _lifecycle_polling_enablement_ready(
+        lifecycle_polling_enablement
+    )
     poll_preconditions = {
         "mode_is_paper": settings.mode == "paper",
         "live_capital_disabled": settings.live_capital_enabled is False,
@@ -542,6 +584,9 @@ def build_paperops_paper_lifecycle_poller(
         and endpoint["alpaca_api_secret_configured"] is True,
         "paperops_2_source_present": source_present,
         "paperops_2_source_valid": source_valid,
+        "pt6_active_lifecycle_polling_enabled": (
+            lifecycle_polling_runtime_enabled if eligible_candidates else True
+        ),
         "submitted_paper_order_present": bool(eligible_candidates),
     }
     poll_path_available = all(poll_preconditions.values())
@@ -588,6 +633,8 @@ def build_paperops_paper_lifecycle_poller(
         poll_called_count=order_poll_called_count,
         failed_count=failed_count,
     )
+    if eligible_candidates and not lifecycle_polling_runtime_enabled:
+        status = "blocked_lifecycle_polling_not_enabled"
     artifact = {
         "schema_version": PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION,
         "artifact_type": "paperops_paper_lifecycle_poller",
@@ -612,6 +659,20 @@ def build_paperops_paper_lifecycle_poller(
         "live_capital_enabled": settings.live_capital_enabled,
         "poll_paper_orders_requested": poll_paper_orders,
         "explicit_poll_flag_required": True,
+        "active_lifecycle_polling_enabled": lifecycle_polling_runtime_enabled,
+        "lifecycle_polling_enablement_status": lifecycle_polling_enablement.get(
+            "status",
+            "missing",
+        ),
+        "lifecycle_polling_enablement_artifact_id": lifecycle_polling_enablement.get(
+            "artifact_id"
+        ),
+        "lifecycle_polling_enablement_validation_error_count": len(
+            lifecycle_polling_enablement_validation_errors
+        ),
+        "lifecycle_polling_enablement_validation_errors": (
+            lifecycle_polling_enablement_validation_errors[:12]
+        ),
         "paper_poll_path_available": poll_path_available,
         "poll_preconditions": poll_preconditions,
         "endpoint_classification": endpoint["endpoint_classification"],
@@ -777,6 +838,7 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
         "alpaca_api_key_configured",
         "alpaca_api_secret_configured",
         "artifact_type",
+        "active_lifecycle_polling_enabled",
         "base_url_exposed",
         "boundary",
         "broker_get_called_count",
@@ -788,6 +850,8 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
         "event_log_required",
         "event_log_written",
         "explicit_poll_flag_required",
+        "lifecycle_polling_enablement_status",
+        "lifecycle_polling_enablement_validation_error_count",
         "live_capital_enabled",
         "live_endpoint_allowed",
         "mode",
@@ -866,6 +930,8 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
             errors.append("paperops_lifecycle_poll_called_without_paperops_2_source")
         if artifact.get("source_paperops_2_validation_error_count") not in {0, None}:
             errors.append("paperops_lifecycle_poll_called_with_invalid_source")
+        if artifact.get("active_lifecycle_polling_enabled") is not True:
+            errors.append("paperops_lifecycle_poll_called_without_pt6_enablement")
     if artifact.get("paper_endpoint_confirmed") is not True and artifact.get(
         "paper_poll_path_available"
     ) is True:
@@ -879,6 +945,12 @@ def validate_paperops_paper_lifecycle_poller(artifact: dict[str, Any]) -> list[s
         or _int(artifact.get("source_submitted_paper_order_count")) < 1
     ):
         errors.append("paperops_lifecycle_pending_explicit_poll_state_invalid")
+    if (
+        _int(artifact.get("source_submitted_paper_order_count")) > 0
+        and artifact.get("active_lifecycle_polling_enabled") is not True
+        and artifact.get("status") != "blocked_lifecycle_polling_not_enabled"
+    ):
+        errors.append("paperops_lifecycle_submitted_source_without_pt6_enablement")
     if _int(artifact.get("paper_order_poll_succeeded_count")) > _int(
         artifact.get("paper_order_poll_called_count")
     ):
@@ -1015,6 +1087,9 @@ def paperops_paper_lifecycle_poller_public_status(
             "status": "not_run",
             "stage": "PaperOps-3",
             "source_submitted_paper_order_count": 0,
+            "active_lifecycle_polling_enabled": False,
+            "lifecycle_polling_enablement_status": "not_run",
+            "lifecycle_polling_enablement_validation_error_count": 0,
             "paper_order_poll_called_count": 0,
             "paper_position_poll_called_count": 0,
             "broker_get_called_count": 0,
@@ -1032,6 +1107,16 @@ def paperops_paper_lifecycle_poller_public_status(
         "status": artifact.get("status"),
         "stage": artifact.get("stage"),
         "poll_paper_orders_requested": artifact.get("poll_paper_orders_requested"),
+        "active_lifecycle_polling_enabled": artifact.get(
+            "active_lifecycle_polling_enabled"
+        ),
+        "lifecycle_polling_enablement_status": artifact.get(
+            "lifecycle_polling_enablement_status"
+        ),
+        "lifecycle_polling_enablement_validation_error_count": artifact.get(
+            "lifecycle_polling_enablement_validation_error_count",
+            0,
+        ),
         "paper_poll_path_available": artifact.get("paper_poll_path_available"),
         "endpoint_classification": artifact.get("endpoint_classification"),
         "paper_endpoint_confirmed": artifact.get("paper_endpoint_confirmed"),

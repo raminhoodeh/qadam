@@ -64,6 +64,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("phase7_order_staging", "scripts/check_phase7_proof_order_staging.py", True),
     ("phase7_guarded_paper_submit", "scripts/check_phase7_guarded_alpaca_paper_submit.py", True),
     ("paperops_alpaca_paper_post", "scripts/check_paperops_alpaca_paper_post.py", True),
+    (
+        "paperops_paper_lifecycle_polling_enablement",
+        "scripts/check_paperops_paper_lifecycle_polling_enablement.py",
+        True,
+    ),
     ("paperops_paper_lifecycle_poller", "scripts/check_paperops_paper_lifecycle_poller.py", True),
     ("paperops_paper_exit_path", "scripts/check_paperops_paper_exit_path.py", True),
     ("paperops_notification_review", "scripts/check_paperops_notification_review.py", True),
@@ -83,8 +88,10 @@ PAPER_OPS_CYCLE_BOUNDARY = (
     "PaperOps-1 runs the current paper-only operational pass without broker "
     "side effects. It may refresh Q7 paper proof artifacts and readiness state, "
     "and it may evaluate the explicit Alpaca paper POST gate only in non-submit "
-    "mode, the PaperOps-3 lifecycle poller only in non-poll mode, and the "
-    "PaperOps-4 exit path only in non-exit mode. PaperOps-5 may render "
+    "mode. PT-6 may invoke read-only Alpaca paper lifecycle polling only for "
+    "orders PaperOps-2 has successfully submitted, while the standalone "
+    "PaperOps-3 checker remains in non-poll mode. The PaperOps-4 exit path "
+    "runs only in non-exit mode. PaperOps-5 may render "
     "notification review records only; it cannot send live Telegram messages "
     "or accept Telegram commands. PaperOps-6 may verify scheduler binding for "
     "the active 30-day paper run only. The cycle cannot pass the paper-submit, "
@@ -239,6 +246,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    lifecycle_polling_enablement = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_paper_lifecycle_polling_enablement"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -272,6 +287,8 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_alpaca_submit_enablement_broker_post_called_count",
             "paper_ops_alpaca_submit_enablement_alpaca_post_called_count",
             "paper_ops_alpaca_submit_enablement_live_endpoint_called_count",
+            "paper_ops_lifecycle_polling_enablement_broker_get_called_count",
+            "paper_ops_lifecycle_polling_enablement_live_endpoint_called_count",
         )
     ) + int(operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0") or 0)
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -570,6 +587,76 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         "alpaca_submit_enablement_live_endpoint_called_count": int(
             alpaca_submit_enablement.get(
                 "paperops_alpaca_submit_enablement_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "lifecycle_polling_enablement_status": (
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_status"
+            )
+        ),
+        "lifecycle_polling_enablement_active": (
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_active"
+            )
+            == "True"
+        ),
+        "lifecycle_polling_enablement_effective": (
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_effective"
+            )
+            == "True"
+        ),
+        "lifecycle_polling_enablement_path_available": (
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_path_available"
+            )
+            == "True"
+        ),
+        "lifecycle_polling_enablement_idle_until_submitted_order": (
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_idle_until_submitted_order"
+            )
+            == "True"
+        ),
+        "lifecycle_polling_enablement_paperops2_submitted_order_count": int(
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_paperops2_submitted_order_count",
+                "0",
+            )
+            or 0
+        ),
+        "lifecycle_polling_enablement_broker_get_allowed": (
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_broker_get_allowed"
+            )
+            == "True"
+        ),
+        "lifecycle_polling_enablement_broker_get_called_count": int(
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_broker_get_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "lifecycle_polling_enablement_poller_order_poll_called_count": int(
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_poller_order_poll_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "lifecycle_polling_enablement_poller_broker_get_called_count": int(
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_poller_broker_get_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "lifecycle_polling_enablement_live_endpoint_called_count": int(
+            lifecycle_polling_enablement.get(
+                "paperops_lifecycle_polling_enablement_live_endpoint_called_count",
                 "0",
             )
             or 0
@@ -976,6 +1063,7 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "alpaca_submit_enablement_broker_post_called_count",
         "alpaca_submit_enablement_alpaca_post_called_count",
         "alpaca_submit_enablement_live_endpoint_called_count",
+        "lifecycle_polling_enablement_live_endpoint_called_count",
         "unsafe_write_counter_total",
     ):
         try:
@@ -1076,6 +1164,27 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
     ):
         if artifact.get(key) is not False:
             errors.append(f"paper_ops_cycle_paper_live_qctrl_forbidden:{key}")
+    if artifact.get("lifecycle_polling_enablement_status") not in {
+        "enabled_pending_submitted_paper_orders",
+        "enabled_pending_explicit_poll",
+    }:
+        errors.append("paper_ops_cycle_lifecycle_polling_enablement_not_enabled")
+    if artifact.get("lifecycle_polling_enablement_active") is not True:
+        errors.append("paper_ops_cycle_lifecycle_polling_enablement_inactive")
+    if artifact.get("lifecycle_polling_enablement_effective") is not True:
+        errors.append("paper_ops_cycle_lifecycle_polling_enablement_not_effective")
+    if artifact.get("lifecycle_polling_enablement_broker_get_allowed") is not True:
+        errors.append("paper_ops_cycle_lifecycle_polling_enablement_get_not_allowed")
+    if (
+        artifact.get("lifecycle_polling_enablement_paperops2_submitted_order_count", 0)
+        == 0
+        and artifact.get("lifecycle_polling_enablement_path_available") is True
+    ):
+        errors.append("paper_ops_cycle_lifecycle_polling_path_without_submitted_order")
+    if artifact.get("lifecycle_polling_enablement_broker_get_called_count") != 0:
+        errors.append("paper_ops_cycle_lifecycle_polling_enablement_called_get_directly")
+    if artifact.get("lifecycle_polling_enablement_live_endpoint_called_count") != 0:
+        errors.append("paper_ops_cycle_lifecycle_polling_enablement_live_endpoint_called")
     qctrl_provider_call_count = int(artifact.get("qctrl_provider_call_count", 0) or 0)
     if (
         qctrl_provider_call_count
@@ -1433,6 +1542,34 @@ def main() -> int:
     print(
         "paper_ops_cycle_alpaca_submit_enablement_live_endpoint_called_count="
         f"{written['alpaca_submit_enablement_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_status="
+        f"{written['lifecycle_polling_enablement_status']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_active="
+        f"{written['lifecycle_polling_enablement_active']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_path_available="
+        f"{written['lifecycle_polling_enablement_path_available']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_submitted_order_count="
+        f"{written['lifecycle_polling_enablement_paperops2_submitted_order_count']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_broker_get_called_count="
+        f"{written['lifecycle_polling_enablement_broker_get_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_poller_order_poll_called_count="
+        f"{written['lifecycle_polling_enablement_poller_order_poll_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_lifecycle_polling_enablement_live_endpoint_called_count="
+        f"{written['lifecycle_polling_enablement_live_endpoint_called_count']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

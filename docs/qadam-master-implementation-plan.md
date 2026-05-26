@@ -1167,8 +1167,19 @@ Current PaperOps status:
   `orchestrator/paperops_paper_lifecycle_poller.py` and
   `scripts/check_paperops_paper_lifecycle_poller.py`. It consumes only
   successful PaperOps-2 submitted paper orders, writes a sanitized read-only
-  lifecycle readback artifact, and requires the explicit `--poll-paper-orders`
-  CLI flag before any Alpaca paper GET.
+  lifecycle readback artifact, and requires PT-6 active lifecycle polling
+  enablement plus an explicit active-poll handoff before any Alpaca paper GET.
+- PT-6 active paper lifecycle polling enablement is implemented in
+  `orchestrator/paperops_paper_lifecycle_polling_enablement.py` and
+  `scripts/check_paperops_paper_lifecycle_polling_enablement.py`. It records
+  `status=enabled_pending_submitted_paper_orders`,
+  `active_lifecycle_polling_enabled=True`,
+  `paper_lifecycle_polling_effective=True`, and
+  `paper_poll_path_available=False` because PaperOps-2 has zero successful
+  submitted paper orders. It does not edit `.env`, submit orders, call Alpaca
+  by itself, call broker POST routes, call live endpoints, close positions,
+  force trades, grant Phase 7 proof credit, expose credentials, or enable live
+  capital.
 - PaperOps-4 guarded paper exit path is implemented in
   `orchestrator/paperops_paper_exit_path.py` and
   `scripts/check_paperops_paper_exit_path.py`. It consumes only PaperOps-3
@@ -1198,14 +1209,14 @@ Current PaperOps status:
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  29/29 commands passing: paper mode is safe to continue, PT-0 approval is
+  30/30 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
   setup candidate ready for guarded paper handoff, PT-4 auto-approves and
   stages one PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit
-  path, the Phase 7 run is active, the Head-of-Quant oracle can run in its
-  current non-provider mode, broker/Alpaca POST counters remain zero,
-  PaperOps-2 reports
+  path, PT-6 runtime-enables active read-only lifecycle polling, the Phase 7
+  run is active, the Head-of-Quant oracle can run in its current non-provider
+  mode, broker/Alpaca POST counters remain zero, PaperOps-2 reports
   `ready_pending_explicit_execute`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `disabled_pending_enablement`, PaperOps-5 reports `review_ready`,

@@ -1888,6 +1888,8 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_alpaca_submit_enablement_path_available",
     "paperops_alpaca_paper_post",
     "paperops_alpaca_paper_post_called_count",
+    "paperops_paper_lifecycle_polling_enablement",
+    "paperops_paper_lifecycle_polling_active",
     "paperops_paper_lifecycle_poller",
     "paperops_paper_lifecycle_poller_order_poll_called_count",
     "paperops_paper_exit_path",
@@ -2131,6 +2133,35 @@ PAPEROPS_ALPACA_SUBMIT_ENABLEMENT_REQUIRED_FIELDS = {
     "runtime_artifact_override_enabled",
     "schema_version",
     "settings_alpaca_paper_submit_enabled",
+    "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_LIFECYCLE_POLLING_ENABLEMENT_REQUIRED_FIELDS = {
+    "active_lifecycle_polling_enabled",
+    "alpaca_paper_get_allowed",
+    "boundary",
+    "broker_get_called_count",
+    "broker_post_allowed",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "explicit_poll_flag_required",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_broker_get_allowed",
+    "paper_lifecycle_polling_effective",
+    "paper_poll_path_available",
+    "paperops_2_paper_post_path_available",
+    "paperops_2_source_valid",
+    "paperops_2_submitted_paper_order_count",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "recorded",
+    "schema_version",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -2849,6 +2880,10 @@ def main() -> int:
         {},
     )
     paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
+    paperops_lifecycle_polling_enablement = payload.get(
+        "paperops_paper_lifecycle_polling_enablement",
+        {},
+    )
     paperops_paper_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
@@ -2948,6 +2983,26 @@ def main() -> int:
     print(
         "cockpit_status_paperops_alpaca_submit_enablement_alpaca_post_called_count="
         f"{paperops_alpaca_submit_enablement.get('alpaca_post_called_count')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_polling_enablement_status="
+        f"{paperops_lifecycle_polling_enablement.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_polling_enablement_active="
+        f"{paperops_lifecycle_polling_enablement.get('active_lifecycle_polling_enabled')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_polling_enablement_path_available="
+        f"{paperops_lifecycle_polling_enablement.get('paper_poll_path_available')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_polling_enablement_submitted_order_count="
+        f"{paperops_lifecycle_polling_enablement.get('paperops_2_submitted_paper_order_count')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_polling_enablement_broker_get_called_count="
+        f"{paperops_lifecycle_polling_enablement.get('broker_get_called_count')}"
     )
     print(
         "cockpit_status_paperops_lifecycle_poller_status="
@@ -6493,6 +6548,16 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_alpaca_post_count_mismatch=true")
         return 1
+    if mission_stack.get("paperops_paper_lifecycle_polling_enablement") != (
+        paperops_lifecycle_polling_enablement.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_lifecycle_polling_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_paper_lifecycle_polling_active") != (
+        paperops_lifecycle_polling_enablement.get("active_lifecycle_polling_enabled")
+    ):
+        print("cockpit_status_mission_stack_paperops_lifecycle_polling_active_mismatch=true")
+        return 1
     if (
         mission_stack.get("paperops_paper_lifecycle_poller")
         != paperops_paper_lifecycle_poller.get("status")
@@ -6978,6 +7043,97 @@ def main() -> int:
         or "cannot enable live capital" not in submit_enablement_boundary
     ):
         print("cockpit_status_paperops_alpaca_submit_enablement_boundary_weak=true")
+        return 1
+    missing_lifecycle_polling_enablement_fields = sorted(
+        PAPEROPS_LIFECYCLE_POLLING_ENABLEMENT_REQUIRED_FIELDS
+        - set(paperops_lifecycle_polling_enablement)
+    )
+    if missing_lifecycle_polling_enablement_fields:
+        print(
+            "cockpit_status_paperops_lifecycle_polling_enablement_fields_missing="
+            + ",".join(missing_lifecycle_polling_enablement_fields)
+        )
+        return 1
+    if paperops_lifecycle_polling_enablement.get("status") not in {
+        "enabled_pending_submitted_paper_orders",
+        "enabled_pending_explicit_poll",
+    }:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_not_enabled=true")
+        return 1
+    if paperops_lifecycle_polling_enablement.get("public_safe") is not True:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_not_public_safe=true")
+        return 1
+    if paperops_lifecycle_polling_enablement.get("recorded") is not True:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_not_recorded=true")
+        return 1
+    if paperops_lifecycle_polling_enablement.get("event_log_written") is not True:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_event_log_not_written=true")
+        return 1
+    if paperops_lifecycle_polling_enablement.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_event_count_mismatch=true")
+        return 1
+    if paperops_lifecycle_polling_enablement.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_validation_errors=true")
+        return 1
+    if (
+        paperops_lifecycle_polling_enablement.get("active_lifecycle_polling_enabled")
+        is not True
+    ):
+        print("cockpit_status_paperops_lifecycle_polling_enablement_active_false=true")
+        return 1
+    if (
+        paperops_lifecycle_polling_enablement.get("paper_lifecycle_polling_effective")
+        is not True
+    ):
+        print("cockpit_status_paperops_lifecycle_polling_enablement_effective_false=true")
+        return 1
+    if paperops_lifecycle_polling_enablement.get("paper_broker_get_allowed") is not True:
+        print("cockpit_status_paperops_lifecycle_polling_enablement_get_not_allowed=true")
+        return 1
+    if (
+        int(
+            paperops_lifecycle_polling_enablement.get(
+                "paperops_2_submitted_paper_order_count",
+                0,
+            )
+            or 0
+        )
+        == 0
+        and paperops_lifecycle_polling_enablement.get("paper_poll_path_available")
+        is True
+    ):
+        print("cockpit_status_paperops_lifecycle_polling_path_without_source=true")
+        return 1
+    for key in (
+        "env_file_edited",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "broker_post_allowed",
+    ):
+        if paperops_lifecycle_polling_enablement.get(key) is not False:
+            print(f"cockpit_status_paperops_lifecycle_polling_enablement_forbidden={key}")
+            return 1
+    for key in (
+        "broker_get_called_count",
+        "live_endpoint_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_lifecycle_polling_enablement.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paperops_lifecycle_polling_enablement_unsafe_counter={key}")
+            return 1
+    lifecycle_polling_boundary = paperops_lifecycle_polling_enablement.get(
+        "boundary",
+        "",
+    )
+    if (
+        "PT-6 records runtime active Alpaca paper lifecycle polling enablement"
+        not in lifecycle_polling_boundary
+        or "read-only Alpaca paper GET" not in lifecycle_polling_boundary
+        or "cannot submit orders" not in lifecycle_polling_boundary
+        or "cannot enable live capital" not in lifecycle_polling_boundary
+    ):
+        print("cockpit_status_paperops_lifecycle_polling_enablement_boundary_weak=true")
         return 1
     if mission_stack.get("phase5_layer_b") != phase5_readiness.get("status"):
         print("cockpit_status_mission_stack_phase5_mismatch=true")

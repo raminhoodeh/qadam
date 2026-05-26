@@ -307,6 +307,15 @@ def main() -> int:
     operations_unsafe_probe["paperops_30_day_operations_unsafe_write_counter_total"] = 1
     operations_unsafe_errors = validate_paper_operational_readiness(operations_unsafe_probe)
 
+    lifecycle_polling_probe = deepcopy(written)
+    lifecycle_polling_probe[
+        "paper_lifecycle_polling_enablement_live_endpoint_called_count"
+    ] = 1
+    lifecycle_polling_probe["unsafe_write_counter_total"] = 1
+    lifecycle_polling_errors = validate_paper_operational_readiness(
+        lifecycle_polling_probe
+    )
+
     mode_probe = deepcopy(written)
     mode_probe["mode"] = "live"
     mode_errors = validate_paper_operational_readiness(mode_probe)
@@ -411,6 +420,34 @@ def main() -> int:
     print(
         "paper_ops_alpaca_submit_enablement_live_endpoint_called_count="
         f"{written['alpaca_paper_submit_runtime_enablement_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_status="
+        f"{written['paper_lifecycle_polling_enablement_status']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_active="
+        f"{written['paper_lifecycle_polling_enablement_active']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_effective="
+        f"{written['paper_lifecycle_polling_enablement_effective']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_path_available="
+        f"{written['paper_lifecycle_polling_enablement_path_available']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_submitted_order_count="
+        f"{written['paper_lifecycle_polling_enablement_paperops2_submitted_order_count']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_broker_get_called_count="
+        f"{written['paper_lifecycle_polling_enablement_broker_get_called_count']}"
+    )
+    print(
+        "paper_ops_lifecycle_polling_enablement_live_endpoint_called_count="
+        f"{written['paper_lifecycle_polling_enablement_live_endpoint_called_count']}"
     )
     print(f"paper_ops_paper_live_activation_status={written['paper_live_activation_status']}")
     print(
@@ -882,6 +919,25 @@ def main() -> int:
         errors.append("PT-4 granted Phase 7 proof credit")
     if written["auto_approval_staged_order_unsafe_write_counter_total"] != 0:
         errors.append("PT-4 unsafe write counter is nonzero")
+    if written["paper_lifecycle_polling_enablement_status"] not in {
+        "enabled_pending_submitted_paper_orders",
+        "enabled_pending_explicit_poll",
+    }:
+        errors.append("PT-6 lifecycle polling enablement is not ready")
+    if written["paper_lifecycle_polling_enablement_active"] is not True:
+        errors.append("PT-6 lifecycle polling is not active")
+    if written["paper_lifecycle_polling_enablement_effective"] is not True:
+        errors.append("PT-6 lifecycle polling is not effective")
+    if written["paper_lifecycle_polling_enablement_broker_get_called_count"] != 0:
+        errors.append("PT-6 enablement called broker GET directly")
+    if written["paper_lifecycle_polling_enablement_live_endpoint_called_count"] != 0:
+        errors.append("PT-6 lifecycle polling called a live endpoint")
+    if (
+        written["paper_lifecycle_polling_enablement_paperops2_submitted_order_count"]
+        == 0
+        and written["paper_lifecycle_polling_enablement_path_available"] is not False
+    ):
+        errors.append("PT-6 exposed poll path without a submitted paper order")
     if written["safe_to_continue_paper_only"] is not True:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
@@ -977,6 +1033,12 @@ def main() -> int:
         not in alpaca_submit_enablement_broker_errors
     ):
         errors.append("PT-5 enablement broker-counter probe was not rejected")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "paper_lifecycle_polling_enablement_live_endpoint_called_count"
+        not in lifecycle_polling_errors
+    ):
+        errors.append("PT-6 lifecycle polling live-endpoint probe was not rejected")
     if (
         "paper_ops_qualified_setup_production_forbidden:"
         "qualified_setup_production_paper_order_submission_allowed"

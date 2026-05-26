@@ -41,6 +41,9 @@ from orchestrator.paperops_alpaca_paper_post import paperops_alpaca_paper_post_p
 from orchestrator.paperops_paper_lifecycle_poller import (
     paperops_paper_lifecycle_poller_public_status,
 )
+from orchestrator.paperops_paper_lifecycle_polling_enablement import (
+    paperops_paper_lifecycle_polling_enablement_public_status,
+)
 from orchestrator.paperops_paper_exit_path import paperops_paper_exit_path_public_status
 from orchestrator.paperops_notification_review import (
     paperops_notification_review_public_status,
@@ -1183,6 +1186,37 @@ PAPEROPS_ALPACA_SUBMIT_ENABLEMENT_PUBLIC_REQUIRED_FIELDS = {
     "runtime_artifact_override_enabled",
     "schema_version",
     "settings_alpaca_paper_submit_enabled",
+    "stage",
+    "status",
+    "unsafe_write_counter_total",
+    "validation_error_count",
+}
+
+PAPEROPS_LIFECYCLE_POLLING_ENABLEMENT_PUBLIC_REQUIRED_FIELDS = {
+    "active_lifecycle_polling_enabled",
+    "alpaca_api_key_configured",
+    "alpaca_api_secret_configured",
+    "alpaca_paper_get_allowed",
+    "boundary",
+    "broker_get_called_count",
+    "broker_post_allowed",
+    "env_file_edited",
+    "event_log_event_count",
+    "event_log_written",
+    "explicit_poll_flag_required",
+    "forced_trades_allowed",
+    "live_capital_enabled",
+    "live_endpoint_called_count",
+    "paper_broker_get_allowed",
+    "paper_lifecycle_polling_effective",
+    "paper_poll_path_available",
+    "paperops_2_paper_post_path_available",
+    "paperops_2_source_valid",
+    "paperops_2_submitted_paper_order_count",
+    "phase7_proof_credit_allowed",
+    "public_safe",
+    "recorded",
+    "schema_version",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -4494,6 +4528,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     paperops_alpaca_post = payload.get("paperops_alpaca_paper_post", {})
+    paperops_lifecycle_polling_enablement = payload.get(
+        "paperops_paper_lifecycle_polling_enablement",
+        {},
+    )
     paperops_lifecycle_poller = payload.get("paperops_paper_lifecycle_poller", {})
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
@@ -4670,6 +4708,15 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "paperops_alpaca_paper_post_called_count": paperops_alpaca_post.get(
                 "alpaca_paper_post_called_count",
                 0,
+            ),
+            "paperops_paper_lifecycle_polling_enablement": (
+                paperops_lifecycle_polling_enablement.get("status", "not_run")
+            ),
+            "paperops_paper_lifecycle_polling_active": (
+                paperops_lifecycle_polling_enablement.get(
+                    "active_lifecycle_polling_enabled",
+                    False,
+                )
             ),
             "paperops_paper_lifecycle_poller": paperops_lifecycle_poller.get(
                 "status",
@@ -5798,6 +5845,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             paperops_alpaca_paper_submit_enablement_public_status(settings)
         ),
         "paperops_alpaca_paper_post": paperops_alpaca_paper_post_public_status(settings),
+        "paperops_paper_lifecycle_polling_enablement": (
+            paperops_paper_lifecycle_polling_enablement_public_status(settings)
+        ),
         "paperops_paper_lifecycle_poller": (
             paperops_paper_lifecycle_poller_public_status(settings)
         ),
@@ -5915,6 +5965,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paper_operational_mode",
         "paperops_alpaca_paper_submit_enablement",
         "paperops_alpaca_paper_post",
+        "paperops_paper_lifecycle_polling_enablement",
         "paperops_paper_lifecycle_poller",
         "paperops_paper_exit_path",
         "paperops_notification_review",
@@ -6259,6 +6310,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "blocked_missing_alpaca_paper_credentials",
         "blocked_missing_paperops_alpaca_post_source",
         "blocked_invalid_paperops_alpaca_post_source",
+        "blocked_lifecycle_polling_not_enabled",
         "invalid",
     }:
         raise ValueError("PaperOps lifecycle poller public status is invalid")
@@ -6623,6 +6675,110 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in submit_enablement_boundary:
             raise ValueError("PaperOps Alpaca submit enablement boundary is weak")
+    paperops_lifecycle_polling_enablement = payload[
+        "paperops_paper_lifecycle_polling_enablement"
+    ]
+    missing_lifecycle_polling_enablement = sorted(
+        PAPEROPS_LIFECYCLE_POLLING_ENABLEMENT_PUBLIC_REQUIRED_FIELDS
+        - set(paperops_lifecycle_polling_enablement)
+    )
+    if missing_lifecycle_polling_enablement:
+        raise ValueError(
+            "PaperOps lifecycle polling enablement public status missing fields: "
+            f"{missing_lifecycle_polling_enablement}"
+        )
+    if paperops_lifecycle_polling_enablement.get("status") not in {
+        "not_run",
+        "enabled_pending_submitted_paper_orders",
+        "enabled_pending_explicit_poll",
+        "blocked_pending_prerequisites",
+        "blocked_alpaca_paper_endpoint_or_credentials",
+        "blocked_not_paper_mode",
+        "blocked_live_capital_enabled",
+        "blocked_missing_paperops_alpaca_post_source",
+        "blocked_invalid_paperops_alpaca_post_source",
+        "invalid",
+    }:
+        raise ValueError("PaperOps lifecycle polling enablement status is invalid")
+    if paperops_lifecycle_polling_enablement.get("public_safe") is not True:
+        raise ValueError("PaperOps lifecycle polling enablement must be public-safe")
+    if paperops_lifecycle_polling_enablement.get("status") != "not_run":
+        if paperops_lifecycle_polling_enablement.get("recorded") is not True:
+            raise ValueError("PaperOps lifecycle polling enablement must be recorded")
+        if paperops_lifecycle_polling_enablement.get("event_log_written") is not True:
+            raise ValueError("PaperOps lifecycle polling enablement event log missing")
+        if paperops_lifecycle_polling_enablement.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps lifecycle polling enablement event count mismatch")
+        if paperops_lifecycle_polling_enablement.get("validation_error_count") != 0:
+            raise ValueError(
+                "PaperOps lifecycle polling enablement validation errors present"
+            )
+    if paperops_lifecycle_polling_enablement.get("status") in {
+        "enabled_pending_submitted_paper_orders",
+        "enabled_pending_explicit_poll",
+    }:
+        if (
+            paperops_lifecycle_polling_enablement.get(
+                "active_lifecycle_polling_enabled"
+            )
+            is not True
+        ):
+            raise ValueError("PaperOps lifecycle polling enablement flag is false")
+        if (
+            paperops_lifecycle_polling_enablement.get(
+                "paper_lifecycle_polling_effective"
+            )
+            is not True
+        ):
+            raise ValueError("PaperOps lifecycle polling effective flag is false")
+        if paperops_lifecycle_polling_enablement.get("paper_broker_get_allowed") is not True:
+            raise ValueError("PaperOps lifecycle polling GET path is not allowed")
+        if (
+            int(
+                paperops_lifecycle_polling_enablement.get(
+                    "paperops_2_submitted_paper_order_count",
+                    0,
+                )
+                or 0
+            )
+            == 0
+            and paperops_lifecycle_polling_enablement.get("paper_poll_path_available")
+            is True
+        ):
+            raise ValueError(
+                "PaperOps lifecycle polling path is available without submitted order"
+            )
+    for key in (
+        "env_file_edited",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "forced_trades_allowed",
+        "broker_post_allowed",
+    ):
+        if paperops_lifecycle_polling_enablement.get(key) is not False:
+            raise ValueError(f"PaperOps lifecycle polling enablement forbidden: {key}")
+    for key in (
+        "broker_get_called_count",
+        "live_endpoint_called_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_lifecycle_polling_enablement.get(key, 0) or 0) != 0:
+            raise ValueError(
+                f"PaperOps lifecycle polling enablement unsafe count nonzero: {key}"
+            )
+    lifecycle_polling_boundary = str(
+        paperops_lifecycle_polling_enablement.get("boundary") or ""
+    )
+    for phrase in (
+        "PT-6 records runtime active Alpaca paper lifecycle polling enablement",
+        "read-only Alpaca paper GET",
+        "cannot submit orders",
+        "cannot call live endpoints",
+        "cannot grant Phase 7 proof credit",
+        "cannot enable live capital",
+    ):
+        if phrase not in lifecycle_polling_boundary:
+            raise ValueError("PaperOps lifecycle polling enablement boundary is weak")
     phase4_strategy = payload["phase4_strategy"]
     missing_phase4 = sorted(PHASE4_STRATEGY_PUBLIC_REQUIRED_FIELDS - set(phase4_strategy))
     if missing_phase4:
