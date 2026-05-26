@@ -115,7 +115,7 @@ includesAll(contract, [
 
 includesAll(plan, [
     "D11C - Canonical Status Language",
-    "D11D - Reduce Panel Count And Merge Duplicate Surfaces"
+    "D11D - Single Safety Strip"
 ], "master plan D11C status");
 
 const window = loadRendererWindow();
@@ -143,11 +143,11 @@ assert(typeof window.canonicalQadamDashboardStatus === "function", "canonical st
 (async () => {
     const rendered = await renderWithStatus(status);
     const flowHtml = html(rendered, "[data-flow-map]");
-    const overviewHtml = html(rendered, "[data-overview-status-rail]");
+    const safetyStripHtml = html(rendered, "[data-dashboard-safety-strip]");
     const reasoningHtml = html(rendered, "[data-cognition]");
     const safetyHtml = html(rendered, "[data-forbidden-actions]");
 
-    includesAll(`${flowHtml} ${overviewHtml} ${reasoningHtml} ${safetyHtml}`, [
+    includesAll(`${flowHtml} ${safetyStripHtml} ${reasoningHtml} ${safetyHtml}`, [
         "Current",
         "Read-only",
         "Live capital off",

@@ -77,6 +77,7 @@ function assertModelShape(models) {
         "system_connectivity_model",
         "operations_model",
         "governance_model",
+        "safety_strip_model",
         "safety_model"
     ].forEach((key) => assert(models[key], `view model missing ${key}`));
 
@@ -138,7 +139,14 @@ function assertPlainOverview(models) {
     ].forEach((term) => {
         assert(!primaryText.includes(term), `Overview primary view model uses internal term ${term}`);
     });
-    assert(primaryText.includes("live capital disabled"), "Overview must keep live-capital safety explicit");
+    assert(
+        models.safety_strip_model.live_capital_label === "Live capital off",
+        "single safety strip must keep live-capital safety explicit"
+    );
+    assert(
+        models.safety_strip_model.boundary.includes("cannot approve"),
+        "single safety strip boundary missing"
+    );
 }
 
 function assertFixtureCoverage(window) {

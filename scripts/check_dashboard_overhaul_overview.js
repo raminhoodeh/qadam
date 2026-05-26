@@ -107,8 +107,8 @@ async function main() {
         "overview.next_review_links",
         "OVERVIEW_NODE_LABELS",
         "Fund Manager oversight",
-        "Live capital disabled",
-        "Broker writes blocked"
+        "Single safety strip owns dashboard authority state",
+        "Use the single safety strip for authority state"
     ], "Overview renderer");
 
     const models = buildModels();
@@ -131,7 +131,7 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-overview-status-rail]", "Paper/demo only");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Live capital disabled");
+    assertIncludes(rendered, "[data-dashboard-safety-strip]", "Live capital off");
     assertIncludes(rendered, "[data-overview-status-rail]", "Day 0/30");
     assertIncludes(rendered, "[data-overview-status-rail]", "Week 0/5");
     assertIncludes(rendered, "[data-overview-status-rail]", "eligible setups");
@@ -144,8 +144,8 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Quantum computer");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Broker writes blocked");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "candidate is not an order");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "Use the single safety strip for authority state");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "Candidate is not an order");
     assertIncludes(rendered, "[data-overview-next-links]", "#trades");
     assertIncludes(rendered, "[data-overview-next-links]", "#operations");
 

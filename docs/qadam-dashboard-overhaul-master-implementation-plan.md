@@ -220,8 +220,9 @@ Overview mini-map:
   Manager oversight.
 - Shows health only: online, degraded, blocked, pending, local-only, or
   read-only.
-- Uses one safety rail under the map: `Paper mode`, `Live capital disabled`,
-  `Read-only cockpit`, `No UI-to-broker path`, and `No LLM-to-broker path`.
+- Uses the D11D single safety strip for paper-only, live-capital,
+  read-only, UI-to-broker, and LLM-to-broker authority state instead of
+  rendering a second rail under the map.
 - Links to the full Operations map.
 
 Operations full map:
@@ -860,8 +861,8 @@ Status update, 2026-05-25:
   canonical replay, Yahoo Finance, and Preference MCP provenance summaries.
 - Edge states are encoded as `active`, `shadow/context-only`, `degraded`,
   `locked`, or `blocked`, with a visible legend.
-- The persistent safety rail states paper mode, live capital disabled,
-  read-only cockpit, no UI-to-broker path, and no LLM-to-broker path.
+- The Operations view references the D11D single safety strip for paper-only,
+  live-capital, read-only, UI-to-broker, and LLM-to-broker authority state.
 - Advanced phase labels and raw operational terms remain in Operations, not the
   Overview first screen.
 - The audit record is captured in
@@ -1134,7 +1135,33 @@ Outcome:
 
 Next stage:
 
-- D11D - Reduce Panel Count And Merge Duplicate Surfaces.
+- D11D - Single Safety Strip.
+
+### D11D - Single Safety Strip
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11d-single-safety-strip-2026-05-26.md`
+- `scripts/check_dashboard_d11d_single_safety_strip.js`
+
+Outcome:
+
+- The dashboard now has one canonical dashboard-wide authority strip under the
+  view switcher.
+- The strip owns paper-only, read-only, live-capital-off, UI-to-broker,
+  LLM-to-broker, and proof-credit-inference copy.
+- Overview now references the single safety strip instead of repeating
+  broker-write and live-capital copy as a second rail.
+- Operations no longer renders a separate safety rail; it points to the single
+  strip and then shows diagnostic evidence.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11E - Reduce Panel Count And Merge Duplicate Surfaces.
 
 ## 8. Implementation Order
 

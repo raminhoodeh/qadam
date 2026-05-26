@@ -52,6 +52,7 @@ const selectors = [
     "[data-mode-label]",
     "[data-capital-label]",
     "[data-live-capital-label]",
+    "[data-dashboard-safety-strip]",
     "[data-snapshot-meta]"
 ];
 
@@ -230,7 +231,7 @@ async function main() {
     assertIncludes(rendered, "[data-operating-summary]", "Paper account");
     assertIncludes(rendered, "[data-operating-summary]", "Source quality");
     assertIncludes(rendered, "[data-operating-summary]", "Strategy");
-    assertIncludes(rendered, "[data-operating-summary]", "Safety state");
+    assertIncludes(rendered, "[data-operating-summary]", "Safety strip");
     assertIncludes(rendered, "[data-operating-summary]", "Candidate is not order");
     assertIncludes(rendered, "[data-phase4-summary]", "Q4-12");
     assertIncludes(rendered, "[data-phase4-summary]", "Certified");

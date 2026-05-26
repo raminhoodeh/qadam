@@ -81,7 +81,7 @@ async function main() {
         "Operations workspace",
         "Read-only runtime diagnostics and full system connectivity",
         "What is broken?",
-        "Persistent safety rail",
+        "single safety strip above",
         "Fund Manager supervisor",
         "Live data feed clusters",
         "Python COO",
@@ -97,7 +97,7 @@ async function main() {
         ".operations-workspace",
         ".operations-workspace-head",
         ".operations-broken-card",
-        ".operations-safety-rail",
+        ".operations-safety-reference",
         ".operations-role-grid",
         ".operations-diagnostics-grid",
         ".operations-feed-grid",
@@ -117,8 +117,8 @@ async function main() {
         "function renderOperationsEdge",
         "operations-full-map",
         "What is broken?",
-        "No UI-to-broker path",
-        "No LLM-to-broker path"
+        "operations-safety-reference",
+        "single safety strip above"
     ], "Operations workspace renderer");
 
     const window = loadRendererWindow();
@@ -170,7 +170,7 @@ async function main() {
         "Operations workspace",
         "Read-only runtime diagnostics and full system connectivity",
         "What is broken?",
-        "Persistent safety rail",
+        "single safety strip above",
         "Fund Manager supervisor",
         "Live data feed clusters",
         "Python COO",
