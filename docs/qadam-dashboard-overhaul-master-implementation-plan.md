@@ -1337,7 +1337,39 @@ Outcome:
 
 Next stage:
 
-- D11K - Performance View Consolidation.
+- D11K - View Model Refactor.
+
+### D11K - View Model Refactor
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11k-view-model-refactor-2026-05-26.md`
+- `scripts/check_dashboard_d11k_view_model_refactor.js`
+
+Outcome:
+
+- The dashboard now builds one shared view-model bundle per status snapshot
+  instead of letting visible sections independently rebuild equivalent model
+  slices.
+- `buildQadamDashboardViewModels` declares a model graph with build order and
+  shared dependencies for Overview, Trades, Operations, and the safety strip.
+- Trades receives the shared Evidence/Sources model, Operations receives the
+  shared System Connectivity and Governance models, and Overview receives the
+  already-built Sources, Trades, Reasoning, Performance, Operations, and System
+  Connectivity models.
+- Evidence, Reasoning, Trades, Performance, and Governance renderers now accept
+  the shared bundle from `renderQadamDashboardStatus`, while keeping fallback
+  builders for isolated tests and legacy calls.
+- The top-level schema remains `dashboard_view_models.v1` for compatibility,
+  with `model_contract_version` marking the D11K shared-bundle contract.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11L - Performance View Consolidation.
 
 ## 8. Implementation Order
 

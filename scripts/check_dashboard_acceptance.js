@@ -67,6 +67,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_d11e_rebuild_overview.js",
     "scripts/check_dashboard_d11f_trades_view_consolidation.js",
     "scripts/check_dashboard_d11j_tooltip_simplification.js",
+    "scripts/check_dashboard_d11k_view_model_refactor.js",
     "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_durable_spine.js",
     "scripts/check_dashboard_renderer.js",
@@ -116,8 +117,8 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260526-d11j-tooltip-simplification",
-    "/dashboard.js?v=20260526-d11j-tooltip-simplification"
+    "/auth.css?v=20260526-d11k-view-model-refactor",
+    "/dashboard.js?v=20260526-d11k-view-model-refactor"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [

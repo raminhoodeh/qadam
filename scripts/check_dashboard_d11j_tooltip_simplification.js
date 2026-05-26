@@ -133,7 +133,7 @@ async function main() {
     assert(fs.existsSync(auditPath), "D11J audit document missing");
     includesAll(plan, [
         "D11J - Tooltip Simplification",
-        "D11K - Performance View Consolidation"
+        "D11K - View Model Refactor"
     ], "D11J master plan");
 
     console.log("dashboard_d11j_tooltip_simplification=ok");
