@@ -3902,13 +3902,13 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
         </div>
         <div class="info-hover safety-strip-info">
             <button class="info-button" type="button" aria-label="About the single safety strip">i</button>
-            <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety">
+            <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety" data-tooltip-contract="compact">
                 <strong>Single Safety Strip</strong>
-                <p>${htmlText(strip.boundary)}</p>
-                <dl class="explainer-grid">
-                    <div><dt>Mode</dt><dd>${htmlText(strip.mode_label)}</dd></div>
-                    <div><dt>Capital</dt><dd>${htmlText(strip.live_capital_label)}</dd></div>
-                    <div><dt>Authority flags</dt><dd>${htmlText(strip.authority_flag_count)} active</dd></div>
+                <p>One place for mode, capital, and authority state.</p>
+                <dl class="explainer-grid compact">
+                    <div><dt>Shows</dt><dd>${htmlText(strip.mode_label)} · ${htmlText(strip.live_capital_label)}</dd></div>
+                    <div><dt>Watch</dt><dd>${htmlText(strip.authority_flag_count)} active authority flags.</dd></div>
+                    <div><dt>Limits</dt><dd>Status only; no approval or order path.</dd></div>
                 </dl>
             </div>
         </div>

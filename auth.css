@@ -1212,7 +1212,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     transform: translateY(-4px);
     transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
     visibility: hidden;
-    width: min(420px, calc(100vw - 48px));
+    width: min(340px, calc(100vw - 48px));
     z-index: 50;
 }
 
@@ -1232,7 +1232,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .section-explainer {
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .section-explainer > p {
@@ -1241,16 +1241,21 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .explainer-grid {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
 }
 
 .explainer-grid div {
     border-top: 1px solid var(--line);
     display: grid;
-    gap: 6px;
-    grid-template-columns: 88px minmax(0, 1fr);
-    padding-top: 8px;
+    gap: 8px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    padding-top: 6px;
+}
+
+.explainer-grid.compact div:first-child {
+    border-top: 0;
+    padding-top: 0;
 }
 
 .explainer-grid dt {
@@ -1266,7 +1271,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .explainer-grid dd {
     color: var(--muted);
     font-size: 12px;
-    line-height: 1.38;
+    line-height: 1.32;
     margin: 0;
     overflow-wrap: anywhere;
 }
