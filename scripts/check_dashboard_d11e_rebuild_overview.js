@@ -97,7 +97,7 @@ async function main() {
         "data-overview-metrics",
         "data-overview-mini-map",
         "data-overview-next-links",
-        "20260526-d11h-reasoning-view"
+        "20260526-d11i-operations-view-anchor"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
