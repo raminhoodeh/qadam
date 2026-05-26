@@ -82,6 +82,11 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ),
     ("paperops_paper_exit_path", "scripts/check_paperops_paper_exit_path.py", True),
     ("paperops_notification_review", "scripts/check_paperops_notification_review.py", True),
+    (
+        "paperops_cockpit_notification_upgrade",
+        "scripts/check_paperops_cockpit_notification_upgrade.py",
+        True,
+    ),
     ("phase7_lifecycle", "scripts/check_phase7_proof_lifecycle_monitor.py", True),
     ("phase7_postmortem", "scripts/check_phase7_proof_postmortem_contract.py", True),
     ("phase7_performance", "scripts/check_phase7_performance_evaluator.py", True),
@@ -106,8 +111,10 @@ PAPER_OPS_CYCLE_BOUNDARY = (
     "bound to the active paper runner, but the cycle itself cannot pass the "
     "active runner execute flag. PaperOps-5 may render "
     "notification review records only; it cannot send live Telegram messages "
-    "or accept Telegram commands. PaperOps-6 may verify scheduler binding for "
-    "the active 30-day paper run only. The cycle cannot pass the paper-submit, "
+    "or accept Telegram commands. PT-9 may expose cockpit and notification "
+    "upgrade state only; it cannot create outbox messages, send Telegram "
+    "messages, or open command paths. PaperOps-6 may verify scheduler binding "
+    "for the active 30-day paper run only. The cycle cannot pass the paper-submit, "
     "paper-poll, or paper-exit CLI flags, cannot call live broker endpoints, "
     "cannot write prediction-market or crypto-perps orders, cannot enable live "
     "capital, and cannot promote the system to live money."
@@ -283,6 +290,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    cockpit_notification_upgrade = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_cockpit_notification_upgrade"
+        ),
+        {},
+    )
     unsafe_counter_total = sum(
         int(readiness.get(key, "0") or 0)
         for key in (
@@ -322,6 +337,10 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_exit_runtime_enablement_live_endpoint_called_count",
             "paper_ops_active_automation_live_endpoint_called_count",
             "paper_ops_active_automation_unsafe_write_counter_total",
+            "paper_ops_cockpit_notification_upgrade_live_send_allowed_count",
+            "paper_ops_cockpit_notification_upgrade_command_path_enabled_count",
+            "paper_ops_cockpit_notification_upgrade_broker_write_allowed_count",
+            "paper_ops_cockpit_notification_upgrade_unsafe_write_counter_total",
         )
     ) + int(
         operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0")
@@ -1091,6 +1110,75 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             readiness.get("paper_ops_notification_review_live_endpoint_allowed_count", "0")
             or 0
         ),
+        "cockpit_notification_upgrade_status": cockpit_notification_upgrade.get(
+            "paperops_cockpit_notification_upgrade_status"
+        ),
+        "cockpit_notification_upgrade_ready": (
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_cockpit_ready"
+            )
+            == "True"
+        ),
+        "cockpit_notification_upgrade_notification_ready": (
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_notification_ready"
+            )
+            == "True"
+        ),
+        "cockpit_notification_upgrade_readout_count": int(
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_readout_count",
+                "0",
+            )
+            or 0
+        ),
+        "cockpit_notification_upgrade_notification_record_count": int(
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_notification_record_count",
+                "0",
+            )
+            or 0
+        ),
+        "cockpit_notification_upgrade_qctrl_hold_visible": (
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_qctrl_hold_visible"
+            )
+            == "True"
+        ),
+        "cockpit_notification_upgrade_submit_visible_as_held": (
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_submit_visible_as_held"
+            )
+            == "True"
+        ),
+        "cockpit_notification_upgrade_live_send_allowed_count": int(
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_notification_live_send_allowed_count",
+                "0",
+            )
+            or 0
+        ),
+        "cockpit_notification_upgrade_command_path_enabled_count": int(
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_notification_command_path_enabled_count",
+                "0",
+            )
+            or 0
+        ),
+        "cockpit_notification_upgrade_broker_write_allowed_count": int(
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_notification_broker_write_allowed_count",
+                "0",
+            )
+            or 0
+        ),
+        "cockpit_notification_upgrade_unsafe_write_counter_total": int(
+            cockpit_notification_upgrade.get(
+                "paperops_cockpit_notification_upgrade_unsafe_write_counter_total",
+                "0",
+            )
+            or 0
+        ),
         "paperops_30_day_operations_status": operations.get(
             "paperops_30_day_operations_status"
         ),
@@ -1194,6 +1282,10 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "notification_review_paper_order_allowed_count",
         "notification_review_position_close_allowed_count",
         "notification_review_live_endpoint_allowed_count",
+        "cockpit_notification_upgrade_live_send_allowed_count",
+        "cockpit_notification_upgrade_command_path_enabled_count",
+        "cockpit_notification_upgrade_broker_write_allowed_count",
+        "cockpit_notification_upgrade_unsafe_write_counter_total",
         "paperops_30_day_operations_unsafe_write_counter_total",
         "paper_live_activation_broker_post_called_count",
         "paper_live_activation_alpaca_post_called_count",
@@ -1379,6 +1471,22 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_active_paper_automation_submit_bypassed_qctrl")
     if artifact.get("active_paper_automation_live_endpoint_called_count") != 0:
         errors.append("paper_ops_cycle_active_paper_automation_live_endpoint_called")
+    if artifact.get("cockpit_notification_upgrade_status") != (
+        "cockpit_notification_upgrade_ready"
+    ):
+        errors.append("paper_ops_cycle_cockpit_notification_upgrade_not_ready")
+    if artifact.get("cockpit_notification_upgrade_ready") is not True:
+        errors.append("paper_ops_cycle_cockpit_notification_upgrade_flag_false")
+    if artifact.get("cockpit_notification_upgrade_notification_ready") is not True:
+        errors.append("paper_ops_cycle_cockpit_notification_upgrade_notification_false")
+    if int(artifact.get("cockpit_notification_upgrade_readout_count", 0) or 0) < 5:
+        errors.append("paper_ops_cycle_cockpit_notification_upgrade_readouts_missing")
+    if (
+        artifact.get("cockpit_notification_upgrade_qctrl_hold_visible") is True
+        and artifact.get("cockpit_notification_upgrade_submit_visible_as_held")
+        is not True
+    ):
+        errors.append("paper_ops_cycle_cockpit_notification_upgrade_qctrl_not_visible")
     qctrl_provider_call_count = int(artifact.get("qctrl_provider_call_count", 0) or 0)
     if (
         qctrl_provider_call_count

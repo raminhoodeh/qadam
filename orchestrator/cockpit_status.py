@@ -58,6 +58,10 @@ from orchestrator.paperops_notification_review import (
 from orchestrator.paperops_30_day_operations import (
     paperops_30_day_operations_public_status,
 )
+from orchestrator.paperops_cockpit_notification_upgrade import (
+    PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_FIELDS,
+    paperops_cockpit_notification_upgrade_public_status,
+)
 from orchestrator.paperops_qualified_setup_production import (
     paperops_qualified_setup_production_public_status,
 )
@@ -1112,6 +1116,10 @@ PAPEROPS_30_DAY_OPERATIONS_PUBLIC_REQUIRED_FIELDS = {
     "unsafe_write_counter_total",
     "validation_error_count",
 }
+
+PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_REQUIRED_FIELDS = set(
+    PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_FIELDS
+)
 
 PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS = {
     "boundary",
@@ -4605,6 +4613,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_cockpit_notification_upgrade = payload.get(
+        "paperops_cockpit_notification_upgrade",
+        {},
+    )
     paperops_active_automation = payload.get(
         "paperops_active_paper_trading_automation",
         {},
@@ -4834,6 +4846,27 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_30_day_operations_active_day_number": (
                 paperops_30_day_operations.get("active_day_number")
+            ),
+            "paperops_cockpit_notification_upgrade": (
+                paperops_cockpit_notification_upgrade.get("status", "not_run")
+            ),
+            "paperops_cockpit_notification_ready": (
+                paperops_cockpit_notification_upgrade.get("cockpit_upgrade_ready", False)
+            ),
+            "paperops_cockpit_notification_readout_count": (
+                paperops_cockpit_notification_upgrade.get(
+                    "fund_manager_readout_count",
+                    0,
+                )
+            ),
+            "paperops_cockpit_notification_qctrl_hold": (
+                paperops_cockpit_notification_upgrade.get("qctrl_hold_visible", False)
+            ),
+            "paperops_cockpit_notification_live_send_allowed_count": (
+                paperops_cockpit_notification_upgrade.get(
+                    "notification_live_send_allowed_count",
+                    0,
+                )
             ),
             "paperops_active_paper_trading_automation": (
                 paperops_active_automation.get("status", "not_run")
@@ -5960,6 +5993,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_paper_exit_path": paperops_paper_exit_path_public_status(settings),
         "paperops_notification_review": paperops_notification_review_public_status(settings),
         "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
+        "paperops_cockpit_notification_upgrade": (
+            paperops_cockpit_notification_upgrade_public_status(settings)
+        ),
         "paperops_active_paper_trading_automation": (
             paperops_active_paper_trading_automation_public_status(settings)
         ),
@@ -6080,6 +6116,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_paper_exit_path",
         "paperops_notification_review",
         "paperops_30_day_operations",
+        "paperops_cockpit_notification_upgrade",
         "paperops_active_paper_trading_automation",
         "paperops_qualified_setup_production",
         "paperops_auto_approval_staged_order",
@@ -6583,6 +6620,79 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in operations_boundary:
             raise ValueError("PaperOps 30-day operations boundary is weak")
+    paperops_cockpit_notification = payload["paperops_cockpit_notification_upgrade"]
+    missing_pt9 = sorted(
+        PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_REQUIRED_FIELDS
+        - set(paperops_cockpit_notification)
+    )
+    if missing_pt9:
+        raise ValueError(
+            "PaperOps cockpit notification public status missing fields: "
+            f"{missing_pt9}"
+        )
+    if paperops_cockpit_notification.get("status") not in {
+        "not_run",
+        "cockpit_notification_upgrade_ready",
+        "blocked_cockpit_notification_upgrade",
+        "invalid",
+    }:
+        raise ValueError("PaperOps cockpit notification upgrade status is invalid")
+    if paperops_cockpit_notification.get("public_safe") is not True:
+        raise ValueError("PaperOps cockpit notification upgrade must be public-safe")
+    if paperops_cockpit_notification.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps cockpit notification upgrade enabled live capital")
+    if paperops_cockpit_notification.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps cockpit notification upgrade granted proof credit")
+    for key in (
+        "notification_live_send_allowed_count",
+        "notification_command_path_enabled_count",
+        "notification_broker_write_allowed_count",
+        "notification_paper_order_allowed_count",
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "outbox_message_written_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_cockpit_notification.get(key, 0) or 0) != 0:
+            raise ValueError(
+                "PaperOps cockpit notification unsafe count nonzero: "
+                f"{key}"
+            )
+    if (
+        paperops_cockpit_notification.get("qctrl_hold_visible") is True
+        and paperops_cockpit_notification.get("paper_submit_visible_as_held")
+        is not True
+    ):
+        raise ValueError("PaperOps cockpit notification hid the Q-CTRL submit hold")
+    if paperops_cockpit_notification.get("status") == (
+        "cockpit_notification_upgrade_ready"
+    ):
+        if paperops_cockpit_notification.get("recorded") is not True:
+            raise ValueError("PaperOps cockpit notification upgrade must be recorded")
+        if paperops_cockpit_notification.get("event_log_written") is not True:
+            raise ValueError("PaperOps cockpit notification event log missing")
+        if paperops_cockpit_notification.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps cockpit notification event count mismatch")
+        if paperops_cockpit_notification.get("validation_error_count") != 0:
+            raise ValueError("PaperOps cockpit notification validation errors present")
+        if paperops_cockpit_notification.get("cockpit_upgrade_ready") is not True:
+            raise ValueError("PaperOps cockpit notification ready flag is false")
+        if paperops_cockpit_notification.get("notification_upgrade_ready") is not True:
+            raise ValueError("PaperOps notification upgrade ready flag is false")
+        if int(paperops_cockpit_notification.get("fund_manager_readout_count", 0) or 0) < 5:
+            raise ValueError("PaperOps cockpit notification readouts missing")
+    pt9_boundary = str(paperops_cockpit_notification.get("boundary") or "")
+    for phrase in (
+        "PT-9 upgrades the cockpit and notification review surface",
+        "review-only notification previews",
+        "cannot send Telegram messages",
+        "cannot enable Telegram commands",
+        "cannot call brokers",
+        "cannot enable live capital",
+    ):
+        if phrase not in pt9_boundary:
+            raise ValueError("PaperOps cockpit notification boundary is weak")
     paperops_active_automation = payload["paperops_active_paper_trading_automation"]
     missing_paperops_active = sorted(
         PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_REQUIRED_FIELDS

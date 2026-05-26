@@ -56,6 +56,9 @@ def main() -> int:
     validation_errors = validate_paperops_notification_review(written)
     replay = EventLog(event_log_path, echo=False).replay()
     readiness_record = _record(written, "paperops_readiness_review")
+    operations_record = _record(written, "paperops_30_day_operations")
+    active_automation_record = _record(written, "active_paper_automation")
+    qctrl_hold_record = _record(written, "qctrl_consultation_hold")
     exit_record = _record(written, "paper_exit_path")
 
     command_probe_errors = _record_probe_errors(
@@ -74,6 +77,10 @@ def main() -> int:
     outbox_probe_errors = _record_probe_errors(
         readiness_record,
         outbox_message_written=True,
+    )
+    active_automation_submit_probe_errors = _record_probe_errors(
+        active_automation_record,
+        paper_order_submission_allowed=True,
     )
     broker_probe_errors = _record_probe_errors(readiness_record, broker_write_allowed=True)
     paper_order_probe_errors = _record_probe_errors(readiness_record, paper_order_allowed=True)
@@ -116,6 +123,18 @@ def main() -> int:
     )
     print(f"paperops_notification_paperops_blocker_count={written['paperops_blocker_count']}")
     print(f"paperops_notification_paperops_blockers={','.join(written['paperops_blockers'])}")
+    print(
+        "paperops_notification_operations_record_status="
+        f"{operations_record['status']}"
+    )
+    print(
+        "paperops_notification_active_automation_record_status="
+        f"{active_automation_record['status']}"
+    )
+    print(
+        "paperops_notification_qctrl_hold_record_status="
+        f"{qctrl_hold_record['status']}"
+    )
     print(f"paperops_notification_readiness_status={written['readiness_status']}")
     print(f"paperops_notification_alpaca_post_status={written['alpaca_paper_post_status']}")
     print(f"paperops_notification_lifecycle_poller_status={written['lifecycle_poller_status']}")
@@ -127,6 +146,18 @@ def main() -> int:
     print(
         "paperops_notification_source_broker_receipt_count="
         f"{written['source_broker_receipt_count']}"
+    )
+    print(
+        "paperops_notification_source_paperops_30_day_operations_count="
+        f"{written['source_paperops_30_day_operations_count']}"
+    )
+    print(
+        "paperops_notification_source_active_paper_automation_count="
+        f"{written['source_active_paper_automation_count']}"
+    )
+    print(
+        "paperops_notification_source_qctrl_consultation_hold_count="
+        f"{written['source_qctrl_consultation_hold_count']}"
     )
     print(
         "paperops_notification_source_open_position_count="
@@ -185,6 +216,10 @@ def main() -> int:
     print(f"paperops_notification_close_probe_error_count={len(close_probe_errors)}")
     print(f"paperops_notification_live_send_probe_error_count={len(live_send_probe_errors)}")
     print(f"paperops_notification_outbox_probe_error_count={len(outbox_probe_errors)}")
+    print(
+        "paperops_notification_active_automation_submit_probe_error_count="
+        f"{len(active_automation_submit_probe_errors)}"
+    )
     print(f"paperops_notification_broker_probe_error_count={len(broker_probe_errors)}")
     print(f"paperops_notification_paper_order_probe_error_count={len(paper_order_probe_errors)}")
     print(
@@ -210,6 +245,18 @@ def main() -> int:
         errors.append("paperops_notification_record_count_mismatch")
     if written["eligible_review_count"] < 1:
         errors.append("paperops_notification_expected_review_missing")
+    if operations_record["status"] != "eligible_for_review":
+        errors.append("paperops_notification_operations_record_not_eligible")
+    if active_automation_record["status"] != "eligible_for_review":
+        errors.append("paperops_notification_active_automation_record_not_eligible")
+    if qctrl_hold_record["status"] != "eligible_for_review":
+        errors.append("paperops_notification_qctrl_hold_record_not_eligible")
+    if written["source_paperops_30_day_operations_count"] < 1:
+        errors.append("paperops_notification_operations_source_missing")
+    if written["source_active_paper_automation_count"] < 1:
+        errors.append("paperops_notification_active_automation_source_missing")
+    if written["source_qctrl_consultation_hold_count"] < 1:
+        errors.append("paperops_notification_qctrl_hold_source_missing")
     if written["telegram_mode"] != "dry_run":
         errors.append("paperops_notification_not_dry_run")
     if written["telegram_send_gate"] != "disabled":
@@ -252,6 +299,10 @@ def main() -> int:
         ),
         ("paperops_notification_authority_enabled:live_send_allowed", live_send_probe_errors),
         ("paperops_notification_outbox_written", outbox_probe_errors),
+        (
+            "paperops_notification_authority_enabled:paper_order_submission_allowed",
+            active_automation_submit_probe_errors,
+        ),
         ("paperops_notification_authority_enabled:broker_write_allowed", broker_probe_errors),
         ("paperops_notification_authority_enabled:paper_order_allowed", paper_order_probe_errors),
         (

@@ -22,6 +22,9 @@ from orchestrator.paper_account import MATURITY_CLOSED_TRADE_TARGET  # noqa: E40
 from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E402
     PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
 )
+from orchestrator.paperops_cockpit_notification_upgrade import (  # noqa: E402
+    PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_REQUIRED_FIELDS,
+)
 from orchestrator.phase6_cockpit_visibility import (
     PUBLIC_STATUS_FIELDS as PHASE6_LEARNING_LOOP_REQUIRED_FIELDS,
 )  # noqa: E402
@@ -1905,6 +1908,11 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_30_day_operations",
     "paperops_30_day_operations_scheduler_status",
     "paperops_30_day_operations_active_day_number",
+    "paperops_cockpit_notification_upgrade",
+    "paperops_cockpit_notification_ready",
+    "paperops_cockpit_notification_readout_count",
+    "paperops_cockpit_notification_qctrl_hold",
+    "paperops_cockpit_notification_live_send_allowed_count",
     "paperops_active_paper_trading_automation",
     "paperops_active_paper_trading_automation_enabled",
     "paperops_active_paper_trading_qctrl_hold",
@@ -2960,6 +2968,10 @@ def main() -> int:
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_cockpit_notification = payload.get(
+        "paperops_cockpit_notification_upgrade",
+        {},
+    )
     paperops_active_automation = payload.get(
         "paperops_active_paper_trading_automation",
         {},
@@ -3171,6 +3183,38 @@ def main() -> int:
     print(
         "cockpit_status_paperops_30_day_operations_unsafe_write_counter_total="
         f"{paperops_30_day_operations.get('unsafe_write_counter_total')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_status="
+        f"{paperops_cockpit_notification.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_ready="
+        f"{paperops_cockpit_notification.get('cockpit_upgrade_ready')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_notification_ready="
+        f"{paperops_cockpit_notification.get('notification_upgrade_ready')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_readout_count="
+        f"{paperops_cockpit_notification.get('fund_manager_readout_count')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_qctrl_hold="
+        f"{paperops_cockpit_notification.get('qctrl_hold_visible')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_submit_visible_as_held="
+        f"{paperops_cockpit_notification.get('paper_submit_visible_as_held')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_live_send_allowed_count="
+        f"{paperops_cockpit_notification.get('notification_live_send_allowed_count')}"
+    )
+    print(
+        "cockpit_status_paperops_cockpit_notification_unsafe_write_counter_total="
+        f"{paperops_cockpit_notification.get('unsafe_write_counter_total')}"
     )
     print(
         "cockpit_status_paperops_active_automation_status="
@@ -6749,6 +6793,31 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_30_day_day_mismatch=true")
         return 1
+    if mission_stack.get("paperops_cockpit_notification_upgrade") != (
+        paperops_cockpit_notification.get("status")
+    ):
+        print("cockpit_status_mission_stack_pt9_status_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_cockpit_notification_ready") != (
+        paperops_cockpit_notification.get("cockpit_upgrade_ready")
+    ):
+        print("cockpit_status_mission_stack_pt9_ready_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_cockpit_notification_readout_count") != (
+        paperops_cockpit_notification.get("fund_manager_readout_count")
+    ):
+        print("cockpit_status_mission_stack_pt9_readout_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_cockpit_notification_qctrl_hold") != (
+        paperops_cockpit_notification.get("qctrl_hold_visible")
+    ):
+        print("cockpit_status_mission_stack_pt9_qctrl_hold_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_cockpit_notification_live_send_allowed_count") != (
+        paperops_cockpit_notification.get("notification_live_send_allowed_count")
+    ):
+        print("cockpit_status_mission_stack_pt9_live_send_mismatch=true")
+        return 1
     if mission_stack.get("paperops_active_paper_trading_automation") != (
         paperops_active_automation.get("status")
     ):
@@ -7004,6 +7073,75 @@ def main() -> int:
         return 1
     if "cannot force trades" not in paperops_30_day_operations.get("boundary", ""):
         print("cockpit_status_paperops_30_day_operations_boundary_weak=true")
+        return 1
+    missing_pt9_fields = sorted(
+        set(PAPEROPS_COCKPIT_NOTIFICATION_REQUIRED_FIELDS)
+        - set(paperops_cockpit_notification)
+    )
+    if missing_pt9_fields:
+        print(
+            "cockpit_status_paperops_cockpit_notification_fields_missing="
+            + ",".join(missing_pt9_fields)
+        )
+        return 1
+    if paperops_cockpit_notification.get("status") != (
+        "cockpit_notification_upgrade_ready"
+    ):
+        print("cockpit_status_paperops_cockpit_notification_not_ready=true")
+        return 1
+    if paperops_cockpit_notification.get("public_safe") is not True:
+        print("cockpit_status_paperops_cockpit_notification_not_public_safe=true")
+        return 1
+    if paperops_cockpit_notification.get("recorded") is not True:
+        print("cockpit_status_paperops_cockpit_notification_not_recorded=true")
+        return 1
+    if paperops_cockpit_notification.get("event_log_written") is not True:
+        print("cockpit_status_paperops_cockpit_notification_event_log_not_written=true")
+        return 1
+    if paperops_cockpit_notification.get("event_log_event_count") != 1:
+        print("cockpit_status_paperops_cockpit_notification_event_count_mismatch=true")
+        return 1
+    if paperops_cockpit_notification.get("validation_error_count") != 0:
+        print("cockpit_status_paperops_cockpit_notification_validation_errors=true")
+        return 1
+    if paperops_cockpit_notification.get("cockpit_upgrade_ready") is not True:
+        print("cockpit_status_paperops_cockpit_notification_flag_false=true")
+        return 1
+    if paperops_cockpit_notification.get("notification_upgrade_ready") is not True:
+        print("cockpit_status_paperops_cockpit_notification_notification_false=true")
+        return 1
+    if int(paperops_cockpit_notification.get("fund_manager_readout_count", 0) or 0) < 5:
+        print("cockpit_status_paperops_cockpit_notification_readouts_missing=true")
+        return 1
+    if (
+        paperops_cockpit_notification.get("qctrl_hold_visible") is True
+        and paperops_cockpit_notification.get("paper_submit_visible_as_held")
+        is not True
+    ):
+        print("cockpit_status_paperops_cockpit_notification_qctrl_hold_hidden=true")
+        return 1
+    for key in (
+        "notification_live_send_allowed_count",
+        "notification_command_path_enabled_count",
+        "notification_broker_write_allowed_count",
+        "notification_paper_order_allowed_count",
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "outbox_message_written_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_cockpit_notification.get(key, 0) or 0) != 0:
+            print(f"cockpit_status_paperops_cockpit_notification_unsafe_{key}=true")
+            return 1
+    if paperops_cockpit_notification.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_paperops_cockpit_notification_proof_credit_allowed=true")
+        return 1
+    if (
+        "review-only notification previews"
+        not in paperops_cockpit_notification.get("boundary", "")
+    ):
+        print("cockpit_status_paperops_cockpit_notification_boundary_weak=true")
         return 1
     missing_active_automation_fields = sorted(
         PAPEROPS_ACTIVE_AUTOMATION_REQUIRED_FIELDS - set(paperops_active_automation)

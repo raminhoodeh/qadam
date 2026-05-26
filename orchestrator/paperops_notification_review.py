@@ -34,6 +34,9 @@ PAPEROPS_NOTIFICATION_REVIEW_COMPONENT = "paperops_notification_review"
 
 PAPEROPS_NOTIFICATION_TYPES: tuple[str, ...] = (
     "paperops_readiness_review",
+    "paperops_30_day_operations",
+    "active_paper_automation",
+    "qctrl_consultation_hold",
     "submitted_paper_order",
     "broker_receipt",
     "open_position",
@@ -55,6 +58,9 @@ PAPEROPS_LIFECYCLE_NOTIFICATION_TYPES = frozenset(
 
 NOTIFICATION_MESSAGE_CLASSES: dict[str, str] = {
     "paperops_readiness_review": "insight_digest",
+    "paperops_30_day_operations": "insight_digest",
+    "active_paper_automation": "insight_digest",
+    "qctrl_consultation_hold": "insight_digest",
     "submitted_paper_order": "submitted_paper_order",
     "broker_receipt": "submitted_paper_order",
     "open_position": "open_position",
@@ -197,6 +203,15 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "alpaca_post": _read_json(runtime / "paperops_alpaca_paper_post.json"),
         "lifecycle_poller": _read_json(runtime / "paperops_paper_lifecycle_poller.json"),
         "exit_path": _read_json(runtime / "paperops_paper_exit_path.json"),
+        "paperops_30_day_operations": _read_json(
+            runtime / "paperops_30_day_operations.json"
+        ),
+        "active_paper_automation": _read_json(
+            runtime / "paperops_active_paper_trading_automation.json"
+        ),
+        "paper_live_qctrl_product_access": _read_json(
+            runtime / "paper_live_qctrl_product_access.json"
+        ),
         "phase7_lifecycle": _read_json(runtime / "phase7_proof_lifecycle_monitor.json"),
         "phase7_postmortem": _read_json(runtime / "phase7_proof_postmortem_contract.json"),
     }
@@ -320,10 +335,31 @@ def _source_count(
     alpaca_post = source["alpaca_post"]
     lifecycle = source["lifecycle_poller"]
     exit_path = source["exit_path"]
+    operations = source["paperops_30_day_operations"]
+    active_automation = source["active_paper_automation"]
+    product_access = source["paper_live_qctrl_product_access"]
     phase7_lifecycle = source["phase7_lifecycle"]
     postmortem = source["phase7_postmortem"]
     if notification_type == "paperops_readiness_review":
         return max(1, len(blockers)), "paper_operational_readiness", "PaperOps readiness"
+    if notification_type == "paperops_30_day_operations":
+        count = 1 if operations.get("status") == "operations_active" else 0
+        return count, "paperops_30_day_operations", "30-day paper run"
+    if notification_type == "active_paper_automation":
+        count = 1 if str(active_automation.get("status") or "").startswith(
+            "active_automation_"
+        ) else 0
+        return count, "paperops_active_paper_trading_automation", "active paper automation"
+    if notification_type == "qctrl_consultation_hold":
+        count = 1 if (
+            active_automation.get("qctrl_consultation_hold_active") is True
+            or product_access.get("status")
+            in {
+                "blocked_qctrl_product_access_or_subscription",
+                "blocked_missing_qctrl_sdk",
+            }
+        ) else 0
+        return count, "paper_live_qctrl_product_access", "Q-CTRL paper consultation hold"
     if notification_type == "submitted_paper_order":
         count = max(
             _int(alpaca_post.get("alpaca_paper_post_succeeded_count")),
@@ -382,6 +418,55 @@ def _message_context(
             ),
             "evidence": f"blocker_count={len(blockers)}; {blocker_text}",
             "block": "full paper operation remains blocked until explicit gates clear",
+        }
+    if notification_type == "paperops_30_day_operations":
+        operations = source["paperops_30_day_operations"]
+        return {
+            "title": "PaperOps review: 30-day run operations",
+            "theme": "30-day paper run operations",
+            "why_it_matters": (
+                f"run={operations.get('run_id', 'missing')}; "
+                f"day={operations.get('active_day_number', 'unknown')}; "
+                f"remaining={operations.get('calendar_days_remaining', 'unknown')}"
+            ),
+            "evidence": (
+                f"cycle={operations.get('paper_operational_cycle_status', 'missing')}; "
+                f"commands={operations.get('paper_operational_cycle_command_count', 0)}; "
+                f"qualified={operations.get('qualified_setup_count', 0)}"
+            ),
+            "block": "paper run stays calendar-true; trades occur only where qualified setups exist",
+        }
+    if notification_type == "active_paper_automation":
+        active_automation = source["active_paper_automation"]
+        return {
+            "title": "PaperOps review: active paper automation",
+            "theme": "guarded active paper automation",
+            "why_it_matters": (
+                f"status={active_automation.get('status', 'missing')}; "
+                f"enabled={active_automation.get('active_paper_trading_automation_enabled')}"
+            ),
+            "evidence": (
+                f"submit_allowed={active_automation.get('paper_submit_step_allowed')}; "
+                f"poll_allowed={active_automation.get('paper_poll_step_allowed')}; "
+                f"exit_allowed={active_automation.get('paper_exit_step_allowed')}"
+            ),
+            "block": "active runner can only delegate to recorded PaperOps paper gates",
+        }
+    if notification_type == "qctrl_consultation_hold":
+        active_automation = source["active_paper_automation"]
+        product_access = source["paper_live_qctrl_product_access"]
+        return {
+            "title": "PaperOps review: Q-CTRL paper consultation hold",
+            "theme": "Head of Quant paper parity hold",
+            "why_it_matters": (
+                f"product_access={product_access.get('status', 'missing')}; "
+                f"hold={active_automation.get('qctrl_consultation_hold_active')}"
+            ),
+            "evidence": (
+                f"provider_calls={product_access.get('provider_call_count', 0)}; "
+                f"submit_allowed={active_automation.get('paper_submit_step_allowed')}"
+            ),
+            "block": "paper submit remains held until Q-CTRL consultation access is ready",
         }
     if notification_type == "paper_exit_path":
         exit_path = source["exit_path"]
@@ -621,6 +706,15 @@ def build_paperops_notification_review(settings: Settings | None = None) -> dict
         ),
         "status_counts": dict(sorted(status_counts.items())),
         "source_state_counts": source_counts,
+        "source_paperops_30_day_operations_count": source_counts[
+            "paperops_30_day_operations"
+        ],
+        "source_active_paper_automation_count": source_counts[
+            "active_paper_automation"
+        ],
+        "source_qctrl_consultation_hold_count": source_counts[
+            "qctrl_consultation_hold"
+        ],
         "paperops_blocker_count": len(blockers),
         "paperops_blockers": blockers,
         "safe_to_continue_paper_only": (
@@ -999,6 +1093,18 @@ def paperops_notification_review_public_status(
             0,
         ),
         "source_broker_receipt_count": artifact.get("source_broker_receipt_count", 0),
+        "source_paperops_30_day_operations_count": artifact.get(
+            "source_paperops_30_day_operations_count",
+            0,
+        ),
+        "source_active_paper_automation_count": artifact.get(
+            "source_active_paper_automation_count",
+            0,
+        ),
+        "source_qctrl_consultation_hold_count": artifact.get(
+            "source_qctrl_consultation_hold_count",
+            0,
+        ),
         "source_open_position_count": artifact.get("source_open_position_count", 0),
         "source_closed_trade_count": artifact.get("source_closed_trade_count", 0),
         "source_postmortem_due_count": artifact.get("source_postmortem_due_count", 0),

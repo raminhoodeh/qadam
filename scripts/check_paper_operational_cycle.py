@@ -151,6 +151,25 @@ def main() -> int:
     notification_probe["unsafe_write_counter_total"] = 3
     notification_errors = validate_paper_operational_cycle(notification_probe)
 
+    cockpit_notification_probe = deepcopy(written)
+    cockpit_notification_probe["cockpit_notification_upgrade_live_send_allowed_count"] = 1
+    cockpit_notification_probe["cockpit_notification_upgrade_unsafe_write_counter_total"] = 1
+    cockpit_notification_probe["unsafe_write_counter_total"] = 2
+    cockpit_notification_errors = validate_paper_operational_cycle(
+        cockpit_notification_probe
+    )
+
+    cockpit_notification_qctrl_probe = deepcopy(written)
+    cockpit_notification_qctrl_probe[
+        "cockpit_notification_upgrade_qctrl_hold_visible"
+    ] = True
+    cockpit_notification_qctrl_probe[
+        "cockpit_notification_upgrade_submit_visible_as_held"
+    ] = False
+    cockpit_notification_qctrl_errors = validate_paper_operational_cycle(
+        cockpit_notification_qctrl_probe
+    )
+
     operations_probe = deepcopy(written)
     operations_probe["paperops_30_day_operations_unsafe_write_counter_total"] = 1
     operations_probe["unsafe_write_counter_total"] = 1
@@ -464,6 +483,50 @@ def main() -> int:
         f"{written['notification_review_broker_write_allowed_count']}"
     )
     print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_status="
+        f"{written['cockpit_notification_upgrade_status']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_ready="
+        f"{written['cockpit_notification_upgrade_ready']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_notification_ready="
+        f"{written['cockpit_notification_upgrade_notification_ready']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_readout_count="
+        f"{written['cockpit_notification_upgrade_readout_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_notification_record_count="
+        f"{written['cockpit_notification_upgrade_notification_record_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_qctrl_hold_visible="
+        f"{written['cockpit_notification_upgrade_qctrl_hold_visible']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_submit_visible_as_held="
+        f"{written['cockpit_notification_upgrade_submit_visible_as_held']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_live_send_allowed_count="
+        f"{written['cockpit_notification_upgrade_live_send_allowed_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_command_path_enabled_count="
+        f"{written['cockpit_notification_upgrade_command_path_enabled_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_broker_write_allowed_count="
+        f"{written['cockpit_notification_upgrade_broker_write_allowed_count']}"
+    )
+    print(
+        "paper_ops_cycle_check_cockpit_notification_upgrade_unsafe_write_counter_total="
+        f"{written['cockpit_notification_upgrade_unsafe_write_counter_total']}"
+    )
+    print(
         "paper_ops_cycle_check_paperops_30_day_operations_status="
         f"{written['paperops_30_day_operations_status']}"
     )
@@ -638,6 +701,21 @@ def main() -> int:
         errors.append("PaperOps-1 enabled Telegram command path through PaperOps-5")
     if written["notification_review_broker_write_allowed_count"] != 0:
         errors.append("PaperOps-1 allowed broker write through PaperOps-5")
+    if written["cockpit_notification_upgrade_status"] != "cockpit_notification_upgrade_ready":
+        errors.append("PaperOps-1 did not include ready PT-9 cockpit notification upgrade")
+    if written["cockpit_notification_upgrade_ready"] is not True:
+        errors.append("PaperOps-1 saw PT-9 cockpit upgrade not ready")
+    if written["cockpit_notification_upgrade_notification_ready"] is not True:
+        errors.append("PaperOps-1 saw PT-9 notification upgrade not ready")
+    if written["cockpit_notification_upgrade_readout_count"] < 5:
+        errors.append("PaperOps-1 saw PT-9 readouts missing")
+    if (
+        written["cockpit_notification_upgrade_qctrl_hold_visible"] is True
+        and written["cockpit_notification_upgrade_submit_visible_as_held"] is not True
+    ):
+        errors.append("PaperOps-1 saw PT-9 hide the Q-CTRL submit hold")
+    if written["cockpit_notification_upgrade_unsafe_write_counter_total"] != 0:
+        errors.append("PaperOps-1 saw nonzero PT-9 unsafe counter")
     if written["paperops_30_day_operations_status"] != "operations_active":
         errors.append("PaperOps-1 did not include active PaperOps-6 operations")
     if written["paperops_30_day_operations_automation_active"] is not True:
@@ -795,6 +873,17 @@ def main() -> int:
         not in notification_errors
     ):
         errors.append("PaperOps notification broker-write probe was not rejected")
+    if (
+        "paper_ops_cycle_unsafe_counter_nonzero:"
+        "cockpit_notification_upgrade_live_send_allowed_count"
+        not in cockpit_notification_errors
+    ):
+        errors.append("PT-9 live-send probe was not rejected")
+    if (
+        "paper_ops_cycle_cockpit_notification_upgrade_qctrl_not_visible"
+        not in cockpit_notification_qctrl_errors
+    ):
+        errors.append("PT-9 Q-CTRL visibility probe was not rejected")
     if (
         "paper_ops_cycle_unsafe_counter_nonzero:"
         "paperops_30_day_operations_unsafe_write_counter_total"

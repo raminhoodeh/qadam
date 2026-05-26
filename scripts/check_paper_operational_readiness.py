@@ -336,6 +336,33 @@ def main() -> int:
         active_automation_shortcut_probe
     )
 
+    cockpit_notification_probe = deepcopy(written)
+    cockpit_notification_probe[
+        "cockpit_notification_upgrade_live_send_allowed_count"
+    ] = 1
+    cockpit_notification_probe["cockpit_notification_upgrade_unsafe_write_counter_total"] = 1
+    cockpit_notification_probe["unsafe_write_counter_total"] = 1
+    cockpit_notification_errors = validate_paper_operational_readiness(
+        cockpit_notification_probe
+    )
+
+    cockpit_notification_qctrl_probe = deepcopy(written)
+    cockpit_notification_qctrl_probe["cockpit_notification_upgrade_qctrl_hold_visible"] = True
+    cockpit_notification_qctrl_probe[
+        "cockpit_notification_upgrade_submit_visible_as_held"
+    ] = False
+    cockpit_notification_qctrl_errors = validate_paper_operational_readiness(
+        cockpit_notification_qctrl_probe
+    )
+
+    cockpit_notification_proof_probe = deepcopy(written)
+    cockpit_notification_proof_probe[
+        "cockpit_notification_upgrade_phase7_proof_credit_allowed"
+    ] = True
+    cockpit_notification_proof_errors = validate_paper_operational_readiness(
+        cockpit_notification_proof_probe
+    )
+
     lifecycle_polling_probe = deepcopy(written)
     lifecycle_polling_probe[
         "paper_lifecycle_polling_enablement_live_endpoint_called_count"
@@ -983,6 +1010,54 @@ def main() -> int:
         "paper_ops_active_paper_automation_unsafe_write_counter_total="
         f"{written['active_paper_trading_automation_unsafe_write_counter_total']}"
     )
+    print(
+        "paper_ops_cockpit_notification_upgrade_status="
+        f"{written['cockpit_notification_upgrade_status']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_ready="
+        f"{written['cockpit_notification_upgrade_ready']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_notification_ready="
+        f"{written['cockpit_notification_upgrade_notification_ready']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_readout_count="
+        f"{written['cockpit_notification_upgrade_readout_count']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_notification_record_count="
+        f"{written['cockpit_notification_upgrade_notification_record_count']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_present_type_count="
+        f"{written['cockpit_notification_upgrade_present_type_count']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_qctrl_hold_visible="
+        f"{written['cockpit_notification_upgrade_qctrl_hold_visible']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_submit_visible_as_held="
+        f"{written['cockpit_notification_upgrade_submit_visible_as_held']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_live_send_allowed_count="
+        f"{written['cockpit_notification_upgrade_live_send_allowed_count']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_command_path_enabled_count="
+        f"{written['cockpit_notification_upgrade_command_path_enabled_count']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_broker_write_allowed_count="
+        f"{written['cockpit_notification_upgrade_broker_write_allowed_count']}"
+    )
+    print(
+        "paper_ops_cockpit_notification_upgrade_unsafe_write_counter_total="
+        f"{written['cockpit_notification_upgrade_unsafe_write_counter_total']}"
+    )
     print(f"paper_ops_live_capital_enabled={written['live_capital_enabled']}")
     print(f"paper_ops_blocker_count={written['blocker_count']}")
     print(f"paper_ops_blockers={','.join(written['blockers'])}")
@@ -1386,6 +1461,42 @@ def main() -> int:
         not in active_automation_shortcut_errors
     ):
         errors.append("PT-8 direct broker shortcut probe was not rejected")
+    if written["cockpit_notification_upgrade_status"] != "cockpit_notification_upgrade_ready":
+        errors.append("PT-9 cockpit notification upgrade is not ready")
+    if written["cockpit_notification_upgrade_ready"] is not True:
+        errors.append("PT-9 cockpit upgrade flag is false")
+    if written["cockpit_notification_upgrade_notification_ready"] is not True:
+        errors.append("PT-9 notification upgrade flag is false")
+    if written["cockpit_notification_upgrade_readout_count"] < 5:
+        errors.append("PT-9 Fund Manager readouts are missing")
+    if (
+        written["cockpit_notification_upgrade_required_type_count"]
+        != written["cockpit_notification_upgrade_present_type_count"]
+    ):
+        errors.append("PT-9 notification required types are missing")
+    if (
+        written["cockpit_notification_upgrade_qctrl_hold_visible"] is True
+        and written["cockpit_notification_upgrade_submit_visible_as_held"] is not True
+    ):
+        errors.append("PT-9 Q-CTRL hold is not visible as a submit hold")
+    if written["cockpit_notification_upgrade_unsafe_write_counter_total"] != 0:
+        errors.append("PT-9 unsafe counter is nonzero")
+    if (
+        "paper_ops_unsafe_counter_nonzero:"
+        "cockpit_notification_upgrade_live_send_allowed_count"
+        not in cockpit_notification_errors
+    ):
+        errors.append("PT-9 live-send probe was not rejected")
+    if (
+        "paper_ops_cockpit_notification_upgrade_qctrl_hold_not_visible"
+        not in cockpit_notification_qctrl_errors
+    ):
+        errors.append("PT-9 Q-CTRL hold visibility probe was not rejected")
+    if (
+        "paper_ops_cockpit_notification_upgrade_proof_credit_allowed"
+        not in cockpit_notification_proof_errors
+    ):
+        errors.append("PT-9 proof-credit probe was not rejected")
     if "paper_ops_mode_not_paper" not in mode_errors:
         errors.append("live mode probe was not rejected")
     if "paper_ops_quantum_provider_execution_prerequisite" not in quantum_errors:

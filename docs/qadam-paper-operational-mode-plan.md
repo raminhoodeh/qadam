@@ -133,6 +133,11 @@ Implemented:
   hourly runner to the existing guarded PaperOps-2 submit, PaperOps-3 poll, and
   PaperOps-4 exit paths, but currently holds paper submit because Q-CTRL paper
   consultation product access is not ready.
+- PT-9 exists as the cockpit and notification upgrade layer. It exposes
+  public-safe Fund Manager readouts for PaperOps-5, PaperOps-6, PT-8, and the
+  current Q-CTRL hold, while keeping Telegram live-send, outbox writes, Telegram
+  commands, broker calls, paper-order authority, live capital, and Phase 7 proof
+  credit disabled.
 
 Remaining paper-operational gaps:
 
@@ -164,7 +169,9 @@ Remaining paper-operational gaps:
   to PaperOps-2, PaperOps-3, and PaperOps-4 only after the relevant source
   gates pass and the Q-CTRL paper consultation hold is cleared.
 - Telegram remains notify-only and dry-run. PaperOps-5 exposes the separate
-  send-test gate, but no send-test approval is currently present.
+  send-test gate, but no send-test approval is currently present. PT-9 surfaces
+  that state in cockpit and notification readouts without creating a live-send
+  or command path.
 
 ## New Runtime Gate
 
@@ -520,7 +527,7 @@ Status after implementation:
   `paper_poll_path_available=False` because PaperOps-2 has zero successful
   submitted paper orders.
 - PT-6 is wired into PaperOps-1, PaperOps readiness, PaperOps-6, and cockpit
-  Mission Control. After PT-8, the PaperOps cycle now passes 32/32 commands.
+  Mission Control. After PT-9, the PaperOps cycle now passes 33/33 commands.
 - PT-6 does not edit `.env`, submit orders, call broker POST routes, call live
   endpoints, close or resize positions, force trades, grant Phase 7 proof
   credit, expose credentials, or enable live capital.
@@ -544,7 +551,7 @@ Status after implementation:
 - The poller writes `data/runtime/paperops_paper_lifecycle_poller.json`,
   history, and event-log artifacts, and exposes public-safe status in cockpit
   Mission Control.
-- Current cycle result: 32/32 commands pass; PaperOps-3 reports zero broker
+- Current cycle result: 33/33 commands pass; PaperOps-3 reports zero broker
   GETs, zero broker/Alpaca POSTs, zero live endpoint calls, zero direct Q7
   lifecycle mutations, and zero Phase 7 proof credit.
 - Current next operational unblock: PaperOps remains blocked on Q-CTRL paper
@@ -596,7 +603,7 @@ Status after implementation:
 - The exit path writes `data/runtime/paperops_paper_exit_path.json`, history,
   and event-log artifacts, and exposes public-safe status in cockpit Mission
   Control.
-- Current cycle result: 32/32 commands pass; PaperOps-4 reports zero paper
+- Current cycle result: 33/33 commands pass; PaperOps-4 reports zero paper
   close calls, zero broker/Alpaca POSTs, zero live endpoint calls, zero order
   cancels, zero position resizes, zero direct Q7 lifecycle mutations, and zero
   Phase 7 proof credit.
@@ -615,22 +622,25 @@ Status after implementation:
 - `scripts/check_paperops_notification_review.py` exists.
 - The artifact writes `data/runtime/paperops_notification_review.json`,
   history, and Event Log records.
-- It creates seven public-safe notification review records:
-  PaperOps readiness review, submitted paper order, broker receipt, open
+- It creates ten public-safe notification review records:
+  PaperOps readiness review, 30-day operations, active paper automation,
+  Q-CTRL consultation hold, submitted paper order, broker receipt, open
   position, paper exit path, closed trade, and postmortem due.
 - Six records are paper lifecycle notification types. In the current state,
-  only PaperOps readiness and paper exit-path state have matching backend state;
-  submitted order, broker receipt, open position, closed trade, and postmortem
-  due notifications are suppressed because the current Phase 7 run has no
-  eligible proof paper lifecycle yet.
+  PaperOps readiness, 30-day operations, active automation, Q-CTRL hold, and
+  paper exit-path state have matching backend state; submitted order, broker
+  receipt, open position, closed trade, and postmortem due notifications are
+  suppressed because the current Phase 7 run has no eligible proof paper
+  lifecycle yet.
 - The current status is `review_ready`.
 - Current safety counters are zero for live Telegram send, Telegram command
   path, broker write, broker POST, paper-order authority, position close,
   position resize, live endpoint, live capital, and Phase 7 proof credit.
 - The cockpit exports the PaperOps-5 status in Mission Control.
-- Current cycle result after PT-8: 32/32 commands pass. PaperOps-5 reports
-  seven review records, six lifecycle notification types, zero live-send
-  allowance, zero command-path allowance, and zero broker-write allowance.
+- Current cycle result after PT-9: 33/33 commands pass. PaperOps-5 reports ten
+  review records, six lifecycle notification types, five PT-9 required review
+  types present, zero live-send allowance, zero command-path allowance, and zero
+  broker-write allowance.
 
 ### PaperOps-6 - 30-Day Paper Run Operations
 
@@ -647,8 +657,8 @@ Status after implementation:
   in place and renamed `Qadam PaperOps 30-Day Runner`; it remains `ACTIVE` on
   `FREQ=HOURLY;INTERVAL=1`, bound to `/Users/raminhoodeh/Desktop/qadam`, and
   now runs the PaperOps cycle, PT-8 active automation checker, the guarded PT-8
-  active runner, PaperOps-6 checker, Phase 7 demo run, certification,
-  live-promotion review, and cockpit status checks.
+  active runner, PT-9 cockpit notification checker, PaperOps-6 checker, Phase 7
+  demo run, certification, live-promotion review, and cockpit status checks.
 - PaperOps-6 writes `data/runtime/paperops_30_day_operations.json`,
   `data/runtime/paperops_30_day_operations_history.jsonl`, and
   `data/runtime/paperops_30_day_operations_events.jsonl`.
@@ -658,9 +668,9 @@ Status after implementation:
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.
-- The PaperOps cycle now reports 32/32 commands passing. PaperOps-6 records
+- The PaperOps cycle now reports 33/33 commands passing. PaperOps-6 records
   `paper_operational_cycle_status=paper_cycle_safe_blocked_pending_enablement`,
-  `paper_operational_cycle_command_count=32`, and
+  `paper_operational_cycle_command_count=33`, and
   `paper_operational_cycle_command_failed_count=0`.
 - The cockpit exports PaperOps-6 in Mission Control with
   `paperops_30_day_operations=operations_active`,
@@ -713,3 +723,33 @@ Status after implementation:
 - Live capital, live endpoints, direct broker shortcuts, Q-CTRL direct
   execution, forced trades, secret exposure, and Phase 7 proof credit remain
   disabled.
+
+### PT-9 - Cockpit And Notification Upgrade
+
+Expose the active PaperOps operating state to the Fund Manager through cockpit
+and notification review artifacts without adding any new write, send, command,
+or broker authority.
+
+Status after implementation:
+
+- `orchestrator/paperops_cockpit_notification_upgrade.py` exists.
+- `scripts/check_paperops_cockpit_notification_upgrade.py` exists.
+- The runtime artifact is
+  `data/runtime/paperops_cockpit_notification_upgrade.json`, with history and
+  Event Log artifacts beside it.
+- Current status is `cockpit_notification_upgrade_ready`.
+- `cockpit_ready=True`, `notification_ready=True`, and
+  `fund_manager_readout_count=5`.
+- The cockpit readout covers PaperOps-6 30-day operations, PT-8 active paper
+  automation, PaperOps-5 notification review, Q-CTRL consultation hold state,
+  and paper-submit visibility.
+- PaperOps-5 now exposes ten review records, with five PT-9 required review
+  types present.
+- Q-CTRL hold is visible to the Fund Manager:
+  `qctrl_hold_visible=True` and `submit_visible_as_held=True`.
+- PT-9 is wired into PaperOps readiness, the PaperOps cycle, PaperOps-6, cockpit
+  status, Mission Control, and the hourly PaperOps automation prompt.
+- The PaperOps cycle now reports 33/33 commands passing. PT-9 records zero
+  live-send allowances, zero command-path allowances, zero outbox writes, zero
+  broker writes, zero broker/live calls, zero live capital, and zero Phase 7
+  proof credit.

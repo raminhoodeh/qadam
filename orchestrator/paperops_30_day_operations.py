@@ -30,13 +30,19 @@ PAPEROPS_30_DAY_OPERATIONS_COMPONENT = "paperops_30_day_operations"
 PAPEROPS_30_DAY_AUTOMATION_ID = "qadam-phase-7-demo-proof-runner"
 PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps 30-Day Runner"
 SELF_OBSERVER_CYCLE_FAILURE_LABELS = frozenset(
-    {"paperops_30_day_operations", "paper_ops_readiness"}
+    {
+        "paperops_notification_review",
+        "paperops_cockpit_notification_upgrade",
+        "paperops_30_day_operations",
+        "paper_ops_readiness",
+    }
 )
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     "scripts/check_paper_operational_cycle.py",
     "scripts/check_paperops_active_paper_trading_automation.py",
     "scripts/run_active_paper_trading_automation.py --execute-paper-automation",
+    "scripts/check_paperops_cockpit_notification_upgrade.py",
     "scripts/check_paperops_30_day_operations.py",
     "scripts/check_phase7_demo_proof_run.py",
     "scripts/check_phase7_certification.py",
@@ -135,6 +141,17 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops_active_automation_qctrl_hold",
     "paperops_active_automation_submit_step_allowed",
     "paperops_active_automation_live_endpoint_called_count",
+    "paperops_cockpit_notification_upgrade_status",
+    "paperops_cockpit_notification_upgrade_ready",
+    "paperops_cockpit_notification_notification_ready",
+    "paperops_cockpit_notification_readout_count",
+    "paperops_cockpit_notification_notification_record_count",
+    "paperops_cockpit_notification_qctrl_hold_visible",
+    "paperops_cockpit_notification_submit_visible_as_held",
+    "paperops_cockpit_notification_live_send_allowed_count",
+    "paperops_cockpit_notification_command_path_enabled_count",
+    "paperops_cockpit_notification_broker_write_allowed_count",
+    "paperops_cockpit_notification_unsafe_write_counter_total",
     "live_capital_enabled",
     "live_credentials_loaded",
     "phase7_proof_credit_allowed",
@@ -161,7 +178,8 @@ PAPEROPS_30_DAY_BOUNDARY = (
     "orders outside the guarded PaperOps gates, cannot call live endpoints, "
     "cannot send live Telegram messages, cannot load live credentials, cannot "
     "bypass the Q-CTRL paper consultation hold, cannot grant Phase 7 proof "
-    "credit, and cannot enable live capital."
+    "credit, and cannot enable live capital. PT-9 cockpit and notification "
+    "visibility remains public-safe and review-only."
 )
 
 
@@ -297,6 +315,9 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "active_automation": _read_json(
             runtime / "paperops_active_paper_trading_automation.json"
         ),
+        "cockpit_notification_upgrade": _read_json(
+            runtime / "paperops_cockpit_notification_upgrade.json"
+        ),
         "cockpit": _read_json(runtime / "cockpit-status.json"),
     }
 
@@ -416,6 +437,10 @@ def _blockers(artifact: dict[str, Any]) -> list[str]:
         blockers.append("paperops_cycle_not_safe_to_continue")
     if artifact.get("dashboard_mirror_public_safe") is not True:
         blockers.append("dashboard_mirror_not_public_safe")
+    if artifact.get("paperops_cockpit_notification_upgrade_status") != (
+        "cockpit_notification_upgrade_ready"
+    ):
+        blockers.append("cockpit_notification_upgrade_not_ready")
     if artifact.get("unsafe_write_counter_total") != 0:
         blockers.append("paperops_30_day_unsafe_counter_nonzero")
     return blockers
@@ -443,6 +468,7 @@ def build_paperops_30_day_operations(
     cycle = snapshot["cycle"]
     notification_review = snapshot["notification_review"]
     active_automation = snapshot["active_automation"]
+    cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
     automation = _automation_status(_automation_config(), settings)
     dashboard = _dashboard_mirror_status(snapshot["cockpit"])
     cycle_summary = _cycle_status(cycle)
@@ -459,6 +485,18 @@ def build_paperops_30_day_operations(
     active_automation_live_endpoint_count = _int(
         active_automation.get("live_endpoint_called_count")
     )
+    cockpit_notification_live_send_count = _int(
+        cockpit_notification_upgrade.get("notification_live_send_allowed_count")
+    )
+    cockpit_notification_command_count = _int(
+        cockpit_notification_upgrade.get("notification_command_path_enabled_count")
+    )
+    cockpit_notification_broker_write_count = _int(
+        cockpit_notification_upgrade.get("notification_broker_write_allowed_count")
+    )
+    cockpit_notification_unsafe_count = _int(
+        cockpit_notification_upgrade.get("unsafe_write_counter_total")
+    )
     unsafe_total = sum(
         _int(value)
         for value in (
@@ -469,6 +507,10 @@ def build_paperops_30_day_operations(
             notification_command_count,
             notification_broker_write_count,
             active_automation_live_endpoint_count,
+            cockpit_notification_live_send_count,
+            cockpit_notification_command_count,
+            cockpit_notification_broker_write_count,
+            cockpit_notification_unsafe_count,
             cycle_summary["paper_operational_cycle_unsafe_write_counter_total"],
         )
     )
@@ -550,6 +592,39 @@ def build_paperops_30_day_operations(
         ),
         "paperops_active_automation_live_endpoint_called_count": (
             active_automation_live_endpoint_count
+        ),
+        "paperops_cockpit_notification_upgrade_status": (
+            cockpit_notification_upgrade.get("status", "missing")
+        ),
+        "paperops_cockpit_notification_upgrade_ready": (
+            cockpit_notification_upgrade.get("cockpit_upgrade_ready") is True
+        ),
+        "paperops_cockpit_notification_notification_ready": (
+            cockpit_notification_upgrade.get("notification_upgrade_ready") is True
+        ),
+        "paperops_cockpit_notification_readout_count": _int(
+            cockpit_notification_upgrade.get("fund_manager_readout_count")
+        ),
+        "paperops_cockpit_notification_notification_record_count": _int(
+            cockpit_notification_upgrade.get("notification_record_count")
+        ),
+        "paperops_cockpit_notification_qctrl_hold_visible": (
+            cockpit_notification_upgrade.get("qctrl_hold_visible") is True
+        ),
+        "paperops_cockpit_notification_submit_visible_as_held": (
+            cockpit_notification_upgrade.get("paper_submit_visible_as_held") is True
+        ),
+        "paperops_cockpit_notification_live_send_allowed_count": (
+            cockpit_notification_live_send_count
+        ),
+        "paperops_cockpit_notification_command_path_enabled_count": (
+            cockpit_notification_command_count
+        ),
+        "paperops_cockpit_notification_broker_write_allowed_count": (
+            cockpit_notification_broker_write_count
+        ),
+        "paperops_cockpit_notification_unsafe_write_counter_total": (
+            cockpit_notification_unsafe_count
         ),
         "live_capital_enabled": settings.live_capital_enabled,
         "live_credentials_loaded": _safe_bool(demo_run.get("live_credentials_loaded")),
@@ -682,6 +757,10 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         "paperops_notification_command_path_enabled_count",
         "paperops_notification_broker_write_allowed_count",
         "paperops_active_automation_live_endpoint_called_count",
+        "paperops_cockpit_notification_live_send_allowed_count",
+        "paperops_cockpit_notification_command_path_enabled_count",
+        "paperops_cockpit_notification_broker_write_allowed_count",
+        "paperops_cockpit_notification_unsafe_write_counter_total",
         "paper_operational_cycle_unsafe_write_counter_total",
         "unsafe_write_counter_total",
     ):
@@ -702,6 +781,22 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         and artifact.get("paperops_active_automation_submit_step_allowed") is True
     ):
         errors.append("paperops_30_day_operations_active_automation_qctrl_bypass")
+    if artifact.get("paperops_cockpit_notification_upgrade_status") != (
+        "cockpit_notification_upgrade_ready"
+    ):
+        errors.append("paperops_30_day_operations_cockpit_notification_not_ready")
+    if artifact.get("paperops_cockpit_notification_upgrade_ready") is not True:
+        errors.append("paperops_30_day_operations_cockpit_notification_flag_false")
+    if artifact.get("paperops_cockpit_notification_notification_ready") is not True:
+        errors.append("paperops_30_day_operations_cockpit_notification_review_false")
+    if _int(artifact.get("paperops_cockpit_notification_readout_count")) < 5:
+        errors.append("paperops_30_day_operations_cockpit_notification_readouts_missing")
+    if (
+        artifact.get("paperops_cockpit_notification_qctrl_hold_visible") is True
+        and artifact.get("paperops_cockpit_notification_submit_visible_as_held")
+        is not True
+    ):
+        errors.append("paperops_30_day_operations_cockpit_notification_qctrl_not_visible")
     if (
         artifact.get("recorded") is True
         and artifact.get("event_log_required") is True

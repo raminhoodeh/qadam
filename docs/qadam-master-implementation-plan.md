@@ -1202,10 +1202,11 @@ Current PaperOps status:
   paper position close.
 - PaperOps-5 notification and review is implemented in
   `orchestrator/paperops_notification_review.py` and
-  `scripts/check_paperops_notification_review.py`. It renders seven
-  public-safe review records for PaperOps readiness, submitted paper orders,
-  broker receipts, open positions, paper exit-path state, closed trades, and
-  postmortem due markers. Telegram remains notify-only, dry-run by default, and
+  `scripts/check_paperops_notification_review.py`. It renders ten public-safe
+  review records for PaperOps readiness, 30-day operations, active paper
+  automation, Q-CTRL consultation hold, submitted paper orders, broker receipts,
+  open positions, paper exit-path state, closed trades, and postmortem due
+  markers. Telegram remains notify-only, dry-run by default, and
   command-disabled; live-send requires a separate send-test approval and is not
   used by the default PaperOps cycle.
 - PaperOps-6 30-day paper run operations is implemented in
@@ -1225,13 +1226,23 @@ Current PaperOps status:
   status is `active_automation_enabled_qctrl_hold`, with
   `paper_submit_step_allowed=False` because Q-CTRL paper consultation product
   access is not ready.
+- PT-9 cockpit and notification upgrade is implemented in
+  `orchestrator/paperops_cockpit_notification_upgrade.py` and
+  `scripts/check_paperops_cockpit_notification_upgrade.py`. It exposes
+  public-safe Fund Manager readouts for 30-day operations, active automation,
+  notification review, Q-CTRL hold visibility, and paper-submit hold visibility
+  in cockpit and Mission Control. It records
+  `cockpit_notification_upgrade_ready`, five Fund Manager readouts, ten
+  notification review records, zero Telegram live sends, zero Telegram command
+  paths, zero outbox writes, zero broker writes, zero broker/live calls, zero
+  live capital, and zero Phase 7 proof credit.
 - External trading strategy notes are now integrated as decision context through
   `orchestrator/strategy_research_intake.py`, Strategy Lead shadow review, the
   Phase 4 candidate strategy universe, and PaperOps readiness. This gives Qadam
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
 - Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  32/32 commands passing: paper mode is safe to continue, PT-0 approval is
+  33/33 commands passing: paper mode is safe to continue, PT-0 approval is
   logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
   global PaperOps runtime mode effective, PT-3 finds one production-qualified
   setup candidate ready for guarded paper handoff, PT-4 auto-approves and
@@ -1244,7 +1255,8 @@ Current PaperOps status:
   `ready_pending_explicit_execute`, PaperOps-3 reports
   `ready_no_submitted_paper_orders`, PaperOps-4 reports
   `ready_no_exit_candidate`, PaperOps-5 reports `review_ready`, PaperOps-6
-  reports `operations_active`, and the remaining blocker is Q-CTRL
+  reports `operations_active`, PT-9 reports
+  `cockpit_notification_upgrade_ready`, and the remaining blocker is Q-CTRL
   paper-consultation product access required for full paper-reality parity.
 - The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
   day `2`, with completed calendar days `1`, calendar days remaining `29`,
@@ -1256,9 +1268,10 @@ Current PaperOps status:
   into Q7 source artifacts.
 - The existing hourly automation is now `Qadam PaperOps 30-Day Runner`, remains
   `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PT-8
-  active automation check, guarded PT-8 active runner, PaperOps-6 operations
-  check, Phase 7 demo-run check, Phase 7 certification check, live-promotion
-  review, and cockpit status export.
+  active automation check, guarded PT-8 active runner, PT-9 cockpit
+  notification check, PaperOps-6 operations check, Phase 7 demo-run check,
+  Phase 7 certification check, live-promotion review, and cockpit status
+  export.
 - The next operational step is to keep the PaperOps runner active through the
   actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
   where Q7-qualified setups exist, resolve PaperOps-Q product access, then let

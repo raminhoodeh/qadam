@@ -34,6 +34,9 @@ from orchestrator.paperops_guarded_paper_exit_enablement import (
 from orchestrator.paperops_active_paper_trading_automation import (
     validate_paperops_active_paper_trading_automation,
 )
+from orchestrator.paperops_cockpit_notification_upgrade import (
+    validate_paperops_cockpit_notification_upgrade,
+)
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -119,6 +122,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     (
         "active_paper_trading_automation_connected",
         "PT-8 must bind the hourly runner to the guarded active paper-trading controller.",
+    ),
+    (
+        "cockpit_notification_upgrade_connected",
+        "PT-9 must expose active PaperOps state through public-safe cockpit and review-only notifications.",
     ),
     ("telegram_notify_only_connected", "Telegram may notify members but cannot approve or place trades."),
     ("learning_loop_review_only", "Learning/postmortems may review outcomes without mutating policy silently."),
@@ -222,6 +229,9 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "active_paper_trading_automation": _read_json(
             runtime / "paperops_active_paper_trading_automation.json"
         ),
+        "cockpit_notification_upgrade": _read_json(
+            runtime / "paperops_cockpit_notification_upgrade.json"
+        ),
         "lifecycle": _read_json(runtime / "phase7_proof_lifecycle_monitor.json"),
         "telegram": _read_json(runtime / "phase5_telegram_notifier.json"),
         "learning": _read_json(runtime / "phase6_certification.json"),
@@ -259,6 +269,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     notification_review = snapshot["notification_review"]
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
     active_paper_trading_automation = snapshot["active_paper_trading_automation"]
+    cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
     lifecycle = snapshot["lifecycle"]
     telegram = snapshot["telegram"]
     learning = snapshot["learning"]
@@ -667,6 +678,48 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             active_paper_trading_automation
         )
     )
+    cockpit_notification_upgrade_ready = (
+        cockpit_notification_upgrade.get("status")
+        == "cockpit_notification_upgrade_ready"
+        and cockpit_notification_upgrade.get("recorded") is True
+        and cockpit_notification_upgrade.get("event_log_written") is True
+        and _int(cockpit_notification_upgrade.get("event_log_event_count")) == 1
+        and cockpit_notification_upgrade.get("cockpit_upgrade_ready") is True
+        and cockpit_notification_upgrade.get("notification_upgrade_ready") is True
+        and cockpit_notification_upgrade.get("public_safe") is True
+        and _int(cockpit_notification_upgrade.get("fund_manager_readout_count")) >= 5
+        and cockpit_notification_upgrade.get("paperops_30_day_operations_status")
+        == "operations_active"
+        and cockpit_notification_upgrade.get(
+            "paperops_30_day_operations_dashboard_public_safe"
+        )
+        is True
+        and cockpit_notification_upgrade.get("active_paper_automation_enabled") is True
+        and not (
+            cockpit_notification_upgrade.get("active_paper_automation_qctrl_hold")
+            is True
+            and cockpit_notification_upgrade.get(
+                "active_paper_automation_submit_step_allowed"
+            )
+            is True
+        )
+        and _int(cockpit_notification_upgrade.get("notification_live_send_allowed_count"))
+        == 0
+        and _int(
+            cockpit_notification_upgrade.get("notification_command_path_enabled_count")
+        )
+        == 0
+        and _int(
+            cockpit_notification_upgrade.get("notification_broker_write_allowed_count")
+        )
+        == 0
+        and _int(cockpit_notification_upgrade.get("unsafe_write_counter_total")) == 0
+        and cockpit_notification_upgrade.get("live_capital_enabled") is False
+        and cockpit_notification_upgrade.get("phase7_proof_credit_allowed") is False
+        and not validate_paperops_cockpit_notification_upgrade(
+            cockpit_notification_upgrade
+        )
+    )
 
     return [
         {
@@ -952,6 +1005,18 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "required_for_full_paper_ops": True,
         },
         {
+            "key": "cockpit_notification_upgrade_connected",
+            "ready": cockpit_notification_upgrade_ready,
+            "status": str(cockpit_notification_upgrade.get("status") or "missing"),
+            "detail": (
+                f"readouts={_int(cockpit_notification_upgrade.get('fund_manager_readout_count'))}; "
+                f"notifications={_int(cockpit_notification_upgrade.get('notification_record_count'))}; "
+                f"qctrl_hold={cockpit_notification_upgrade.get('qctrl_hold_visible')}; "
+                f"unsafe={_int(cockpit_notification_upgrade.get('unsafe_write_counter_total'))}"
+            ),
+            "required_for_full_paper_ops": True,
+        },
+        {
             "key": "telegram_notify_only_connected",
             "ready": telegram.get("command_path_enabled_count", 0) == 0,
             "status": str(telegram.get("mode") or telegram.get("status") or "missing"),
@@ -1009,6 +1074,8 @@ def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
         return "Run PaperOps-6 30-day paper operations scheduler binding"
     if "active_paper_trading_automation_connected_not_ready" in blockers:
         return "Run PT-8 active paper-trading automation binding"
+    if "cockpit_notification_upgrade_connected_not_ready" in blockers:
+        return "Run PT-9 cockpit and notification upgrade"
     if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
         return "Run PT-4 auto-approval and staged paper-order handoff"
     if "paper_lifecycle_polling_runtime_enablement_connected_not_ready" in blockers:
@@ -1052,6 +1119,7 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
     notification_review = snapshot["notification_review"]
     paperops_30_day_operations = snapshot["paperops_30_day_operations"]
     active_paper_trading_automation = snapshot["active_paper_trading_automation"]
+    cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
     strategy_research = snapshot["strategy_research"]
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
@@ -1867,6 +1935,58 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "active_paper_trading_automation_unsafe_write_counter_total": _int(
             active_paper_trading_automation.get("unsafe_write_counter_total")
         ),
+        "cockpit_notification_upgrade_status": cockpit_notification_upgrade.get(
+            "status",
+            "missing",
+        ),
+        "cockpit_notification_upgrade_ready": (
+            cockpit_notification_upgrade.get("cockpit_upgrade_ready") is True
+        ),
+        "cockpit_notification_upgrade_notification_ready": (
+            cockpit_notification_upgrade.get("notification_upgrade_ready") is True
+        ),
+        "cockpit_notification_upgrade_readout_count": _int(
+            cockpit_notification_upgrade.get("fund_manager_readout_count")
+        ),
+        "cockpit_notification_upgrade_notification_record_count": _int(
+            cockpit_notification_upgrade.get("notification_record_count")
+        ),
+        "cockpit_notification_upgrade_required_type_count": _int(
+            cockpit_notification_upgrade.get("notification_required_type_count")
+        ),
+        "cockpit_notification_upgrade_present_type_count": _int(
+            cockpit_notification_upgrade.get("notification_required_types_present_count")
+        ),
+        "cockpit_notification_upgrade_qctrl_hold_visible": (
+            cockpit_notification_upgrade.get("qctrl_hold_visible") is True
+        ),
+        "cockpit_notification_upgrade_submit_visible_as_held": (
+            cockpit_notification_upgrade.get("paper_submit_visible_as_held") is True
+        ),
+        "cockpit_notification_upgrade_live_send_allowed_count": _int(
+            cockpit_notification_upgrade.get("notification_live_send_allowed_count")
+        ),
+        "cockpit_notification_upgrade_command_path_enabled_count": _int(
+            cockpit_notification_upgrade.get("notification_command_path_enabled_count")
+        ),
+        "cockpit_notification_upgrade_broker_write_allowed_count": _int(
+            cockpit_notification_upgrade.get("notification_broker_write_allowed_count")
+        ),
+        "cockpit_notification_upgrade_paper_order_allowed_count": _int(
+            cockpit_notification_upgrade.get("notification_paper_order_allowed_count")
+        ),
+        "cockpit_notification_upgrade_live_endpoint_called_count": _int(
+            cockpit_notification_upgrade.get("live_endpoint_called_count")
+        ),
+        "cockpit_notification_upgrade_outbox_message_written_count": _int(
+            cockpit_notification_upgrade.get("outbox_message_written_count")
+        ),
+        "cockpit_notification_upgrade_unsafe_write_counter_total": _int(
+            cockpit_notification_upgrade.get("unsafe_write_counter_total")
+        ),
+        "cockpit_notification_upgrade_phase7_proof_credit_allowed": (
+            cockpit_notification_upgrade.get("phase7_proof_credit_allowed") is True
+        ),
         "prediction_market_write_allowed_count": _int(
             submit.get("prediction_market_write_allowed_count")
         ),
@@ -1963,6 +2083,13 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_exit_runtime_enablement_unsafe_write_counter_total",
         "active_paper_trading_automation_live_endpoint_called_count",
         "active_paper_trading_automation_unsafe_write_counter_total",
+        "cockpit_notification_upgrade_live_send_allowed_count",
+        "cockpit_notification_upgrade_command_path_enabled_count",
+        "cockpit_notification_upgrade_broker_write_allowed_count",
+        "cockpit_notification_upgrade_paper_order_allowed_count",
+        "cockpit_notification_upgrade_live_endpoint_called_count",
+        "cockpit_notification_upgrade_outbox_message_written_count",
+        "cockpit_notification_upgrade_unsafe_write_counter_total",
     ):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paper_ops_unsafe_counter_nonzero:{key}")
@@ -2257,6 +2384,28 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         and artifact.get("active_paper_trading_automation_submit_step_allowed") is True
     ):
         errors.append("paper_ops_active_paper_automation_qctrl_bypass")
+    if artifact.get("cockpit_notification_upgrade_status") != (
+        "cockpit_notification_upgrade_ready"
+    ):
+        errors.append("paper_ops_cockpit_notification_upgrade_not_ready")
+    if artifact.get("cockpit_notification_upgrade_ready") is not True:
+        errors.append("paper_ops_cockpit_notification_upgrade_flag_false")
+    if artifact.get("cockpit_notification_upgrade_notification_ready") is not True:
+        errors.append("paper_ops_cockpit_notification_upgrade_notification_false")
+    if _int(artifact.get("cockpit_notification_upgrade_readout_count")) < 5:
+        errors.append("paper_ops_cockpit_notification_upgrade_readouts_missing")
+    if artifact.get("cockpit_notification_upgrade_required_type_count") != artifact.get(
+        "cockpit_notification_upgrade_present_type_count"
+    ):
+        errors.append("paper_ops_cockpit_notification_upgrade_required_types_missing")
+    if (
+        artifact.get("cockpit_notification_upgrade_qctrl_hold_visible") is True
+        and artifact.get("cockpit_notification_upgrade_submit_visible_as_held")
+        is not True
+    ):
+        errors.append("paper_ops_cockpit_notification_upgrade_qctrl_hold_not_visible")
+    if artifact.get("cockpit_notification_upgrade_phase7_proof_credit_allowed") is not False:
+        errors.append("paper_ops_cockpit_notification_upgrade_proof_credit_allowed")
     if artifact.get("quantum_provider_required_as_execution_prerequisite") is not False:
         errors.append("paper_ops_quantum_provider_execution_prerequisite")
     if artifact.get("qctrl_execution_allowed") is not False:
