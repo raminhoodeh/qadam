@@ -79,6 +79,10 @@ function buildModels(snapshot = status) {
 async function main() {
     includesAll(dashboardHtml, [
         "data-overview-first-screen",
+        "data-overview-command-surface",
+        "data-overview-review-card",
+        "data-overview-proof-flow",
+        "data-overview-system-summary",
         "data-overview-status-rail",
         "data-overview-hero",
         "data-overview-metrics",
@@ -92,8 +96,12 @@ async function main() {
 
     includesAll(css, [
         ".overview-first-screen",
+        ".overview-command-surface",
+        ".overview-review-card",
+        ".overview-proof-flow",
+        ".overview-system-summary",
         ".overview-status-rail",
-        ".overview-snapshot-grid",
+        ".overview-readout-list",
         ".overview-lifecycle-strip",
         ".overview-mini-map",
         ".overview-boundary-rail",
@@ -104,16 +112,19 @@ async function main() {
     includesAll(renderer, [
         "function renderOverviewFirstScreen",
         "overview.demo_proof",
+        "overview.status_chips",
+        "overview.review_focus",
         "overview.next_review_links",
         "OVERVIEW_NODE_LABELS",
         "Fund Manager oversight",
-        "Single safety strip owns dashboard authority state",
         "Use the single safety strip for authority state"
     ], "Overview renderer");
 
     const models = buildModels();
     const overview = models.overview_model;
     assert(overview.id === "overview", "Overview model id mismatch");
+    assert(overview.readouts.length === 4, "Overview should expose four primary readouts after D11E");
+    assert(overview.status_chips.length === 6, "Overview should expose six compact status chips after D11E");
     assert(overview.demo_proof.required_calendar_day_count === 30, "Overview must expose 30-day demo window");
     assert(overview.demo_proof.weekly_proof_trade_target === 3, "Overview must expose 3 proof trades per week target");
     assert(typeof overview.demo_proof.eligible_setup_count === "number", "Overview must expose eligible setup count");
@@ -130,16 +141,20 @@ async function main() {
     );
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-overview-status-rail]", "Paper/demo only");
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "Live capital off");
     assertIncludes(rendered, "[data-overview-status-rail]", "Day 0/30");
     assertIncludes(rendered, "[data-overview-status-rail]", "Week 0/5");
-    assertIncludes(rendered, "[data-overview-status-rail]", "eligible setups");
-    assertIncludes(rendered, "[data-overview-hero]", "What should I know first?");
+    assertIncludes(rendered, "[data-overview-status-rail]", "Eligible setups");
+    assertIncludes(rendered, "[data-overview-hero]", "Fund Manager read");
+    assertIncludes(rendered, "[data-overview-hero]", "Use the single safety strip");
+    assertIncludes(rendered, "[data-overview-review-card]", "Needs review");
+    assertIncludes(rendered, "[data-overview-metrics]", "Source health");
+    assertIncludes(rendered, "[data-overview-metrics]", "Trade path");
+    assertIncludes(rendered, "[data-overview-metrics]", "Proof run");
     assertIncludes(rendered, "[data-overview-lifecycle]", "Observed signals");
     assertIncludes(rendered, "[data-overview-lifecycle]", "Postmortems due");
-    assertIncludes(rendered, "[data-overview-oversight]", "One supervising Fund Manager oversees Qadam");
-    assertIncludes(rendered, "[data-overview-oversight]", "Python keeps the book");
+    assertIncludes(rendered, "[data-overview-oversight]", "You supervise the fund team");
+    assertIncludes(rendered, "[data-overview-oversight]", "Python COO");
     assertIncludes(rendered, "[data-overview-mini-map]", "Python script");
     assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
@@ -153,6 +168,7 @@ async function main() {
         html(rendered, "[data-overview-status-rail]"),
         html(rendered, "[data-overview-hero]"),
         html(rendered, "[data-overview-metrics]"),
+        html(rendered, "[data-overview-review-card]"),
         html(rendered, "[data-overview-lifecycle]"),
         html(rendered, "[data-overview-oversight]"),
         html(rendered, "[data-overview-mini-map]"),

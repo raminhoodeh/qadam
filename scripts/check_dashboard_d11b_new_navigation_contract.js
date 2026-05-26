@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-d11b-nav-contract",
-    "/dashboard.js?v=20260526-d11b-nav-contract"
+    "/auth.css?v=20260526-d11e-overview-rebuild",
+    "/dashboard.js?v=20260526-d11e-overview-rebuild"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [

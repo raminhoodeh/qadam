@@ -57,7 +57,7 @@ Detail views should answer:
 
 | View | User Question | Primary User |
 | --- | --- | --- |
-| Overview | What should I know first? | Founding Fund Manager |
+| Overview | What is happening now? | Founding Fund Manager |
 | Trades | What happened to setups, candidates, orders, positions, exits, and postmortems? | Fund Manager / operator |
 | Sources | Are Qadam's inputs fresh, trustworthy, and sufficient? | Fund Manager / operator |
 | Reasoning | Why does Qadam care, and what is still missing? | Fund Manager |
@@ -89,19 +89,20 @@ Detail views should answer:
 
 ### 4.1 Default Overview
 
-The Overview is the new first screen and should be short.
+The Overview is the new first screen and should be short. After D11E it is a
+Fund Manager brief, not a card wall.
 
-Required cards:
+Required readouts:
 
-| Card | Plain-Language Question | Data Source |
+| Readout | Plain-Language Question | Data Source |
 | --- | --- | --- |
-| Mode | Are we paper/demo-only and read-only? | `mode`, `capital`, `forbidden_actions` |
-| Demo Proof | What day/week of the 30-day proof run is this? | Phase 7 cockpit visibility |
-| Setups | Did qualified setups exist today/this week? | Phase 7 qualified setup ledger |
-| Trades | Are there candidates, staged orders, submitted orders, positions, exits, or postmortems? | `trade_layer`, Phase 7 lifecycle |
-| Sources | Are enough sources online and fresh? | `watching`, source registry |
-| Safety | Is anything blocked, degraded, stale, or halted? | `forbidden_actions`, risk/drawdown/kill-switch state |
-| Action Needed | What should a Fund Manager review next? | Derived read-only summary from status fields |
+| Source health | Are enough sources online and fresh? | `watching`, source registry |
+| Trade path | Are there setups, candidates, submitted paper orders, positions, exits, or postmortems? | `trade_layer`, Phase 7 lifecycle |
+| Proof run | What day/week of the 30-day proof run is this, and how many proof trades are closed? | Phase 7 cockpit visibility |
+| Needs review | What should a Fund Manager review next? | Derived read-only summary from status fields |
+
+Mode, live-capital, broker-path, LLM-path, and proof-credit authority are owned
+by the D11D single safety strip and should not be repeated as Overview cards.
 
 The Overview should include one compact timeline:
 
@@ -117,8 +118,8 @@ Live feeds -> COO -> Research Analyst -> Strategy Lead -> Head of Quant
 ```
 
 The Fund Manager should appear above the flow as overseer/reviewer, not as an
-execution node. The safety boundary should appear under the flow as a constant
-read-only/paper-mode rail.
+execution node. The safety boundary should appear once in the D11D single
+safety strip; Overview can reference it but must not render a duplicate rail.
 
 Only completed or active states should be visually emphasized.
 
@@ -1161,7 +1162,37 @@ Outcome:
 
 Next stage:
 
-- D11E - Reduce Panel Count And Merge Duplicate Surfaces.
+- D11E - Rebuild Overview.
+
+### D11E - Rebuild Overview
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11e-rebuild-overview-2026-05-26.md`
+- `scripts/check_dashboard_d11e_rebuild_overview.js`
+
+Outcome:
+
+- The Overview now opens as a short Fund Manager brief rather than a repeated
+  status-card wall.
+- Mode, live-capital, broker path, LLM path, and proof-credit authority copy
+  remain in the D11D single safety strip, not in Overview.
+- The Overview is now four readouts only: source health, trade path, proof run,
+  and needs-review.
+- The proof window and trade lifecycle are grouped into one compact proof/status
+  strip plus one lifecycle strip.
+- The compact system map remains in Overview, but is grouped as one system
+  summary instead of several disconnected panels.
+- The four next-review handoffs remain Trades, Evidence, Reasoning, and
+  Operations.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11F - Merge Duplicate Detail Panels.
 
 ## 8. Implementation Order
 

@@ -17,7 +17,7 @@
       "order": 1,
       "label": "Overview",
       "short_description": "The first-read operating summary for a founding Fund Manager.",
-      "entry_question": "What should I know first?",
+      "entry_question": "What is happening now?",
       "default": true,
       "url_hash": "#overview"
     },

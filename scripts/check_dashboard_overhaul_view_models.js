@@ -84,7 +84,10 @@ function assertModelShape(models) {
     assert(models.schema_version === "dashboard_view_models.v1", "wrong dashboard view-model schema version");
     assert(models.public_safe === true, "view models must be public safe");
     assert(models.authority_boundary.includes("read-only projections"), "view-model authority boundary missing");
-    assert(models.overview_model.cards.length >= 6, "Overview model should expose first-screen cards");
+    assert(models.overview_model.cards.length <= 4, "Overview model should expose a compact first-screen readout set");
+    assert(models.overview_model.readouts.length === 4, "Overview model should expose exactly four readouts");
+    assert(models.overview_model.status_chips.length === 6, "Overview model should expose six compact status chips");
+    assert(models.overview_model.review_focus.state, "Overview model should expose review focus");
     assert(models.trades_model.lifecycle.length >= 8, "Trades model should expose lifecycle states");
     assert(models.system_connectivity_model.id === "system_connectivity_model", "connectivity model id mismatch");
     assert(models.system_connectivity_model.nodes.length > 0, "connectivity model has no nodes");
@@ -117,9 +120,9 @@ function assertPublicSafe(models) {
 }
 
 function assertPlainOverview(models) {
-    const primaryText = models.overview_model.cards
+    const primaryText = models.overview_model.readouts
         .map((card) => `${card.label} ${card.state} ${card.summary}`)
-        .join(" ");
+        .join(" ") + ` ${models.overview_model.summary} ${models.overview_model.scope_note}`;
     [
         "D0",
         "D1",
@@ -146,6 +149,10 @@ function assertPlainOverview(models) {
     assert(
         models.safety_strip_model.boundary.includes("cannot approve"),
         "single safety strip boundary missing"
+    );
+    assert(
+        !models.overview_model.summary.toLowerCase().includes("live capital"),
+        "Overview summary must not duplicate live-capital safety copy"
     );
 }
 

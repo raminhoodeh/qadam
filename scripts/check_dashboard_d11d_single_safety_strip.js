@@ -124,7 +124,7 @@ includesAll(contract, [
 
 includesAll(plan, [
     "D11D - Single Safety Strip",
-    "D11E - Reduce Panel Count And Merge Duplicate Surfaces"
+    "D11E - Rebuild Overview"
 ], "master plan D11D status");
 
 const window = loadRendererWindow();
