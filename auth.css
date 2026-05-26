@@ -2747,6 +2747,111 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     margin-top: 2px;
 }
 
+.reasoning-consolidated-readout,
+.reasoning-review-group {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.reasoning-consolidated-readout {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    padding: 14px;
+}
+
+.reasoning-consolidated-readout.online {
+    border-color: rgba(var(--green-rgb), 0.3);
+    box-shadow: var(--glow-green);
+}
+
+.reasoning-consolidated-readout.pending,
+.reasoning-consolidated-readout.neutral {
+    border-color: rgba(var(--amber-rgb), 0.3);
+    box-shadow: var(--glow-amber);
+}
+
+.reasoning-consolidated-readout.blocked {
+    border-color: rgba(var(--coral-rgb), 0.34);
+    box-shadow: var(--glow-coral);
+}
+
+.reasoning-consolidated-readout h3 {
+    font-size: 18px;
+    line-height: 1.22;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.reasoning-consolidated-readout p {
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.reasoning-consolidated-metrics,
+.reasoning-review-groups {
+    display: grid;
+    gap: 10px;
+}
+
+.reasoning-consolidated-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reasoning-review-group {
+    overflow: clip;
+}
+
+.reasoning-review-group summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 0.36fr) minmax(0, 0.54fr) auto;
+    list-style: none;
+    min-height: 48px;
+    padding: 12px 14px;
+}
+
+.reasoning-review-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.reasoning-review-group summary strong {
+    color: var(--text);
+    line-height: 1.25;
+}
+
+.reasoning-review-group summary span,
+.reasoning-review-group summary em {
+    color: var(--muted);
+    font-size: 12px;
+    font-style: normal;
+    line-height: 1.35;
+}
+
+.reasoning-review-group summary::after {
+    color: var(--cyan);
+    content: "+";
+    font-family: var(--font-mono);
+}
+
+.reasoning-review-group[open] summary::after {
+    content: "-";
+}
+
+.reasoning-review-group-body {
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+}
+
+.reasoning-advanced-diagnostics {
+    margin-top: 14px;
+}
+
 .reasoning-summary-strip {
     margin-top: 0;
 }
@@ -4002,6 +4107,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .governance-record-grid,
 .trade-consolidated-metrics,
 .evidence-consolidated-metrics,
+.reasoning-consolidated-metrics,
 .trade-proof-partitions,
 .trade-evidence-links {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
@@ -4702,6 +4808,9 @@ summary {
     .evidence-consolidated-metrics,
     .evidence-review-group summary,
     .evidence-source-ledger > summary,
+    .reasoning-consolidated-readout,
+    .reasoning-consolidated-metrics,
+    .reasoning-review-group summary,
     .trade-proof-partitions,
     .trade-evidence-links,
     .sources-workspace-head,

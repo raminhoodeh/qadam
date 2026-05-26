@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam System Map</title>
     <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-d11g-evidence-view">
+    <link rel="stylesheet" href="/auth.css?v=20260526-d11h-reasoning-view">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -634,7 +634,7 @@
                     <div class="panel-heading">
                         <div>
                             <p class="label">Reasoning</p>
-                            <h2>Priors, evidence, hypotheses, and blockers</h2>
+                            <h2>Reasoning readout and review chain</h2>
                         </div>
                         <div class="info-hover">
                             <button class="info-button" type="button" aria-label="About Reasoning">i</button>
@@ -665,6 +665,18 @@
                                     <p>The browser cannot create candidates, stage paper orders, write brokers, or enable live capital.</p>
                                 </div>
                             </div>
+                            <section class="reasoning-consolidated-readout pending" data-reasoning-consolidated-readout>
+                                <div>
+                                    <p class="label">Reasoning readout</p>
+                                    <h3>Loading reasoning state</h3>
+                                    <p>The live snapshot will separate priors, factual evidence, hypotheses, blockers, and review-chain annotations.</p>
+                                </div>
+                                <div class="reasoning-consolidated-metrics">
+                                    <div class="metric"><span>Hypotheses</span><strong>0</strong></div>
+                                    <div class="metric"><span>Evidence packets</span><strong>0</strong></div>
+                                    <div class="metric"><span>Executable</span><strong>0</strong></div>
+                                </div>
+                            </section>
                             <div class="reasoning-lane-grid">
                                 <article class="reasoning-lane-card pending">
                                     <b class="node-status pending">Prior only</b>
@@ -682,33 +694,25 @@
                                     <p>Missing corroboration is a normal hold condition before trade state.</p>
                                 </article>
                             </div>
-                        </section>
-                        <section class="panel-brief pending" data-panel-brief="cognition">
-                            <div class="panel-brief-main">
-                                <p class="label">Panel readout</p>
-                                <h3>What is Qadam thinking about, and what is still missing?</h3>
-                                <p>Static fallback explains the research path before live hypotheses, model activity, evidence packets, and safety-stop reasons load.</p>
+                            <div class="reasoning-review-groups" data-reasoning-review-groups>
+                                <details class="reasoning-review-group" open data-reasoning-review-group="prior_evidence_basis">
+                                    <summary><strong>Prior and evidence basis</strong><span>Loading private-prior and factual-evidence separation.</span><em>0 records</em></summary>
+                                </details>
+                                <details class="reasoning-review-group" data-reasoning-review-group="hypotheses_blockers">
+                                    <summary><strong>Hypotheses and blockers</strong><span>Loading hypothesis queue and missing corroboration.</span><em>0 records</em></summary>
+                                </details>
+                                <details class="reasoning-review-group" data-reasoning-review-group="review_chain">
+                                    <summary><strong>Review chain and quant annotation</strong><span>Loading Research Analyst, Strategy Lead, Signal Integrity, and Head of Quant annotations.</span><em>0 records</em></summary>
+                                </details>
                             </div>
-                            <dl class="panel-brief-facts">
-                                <div><dt>State</dt><dd><span class="inline-badge pending">Waiting for snapshot</span></dd></div>
-                                <div><dt>Watch</dt><dd>Model-only reasoning, stale evidence, low corroboration, and anything that claims execution permission.</dd></div>
-                                <div><dt>Boundary</dt><dd>Research notebook only. A hypothesis is not a trade and cannot bypass risk.</dd></div>
-                            </dl>
                         </section>
-                        <article class="cognition-card">
-                            <div class="cognition-card-head">
-                                <b class="node-status pending">Static</b>
-                                <p class="label">Foundation cognition</p>
-                            </div>
-                            <h3>No live reasoning shown in D0</h3>
-                            <p>The static cockpit can explain the reasoning path, but actual hypotheses require the local status snapshot and shadow-intelligence queue.</p>
-                            <dl class="cognition-facts">
-                                <div>
-                                    <dt>Boundary</dt>
-                                    <dd>Hypotheses are not trades. The Research Analyst and Strategy Lead have no execution authority.</dd>
-                                </div>
-                            </dl>
-                        </article>
+                        <details class="reasoning-review-group reasoning-advanced-diagnostics" data-reasoning-review-group="advanced_diagnostics">
+                            <summary>
+                                <strong>Advanced cognition diagnostics</strong>
+                                <span>Static fallback for model activity, local research, strategy handoff, and signal integrity detail.</span>
+                                <em>0 records</em>
+                            </summary>
+                        </details>
                     </div>
                 </article>
 
@@ -1156,7 +1160,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-d11g-evidence-view"></script>
+    <script src="/dashboard.js?v=20260526-d11h-reasoning-view"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

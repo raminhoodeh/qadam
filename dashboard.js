@@ -1572,6 +1572,29 @@ function buildReasoningModel(status = {}) {
             boundary: quantAnnotation.boundary
         }
     ];
+    const reviewGroups = [
+        {
+            id: "prior_evidence_basis",
+            label: "Prior and evidence basis",
+            summary: "Private priors, factual evidence packets, and the reason each must stay separate.",
+            record_count: worldviewLenses.length + evidenceIndex.length,
+            tone: evidenceIndex.length ? "online" : "pending"
+        },
+        {
+            id: "hypotheses_blockers",
+            label: "Hypotheses and blockers",
+            summary: "Current hypotheses, why they stalled, and missing corroboration that holds them.",
+            record_count: hypothesisQueue.length + missingCorroboration.length,
+            tone: missingCorroboration.length ? "blocked" : "pending"
+        },
+        {
+            id: "review_chain",
+            label: "Review chain and quant annotation",
+            summary: "Research Analyst, Strategy Lead, Signal Integrity, and Head of Quant annotations.",
+            record_count: reviewChain.length + 1,
+            tone: reviewChain.some((review) => /blocked|hold|pending/i.test(review.status)) ? "pending" : "online"
+        }
+    ];
     return {
         id: "reasoning",
         label: "Reasoning",
@@ -1588,6 +1611,7 @@ function buildReasoningModel(status = {}) {
             executable_hypotheses: executableHypotheses.length
         },
         lanes: laneRecords,
+        reasoning_review_groups: reviewGroups,
         worldview_prior: {
             status: dashboardText(philosophy.status, "not_exported"),
             role: dashboardText(philosophy.role, "private_worldview_prior"),
@@ -5427,6 +5451,19 @@ function renderQuantAnnotationCard(annotation) {
     `;
 }
 
+function renderReasoningReviewGroup(group, bodyHtml, open = false) {
+    return `
+        <details class="reasoning-review-group" ${open ? "open" : ""} data-reasoning-review-group="${literalHtmlText(group.id)}">
+            <summary>
+                <strong>${htmlText(group.label)}</strong>
+                <span>${htmlText(group.summary)}</span>
+                <em>${htmlText(group.record_count)} records</em>
+            </summary>
+            <div class="reasoning-review-group-body">${bodyHtml}</div>
+        </details>
+    `;
+}
+
 function renderReasoningWorkspace(model) {
     const lanesHtml = asArray(model.lanes).map(renderReasoningLaneCard).join("");
     const hypothesesHtml = asArray(model.hypothesis_queue).length
@@ -5439,6 +5476,10 @@ function renderReasoningWorkspace(model) {
         ? asArray(model.missing_corroboration).map(renderMissingCorroborationCard).join("")
         : `<article class="reasoning-missing-card online"><h3>No missing corroboration exported</h3><p>No missing corroboration blocker is visible in this snapshot.</p></article>`;
     const reviewHtml = asArray(model.review_chain).map(renderReasoningReviewCard).join("");
+    const groups = new Map(asArray(model.reasoning_review_groups).map((group) => [group.id, group]));
+    const priorEvidenceGroup = groups.get("prior_evidence_basis") || { id: "prior_evidence_basis", label: "Prior and evidence basis", summary: "", record_count: 0 };
+    const hypothesesGroup = groups.get("hypotheses_blockers") || { id: "hypotheses_blockers", label: "Hypotheses and blockers", summary: "", record_count: 0 };
+    const reviewGroup = groups.get("review_chain") || { id: "review_chain", label: "Review chain and quant annotation", summary: "", record_count: 0 };
     return `
         <section class="reasoning-workspace" data-reasoning-workspace>
             <div class="reasoning-workspace-head">
@@ -5455,57 +5496,78 @@ function renderReasoningWorkspace(model) {
                     <p>${htmlText(model.boundary, "Reasoning is read-only and cannot create trade state.")}</p>
                 </div>
             </div>
-            <div class="summary-strip compact reasoning-summary-strip">
-                ${renderMetric("Hypotheses", model.counts?.hypotheses || 0)}
-                ${renderMetric("Evidence packets", model.counts?.evidence_packets || 0)}
-                ${renderMetric("Evidence items", model.counts?.evidence_items || 0)}
-                ${renderMetric("Research packets", model.counts?.shadow_packets || 0)}
-                ${renderMetric("Strategy packets", model.counts?.strategy_packets || 0)}
-                ${renderMetric("Executable", model.counts?.executable_hypotheses || 0)}
-            </div>
+            <section class="reasoning-consolidated-readout ${statusClass(model.tone)}" data-reasoning-consolidated-readout>
+                <div>
+                    <p class="label">Reasoning readout</p>
+                    <h3>Can this idea move beyond research?</h3>
+                    <p>${htmlText(model.summary, "Reasoning queue has not loaded.")} Priors, evidence, hypotheses, and reviews remain separated below.</p>
+                </div>
+                <div class="reasoning-consolidated-metrics">
+                    ${renderMetric("Hypotheses", model.counts?.hypotheses || 0)}
+                    ${renderMetric("Evidence packets", model.counts?.evidence_packets || 0)}
+                    ${renderMetric("Evidence items", model.counts?.evidence_items || 0)}
+                    ${renderMetric("Research packets", model.counts?.shadow_packets || 0)}
+                    ${renderMetric("Strategy packets", model.counts?.strategy_packets || 0)}
+                    ${renderMetric("Executable", model.counts?.executable_hypotheses || 0)}
+                </div>
+                <div class="tag-row">
+                    ${renderInlineBadge("Prior is not evidence", "blocked")}
+                    ${renderInlineBadge("Hypothesis is not candidate", "blocked")}
+                    ${renderInlineBadge("Model output cannot create orders", "online")}
+                    ${renderInlineBadge("Review chain is challenge-only", "pending")}
+                </div>
+            </section>
             <div class="reasoning-lane-grid">${lanesHtml}</div>
-            ${renderWorldviewPriorSummary(model.worldview_prior || {})}
-            <section class="reasoning-section">
-                <div class="reasoning-section-head">
-                    <div>
-                        <p class="label">Hypothesis queue</p>
-                        <h3>Why ideas advanced, stalled, or were blocked</h3>
-                    </div>
-                    ${renderInlineBadge("Hypothesis, not candidate", "blocked")}
-                </div>
-                <div class="reasoning-hypothesis-stack">${hypothesesHtml}</div>
-            </section>
-            <section class="reasoning-section">
-                <div class="reasoning-section-head">
-                    <div>
-                        <p class="label">Factual evidence</p>
-                        <h3>Evidence packets and source trail</h3>
-                    </div>
-                    ${renderInlineBadge("Evidence, not order", "online")}
-                </div>
-                <div class="reasoning-evidence-grid">${evidenceHtml}</div>
-            </section>
-            <section class="reasoning-section">
-                <div class="reasoning-section-head">
-                    <div>
-                        <p class="label">Missing corroboration</p>
-                        <h3>Normal blockers before trade state</h3>
-                    </div>
-                    ${renderInlineBadge("Hold until resolved", "blocked")}
-                </div>
-                <div class="reasoning-missing-grid">${missingHtml}</div>
-            </section>
-            <section class="reasoning-section">
-                <div class="reasoning-section-head">
-                    <div>
-                        <p class="label">Review chain</p>
-                        <h3>Research Analyst, Strategy Lead, Signal Integrity, and Head of Quant</h3>
-                    </div>
-                    ${renderInlineBadge("Challenge-only", "pending")}
-                </div>
-                <div class="reasoning-review-grid">${reviewHtml}</div>
-                ${renderQuantAnnotationCard(model.quant_annotation || {})}
-            </section>
+            <div class="reasoning-review-groups" data-reasoning-review-groups>
+                ${renderReasoningReviewGroup(priorEvidenceGroup, `
+                    ${renderWorldviewPriorSummary(model.worldview_prior || {})}
+                    <section class="reasoning-section">
+                        <div class="reasoning-section-head">
+                            <div>
+                                <p class="label">Factual evidence</p>
+                                <h3>Evidence packets and source trail</h3>
+                            </div>
+                            ${renderInlineBadge("Evidence, not order", "online")}
+                        </div>
+                        <div class="reasoning-evidence-grid">${evidenceHtml}</div>
+                    </section>
+                `, true)}
+                ${renderReasoningReviewGroup(hypothesesGroup, `
+                    <section class="reasoning-section">
+                        <div class="reasoning-section-head">
+                            <div>
+                                <p class="label">Hypothesis queue</p>
+                                <h3>Why ideas advanced, stalled, or were blocked</h3>
+                            </div>
+                            ${renderInlineBadge("Hypothesis, not candidate", "blocked")}
+                        </div>
+                        <div class="reasoning-hypothesis-stack">${hypothesesHtml}</div>
+                    </section>
+                    <section class="reasoning-section">
+                        <div class="reasoning-section-head">
+                            <div>
+                                <p class="label">Missing corroboration</p>
+                                <h3>Normal blockers before trade state</h3>
+                            </div>
+                            ${renderInlineBadge("Hold until resolved", "blocked")}
+                        </div>
+                        <div class="reasoning-missing-grid">${missingHtml}</div>
+                    </section>
+                `)}
+                ${renderReasoningReviewGroup(reviewGroup, `
+                    <section class="reasoning-section">
+                        <div class="reasoning-section-head">
+                            <div>
+                                <p class="label">Review chain</p>
+                                <h3>Research Analyst, Strategy Lead, Signal Integrity, and Head of Quant</h3>
+                            </div>
+                            ${renderInlineBadge("Challenge-only", "pending")}
+                        </div>
+                        <div class="reasoning-review-grid">${reviewHtml}</div>
+                        ${renderQuantAnnotationCard(model.quant_annotation || {})}
+                    </section>
+                `)}
+            </div>
         </section>
     `;
 }
@@ -5826,91 +5888,91 @@ function renderCognition(status) {
 
     target.innerHTML = `
         ${renderReasoningWorkspace(reasoning)}
-        ${renderPanelBrief({
-            id: "cognition",
-            question: "What is Qadam thinking about, and what is still missing?",
-            state: `${hypotheses.length} hypotheses`,
-            tone: executableHypotheses.length ? "blocked" : "pending",
-            primary: `${shadowPackets.length} shadow packets, ${evidencePackets.length} evidence packets, ${localResearch.length} local assessments, ${strategyPackets.length} Strategy Lead packets, and ${activity.length} model activity records are in the current queue.`,
-            secondary: "Model-only reasoning, missing corroboration, stale evidence, safety-stop reasons, and whether anything unexpectedly claims execution permission.",
-            boundary: cognition.boundary || "Research notebook only. A hypothesis is not a trade and cannot bypass risk."
-        })}
-        <section class="cognition-section">
-            <p class="label">Cognition state</p>
-            <div class="summary-strip compact">
-                ${renderMetric("State", cognition.status || "shadow ready")}
-                ${renderMetric("Focus items", focus.length)}
-                ${renderMetric("Hypotheses", hypotheses.length)}
-                ${renderMetric("Evidence items", evidenceItemCount)}
-                ${renderMetric("Shadow packets", shadowPackets.length)}
-                ${renderMetric("Local assessments", localResearch.length)}
-                ${renderMetric("Strategy packets", strategyPackets.length)}
-                ${renderMetric("Integrity reviews", signalReviews.length)}
-                ${renderMetric("Models", activity.length)}
-                ${renderMetric("Execution", executableHypotheses.length ? "Unexpected allowed" : "Blocked")}
+        <details class="reasoning-review-group reasoning-advanced-diagnostics" data-reasoning-review-group="advanced_diagnostics">
+            <summary>
+                <strong>Advanced cognition diagnostics</strong>
+                <span>Legacy detail for paper context, model activity, local research, strategy handoff, and signal integrity.</span>
+                <em>${htmlText(activity.length + shadowPackets.length + localResearch.length + strategyPackets.length + signalReviews.length)} records</em>
+            </summary>
+            <div class="reasoning-review-group-body">
+                <section class="cognition-section">
+                    <p class="label">Cognition state</p>
+                    <div class="summary-strip compact">
+                        ${renderMetric("State", cognition.status || "shadow ready")}
+                        ${renderMetric("Focus items", focus.length)}
+                        ${renderMetric("Hypotheses", hypotheses.length)}
+                        ${renderMetric("Evidence items", evidenceItemCount)}
+                        ${renderMetric("Shadow packets", shadowPackets.length)}
+                        ${renderMetric("Local assessments", localResearch.length)}
+                        ${renderMetric("Strategy packets", strategyPackets.length)}
+                        ${renderMetric("Integrity reviews", signalReviews.length)}
+                        ${renderMetric("Models", activity.length)}
+                        ${renderMetric("Execution", executableHypotheses.length ? "Unexpected allowed" : "Blocked")}
+                    </div>
+                    <div class="tag-row">
+                        ${renderInlineBadge("Hypothesis, not trade", "blocked")}
+                        ${renderInlineBadge("Trade layer not reached", "blocked")}
+                        ${renderInlineBadge(`Signal Integrity ${signalIntegrity.status || "pending"}`, signalIntegrity.status === "ok" ? "online" : "pending")}
+                        ${renderInlineBadge(`latest local assessment ${formatTime(latestAssessment.created_at)}`, latestAssessment.created_at ? "online" : "pending")}
+                    </div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Current focus</p>
+                    <div class="focus-box">${renderTagList(focus, "No active focus")}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Paper account context</p>
+                    <div class="hypothesis-stack">${paperContextHtml}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Signal Integrity Gate</p>
+                    <div class="summary-strip compact">
+                        ${renderMetric("Total reviews", signalIntegrity.review_count || 0)}
+                        ${renderMetric("Held", (signalIntegrity.by_status || {}).hold_for_corroboration || 0)}
+                        ${renderMetric("Blocked", (signalIntegrity.by_status || {}).blocked || 0)}
+                        ${renderMetric("Risk shadow", (signalIntegrity.by_status || {}).passed_to_risk_shadow || 0)}
+                        ${renderMetric("Candidates created", signalIntegrity.trade_candidate_created_count || 0)}
+                        ${renderMetric("Execution", signalIntegrity.execution_allowed_count ? "Unexpected allowed" : "Blocked")}
+                    </div>
+                    <div class="hypothesis-stack">${signalIntegrityHtml}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Model activity</p>
+                    <div class="model-activity-grid">${activityHtml}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Shadow packets</p>
+                    <ul class="status-list packet-list">${shadowPacketHtml}</ul>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Local Research Analyst</p>
+                    <div class="hypothesis-stack">${localResearchHtml}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Strategy Lead shadow review</p>
+                    <div class="hypothesis-stack">${strategyLeadHtml}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Hypotheses and evidence</p>
+                    <div class="hypothesis-stack">${hypothesisHtml}</div>
+                </section>
+                <section class="cognition-section">
+                    <p class="label">Evidence packet index</p>
+                    <div class="evidence-packet-grid">${evidencePacketHtml}</div>
+                </section>
+                <section class="cognition-section cognition-two-col">
+                    <div>
+                        <p class="label">Analysis timeline</p>
+                        <ol class="timeline-list">${timelineHtml}</ol>
+                    </div>
+                    <div>
+                        <p class="label">Blocked reasons</p>
+                        <div class="tag-row">${renderTagList(blockedReasons, "No blocks recorded")}</div>
+                    </div>
+                </section>
+                <p class="mini">${htmlText(cognition.boundary, "Shadow-only cognition.")}</p>
             </div>
-            <div class="tag-row">
-                ${renderInlineBadge("Hypothesis, not trade", "blocked")}
-                ${renderInlineBadge("Trade layer not reached", "blocked")}
-                ${renderInlineBadge(`Signal Integrity ${signalIntegrity.status || "pending"}`, signalIntegrity.status === "ok" ? "online" : "pending")}
-                ${renderInlineBadge(`latest local assessment ${formatTime(latestAssessment.created_at)}`, latestAssessment.created_at ? "online" : "pending")}
-            </div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Current focus</p>
-            <div class="focus-box">${renderTagList(focus, "No active focus")}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Paper account context</p>
-            <div class="hypothesis-stack">${paperContextHtml}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Signal Integrity Gate</p>
-            <div class="summary-strip compact">
-                ${renderMetric("Total reviews", signalIntegrity.review_count || 0)}
-                ${renderMetric("Held", (signalIntegrity.by_status || {}).hold_for_corroboration || 0)}
-                ${renderMetric("Blocked", (signalIntegrity.by_status || {}).blocked || 0)}
-                ${renderMetric("Risk shadow", (signalIntegrity.by_status || {}).passed_to_risk_shadow || 0)}
-                ${renderMetric("Candidates created", signalIntegrity.trade_candidate_created_count || 0)}
-                ${renderMetric("Execution", signalIntegrity.execution_allowed_count ? "Unexpected allowed" : "Blocked")}
-            </div>
-            <div class="hypothesis-stack">${signalIntegrityHtml}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Model activity</p>
-            <div class="model-activity-grid">${activityHtml}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Shadow packets</p>
-            <ul class="status-list packet-list">${shadowPacketHtml}</ul>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Local Research Analyst</p>
-            <div class="hypothesis-stack">${localResearchHtml}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Strategy Lead shadow review</p>
-            <div class="hypothesis-stack">${strategyLeadHtml}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Hypotheses and evidence</p>
-            <div class="hypothesis-stack">${hypothesisHtml}</div>
-        </section>
-        <section class="cognition-section">
-            <p class="label">Evidence packet index</p>
-            <div class="evidence-packet-grid">${evidencePacketHtml}</div>
-        </section>
-        <section class="cognition-section cognition-two-col">
-            <div>
-                <p class="label">Analysis timeline</p>
-                <ol class="timeline-list">${timelineHtml}</ol>
-            </div>
-            <div>
-                <p class="label">Blocked reasons</p>
-                <div class="tag-row">${renderTagList(blockedReasons, "No blocks recorded")}</div>
-            </div>
-        </section>
-        <p class="mini">${htmlText(cognition.boundary, "Shadow-only cognition.")}</p>
+        </details>
     `;
 }
 
