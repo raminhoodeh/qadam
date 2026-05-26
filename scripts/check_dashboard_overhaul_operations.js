@@ -79,12 +79,19 @@ function loadRendererWindow() {
 async function main() {
     includesAll(dashboardHtml, [
         "Operations workspace",
-        "Read-only runtime diagnostics and full system connectivity",
+        "Operations readout and full system map",
+        "data-operations-consolidated-readout",
+        "data-operations-review-groups",
+        "data-operations-review-group=\"runtime_safety\"",
+        "data-operations-review-group=\"team_data_plumbing\"",
+        "data-operations-review-group=\"system_map_event_trail\"",
+        "data-operations-review-group=\"governance_comms_audit\"",
         "What is broken?",
         "single safety strip above",
-        "Fund Manager supervisor",
-        "Live data feed clusters",
-        "Python COO",
+        "Runtime, bridge, and safety",
+        "Operating team and data plumbing",
+        "Full system map and event trail",
+        "Governance and communications audit",
         "Full expandable System Operating Map",
         "Expand diagnostics",
         "Event Log references",
@@ -95,6 +102,11 @@ async function main() {
 
     includesAll(css, [
         ".operations-workspace",
+        ".operations-consolidated-readout",
+        ".operations-consolidated-metrics",
+        ".operations-review-groups",
+        ".operations-review-group",
+        ".operations-review-group-body",
         ".operations-workspace-head",
         ".operations-broken-card",
         ".operations-safety-reference",
@@ -112,9 +124,11 @@ async function main() {
         "function buildOperationsFeedClusters",
         "function buildOperationsRoleSpine",
         "function renderOperationsWorkspace",
+        "function renderOperationsReviewGroup",
         "function renderOperationsNodeDetails",
         "function renderOperationsFeedCluster",
         "function renderOperationsEdge",
+        "operations_review_groups",
         "operations-full-map",
         "What is broken?",
         "operations-safety-reference",
@@ -130,6 +144,7 @@ async function main() {
     const feedLabels = (connectivity.feed_clusters || []).map((cluster) => cluster.label);
 
     assert(operations.id === "operations", "operations model id mismatch");
+    assert(operations.operations_review_groups.length === 4, "operations model should expose four D11I review groups");
     assert(connectivity.id === "system_connectivity_model", "operations missing shared connectivity model");
     assert(connectivity.operations_scope?.placement === "operations-full-map", "operations full-map placement missing");
     assert(connectivity.overview_scope?.placement === "overview-mini-map", "overview mini-map placement missing");
@@ -168,7 +183,11 @@ async function main() {
     const operationsHtml = html(rendered, "[data-flow-map]");
     [
         "Operations workspace",
-        "Read-only runtime diagnostics and full system connectivity",
+        "Operations readout and full system map",
+        "Runtime, bridge, and safety",
+        "Operating team and data plumbing",
+        "Full system map and event trail",
+        "Governance and communications audit",
         "What is broken?",
         "single safety strip above",
         "Fund Manager supervisor",
