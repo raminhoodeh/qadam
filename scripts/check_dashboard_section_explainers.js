@@ -100,7 +100,7 @@ requiredExplainers.forEach((id) => {
     ".section-intro-heading"
 ].forEach((needle) => assertIncludes(css, needle, "explainer CSS"));
 
-assertIncludes(html, "/auth.css?v=20260526-d11e-overview-rebuild", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260526-d11g-evidence-view", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

@@ -52,6 +52,7 @@ node scripts/check_dashboard_d11c_canonical_status_language.js
 node scripts/check_dashboard_d11d_single_safety_strip.js
 node scripts/check_dashboard_d11e_rebuild_overview.js
 node scripts/check_dashboard_d11f_trades_view_consolidation.js
+node scripts/check_dashboard_d11g_evidence_view_consolidation.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
@@ -100,6 +101,7 @@ git diff --check -- \
   docs/qadam-dashboard-d11d-single-safety-strip-2026-05-26.md \
   docs/qadam-dashboard-d11e-rebuild-overview-2026-05-26.md \
   docs/qadam-dashboard-d11f-trades-view-consolidation-2026-05-26.md \
+  docs/qadam-dashboard-d11g-evidence-view-consolidation-2026-05-26.md \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   scripts/check_dashboard_acceptance.js \
   scripts/check_dashboard_deployment_readiness.js \
@@ -126,6 +128,7 @@ git diff --check -- \
   scripts/check_dashboard_d11d_single_safety_strip.js \
   scripts/check_dashboard_d11e_rebuild_overview.js \
   scripts/check_dashboard_d11f_trades_view_consolidation.js \
+  scripts/check_dashboard_d11g_evidence_view_consolidation.js \
   scripts/preflight_dashboard_deployment.sh
 
 say "Deployment preflight passed"
