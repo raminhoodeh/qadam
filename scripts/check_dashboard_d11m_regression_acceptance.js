@@ -137,7 +137,8 @@ function assertPlanAndOrchestration() {
         "docs/qadam-dashboard-d11m-regression-and-acceptance-tests-2026-05-26.md",
         "scripts/check_dashboard_d11m_regression_acceptance.js",
         "D11N - Documentation And Guide Alignment",
-        "D11O - Performance View Consolidation"
+        "D11O - Deployment Discipline",
+        "D11P - Performance View Consolidation"
     ], "D11M master plan");
     includesAll(preflight, [
         "node scripts/check_dashboard_d11l_visual_simplification.js",

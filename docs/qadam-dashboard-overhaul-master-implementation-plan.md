@@ -1420,7 +1420,7 @@ Outcome:
 - The dashboard preflight now runs the D11M checker, and the dashboard
   acceptance gate treats it as a required dependency.
 - Performance remains consolidated inside Trades for now; a deeper performance
-  cleanup has moved to D11O.
+  cleanup has moved to D11P.
 - Runtime authority, provider calls, broker writes, Telegram command behavior,
   proof-credit rules, and live-capital state are unchanged.
 
@@ -1456,7 +1456,37 @@ Outcome:
 
 Next stage:
 
-- D11O - Performance View Consolidation.
+- D11O - Deployment Discipline.
+
+### D11O - Deployment Discipline
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md`
+- `scripts/check_dashboard_d11o_deployment_discipline.js`
+
+Outcome:
+
+- Added a D11O release-discipline checker for the dashboard deployment path.
+- The checker verifies that production deployment is still gated by the local
+  dashboard preflight unless an explicit skip flag is set.
+- The checker verifies the deploy script fails closed if Vercel does not return
+  a deployment URL or if either production alias fails.
+- The checker verifies the deployment receipt is written only after aliasing
+  and is explicitly receipt-only, with no Vercel token, session cookie, broker
+  credential, or dashboard secret.
+- The deployment readiness gate, dashboard acceptance gate, and deployment
+  preflight now know the D11O contract.
+- D11O does not perform a live deployment; it certifies the guarded path for a
+  later operator-triggered deployment.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11P - Performance View Consolidation.
 
 ## 8. Implementation Order
 

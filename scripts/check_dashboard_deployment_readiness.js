@@ -66,7 +66,10 @@ function assertNoUnsafePublicText(text, label) {
     "landing-page-repo/scripts/deploy-vercel-production.sh",
     "scripts/preflight_dashboard_deployment.sh",
     "scripts/check_dashboard_acceptance.js",
-    "scripts/check_dashboard_deployment_readiness.js"
+    "scripts/check_dashboard_deployment_readiness.js",
+    "scripts/check_dashboard_d11o_deployment_discipline.js",
+    "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
+    "docs/qadam-dashboard-overhaul-master-implementation-plan.md"
 ].forEach(assertFile);
 
 [
@@ -111,6 +114,14 @@ const plan = readText(planPath);
     "production deploy script",
     "deployment receipt"
 ].forEach((needle) => assertIncludes(plan, needle, "dashboard implementation plan"));
+
+const masterPlan = readText(path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md"));
+[
+    "D11O - Deployment Discipline",
+    "scripts/check_dashboard_d11o_deployment_discipline.js",
+    "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
+    "D11P - Performance View Consolidation"
+].forEach((needle) => assertIncludes(masterPlan, needle, "dashboard overhaul master plan"));
 
 [
     "landing-page-repo/dashboard/index.html",
