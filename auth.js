@@ -8,8 +8,10 @@ const COMMENT_TARGET_TYPES = new Set([
     "signal",
     "trade_candidate",
     "postmortem",
+    "resource",
     "strategy",
-    "system"
+    "system",
+    "world_model"
 ]);
 const COMMENT_STATUSES = new Set(["suggestion", "accepted", "rejected", "implemented"]);
 const COMMENT_EXPORT_STATUSES = new Set(["accepted", "implemented"]);

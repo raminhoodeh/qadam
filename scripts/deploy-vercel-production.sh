@@ -5,6 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SITE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ROOT_DIR="$(cd "${SITE_DIR}/.." && pwd)"
 LOCAL_VERCEL_ENV="${ROOT_DIR}/data/runtime/vercel.env"
+QADAM_ORIGINAL_HOME="${HOME}"
+QADAM_ORIGINAL_XDG_CACHE_HOME="${XDG_CACHE_HOME:-${QADAM_ORIGINAL_HOME}/.cache}"
+QADAM_ORIGINAL_XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${QADAM_ORIGINAL_HOME}/.config}"
 export npm_config_cache="${npm_config_cache:-${ROOT_DIR}/data/runtime/npm-cache}"
 export QADAM_VERCEL_HOME="${QADAM_VERCEL_HOME:-${ROOT_DIR}/data/runtime/vercel-home}"
 export HOME="${QADAM_VERCEL_HOME}"
@@ -40,7 +43,11 @@ PRODUCTION_DOMAINS=(
 
 if [[ "${QADAM_SKIP_DEPLOY_PREFLIGHT:-0}" != "1" ]]; then
   say "Running local deployment preflight"
-  bash "${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh"
+  env \
+    HOME="${QADAM_ORIGINAL_HOME}" \
+    XDG_CACHE_HOME="${QADAM_ORIGINAL_XDG_CACHE_HOME}" \
+    XDG_CONFIG_HOME="${QADAM_ORIGINAL_XDG_CONFIG_HOME}" \
+    bash "${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh"
 else
   say "Skipping local deployment preflight because QADAM_SKIP_DEPLOY_PREFLIGHT=1"
 fi
