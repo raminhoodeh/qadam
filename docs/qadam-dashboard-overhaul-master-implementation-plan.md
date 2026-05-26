@@ -1250,6 +1250,34 @@ Next stage:
 
 - D11H - Reasoning View Consolidation.
 
+### D11H - Reasoning View Consolidation
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d11h-reasoning-view-consolidation-2026-05-26.md`
+- `scripts/check_dashboard_d11h_reasoning_view_consolidation.js`
+
+Outcome:
+
+- The Reasoning view now starts with one consolidated reasoning readout instead
+  of a repeated Cognition panel brief.
+- Private priors, factual evidence, hypotheses/blockers, and the review chain
+  are grouped into clear review drawers.
+- Legacy cognition diagnostics remain available in one advanced diagnostics
+  drawer instead of occupying the main first screen.
+- The UI keeps priors, factual evidence, hypotheses, Strategy Lead review,
+  Signal Integrity, and Head of Quant annotation semantically separate.
+- Model output, quantum/classical annotation, hypotheses, and evidence packets
+  remain explicitly non-executable and cannot create orders or proof credit.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  proof-credit rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D11I - Performance View Consolidation.
+
 ## 8. Implementation Order
 
 Implement in this order:
