@@ -7124,6 +7124,7 @@ function renderTrades(status, viewModels = {}) {
     if (!target) return;
     const tradeLayer = status.trade_layer || {};
     const tradingView = status.tradingview_alerts || {};
+    const tradingViewMcp = status.tradingview_mcp || {};
     const riskAgent = tradeLayer.risk_agent || status.risk_agent || {};
     const riskReviews = asArray(riskAgent.reviews);
     const executionPolicy = tradeLayer.execution_policy || status.execution_policy || {};
@@ -8167,6 +8168,26 @@ function renderTrades(status, viewModels = {}) {
                     <span>TradingView observations, trade ideas, blocked ideas, and explicit paper lifecycle states.</span>
                 </summary>
                 <div class="trade-review-group-body">
+        <section class="trade-intent-section">
+            <p class="label">TradingView MCP technical analysis</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Connection", tradingViewMcp.connected ? "connected" : "not connected")}
+                ${renderMetric("Adapter", tradingViewMcp.status || "degraded")}
+                ${renderMetric("Mode", tradingViewMcp.live_calls_enabled ? "live read-only" : "local/sample-safe")}
+                ${renderMetric("Contexts", tradingViewMcp.technical_context_count || 0)}
+                ${renderMetric("High-conviction flags", tradingViewMcp.obvious_technical_context_count || 0)}
+                ${renderMetric("Candidates", `${tradingViewMcp.trade_candidate_creation_allowed ? 1 : 0} created`)}
+                ${renderMetric("Paper orders", `${tradingViewMcp.paper_order_allowed ? 1 : 0} allowed`)}
+                ${renderMetric("Broker writes", `${tradingViewMcp.broker_write_allowed ? 1 : 0} allowed`)}
+            </div>
+            <div class="tag-row">
+                ${renderInlineBadge("observes and analyses", tradingViewMcp.connected ? "online" : "pending")}
+                ${renderInlineBadge("Qadam governs", "online")}
+                ${renderInlineBadge("Alpaca Paper executes", "pending")}
+                ${renderInlineBadge("no direct trade authority", "online")}
+            </div>
+            <p class="mini">${htmlText(tradingViewMcp.boundary, "TradingView MCP is read-only technical analysis.")}</p>
+        </section>
         <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
             <div class="summary-strip compact">
