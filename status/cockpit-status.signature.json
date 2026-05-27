@@ -4,12 +4,12 @@
   "broker_write_route": false,
   "browser_authority": "read_only",
   "payload_file": "cockpit-status.json",
-  "payload_generated_at": "2026-05-27T00:14:05.263894+00:00",
+  "payload_generated_at": "2026-05-27T02:53:18.489714+00:00",
   "payload_schema_version": 1,
   "read_only": true,
   "schema_version": 1,
-  "signature": "68e7106aad4267eb4fe516584a978464bec15fd311048bc47b9940fb3c9d5ae9",
+  "signature": "aad96a7b1905ef7881c5245831fcabc13b50fe9a74072eacfa46a98ccee2fc03",
   "signature_configured": false,
-  "signed_at": "2026-05-27T00:14:05.263894+00:00",
+  "signed_at": "2026-05-27T02:53:18.489714+00:00",
   "status": "digest_only"
 }

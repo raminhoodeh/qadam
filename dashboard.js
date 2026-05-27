@@ -140,27 +140,39 @@ const OPERATIONS_PIPELINE_LABELS = {
     market: "Markets, broker, and prediction markets",
     social: "Narrative, filings, social, and news"
 };
+const DASHBOARD_CORE_SOURCE_KEYS = new Set([
+    "acled",
+    "gdelt",
+    "oref",
+    "nasa_firms",
+    "fred",
+    "polymarket",
+    "alpaca",
+    "rss",
+    "telegram",
+    "tradingview_paid_alerts"
+]);
 const CANONICAL_STATUS_LANGUAGE = {
     current: {
-        label: "Current",
+        label: "OK",
         tone: "online",
-        description: "Fresh enough to read as the current dashboard state.",
-        tokens: ["online", "ok", "ready", "connected", "available", "active", "configured", "validated", "certified", "approved", "passed", "complete", "written"]
+        description: "Verified enough to treat as a healthy dashboard state.",
+        tokens: ["online", "ok", "ready", "connected", "available", "active", "configured", "validated", "certified", "approved", "passed", "complete", "written", "full paper operational ready", "submitted to alpaca paper"]
     },
     "read-only": {
-        label: "Read-only",
+        label: "OK - read-only",
         tone: "online",
         description: "Visible for monitoring only. It cannot mutate Qadam state.",
         tokens: ["read-only", "read only", "read_only", "read-only ready", "read_only_ready"]
     },
     "paper-only": {
-        label: "Paper only",
+        label: "OK - paper only",
         tone: "online",
         description: "Paper/demo state only. Live capital remains off.",
         tokens: ["paper only", "paper/demo only", "paper mode", "paper"]
     },
     "live-capital-off": {
-        label: "Live capital off",
+        label: "OK - live capital off",
         tone: "online",
         description: "Real-money trading authority is off.",
         tokens: ["live capital disabled", "live capital off"]
@@ -171,23 +183,29 @@ const CANONICAL_STATUS_LANGUAGE = {
         description: "Prepared for simulation or notification testing without live send/write authority.",
         tokens: ["dry run", "dry-run", "dry_run", "queued dry run", "dry-run planned"]
     },
+    optional: {
+        label: "Optional",
+        tone: "pending",
+        description: "Useful if configured, but not required for the current paper-trading core.",
+        tokens: ["optional", "not required", "supplemental only", "ready to build", "fallback only", "receiver pending", "live read deferred", "disabled live mode", "live mcp disabled"]
+    },
     "waiting-for-evidence": {
-        label: "Waiting for evidence",
+        label: "Waiting",
         tone: "pending",
         description: "Normal hold state while Qadam waits for source, model, risk, or review evidence.",
         tokens: ["pending", "waiting", "not ready", "not_ready", "not run", "not-run", "not requested", "not_requested", "deferred", "planned"]
     },
     "missing-setup": {
-        label: "Missing setup",
+        label: "Not configured",
         tone: "degraded",
         description: "Required configuration, credentials, source material, or exported status is missing.",
-        tokens: ["missing", "not exported", "missing credential", "credential missing", "status unavailable", "not connected", "unavailable"]
+        tokens: ["missing", "not configured", "not exported", "missing credential", "credential missing", "status unavailable", "not connected", "unavailable"]
     },
     degraded: {
-        label: "Degraded",
+        label: "Needs attention",
         tone: "degraded",
         description: "Available but impaired, stale, partial, or lower confidence.",
-        tokens: ["degraded", "stale", "fallback", "partial", "weak"]
+        tokens: ["degraded", "needs attention", "stale", "fallback", "partial", "weak"]
     },
     "local-only": {
         label: "Local only",
@@ -196,13 +214,13 @@ const CANONICAL_STATUS_LANGUAGE = {
         tokens: ["local only", "local-only", "local_only"]
     },
     "non-executable": {
-        label: "Non-executable",
+        label: "Review only",
         tone: "blocked",
         description: "Can inform review, but cannot create or execute a trade action.",
         tokens: ["non executable", "non-executable", "non_executable", "research only", "research-only", "context only", "prior only", "challenge only", "challenge-only"]
     },
     "safety-stop": {
-        label: "Safety stop",
+        label: "Blocked",
         tone: "blocked",
         description: "A deliberate safety, authority, risk, or policy stop is holding the path.",
         tokens: ["blocked", "blocked before", "blocked_by_policy", "disabled contract hold", "disabled_contract_hold", "hard block", "kill switch", "no-submit", "live blocked"]
@@ -488,6 +506,7 @@ function canonicalStatusRecord(value, options = {}) {
     if (/blocked|hard block|kill switch|no submit|disabled contract|live blocked/.test(token)) return { key: "safety-stop", ...CANONICAL_STATUS_LANGUAGE["safety-stop"] };
     if (/missing|not exported|not connected|credential|unavailable/.test(token)) return { key: "missing-setup", ...CANONICAL_STATUS_LANGUAGE["missing-setup"] };
     if (/degraded|stale|fallback|partial|weak/.test(token)) return { key: "degraded", ...CANONICAL_STATUS_LANGUAGE.degraded };
+    if (/optional|not required|supplemental only|ready to build|fallback only|receiver pending|disabled live mode|live mcp disabled/.test(token)) return { key: "optional", ...CANONICAL_STATUS_LANGUAGE.optional };
     if (/pending|waiting|deferred|not ready|not run|planned/.test(token)) return { key: "waiting-for-evidence", ...CANONICAL_STATUS_LANGUAGE["waiting-for-evidence"] };
     if (/dry run|queued/.test(token)) return { key: "dry-run", ...CANONICAL_STATUS_LANGUAGE["dry-run"] };
     if (/read only|public safe|backend derived/.test(token)) return { key: "read-only", ...CANONICAL_STATUS_LANGUAGE["read-only"] };
@@ -584,6 +603,32 @@ function countBy(items, key) {
         acc[value] = (acc[value] || 0) + 1;
         return acc;
     }, {});
+}
+
+function sourceIsCore(source = {}) {
+    return DASHBOARD_CORE_SOURCE_KEYS.has(String(source.source_key || ""));
+}
+
+function sourceDisplayStatus(source = {}) {
+    const rawStatus = normalizeCanonicalStatusToken(source.status || "");
+    const readiness = normalizeCanonicalStatusToken(source.readiness || "");
+    const credentialStatus = normalizeCanonicalStatusToken(source.credential_status || "");
+    if (rawStatus === "online") return "ok";
+    if (rawStatus === "local only") return "local only";
+    if (!sourceIsCore(source)) {
+        return "optional";
+    }
+    if (credentialStatus === "missing" || readiness.includes("credential required")) {
+        return "not configured";
+    }
+    if (rawStatus === "degraded") return "degraded";
+    if (rawStatus === "pending") return "waiting";
+    return source.status || "waiting";
+}
+
+function sourceRequiresAction(source = {}) {
+    const displayStatus = canonicalStatusRecord(sourceDisplayStatus(source));
+    return displayStatus?.tone === "degraded" || displayStatus?.tone === "blocked";
 }
 
 function setText(selector, value) {
@@ -958,25 +1003,36 @@ function collectReadinessWarnings(status) {
 
 function buildSourcesModel(status = {}) {
     const watching = asArray(status.watching);
+    const displaySources = watching.map((source) => ({
+        ...source,
+        core: sourceIsCore(source),
+        display_status: sourceDisplayStatus(source),
+        requires_action: sourceRequiresAction(source)
+    }));
     const pipelineSummary = asArray(status.source_pipeline_summary);
     const cognition = status.cognition || {};
-    const sourceCounts = countBy(watching, "status");
+    const sourceCounts = countBy(displaySources, "display_status");
     const durable = status.durable_ingestion || status.mission_control?.durable_spine || {};
     const phase5SystemMap = status.phase5_system_map || {};
     const canonical = phase5SystemMap.source_posture?.canonical || durable;
     const expected = modelNumber(canonical.expected_source_count, modelNumber(durable.expected_source_count, 0));
     const replayed = modelNumber(canonical.replayed_source_count, modelNumber(durable.replayed_source_count, 0));
     const missing = modelNumber(canonical.missing_source_count, Math.max(0, expected - replayed));
-    const missingCredentialCount = pipelineSummary.reduce(
-        (total, pipeline) => total + modelNumber(pipeline.missing_credential_count, 0),
-        0
+    const missingCredentialSources = displaySources.filter(
+        (source) => source.core && source.credential_status === "missing"
     );
-    const degraded = modelNumber(sourceCounts.degraded, 0);
-    const pending = modelNumber(sourceCounts.pending, 0);
-    const localOnly = modelNumber(sourceCounts.local_only || sourceCounts["local-only"], 0);
-    const online = modelNumber(sourceCounts.online, 0);
-    const missingCredentialSources = watching.filter((source) => source.credential_status === "missing");
-    const pendingAdapterSources = watching.filter((source) => !source.promoted_adapter || String(source.registry_status || "").includes("ready_to_build"));
+    const optionalCredentialSources = displaySources.filter(
+        (source) => !source.core && source.credential_status === "missing"
+    );
+    const degraded = displaySources.filter((source) => source.requires_action).length;
+    const pending = modelNumber(sourceCounts.waiting, 0);
+    const optional = modelNumber(sourceCounts.optional, 0);
+    const localOnly = modelNumber(sourceCounts["local only"], 0);
+    const online = modelNumber(sourceCounts.ok, 0);
+    const coreSourceCount = displaySources.filter((source) => source.core).length;
+    const coreOkCount = displaySources.filter((source) => source.core && source.display_status === "ok").length;
+    const missingCredentialCount = missingCredentialSources.length;
+    const pendingAdapterSources = displaySources.filter((source) => !source.promoted_adapter || String(source.registry_status || "").includes("ready_to_build"));
     const generatedAtMs = Date.parse(status.generated_at || "");
     const staleHeartbeatSources = watching.filter((source) => {
         const heartbeatMs = Date.parse(source.last_heartbeat || "");
@@ -985,7 +1041,7 @@ function buildSourcesModel(status = {}) {
         return generatedAtMs - heartbeatMs > 36 * 60 * 60 * 1000;
     });
     const summaryByPipeline = new Map(pipelineSummary.map((pipeline) => [pipeline.pipeline, pipeline]));
-    const pipelineRecords = Object.entries(watching.reduce((acc, source) => {
+    const pipelineRecords = Object.entries(displaySources.reduce((acc, source) => {
         const pipeline = source.pipeline || "unknown";
         acc[pipeline] = acc[pipeline] || [];
         acc[pipeline].push(source);
@@ -993,23 +1049,27 @@ function buildSourcesModel(status = {}) {
     }, {}))
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([pipeline, sources]) => {
-            const counts = countBy(sources, "status");
+            const counts = countBy(sources, "display_status");
             const pipelineCounts = summaryByPipeline.get(pipeline) || {};
             const signalInfluencing = sources.filter((source) => source.can_influence_signals).length;
+            const requiresAction = sources.some((source) => source.requires_action);
+            const hasOk = sources.some((source) => source.display_status === "ok");
+            const hasWaiting = sources.some((source) => source.display_status === "waiting");
             return {
                 pipeline,
                 label: dashboardText(pipeline),
                 source_count: sources.length,
-                online_count: modelNumber(counts.online, 0),
+                online_count: modelNumber(counts.ok, 0),
                 degraded_count: modelNumber(counts.degraded, 0),
-                pending_count: modelNumber(counts.pending, 0),
+                pending_count: modelNumber(counts.waiting, 0),
+                optional_count: modelNumber(counts.optional, 0),
                 local_only_count: modelNumber(pipelineCounts.local_only_count || counts.local_only || counts["local-only"], 0),
-                missing_credential_count: sources.filter((source) => source.credential_status === "missing").length,
+                missing_credential_count: sources.filter((source) => source.core && source.credential_status === "missing").length,
                 pending_adapter_count: sources.filter((source) => !source.promoted_adapter).length,
                 signal_influencing_count: signalInfluencing,
-                status: modelNumber(counts.degraded, 0) || sources.some((source) => source.credential_status === "missing")
+                status: requiresAction
                     ? "degraded"
-                    : (signalInfluencing || modelNumber(counts.online, 0) ? "online" : "pending"),
+                    : (hasOk ? "ok" : (hasWaiting ? "waiting" : "optional")),
                 top_sources: sources
                     .slice()
                     .sort((a, b) => String(a.source_name).localeCompare(String(b.source_name)))
@@ -1017,7 +1077,7 @@ function buildSourcesModel(status = {}) {
                     .map((source) => ({
                         key: source.source_key,
                         label: source.source_name || source.source_key,
-                        status: source.status,
+                        status: source.display_status,
                         readiness: source.readiness,
                         credential_status: source.credential_status,
                         promoted_adapter: Boolean(source.promoted_adapter),
@@ -1030,23 +1090,27 @@ function buildSourcesModel(status = {}) {
         {
             key: "yahoo_finance",
             label: "Yahoo Finance",
-            status: status.yahoo_finance?.status || phase5SystemMap.source_posture?.yahoo_finance?.status || "not exported",
+            status: status.yahoo_finance?.enabled
+                ? (status.yahoo_finance?.status || phase5SystemMap.source_posture?.yahoo_finance?.status || "not exported")
+                : "optional",
             role: status.yahoo_finance?.market_confirmation_role || phase5SystemMap.source_posture?.yahoo_finance?.role || "supplemental market confirmation only",
             authority: "read-only supplemental",
-            capability_state: status.yahoo_finance?.enabled ? "live read configured" : (status.yahoo_finance?.live_read_deferred ? "live read deferred" : "not enabled"),
+            capability_state: status.yahoo_finance?.enabled ? "live read configured" : "optional",
             provenance_status: status.yahoo_finance?.sample_mode_available ? "sample mode available" : "sample mode missing",
-            degraded: Boolean(status.yahoo_finance?.degraded),
+            degraded: Boolean(status.yahoo_finance?.enabled && status.yahoo_finance?.degraded),
             proof_boundary: "Supplemental confirmation only; not source quorum, signal, order, broker, receipt, or reconciliation truth."
         },
         {
             key: "preference_mcp",
             label: "Preference MCP",
-            status: status.preference_mcp?.status || phase5SystemMap.source_posture?.preference_mcp?.status || "not exported",
+            status: status.preference_mcp?.enabled
+                ? (status.preference_mcp?.status || phase5SystemMap.source_posture?.preference_mcp?.status || "not exported")
+                : "optional",
             role: status.preference_mcp?.classification || "supplemental challenge context",
             authority: "challenge-only supplemental",
-            capability_state: status.preference_mcp?.enabled ? "live MCP configured" : "live MCP disabled",
+            capability_state: status.preference_mcp?.enabled ? "live MCP configured" : "optional",
             provenance_status: status.preference_mcp?.provenance_status || "not verified",
-            degraded: Boolean(status.preference_mcp?.degraded),
+            degraded: Boolean(status.preference_mcp?.enabled && status.preference_mcp?.degraded),
             proof_boundary: "Challenge-only supplemental data plane; not source quorum, trade authority, paid-tool authority, broker write, or live capital."
         }
     ];
@@ -1141,14 +1205,18 @@ function buildSourcesModel(status = {}) {
         label: "Evidence",
         question: "Are Qadam's inputs fresh, trustworthy, and sufficient?",
         tone,
-        summary: `${online}/${watching.length} sources online; ${missing} canonical sources missing; ${missingCredentialCount} credentials missing; ${evidencePacketCards.length} factual evidence packets visible.`,
+        summary: `${coreOkCount}/${coreSourceCount} core sources OK; ${missing} canonical sources missing; ${missingCredentialCount} required credentials missing; ${optionalCredentialSources.length} optional credentials not configured; ${evidencePacketCards.length} factual evidence packets visible.`,
         counts: {
             total: watching.length,
             online,
             degraded,
             pending,
+            optional,
+            core: coreSourceCount,
+            core_ok: coreOkCount,
             local_only: localOnly,
             missing_credentials: missingCredentialCount,
+            optional_credentials: optionalCredentialSources.length,
             signal_influencing: watching.filter((source) => source.can_influence_signals).length,
             pipelines: pipelineSummary.length,
             supplemental: supplemental.length,
@@ -1156,12 +1224,13 @@ function buildSourcesModel(status = {}) {
             evidence_packets: evidencePacketCards.length
         },
         reliability: [
-            { key: "online", label: "Online", count: online, tone: online ? "online" : "pending", detail: "Sources reporting online in the dashboard status." },
-            { key: "degraded", label: "Degraded", count: degraded, tone: degraded ? "degraded" : "online", detail: "Sources reporting degraded runtime state." },
-            { key: "missing_credential", label: "Missing credential", count: missingCredentialSources.length, tone: missingCredentialSources.length ? "degraded" : "online", detail: "Credential-required sources without configured credentials." },
+            { key: "core_ok", label: "Core OK", count: `${coreOkCount}/${coreSourceCount}`, tone: coreOkCount === coreSourceCount ? "online" : "pending", detail: "Required paper-trading source feeds reporting healthy status." },
+            { key: "needs_attention", label: "Needs attention", count: degraded, tone: degraded ? "degraded" : "online", detail: "Required sources with degraded runtime state." },
+            { key: "missing_credential", label: "Required not configured", count: missingCredentialSources.length, tone: missingCredentialSources.length ? "degraded" : "online", detail: "Required source credentials not configured." },
             { key: "stale_heartbeat", label: "Stale heartbeat", count: staleHeartbeatSources.length, tone: staleHeartbeatSources.length ? "degraded" : "online", detail: "Sources missing heartbeat freshness in this snapshot." },
-            { key: "pending_adapter", label: "Pending adapter", count: pendingAdapterSources.length, tone: pendingAdapterSources.length ? "pending" : "online", detail: "Sources that are registry-ready, derived, or not yet promoted adapters." },
-            { key: "supplemental_only", label: "Supplemental only", count: supplemental.length, tone: "pending", detail: "Yahoo Finance and Preference/PREF are capability-aware supplemental inputs, not sole proof." }
+            { key: "optional", label: "Optional", count: optional, tone: "pending", detail: "Useful extra feeds that are not required for the current paper-trading core." },
+            { key: "optional_credentials", label: "Optional not configured", count: optionalCredentialSources.length, tone: "pending", detail: "Optional feeds that can be wired later without blocking the core dashboard." },
+            { key: "pending_adapter", label: "Adapter backlog", count: pendingAdapterSources.length, tone: pendingAdapterSources.length ? "pending" : "online", detail: "Sources that are registry-ready, derived, or not yet promoted adapters." }
         ],
         quorum: {
             expected_source_count: expected,
@@ -2983,19 +3052,19 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const authorityFlags = asArray(safety.authority_flags);
     const tone = liveCapitalEnabled || writeAuthority || authorityFlags.length ? "blocked" : "online";
     const modeLabel = status.mode === "paper"
-        ? "Paper only"
+        ? "OK - paper only"
         : canonicalStatusLabel(status.mode, { fallback: "Mode unknown" });
     return {
         id: "dashboard_safety_strip",
         tone,
         headline: tone === "blocked"
             ? "Review safety before reading the dashboard"
-            : "Paper only, read-only, live capital off",
+            : "OK - paper only, read-only, live capital off",
         summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off; dashboard and AI cannot bypass risk checks.`,
         mode_label: modeLabel,
         capital_label: `${formatMoney(paperBalance)} paper account`,
-        live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "Live capital off",
-        read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "Read-only",
+        live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "OK - live capital off",
+        read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "OK - read-only",
         ui_broker_label: "Dashboard cannot place orders",
         llm_broker_label: "AI cannot bypass risk checks",
         proof_label: "Performance proof requires verified records",
@@ -3118,19 +3187,25 @@ async function fetchDashboardStatus(session) {
 
 function sourceSummary(status) {
     const watching = asArray(status.watching);
-    const pipelineSummary = asArray(status.source_pipeline_summary);
-    const counts = countBy(watching, "status");
-    const missingCredentialCount = pipelineSummary.reduce(
-        (total, pipeline) => total + Number(pipeline.missing_credential_count || 0),
-        0
-    );
+    const displaySources = watching.map((source) => ({
+        ...source,
+        core: sourceIsCore(source),
+        display_status: sourceDisplayStatus(source),
+        requires_action: sourceRequiresAction(source)
+    }));
+    const counts = countBy(displaySources, "display_status");
+    const coreSources = displaySources.filter((source) => source.core);
+    const missingCredentialCount = displaySources.filter(
+        (source) => source.core && source.credential_status === "missing"
+    ).length;
     return [
         renderMetric("Sources", watching.length),
-        renderMetric("Online", counts.online || 0),
-        renderMetric("Degraded", counts.degraded || 0),
-        renderMetric("Pending", counts.pending || 0),
-        renderMetric("Local-only", counts.local_only || counts["local-only"] || 0),
-        renderMetric("Missing creds", missingCredentialCount),
+        renderMetric("Core OK", `${coreSources.filter((source) => source.display_status === "ok").length}/${coreSources.length}`),
+        renderMetric("Needs attention", displaySources.filter((source) => source.requires_action).length),
+        renderMetric("Waiting", counts.waiting || 0),
+        renderMetric("Optional", counts.optional || 0),
+        renderMetric("Local-only", counts["local only"] || 0),
+        renderMetric("Required not configured", missingCredentialCount),
         renderMetric("Signal influence", watching.filter((source) => source.can_influence_signals).length)
     ].join("");
 }
@@ -3234,7 +3309,7 @@ function renderSourcePipelineCard(pipeline) {
     const sourceRows = asArray(pipeline.top_sources).map((source) => `
         <li>
             <strong>${htmlText(source.label)}</strong>
-            <span>${htmlText(source.status)} · ${htmlText(source.readiness)} · ${source.promoted_adapter ? "adapter" : "pending adapter"} · ${source.can_influence_signals ? "signal-influencing" : "evidence blocked"}</span>
+            <span>${htmlText(canonicalStatusLabel(source.status))} · ${htmlText(source.readiness)} · ${source.promoted_adapter ? "adapter" : "pending adapter"} · ${source.can_influence_signals ? "signal-influencing" : "evidence only"}</span>
         </li>
     `).join("");
     return `
@@ -3245,11 +3320,12 @@ function renderSourcePipelineCard(pipeline) {
             </div>
             <h3>${htmlText(pipeline.label)}</h3>
             <div class="summary-strip compact">
-                ${renderMetric("Online", pipeline.online_count)}
-                ${renderMetric("Degraded", pipeline.degraded_count)}
-                ${renderMetric("Pending", pipeline.pending_count)}
-                ${renderMetric("Missing creds", pipeline.missing_credential_count)}
-                ${renderMetric("Pending adapters", pipeline.pending_adapter_count)}
+                ${renderMetric("OK", pipeline.online_count)}
+                ${renderMetric("Needs attention", pipeline.degraded_count)}
+                ${renderMetric("Waiting", pipeline.pending_count)}
+                ${renderMetric("Optional", pipeline.optional_count)}
+                ${renderMetric("Not configured", pipeline.missing_credential_count)}
+                ${renderMetric("Adapter backlog", pipeline.pending_adapter_count)}
                 ${renderMetric("Signal influence", pipeline.signal_influencing_count)}
             </div>
             <ul>${sourceRows}</ul>
@@ -3316,8 +3392,10 @@ function renderSourcesWorkspace(model) {
                 </div>
                 <div class="evidence-consolidated-metrics" data-source-summary>
                     ${renderMetric("Sources", model.counts.total)}
-                    ${renderMetric("Online", model.counts.online)}
-                    ${renderMetric("Missing creds", model.counts.missing_credentials)}
+                    ${renderMetric("Core OK", `${model.counts.core_ok}/${model.counts.core}`)}
+                    ${renderMetric("Required not configured", model.counts.missing_credentials)}
+                    ${renderMetric("Optional", model.counts.optional)}
+                    ${renderMetric("Optional not configured", model.counts.optional_credentials)}
                     ${renderMetric("Signal influence", model.counts.signal_influencing)}
                     ${renderMetric("Yahoo Finance", asArray(model.supplemental).find((source) => source.key === "yahoo_finance")?.status || "not exported")}
                     ${renderMetric("Preference MCP", asArray(model.supplemental).find((source) => source.key === "preference_mcp")?.status || "not exported")}
@@ -4173,7 +4251,7 @@ function renderSnapshotMeta(status, source) {
     setText("[data-capital-label]", `${formatMoney(paperBalance)} paper account`);
     setText(
         "[data-live-capital-label]",
-        capital.live_capital_enabled ? "Live capital enabled" : "Live capital off"
+        capital.live_capital_enabled ? "Live capital enabled" : "OK - live capital off"
     );
     setText("[data-snapshot-meta]", `Snapshot ${generatedAt} · schema ${status.schema_version} · ${sourceLabel}`);
 
@@ -4208,7 +4286,7 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
             <span class="inline-badge ${statusClass(strip.mode_label)}" data-mode-label>${htmlText(strip.mode_label)}</span>
             <span class="inline-badge ${statusClass(strip.write_authority ? "blocked" : "online")}" data-capital-label>${htmlText(strip.capital_label)}</span>
             <span class="inline-badge ${statusClass(strip.live_capital_enabled ? "blocked" : "online")}" data-live-capital-label>${htmlText(strip.live_capital_label)}</span>
-            ${renderInlineBadge(strip.read_only_label, strip.read_only_label === "Read-only" ? "online" : "blocked")}
+            ${renderInlineBadge(strip.read_only_label, strip.read_only_label === "OK - read-only" ? "online" : "blocked")}
             ${renderInlineBadge(strip.ui_broker_label, "online")}
             ${renderInlineBadge(strip.llm_broker_label, "online")}
             ${renderInlineBadge(strip.proof_label, "online")}
@@ -5733,20 +5811,17 @@ function renderWatching(status, viewModels = {}) {
     const yahooFinance = status.yahoo_finance || {};
     const preferenceMcp = status.preference_mcp || {};
     const summaryByPipeline = new Map(pipelineSummary.map((pipeline) => [pipeline.pipeline, pipeline]));
-    const sourceCounts = countBy(watching, "status");
-    const degraded = Number(sourceCounts.degraded || 0);
-    const pending = Number(sourceCounts.pending || 0);
-    const missingCredentialCount = pipelineSummary.reduce(
-        (total, pipeline) => total + Number(pipeline.missing_credential_count || 0),
-        0
-    );
+    const degraded = Number(sourcesModel.counts?.degraded || 0);
+    const pending = Number(sourcesModel.counts?.pending || 0);
+    const missingCredentialCount = Number(sourcesModel.counts?.missing_credentials || 0);
+    const optionalCredentialCount = Number(sourcesModel.counts?.optional_credentials || 0);
     replacePanelBrief("watching", {
         question: "Are Qadam's inputs healthy enough to trust?",
-        state: `${sourceCounts.online || 0}/${watching.length} online`,
-        tone: degraded || pending || missingCredentialCount ? "degraded" : "online",
-        primary: `${watching.length} watched sources across ${pipelineSummary.length} pipelines, with ${degraded} degraded, ${pending} pending, and ${missingCredentialCount} missing credentials.`,
+        state: `${sourcesModel.counts?.core_ok || 0}/${sourcesModel.counts?.core || 0} core OK`,
+        tone: degraded || missingCredentialCount ? "degraded" : "online",
+        primary: `${watching.length} watched sources across ${pipelineSummary.length} pipelines. Required issues: ${degraded} need attention, ${missingCredentialCount} not configured. Optional feeds not configured: ${optionalCredentialCount}.`,
         secondary: "Stale heartbeats, missing credentials, degraded feeds, local-only sources, and whether a source can influence signals.",
-        boundary: "Sources create observations only. Weak or pending source state cannot become strong evidence or create orders."
+        boundary: "Sources create observations only. Optional source gaps do not block the paper-trading core."
     });
     const workspace = dashboardQuery("[data-sources-workspace-slot]");
     if (workspace) {
@@ -5883,23 +5958,23 @@ function renderWatching(status, viewModels = {}) {
                 .map((source) => `
                     <li class="source-row">
                         <div class="source-main">
-                            ${renderStatusPill(source.status)}
+                            ${renderStatusPill(sourceDisplayStatus(source))}
                             <div>
                                 <strong>${htmlText(source.source_name, source.source_key)}</strong>
                                 <span>${htmlText(source.readiness)} · tier ${htmlText(source.tier)} · ${htmlText(source.cadence, "cadence unknown")}</span>
                             </div>
                         </div>
                         <div class="source-meta">
-                            ${renderInlineBadge(source.credential_status, source.credential_status === "missing" ? "degraded" : "online")}
+                            ${renderInlineBadge(source.credential_status, source.credential_status === "missing" && sourceIsCore(source) ? "degraded" : "optional")}
                             ${renderInlineBadge(source.promoted_adapter ? "adapter" : "registry", source.promoted_adapter ? "online" : "pending")}
-                            ${renderInlineBadge(source.auth_class, source.auth_class === "credential_required" ? "degraded" : "online")}
+                            ${renderInlineBadge(source.auth_class, source.auth_class === "credential_required" && sourceIsCore(source) ? "degraded" : "optional")}
                             ${renderInlineBadge(source.registry_status, "pending")}
                             ${renderInlineBadge(`${dashboardText(source.endpoint_count, "0")} endpoints`, source.endpoint_count ? "online" : "pending")}
                             ${renderInlineBadge(`trust ${dashboardText(source.trust_score, "n/a")}`, source.trust_score ? "online" : "pending")}
-                            ${renderInlineBadge(source.can_influence_signals ? "can influence signals" : "evidence blocked", source.can_influence_signals ? "online" : "blocked")}
+                            ${renderInlineBadge(source.can_influence_signals ? "can influence signals" : "evidence only", source.can_influence_signals ? "online" : "optional")}
                             ${renderInlineBadge(`payload ${formatTime(source.last_payload_time)}`, source.last_payload_time ? "online" : "pending")}
                             ${renderInlineBadge(`latency ${formatLatency(source.latency_ms)}`, source.latency_ms ? "online" : "pending")}
-                            ${renderInlineBadge(formatTime(source.last_heartbeat), source.status)}
+                            ${renderInlineBadge(formatTime(source.last_heartbeat), sourceDisplayStatus(source))}
                         </div>
                         <p>${htmlText(source.degraded_reason || source.raw_status)} · ${htmlText(source.influence_boundary, "blocked until signal integrity gate")}</p>
                     </li>
@@ -8603,8 +8678,8 @@ function renderCapital(status, viewModels = {}) {
             ${renderInlineBadge(capital.account_scope, "online")}
             ${renderInlineBadge(capital.broker, "pending")}
             ${renderInlineBadge(capital.connection_status, capital.mirror_status === "ok" ? "online" : "pending")}
-            ${renderInlineBadge(`${capital.write_authority ? "write enabled" : "read only"}`, capital.write_authority ? "blocked" : "online")}
-            ${renderInlineBadge(`${capital.live_capital_enabled ? "live capital" : "paper only"}`, capital.live_capital_enabled ? "blocked" : "online")}
+            ${renderInlineBadge(`${capital.write_authority ? "write enabled" : "OK - read-only"}`, capital.write_authority ? "blocked" : "online")}
+            ${renderInlineBadge(`${capital.live_capital_enabled ? "live capital" : "OK - paper only"}`, capital.live_capital_enabled ? "blocked" : "online")}
         </div>
         <section class="paper-account-section">
             <p class="label">Paper mirror state</p>
