@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import replace
+import json
 from pathlib import Path
 import sys
 
@@ -17,27 +18,72 @@ from orchestrator.event_log import EventLog  # noqa: E402
 from orchestrator.paperops_qctrl_consultation import (  # noqa: E402
     PAPEROPS_QCTRL_CONSULTATION_SCHEMA_VERSION,
     build_paperops_qctrl_consultation,
+    paperops_qctrl_consultation_paths,
     read_latest_paperops_qctrl_consultation,
     validate_paperops_qctrl_consultation,
     write_paperops_qctrl_consultation,
 )
 
 
+def _is_verified_consultation(artifact: dict[str, object]) -> bool:
+    return (
+        artifact.get("status") == "consultation_recorded"
+        and artifact.get("provider_call_succeeded") is True
+        and artifact.get("qctrl_paper_consultation_enabled") is True
+    )
+
+
+def _latest_verified_consultation_from_history(settings: Settings) -> dict[str, object]:
+    _, history_path, _ = paperops_qctrl_consultation_paths(settings)
+    if not history_path.exists():
+        return {}
+
+    latest: dict[str, object] = {}
+    for line in history_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            candidate = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, dict) and _is_verified_consultation(candidate):
+            latest = candidate
+    return latest
+
+
+def _is_transient_provider_failure(artifact: dict[str, object]) -> bool:
+    return (
+        artifact.get("provider_call_attempted") is True
+        and artifact.get("provider_call_succeeded") is not True
+        and artifact.get("provider_failure_category") == "provider_network_error"
+    )
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
     existing = read_latest_paperops_qctrl_consultation(settings)
-    preserve_recorded_consultation = (
-        settings.qctrl_paper_consultation_enabled is False
-        and existing.get("status") == "consultation_recorded"
-        and existing.get("provider_call_succeeded") is True
-        and existing.get("qctrl_paper_consultation_enabled") is True
+    latest_verified = (
+        existing if _is_verified_consultation(existing) else _latest_verified_consultation_from_history(settings)
     )
-    artifact = (
-        existing
-        if preserve_recorded_consultation
-        else build_paperops_qctrl_consultation(settings)
-    )
+    preserve_reason = "none"
+    preserve_recorded_consultation = False
+    if settings.qctrl_paper_consultation_enabled is False and latest_verified:
+        artifact = latest_verified
+        preserve_recorded_consultation = True
+        preserve_reason = "disabled_flag_preserved_last_verified_consultation"
+    else:
+        candidate = build_paperops_qctrl_consultation(settings)
+        if latest_verified and _is_transient_provider_failure(candidate):
+            artifact = latest_verified
+            preserve_recorded_consultation = True
+            preserve_reason = "transient_provider_network_error_preserved_last_verified_consultation"
+            artifact["latest_provider_probe_status"] = candidate.get("status")
+            artifact["latest_provider_probe_failure_category"] = candidate.get(
+                "provider_failure_category"
+            )
+        else:
+            artifact = candidate
     output_path, history_path, event_path, written = write_paperops_qctrl_consultation(
         artifact,
         settings,
@@ -125,6 +171,7 @@ def main() -> int:
         "paperops_qctrl_preserved_recorded_consultation="
         f"{preserve_recorded_consultation}"
     )
+    print(f"paperops_qctrl_preserve_reason={preserve_reason}")
     print(f"paperops_qctrl_enabled_preview_status={enabled_preview['status']}")
     print(
         "paperops_qctrl_enabled_preview_provider_call_allowed="

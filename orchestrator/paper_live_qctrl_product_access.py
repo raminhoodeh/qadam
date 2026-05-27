@@ -145,6 +145,40 @@ def read_latest_paper_live_qctrl_product_access(
     return _read_json(output_path)
 
 
+def _is_verified_product_access(artifact: dict[str, Any]) -> bool:
+    return (
+        artifact.get("product_access_verified") is True
+        and artifact.get("paper_consultation_ready") is True
+        and artifact.get("provider_call_succeeded") is True
+    )
+
+
+def _latest_verified_product_access_from_history(settings: Settings) -> dict[str, Any]:
+    _, history_path, _ = paper_live_qctrl_product_access_paths(settings)
+    if not history_path.exists():
+        return {}
+
+    latest: dict[str, Any] = {}
+    for line in history_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            candidate = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, dict) and _is_verified_product_access(candidate):
+            latest = candidate
+    return latest
+
+
+def _is_transient_provider_failure(qctrl_artifact: dict[str, Any]) -> bool:
+    return (
+        qctrl_artifact.get("provider_call_attempted") is True
+        and qctrl_artifact.get("provider_call_succeeded") is not True
+        and qctrl_artifact.get("provider_failure_category") == "provider_network_error"
+    )
+
+
 def _activation_ready(activation: dict[str, Any]) -> bool:
     return (
         activation.get("status") == "approved_pending_later_enablement"
@@ -303,6 +337,11 @@ def build_paper_live_qctrl_product_access(
     activation_ready = _activation_ready(activation)
     readiness = qctrl_readiness(settings)
     previous_pt1 = read_latest_paper_live_qctrl_product_access(settings)
+    latest_verified_pt1 = (
+        previous_pt1
+        if _is_verified_product_access(previous_pt1)
+        else _latest_verified_product_access_from_history(settings)
+    )
     if qctrl_artifact is None:
         if attempt_provider_consultation and activation_ready:
             probe_settings = replace(settings, qctrl_paper_consultation_enabled=True)
@@ -321,6 +360,12 @@ def build_paper_live_qctrl_product_access(
                 and previous_pt1.get("provider_call_attempted") is True
             ):
                 qctrl_artifact = _qctrl_artifact_from_previous_pt1(previous_pt1)
+            elif latest_verified_pt1 and _is_transient_provider_failure(qctrl_artifact):
+                qctrl_artifact = _qctrl_artifact_from_previous_pt1(latest_verified_pt1)
+                qctrl_artifact["latest_provider_probe_status"] = "provider_call_failed_sanitized"
+                qctrl_artifact["latest_provider_probe_failure_category"] = (
+                    "provider_network_error"
+                )
 
     status, product_state, blocker, next_action = _classify_product_access(
         settings=settings,
