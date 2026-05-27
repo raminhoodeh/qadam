@@ -97,8 +97,8 @@ async function main() {
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
         "legacy-operations-panel",
-        "/auth.css?v=20260526-language-cleanup",
-        "/dashboard.js?v=20260526-language-cleanup"
+        "/auth.css?v=20260527-health-language",
+        "/dashboard.js?v=20260527-health-language"
     ], "D11I Operations static shell");
 
     assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 4, "four legacy Operations panels should be hidden from visible Operations view");
@@ -166,7 +166,7 @@ async function main() {
         "No browser shell",
         "Closed-loop rule",
         "Read-only bridge",
-        "Live capital off"
+        "OK - live capital off"
     ], "rendered D11I Operations");
 
     assert(countOccurrences(operationsHtml, "data-operations-review-group=") === 4, "Operations should render exactly four review groups");

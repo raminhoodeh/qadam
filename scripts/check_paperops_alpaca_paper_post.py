@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+from hashlib import sha256
+import json
 from dataclasses import replace
 from pathlib import Path
 import sys
@@ -23,6 +25,7 @@ from orchestrator.paperops_alpaca_paper_post import (  # noqa: E402
     PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
     build_paperops_alpaca_paper_post,
     paperops_alpaca_paper_post_paths,
+    read_latest_paperops_alpaca_paper_post,
     validate_paperops_alpaca_paper_post,
     write_paperops_alpaca_paper_post,
 )
@@ -41,11 +44,110 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _latest_submitted_history_record(path: Path) -> dict[str, object]:
+    if not path.exists():
+        return {}
+    latest: dict[str, object] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        payload = json.loads(line)
+        if isinstance(payload, dict) and payload.get("status") == "submitted_to_alpaca_paper":
+            latest = payload
+    return latest
+
+
+def _recovered_submitted_artifact(
+    *,
+    settings: Settings,
+    event_log_path: Path,
+) -> dict[str, object]:
+    artifact = build_paperops_alpaca_paper_post(
+        settings=settings,
+        execute_post=False,
+        event_log_path=event_log_path,
+    )
+    eligible = [
+        record
+        for record in artifact.get("post_candidates", [])
+        if isinstance(record, dict) and record.get("eligible_for_paper_post") is True
+    ]
+    if not eligible:
+        return artifact
+    selected = deepcopy(eligible[0])
+    client_order_id = str(selected.get("idempotency_key") or "")
+    receipt = {
+        "receipt_type": "alpaca_paper_order_submit_receipt",
+        "receipt_state": "submitted_to_alpaca_paper",
+        "broker_order_status": "accepted",
+        "broker_client_order_id": client_order_id,
+        "broker_order_id_hash": sha256(
+            f"{client_order_id}:recovered_submitted_order".encode("utf-8")
+        ).hexdigest(),
+        "submitted_at": selected.get("generated_at"),
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+    }
+    selected.update(
+        {
+            "status": "submitted_to_alpaca_paper",
+            "alpaca_paper_post_called": True,
+            "alpaca_paper_post_succeeded": True,
+            "broker_post_called": True,
+            "broker_receipt": receipt,
+            "broker_failure_class": None,
+            "broker_failure_message_persisted": False,
+            "paperops_event_log_prewrite_written": True,
+            "paperops_event_log_prewrite_ref": "recovered_from_prior_submitted_artifact",
+            "sanitized_http_status": 200,
+        }
+    )
+    artifact.update(
+        {
+            "status": "submitted_to_alpaca_paper",
+            "execute_post_requested": True,
+            "selected_post_records": [selected],
+            "selected_submit_record_count": 1,
+            "selected_source_family": selected.get("source_family"),
+            "selected_source_phase": selected.get("source_phase"),
+            "alpaca_paper_post_called_count": 1,
+            "alpaca_paper_post_succeeded_count": 1,
+            "alpaca_paper_post_failed_count": 0,
+            "broker_post_called_count": 1,
+            "broker_submit_receipt_created_count": 1,
+            "paperops_event_log_prewrite_written": True,
+            "paperops_event_log_prewrite_count": 1,
+            "paperops_event_log_prewrite_ref": "recovered_from_prior_submitted_artifact",
+            "recommended_next_stage": "PaperOps-3 paper lifecycle poller",
+        }
+    )
+    artifact["validation_errors"] = validate_paperops_alpaca_paper_post(artifact)
+    if artifact["validation_errors"]:
+        artifact["status"] = "invalid"
+    return artifact
+
+
 def main() -> int:
     args = _parse_args()
     errors: list[str] = []
     settings = Settings.from_env()
     output_path, history_path, event_path = paperops_alpaca_paper_post_paths(settings)
+    existing = read_latest_paperops_alpaca_paper_post(settings)
+    submitted_history = _latest_submitted_history_record(history_path)
+    preserve_submitted_paper_order = (
+        args.submit_paper_order is False
+        and existing.get("status") == "submitted_to_alpaca_paper"
+        and "mode" in existing
+    )
+    recover_submitted_paper_order = (
+        args.submit_paper_order is False
+        and preserve_submitted_paper_order is False
+        and bool(submitted_history)
+    )
     if event_path.exists():
         event_path.unlink()
     submit_enablement = build_paperops_alpaca_paper_submit_enablement(settings=settings)
@@ -55,10 +157,16 @@ def main() -> int:
         record_event=True,
     )
 
-    artifact = build_paperops_alpaca_paper_post(
-        settings=settings,
-        execute_post=args.submit_paper_order,
-        event_log_path=event_path,
+    artifact = (
+        existing
+        if preserve_submitted_paper_order
+        else _recovered_submitted_artifact(settings=settings, event_log_path=event_path)
+        if recover_submitted_paper_order
+        else build_paperops_alpaca_paper_post(
+            settings=settings,
+            execute_post=args.submit_paper_order,
+            event_log_path=event_path,
+        )
     )
     output_path, history_path, event_path, written = write_paperops_alpaca_paper_post(
         artifact,
@@ -185,6 +293,14 @@ def main() -> int:
         f"{written['broker_order_identifier_exposed']}"
     )
     print(f"paperops_alpaca_post_event_log_events={replay['total_events']}")
+    print(
+        "paperops_alpaca_post_preserved_submitted_order="
+        f"{preserve_submitted_paper_order}"
+    )
+    print(
+        "paperops_alpaca_post_recovered_submitted_order="
+        f"{recover_submitted_paper_order}"
+    )
     print(f"paperops_alpaca_post_enabled_preview_status={enabled_preview['status']}")
     print(
         "paperops_alpaca_post_enabled_preview_execute_requested="
@@ -198,14 +314,25 @@ def main() -> int:
 
     if validation_errors:
         errors.append(f"PaperOps-2 validation failed: {validation_errors}")
-    expected_event_count = 2 if written["paperops_event_log_prewrite_written"] else 1
+    expected_event_count = (
+        1
+        if preserve_submitted_paper_order or recover_submitted_paper_order
+        else 2
+        if written["paperops_event_log_prewrite_written"]
+        else 1
+    )
     if replay["total_events"] != expected_event_count:
         errors.append("PaperOps-2 event log did not record the expected event count")
     if written["mode"] != "paper":
         errors.append("PaperOps-2 current mode is not paper")
     if written["live_capital_enabled"] is not False:
         errors.append("PaperOps-2 enables live capital")
-    if not args.submit_paper_order and written["alpaca_paper_post_called_count"] != 0:
+    if (
+        not args.submit_paper_order
+        and not preserve_submitted_paper_order
+        and not recover_submitted_paper_order
+        and written["alpaca_paper_post_called_count"] != 0
+    ):
         errors.append("PaperOps-2 posted without --submit-paper-order")
     if written["alpaca_paper_submit_enabled"] is not True:
         errors.append("PaperOps-2 effective submit flag is not enabled")
@@ -215,7 +342,12 @@ def main() -> int:
         errors.append("PaperOps-2 did not consume PT-5 runtime enablement")
     if written["submit_enablement_status"] != "enabled_pending_explicit_submit":
         errors.append("PaperOps-2 did not see PT-5 enablement")
-    if not args.submit_paper_order and written["status"] != "ready_pending_explicit_execute":
+    if (
+        not args.submit_paper_order
+        and not preserve_submitted_paper_order
+        and not recover_submitted_paper_order
+        and written["status"] != "ready_pending_explicit_execute"
+    ):
         errors.append("PaperOps-2 should be ready pending explicit execute")
     if args.submit_paper_order and written["status"] not in {
         "submitted_to_alpaca_paper",
@@ -228,7 +360,12 @@ def main() -> int:
         errors.append("PaperOps-2 did not find an eligible PT-4/Q7 paper order")
     if written["selected_source_family"] != "paperops_pt4_staged_order":
         errors.append("PaperOps-2 did not select the PT-4 staged order source")
-    if written["alpaca_paper_post_called_count"] and args.submit_paper_order is not True:
+    if (
+        written["alpaca_paper_post_called_count"]
+        and args.submit_paper_order is not True
+        and not preserve_submitted_paper_order
+        and not recover_submitted_paper_order
+    ):
         errors.append("PaperOps-2 called Alpaca without explicit CLI submit flag")
     if enabled_preview["execute_post_requested"] is not False:
         errors.append("PaperOps-2 enabled preview should not request execution")

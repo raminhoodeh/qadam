@@ -3,7 +3,7 @@
 PT-10 aggregates the paper-live activation path through PT-9 and records whether
 Qadam can be certified for active paper-live operation. It is intentionally
 fail-closed: the control plane can be certified as safe and visible while full
-paper-live certification remains blocked by Q-CTRL product access or an
+paper-live certification remains blocked by any mandatory Q-CTRL gate or the
 incomplete Phase 7 proof run.
 """
 
@@ -465,6 +465,36 @@ def _recommended_next_action(blockers: list[str]) -> str:
     return "Keep PaperOps runner active and monitor certified paper-live operation."
 
 
+def _blocked_certification_status(
+    *,
+    control_plane_certified: bool,
+    certification_blockers: list[str],
+    paper_live_certified: bool,
+) -> str:
+    if paper_live_certified:
+        return "paper_live_certified"
+    if not control_plane_certified:
+        return "blocked_paper_live_control_plane"
+
+    qctrl_blockers = {
+        "qctrl_product_access_ready",
+        "qctrl_hold_cleared_for_submit",
+    }
+    phase7_blockers = {
+        "phase7_30_day_run_complete",
+        "phase7_demo_proof_certified",
+    }
+    has_qctrl_blocker = any(blocker in qctrl_blockers for blocker in certification_blockers)
+    has_phase7_blocker = any(blocker in phase7_blockers for blocker in certification_blockers)
+    if has_qctrl_blocker and has_phase7_blocker:
+        return "blocked_pending_qctrl_and_phase7_proof"
+    if has_qctrl_blocker:
+        return "blocked_pending_qctrl"
+    if has_phase7_blocker:
+        return "blocked_pending_phase7_proof"
+    return "blocked_pending_certification_gates"
+
+
 def build_paper_live_certification(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     snapshot = _source_snapshot(settings)
@@ -516,14 +546,10 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         unsafe_total += 1
     control_plane_certified = not control_blockers and unsafe_total == 0
     paper_live_certified = control_plane_certified and not certification_blockers
-    status = (
-        "paper_live_certified"
-        if paper_live_certified
-        else (
-            "blocked_pending_qctrl_and_phase7_proof"
-            if control_plane_certified
-            else "blocked_paper_live_control_plane"
-        )
+    status = _blocked_certification_status(
+        control_plane_certified=control_plane_certified,
+        certification_blockers=certification_blockers,
+        paper_live_certified=paper_live_certified,
     )
     artifact = {
         "schema_version": PAPER_LIVE_CERTIFICATION_SCHEMA_VERSION,
@@ -690,6 +716,9 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
     if artifact.get("status") not in {
         "paper_live_certified",
         "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_pending_qctrl",
+        "blocked_pending_phase7_proof",
+        "blocked_pending_certification_gates",
         "blocked_paper_live_control_plane",
         "invalid",
     }:

@@ -62,6 +62,7 @@ node scripts/check_dashboard_d11m_regression_acceptance.js
 node scripts/check_dashboard_d11n_documentation_guide_alignment.js
 node scripts/check_dashboard_d11o_deployment_discipline.js
 node scripts/check_dashboard_d12_language_cleanup.js
+node scripts/check_dashboard_d13_health_language.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
@@ -120,6 +121,8 @@ git diff --check -- \
   docs/qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md \
   docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md \
   docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md \
+  docs/qadam-dashboard-d13-health-language-and-ibm-readiness-2026-05-26.md \
+  scripts/check_dashboard_d13_health_language.js \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   docs/qadam-user-guide.md \
   scripts/check_dashboard_acceptance.js \

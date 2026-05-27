@@ -156,7 +156,7 @@ function assertPlainOverview(models) {
         assert(!primaryText.includes(term), `Overview primary view model uses internal term ${term}`);
     });
     assert(
-        models.safety_strip_model.live_capital_label === "Live capital off",
+        models.safety_strip_model.live_capital_label === "OK - live capital off",
         "single safety strip must keep live-capital safety explicit"
     );
     assert(

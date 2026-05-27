@@ -15,6 +15,7 @@ from orchestrator.config import Settings  # noqa: E402
 from orchestrator.event_log import EventLog  # noqa: E402
 from orchestrator.paperops_paper_lifecycle_poller import (  # noqa: E402
     build_paperops_paper_lifecycle_poller,
+    read_latest_paperops_paper_lifecycle_poller,
     write_paperops_paper_lifecycle_poller,
 )
 from orchestrator.paperops_paper_lifecycle_polling_enablement import (  # noqa: E402
@@ -47,14 +48,19 @@ def main() -> int:
     validation_errors = validate_paperops_paper_lifecycle_polling_enablement(written)
     replay = EventLog(event_path, echo=False).replay()
 
-    poll_now = (
-        written["active_lifecycle_polling_enabled"] is True
-        and written["paper_poll_path_available"] is True
-        and written["paperops_2_submitted_paper_order_count"] > 0
+    poll_now = False
+    existing_poller = read_latest_paperops_paper_lifecycle_poller(settings)
+    preserve_lifecycle_readback = (
+        existing_poller.get("status") == "paper_lifecycle_poll_recorded"
+        and "phase7_proof_credit_allowed" in existing_poller
     )
-    poller = build_paperops_paper_lifecycle_poller(
-        settings=settings,
-        poll_paper_orders=poll_now,
+    poller = (
+        existing_poller
+        if preserve_lifecycle_readback
+        else build_paperops_paper_lifecycle_poller(
+            settings=settings,
+            poll_paper_orders=False,
+        )
     )
     _, _, _, poller_written = write_paperops_paper_lifecycle_poller(
         poller,
@@ -217,6 +223,10 @@ def main() -> int:
     )
     print(f"paperops_lifecycle_polling_enablement_validation_errors={validation_errors}")
     print(f"paperops_lifecycle_polling_enablement_active_poll_now={poll_now}")
+    print(
+        "paperops_lifecycle_polling_enablement_preserved_lifecycle_readback="
+        f"{preserve_lifecycle_readback}"
+    )
     print(f"paperops_lifecycle_polling_enablement_poller_status={poller_written['status']}")
     print(
         "paperops_lifecycle_polling_enablement_poller_order_poll_called_count="

@@ -7,6 +7,32 @@ Qadam operates on a self-imposed trading strategy based on a deep and continuous
 
 This is the control document. Read this first. The other docs are supporting appendices, not competing plans.
 
+## 2026-05-26 Quantum And PaperOps Runtime Update
+
+Qadam now treats Q-CTRL Fire Opal as a mandatory paper-parity provider rather
+than an optional note. The PT-1 guarded provider probe authenticates
+successfully for the `qadam` organization and records
+`qctrl_paper_consultation_ready`, `product_access_verified=True`,
+`provider_call_succeeded=True`, and `product_access_blocker=none`. The Q-CTRL
+submit hold is clear.
+
+The Fire Opal on IBM Quantum guide is captured in
+`scripts/check_qctrl_fire_opal_ibm_quantum.py`. Current state:
+`fire_opal_product_access_verified=True`, `fire_opal_sdk_importable=True`,
+`qiskit_importable=True`, `qiskit_ibm_runtime_importable=True`,
+`qctrl_organization_slug_configured=True`, and
+`status=blocked_missing_ibm_quantum_credentials` because
+`IBM_QUANTUM_TOKEN` and `IBM_QUANTUM_INSTANCE` are not yet configured locally.
+This gate is readiness and device discovery only; hardware submission remains
+separately blocked.
+
+PaperOps is now `ready_for_full_paper_ops`. The safe cycle reports
+`paper_cycle_full_paper_operational_ready` with 34/34 commands passing. One
+Alpaca paper order was submitted and accepted, and the lifecycle poller mirrors
+it as a submitted order with no fill yet. PT-10 remains blocked only on the
+actual Phase 7 proof requirements: `phase7_30_day_run_complete` and
+`phase7_demo_proof_certified`.
+
 ## 1. What This Document Solves
 
 Qadam now has several useful documents, but too many of them feel like plans. This master plan turns them into one build path:
@@ -1089,12 +1115,11 @@ Current PaperOps status:
 - PT-1 Q-CTRL product access and paper consultation is implemented in
   `orchestrator/paper_live_qctrl_product_access.py` and
   `scripts/check_paper_live_qctrl_product_access.py`. The explicit guarded
-  provider probe was run once through PaperOps-Q and reports
-  `status=blocked_qctrl_product_access_or_subscription`,
-  `product_access_verified=False`, `paper_consultation_ready=False`,
-  `provider_call_attempted=True`, `provider_call_succeeded=False`,
-  `provider_call_count=1`, and
-  `product_access_blocker=qctrl_product_access_or_subscription_not_active`.
+  provider probe was run through PaperOps-Q for the `qadam` organization and
+  reports `status=qctrl_paper_consultation_ready`,
+  `product_access_verified=True`, `paper_consultation_ready=True`,
+  `provider_call_attempted=True`, `provider_call_succeeded=True`,
+  `provider_call_count=1`, and `product_access_blocker=none`.
   It exposes this state in PaperOps readiness, PaperOps cycle, PaperOps-6, and
   cockpit Mission Control while keeping Q-CTRL advisory-only with no execution,
   paper-order, broker, live endpoint, live capital, forced-trade, hardware, raw
@@ -1223,9 +1248,10 @@ Current PaperOps status:
   `scripts/run_active_paper_trading_automation.py`. It binds the hourly
   PaperOps runner to the existing PaperOps-2 submit, PaperOps-3 poll, and
   PaperOps-4 exit gates without creating a direct broker shortcut. Current
-  status is `active_automation_enabled_qctrl_hold`, with
-  `paper_submit_step_allowed=False` because Q-CTRL paper consultation product
-  access is not ready.
+  status is `active_automation_enabled_idle`: Q-CTRL is ready, one Alpaca paper
+  order has been submitted and accepted, the lifecycle poller has mirrored the
+  submitted order, and no exit is eligible until an open-position readback
+  exists.
 - PT-9 cockpit and notification upgrade is implemented in
   `orchestrator/paperops_cockpit_notification_upgrade.py` and
   `scripts/check_paperops_cockpit_notification_upgrade.py`. It exposes
@@ -1239,42 +1265,39 @@ Current PaperOps status:
 - PT-10 paper-live certification is implemented in
   `orchestrator/paper_live_certification.py` and
   `scripts/check_paper_live_certification.py`. It records
-  `status=blocked_pending_qctrl_and_phase7_proof`,
+  `status=blocked_pending_phase7_proof`,
   `paper_live_certification_gate_evaluated=True`,
   `paper_live_control_plane_certified=True`,
   `paper_live_certified=False`, `paper_live_operation_allowed=False`, and
   `paper_live_submission_delegation_allowed=False`. It is wired into PaperOps
   readiness, the PaperOps cycle, PaperOps-6, cockpit status, Mission Control,
   and the hourly automation prompt. Current certification blockers are
-  `qctrl_product_access_ready`, `qctrl_hold_cleared_for_submit`,
-  `paperops_full_readiness`, `phase7_30_day_run_complete`, and
-  `phase7_demo_proof_certified`; all unsafe write, broker, notification, live
-  capital, and Phase 7 proof-credit counters remain zero.
+  `phase7_30_day_run_complete` and `phase7_demo_proof_certified`; all unsafe
+  write, broker, notification, live capital, and Phase 7 proof-credit counters
+  remain zero. Q-CTRL remains mandatory, but its current product-access and
+  submit-hold gates are clear for the `qadam` organization.
 - External trading strategy notes are now integrated as decision context through
   `orchestrator/strategy_research_intake.py`, Strategy Lead shadow review, the
   Phase 4 candidate strategy universe, and PaperOps readiness. This gives Qadam
   four structured research candidates without granting trade, broker, Q-CTRL, or
   live-capital authority.
-- Current cycle result is `paper_cycle_safe_blocked_pending_enablement` with
-  34/34 commands passing: paper mode is safe to continue, PT-0 approval is
-  logged, PT-1 has recorded the Q-CTRL product-access blocker, PT-2 makes the
-  global PaperOps runtime mode effective, PT-3 finds one production-qualified
-  setup candidate ready for guarded paper handoff, PT-4 auto-approves and
-  stages one PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit
-  path, PT-6 runtime-enables active read-only lifecycle polling, PT-7
-  runtime-enables the guarded paper-exit path, PT-8 binds active paper
-  automation but holds submit behind Q-CTRL product access, the Phase 7 run is
-  active, the Head-of-Quant oracle can run in its current non-provider mode,
-  broker/Alpaca POST counters remain zero, PaperOps-2 reports
-  `ready_pending_explicit_execute`, PaperOps-3 reports
-  `ready_no_submitted_paper_orders`, PaperOps-4 reports
+- Current cycle result is `paper_cycle_full_paper_operational_ready` with 34/34
+  commands passing: paper mode is safe to continue, PT-0 approval is logged,
+  PT-1 has verified Q-CTRL product access for `qadam`, PT-2 makes the global
+  PaperOps runtime mode effective, PT-3 finds one production-qualified setup
+  candidate ready for guarded paper handoff, PT-4 auto-approves and stages one
+  PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit path,
+  PT-6 runtime-enables active read-only lifecycle polling, PT-7 runtime-enables
+  the guarded paper-exit path, PT-8 binds active paper automation with the
+  Q-CTRL hold clear, the Phase 7 run is active, the Head-of-Quant oracle can run
+  in its current guarded mode, one Alpaca paper order has been submitted and
+  accepted, PaperOps-3 has mirrored the submitted order, PaperOps-4 reports
   `ready_no_exit_candidate`, PaperOps-5 reports `review_ready`, PaperOps-6
   reports `operations_active`, PT-9 reports
   `cockpit_notification_upgrade_ready`, PT-10 reports
-  `blocked_pending_qctrl_and_phase7_proof` with the paper-live control plane
-  certified, and the remaining blockers are Q-CTRL paper-consultation product
-  access, the active Q-CTRL submit hold, full PaperOps readiness, 30-day Phase 7
-  run completion, and Phase 7 demo-proof certification.
+  `blocked_pending_phase7_proof` with the paper-live control plane certified,
+  and the remaining certification blockers are 30-day Phase 7 run completion
+  and Phase 7 demo-proof certification.
 - The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
   day `2`, with completed calendar days `1`, calendar days remaining `29`,
   `qualified_setup_count=0`, `submitted_paper_order_count=0`, and
@@ -1291,9 +1314,9 @@ Current PaperOps status:
   live-promotion review, and cockpit status export.
 - The next operational step is to keep the PaperOps runner active through the
   actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, resolve PaperOps-Q product access, then let
-  PT-8 delegate only to PaperOps-2/PaperOps-3/PaperOps-4 when their explicit
-  paper-only gates and source prerequisites exist.
+  where Q7-qualified setups exist, keep the Q-CTRL/Fire Opal paper consultation
+  gate clear, then let PT-8 delegate only to PaperOps-2/PaperOps-3/PaperOps-4
+  when their explicit paper-only gates and source prerequisites exist.
 
 Build:
 

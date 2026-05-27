@@ -139,6 +139,18 @@ def main() -> int:
         f"{written['qctrl_credential_configured']}"
     )
     print(
+        "paper_live_qctrl_product_access_fire_opal_product_required="
+        f"{written['qctrl_fire_opal_product_required']}"
+    )
+    print(
+        "paper_live_qctrl_product_access_organization_slug_configured="
+        f"{written['qctrl_organization_slug_configured']}"
+    )
+    print(
+        "paper_live_qctrl_product_access_organization_config_applied="
+        f"{written['qctrl_organization_config_applied']}"
+    )
+    print(
         "paper_live_qctrl_product_access_sdk_importable="
         f"{written['qctrl_sdk_package_importable']}"
     )
@@ -165,6 +177,10 @@ def main() -> int:
     print(
         "paper_live_qctrl_product_access_auth_status="
         f"{written['qctrl_auth_status']}"
+    )
+    print(
+        "paper_live_qctrl_product_access_provider_failure_category="
+        f"{written['provider_failure_category']}"
     )
     print(
         "paper_live_qctrl_product_access_blocker="
@@ -229,6 +245,8 @@ def main() -> int:
         errors.append("PT-1 is missing PT-0 system approval log")
     if written["qctrl_credential_configured"] is not True:
         errors.append("PT-1 does not see configured Q-CTRL credential")
+    if written["qctrl_fire_opal_product_required"] is not True:
+        errors.append("PT-1 does not require Fire Opal for mandatory quantum parity")
     if (
         written["qctrl_sdk_package_importable"] is not True
         and written["status"] != "blocked_missing_qctrl_sdk"

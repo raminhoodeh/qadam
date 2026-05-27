@@ -19,17 +19,18 @@ missing setup, waiting for evidence, disabled features, and actual faults.
 
 | Canonical label | Tone | Meaning |
 | --- | --- | --- |
-| Current | online | Fresh enough to read as the current public-safe state. |
-| Read-only | online | Visible for monitoring only; cannot mutate Qadam state. |
-| Paper only | online | Paper/demo state only. |
-| Live capital off | online | Real-money trading authority is off. |
+| OK | online | Verified enough to treat as a healthy dashboard state. |
+| OK - read-only | online | Visible for monitoring only; cannot mutate Qadam state. |
+| OK - paper only | online | Paper/demo state only. |
+| OK - live capital off | online | Real-money trading authority is off. |
 | Dry run | pending | Simulation or notification test mode without live send/write authority. |
-| Waiting for evidence | pending | Normal hold while source, model, risk, or review evidence is not complete. |
-| Missing setup | degraded | Required configuration, credentials, source material, or exported status is missing. |
-| Degraded | degraded | Available but impaired, stale, partial, or lower confidence. |
+| Waiting | pending | Normal hold while source, model, risk, proof-window, or review evidence is not complete. |
+| Optional | pending | Useful if configured, but not required for the current paper-trading core. |
+| Not configured | degraded | Required configuration, credentials, source material, or exported status is missing. |
+| Needs attention | degraded | Available but impaired, stale, partial, or lower confidence. |
 | Local only | local-only | Present only in local/private runtime context. |
-| Non-executable | blocked | Can inform review, but cannot create or execute a trade action. |
-| Safety stop | blocked | A deliberate safety, authority, risk, or policy stop is holding the path. |
+| Review only | blocked | Can inform review, but cannot create or execute a trade action. |
+| Blocked | blocked | A deliberate safety, authority, risk, or policy stop is holding the path. |
 | Fault | blocked | Unexpected failure or unsafe condition needing operator review. |
 
 ## Renderer Contract
@@ -55,5 +56,7 @@ such as `Blocked idea` or `Postmortem due` remain intact.
 - Exact raw status-token badges render canonical labels where safe.
 - The dashboard keeps existing safety boundaries explicit, including paper-only,
   read-only, broker-write stop, and live-capital-off language.
+- Optional feeds and supplemental context are labelled as optional instead of
+  making the whole paper-trading core look broken.
 - Existing status tones and CSS classes remain compatible with previous checks.
 - Dashboard authority remains read-only and status-derived.

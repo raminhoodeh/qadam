@@ -113,8 +113,8 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Provider | Placeholders | Why It Matters |
 | --- | --- | --- |
 | LM Studio local LLM | `LM_STUDIO_BASE_URL`, `LM_STUDIO_MODEL` | Local Research Analyst triage; usually no API key. |
-| Q-CTRL | `QCTRL_API_KEY` | Optional future quantum optimization/error-suppression layer. |
-| IBM Quantum | `IBM_QUANTUM_TOKEN` | Primary future hardware backend through Qiskit Runtime. |
+| Q-CTRL Fire Opal | `QCTRL_API_KEY`, `QCTRL_ORGANIZATION_SLUG` when required | Mandatory quantum consultation provider for paper-live parity; Qadam defaults the organization slug to `qadam` when no secret override is present. |
+| IBM Quantum | `IBM_QUANTUM_TOKEN`, `IBM_QUANTUM_INSTANCE` | Primary future hardware backend through Fire Opal on IBM Quantum / Qiskit Runtime. |
 | AWS Braket | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | Secondary future quantum backend. |
 | TradingView alerts | `TRADINGVIEW_WEBHOOK_SECRET`, `TRADINGVIEW_ALERT_RECEIVER_URL` | Paid-account alert intake. TradingView does not provide a normal retail market-data API key. |
 | Polymarket execution | `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER_ADDRESS`, `POLYMARKET_CHAIN_ID` | Later guarded prediction-market execution only; public market data needs no key. |
@@ -180,8 +180,8 @@ These are not all World Monitor data sources, but they are required to make Qada
 | Deployment | Vercel | `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` | Deploys static cockpit / web shell; no local orchestrator secrets in Vercel unless explicitly approved. |
 | Frontier LLM | Gemini | `GEMINI_API_KEY` | Strategy Lead research packets; cannot execute trades. |
 | Local LLM | LM Studio / Gemma | `LM_STUDIO_BASE_URL`, `LM_STUDIO_MODEL` | Local Research Analyst triage; no cloud key required. |
-| Quantum | Q-CTRL | `QCTRL_API_KEY` | Optional provider; weekly oracle only. |
-| Quantum | IBM Quantum | `IBM_QUANTUM_TOKEN` | Optional hardware backend; classical fallback required. |
+| Quantum | Q-CTRL Fire Opal | `QCTRL_API_KEY`, `QCTRL_ORGANIZATION_SLUG` when required | Mandatory paper-live quantum consultation; no broker, risk, or execution authority. |
+| Quantum | IBM Quantum | `IBM_QUANTUM_TOKEN`, `IBM_QUANTUM_INSTANCE` | Future hardware backend through Fire Opal device discovery and Qiskit Runtime; explicit probe required and hardware submission remains separately blocked. |
 | Quantum | AWS Braket | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | Optional hardware backend; restricted IAM only. |
 | Paper broker | Alpaca | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account only until live promotion review. |
 | Market data supplement | Yahoo Finance / yfinance | none by default; optional `YFINANCE_ENABLED`, `YFINANCE_CACHE_DIR`, `YFINANCE_REQUEST_BUDGET_PER_RUN`, `YFINANCE_SYMBOL_ALLOWLIST` | Read-only supplemental market confirmation. No broker execution, no fill prices, no receipts, no reconciliation truth. |
@@ -240,7 +240,9 @@ LM_STUDIO_MODEL=gemma-4-e4b
 
 # Quantum providers
 QCTRL_API_KEY=
+QCTRL_ORGANIZATION_SLUG=
 IBM_QUANTUM_TOKEN=
+IBM_QUANTUM_INSTANCE=
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=

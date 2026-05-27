@@ -97,7 +97,7 @@ async function main() {
     assert(watching.some((source) => source.auth_class === "credential_required"), "credential-required auth state is not represented");
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-source-summary]", "Missing creds");
+    assertIncludes(rendered, "[data-source-summary]", "Required not configured");
     assertIncludes(rendered, "[data-source-summary]", "Signal influence");
     assertIncludes(rendered, "[data-source-summary]", "Yahoo Finance");
     assertIncludes(rendered, "[data-source-summary]", "Preference MCP");
@@ -105,13 +105,13 @@ async function main() {
     assertIncludes(rendered, "[data-watching-list]", "credential required");
     assertIncludes(rendered, "[data-watching-list]", "ready to port");
     assertIncludes(rendered, "[data-watching-list]", "1 endpoints");
-    assertIncludes(rendered, "[data-watching-list]", "evidence blocked");
+    assertIncludes(rendered, "[data-watching-list]", "evidence only");
     assertIncludes(rendered, "[data-watching-list]", "blocked until signal integrity gate");
     assertIncludes(rendered, "[data-watching-list]", "payload Not connected");
     assertIncludes(rendered, "[data-watching-list]", "TradingView Paid Alerts");
     assertIncludes(rendered, "[data-watching-list]", "Supplemental market confirmation");
     assertIncludes(rendered, "[data-watching-list]", "Yahoo Finance");
-    assertIncludes(rendered, "[data-watching-list]", "live read deferred");
+    assertIncludes(rendered, "[data-watching-list]", "Yahoo Finance deferred");
     assertIncludes(rendered, "[data-watching-list]", "no reconciliation truth");
     assertIncludes(rendered, "[data-watching-list]", "Preference MCP data plane");
     assertIncludes(rendered, "[data-watching-list]", "Domain-pack coverage");

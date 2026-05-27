@@ -29,6 +29,11 @@ quantum-local = [
 qctrl-paper = [
   "fire-opal>=8.0",
 ]
+quantum-ibm = [
+  "fire-opal>=8.0",
+  "qiskit>=1.0",
+  "qiskit-ibm-runtime>=0.23",
+]
 
 [build-system]
 requires = ["setuptools>=69", "wheel"]

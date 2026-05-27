@@ -125,8 +125,8 @@ async function main() {
     assertIncludes(rendered, "[data-capital]", "first release gbp 100000 paper");
     assertIncludes(rendered, "[data-capital]", String(capital.broker || "").replaceAll("_", " "));
     assertIncludes(rendered, "[data-capital]", String(capital.connection_status || "").replaceAll("_", " "));
-    assertIncludes(rendered, "[data-capital]", "read only");
-    assertIncludes(rendered, "[data-capital]", "Paper only");
+    assertIncludes(rendered, "[data-capital]", "OK - read-only");
+    assertIncludes(rendered, "[data-capital]", "OK - paper only");
     assertIncludes(rendered, "[data-capital]", "Paper mirror state");
     assertIncludes(rendered, "[data-capital]", String(capital.timeline_status || "").replaceAll("_", " "));
     assertIncludes(rendered, "[data-capital]", "Peak equity");

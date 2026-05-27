@@ -66,6 +66,9 @@ PAPER_LIVE_QCTRL_PRODUCT_ACCESS_PUBLIC_FIELDS: tuple[str, ...] = (
     "qctrl_paper_consultation_enabled_for_probe",
     "qctrl_readiness_status",
     "qctrl_credential_configured",
+    "qctrl_fire_opal_product_required",
+    "qctrl_organization_slug_configured",
+    "qctrl_organization_config_applied",
     "qctrl_sdk_package_importable",
     "qctrl_sdk_module_selected",
     "provider_call_allowed",
@@ -73,6 +76,7 @@ PAPER_LIVE_QCTRL_PRODUCT_ACCESS_PUBLIC_FIELDS: tuple[str, ...] = (
     "provider_call_succeeded",
     "provider_call_count",
     "qctrl_auth_status",
+    "provider_failure_category",
     "product_access_blocker",
     "paperops_qctrl_status",
     "head_of_quant_note_status",
@@ -203,6 +207,35 @@ def _classify_product_access(
             "Q-CTRL product access is verified; proceed to PT-2 when other gates allow.",
         )
     if qctrl_artifact.get("provider_call_attempted") is True:
+        failure_category = str(qctrl_artifact.get("provider_failure_category") or "")
+        if failure_category == "fire_opal_organization_slug_required":
+            return (
+                "blocked_qctrl_product_access_or_subscription",
+                "blocked_missing_fire_opal_organization_slug",
+                "qctrl_fire_opal_organization_slug_required",
+                "Set QCTRL_ORGANIZATION_SLUG for the Fire Opal organization, then rerun PT-1.",
+            )
+        if failure_category == "fire_opal_organization_slug_invalid_or_no_product_access":
+            return (
+                "blocked_qctrl_product_access_or_subscription",
+                "blocked_fire_opal_organization_access",
+                "qctrl_fire_opal_organization_slug_invalid_or_no_product_access",
+                "Verify the configured QCTRL_ORGANIZATION_SLUG belongs to an organization with active Fire Opal access, then rerun PT-1.",
+            )
+        if failure_category == "fire_opal_subscription_not_active":
+            return (
+                "blocked_qctrl_product_access_or_subscription",
+                "blocked_external_product_access",
+                "qctrl_fire_opal_subscription_not_active",
+                "Activate Fire Opal access for the Q-CTRL organization used by Qadam, then rerun PT-1.",
+            )
+        if failure_category == "provider_network_error":
+            return (
+                "blocked_qctrl_product_access_or_subscription",
+                "blocked_provider_network",
+                "qctrl_provider_network_unavailable",
+                "Allow the Q-CTRL provider probe to reach Fire Opal, then rerun PT-1.",
+            )
         return (
             "blocked_qctrl_product_access_or_subscription",
             "blocked_external_product_access",
@@ -229,6 +262,16 @@ def _qctrl_artifact_from_previous_pt1(previous: dict[str, Any]) -> dict[str, Any
         "provider_call_succeeded": previous.get("provider_call_succeeded"),
         "provider_call_count": previous.get("provider_call_count"),
         "qctrl_auth_status": previous.get("qctrl_auth_status"),
+        "provider_failure_category": previous.get("provider_failure_category"),
+        "qctrl_fire_opal_product_required": previous.get(
+            "qctrl_fire_opal_product_required"
+        ),
+        "qctrl_organization_slug_configured": previous.get(
+            "qctrl_organization_slug_configured"
+        ),
+        "qctrl_organization_config_applied": previous.get(
+            "qctrl_organization_config_applied"
+        ),
         "validation_errors": [],
         "head_of_quant_note": {
             "status": previous.get("head_of_quant_note_status"),
@@ -327,6 +370,18 @@ def build_paper_live_qctrl_product_access(
         "qctrl_readiness_status": readiness.get("status"),
         "qctrl_credential_configured": readiness.get("credential_configured")
         is True,
+        "qctrl_fire_opal_product_required": qctrl_artifact.get(
+            "qctrl_fire_opal_product_required"
+        )
+        is True,
+        "qctrl_organization_slug_configured": qctrl_artifact.get(
+            "qctrl_organization_slug_configured"
+        )
+        is True,
+        "qctrl_organization_config_applied": qctrl_artifact.get(
+            "qctrl_organization_config_applied"
+        )
+        is True,
         "qctrl_sdk_package_importable": readiness.get("sdk_package_importable")
         is True,
         "qctrl_sdk_module_selected": qctrl_artifact.get("qctrl_sdk_module_selected"),
@@ -337,6 +392,7 @@ def build_paper_live_qctrl_product_access(
         is True,
         "provider_call_count": _int(qctrl_artifact.get("provider_call_count")),
         "qctrl_auth_status": qctrl_artifact.get("qctrl_auth_status", "not_run"),
+        "provider_failure_category": qctrl_artifact.get("provider_failure_category"),
         "product_access_blocker": blocker,
         "paperops_qctrl_status": qctrl_artifact.get("status", "not_run"),
         "paperops_qctrl_validation_error_count": len(
@@ -414,11 +470,18 @@ def validate_paper_live_qctrl_product_access(artifact: dict[str, Any]) -> list[s
         errors.append("paper_live_qctrl_product_access_pt0_not_logged")
     if artifact.get("qctrl_credential_configured") is not True:
         errors.append("paper_live_qctrl_product_access_credential_missing")
+    if artifact.get("qctrl_fire_opal_product_required") is not True:
+        errors.append("paper_live_qctrl_product_access_fire_opal_not_required")
     if (
         artifact.get("qctrl_sdk_package_importable") is not True
         and artifact.get("status") != "blocked_missing_qctrl_sdk"
     ):
         errors.append("paper_live_qctrl_product_access_sdk_missing")
+    if (
+        artifact.get("qctrl_organization_config_applied") is True
+        and artifact.get("qctrl_organization_slug_configured") is not True
+    ):
+        errors.append("paper_live_qctrl_product_access_org_config_applied_without_slug")
     allowed_statuses = {
         "ready_for_explicit_qctrl_product_access_probe",
         "blocked_qctrl_product_access_or_subscription",

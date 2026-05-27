@@ -129,7 +129,7 @@ async function main() {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-watching-list]", "TradingView Paid Alerts");
     assertIncludes(rendered, "[data-watching-list]", "observed alert source");
-    assertIncludes(rendered, "[data-watching-list]", "receiver pending");
+    assertIncludes(rendered, "[data-watching-list]", "Optional");
     assertIncludes(rendered, "[data-watching-list]", "d7 local contract");
     assertIncludes(rendered, "[data-watching-list]", "observed signal only no execution path");
     assertIncludes(rendered, "[data-trade-layer]", "TradingView alert source");

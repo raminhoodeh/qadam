@@ -76,6 +76,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_d11n_documentation_guide_alignment.js",
     "scripts/check_dashboard_d11o_deployment_discipline.js",
     "scripts/check_dashboard_d12_language_cleanup.js",
+    "scripts/check_dashboard_d13_health_language.js",
     "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_durable_spine.js",
     "scripts/check_dashboard_renderer.js",
@@ -90,7 +91,8 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_protected_user_guide.js",
     "scripts/check_cockpit_status.py",
     "scripts/check_live_bridge.py",
-    "docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md"
+    "docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md",
+    "docs/qadam-dashboard-d13-health-language-and-ibm-readiness-2026-05-26.md"
 ].forEach(assertFileExists);
 
 [
@@ -126,8 +128,8 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260526-language-cleanup",
-    "/dashboard.js?v=20260526-language-cleanup"
+    "/auth.css?v=20260527-health-language",
+    "/dashboard.js?v=20260527-health-language"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -207,8 +209,8 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
     [
         ["[data-status-banner]", "Dashboard status loaded"],
         ["[data-status-banner]", "Live status connected"],
-        ["[data-dashboard-safety-strip]", "Paper only"],
-        ["[data-dashboard-safety-strip]", "Live capital off"],
+        ["[data-dashboard-safety-strip]", "OK - paper only"],
+        ["[data-dashboard-safety-strip]", "OK - live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders"],
         ["[data-overview-status-rail]", "Day 0/30"],
         ["[data-overview-status-rail]", "Potential setups"],

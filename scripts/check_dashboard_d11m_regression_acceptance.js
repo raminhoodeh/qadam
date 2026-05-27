@@ -112,8 +112,8 @@ function assertSafetyStripIsSingleGlobalAuthority() {
         "dashboard must expose exactly one global safety strip"
     );
     includesAll(dashboardHtml, [
-        "Paper only",
-        "Live capital off",
+        "OK - paper only",
+        "OK - live capital off",
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
         "Performance proof requires verified records"
@@ -121,7 +121,7 @@ function assertSafetyStripIsSingleGlobalAuthority() {
     includesAll(renderer, [
         "renderDashboardSafetyStrip(status, viewModels)",
         "const modeLabel = status.mode === \"paper\"",
-        "? \"Paper only\"",
+        "? \"OK - paper only\"",
         "mode_label: modeLabel",
         "ui_broker_label: \"Dashboard cannot place orders\"",
         "llm_broker_label: \"AI cannot bypass risk checks\""
@@ -177,8 +177,8 @@ async function assertRenderedDashboardContract() {
     );
 
     [
-        ["[data-dashboard-safety-strip]", "Paper only"],
-        ["[data-dashboard-safety-strip]", "Live capital off"],
+        ["[data-dashboard-safety-strip]", "OK - paper only"],
+        ["[data-dashboard-safety-strip]", "OK - live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders"],
         ["[data-dashboard-safety-strip]", "AI cannot bypass risk checks"],
         ["[data-overview-hero]", "Current summary"],
@@ -228,8 +228,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260526-language-cleanup",
-        "/dashboard.js?v=20260526-language-cleanup"
+        "/auth.css?v=20260527-health-language",
+        "/dashboard.js?v=20260527-health-language"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

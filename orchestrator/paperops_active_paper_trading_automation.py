@@ -308,7 +308,9 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "paper_live_qctrl_product_access": _read_json(
             runtime / "paper_live_qctrl_product_access.json"
         ),
-        "qctrl_consultation": _read_json(runtime / "paperops_qctrl_consultation.json"),
+        "qctrl_consultation": _read_json(
+            runtime / "paperops_qctrl_paper_consultation.json"
+        ),
         "paperops2": _read_json(runtime / "paperops_alpaca_paper_post.json"),
         "paperops3": _read_json(runtime / "paperops_paper_lifecycle_poller.json"),
         "paperops4": _read_json(runtime / "paperops_paper_exit_path.json"),

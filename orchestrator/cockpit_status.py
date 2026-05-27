@@ -183,9 +183,11 @@ from orchestrator.preference_mcp_provenance import preference_provenance_paths
 from orchestrator.preference_mcp_shadow_context import preference_shadow_context_paths
 from orchestrator.preference_mcp_source_promotion import preference_source_promotion_paths
 from orchestrator.quantum import (
+    qctrl_fire_opal_ibm_readiness,
     quantum_local_simulator_status,
     quantum_oracle_summary,
     quantum_provider_readiness,
+    validate_qctrl_fire_opal_ibm_readiness,
     validate_quantum_local_simulator_status,
     validate_quantum_oracle_output_routing,
     validate_quantum_provider_readiness,
@@ -5974,6 +5976,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     health = build_system_health(settings, event_log_health=EventLog(echo=False).health())
     quantum_oracle = dict(health["quantum_oracle"])
     quantum_oracle["provider_readiness"] = quantum_provider_readiness(settings)
+    fire_opal_ibm_readiness = qctrl_fire_opal_ibm_readiness(settings)
+    validate_qctrl_fire_opal_ibm_readiness(fire_opal_ibm_readiness)
+    quantum_oracle["fire_opal_ibm_readiness"] = fire_opal_ibm_readiness
     watching = _build_watching(data_map, settings)
     payload = {
         "schema_version": COCKPIT_STATUS_SCHEMA_VERSION,
@@ -6003,6 +6008,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "broker_reconciliation": _broker_reconciliation_status(settings),
         "paper_submit_receipt": _paper_submit_receipt_status(settings),
         "quantum_oracle": quantum_oracle,
+        "qctrl_fire_opal_ibm_readiness": fire_opal_ibm_readiness,
         "paper_live_activation": paper_live_activation_public_status(settings),
         "paper_live_qctrl_product_access": paper_live_qctrl_product_access_public_status(
             settings
@@ -6739,6 +6745,9 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     if paper_live_certification.get("status") not in {
         "not_run",
         "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_pending_qctrl",
+        "blocked_pending_phase7_proof",
+        "blocked_pending_certification_gates",
         "blocked_paper_live_control_plane",
         "paper_live_certified",
         "invalid",
@@ -9042,6 +9051,10 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("quantum provider readiness must not expose secret values")
     if provider_readiness.get("raw_response_exposed_count", 0) != 0:
         raise ValueError("quantum provider readiness must not expose raw provider responses")
+    fire_opal_ibm = payload.get("qctrl_fire_opal_ibm_readiness", {})
+    validate_qctrl_fire_opal_ibm_readiness(fire_opal_ibm)
+    if quantum_oracle.get("fire_opal_ibm_readiness") != fire_opal_ibm:
+        raise ValueError("Fire Opal IBM readiness mismatch between cockpit surfaces")
     phase3_readiness = payload["mission_control"].get("phase3_readiness", {})
     phase3_required = {
         "autonomous_scheduler_enabled",

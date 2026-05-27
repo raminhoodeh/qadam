@@ -57,6 +57,14 @@ PAPER_OPS_BOUNDARY = (
     "money."
 )
 
+PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES = {
+    "blocked_pending_qctrl_and_phase7_proof",
+    "blocked_pending_qctrl",
+    "blocked_pending_phase7_proof",
+    "blocked_pending_certification_gates",
+    "paper_live_certified",
+}
+
 TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     ("paper_mode_enforced", "QADAM_MODE must be paper and live capital must stay false."),
     (
@@ -531,13 +539,14 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         )
     )
     qctrl_consultation_ready = (
-        settings.qctrl_paper_consultation_enabled
-        and qctrl_consultation.get("status") == "consultation_recorded"
+        qctrl_consultation.get("status") == "consultation_recorded"
         and qctrl_consultation.get("provider_call_recorded") is True
         and _int(qctrl_consultation.get("provider_call_count")) > 0
         and qctrl_consultation.get("paper_order_allowed") is False
         and qctrl_consultation.get("execution_allowed") is False
         and qctrl_consultation.get("broker_post_allowed") is False
+        and paper_live_qctrl_product_access.get("product_access_verified") is True
+        and paper_live_qctrl_product_access.get("paper_consultation_ready") is True
     )
     alpaca_paper_submit_effective = (
         settings.alpaca_paper_submit_enabled or alpaca_submit_enablement_ready
@@ -729,10 +738,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     )
     paper_live_certification_ready = (
         paper_live_certification.get("status")
-        in {
-            "blocked_pending_qctrl_and_phase7_proof",
-            "paper_live_certified",
-        }
+        in PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES
         and paper_live_certification.get("recorded") is True
         and paper_live_certification.get("event_log_written") is True
         and _int(paper_live_certification.get("event_log_event_count")) == 1
@@ -2515,8 +2521,7 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
     if artifact.get("cockpit_notification_upgrade_phase7_proof_credit_allowed") is not False:
         errors.append("paper_ops_cockpit_notification_upgrade_proof_credit_allowed")
     if artifact.get("paper_live_certification_status") not in {
-        "blocked_pending_qctrl_and_phase7_proof",
-        "paper_live_certified",
+        *PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES,
     }:
         errors.append("paper_ops_paper_live_certification_not_evaluated")
     if artifact.get("paper_live_certification_gate_evaluated") is not True:

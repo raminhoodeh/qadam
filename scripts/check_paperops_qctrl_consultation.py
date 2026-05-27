@@ -17,6 +17,7 @@ from orchestrator.event_log import EventLog  # noqa: E402
 from orchestrator.paperops_qctrl_consultation import (  # noqa: E402
     PAPEROPS_QCTRL_CONSULTATION_SCHEMA_VERSION,
     build_paperops_qctrl_consultation,
+    read_latest_paperops_qctrl_consultation,
     validate_paperops_qctrl_consultation,
     write_paperops_qctrl_consultation,
 )
@@ -25,7 +26,18 @@ from orchestrator.paperops_qctrl_consultation import (  # noqa: E402
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
-    artifact = build_paperops_qctrl_consultation(settings)
+    existing = read_latest_paperops_qctrl_consultation(settings)
+    preserve_recorded_consultation = (
+        settings.qctrl_paper_consultation_enabled is False
+        and existing.get("status") == "consultation_recorded"
+        and existing.get("provider_call_succeeded") is True
+        and existing.get("qctrl_paper_consultation_enabled") is True
+    )
+    artifact = (
+        existing
+        if preserve_recorded_consultation
+        else build_paperops_qctrl_consultation(settings)
+    )
     output_path, history_path, event_path, written = write_paperops_qctrl_consultation(
         artifact,
         settings,
@@ -79,6 +91,18 @@ def main() -> int:
     print(f"paperops_qctrl_enabled={written['qctrl_paper_consultation_enabled']}")
     print(f"paperops_qctrl_readiness_status={written['qctrl_readiness_status']}")
     print(f"paperops_qctrl_credential_configured={written['qctrl_credential_configured']}")
+    print(
+        "paperops_qctrl_fire_opal_product_required="
+        f"{written['qctrl_fire_opal_product_required']}"
+    )
+    print(
+        "paperops_qctrl_organization_slug_configured="
+        f"{written['qctrl_organization_slug_configured']}"
+    )
+    print(
+        "paperops_qctrl_organization_config_applied="
+        f"{written['qctrl_organization_config_applied']}"
+    )
     print(f"paperops_qctrl_sdk_package_importable={written['qctrl_sdk_package_importable']}")
     print(f"paperops_qctrl_sdk_module_selected={written['qctrl_sdk_module_selected']}")
     print(f"paperops_qctrl_provider_call_allowed={written['provider_call_allowed']}")
@@ -86,6 +110,7 @@ def main() -> int:
     print(f"paperops_qctrl_provider_call_succeeded={written['provider_call_succeeded']}")
     print(f"paperops_qctrl_provider_call_count={written['provider_call_count']}")
     print(f"paperops_qctrl_auth_status={written['qctrl_auth_status']}")
+    print(f"paperops_qctrl_provider_failure_category={written['provider_failure_category']}")
     print(
         "paperops_qctrl_head_of_quant_note_status="
         f"{written['head_of_quant_note']['status']}"
@@ -96,6 +121,10 @@ def main() -> int:
     print(f"paperops_qctrl_secret_value_exposed={written['secret_value_exposed']}")
     print(f"paperops_qctrl_raw_response_exposed={written['raw_response_exposed']}")
     print(f"paperops_qctrl_event_log_events={replay['total_events']}")
+    print(
+        "paperops_qctrl_preserved_recorded_consultation="
+        f"{preserve_recorded_consultation}"
+    )
     print(f"paperops_qctrl_enabled_preview_status={enabled_preview['status']}")
     print(
         "paperops_qctrl_enabled_preview_provider_call_allowed="
@@ -117,7 +146,12 @@ def main() -> int:
         errors.append("PaperOps-Q enables live capital")
     if written["qctrl_credential_configured"] is not True:
         errors.append("PaperOps-Q does not see the configured Q-CTRL credential")
-    if written["qctrl_paper_consultation_enabled"] is False:
+    if written["qctrl_fire_opal_product_required"] is not True:
+        errors.append("PaperOps-Q does not require Fire Opal for quantum parity")
+    if (
+        settings.qctrl_paper_consultation_enabled is False
+        and written["qctrl_paper_consultation_enabled"] is False
+    ):
         if written["status"] != "disabled_pending_enablement":
             errors.append("PaperOps-Q should stay disabled pending explicit enablement")
         if written["provider_call_count"] != 0:

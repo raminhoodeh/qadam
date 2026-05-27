@@ -93,8 +93,8 @@ async function main() {
         "data-evidence-review-group=\"supplemental_context\"",
         "data-evidence-review-group=\"factual_packets\"",
         "data-evidence-source-ledger",
-        "/auth.css?v=20260526-language-cleanup",
-        "/dashboard.js?v=20260526-language-cleanup"
+        "/auth.css?v=20260527-health-language",
+        "/dashboard.js?v=20260527-health-language"
     ], "D11G Evidence static shell");
 
     excludesAll(dashboardHtml, [
@@ -163,7 +163,7 @@ async function main() {
 
     includesAll(summaryHtml, [
         "Sources",
-        "Missing creds",
+        "Required not configured",
         "Signal influence",
         "Yahoo Finance",
         "Preference MCP"
@@ -175,7 +175,7 @@ async function main() {
         "ACLED API",
         "Supplemental market confirmation",
         "Preference MCP data plane",
-        "evidence blocked"
+        "evidence only"
     ], "rendered D11G Evidence ledger");
 
     excludesAll(`${workspaceHtml} ${summaryHtml} ${ledgerHtml}`, [

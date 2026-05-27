@@ -91,8 +91,8 @@ async function main() {
         "data-reasoning-review-group=\"hypotheses_blockers\"",
         "data-reasoning-review-group=\"review_chain\"",
         "data-reasoning-review-group=\"advanced_diagnostics\"",
-        "/auth.css?v=20260526-language-cleanup",
-        "/dashboard.js?v=20260526-language-cleanup"
+        "/auth.css?v=20260527-health-language",
+        "/dashboard.js?v=20260527-health-language"
     ], "D11H Reasoning static shell");
 
     excludesAll(dashboardHtml, [

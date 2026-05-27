@@ -78,9 +78,9 @@ assert(count(dashboardHtml, "data-dashboard-safety-strip") === 1, "static shell 
 
 includesAll(dashboardHtml, [
     "Safety status",
-    "Paper only",
-    "Live capital off",
-    "Read-only",
+    "OK - paper only",
+    "OK - live capital off",
+    "OK - read-only",
     "Dashboard cannot place orders",
     "AI cannot bypass risk checks",
     "Performance proof requires verified records",
@@ -131,8 +131,8 @@ const window = loadRendererWindow();
 assert(typeof window.buildQadamDashboardSafetyStripModel === "function", "safety strip model builder not exported");
 const model = window.buildQadamDashboardSafetyStripModel(status);
 assert(model.id === "dashboard_safety_strip", "safety strip model id mismatch");
-assert(model.mode_label === "Paper only", "safety strip mode label mismatch");
-assert(model.live_capital_label === "Live capital off", "safety strip live-capital label mismatch");
+assert(model.mode_label === "OK - paper only", "safety strip mode label mismatch");
+assert(model.live_capital_label === "OK - live capital off", "safety strip live-capital label mismatch");
 assert(model.write_authority === false, "safety strip reports write authority");
 assert(model.live_capital_enabled === false, "safety strip reports live capital enabled");
 assert(model.authority_flag_count === 0, "safety strip reports authority flags");
@@ -145,9 +145,9 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
 
     includesAll(stripHtml, [
         "Safety status",
-        "Paper only",
-        "Live capital off",
-        "Read-only",
+        "OK - paper only",
+        "OK - live capital off",
+        "OK - read-only",
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
         "Performance proof requires verified records"

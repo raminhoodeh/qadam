@@ -80,35 +80,37 @@ includesAll(renderer, [
 ], "renderer canonical status API");
 
 includesAll(renderer, [
-    "Safety stop",
-    "Waiting for evidence",
-    "Missing setup",
-    "Live capital off",
-    "Read-only",
-    "Paper only",
+    "Blocked",
+    "Waiting",
+    "Not configured",
+    "Optional",
+    "OK - live capital off",
+    "OK - read-only",
+    "OK - paper only",
     "Dry run",
     "Fault",
-    "Non-executable",
+    "Review only",
     "Local only"
 ], "renderer canonical vocabulary");
 
 includesAll(dashboardHtml, [
-    "Safety stop",
-    "Waiting for evidence",
-    "Live capital off",
-    "Paper only",
+    "Blocked",
+    "Waiting",
+    "OK - live capital off",
+    "OK - paper only",
     "Read-only lock"
 ], "static fallback canonical vocabulary");
 
 includesAll(contract, [
     "D11C Canonical Status Language",
-    "Current",
-    "Read-only",
-    "Paper only",
-    "Live capital off",
-    "Waiting for evidence",
-    "Missing setup",
-    "Safety stop",
+    "OK",
+    "OK - read-only",
+    "OK - paper only",
+    "OK - live capital off",
+    "Waiting",
+    "Optional",
+    "Not configured",
+    "Blocked",
     "Fault",
     "Dashboard authority remains read-only and status-derived"
 ], "D11C contract document");
@@ -122,17 +124,18 @@ const window = loadRendererWindow();
 assert(typeof window.canonicalQadamDashboardStatus === "function", "canonical status function not exported");
 
 [
-    ["online", "Current", "online"],
-    ["read_only_ready", "Read-only", "online"],
-    ["paper/demo only", "Paper only", "online"],
-    ["live capital disabled", "Live capital off", "online"],
+    ["online", "OK", "online"],
+    ["read_only_ready", "OK - read-only", "online"],
+    ["paper/demo only", "OK - paper only", "online"],
+    ["live capital disabled", "OK - live capital off", "online"],
     ["dry_run", "Dry run", "pending"],
-    ["pending", "Waiting for evidence", "pending"],
-    ["not exported", "Missing setup", "degraded"],
-    ["degraded", "Degraded", "degraded"],
+    ["pending", "Waiting", "pending"],
+    ["not required", "Optional", "pending"],
+    ["not exported", "Not configured", "degraded"],
+    ["degraded", "Needs attention", "degraded"],
     ["local_only", "Local only", "local-only"],
-    ["non_executable", "Non-executable", "blocked"],
-    ["blocked", "Safety stop", "blocked"],
+    ["non_executable", "Review only", "blocked"],
+    ["blocked", "Blocked", "blocked"],
     ["failed", "Fault", "blocked"]
 ].forEach(([raw, expectedLabel, expectedTone]) => {
     const record = window.canonicalQadamDashboardStatus(raw);
@@ -148,21 +151,21 @@ assert(typeof window.canonicalQadamDashboardStatus === "function", "canonical st
     const safetyHtml = html(rendered, "[data-forbidden-actions]");
 
     includesAll(`${flowHtml} ${safetyStripHtml} ${reasoningHtml} ${safetyHtml}`, [
-        "Current",
-        "Read-only",
-        "Live capital off",
-        "Waiting for evidence",
-        "Safety stop"
+        "OK",
+        "OK - read-only",
+        "OK - live capital off",
+        "Waiting",
+        "Blocked"
     ], "rendered canonical status output");
 
-    assert(!/node-status blocked\">Blocked<\/b>/.test(`${flowHtml} ${reasoningHtml}`), "raw Blocked status pill leaked");
     assert(!/node-status pending\">Pending<\/b>/.test(`${flowHtml} ${reasoningHtml}`), "raw Pending status pill leaked");
+    assert(!/node-status blocked\">Safety stop<\/b>/.test(`${flowHtml} ${reasoningHtml}`), "old safety-stop status pill leaked");
 
     console.log("dashboard_d11c_canonical_status_language=ok");
-    console.log("dashboard_d11c_status_label_count=12");
-    console.log("dashboard_d11c_safety_stop_language=True");
+    console.log("dashboard_d11c_status_label_count=13");
+    console.log("dashboard_d11c_blocked_language=True");
     console.log("dashboard_d11c_waiting_language=True");
-    console.log("dashboard_d11c_missing_setup_language=True");
+    console.log("dashboard_d11c_not_configured_language=True");
     console.log("dashboard_authority_unchanged=True");
 })().catch((error) => {
     console.error(error.message);

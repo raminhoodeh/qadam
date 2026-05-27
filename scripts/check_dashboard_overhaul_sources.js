@@ -114,7 +114,7 @@ async function main() {
         "function renderEvidenceReviewGroup",
         "source_setup_links",
         "evidence_review_groups",
-        "supplemental_only",
+        "optional_credentials",
         "pending_adapter",
         "stale_heartbeat"
     ], "Sources workspace renderer");
@@ -128,18 +128,20 @@ async function main() {
 
     assert(model.id === "sources", "sources model id mismatch");
     assert(model.pipelines.length === 5, "sources model must expose five intelligence pipelines");
-    assert(reliability.length === 6, "sources model must expose six reliability states");
+    assert(reliability.length === 7, "sources model must expose seven reliability states");
     [
-        "online",
-        "degraded",
+        "core_ok",
+        "needs_attention",
         "missing_credential",
         "stale_heartbeat",
-        "pending_adapter",
-        "supplemental_only"
+        "optional",
+        "optional_credentials",
+        "pending_adapter"
     ].forEach((key) => assert(reliabilityByKey.has(key), `missing reliability state ${key}`));
-    assert(reliabilityByKey.get("missing_credential").count >= 1, "missing credentials must be visible");
+    assert(reliabilityByKey.get("missing_credential").count === 0, "required missing credentials should be zero for the core paper sources");
+    assert(reliabilityByKey.get("optional_credentials").count >= 1, "optional missing credentials must be visible");
     assert(reliabilityByKey.get("pending_adapter").count >= 1, "pending adapters must be visible");
-    assert(reliabilityByKey.get("supplemental_only").count === 2, "supplemental-only count must include Yahoo and Preference");
+    assert(reliabilityByKey.get("optional").count >= 1, "optional feed count must be visible");
     assert(["ok", "degraded"].includes(model.quorum.status), "source quorum status should be visible");
     assert(supplementalByKey.has("yahoo_finance"), "Yahoo Finance supplemental source missing");
     assert(supplementalByKey.has("preference_mcp"), "Preference MCP supplemental source missing");
@@ -157,10 +159,11 @@ async function main() {
     [
         "Source reliability and corroboration",
         "Source quorum",
-        "Missing credential",
+        "Core OK",
+        "Required not configured",
         "Stale heartbeat",
-        "Pending adapter",
-        "Supplemental only",
+        "Adapter backlog",
+        "Optional not configured",
         "Yahoo Finance",
         "Preference MCP",
         "Supplemental confirmation only",
@@ -173,7 +176,7 @@ async function main() {
         "Reliability state by intelligence pipeline",
         "credential required",
         "pending adapter",
-        "evidence blocked",
+        "evidence only",
         "Evidence readout",
         "Setup evidence",
         "Source reliability",
@@ -207,7 +210,7 @@ async function main() {
 
     console.log("dashboard_overhaul_sources=ok");
     console.log("dashboard_sources_pipeline_count=" + model.pipelines.length);
-    console.log("dashboard_sources_reliability_state_count=6");
+    console.log("dashboard_sources_reliability_state_count=" + reliability.length);
     console.log("dashboard_sources_supplemental_count=2");
     console.log("dashboard_sources_setup_link_count=" + model.source_setup_links.length);
     console.log("dashboard_sources_public_safe=True");

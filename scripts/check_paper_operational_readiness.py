@@ -1287,11 +1287,13 @@ def main() -> int:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
         errors.append("paper ops claims full readiness while blockers exist")
-    if (
-        written["recommended_next_stage"]
-        != "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
-    ):
-        errors.append("paper ops next unblock should be PaperOps-Q product access")
+    expected_next_stage = (
+        "Run PaperOps-1 operational cycle"
+        if written["full_paper_operational_ready"] is True
+        else "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
+    )
+    if written["recommended_next_stage"] != expected_next_stage:
+        errors.append("paper ops next unblock is inconsistent with Q-CTRL readiness")
     if "paper_ops_live_capital_enabled" not in live_capital_errors:
         errors.append("live capital probe was not rejected")
     if (
@@ -1584,6 +1586,9 @@ def main() -> int:
         errors.append("PT-9 proof-credit probe was not rejected")
     if written["paper_live_certification_status"] not in {
         "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_pending_qctrl",
+        "blocked_pending_phase7_proof",
+        "blocked_pending_certification_gates",
         "paper_live_certified",
     }:
         errors.append("PT-10 paper-live certification is not evaluated")

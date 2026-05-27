@@ -1,4 +1,4 @@
-# Qadam Dashboard D11D Single Safety Strip
+# Qadam Dashboard D11D Safety Status Strip
 
 Date: 2026-05-26
 
@@ -29,12 +29,12 @@ The strip owns these dashboard-wide facts:
 - Paper only
 - Read-only
 - Live capital off
-- No UI-to-broker path
-- No LLM-to-broker path
-- No proof-credit inference
+- Dashboard cannot place orders
+- AI cannot bypass risk checks
+- Performance proof requires verified records
 
 Other panels can still show detailed evidence, blockers, risk checks, and
-capability boundaries, but they should reference the single strip instead of
+capability boundaries, but they should reference Safety Status instead of
 recreating a second safety rail.
 
 ## Acceptance

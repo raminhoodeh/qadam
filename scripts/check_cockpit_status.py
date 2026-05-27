@@ -2839,6 +2839,20 @@ def main() -> int:
         "cockpit_status_quantum_oracle_mode="
         f"{payload.get('quantum_oracle', {}).get('latest_local_simulation_mode')}"
     )
+    fire_opal_ibm = payload.get("qctrl_fire_opal_ibm_readiness", {})
+    print(f"cockpit_status_fire_opal_ibm_status={fire_opal_ibm.get('status')}")
+    print(
+        "cockpit_status_fire_opal_ibm_fire_opal_access="
+        f"{fire_opal_ibm.get('fire_opal_product_access_verified')}"
+    )
+    print(
+        "cockpit_status_fire_opal_ibm_qiskit_runtime="
+        f"{fire_opal_ibm.get('qiskit_ibm_runtime_importable')}"
+    )
+    print(
+        "cockpit_status_fire_opal_ibm_blocker="
+        f"{fire_opal_ibm.get('blocker')}"
+    )
     print(f"cockpit_status_mission_control_status={payload.get('mission_control', {}).get('status')}")
     print(f"cockpit_status_mission_control_headline={payload.get('mission_control', {}).get('headline')}")
     print(
@@ -7233,6 +7247,10 @@ def main() -> int:
         return 1
     if paper_live_certification.get("status") not in {
         "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_pending_qctrl",
+        "blocked_pending_phase7_proof",
+        "blocked_pending_certification_gates",
+        "blocked_paper_live_control_plane",
         "paper_live_certified",
     }:
         print("cockpit_status_paper_live_certification_not_evaluated=true")
@@ -8439,7 +8457,11 @@ def main() -> int:
     ):
         print("cockpit_status_mission_phase3_local_backend_mismatch=true")
         return 1
-    if mission_phase3.get("ibm_quantum_status") != "missing_secret":
+    if mission_phase3.get("ibm_quantum_status") not in {
+        "missing_secret",
+        "configured",
+        "configured_policy_blocked",
+    }:
         print("cockpit_status_mission_phase3_ibm_status_mismatch=true")
         return 1
     if mission_phase3.get("aws_braket_status") != "missing_secret":

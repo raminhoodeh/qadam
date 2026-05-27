@@ -1655,6 +1655,9 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_cockpit_notification_upgrade_qctrl_not_visible")
     if artifact.get("paper_live_certification_status") not in {
         "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_pending_qctrl",
+        "blocked_pending_phase7_proof",
+        "blocked_pending_certification_gates",
         "paper_live_certified",
     }:
         errors.append("paper_ops_cycle_paper_live_certification_not_evaluated")

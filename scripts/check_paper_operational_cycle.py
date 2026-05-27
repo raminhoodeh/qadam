@@ -21,6 +21,22 @@ from scripts.run_paper_operational_cycle import (  # noqa: E402
     write_paper_operational_cycle,
 )
 
+ACCEPTED_CYCLE_STATUSES = {
+    "paper_cycle_safe_blocked_pending_enablement",
+    "paper_cycle_full_paper_operational_ready",
+}
+ACCEPTED_PAPER_LIVE_CERTIFICATION_STATUSES = {
+    "blocked_pending_qctrl_and_phase7_proof",
+    "blocked_pending_qctrl",
+    "blocked_pending_phase7_proof",
+    "blocked_pending_certification_gates",
+    "paper_live_certified",
+}
+FULL_READY_NEXT_STAGES = {
+    "PaperOps-4 paper exit path",
+    "Phase 7 proof run certification",
+}
+
 
 def main() -> int:
     errors: list[str] = []
@@ -631,8 +647,15 @@ def main() -> int:
         errors.append(f"cycle validation failed: {validation_errors}")
     if replay["total_events"] != 1:
         errors.append("cycle event log did not record exactly one event")
-    if written["status"] != "paper_cycle_safe_blocked_pending_enablement":
+    if written["status"] not in ACCEPTED_CYCLE_STATUSES:
         errors.append("unexpected current PaperOps-1 status")
+    if written["full_paper_operational_ready"] is True:
+        if written["status"] != "paper_cycle_full_paper_operational_ready":
+            errors.append("PaperOps-1 full readiness did not use the full-ready status")
+        if written["blocker_count"] != 0:
+            errors.append("PaperOps-1 full readiness still has blockers")
+    elif written["status"] != "paper_cycle_safe_blocked_pending_enablement":
+        errors.append("PaperOps-1 is neither full-ready nor safely blocked")
     if written["command_count"] != len(COMMANDS) or written["command_passed_count"] != len(
         COMMANDS
     ):
@@ -739,8 +762,11 @@ def main() -> int:
         errors.append("PaperOps-1 called live endpoint through PT-8")
     if written["active_paper_automation_unsafe_write_counter_total"] != 0:
         errors.append("PaperOps-1 saw nonzero PT-8 unsafe counter")
-    if written["full_paper_operational_ready"] is not False:
-        errors.append("PaperOps-1 should remain blocked pending later enablement")
+    if (
+        written["full_paper_operational_ready"] is False
+        and written["blocker_count"] == 0
+    ):
+        errors.append("PaperOps-1 is not full-ready but has no blockers")
     if written["broker_post_called_count"] != 0 or written["alpaca_post_called_count"] != 0:
         errors.append("PaperOps-1 called broker/Alpaca POST")
     if written["alpaca_paper_post_live_endpoint_called_count"] != 0:
@@ -776,10 +802,9 @@ def main() -> int:
         errors.append("PaperOps-1 saw PT-9 hide the Q-CTRL submit hold")
     if written["cockpit_notification_upgrade_unsafe_write_counter_total"] != 0:
         errors.append("PaperOps-1 saw nonzero PT-9 unsafe counter")
-    if written["paper_live_certification_status"] not in {
-        "blocked_pending_qctrl_and_phase7_proof",
-        "paper_live_certified",
-    }:
+    if written["paper_live_certification_status"] not in (
+        ACCEPTED_PAPER_LIVE_CERTIFICATION_STATUSES
+    ):
         errors.append("PaperOps-1 did not include evaluated PT-10 certification")
     if written["paper_live_certification_control_plane_certified"] is not True:
         errors.append("PaperOps-1 saw PT-10 control plane not certified")
@@ -821,7 +846,10 @@ def main() -> int:
         "qctrl_paper_consultation_provider_call_recorded"
     ]:
         errors.append("PaperOps-1 has an unrecorded Q-CTRL provider call")
-    if (
+    if written["full_paper_operational_ready"] is True:
+        if written["recommended_next_stage"] not in FULL_READY_NEXT_STAGES:
+            errors.append("PaperOps-1 full-ready next step is not a paper exit/proof step")
+    elif (
         written["recommended_next_stage"]
         != "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     ):

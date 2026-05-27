@@ -191,7 +191,7 @@ async function renderWithStatus(snapshot, options = {}) {
         ? options.session
         : { access_token: "test-session-token" };
     await window.renderQadamDashboardStatus(session);
-    return { document, elements, errors, requests };
+    return { document, elements, errors, requests, window };
 }
 
 function html(rendered, selector) {

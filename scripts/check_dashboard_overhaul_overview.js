@@ -166,7 +166,7 @@ async function main() {
     );
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-dashboard-safety-strip]", "Live capital off");
+    assertIncludes(rendered, "[data-dashboard-safety-strip]", "OK - live capital off");
     assertIncludes(rendered, "[data-overview-status-rail]", "Day 0/30");
     assertIncludes(rendered, "[data-overview-status-rail]", "Week 0/5");
     assertIncludes(rendered, "[data-overview-status-rail]", "Potential setups");

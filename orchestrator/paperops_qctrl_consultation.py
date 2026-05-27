@@ -121,6 +121,32 @@ def _select_sdk_module(readiness: dict[str, Any]) -> str | None:
     return str(importable[0]) if importable else None
 
 
+def _qctrl_organization_slug(settings: Settings) -> str | None:
+    value = secret_value("QCTRL_ORGANIZATION_SLUG", settings) or settings.qctrl_organization_slug
+    if not value:
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _provider_failure_category(exc: Exception) -> str:
+    message = str(exc).lower()
+    class_name = type(exc).__name__.lower()
+    if "no organizations are set up" in message and "valid subscription" in message:
+        return "fire_opal_subscription_not_active"
+    if "assigned to multiple organizations" in message:
+        return "fire_opal_organization_slug_required"
+    if "configured organization not found" in message:
+        return "fire_opal_organization_slug_invalid_or_no_product_access"
+    if "not found, is not set up, or does not have valid product access" in message:
+        return "fire_opal_organization_slug_invalid_or_no_product_access"
+    if "unauthorized" in message or "invalid api key" in message or "authentication" in message:
+        return "qctrl_auth_failed"
+    if "connect" in class_name or "timeout" in class_name or "connection" in message:
+        return "provider_network_error"
+    return "provider_runtime_error"
+
+
 def _paper_settings(settings: Settings, **overrides: Any) -> Settings:
     return replace(settings, **overrides)
 
@@ -138,6 +164,9 @@ def _provider_auth_probe(
             "provider_call_count": 0,
             "auth_status": "missing_credential",
             "provider_failure_class": None,
+            "provider_failure_category": "missing_credential",
+            "qctrl_organization_slug_configured": False,
+            "qctrl_organization_config_applied": False,
         }
 
     os.environ.setdefault("FIRE_OPAL_CLIENT_DISABLE_TRACKING", "true")
@@ -151,6 +180,13 @@ def _provider_auth_probe(
         pass
 
     module = importlib.import_module(module_name)
+    organization_slug = _qctrl_organization_slug(settings)
+    organization_config_applied = False
+    configure_organization = getattr(module, "configure_organization", None)
+    if organization_slug and callable(configure_organization):
+        configure_organization(organization_slug)
+        organization_config_applied = True
+
     auth = getattr(module, "authenticate_qctrl_account", None)
     if not callable(auth):
         return {
@@ -159,6 +195,9 @@ def _provider_auth_probe(
             "provider_call_count": 0,
             "auth_status": "auth_function_missing",
             "provider_failure_class": None,
+            "provider_failure_category": "auth_function_missing",
+            "qctrl_organization_slug_configured": organization_slug is not None,
+            "qctrl_organization_config_applied": organization_config_applied,
         }
 
     try:
@@ -170,6 +209,9 @@ def _provider_auth_probe(
             "provider_call_count": 1,
             "auth_status": "provider_call_failed_sanitized",
             "provider_failure_class": type(exc).__name__,
+            "provider_failure_category": _provider_failure_category(exc),
+            "qctrl_organization_slug_configured": organization_slug is not None,
+            "qctrl_organization_config_applied": organization_config_applied,
         }
 
     return {
@@ -178,6 +220,9 @@ def _provider_auth_probe(
         "provider_call_count": 1,
         "auth_status": "authenticated",
         "provider_failure_class": None,
+        "provider_failure_category": None,
+        "qctrl_organization_slug_configured": organization_slug is not None,
+        "qctrl_organization_config_applied": organization_config_applied,
     }
 
 
@@ -210,6 +255,9 @@ def build_paperops_qctrl_consultation(
         "provider_call_count": 0,
         "auth_status": "not_attempted",
         "provider_failure_class": None,
+        "provider_failure_category": None,
+        "qctrl_organization_slug_configured": _qctrl_organization_slug(settings) is not None,
+        "qctrl_organization_config_applied": False,
     }
     if should_attempt_provider and sdk_module:
         auth_probe = _provider_auth_probe(module_name=sdk_module, settings=settings)
@@ -286,6 +334,13 @@ def build_paperops_qctrl_consultation(
         "live_capital_enabled": settings.live_capital_enabled,
         "qctrl_readiness_status": readiness.get("status"),
         "qctrl_credential_configured": readiness.get("credential_configured") is True,
+        "qctrl_fire_opal_product_required": True,
+        "qctrl_organization_slug_configured": auth_probe[
+            "qctrl_organization_slug_configured"
+        ],
+        "qctrl_organization_config_applied": auth_probe[
+            "qctrl_organization_config_applied"
+        ],
         "qctrl_sdk_package_importable": readiness.get("sdk_package_importable") is True,
         "qctrl_sdk_module_candidates": list(QCTRL_SDK_MODULE_CANDIDATES),
         "qctrl_importable_modules": readiness.get("importable_modules", []),
@@ -298,6 +353,7 @@ def build_paperops_qctrl_consultation(
         "provider_call_count": auth_probe["provider_call_count"],
         "qctrl_auth_status": auth_probe["auth_status"],
         "provider_failure_class": auth_probe["provider_failure_class"],
+        "provider_failure_category": auth_probe["provider_failure_category"],
         "provider_failure_message_persisted": False,
         "sdk_import_network_version_check_suppressed": True,
         "sdk_analytics_tracking_disabled": True,
@@ -354,6 +410,9 @@ def validate_paperops_qctrl_consultation(artifact: dict[str, Any]) -> list[str]:
         "public_safe",
         "qctrl_auth_status",
         "qctrl_credential_configured",
+        "qctrl_fire_opal_product_required",
+        "qctrl_organization_config_applied",
+        "qctrl_organization_slug_configured",
         "qctrl_paper_consultation_enabled",
         "qctrl_sdk_package_importable",
         "raw_provider_response_persisted",
@@ -401,6 +460,13 @@ def validate_paperops_qctrl_consultation(artifact: dict[str, Any]) -> list[str]:
         artifact.get("provider_call_count", 0) or 0
     ) != 0:
         errors.append("paperops_qctrl_provider_call_without_flag")
+    if artifact.get("qctrl_fire_opal_product_required") is not True:
+        errors.append("paperops_qctrl_fire_opal_not_required")
+    if (
+        artifact.get("qctrl_organization_config_applied") is True
+        and artifact.get("qctrl_organization_slug_configured") is not True
+    ):
+        errors.append("paperops_qctrl_org_config_applied_without_slug")
     note = artifact.get("head_of_quant_note", {})
     if not isinstance(note, dict):
         errors.append("paperops_qctrl_head_of_quant_note_missing")
@@ -498,12 +564,22 @@ def paperops_qctrl_public_status(settings: Settings | None = None) -> dict[str, 
         "qctrl_paper_consultation_enabled": artifact.get("qctrl_paper_consultation_enabled"),
         "qctrl_readiness_status": artifact.get("qctrl_readiness_status"),
         "qctrl_credential_configured": artifact.get("qctrl_credential_configured"),
+        "qctrl_fire_opal_product_required": artifact.get(
+            "qctrl_fire_opal_product_required"
+        ),
+        "qctrl_organization_slug_configured": artifact.get(
+            "qctrl_organization_slug_configured"
+        ),
+        "qctrl_organization_config_applied": artifact.get(
+            "qctrl_organization_config_applied"
+        ),
         "qctrl_sdk_package_importable": artifact.get("qctrl_sdk_package_importable"),
         "qctrl_sdk_module_selected": artifact.get("qctrl_sdk_module_selected"),
         "provider_call_allowed": artifact.get("provider_call_allowed"),
         "provider_call_attempted": artifact.get("provider_call_attempted"),
         "provider_call_succeeded": artifact.get("provider_call_succeeded"),
         "provider_call_count": artifact.get("provider_call_count", 0),
+        "provider_failure_category": artifact.get("provider_failure_category"),
         "head_of_quant_note_status": (artifact.get("head_of_quant_note") or {}).get("status"),
         "execution_allowed": artifact.get("execution_allowed"),
         "paper_order_allowed": artifact.get("paper_order_allowed"),

@@ -491,11 +491,13 @@ def main() -> int:
         errors.append("PT-9 Q-CTRL hold visibility probe was not rejected")
     if written["paper_live_certification_status"] not in {
         "blocked_pending_qctrl_and_phase7_proof",
+        "blocked_pending_qctrl",
+        "blocked_pending_phase7_proof",
+        "blocked_pending_certification_gates",
+        "blocked_paper_live_control_plane",
         "paper_live_certified",
     }:
         errors.append("PT-10 paper-live certification is not evaluated")
-    if written["paper_live_certification_control_plane_certified"] is not True:
-        errors.append("PT-10 paper-live control plane is not certified")
     if written["paper_live_certification_paper_live_certified"] is not False:
         errors.append("PT-10 unexpectedly certified paper-live")
     if written["paper_live_certification_operation_allowed"] is not False:

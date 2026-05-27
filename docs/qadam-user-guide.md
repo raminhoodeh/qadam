@@ -103,6 +103,49 @@ The cockpit and runtime checks are the source of truth. If this guide and the
 dashboard disagree, trust the latest backend-derived dashboard state and inspect
 the corresponding runtime artifact or checker output.
 
+## 5A. Dashboard Health Language
+
+The dashboard health labels mean:
+
+| Label | Meaning |
+| --- | --- |
+| OK | The system or core dependency is healthy for the current paper-trading mode. |
+| OK - read-only | The path is healthy for monitoring and cannot mutate Qadam state. |
+| OK - paper only | The path is healthy for paper/demo operation only. |
+| OK - live capital off | Real-money trading remains disabled by design. |
+| Waiting | A normal hold, usually the 30-day proof window, no open position, or missing evidence. |
+| Optional | Useful if configured, but not required for the current paper-trading core. |
+| Not configured | A required credential, bridge, or artifact is missing. |
+| Needs attention | A required dependency is stale, degraded, partial, or lower confidence. |
+| Blocked | A safety, authority, risk, or policy stop is deliberately holding the path. |
+
+Do not try to turn every optional feed into `OK`. For the paper-trading core,
+`Optional` is a healthy non-blocking state.
+
+## 5B. IBM Quantum Device Discovery
+
+IBM Quantum credentials are local runtime secrets. They should live in
+`.env.local` or another ignored secret store, never in Git.
+
+Before running an IBM device-discovery probe:
+
+```bash
+set -a
+source .env.local
+set +a
+```
+
+Then run:
+
+```bash
+.venv/bin/python scripts/check_qctrl_fire_opal_ibm_quantum.py --probe-devices
+```
+
+This explicit probe may call Fire Opal and IBM Quantum to discover available
+devices. It does not submit a hardware job, enable a hardware scheduler, create
+a trade idea, approve risk, approve a paper order, call a broker, or enable live
+capital.
+
 ## 6. Before You Start
 
 If you are a founding Fund Manager using the website, you need:
@@ -142,8 +185,8 @@ into comments, forms, chats, docs, or prompts.
 Use this sequence the first time you open Qadam.
 
 1. Start in the Overview view.
-2. Read Safety Status first: it should say Paper only, Read-only,
-   Live capital off, Dashboard cannot place orders, and AI cannot bypass risk
+2. Read Safety Status first: it should say OK - paper only, OK - read-only,
+   OK - live capital off, Dashboard cannot place orders, and AI cannot bypass risk
    checks.
 3. Use Overview's health readout and mini-map to understand whether Qadam is
    watching sources, forming hypotheses, seeing trade candidates, or blocked.

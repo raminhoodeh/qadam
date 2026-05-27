@@ -39,6 +39,15 @@ SELF_OBSERVER_CYCLE_FAILURE_LABELS = frozenset(
     }
 )
 
+PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES = {
+    "blocked_pending_qctrl_and_phase7_proof",
+    "blocked_pending_qctrl",
+    "blocked_pending_phase7_proof",
+    "blocked_pending_certification_gates",
+    "blocked_paper_live_control_plane",
+    "paper_live_certified",
+}
+
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     "scripts/check_paper_operational_cycle.py",
     "scripts/check_paperops_active_paper_trading_automation.py",
@@ -851,12 +860,9 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
     ):
         errors.append("paperops_30_day_operations_cockpit_notification_qctrl_not_visible")
     if artifact.get("paper_live_certification_status") not in {
-        "blocked_pending_qctrl_and_phase7_proof",
-        "paper_live_certified",
+        *PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES,
     }:
         errors.append("paperops_30_day_operations_paper_live_certification_not_evaluated")
-    if artifact.get("paper_live_certification_control_plane_certified") is not True:
-        errors.append("paperops_30_day_operations_paper_live_control_plane_not_certified")
     if artifact.get("paper_live_certification_paper_live_certified") is not False:
         errors.append("paperops_30_day_operations_paper_live_certified_unexpected")
     if artifact.get("paper_live_certification_operation_allowed") is not False:

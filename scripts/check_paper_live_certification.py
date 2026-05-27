@@ -26,6 +26,35 @@ def _has_error(errors: list[str], expected: str) -> bool:
     return any(error == expected or error.startswith(expected) for error in errors)
 
 
+def _expected_status(written: dict) -> str:
+    if written["paper_live_certified"] is True:
+        return "paper_live_certified"
+    if written["paper_live_control_plane_certified"] is not True:
+        return "blocked_paper_live_control_plane"
+    blockers = set(written["certification_blockers"])
+    has_qctrl_blocker = bool(
+        blockers
+        & {
+            "qctrl_product_access_ready",
+            "qctrl_hold_cleared_for_submit",
+        }
+    )
+    has_phase7_blocker = bool(
+        blockers
+        & {
+            "phase7_30_day_run_complete",
+            "phase7_demo_proof_certified",
+        }
+    )
+    if has_qctrl_blocker and has_phase7_blocker:
+        return "blocked_pending_qctrl_and_phase7_proof"
+    if has_qctrl_blocker:
+        return "blocked_pending_qctrl"
+    if has_phase7_blocker:
+        return "blocked_pending_phase7_proof"
+    return "blocked_pending_certification_gates"
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
@@ -110,27 +139,36 @@ def main() -> int:
         errors.append("paper_live_operation_allowed_while_blocked")
     if written["paper_live_submission_delegation_allowed"] is not False:
         errors.append("paper_live_submission_allowed_while_blocked")
-    if written["status"] != "blocked_pending_qctrl_and_phase7_proof":
+    if written["status"] != _expected_status(written):
         errors.append("unexpected_pt10_status")
     if written["stage_status"] != "paper_live_certification_blocked":
         errors.append("unexpected_stage_status")
     required_current_blockers = {
-        "qctrl_product_access_ready",
-        "qctrl_hold_cleared_for_submit",
-        "paperops_full_readiness",
         "phase7_30_day_run_complete",
         "phase7_demo_proof_certified",
     }
+    if written["qctrl_product_access_verified"] is not True:
+        required_current_blockers.add("qctrl_product_access_ready")
+    if written["qctrl_hold_active"] is True:
+        required_current_blockers.add("qctrl_hold_cleared_for_submit")
+    if written["full_paper_operational_ready"] is not True:
+        required_current_blockers.add("paperops_full_readiness")
     if not required_current_blockers.issubset(set(written["certification_blockers"])):
         errors.append("expected_current_certification_blockers_missing")
-    if written["qctrl_product_access_verified"] is not False:
-        errors.append("qctrl_product_access_unexpectedly_verified")
-    if written["qctrl_hold_active"] is not True:
-        errors.append("qctrl_hold_not_active")
-    if written["qctrl_hold_visible"] is not True:
-        errors.append("qctrl_hold_not_visible")
-    if written["paper_submit_visible_as_held"] is not True:
-        errors.append("submit_hold_not_visible")
+    if written["qctrl_product_access_verified"] is True:
+        if "qctrl_product_access_ready" in written["certification_blockers"]:
+            errors.append("qctrl_product_access_still_blocking_after_verification")
+    else:
+        if "qctrl_product_access_ready" not in written["certification_blockers"]:
+            errors.append("qctrl_product_access_blocker_missing")
+    if written["qctrl_hold_active"] is True:
+        if written["qctrl_hold_visible"] is not True:
+            errors.append("qctrl_hold_not_visible")
+        if written["paper_submit_visible_as_held"] is not True:
+            errors.append("submit_hold_not_visible")
+    else:
+        if "qctrl_hold_cleared_for_submit" in written["certification_blockers"]:
+            errors.append("qctrl_hold_still_blocking_after_clear")
     if written["phase7_30_day_run_complete"] is not False:
         errors.append("phase7_30_day_unexpectedly_complete")
     if written["phase7_demo_proof_certified"] is not False:

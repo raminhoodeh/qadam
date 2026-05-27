@@ -32,7 +32,9 @@ ACLED_REFRESH_TOKEN=
 UNUSUAL_WHALES_API_KEY=
 FRED_API_KEY=
 QCTRL_API_KEY=
+QCTRL_ORGANIZATION_SLUG=
 IBM_QUANTUM_TOKEN=
+IBM_QUANTUM_INSTANCE=
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=
@@ -109,8 +111,8 @@ Qadam does not need quantum hardware to complete Phase 1D. Keep these as readine
 
 | Provider | Qadam variable | Notes |
 | --- | --- | --- |
-| Q-CTRL Fire Opal | `QCTRL_API_KEY` | Error-suppression layer; authenticate through Fire Opal when the quantum module is active. |
-| IBM Quantum | `IBM_QUANTUM_TOKEN` | Primary future quantum backend through Qiskit Runtime. |
+| Q-CTRL Fire Opal | `QCTRL_API_KEY`, `QCTRL_ORGANIZATION_SLUG` when required | Mandatory paper-reality quantum parity provider for paper-live operation. Qadam defaults the organization slug to `qadam` when no secret override is present. |
+| IBM Quantum | `IBM_QUANTUM_TOKEN`, `IBM_QUANTUM_INSTANCE` | Primary future quantum backend through Fire Opal on IBM Quantum / Qiskit Runtime. Device discovery is explicit and hardware submission remains separately blocked. |
 | AWS Braket | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | Secondary future backend; use a restricted IAM user/role when enabled. |
 
 ## Current Phase 1D State

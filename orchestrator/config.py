@@ -80,6 +80,7 @@ class Settings:
     paper_operational_max_notional_gbp: int
     quantum_paper_parity_required: bool
     qctrl_paper_consultation_enabled: bool
+    qctrl_organization_slug: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -158,4 +159,5 @@ class Settings:
             qctrl_paper_consultation_enabled=_bool_env(
                 "QADAM_QCTRL_PAPER_CONSULTATION_ENABLED", False
             ),
+            qctrl_organization_slug=os.getenv("QCTRL_ORGANIZATION_SLUG", "qadam").strip(),
         )

@@ -1124,9 +1124,10 @@ Control artifacts:
 
 Outcome:
 
-- The dashboard now has a canonical display vocabulary for Current,
-  Read-only, Paper only, Live capital off, Dry run, Waiting for evidence,
-  Missing setup, Degraded, Local only, Non-executable, Safety stop, and Fault.
+- The dashboard now has a canonical display vocabulary for OK,
+  OK - read-only, OK - paper only, OK - live capital off, Dry run, Waiting,
+  Optional, Not configured, Needs attention, Local only, Review only, Blocked,
+  and Fault.
 - Generic status pills no longer need to expose raw `Blocked`, `Pending`, or
   `Online` language when a clearer canonical label exists.
 - Exact raw status-token badges are normalized where safe, while
@@ -1515,6 +1516,31 @@ Outcome:
   rendered Overview do not reintroduce the old slop terms.
 - Runtime authority, provider calls, broker writes, Telegram command behavior,
   verified-performance rules, and live-capital state are unchanged.
+
+Next stage:
+
+- D13 - Health Language And IBM Readiness.
+
+### D13 - Health Language And IBM Readiness
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d13-health-language-and-ibm-readiness-2026-05-26.md`
+- `scripts/check_dashboard_d13_health_language.js`
+
+Outcome:
+
+- Core paper-trading dependencies render as `OK` when verified.
+- Normal proof-window or no-position states render as `Waiting`, not broken.
+- Supplemental feeds render as `Optional` when they are not required for the
+  current paper-trading core.
+- Missing required configuration renders as `Not configured`.
+- IBM Quantum credentials are accepted as local runtime secrets and move the
+  Fire Opal IBM state to `ready_for_explicit_device_probe`.
+- Hardware submission, hardware scheduling, broker authority, order authority,
+  and live capital remain disabled.
 
 Next stage:
 

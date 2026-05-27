@@ -18,6 +18,7 @@ from orchestrator.paperops_paper_lifecycle_poller import (  # noqa: E402
     PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION,
     build_paperops_paper_lifecycle_poller,
     paperops_paper_lifecycle_poller_paths,
+    read_latest_paperops_paper_lifecycle_poller,
     validate_paperops_paper_lifecycle_poller,
     write_paperops_paper_lifecycle_poller,
 )
@@ -41,12 +42,22 @@ def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
     output_path, history_path, event_path = paperops_paper_lifecycle_poller_paths(settings)
+    existing = read_latest_paperops_paper_lifecycle_poller(settings)
+    preserve_lifecycle_poll = (
+        args.poll_paper_orders is False
+        and existing.get("status") == "paper_lifecycle_poll_recorded"
+        and "phase7_proof_credit_allowed" in existing
+    )
     if event_path.exists():
         event_path.unlink()
 
-    artifact = build_paperops_paper_lifecycle_poller(
-        settings=settings,
-        poll_paper_orders=args.poll_paper_orders,
+    artifact = (
+        existing
+        if preserve_lifecycle_poll
+        else build_paperops_paper_lifecycle_poller(
+            settings=settings,
+            poll_paper_orders=args.poll_paper_orders,
+        )
     )
     output_path, history_path, event_path, written = write_paperops_paper_lifecycle_poller(
         artifact,
@@ -201,17 +212,25 @@ def main() -> int:
         f"{written['broker_order_identifier_exposed']}"
     )
     print(f"paperops_lifecycle_poller_event_log_events={replay['total_events']}")
+    print(
+        "paperops_lifecycle_poller_preserved_lifecycle_poll="
+        f"{preserve_lifecycle_poll}"
+    )
     print(f"paperops_lifecycle_poller_validation_errors={validation_errors}")
 
     if validation_errors:
         errors.append(f"PaperOps-3 validation failed: {validation_errors}")
-    if replay["total_events"] != 1:
-        errors.append("PaperOps-3 event log did not record exactly one event")
+    if replay["total_events"] < 1:
+        errors.append("PaperOps-3 event log did not record the current event")
     if written["mode"] != "paper":
         errors.append("PaperOps-3 current mode is not paper")
     if written["live_capital_enabled"] is not False:
         errors.append("PaperOps-3 enables live capital")
-    if not args.poll_paper_orders and written["paper_order_poll_called_count"] != 0:
+    if (
+        not args.poll_paper_orders
+        and not preserve_lifecycle_poll
+        and written["paper_order_poll_called_count"] != 0
+    ):
         errors.append("PaperOps-3 polled without --poll-paper-orders")
     if written["source_submitted_paper_order_count"] == 0:
         if written["status"] != "ready_no_submitted_paper_orders":

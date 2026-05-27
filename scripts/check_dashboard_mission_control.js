@@ -93,7 +93,10 @@ async function main() {
     assert(typeof phase3.qiskit_available === "boolean", "mission Phase 3 Qiskit availability is not boolean");
     assert(typeof phase3.qiskit_aer_available === "boolean", "mission Phase 3 Qiskit Aer availability is not boolean");
     assert(phase3.local_simulator_backend === status.quantum_oracle.local_simulator.selected_backend, "mission Phase 3 local simulator backend mismatch");
-    assert(phase3.ibm_quantum_status === "missing_secret", "mission Phase 3 IBM status mismatch");
+    assert(
+        ["missing_secret", "configured", "configured_policy_blocked"].includes(phase3.ibm_quantum_status),
+        "mission Phase 3 IBM status mismatch"
+    );
     assert(phase3.aws_braket_status === "missing_secret", "mission Phase 3 AWS status mismatch");
     assert(phase3.scheduler_enabled === false, "mission Phase 3 scheduler enabled");
     assert(phase3.autonomous_scheduler_enabled === false, "mission Phase 3 autonomous scheduler enabled");
