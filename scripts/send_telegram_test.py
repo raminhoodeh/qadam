@@ -65,6 +65,21 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Send a safe Telegram test message.")
     parser.add_argument("--target", choices=("private", "group", "both"), default="group")
     parser.add_argument(
+        "--message-class",
+        choices=("source_degraded", "insight_digest"),
+        default="source_degraded",
+        help="Safe outbound template to use for the message.",
+    )
+    parser.add_argument("--title", default="Qadam Telegram test")
+    parser.add_argument("--subject", default="member communications rail")
+    parser.add_argument("--theme", default="member communications rail")
+    parser.add_argument(
+        "--why-it-matters",
+        default="this confirms the bot can reach the selected Qadam chat",
+    )
+    parser.add_argument("--evidence", default="manual test from local Qadam runtime")
+    parser.add_argument("--block", default="notification only; no trade command is available")
+    parser.add_argument(
         "--live",
         action="store_true",
         help="Actually call Telegram sendMessage. Without this, only validates the target.",
@@ -78,13 +93,14 @@ def main() -> int:
         return 1
 
     title, body = render_telegram_message(
-        "source_degraded",
+        args.message_class,
         {
-            "title": "Qadam Telegram test",
-            "subject": "member communications rail",
-            "why_it_matters": "this confirms the bot can reach the selected Qadam chat",
-            "evidence": "manual test from local Qadam runtime",
-            "block": "notification only; no trade command is available",
+            "title": args.title,
+            "subject": args.subject,
+            "theme": args.theme,
+            "why_it_matters": args.why_it_matters,
+            "evidence": args.evidence,
+            "block": args.block,
         },
     )
     text = f"{title}\n\n{body}"
