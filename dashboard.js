@@ -337,7 +337,7 @@ function setDashboardDebugControls(enabled) {
         button.setAttribute("aria-pressed", enabled ? "true" : "false");
         button.setAttribute("aria-expanded", enabled ? "true" : "false");
         button.classList.toggle("active", enabled);
-        button.textContent = enabled ? "Hide Advanced / Debug" : "Advanced / Debug Mode";
+        button.textContent = enabled ? "Hide diagnostics" : "Diagnostics";
     });
     document.querySelectorAll("[data-dashboard-advanced-links]").forEach((links) => {
         links.hidden = !enabled;
@@ -352,10 +352,6 @@ function setDashboardDebugMode(enabled, options = {}) {
     }
     setDashboardDebugControls(nextEnabled);
     if (options.persist !== false) writeDashboardDebugPreference(nextEnabled);
-    if (!nextEnabled && currentDashboardView() !== "overview") {
-        activateDashboardView("overview", { scroll: options.scroll !== false });
-        return;
-    }
     setDashboardViewSectionVisibility(currentDashboardView());
 }
 
@@ -4287,15 +4283,12 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
             <span class="inline-badge ${statusClass(strip.write_authority ? "blocked" : "online")}" data-capital-label>${htmlText(strip.capital_label)}</span>
             <span class="inline-badge ${statusClass(strip.live_capital_enabled ? "blocked" : "online")}" data-live-capital-label>${htmlText(strip.live_capital_label)}</span>
             ${renderInlineBadge(strip.read_only_label, strip.read_only_label === "OK - read-only" ? "online" : "blocked")}
-            ${renderInlineBadge(strip.ui_broker_label, "online")}
-            ${renderInlineBadge(strip.llm_broker_label, "online")}
-            ${renderInlineBadge(strip.proof_label, "online")}
         </div>
         <div class="info-hover safety-strip-info">
             <button class="info-button" type="button" aria-label="About Safety Status">i</button>
             <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety" data-tooltip-contract="compact">
                 <strong>Safety Status</strong>
-                <p>One place for paper mode, capital, and order safety.</p>
+                <p>One place for paper mode, capital, and order authority.</p>
                 <dl class="explainer-grid compact">
                     <div><dt>Shows</dt><dd>${htmlText(strip.mode_label)} · ${htmlText(strip.live_capital_label)}</dd></div>
                     <div><dt>Watch</dt><dd>${htmlText(strip.authority_flag_count)} active authority flags.</dd></div>
@@ -5211,7 +5204,10 @@ function renderOverviewMiniNode(node, index, total) {
     const connector = index < total - 1 ? `<span class="overview-mini-connector" aria-hidden="true">&rarr;</span>` : "";
     return `
         <article class="overview-mini-node ${statusClass(node.health || node.status)}">
-            <span>${htmlText(role)}</span>
+            <div class="overview-mini-top">
+                <span class="overview-mini-step">${index + 1}</span>
+                <span class="overview-mini-role">${htmlText(role)}</span>
+            </div>
             <strong>${htmlText(label)}</strong>
             <p>${htmlText(node.status)}</p>
         </article>

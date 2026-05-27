@@ -5914,3 +5914,181 @@ html[data-dashboard-active-view="trades"] .capital-panel {
         padding: 22px 0;
     }
 }
+
+/* D13 mission-control UX pass: core views are always navigable, diagnostics are secondary. */
+.dashboard-hero {
+    align-items: flex-end;
+    gap: 18px;
+}
+
+.dashboard-hero .copy {
+    max-width: 860px;
+}
+
+.panel-subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.45;
+    margin: 6px 0 0;
+    max-width: 760px;
+}
+
+.dashboard-view-switcher {
+    align-items: start;
+    grid-template-columns: minmax(150px, 0.16fr) minmax(0, 1fr);
+}
+
+.dashboard-view-switcher .cockpit-nav-links {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow: visible;
+}
+
+.dashboard-debug-toggle {
+    border-style: dashed;
+    margin-left: auto;
+}
+
+.dashboard-safety-strip {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 14px 16px;
+}
+
+.dashboard-safety-strip-main h2 {
+    font-size: 19px;
+    line-height: 1.25;
+}
+
+.dashboard-safety-strip-main p {
+    max-width: 900px;
+}
+
+.dashboard-safety-strip-badges {
+    justify-content: flex-start;
+}
+
+.safety-strip-info {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+.overview-system-summary {
+    gap: 16px;
+}
+
+.overview-system-grid,
+html[data-dashboard-debug="off"] .overview-system-grid {
+    grid-template-columns: 1fr;
+}
+
+.overview-mini-map,
+html[data-dashboard-debug="off"] .overview-mini-map {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 178px), 1fr));
+}
+
+.overview-mini-node,
+html[data-dashboard-debug="off"] .overview-mini-node {
+    align-content: start;
+    gap: 9px;
+    min-height: 0;
+    padding: 14px;
+}
+
+.overview-mini-node::before {
+    content: none;
+}
+
+.overview-mini-top {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.overview-mini-step {
+    align-items: center;
+    background: rgba(var(--cyan-rgb), 0.1);
+    border: 1px solid rgba(var(--cyan-rgb), 0.36);
+    border-radius: 999px;
+    color: var(--cyan);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    height: 24px;
+    justify-content: center;
+    width: 24px;
+}
+
+.overview-mini-role {
+    color: var(--muted-soft);
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+}
+
+.overview-mini-node strong,
+html[data-dashboard-debug="off"] .overview-mini-node strong {
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.overview-mini-node p,
+html[data-dashboard-debug="off"] .overview-mini-node p {
+    display: block;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.overview-oversight {
+    gap: 8px;
+    padding: 14px;
+}
+
+html[data-dashboard-debug="off"] .overview-feed-strip {
+    display: grid;
+}
+
+html[data-dashboard-debug="off"] .overview-boundary-rail {
+    display: grid;
+}
+
+@media (max-width: 900px) {
+    .dashboard-view-switcher,
+    .dashboard-safety-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-debug-toggle {
+        margin-left: 0;
+    }
+
+    .safety-strip-info {
+        grid-column: auto;
+        grid-row: auto;
+    }
+}
+
+@media (max-width: 620px) {
+    .dashboard-view-switcher .cockpit-nav-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-view-switcher .cockpit-nav-links a,
+    .dashboard-debug-toggle {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .overview-mini-map,
+    html[data-dashboard-debug="off"] .overview-mini-map {
+        grid-template-columns: 1fr;
+    }
+}

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260527-health-language">
+    <link rel="stylesheet" href="/auth.css?v=20260527-mission-control-ux">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -28,12 +28,12 @@
             <section class="dashboard-hero">
                 <div>
                     <p class="eyebrow">Qadam paper trading dashboard</p>
-                    <h1>Paper Trading Overview</h1>
-                    <p class="copy">Logged in as <span data-user-email></span>. This dashboard shows how Qadam reads data, forms trade ideas, checks risk, tracks paper trades, and records performance.</p>
+                    <h1>Qadam Mission Control</h1>
+                    <p class="copy">Logged in as <span data-user-email></span>. Start here to see source health, current reasoning, trade candidates, paper-account state, and active safety blocks.</p>
                 </div>
                 <div class="mode-stack" aria-label="Dashboard status">
                     <span>Paper trading mode</span>
-                    <span>Overview</span>
+                    <span>Read-only dashboard</span>
                 </div>
             </section>
 
@@ -44,38 +44,34 @@
                 </div>
                 <div class="cockpit-nav-links">
                     <a href="#overview" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
+                    <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
+                    <a href="#evidence" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
+                    <a href="#reasoning" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
+                    <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
                     <button class="dashboard-debug-toggle" type="button" data-dashboard-debug-toggle aria-pressed="false" aria-expanded="false" aria-controls="dashboard-debug-tabs">
-                        Advanced / Debug Mode
+                        Diagnostics
                     </button>
-                    <span id="dashboard-debug-tabs" class="dashboard-debug-links" data-dashboard-advanced-links hidden>
-                        <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
-                        <a href="#evidence" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
-                        <a href="#reasoning" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
-                        <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
-                    </span>
+                    <span id="dashboard-debug-tabs" class="dashboard-debug-links" data-dashboard-advanced-links hidden></span>
                 </div>
             </nav>
 
             <section class="dashboard-safety-strip online" aria-label="Single dashboard safety strip" data-dashboard-safety-strip>
                 <div class="dashboard-safety-strip-main">
                 <p class="label">Safety status</p>
-                <h2>OK - paper only · OK - read-only · OK - live capital off</h2>
-                    <p>One dashboard-wide safety state. Sections below explain what Qadam is reading, thinking, and tracking.</p>
+                <h2>Paper-only, read-only, live capital off</h2>
+                    <p>This page cannot place orders. Qadam can only show status, evidence, trade ideas, paper-account mirror, and safety blocks.</p>
                 </div>
                 <div class="dashboard-safety-strip-badges">
                     <span class="inline-badge online"><span class="dot"></span><span data-mode-label>OK - paper only</span></span>
                     <span class="inline-badge online" data-capital-label>Loading paper account</span>
                     <span class="inline-badge online" data-live-capital-label>OK - live capital off</span>
                     <span class="inline-badge online">OK - read-only</span>
-                    <span class="inline-badge online">Dashboard cannot place orders</span>
-                    <span class="inline-badge online">AI cannot bypass risk checks</span>
-                    <span class="inline-badge online">Performance proof requires verified records</span>
                 </div>
                 <div class="info-hover safety-strip-info">
                     <button class="info-button" type="button" aria-label="About Safety Status">i</button>
                     <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety" data-tooltip-contract="compact">
                         <strong>Safety Status</strong>
-                        <p>One place for paper mode, capital, and order safety.</p>
+                        <p>One place for paper mode, capital, and order authority.</p>
                         <dl class="explainer-grid compact">
                             <div><dt>Shows</dt><dd>Paper mode, live-capital state, order safety.</dd></div>
                             <div><dt>Watch</dt><dd>Any change from read-only paper trading.</dd></div>
@@ -89,7 +85,8 @@
                 <div class="panel-heading">
                     <div>
                         <p class="label">Overview</p>
-                        <h2>What is happening now?</h2>
+                        <h2>Mission control</h2>
+                        <p class="panel-subtitle">One screen for what Qadam is watching, thinking, considering, holding, and forbidden from doing.</p>
                     </div>
                     <div class="info-hover">
                         <button class="info-button" type="button" aria-label="About the overview">i</button>
@@ -108,16 +105,16 @@
                 <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
                     <div class="overview-section-head">
                         <span>System map</span>
-                        <strong>How data becomes paper trade decisions</strong>
+                        <strong>Operating flow</strong>
                     </div>
                     <div class="overview-system-grid">
-                        <div class="overview-oversight" data-overview-oversight>
-                            <span>Human oversight</span>
-                            <strong>You supervise Qadam</strong>
-                            <p>You review the system, challenge ideas, and decide whether Qadam is mature enough to advance.</p>
-                        </div>
                         <div class="overview-mini-map" data-overview-mini-map>
                             <span>Loading system connectivity.</span>
+                        </div>
+                        <div class="overview-oversight" data-overview-oversight>
+                            <span>Fund Manager role</span>
+                            <strong>You supervise Qadam</strong>
+                            <p>Qadam watches live sources, compresses evidence locally, escalates strategy, checks quant/risk, and stays paper-only until you approve maturity.</p>
                         </div>
                     </div>
                     <div class="overview-feed-strip" data-overview-feed-strip></div>
@@ -1210,7 +1207,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260527-health-language"></script>
+    <script src="/dashboard.js?v=20260527-mission-control-ux"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 
