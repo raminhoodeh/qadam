@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260526-advanced-debug-overview"
+        "20260526-language-cleanup"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -149,8 +149,8 @@ async function main() {
         "function renderOverviewChip",
         "function renderOverviewReadout",
         "function renderOverviewCapacityChart",
-        "Use the single safety strip for authority state",
-        "Overview only answers what changed and which deeper view to open next"
+        "Use Safety Status for order authority",
+        "Overview only answers what changed and where to review next"
     ], "D11E overview renderer");
 
     const window = loadRendererWindow();
@@ -161,7 +161,7 @@ async function main() {
     assert(overview.readouts.length === 4, "Overview readouts should be exactly four");
     assert(overview.status_chips.length === 6, "Overview proof strip should be six compact chips");
     assert(overview.review_focus.state, "Overview review focus missing state");
-    assert(overview.scope_note.includes("single safety strip"), "Overview scope note must reference the single safety strip");
+    assert(overview.scope_note.includes("Safety Status"), "Overview scope note must reference Safety Status");
     assert(!overview.summary.toLowerCase().includes("live capital"), "Overview summary must not duplicate live-capital safety copy");
     assert(overview.system_status.length === 4, "Overview should expose four plain system status cards");
     assert(overview.data_sources_connected.length >= 3, "Overview should expose connected source groups");
@@ -191,7 +191,7 @@ async function main() {
     includesAll(statusRail, [
         "Day 0/30",
         "Week 0/5",
-        "Eligible setups",
+        "Potential setups",
         "Submitted paper orders",
         "Postmortems due"
     ], "rendered D11E proof strip");
@@ -203,10 +203,10 @@ async function main() {
     ], "rendered D11E proof strip");
 
     includesAll(hero, [
-        "Fund Manager read",
+        "Current summary",
         "sources current",
         "next review",
-        "Use the single safety strip"
+        "Use Safety Status"
     ], "rendered D11E hero");
 
     includesAll(metrics, [
@@ -269,12 +269,12 @@ async function main() {
     ], "rendered D11E trade considerations");
 
     includesAll(system, [
-        "You supervise the fund team",
+        "You supervise Qadam",
         "Python script",
         "Local LLM",
         "Frontier LLM",
         "Quantum computer",
-        "Candidate is not an order"
+        "A trade idea is not an order"
     ], "rendered D11E compact system map");
 
     assert(fs.existsSync(auditPath), "D11E audit document missing");

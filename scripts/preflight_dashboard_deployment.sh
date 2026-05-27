@@ -61,6 +61,7 @@ node scripts/check_dashboard_d11l_visual_simplification.js
 node scripts/check_dashboard_d11m_regression_acceptance.js
 node scripts/check_dashboard_d11n_documentation_guide_alignment.js
 node scripts/check_dashboard_d11o_deployment_discipline.js
+node scripts/check_dashboard_d12_language_cleanup.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
@@ -118,6 +119,7 @@ git diff --check -- \
   docs/qadam-dashboard-d11m-regression-and-acceptance-tests-2026-05-26.md \
   docs/qadam-dashboard-d11n-documentation-guide-alignment-2026-05-26.md \
   docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md \
+  docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   docs/qadam-user-guide.md \
   scripts/check_dashboard_acceptance.js \
@@ -154,6 +156,7 @@ git diff --check -- \
   scripts/check_dashboard_d11m_regression_acceptance.js \
   scripts/check_dashboard_d11n_documentation_guide_alignment.js \
   scripts/check_dashboard_d11o_deployment_discipline.js \
+  scripts/check_dashboard_d12_language_cleanup.js \
   scripts/check_protected_user_guide.js \
   scripts/preflight_dashboard_deployment.sh
 

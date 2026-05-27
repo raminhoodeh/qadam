@@ -94,13 +94,13 @@ requiredExplainers.forEach((id) => {
 });
 
 [
-    "One place for mode, capital, and authority state.",
-    "The shortest answer before deeper review.",
-    "How nodes hand evidence into paper-state review.",
+    "One place for paper mode, capital, and order safety.",
+    "Summary only; Advanced mode has diagnostics.",
+    "Map only; nodes are not controls.",
     "Observation only; no order creation.",
     "Hypothesis only; risk still decides.",
     "Notify-only; no command path.",
-    "Candidate/order separation stays explicit.",
+    "A trade idea is not an order.",
     "Event stream only; not shell access.",
     "Context only; requires live corroboration.",
     "Governance only; no runtime or trade authority."
@@ -117,7 +117,7 @@ requiredExplainers.forEach((id) => {
 
 assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
 assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
-assertIncludes(html, "/auth.css?v=20260526-advanced-debug-overview", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260526-language-cleanup", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

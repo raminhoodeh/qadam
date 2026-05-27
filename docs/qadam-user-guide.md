@@ -10,13 +10,13 @@ logs outcomes for review.
 
 Qadam is not a public financial-advice product, not a signal channel, and not a
 live-capital trading bot. In the current first-release workflow, live capital is
-disabled and the user-facing cockpit is a read-only operating mirror.
+disabled and the user-facing dashboard is a read-only operating mirror.
 
 ## 1. The Short Version
 
-Use Qadam through the cockpit at `qadam.trade`.
+Use Qadam through the dashboard at `qadam.trade`.
 
-The cockpit shows:
+The dashboard shows:
 
 - what Qadam is watching
 - what Qadam is thinking about
@@ -52,7 +52,7 @@ Think of Qadam as a small fund team running inside a laptop.
 | Role | Meaning |
 | --- | --- |
 | Fund Managers | The humans who oversee Qadam, review evidence, challenge assumptions, and improve the process. |
-| COO | The Python orchestrator. It coordinates modules, checks health, writes logs, and routes work. |
+| Orchestrator | The Python coordinator. It coordinates modules, checks health, writes logs, and routes work. |
 | Research Analyst | The local LLM. It filters noisy information locally. |
 | Strategy Lead | The frontier LLM. It builds and challenges deeper strategy packets. |
 | Head of Quant | The quantum/classical modelling layer. It acts as a bounded oracle, not a real-time trading brain. |
@@ -91,8 +91,11 @@ As of this guide update, Qadam is in Phase 7 demo-proof operation:
 - Phase 5 test trades do not count as Phase 7 proof trades
 - Phase 7 proof credit remains blocked until Phase 7 evidence earns it
 - the paper-live control plane is certified, visible, and guarded
-- full paper-live submission remains held until Q-CTRL and proof gates clear
-- Q-CTRL product access is currently a blocker, not active quantum execution
+- Q-CTRL Fire Opal product access is verified for the `qadam` organization
+- the remaining full paper-live certification blockers are Phase 7 30-day proof
+  completion and certification
+- Fire Opal plus IBM Quantum hardware discovery is a separate explicit gate; it
+  needs IBM Quantum token/instance configuration before device probing
 - live capital is disabled
 - broker live endpoints are disabled
 
@@ -139,8 +142,9 @@ into comments, forms, chats, docs, or prompts.
 Use this sequence the first time you open Qadam.
 
 1. Start in the Overview view.
-2. Read the single safety strip first: it should say Paper only, Read-only,
-   Live capital off, No UI-to-broker path, and No LLM-to-broker path.
+2. Read Safety Status first: it should say Paper only, Read-only,
+   Live capital off, Dashboard cannot place orders, and AI cannot bypass risk
+   checks.
 3. Use Overview's health readout and mini-map to understand whether Qadam is
    watching sources, forming hypotheses, seeing trade candidates, or blocked.
 4. Open Evidence to inspect source health, setup evidence, and supplemental
@@ -251,7 +255,7 @@ sources must corroborate any tradable implication.
 
 Use Operations when you need diagnostics rather than a quick operating read:
 
-- the full expandable System Operating Map
+- the full system map
 - event trail and process-console entries
 - hard safety boundaries and kill switches
 - Telegram notification state
@@ -261,9 +265,9 @@ Use Operations when you need diagnostics rather than a quick operating read:
 Operations is still read-only. The full system map explains how modules connect;
 its nodes are not controls.
 
-### Single Safety Strip
+### Safety Status
 
-The single safety strip is the dashboard's global authority summary. Read it
+Safety Status is the dashboard's global authority summary. Read it
 before interpreting any panel.
 
 Use it to answer:
@@ -272,9 +276,9 @@ Use it to answer:
 - is the bridge read-only
 - is live capital off
 - are UI-to-broker and LLM-to-broker paths blocked
-- is proof-credit inference blocked
+- does performance proof require verified records
 
-If a deeper panel appears to contradict the safety strip, trust the backend
+If a deeper panel appears to contradict Safety Status, trust the backend
 state and investigate before acting.
 
 ### Secure Live Bridge
@@ -306,13 +310,13 @@ Use this mapping when reading old notes:
 | Old term | Read it now as |
 | --- | --- |
 | Mission Control | Overview |
-| System Operating Map | Overview mini-map or Operations full map |
+| System map | Overview mini-map or Operations full map |
 | Watching | Evidence |
 | Cognition | Reasoning |
 | Worldview / Private Edge | Reasoning prior context |
 | Trade Layer | Trades |
 | Money / Paper Account Timeline | Trades paper account and Phase 7 proof area |
-| Forbidden | Operations safety diagnostics plus the single safety strip |
+| Forbidden | Operations safety diagnostics plus Safety Status |
 | Process Console | Operations event trail |
 | Fund Manager Comments | Operations governance |
 | Communications / Telegram | Operations communications |
@@ -332,7 +336,7 @@ Important labels:
 | Degraded | The module is partially available but has a known limitation. |
 | Blocked | Qadam is deliberately prevented from using that path. |
 | Local-only | The capability exists on the MacBook but is not exposed to the web. |
-| Read-only ready | The bridge can serve the public-safe snapshot, but cannot run commands or trade. |
+| Read-only ready | The bridge can serve dashboard status, but cannot run commands or trade. |
 | Dry-run | Qadam can render or queue a message locally, but no live send is allowed. |
 | Notify-only | A module can communicate status but cannot approve or create trade actions. |
 | Certified | A phase gate has passed its explicit checker. |
@@ -342,7 +346,7 @@ Important labels:
 | Paper-live certified | Full paper-live operation is allowed only when PT-10 reports `paper_live_certified=True`. |
 | Paper order staged | A guarded paper order preparation record exists. |
 | Paper order submitted | A paper order has been submitted to the paper broker under the allowed path. |
-| Q-CTRL hold | Paper submission remains held while Q-CTRL product access or consultation is unresolved. |
+| Q-CTRL hold | Paper submission remains held while Q-CTRL product access or consultation is unresolved. The hold is clear when PT-1 reports `qctrl_paper_consultation_ready`. |
 | Phase 7 proof credit | Credit for the 30-day proof sample; it is granted only by backend Phase 7 proof artifacts. |
 
 ## 11. How Qadam Makes A Trade
@@ -426,7 +430,7 @@ rationale. Qadam should not trade just to satisfy a quota.
 Use this routine when checking Qadam.
 
 1. Start with Overview.
-2. Read the single safety strip and confirm paper-only, read-only, live-capital
+2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
 3. Scan the Overview mini-map and review card for the current operating posture.
 4. Open Evidence and review degraded, missing, stale, or supplemental-only
@@ -596,7 +600,7 @@ If sources look stale:
 If a trade state looks wrong:
 
 1. Check Trades for the exact lifecycle state.
-2. Check the single safety strip.
+2. Check Safety Status.
 3. Check Operations for the Event Log or process-console entry.
 4. Do not assume a candidate is an order.
 5. Add a comment with the exact view and concern.
@@ -629,16 +633,16 @@ Escalate or comment if:
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
 | Overview | The default dashboard view for the operating readout and compact system mini-map. |
-| Trades | The dashboard view for signals, candidates, paper states, paper-account performance, and Phase 7 proof. |
+| Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
 | Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
 | Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |
 | Operations | The dashboard view for the full system map, event trail, communications, governance, and technical diagnostics. |
-| Single safety strip | The one global dashboard authority summary: paper only, read-only, live capital off, no UI-to-broker path, no LLM-to-broker path. |
+| Safety Status | The one global dashboard authority summary: paper only, read-only, live capital off, dashboard cannot place orders, AI cannot bypass risk checks. |
 | Mission Control | Older implementation name now represented by Overview. |
 | Watching | Older implementation name now represented by Evidence. |
 | Cognition | Older implementation name now represented by Reasoning. |
 | Money | Older implementation name now represented inside Trades. |
-| Forbidden | Older implementation name now represented by the single safety strip plus Operations diagnostics. |
+| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |
 | Paper mode | Test-account mode; no live capital. |
 | Demo proof | The Phase 7 proof window for observing Qadam under real calendar time. |
 | Qualified setup | A setup that passes the current evidence, strategy, and risk prerequisites. |

@@ -50,10 +50,10 @@ assert(detailIntro < detailFlow, "detail panels must appear after the section in
     "data-overview-boundary-rail",
     "What is happening now?",
     "data-mission-primary",
-    "Fund Manager read",
+    "Current summary",
     "Needs review",
-    "Proof and trade path",
-    "Fund Manager oversight",
+    "Paper trade lifecycle",
+    "Human oversight",
     "Use the view switcher when a first-screen item needs detail"
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
@@ -108,8 +108,8 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
     "Local LLM",
     "Frontier LLM",
     "Quantum computer",
-    "Use the single safety strip for authority state",
-    "Candidate is not an order"
+    "Use Safety Status for order authority",
+    "A trade idea is not an order"
 ].forEach((needle) => assert(renderer.includes(needle), `Overview renderer missing ${needle}`));
 
 console.log("dashboard_information_hierarchy=ok");

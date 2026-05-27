@@ -93,8 +93,8 @@ async function main() {
         "data-evidence-review-group=\"supplemental_context\"",
         "data-evidence-review-group=\"factual_packets\"",
         "data-evidence-source-ledger",
-        "/auth.css?v=20260526-advanced-debug-overview",
-        "/dashboard.js?v=20260526-advanced-debug-overview"
+        "/auth.css?v=20260526-language-cleanup",
+        "/dashboard.js?v=20260526-language-cleanup"
     ], "D11G Evidence static shell");
 
     excludesAll(dashboardHtml, [
@@ -137,9 +137,9 @@ async function main() {
     assert(model.source_setup_links.length >= 3, "Setup evidence links missing from Evidence view");
     assert(supplementalByKey.get("yahoo_finance")?.proof_boundary.includes("not source quorum"), "Yahoo Finance boundary must stay supplemental");
     assert(supplementalByKey.get("preference_mcp")?.proof_boundary.includes("not source quorum"), "Preference boundary must stay supplemental");
-    assert(/no source can create trade candidates, orders, broker writes, or live-capital authority/i.test(model.boundary), "Evidence model authority boundary is weak");
+    assert(/no source can create trade ideas, orders, broker writes, or live-capital authority/i.test(model.boundary), "Evidence model authority boundary is weak");
     assert(model.source_setup_links.every((link) => !/order authority|broker write|live capital/i.test(link.proof_boundary)), "Setup evidence link implies execution authority");
-    assert(model.evidence_packets.every((packet) => /cannot create candidates, orders, broker writes, or proof credit/i.test(packet.boundary)), "Evidence packet boundary is weak");
+    assert(model.evidence_packets.every((packet) => /cannot create trade ideas, orders, broker writes, or performance credit/i.test(packet.boundary)), "Evidence packet boundary is weak");
 
     const rendered = await renderWithStatus(status);
     const workspaceHtml = html(rendered, "[data-sources-workspace-slot]");

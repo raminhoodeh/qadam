@@ -114,17 +114,17 @@ function assertSafetyStripIsSingleGlobalAuthority() {
     includesAll(dashboardHtml, [
         "Paper only",
         "Live capital off",
-        "No UI-to-broker path",
-        "No LLM-to-broker path",
-        "No proof-credit inference"
+        "Dashboard cannot place orders",
+        "AI cannot bypass risk checks",
+        "Performance proof requires verified records"
     ], "single safety strip static shell");
     includesAll(renderer, [
         "renderDashboardSafetyStrip(status, viewModels)",
         "const modeLabel = status.mode === \"paper\"",
         "? \"Paper only\"",
         "mode_label: modeLabel",
-        "ui_broker_label: \"No UI-to-broker path\"",
-        "llm_broker_label: \"No LLM-to-broker path\""
+        "ui_broker_label: \"Dashboard cannot place orders\"",
+        "llm_broker_label: \"AI cannot bypass risk checks\""
     ], "single safety strip renderer");
 }
 
@@ -179,19 +179,19 @@ async function assertRenderedDashboardContract() {
     [
         ["[data-dashboard-safety-strip]", "Paper only"],
         ["[data-dashboard-safety-strip]", "Live capital off"],
-        ["[data-dashboard-safety-strip]", "No UI-to-broker path"],
-        ["[data-dashboard-safety-strip]", "No LLM-to-broker path"],
-        ["[data-overview-hero]", "Fund Manager read"],
+        ["[data-dashboard-safety-strip]", "Dashboard cannot place orders"],
+        ["[data-dashboard-safety-strip]", "AI cannot bypass risk checks"],
+        ["[data-overview-hero]", "Current summary"],
         ["[data-overview-review-card]", "Needs review"],
-        ["[data-overview-boundary-rail]", "single safety strip"],
+        ["[data-overview-boundary-rail]", "Safety Status"],
         ["[data-trade-layer]", "Trade lifecycle board"],
         ["[data-trade-layer]", "Consolidated trade readout"],
-        ["[data-trade-layer]", "Proof and paper lifecycle"],
+        ["[data-trade-layer]", "Paper trade lifecycle"],
         ["[data-trade-layer]", "Gate chain and broker readiness"],
-        ["[data-trade-layer]", "Signals, candidates, and paper states"],
+        ["[data-trade-layer]", "Signals, trade ideas, and paper trades"],
         ["[data-capital]", "30-day demo proof"],
         ["[data-capital]", "Paper trading account"],
-        ["[data-capital]", "Phase 7 proof"],
+        ["[data-capital]", "Verified paper trades"],
         ["[data-sources-workspace-slot]", "Evidence workspace"],
         ["[data-source-summary]", "Sources"],
         ["[data-watching-list]", "pipeline-row"],
@@ -200,7 +200,7 @@ async function assertRenderedDashboardContract() {
         ["[data-worldview]", "Prior only"],
         ["[data-worldview]", "private priors"],
         ["[data-flow-map]", "Operations readout and full system map"],
-        ["[data-flow-map]", "Full expandable System Operating Map"],
+        ["[data-flow-map]", "Full system map"],
         ["[data-flow-map]", "Closed-loop rule"],
         ["[data-communications]", "Recent outbox"],
         ["[data-process-console]", "<li>"]
@@ -228,8 +228,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260526-advanced-debug-overview",
-        "/dashboard.js?v=20260526-advanced-debug-overview"
+        "/auth.css?v=20260526-language-cleanup",
+        "/dashboard.js?v=20260526-language-cleanup"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

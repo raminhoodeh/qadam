@@ -33,7 +33,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260526-advanced-debug-overview",
+        "/auth.css?v=20260526-language-cleanup",
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "aria-label=\"Dashboard views\"",
@@ -112,11 +112,11 @@ async function main() {
     const governanceHtml = html(rendered, "[data-governance-workspace]");
 
     assert(countOccurrences(overviewMapHtml, "overview-mini-node") >= 6, "overview mini-map rendered too few nodes");
-    assert(operationsHtml.includes("Full expandable System Operating Map"), "operations full map missing");
+    assert(operationsHtml.includes("Full system map"), "operations full map missing");
     assert(operationsHtml.includes("operations-flow-diagram"), "operations flow diagram missing");
     assert(tradesHtml.includes("trade-lifecycle-filters"), "trade lifecycle filters missing");
     assert(tradesHtml.includes("aria-pressed=\"true\""), "selected trade filter state missing");
-    assert(governanceHtml.includes("Contextual comment entry points"), "governance contextual comment targets missing");
+    assert(governanceHtml.includes("Comment shortcuts"), "governance contextual comment targets missing");
 
     [
         "/Users/",

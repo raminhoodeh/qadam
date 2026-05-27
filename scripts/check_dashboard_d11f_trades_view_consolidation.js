@@ -88,7 +88,7 @@ function loadRendererWindow() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "Trade lifecycle and paper-state review",
+        "Trade lifecycle and paper trade review",
         "data-trade-consolidated-snapshot",
         "data-trade-diagnostic-groups",
         "data-trade-review-group=\"proof_lifecycle\"",
@@ -135,9 +135,9 @@ async function main() {
     includesAll(tradeHtml, [
         "Trade lifecycle board",
         "Consolidated trade readout",
-        "Proof and paper lifecycle",
+        "Paper trade lifecycle",
         "Gate chain and broker readiness",
-        "Signals, candidates, and paper states",
+        "Signals, trade ideas, and paper trades",
         "Q5-14 End-To-End Paper Trade Drill",
         "Q5-15 Phase 5 Certification",
         "Q6-16 Learning Loop Journal Visibility",
@@ -149,7 +149,7 @@ async function main() {
         "Dry-run paper-submit receipt",
         "TradingView alert source",
         "Observed signals",
-        "Candidates",
+        "Trade ideas",
         "Blocked trades",
         "Paper lifecycle states"
     ], "rendered D11F Trades");
@@ -157,8 +157,8 @@ async function main() {
     assert(countOccurrences(tradeHtml, "data-trade-review-group=") === 3, "Trades should render exactly three review groups");
     assert(!tradeHtml.includes("data-panel-brief=\"trade_layer\""), "Trades still renders duplicate panel brief");
     assert(!tradeHtml.includes("trade-route"), "Trades still renders the obsolete static trade route");
-    assert(tradeHtml.includes("Candidate is not an order") || tradeHtml.includes("Candidate is not order"), "candidate/order boundary missing");
-    assert(tradeHtml.includes("No UI proof credit"), "proof-credit boundary missing");
+    assert(tradeHtml.includes("A trade idea is not an order") || tradeHtml.includes("A trade idea is not order"), "candidate/order boundary missing");
+    assert(tradeHtml.includes("Verified performance only"), "proof-credit boundary missing");
 
     assert(fs.existsSync(auditPath), "D11F audit document missing");
     includesAll(plan, [

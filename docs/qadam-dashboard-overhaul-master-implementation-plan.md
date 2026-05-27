@@ -1486,6 +1486,38 @@ Outcome:
 
 Next stage:
 
+- D12 - Dashboard Language And Meaning Cleanup.
+
+### D12 - Dashboard Language And Meaning Cleanup
+
+Status: complete on 2026-05-26.
+
+Control artifacts:
+
+- `docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md`
+- `scripts/check_dashboard_d12_language_cleanup.js`
+
+Outcome:
+
+- Replaced public dashboard labels that sounded like implementation phases,
+  internal release names, or metaphor-only wording with plain paper-trading
+  language.
+- The default Overview now uses `Paper Trading Overview`, `Safety Status`,
+  `System map`, `Current summary`, `Potential setups`, `Trade ideas`, and
+  `Paper trade lifecycle`.
+- Safety copy now says what users need to know directly: the dashboard cannot
+  place orders, AI cannot bypass risk checks, and performance proof requires
+  verified records.
+- Hidden Advanced / Debug routes retain their diagnostic structure, but their
+  static labels no longer preserve the worst leftover copy from the previous
+  cockpit wording.
+- Added a D12 copy-regression checker so the default dashboard shell and
+  rendered Overview do not reintroduce the old slop terms.
+- Runtime authority, provider calls, broker writes, Telegram command behavior,
+  verified-performance rules, and live-capital state are unchanged.
+
+Next stage:
+
 - D11P - Performance View Consolidation.
 
 ## 8. Implementation Order

@@ -82,7 +82,7 @@ async function main() {
         "Reasoning workspace",
         "Reasoning readout and review chain",
         "Prior, not evidence",
-        "Hypothesis, not candidate",
+        "Hypothesis, not trade idea",
         "No paper/order authority",
         "data-reasoning-consolidated-readout",
         "data-reasoning-review-groups",
@@ -136,17 +136,17 @@ async function main() {
 
     assert(model.hypothesis_queue.length > 0, "hypothesis queue missing");
     model.hypothesis_queue.forEach((hypothesis) => {
-        assert(hypothesis.is_trade_candidate === false, `${hypothesis.signal_id} became a candidate`);
+        assert(hypothesis.is_trade_candidate === false, `${hypothesis.signal_id} became a trade idea`);
         assert(hypothesis.paper_order_allowed === false, `${hypothesis.signal_id} allows paper orders`);
         assert(hypothesis.order_authority === false, `${hypothesis.signal_id} exposes order authority`);
-        assert(/Hypothesis, not candidate/i.test(hypothesis.boundary), `${hypothesis.signal_id} boundary is weak`);
+        assert(/Hypothesis, not trade idea/i.test(hypothesis.boundary), `${hypothesis.signal_id} boundary is weak`);
     });
 
     assert(model.evidence_packets.length > 0, "evidence packet index missing");
     model.evidence_packets.forEach((packet) => {
         assert(packet.source_count >= 1, `${packet.trail_id} has no sources`);
         assert(packet.items.length >= 1, `${packet.trail_id} has no evidence items`);
-        assert(/cannot create a candidate or order/i.test(packet.boundary), `${packet.trail_id} boundary is weak`);
+        assert(/cannot create (a )?trade ideas? or order|cannot create trade ideas, orders/i.test(packet.boundary), `${packet.trail_id} boundary is weak`);
     });
 
     assert(model.missing_corroboration.length > 0, "missing corroboration blockers are missing");
@@ -176,7 +176,7 @@ async function main() {
         "Prior, not evidence",
         "Hypothesis queue",
         "Why ideas advanced, stalled, or were blocked",
-        "Hypothesis, not candidate",
+        "Hypothesis, not trade idea",
         "Factual evidence",
         "Evidence packets and source trail",
         "Missing corroboration",

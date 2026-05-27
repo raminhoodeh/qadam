@@ -75,6 +75,7 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_d11m_regression_acceptance.js",
     "scripts/check_dashboard_d11n_documentation_guide_alignment.js",
     "scripts/check_dashboard_d11o_deployment_discipline.js",
+    "scripts/check_dashboard_d12_language_cleanup.js",
     "scripts/check_dashboard_mission_control.js",
     "scripts/check_dashboard_durable_spine.js",
     "scripts/check_dashboard_renderer.js",
@@ -88,7 +89,8 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_forum.js",
     "scripts/check_protected_user_guide.js",
     "scripts/check_cockpit_status.py",
-    "scripts/check_live_bridge.py"
+    "scripts/check_live_bridge.py",
+    "docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md"
 ].forEach(assertFileExists);
 
 [
@@ -124,15 +126,15 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260526-advanced-debug-overview",
-    "/dashboard.js?v=20260526-advanced-debug-overview"
+    "/auth.css?v=20260526-language-cleanup",
+    "/dashboard.js?v=20260526-language-cleanup"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
-    "Status only; no approval or order path.",
+    "Readout only; this page cannot place orders.",
     "Map only; nodes are not controls.",
     "No command route",
-    "Candidate/order separation stays explicit.",
+    "A trade idea is not an order",
     "live capital disabled",
     "Notify-only; no command path.",
     "Context only; requires live corroboration.",
@@ -203,20 +205,20 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         "dashboard acceptance expected live bridge preference"
     );
     [
-        ["[data-status-banner]", "D1 public-safe snapshot loaded"],
-        ["[data-status-banner]", "D9 live bridge connected"],
+        ["[data-status-banner]", "Dashboard status loaded"],
+        ["[data-status-banner]", "Live status connected"],
         ["[data-dashboard-safety-strip]", "Paper only"],
         ["[data-dashboard-safety-strip]", "Live capital off"],
-        ["[data-dashboard-safety-strip]", "No UI-to-broker path"],
+        ["[data-dashboard-safety-strip]", "Dashboard cannot place orders"],
         ["[data-overview-status-rail]", "Day 0/30"],
-        ["[data-overview-status-rail]", "Eligible setups"],
-        ["[data-overview-hero]", "Fund Manager read"],
+        ["[data-overview-status-rail]", "Potential setups"],
+        ["[data-overview-hero]", "Current summary"],
         ["[data-overview-review-card]", "Needs review"],
         ["[data-overview-lifecycle]", "Observed signals"],
         ["[data-overview-mini-map]", "Python script"],
         ["[data-overview-mini-map]", "Local LLM"],
         ["[data-overview-mini-map]", "Quantum computer"],
-        ["[data-overview-boundary-rail]", "single safety strip"],
+        ["[data-overview-boundary-rail]", "Safety Status"],
         ["[data-overview-next-links]", "#trades"],
         ["[data-mission-primary]", "Operating thesis"],
         ["[data-mission-primary]", "hypotheses"],
@@ -233,7 +235,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-operating-summary]", "Safety strip"],
         ["[data-operating-summary]", "Bridge"],
         ["[data-fund-model]", "Fund Manager"],
-        ["[data-fund-model]", "Python keeps the book"],
+        ["[data-fund-model]", "Python records the system"],
         ["[data-fund-model]", "Models inform, gates decide"],
         ["[data-flow-map]", "Watched Sources"],
         ["[data-flow-map]", "Event Log"],
@@ -254,11 +256,11 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-communications]", "Panel readout"],
         ["[data-communications]", "Recent outbox"],
         ["[data-trade-layer]", "Consolidated trade readout"],
-        ["[data-trade-layer]", "Proof and paper lifecycle"],
+        ["[data-trade-layer]", "Paper trade lifecycle"],
         ["[data-trade-layer]", "Gate chain and broker readiness"],
-        ["[data-trade-layer]", "Signals, candidates, and paper states"],
+        ["[data-trade-layer]", "Signals, trade ideas, and paper trades"],
         ["[data-trade-layer]", "Observed signals"],
-        ["[data-trade-layer]", "Candidates"],
+        ["[data-trade-layer]", "Trade ideas"],
         ["[data-trade-layer]", "Blocked trades"],
         ["[data-capital]", "Panel readout"],
         ["[data-capital]", "Current"],

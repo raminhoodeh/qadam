@@ -81,7 +81,7 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-trades-workspace",
         "Trade lifecycle board",
-        "No UI proof credit"
+        "Performance proof requires verified records"
     ], "Trades workspace static shell");
 
     includesAll(css, [
@@ -165,16 +165,16 @@ async function main() {
     const tradeHtml = html(rendered, "[data-trade-layer]");
     [
         "Trade lifecycle board",
-        "No UI proof credit",
-        "Candidate, not order",
+        "Verified performance only",
+        "A trade idea is not an order",
         "Observed signal",
-        "Candidate",
+        "Trade idea",
         "Blocked idea",
         "Submitted paper order",
         "Closed paper trade",
         "Postmortem due",
         "Phase 5 test lifecycle",
-        "Phase 7 proof trades",
+        "Verified paper trades",
         "Source quorum",
         "Risk decision",
         "Broker receipt",

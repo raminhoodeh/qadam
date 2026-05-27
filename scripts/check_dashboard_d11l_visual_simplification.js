@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260526-advanced-debug-overview",
-        "/dashboard.js?v=20260526-advanced-debug-overview"
+        "/auth.css?v=20260526-language-cleanup",
+        "/dashboard.js?v=20260526-language-cleanup"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -127,11 +127,11 @@ async function main() {
     [
         ["[data-dashboard-safety-strip]", "Paper only"],
         ["[data-dashboard-safety-strip]", "Live capital off"],
-        ["[data-overview-hero]", "Fund Manager read"],
+        ["[data-overview-hero]", "Current summary"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-source-summary]", "Sources"],
         ["[data-cognition]", "Reasoning readout"],
-        ["[data-flow-map]", "Full expandable System Operating Map"],
+        ["[data-flow-map]", "Full system map"],
         ["[data-capital]", "30-day demo proof"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
@@ -141,7 +141,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260526-advanced-debug-overview");
+    console.log("dashboard_d11l_cache_key=20260526-language-cleanup");
     console.log("dashboard_authority_unchanged=True");
 }
 

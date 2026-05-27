@@ -36,7 +36,7 @@ async function main() {
         "system-flow-diagram",
         "flow-return-loop",
         "Observation",
-        "COO Memory",
+        "System Memory",
         "Quant + Risk",
         "Paper Trial",
         "Members"
@@ -57,12 +57,16 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        "Observation",
-        "COO Memory",
-        "Research",
-        "Quant + Risk",
-        "Paper Trial",
-        "Members",
+        "Operations readout and full system map",
+        "Fund Manager supervisor",
+        "Live data feed clusters",
+        "Qadam Orchestrator",
+        "Local LLM Research Analyst",
+        "Frontier LLM Strategy Lead",
+        "Quantum/Classical Head of Quant",
+        "Signal/Risk Gates",
+        "Paper Lifecycle",
+        "Learning Loop",
         "Event Log",
         "Secure Live Bridge",
         "Research Analyst",
@@ -78,10 +82,10 @@ async function main() {
         "Postmortem Loop",
         "Telegram Bot",
         "Fund Manager Forum",
-        "Input",
-        "Output",
-        "Closed-loop rule",
-        "lessons return to memory"
+        "Edge state",
+        "Authority boundary",
+        "Related dashboard links",
+        "live capital disabled"
     ].forEach((needle) => assertIncludes(rendered, "[data-flow-map]", needle));
 
     console.log("dashboard_system_map=ok");

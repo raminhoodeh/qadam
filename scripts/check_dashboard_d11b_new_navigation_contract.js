@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260526-advanced-debug-overview",
-    "/dashboard.js?v=20260526-advanced-debug-overview",
+    "/auth.css?v=20260526-language-cleanup",
+    "/dashboard.js?v=20260526-language-cleanup",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"

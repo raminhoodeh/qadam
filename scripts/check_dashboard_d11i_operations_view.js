@@ -97,8 +97,8 @@ async function main() {
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
         "legacy-operations-panel",
-        "/auth.css?v=20260526-advanced-debug-overview",
-        "/dashboard.js?v=20260526-advanced-debug-overview"
+        "/auth.css?v=20260526-language-cleanup",
+        "/dashboard.js?v=20260526-language-cleanup"
     ], "D11I Operations static shell");
 
     assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 4, "four legacy Operations panels should be hidden from visible Operations view");
@@ -157,7 +157,7 @@ async function main() {
         "Hard safety stops",
         "First-class operating roles",
         "Live data feed clusters",
-        "Full expandable System Operating Map",
+        "Full system map",
         "Recent runtime events",
         "Process console merged into Operations",
         "Governance and outbound communications",

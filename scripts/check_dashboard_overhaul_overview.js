@@ -136,7 +136,7 @@ async function main() {
         "overview.paper_capacity",
         "OVERVIEW_NODE_LABELS",
         "Fund Manager oversight",
-        "Use the single safety strip for authority state"
+        "Use Safety Status for order authority"
     ], "Overview renderer");
 
     const models = buildModels();
@@ -169,9 +169,9 @@ async function main() {
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "Live capital off");
     assertIncludes(rendered, "[data-overview-status-rail]", "Day 0/30");
     assertIncludes(rendered, "[data-overview-status-rail]", "Week 0/5");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Eligible setups");
-    assertIncludes(rendered, "[data-overview-hero]", "Fund Manager read");
-    assertIncludes(rendered, "[data-overview-hero]", "Use the single safety strip");
+    assertIncludes(rendered, "[data-overview-status-rail]", "Potential setups");
+    assertIncludes(rendered, "[data-overview-hero]", "Current summary");
+    assertIncludes(rendered, "[data-overview-hero]", "Use Safety Status");
     assertIncludes(rendered, "[data-overview-review-card]", "Needs review");
     assertIncludes(rendered, "[data-overview-system-status]", "System status");
     assertIncludes(rendered, "[data-overview-system-status]", "Paper trading");
@@ -183,14 +183,14 @@ async function main() {
     assertIncludes(rendered, "[data-overview-metrics]", "Proof run");
     assertIncludes(rendered, "[data-overview-lifecycle]", "Observed signals");
     assertIncludes(rendered, "[data-overview-lifecycle]", "Postmortems due");
-    assertIncludes(rendered, "[data-overview-oversight]", "You supervise the fund team");
-    assertIncludes(rendered, "[data-overview-oversight]", "Python COO");
+    assertIncludes(rendered, "[data-overview-oversight]", "You supervise Qadam");
+    assertIncludes(rendered, "[data-overview-oversight]", "Qadam Orchestrator");
     assertIncludes(rendered, "[data-overview-mini-map]", "Python script");
     assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Quantum computer");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Use the single safety strip for authority state");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Candidate is not an order");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "Use Safety Status for order authority");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "A trade idea is not an order");
     assertIncludes(rendered, "[data-overview-data-sources]", "Data sources connected");
     assertIncludes(rendered, "[data-overview-data-sources]", "Markets, broker, and prediction markets");
     assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategies");

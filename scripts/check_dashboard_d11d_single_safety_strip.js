@@ -77,14 +77,14 @@ function loadRendererWindow() {
 assert(count(dashboardHtml, "data-dashboard-safety-strip") === 1, "static shell must contain exactly one safety strip");
 
 includesAll(dashboardHtml, [
-    "Single safety strip",
+    "Safety status",
     "Paper only",
     "Live capital off",
     "Read-only",
-    "No UI-to-broker path",
-    "No LLM-to-broker path",
-    "No proof-credit inference",
-    "Use the single safety strip for authority state",
+    "Dashboard cannot place orders",
+    "AI cannot bypass risk checks",
+    "Performance proof requires verified records",
+    "Use Safety Status for order authority",
     "data-operations-safety-reference"
 ], "static single safety strip shell");
 
@@ -100,7 +100,7 @@ includesAll(renderer, [
     "function renderDashboardSafetyStrip",
     "safety_strip_model",
     "data-dashboard-safety-strip",
-    "No proof-credit inference",
+    "Performance proof requires verified records",
     "renderDashboardSafetyStrip(status, viewModels)",
     "window.buildQadamDashboardSafetyStripModel"
 ], "single safety strip renderer");
@@ -114,11 +114,11 @@ includesAll(renderer, [
 });
 
 includesAll(contract, [
-    "D11D Single Safety Strip",
+    "D11D Safety Status Strip",
     "data-dashboard-safety-strip",
     "buildDashboardSafetyStripModel",
     "renderDashboardSafetyStrip",
-    "No proof-credit inference",
+    "Performance proof requires verified records",
     "Existing authority remains unchanged and read-only"
 ], "D11D contract document");
 
@@ -144,24 +144,24 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
     const operationsHtml = html(rendered, "[data-flow-map]");
 
     includesAll(stripHtml, [
-        "Single safety strip",
+        "Safety status",
         "Paper only",
         "Live capital off",
         "Read-only",
-        "No UI-to-broker path",
-        "No LLM-to-broker path",
-        "No proof-credit inference"
+        "Dashboard cannot place orders",
+        "AI cannot bypass risk checks",
+        "Performance proof requires verified records"
     ], "rendered safety strip");
 
     includesAll(overviewBoundaryHtml, [
-        "Use the single safety strip for authority state",
-        "Candidate is not an order"
+        "Use Safety Status for order authority",
+        "A trade idea is not an order"
     ], "overview safety reference");
     assert(!overviewBoundaryHtml.includes("Broker writes blocked"), "overview still duplicates broker-write safety copy");
     assert(!overviewBoundaryHtml.includes("live capital disabled"), "overview still duplicates live-capital safety copy");
 
     includesAll(operationsHtml, [
-        "single safety strip above",
+        "Safety Status above",
         "Operations below show the evidence behind that state"
     ], "operations safety reference");
     assert(!operationsHtml.includes("Persistent safety rail"), "operations still renders duplicate safety rail");

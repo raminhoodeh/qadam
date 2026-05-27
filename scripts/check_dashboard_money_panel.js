@@ -134,9 +134,10 @@ async function main() {
     assertIncludes(rendered, "[data-capital]", "Mirrored paper orders");
     assertIncludes(rendered, "[data-capital]", "Maturity benchmark");
     assertIncludes(rendered, "[data-capital]", `${capital.maturity_closed_trade_count} of ${capital.maturity_closed_trade_target} closed paper trades`);
-    assertIncludes(rendered, "[data-capital]", `Phase 7 proof: ${status.phase7_demo_proof.closed_proof_trade_count} of ${status.phase7_demo_proof.mature_benchmark} closed proof trades`);
-    assertIncludes(rendered, "[data-capital]", "no Phase 7 proof credit");
-    assertIncludes(rendered, "[data-capital]", "Phase 5 trades excluded from proof");
+    assertIncludes(rendered, "[data-capital]", "Closed proof");
+    assertIncludes(rendered, "[data-capital]", `${status.phase7_demo_proof.closed_proof_trade_count}/${status.phase7_demo_proof.mature_benchmark}`);
+    assertIncludes(rendered, "[data-capital]", "no verified performance credit");
+    assertIncludes(rendered, "[data-capital]", "Phase 5 trades excluded");
     assertIncludes(rendered, "[data-capital]", "No open positions");
     assertIncludes(rendered, "[data-capital]", orders.length ? "Mirrored paper order" : "No mirrored paper orders");
     assertIncludes(

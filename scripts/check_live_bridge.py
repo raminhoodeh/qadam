@@ -77,8 +77,8 @@ def main() -> int:
         "\"/status/cockpit-status.json\"",
         "statusFetchHeaders",
         "dashboardStatusSource",
-        "D9 live bridge connected",
-        "D9 static fallback loaded",
+        "read-only live status",
+        "static snapshot fallback",
     ):
         require(marker in renderer, f"dashboard renderer missing marker: {marker}")
 

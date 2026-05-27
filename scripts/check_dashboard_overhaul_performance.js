@@ -83,7 +83,7 @@ async function main() {
         "30-day run separate from 100-trade maturity",
         "No forced trades",
         "Phase 5 trades excluded",
-        "No proof-credit inference"
+        "Performance proof requires verified records"
     ], "Performance workspace static shell");
 
     includesAll(css, [
@@ -150,7 +150,7 @@ async function main() {
     assert(safety.broker_post_called_count === 0, "broker POST count must be zero");
     assert(safety.unsafe_write_counter_total === 0, "unsafe write counter must be zero");
     assert(safety.live_capital_enabled_count === 0, "live capital grant count must be zero");
-    assert(/no forced trades/i.test(model.boundary), "performance boundary must block forced trades");
+    assert(/no forced trades|cannot force trades/i.test(model.boundary), "performance boundary must block forced trades");
 
     const rendered = await renderWithStatus(status);
     const performanceHtml = html(rendered, "[data-capital]");
@@ -160,7 +160,7 @@ async function main() {
         "30-day run separate from 100-trade maturity",
         "No forced trades",
         "Phase 5 trades excluded",
-        "No proof-credit inference",
+        "Verified records only",
         "Demo day",
         "Proof week",
         "Qualified setups",

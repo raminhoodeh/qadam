@@ -94,7 +94,7 @@ function assertOldTermMapping() {
         "| Watching | Older implementation name now represented by Evidence. |",
         "| Cognition | Older implementation name now represented by Reasoning. |",
         "| Money | Older implementation name now represented inside Trades. |",
-        "| Forbidden | Older implementation name now represented by the single safety strip plus Operations diagnostics. |"
+        "| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |"
     ].forEach((needle) => assertIncludes(guideDoc, needle, "guide markdown old-term mapping"));
     [
         "<strong>Mission Control</strong><span>Overview.",
@@ -108,7 +108,7 @@ function assertOldTermMapping() {
 function assertGuideConcepts() {
     includesAll(guideDoc, [
         "Start in the Overview view.",
-        "single safety strip",
+        "Safety Status",
         "Overview's health readout and mini-map",
         "Open Evidence",
         "Open Reasoning",
@@ -122,7 +122,7 @@ function assertGuideConcepts() {
     ], "guide markdown D11N concepts");
     includesAll(guideHtml, [
         "Start in the Overview view.",
-        "single safety strip",
+        "Safety Status",
         "Overview's health readout and mini-map",
         "Open Evidence",
         "Open Reasoning",

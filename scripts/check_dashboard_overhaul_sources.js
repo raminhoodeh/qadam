@@ -145,8 +145,8 @@ async function main() {
     assert(supplementalByKey.has("preference_mcp"), "Preference MCP supplemental source missing");
     assert(supplementalByKey.get("yahoo_finance").proof_boundary.includes("not source quorum"), "Yahoo Finance boundary must prevent sole-proof use");
     assert(supplementalByKey.get("preference_mcp").proof_boundary.includes("not source quorum"), "Preference boundary must prevent sole-proof use");
-    assert(model.source_setup_links.length >= 3, "source-to-setup links should include observed, candidate, and setup pool state");
-    assert(model.source_setup_links.some((link) => link.stage === "Candidate"), "candidate source link missing");
+    assert(model.source_setup_links.length >= 3, "source-to-setup links should include observed, trade idea, and setup pool state");
+    assert(model.source_setup_links.some((link) => link.stage === "Trade idea"), "trade-idea source link missing");
     assert(model.source_setup_links.some((link) => link.stage === "Observed signal"), "observed-signal source link missing");
     assert(model.source_setup_links.every((link) => link.href === "#trade-layer" || link.href === "#trades"), "source setup links must route to trade review surfaces");
     assert(model.source_setup_links.every((link) => !/order authority|broker write|live capital/i.test(link.proof_boundary)), "source setup links must not imply execution authority");
@@ -167,7 +167,7 @@ async function main() {
         "Challenge-only supplemental data plane",
         "Source to setup links",
         "Observed signal",
-        "Candidate",
+        "Trade idea",
         "Phase 7 setup pool",
         "Pipeline groups",
         "Reliability state by intelligence pipeline",

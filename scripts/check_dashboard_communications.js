@@ -110,7 +110,7 @@ async function main() {
     [
         "communications-panel",
         "data-communications",
-        "Telegram rail",
+        "Telegram notifications",
         "Telegram cannot place, approve, reject, modify, close, or resize trades"
     ].forEach((needle) => assert(html.includes(needle), `dashboard communications HTML missing ${needle}`));
     [

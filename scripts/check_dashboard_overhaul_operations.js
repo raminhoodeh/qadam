@@ -87,17 +87,17 @@ async function main() {
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
         "What is broken?",
-        "single safety strip above",
+        "Safety Status above",
         "Runtime, bridge, and safety",
         "Operating team and data plumbing",
         "Full system map and event trail",
         "Governance and communications audit",
-        "Full expandable System Operating Map",
+        "Full system map",
         "Expand diagnostics",
         "Event Log references",
         "Authority boundary",
         "Edge state",
-        "shadow/context-only"
+        "research only"
     ], "Operations workspace static shell");
 
     includesAll(css, [
@@ -132,7 +132,7 @@ async function main() {
         "operations-full-map",
         "What is broken?",
         "operations-safety-reference",
-        "single safety strip above"
+        "Safety Status above"
     ], "Operations workspace renderer");
 
     const window = loadRendererWindow();
@@ -156,7 +156,7 @@ async function main() {
     [
         "Fund Manager supervisor",
         "Live data feed clusters",
-        "Python COO",
+        "Qadam Orchestrator",
         "Local LLM Research Analyst",
         "Frontier LLM Strategy Lead",
         "Quantum/Classical Head of Quant",
@@ -189,10 +189,10 @@ async function main() {
         "Full system map and event trail",
         "Governance and communications audit",
         "What is broken?",
-        "single safety strip above",
+        "Safety Status above",
         "Fund Manager supervisor",
         "Live data feed clusters",
-        "Python COO",
+        "Qadam Orchestrator",
         "Local LLM Research Analyst",
         "Frontier LLM Strategy Lead",
         "Quantum/Classical Head of Quant",
@@ -204,7 +204,7 @@ async function main() {
         "Module health",
         "Phase/certification diagnostics",
         "Kill-switch ledger",
-        "Full expandable System Operating Map",
+        "Full system map",
         "Q5-13 Functional System Map Dashboard",
         "Backend parity",
         "Unsafe controls",

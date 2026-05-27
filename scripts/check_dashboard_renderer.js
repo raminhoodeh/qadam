@@ -226,8 +226,8 @@ async function main() {
         rendered.requests[0]?.url.includes("/api/cockpit-status"),
         "dashboard did not request the live bridge before the static snapshot"
     );
-    assertIncludes(rendered, "[data-status-banner]", "D1 public-safe snapshot loaded");
-    assertIncludes(rendered, "[data-status-banner]", "D9 live bridge connected");
+    assertIncludes(rendered, "[data-status-banner]", "Dashboard status loaded");
+    assertIncludes(rendered, "[data-status-banner]", "Live status connected");
     assertIncludes(rendered, "[data-mission-primary]", "Operating thesis");
     assertIncludes(rendered, "[data-mission-primary]", "hypotheses");
     assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
@@ -256,7 +256,7 @@ async function main() {
     assertIncludes(rendered, "[data-phase4-strategy]", "No execution");
     assertIncludes(rendered, "[data-phase4-strategy]", "Yahoo Finance supplemental");
     assertIncludes(rendered, "[data-fund-model]", "Fund Manager");
-    assertIncludes(rendered, "[data-fund-model]", "Python keeps the book");
+    assertIncludes(rendered, "[data-fund-model]", "Python records the system");
     assertIncludes(rendered, "[data-fund-model]", "Models inform, gates decide");
     assertIncludes(rendered, "[data-flow-map]", "Watched Sources");
     assertIncludes(rendered, "[data-flow-map]", "Secure Live Bridge");

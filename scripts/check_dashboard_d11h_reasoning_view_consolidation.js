@@ -91,8 +91,8 @@ async function main() {
         "data-reasoning-review-group=\"hypotheses_blockers\"",
         "data-reasoning-review-group=\"review_chain\"",
         "data-reasoning-review-group=\"advanced_diagnostics\"",
-        "/auth.css?v=20260526-advanced-debug-overview",
-        "/dashboard.js?v=20260526-advanced-debug-overview"
+        "/auth.css?v=20260526-language-cleanup",
+        "/dashboard.js?v=20260526-language-cleanup"
     ], "D11H Reasoning static shell");
 
     excludesAll(dashboardHtml, [
@@ -132,9 +132,9 @@ async function main() {
     });
     assert(model.worldview_prior?.is_evidence === false, "worldview prior became evidence");
     assert(model.worldview_prior?.evidence_role === "prior_not_evidence", "worldview prior role is weak");
-    assert(model.hypothesis_queue.every((hypothesis) => hypothesis.is_trade_candidate === false), "hypothesis became candidate");
+    assert(model.hypothesis_queue.every((hypothesis) => hypothesis.is_trade_candidate === false), "hypothesis became trade idea");
     assert(model.hypothesis_queue.every((hypothesis) => hypothesis.paper_order_allowed === false), "hypothesis allows paper order");
-    assert(model.evidence_packets.every((packet) => /cannot create a candidate or order/i.test(packet.boundary)), "evidence packet boundary is weak");
+    assert(model.evidence_packets.every((packet) => /cannot create a trade idea or order/i.test(packet.boundary)), "evidence packet boundary is weak");
     assert(model.review_chain.every((review) => review.can_advance_trade === false), "review chain can advance trade");
     assert(model.quant_annotation.execution_allowed === false, "quant annotation allows execution");
     assert(model.quant_annotation.paper_order_allowed === false, "quant annotation allows paper orders");
