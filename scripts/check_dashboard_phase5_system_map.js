@@ -11,6 +11,7 @@ const {
 const REQUIRED_NODE_KEYS = [
     "watching",
     "yahoo_finance",
+    "tradingview_mcp",
     "preference_mcp",
     "event_log",
     "live_bridge",
@@ -103,6 +104,7 @@ async function main() {
     }
 
     assertNodeStatus(systemMap, "yahoo_finance", status.yahoo_finance.status);
+    assertNodeStatus(systemMap, "tradingview_mcp", status.tradingview_mcp.status);
     assertNodeStatus(systemMap, "preference_mcp", status.preference_mcp.status);
     assertNodeStatus(systemMap, "live_bridge", status.live_bridge.status);
     assertNodeStatus(systemMap, "kill_switch_ledger", status.phase5_kill_switch_ledger.status);
@@ -117,6 +119,9 @@ async function main() {
     assert(systemMap.source_posture.canonical.expected_source_count === status.durable_ingestion.expected_source_count, "canonical expected source mismatch");
     assert(systemMap.source_posture.canonical.replayed_source_count === status.durable_ingestion.replayed_source_count, "canonical replayed source mismatch");
     assert(systemMap.source_posture.yahoo_finance.role === "supplemental_market_confirmation_only", "Yahoo Finance role mismatch");
+    assert(systemMap.source_posture.tradingview_mcp.role === "supplemental_technical_confirmation_only", "TradingView MCP role mismatch");
+    assert(systemMap.source_posture.tradingview_mcp.source_quorum_credit_allowed === false, "TradingView MCP source quorum enabled");
+    assert(systemMap.source_posture.tradingview_mcp.trade_candidate_creation_allowed === false, "TradingView MCP candidate creation enabled");
     assert(systemMap.source_posture.preference_mcp.source_36 === false, "Preference MCP source 36 enabled");
     assert(systemMap.source_posture.preference_mcp.source_quorum_credit_allowed === false, "Preference MCP source quorum enabled");
 
@@ -134,6 +139,7 @@ async function main() {
     assertIncludes(rendered, "[data-flow-map]", "Unsafe controls");
     assertIncludes(rendered, "[data-flow-map]", "canonical sources");
     assertIncludes(rendered, "[data-flow-map]", "Yahoo Finance supplemental market confirmation only");
+    assertIncludes(rendered, "[data-flow-map]", "TradingView MCP Technical");
     assertIncludes(rendered, "[data-flow-map]", "Preference/PREF MCP");
     assertIncludes(rendered, "[data-flow-map]", "live capital disabled");
     assertIncludes(rendered, "[data-flow-map]", `paper submit path ${systemMap.guardrails.paper_submit_path_available_count || 0}`);

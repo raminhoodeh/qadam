@@ -20,12 +20,14 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.intelligence import ShadowSignalStore, run_shadow_intelligence_sample
 
-SIGNAL_INTEGRITY_SCHEMA_VERSION = 3
+SIGNAL_INTEGRITY_SCHEMA_VERSION = 4
 SIGNAL_INTEGRITY_STATUSES = {"blocked", "hold_for_corroboration", "passed_to_risk_shadow"}
 MARKET_CONFIRMATION_MAX_AGE = timedelta(hours=48)
 MARKET_CONFIRMATION_EVENT_TYPE = "market_price_confirmation"
 YAHOO_FINANCE_SOURCE = "market.yahoo_finance"
 PREFERENCE_MCP_SOURCE = "supplemental.preference_mcp"
+TRADINGVIEW_MCP_SOURCE = "market.tradingview_mcp"
+TRADINGVIEW_MCP_EVENT_TYPE = "technical_analysis_context"
 PRICING_GAP_EVENT_TYPES = {"pricing_gap_assumption", "transaction_cost_assumption"}
 PRICING_GAP_CONFIRMATION_MARKERS = (
     "pricing gap confirmed",
@@ -40,6 +42,13 @@ PREFERENCE_CONTEXT_MARKERS = (
     "preference-only confirmation",
     "orderbook depth is market context",
     "wallet/kol movement",
+)
+TRADINGVIEW_MCP_CONTEXT_MARKERS = (
+    "tradingview mcp",
+    "tradingview_mcp",
+    "technical context is supplemental",
+    "technical analysis context",
+    "support/resistance",
 )
 
 
@@ -60,6 +69,7 @@ class SignalIntegrityReview:
     akber_filter: dict[str, str]
     market_confirmation_policy: dict[str, Any]
     preference_context_policy: dict[str, Any]
+    technical_context_policy: dict[str, Any]
     failure_reasons: tuple[str, ...]
     required_next_steps: tuple[str, ...]
     worldview_prior_status: str
@@ -282,6 +292,59 @@ def _preference_context_policy(
     }
 
 
+def _is_technical_context_item(item: dict[str, Any]) -> bool:
+    source = str(item.get("source") or "").lower()
+    event_type = str(item.get("event_type") or "").lower()
+    summary = str(item.get("summary") or "").lower()
+    return (
+        TRADINGVIEW_MCP_SOURCE in source
+        or event_type == TRADINGVIEW_MCP_EVENT_TYPE
+        or any(marker in summary for marker in TRADINGVIEW_MCP_CONTEXT_MARKERS)
+    )
+
+
+def _technical_context_policy(
+    *,
+    trail: dict[str, Any],
+    source_count: int,
+) -> dict[str, Any]:
+    items = _evidence_items(trail)
+    technical_items = tuple(item for item in items if _is_technical_context_item(item))
+    summary_text = " ".join(str(item.get("summary") or "") for item in technical_items).lower()
+    present = bool(technical_items)
+    stale = "stale" in summary_text
+    technical_only_hold = present and source_count < 2
+    if not present:
+        status = "technical_context_absent"
+    elif stale:
+        status = "technical_context_stale_hold"
+    elif technical_only_hold:
+        status = "tradingview_mcp_context_only_hold"
+    else:
+        status = "supplemental_technical_confirmation_available"
+    return {
+        "status": status,
+        "technical_context_present": present,
+        "technical_item_count": len(technical_items),
+        "tradingview_mcp_context_only_hold": technical_only_hold,
+        "context_stale_hold": stale,
+        "source_quorum_credit_allowed": False,
+        "technical_context_only_confirmation_allowed": False,
+        "signal_authority": False,
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "order_authority": False,
+        "paper_order_authority": False,
+        "broker_write_authority": False,
+        "live_capital_authority": False,
+        "boundary": (
+            "TradingView MCP technical context can corroborate technical setup only. "
+            "It cannot satisfy source quorum, create trade candidates, create paper "
+            "orders, write to brokers, or enable live capital."
+        ),
+    }
+
+
 def _akber_filter(
     *,
     evidence_item_count: int,
@@ -289,17 +352,22 @@ def _akber_filter(
     missing: tuple[str, ...],
     average_trust_score: float,
     market_policy: dict[str, Any],
+    technical_policy: dict[str, Any],
 ) -> dict[str, str]:
     catalyst = "pass" if evidence_item_count > 0 and average_trust_score >= 0.5 else "fail_missing_trusted_catalyst"
     return {
         "low_volatility": "missing_volatility_context",
         "options_distribution_gap": str(market_policy["pricing_gap"]),
         "catalyst_identification": catalyst,
-        "technical_setup": "missing_market_price_confirmation"
-        if "market_price_confirmation" in missing
-        or source_count < 2
-        or market_policy["status"] != "market_confirmation_corroboration_available"
-        else "shadow_pass",
+        "technical_setup": (
+            "supplemental_technical_confirmation_available"
+            if technical_policy["status"] == "supplemental_technical_confirmation_available"
+            else "missing_market_price_confirmation"
+            if "market_price_confirmation" in missing
+            or source_count < 2
+            or market_policy["status"] != "market_confirmation_corroboration_available"
+            else "shadow_pass"
+        ),
         "obv_volume": "missing_volume_confirmation",
         "approval_policy": "not_reached_risk_agent_absent",
     }
@@ -315,6 +383,7 @@ def _failure_reasons(
     missing: tuple[str, ...],
     market_policy: dict[str, Any],
     preference_policy: dict[str, Any],
+    technical_policy: dict[str, Any],
 ) -> tuple[str, ...]:
     reasons: list[str] = []
     if evidence_item_count < 1:
@@ -336,6 +405,11 @@ def _failure_reasons(
         "preference_context_quota_degraded_hold",
     }:
         reasons.append(str(preference_policy["status"]))
+    if technical_policy["status"] in {
+        "tradingview_mcp_context_only_hold",
+        "technical_context_stale_hold",
+    }:
+        reasons.append(str(technical_policy["status"]))
     if market_policy["pricing_gap"] != "pass_pricing_gap_confirmed":
         reasons.append("missing_pricing_gap")
     reasons.extend(missing)
@@ -371,6 +445,7 @@ def _review_status(
     missing: tuple[str, ...],
     market_policy: dict[str, Any],
     preference_policy: dict[str, Any],
+    technical_policy: dict[str, Any],
 ) -> str:
     preference_hold_status = preference_policy["status"] in {
         "preference_only_confirmation_hold",
@@ -387,6 +462,8 @@ def _review_status(
         or market_policy["status"] != "market_confirmation_corroboration_available"
         or market_policy["pricing_gap"] != "pass_pricing_gap_confirmed"
         or preference_hold_status
+        or technical_policy["status"]
+        in {"tradingview_mcp_context_only_hold", "technical_context_stale_hold"}
     ):
         return "hold_for_corroboration"
     return "passed_to_risk_shadow"
@@ -412,6 +489,10 @@ def _next_steps(status: str, failure_reasons: tuple[str, ...]) -> tuple[str, ...
         steps.append("Refresh Preference context before Strategy Lead review.")
     if "preference_context_quota_degraded_hold" in failure_reasons:
         steps.append("Verify Preference identity and quota before live Preference use.")
+    if "tradingview_mcp_context_only_hold" in failure_reasons:
+        steps.append("Add canonical non-TradingView corroboration; technical context alone is a hold.")
+    if "technical_context_stale_hold" in failure_reasons:
+        steps.append("Refresh TradingView MCP technical context before Strategy Lead review.")
     if "maritime_confirmation" in failure_reasons:
         steps.append("Add maritime, logistics, or vessel confirmation.")
     if "missing_pricing_gap" in failure_reasons:
@@ -454,6 +535,21 @@ def validate_signal_integrity_review(review: SignalIntegrityReview) -> None:
     ):
         if review.preference_context_policy.get(key) is not False:
             raise ValueError(f"Preference context policy authority enabled: {key}")
+    if review.technical_context_policy.get("source_quorum_credit_allowed") is not False:
+        raise ValueError("TradingView MCP context cannot satisfy source quorum")
+    if review.technical_context_policy.get("technical_context_only_confirmation_allowed") is not False:
+        raise ValueError("TradingView MCP-only confirmation cannot pass Signal Integrity")
+    for key in (
+        "signal_authority",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "order_authority",
+        "paper_order_authority",
+        "broker_write_authority",
+        "live_capital_authority",
+    ):
+        if review.technical_context_policy.get(key) is not False:
+            raise ValueError(f"TradingView MCP technical context authority enabled: {key}")
     if not 0 <= review.integrity_score <= 1:
         raise ValueError("signal integrity score must be between 0 and 1")
 
@@ -468,6 +564,7 @@ def build_signal_integrity_review(signal: dict[str, Any]) -> SignalIntegrityRevi
     signal_confidence = round(_float(signal.get("confidence"), 0), 3)
     market_policy = _market_confirmation_policy(trail=trail, source_count=source_count)
     preference_policy = _preference_context_policy(trail=trail, source_count=source_count)
+    technical_policy = _technical_context_policy(trail=trail, source_count=source_count)
     status = _review_status(
         evidence_item_count=evidence_item_count,
         source_count=source_count,
@@ -477,6 +574,7 @@ def build_signal_integrity_review(signal: dict[str, Any]) -> SignalIntegrityRevi
         missing=missing,
         market_policy=market_policy,
         preference_policy=preference_policy,
+        technical_policy=technical_policy,
     )
     failures = _failure_reasons(
         evidence_item_count=evidence_item_count,
@@ -487,6 +585,7 @@ def build_signal_integrity_review(signal: dict[str, Any]) -> SignalIntegrityRevi
         missing=missing,
         market_policy=market_policy,
         preference_policy=preference_policy,
+        technical_policy=technical_policy,
     )
     review = SignalIntegrityReview(
         schema_version=SIGNAL_INTEGRITY_SCHEMA_VERSION,
@@ -513,9 +612,11 @@ def build_signal_integrity_review(signal: dict[str, Any]) -> SignalIntegrityRevi
             missing=missing,
             average_trust_score=average_trust_score,
             market_policy=market_policy,
+            technical_policy=technical_policy,
         ),
         market_confirmation_policy=market_policy,
         preference_context_policy=preference_policy,
+        technical_context_policy=technical_policy,
         failure_reasons=failures,
         required_next_steps=_next_steps(status, failures),
         worldview_prior_status="private_prior_only_not_evidence",

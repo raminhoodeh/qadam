@@ -205,6 +205,11 @@ from orchestrator.tradingview_alerts import (
     TradingViewAlertStore,
     tradingview_alert_summary,
 )
+from orchestrator.tradingview_mcp_adapter import (
+    tradingview_mcp_adapter_status,
+    tradingview_mcp_context,
+    tradingview_mcp_packet_context,
+)
 from orchestrator.world_model import world_model_claims, world_model_summary
 from orchestrator.yahoo_finance_adapter import yahoo_finance_adapter_status
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
@@ -283,6 +288,46 @@ YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS = {
     "source",
     "status",
     "symbol_allowlist_count",
+}
+
+TRADINGVIEW_MCP_PUBLIC_REQUIRED_FIELDS = {
+    "active_required_challenges",
+    "boundary",
+    "broker_write_allowed",
+    "canonical_source_count",
+    "classification",
+    "connected",
+    "enabled",
+    "execution_allowed",
+    "fill_confirmation_authority",
+    "live_calls_enabled",
+    "live_capital_enabled",
+    "local_checkout_exists",
+    "local_path_exposed",
+    "mcp_config_exists",
+    "obvious_technical_context_count",
+    "package_importable",
+    "paper_order_allowed",
+    "provider",
+    "public_safe",
+    "quantum_job_authority",
+    "raw_payload_exposed",
+    "receipt_evidence_authority",
+    "reconciliation_truth_authority",
+    "risk_approval_authority",
+    "sample_mode_available",
+    "schema_version",
+    "service_importable",
+    "signal_authority",
+    "source",
+    "source_key",
+    "source_quorum_credit_allowed",
+    "status",
+    "technical_confirmation_role",
+    "technical_context_count",
+    "technical_context_status",
+    "technical_contexts",
+    "trade_candidate_creation_allowed",
 }
 
 PREFERENCE_MCP_PUBLIC_REQUIRED_FIELDS = {
@@ -1539,6 +1584,39 @@ def _tradingview_watching_row(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _tradingview_mcp_watching_row(settings: Settings) -> dict[str, Any]:
+    summary = tradingview_mcp_adapter_status(settings)
+    connected = bool(summary.get("connected"))
+    context_count = int(summary.get("technical_context_count", 0) or 0)
+    return {
+        "source_key": "tradingview_mcp",
+        "source_name": "TradingView MCP Technical Analysis",
+        "pipeline": "market",
+        "tier": 2,
+        "status": "online" if connected else "degraded",
+        "raw_status": summary.get("status", "degraded"),
+        "registry_status": "read_only_mcp_adapter",
+        "readiness": "technical analysis connected"
+        if connected
+        else "local MCP server not connected",
+        "promoted_adapter": connected,
+        "auth_class": "public_or_none",
+        "cadence": "read-only technical scan when called by Qadam",
+        "endpoint_count": 0,
+        "degraded_reason": None if connected else "local TradingView MCP checkout unavailable",
+        "trust_score": None,
+        "last_heartbeat": None,
+        "last_payload_time": None,
+        "credential_status": "not_required",
+        "latency_ms": None,
+        "can_influence_signals": False,
+        "influence_boundary": (
+            "supplemental_technical_confirmation_no_source_quorum_or_order_authority"
+        ),
+        "technical_context_count": context_count,
+    }
+
+
 def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[str, Any]]:
     watching: list[dict[str, Any]] = []
     for source in data_map.get("sources", []):
@@ -1567,6 +1645,7 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                 "influence_boundary": "blocked_until_signal_integrity_gate",
             }
         )
+    watching.append(_tradingview_mcp_watching_row(settings))
     watching.append(_tradingview_watching_row(settings))
     return watching
 
@@ -2118,6 +2197,7 @@ def _safe_signal_integrity_reviews(settings: Settings) -> list[dict[str, Any]]:
             "missing_correlations": review.get("missing_correlations", []),
             "akber_filter": review.get("akber_filter", {}),
             "market_confirmation_policy": review.get("market_confirmation_policy", {}),
+            "technical_context_policy": review.get("technical_context_policy", {}),
             "failure_reasons": review.get("failure_reasons", []),
             "required_next_steps": review.get("required_next_steps", []),
             "worldview_prior_status": review.get("worldview_prior_status"),
@@ -2705,6 +2785,86 @@ def _tradingview_alerts(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _safe_tradingview_mcp_context_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "event_id": str(row.get("event_id") or "")[:160],
+        "symbol": str(row.get("symbol") or "unknown")[:40],
+        "instrument_name": str(row.get("instrument_name") or "unknown")[:120],
+        "timeframe": str(row.get("timeframe") or "unknown")[:20],
+        "tool_name": str(row.get("tool_name") or "technical_context")[:80],
+        "setup_type": str(row.get("setup_type") or "technical_context")[:100],
+        "direction": str(row.get("direction") or "watch")[:80],
+        "technical_score": row.get("technical_score"),
+        "volatility_state": str(row.get("volatility_state") or "unknown")[:120],
+        "indicator_state": row.get("indicator_state") if isinstance(row.get("indicator_state"), dict) else {},
+        "support_resistance": row.get("support_resistance")
+        if isinstance(row.get("support_resistance"), dict)
+        else {},
+        "candidate_watchlist_context": str(row.get("candidate_watchlist_context") or "")[:260],
+        "obvious_technical_context_flag": bool(row.get("obvious_technical_context_flag")),
+        "observed_at": row.get("observed_at"),
+        "trade_candidate_created": False,
+        "paper_order_allowed": False,
+        "execution_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+        "boundary": str(row.get("boundary") or "TradingView MCP is technical context only.")[:700],
+    }
+
+
+def _tradingview_mcp_status(settings: Settings) -> dict[str, Any]:
+    status = tradingview_mcp_adapter_status(settings)
+    context = tradingview_mcp_context(settings)
+    packet_context = tradingview_mcp_packet_context(settings)
+    rows = context.get("technical_contexts", [])
+    if not isinstance(rows, list):
+        rows = []
+    return {
+        "schema_version": status.get("schema_version", 1),
+        "status": status.get("status", "degraded"),
+        "source": status.get("source", "market.tradingview_mcp"),
+        "source_key": status.get("source_key", "tradingview_mcp"),
+        "provider": status.get("provider", "local_tradingview_mcp_server"),
+        "classification": status.get("classification", "supplemental_technical_analysis_context"),
+        "canonical_source_count": int(status.get("canonical_source_count", 0) or 0),
+        "enabled": bool(status.get("enabled")),
+        "connected": bool(status.get("connected")),
+        "local_checkout_exists": bool(status.get("local_checkout_exists")),
+        "mcp_config_exists": bool(status.get("mcp_config_exists")),
+        "package_importable": bool(status.get("package_importable")),
+        "service_importable": bool(status.get("service_importable")),
+        "live_calls_enabled": bool(status.get("live_calls_enabled")),
+        "sample_mode_available": bool(status.get("sample_mode_available", True)),
+        "technical_context_status": status.get("technical_context_status", "not_initialized"),
+        "technical_context_count": int(status.get("technical_context_count", 0) or 0),
+        "obvious_technical_context_count": int(
+            status.get("obvious_technical_context_count", 0) or 0
+        ),
+        "technical_contexts": [_safe_tradingview_mcp_context_row(row) for row in rows[:8]],
+        "active_required_challenges": packet_context.get("active_required_challenges", []),
+        "source_quorum_credit_allowed": False,
+        "technical_confirmation_role": "supplemental_technical_confirmation_only",
+        "signal_authority": False,
+        "risk_approval_authority": False,
+        "trade_candidate_creation_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "fill_confirmation_authority": False,
+        "receipt_evidence_authority": False,
+        "reconciliation_truth_authority": False,
+        "quantum_job_authority": False,
+        "live_capital_enabled": False,
+        "raw_payload_exposed": False,
+        "local_path_exposed": False,
+        "public_safe": True,
+        "boundary": status.get(
+            "boundary",
+            "TradingView MCP is read-only supplemental technical analysis.",
+        ),
+    }
+
+
 def _fund_manager_notes(settings: Settings) -> dict[str, Any]:
     store = GovernanceStore(settings=settings)
     try:
@@ -2945,6 +3105,9 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         tradingview_alerts = TradingViewAlertStore(settings=settings).read_alerts(limit=10)
     except Exception:
         tradingview_alerts = ()
+    tradingview_mcp_rows = _tradingview_mcp_status(settings).get("technical_contexts", [])
+    if not isinstance(tradingview_mcp_rows, list):
+        tradingview_mcp_rows = []
 
     trade_layer: dict[str, Any] = {
         "summary": trade_intent_summary(settings) if store_status == "ok" else {"status": store_status},
@@ -2967,6 +3130,30 @@ def _trade_layer(settings: Settings) -> dict[str, Any]:
         "boundary": "D5 trade intent is local and non-executing. No broker order path exists.",
     }
     trade_layer["watching"].extend(_safe_tradingview_alert(alert) for alert in tradingview_alerts)
+    trade_layer["watching"].extend(
+        {
+            "alert_id": row.get("event_id"),
+            "status": "observed_signal",
+            "source": "tradingview_mcp",
+            "source_type": "tradingview_mcp_technical_context",
+            "instrument": row.get("symbol"),
+            "symbol": row.get("symbol"),
+            "timeframe": row.get("timeframe"),
+            "setup_type": row.get("setup_type"),
+            "direction": row.get("direction"),
+            "trigger": row.get("candidate_watchlist_context"),
+            "price": None,
+            "indicator_state": row.get("indicator_state", {}),
+            "chart_context": row.get("volatility_state"),
+            "received_at": row.get("observed_at"),
+            "observed_at": row.get("observed_at"),
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "trade_candidate_created": False,
+            "boundary": row.get("boundary"),
+        }
+        for row in tradingview_mcp_rows[:8]
+    )
     for intent in intents:
         item = _safe_trade_item(intent)
         if intent.status in {"candidate", "risk_review"}:
@@ -5997,6 +6184,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "source_heartbeat_history": _build_source_heartbeat_history(settings),
         "yahoo_finance": _safe_yahoo_finance_status(settings, generated_at),
         "preference_mcp": _safe_preference_mcp_status(settings, generated_at),
+        "tradingview_mcp": _tradingview_mcp_status(settings),
         "modules": _build_modules(health, generated_at),
         "process_console": _build_process_console(settings, generated_at),
         "decision_philosophy": _decision_philosophy(),
@@ -6161,6 +6349,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_auto_approval_staged_order",
         "yahoo_finance",
         "preference_mcp",
+        "tradingview_mcp",
         "capital",
         "mission_control",
         "watching",
@@ -6306,6 +6495,48 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     for phrase in ("read-only", "without secrets", "cannot satisfy source quorum", "create trade candidates"):
         if phrase not in preference_boundary:
             raise ValueError(f"Preference MCP public boundary missing: {phrase}")
+    tradingview_mcp = payload["tradingview_mcp"]
+    missing_tradingview_mcp = sorted(
+        TRADINGVIEW_MCP_PUBLIC_REQUIRED_FIELDS - set(tradingview_mcp)
+    )
+    if missing_tradingview_mcp:
+        raise ValueError(f"TradingView MCP public status missing fields: {missing_tradingview_mcp}")
+    if tradingview_mcp.get("public_safe") is not True:
+        raise ValueError("TradingView MCP public status must be public-safe")
+    if tradingview_mcp.get("source_key") != "tradingview_mcp":
+        raise ValueError("TradingView MCP source key mismatch")
+    if tradingview_mcp.get("status") not in {"connected", "degraded"}:
+        raise ValueError("TradingView MCP public status is invalid")
+    if tradingview_mcp.get("technical_confirmation_role") != "supplemental_technical_confirmation_only":
+        raise ValueError("TradingView MCP role must remain supplemental technical confirmation")
+    for key in (
+        "source_quorum_credit_allowed",
+        "signal_authority",
+        "risk_approval_authority",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "fill_confirmation_authority",
+        "receipt_evidence_authority",
+        "reconciliation_truth_authority",
+        "quantum_job_authority",
+        "live_capital_enabled",
+        "raw_payload_exposed",
+        "local_path_exposed",
+    ):
+        if tradingview_mcp.get(key) is not False:
+            raise ValueError(f"TradingView MCP public status must keep {key}=False")
+    tradingview_mcp_boundary = str(tradingview_mcp.get("boundary") or "")
+    for phrase in (
+        "read-only supplemental technical analysis",
+        "cannot create source quorum",
+        "trade candidates",
+        "paper orders",
+        "broker writes",
+    ):
+        if phrase not in tradingview_mcp_boundary:
+            raise ValueError(f"TradingView MCP public boundary missing: {phrase}")
     paper_live_activation = payload["paper_live_activation"]
     if paper_live_activation.get("status") not in {
         "not_run",

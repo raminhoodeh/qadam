@@ -81,6 +81,8 @@ Required local env values:
 - `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID`, or member-specific chat IDs
 - `QADAM_TELEGRAM_ENABLED=false` by default
 - `QADAM_TELEGRAM_DRY_RUN=true` by default
+- `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false` by default
+- `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true` by default
 
 Local files:
 
@@ -194,6 +196,17 @@ Exit gate:
 Status: implemented for D8A as a local dry-run contract. The public status key is `communications.telegram`; it exposes mode, send gate, member counts, queue counts, message classes, recent message metadata, and an outbound-only boundary.
 
 Current local state as of 2026-05-18: bot token, bot username, private default chat ID, and group chat ID are configured in the ignored local secret file. The send gate remains disabled and dry-run remains enabled.
+
+PaperOps trade-decision group notifications now have a dedicated sender:
+`scripts/check_telegram_trade_notifications.py` validates the group-alert
+contract, and `scripts/run_active_paper_trading_automation.py
+--execute-paper-automation` invokes it after the active paper runner observes a
+submitted Alpaca paper order. The sender is idempotent per paper order, targets
+only `TELEGRAM_GROUP_CHAT_ID`, includes the submitted paper trade, current paper
+portfolio value, total paper P&L, and signed performance percentage, and remains
+dry-run until
+`QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=true` plus
+`QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=false`.
 
 ### Phase T1 - BotFather Setup And Local Secret
 

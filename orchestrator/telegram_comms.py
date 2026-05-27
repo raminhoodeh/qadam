@@ -339,6 +339,18 @@ class TelegramCommunicationsStore:
     def public_status(self) -> dict[str, Any]:
         members = self.ensure_member_registry()
         outbox = self.read_outbox()
+        trade_notifications_path = _runtime_path(
+            self.settings,
+            "telegram_trade_notifications.json",
+        )
+        trade_notifications: dict[str, Any] = {}
+        if trade_notifications_path.exists():
+            try:
+                payload = json.loads(trade_notifications_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    trade_notifications = payload
+            except json.JSONDecodeError:
+                trade_notifications = {"status": "invalid_json"}
         bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
         bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
         default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
@@ -396,6 +408,22 @@ class TelegramCommunicationsStore:
             "last_digest_title": digest_messages[-1].title if digest_messages else "",
             "active_message_classes": sorted({message.message_class for message in outbox}),
             "dry_run_message_count": sum(1 for message in outbox if message.mode == "dry_run"),
+            "trade_group_notifications_enabled": (
+                self.settings.telegram_trade_group_notifications_enabled
+            ),
+            "trade_group_notifications_dry_run": (
+                self.settings.telegram_trade_group_notifications_dry_run
+            ),
+            "trade_group_notifications_status": trade_notifications.get("status", "not_run"),
+            "trade_group_notifications_eligible_count": int(
+                trade_notifications.get("eligible_notification_count", 0) or 0
+            ),
+            "trade_group_notifications_live_send_attempted_count": int(
+                trade_notifications.get("live_send_attempted_count", 0) or 0
+            ),
+            "trade_group_notifications_live_send_succeeded_count": int(
+                trade_notifications.get("live_send_succeeded_count", 0) or 0
+            ),
             "recent_messages": [
                 {
                     "message_id": message.message_id,

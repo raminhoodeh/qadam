@@ -21,6 +21,23 @@ const TRADINGVIEW_SUMMARY_FIELDS = [
     "trade_candidate_created_count"
 ];
 
+const TRADINGVIEW_MCP_FIELDS = [
+    "boundary",
+    "broker_write_allowed",
+    "connected",
+    "execution_allowed",
+    "live_capital_enabled",
+    "paper_order_allowed",
+    "public_safe",
+    "source_key",
+    "source_quorum_credit_allowed",
+    "status",
+    "technical_confirmation_role",
+    "technical_context_count",
+    "technical_contexts",
+    "trade_candidate_creation_allowed"
+];
+
 const OBSERVED_SIGNAL_FIELDS = [
     "alert_id",
     "boundary",
@@ -82,14 +99,19 @@ function assertObservationOnly(signal, label) {
 
 async function main() {
     const tradingView = status.tradingview_alerts || {};
+    const tradingViewMcp = status.tradingview_mcp || {};
     const watching = Array.isArray(status.watching) ? status.watching : [];
     const tradeWatching = Array.isArray(status.trade_layer?.watching) ? status.trade_layer.watching : [];
     const observedSignals = Array.isArray(tradingView.observed_signals) ? tradingView.observed_signals : [];
     const sourceRow = watching.find((source) => source.source_key === "tradingview_paid_alerts");
+    const mcpSourceRow = watching.find((source) => source.source_key === "tradingview_mcp");
 
     const missingSummary = missingFields(tradingView, TRADINGVIEW_SUMMARY_FIELDS);
+    const missingMcpSummary = missingFields(tradingViewMcp, TRADINGVIEW_MCP_FIELDS);
     assert(!missingSummary.length, `tradingview_alerts missing fields: ${missingSummary.join(", ")}`);
+    assert(!missingMcpSummary.length, `tradingview_mcp missing fields: ${missingMcpSummary.join(", ")}`);
     assert(sourceRow, "TradingView watching source row is missing");
+    assert(mcpSourceRow, "TradingView MCP watching source row is missing");
     const missingSource = missingFields(sourceRow, WATCHING_SOURCE_FIELDS);
     assert(!missingSource.length, `TradingView watching row missing fields: ${missingSource.join(", ")}`);
 
@@ -111,6 +133,35 @@ async function main() {
     assert(sourceRow.can_influence_signals === false, "TradingView can influence signals too early");
     assert(sourceRow.influence_boundary === "observed_signal_only_no_execution_path", "TradingView influence boundary mismatch");
 
+    assert(tradingViewMcp.status === "connected", "TradingView MCP is not connected");
+    assert(tradingViewMcp.connected === true, "TradingView MCP connected flag is false");
+    assert(tradingViewMcp.source_key === "tradingview_mcp", "TradingView MCP source key mismatch");
+    assert(
+        tradingViewMcp.technical_confirmation_role === "supplemental_technical_confirmation_only",
+        "TradingView MCP role mismatch"
+    );
+    assert(tradingViewMcp.source_quorum_credit_allowed === false, "TradingView MCP can satisfy source quorum");
+    assert(tradingViewMcp.trade_candidate_creation_allowed === false, "TradingView MCP can create candidates");
+    assert(tradingViewMcp.execution_allowed === false, "TradingView MCP allows execution");
+    assert(tradingViewMcp.paper_order_allowed === false, "TradingView MCP allows paper orders");
+    assert(tradingViewMcp.broker_write_allowed === false, "TradingView MCP allows broker writes");
+    assert(tradingViewMcp.live_capital_enabled === false, "TradingView MCP enables live capital");
+    assert(/read-only supplemental technical analysis/i.test(tradingViewMcp.boundary || ""), "TradingView MCP boundary is weak");
+    assert(mcpSourceRow.registry_status === "read_only_mcp_adapter", "TradingView MCP registry status mismatch");
+    assert(mcpSourceRow.readiness === "technical analysis connected", "TradingView MCP readiness mismatch");
+    assert(mcpSourceRow.credential_status === "not_required", "TradingView MCP credential state mismatch");
+    assert(mcpSourceRow.can_influence_signals === false, "TradingView MCP source influence should be bounded");
+    assert(
+        /supplemental_technical_confirmation/.test(mcpSourceRow.influence_boundary || ""),
+        "TradingView MCP influence boundary mismatch"
+    );
+    for (const row of tradingViewMcp.technical_contexts || []) {
+        assert(row.execution_allowed === false, "TradingView MCP row allows execution");
+        assert(row.paper_order_allowed === false, "TradingView MCP row allows paper orders");
+        assert(row.trade_candidate_created === false, "TradingView MCP row created a candidate");
+        assert(row.broker_write_allowed === false, "TradingView MCP row allows broker writes");
+    }
+
     for (const signal of observedSignals) {
         const missingSignal = missingFields(signal, OBSERVED_SIGNAL_FIELDS);
         assert(!missingSignal.length, `${signal.alert_id || "TradingView signal"} missing fields: ${missingSignal.join(", ")}`);
@@ -128,11 +179,18 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-watching-list]", "TradingView Paid Alerts");
+    assertIncludes(rendered, "[data-watching-list]", "TradingView MCP Technical Analysis");
+    assertIncludes(rendered, "[data-watching-list]", "technical analysis connected");
     assertIncludes(rendered, "[data-watching-list]", "observed alert source");
     assertIncludes(rendered, "[data-watching-list]", "Optional");
     assertIncludes(rendered, "[data-watching-list]", "d7 local contract");
     assertIncludes(rendered, "[data-watching-list]", "observed signal only no execution path");
     assertIncludes(rendered, "[data-trade-layer]", "TradingView alert source");
+    assertIncludes(rendered, "[data-trade-layer]", "TradingView MCP technical analysis");
+    assertIncludes(rendered, "[data-trade-layer]", "observes and analyses");
+    assertIncludes(rendered, "[data-trade-layer]", "Qadam governs");
+    assertIncludes(rendered, "[data-trade-layer]", "Alpaca Paper executes");
+    assertIncludes(rendered, "[data-trade-layer]", "no direct trade authority");
     assertIncludes(rendered, "[data-trade-layer]", "local contract only");
     assertIncludes(rendered, "[data-trade-layer]", "dedupe key sha256");
     assertIncludes(rendered, "[data-trade-layer]", "TradingView alerts are observed signals only. D7 has no execution route.");

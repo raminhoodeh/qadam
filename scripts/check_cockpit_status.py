@@ -153,6 +153,7 @@ SIGNAL_INTEGRITY_REVIEW_REQUIRED_FIELDS = {
     "source_count",
     "source_signal_id",
     "status",
+    "technical_context_policy",
     "trade_candidate_created",
     "worldview_prior_status",
 }
@@ -191,6 +192,46 @@ YAHOO_FINANCE_REQUIRED_FIELDS = {
     "source",
     "status",
     "symbol_allowlist_count",
+}
+
+TRADINGVIEW_MCP_REQUIRED_FIELDS = {
+    "active_required_challenges",
+    "boundary",
+    "broker_write_allowed",
+    "canonical_source_count",
+    "classification",
+    "connected",
+    "enabled",
+    "execution_allowed",
+    "fill_confirmation_authority",
+    "live_calls_enabled",
+    "live_capital_enabled",
+    "local_checkout_exists",
+    "local_path_exposed",
+    "mcp_config_exists",
+    "obvious_technical_context_count",
+    "package_importable",
+    "paper_order_allowed",
+    "provider",
+    "public_safe",
+    "quantum_job_authority",
+    "raw_payload_exposed",
+    "receipt_evidence_authority",
+    "reconciliation_truth_authority",
+    "risk_approval_authority",
+    "sample_mode_available",
+    "schema_version",
+    "service_importable",
+    "signal_authority",
+    "source",
+    "source_key",
+    "source_quorum_credit_allowed",
+    "status",
+    "technical_confirmation_role",
+    "technical_context_count",
+    "technical_context_status",
+    "technical_contexts",
+    "trade_candidate_creation_allowed",
 }
 
 PREFERENCE_MCP_REQUIRED_FIELDS = {
@@ -2870,6 +2911,12 @@ def main() -> int:
         f"{payload['decision_philosophy'].get('foundational_prior_count')}"
     )
     print(f"cockpit_status_forbidden_action_count={len(payload['forbidden_actions'])}")
+    print(f"cockpit_status_tradingview_mcp_status={payload['tradingview_mcp'].get('status')}")
+    print(f"cockpit_status_tradingview_mcp_connected={payload['tradingview_mcp'].get('connected')}")
+    print(
+        "cockpit_status_tradingview_mcp_context_count="
+        f"{payload['tradingview_mcp'].get('technical_context_count')}"
+    )
     print(f"cockpit_status_tradingview_alert_status={payload['tradingview_alerts'].get('status')}")
     print(f"cockpit_status_tradingview_alert_count={payload['tradingview_alerts'].get('alert_count')}")
     print(
@@ -8559,6 +8606,9 @@ def main() -> int:
     if not any(source.get("source_key") == "tradingview_paid_alerts" for source in payload["watching"]):
         print("cockpit_status_watching_tradingview_missing=true")
         return 1
+    if not any(source.get("source_key") == "tradingview_mcp" for source in payload["watching"]):
+        print("cockpit_status_watching_tradingview_mcp_missing=true")
+        return 1
     if not all(source.get("can_influence_signals") is False for source in payload["watching"]):
         print("cockpit_status_source_signal_influence_unblocked=true")
         return 1
@@ -9248,6 +9298,59 @@ def main() -> int:
             return 1
         if "cannot call Alpaca POST routes" not in review.get("boundary", ""):
             print("cockpit_status_paper_submit_receipt_review_boundary_weak=true")
+            return 1
+
+    tradingview_mcp = payload["tradingview_mcp"]
+    missing_tradingview_mcp_fields = sorted(TRADINGVIEW_MCP_REQUIRED_FIELDS - set(tradingview_mcp))
+    if missing_tradingview_mcp_fields:
+        print("cockpit_status_tradingview_mcp_fields_missing=" + ",".join(missing_tradingview_mcp_fields))
+        return 1
+    if tradingview_mcp.get("status") not in {"connected", "degraded"}:
+        print("cockpit_status_tradingview_mcp_status_invalid=true")
+        return 1
+    if tradingview_mcp.get("public_safe") is not True:
+        print("cockpit_status_tradingview_mcp_not_public_safe=true")
+        return 1
+    if tradingview_mcp.get("source_key") != "tradingview_mcp":
+        print("cockpit_status_tradingview_mcp_source_key_mismatch=true")
+        return 1
+    if tradingview_mcp.get("technical_confirmation_role") != "supplemental_technical_confirmation_only":
+        print("cockpit_status_tradingview_mcp_role_mismatch=true")
+        return 1
+    for key in (
+        "source_quorum_credit_allowed",
+        "signal_authority",
+        "risk_approval_authority",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "fill_confirmation_authority",
+        "receipt_evidence_authority",
+        "reconciliation_truth_authority",
+        "quantum_job_authority",
+        "live_capital_enabled",
+        "raw_payload_exposed",
+        "local_path_exposed",
+    ):
+        if tradingview_mcp.get(key) is not False:
+            print(f"cockpit_status_tradingview_mcp_authority_enabled={key}")
+            return 1
+    if "read-only supplemental technical analysis" not in tradingview_mcp.get("boundary", ""):
+        print("cockpit_status_tradingview_mcp_boundary_weak=true")
+        return 1
+    for row in tradingview_mcp.get("technical_contexts", []):
+        if row.get("execution_allowed") is not False:
+            print("cockpit_status_tradingview_mcp_row_execution_allowed=true")
+            return 1
+        if row.get("paper_order_allowed") is not False:
+            print("cockpit_status_tradingview_mcp_row_paper_order_allowed=true")
+            return 1
+        if row.get("trade_candidate_created") is not False:
+            print("cockpit_status_tradingview_mcp_row_trade_candidate_created=true")
+            return 1
+        if row.get("broker_write_allowed") is not False:
+            print("cockpit_status_tradingview_mcp_row_broker_write_allowed=true")
             return 1
 
     tradingview = payload["tradingview_alerts"]

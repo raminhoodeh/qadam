@@ -187,6 +187,59 @@ def _safe_preference_shadow_context(value: Any) -> dict[str, Any]:
     }
 
 
+def _safe_tradingview_mcp_context(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "status": "not_available",
+            "context_role": "not_available",
+            "technical_context_count": 0,
+            "technical_context_refs": [],
+            "active_required_challenges": [],
+            "source_quorum_credit_allowed": False,
+            "trade_candidate_creation_allowed": False,
+            "risk_handoff_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+            "live_capital_enabled": False,
+            "boundary": "No TradingView MCP technical context was supplied.",
+        }
+    refs = value.get("technical_context_refs", [])
+    if not isinstance(refs, list):
+        refs = []
+    challenges = value.get("active_required_challenges", [])
+    if not isinstance(challenges, list):
+        challenges = []
+    return {
+        "source_key": str(value.get("source_key") or "tradingview_mcp")[:80],
+        "status": str(value.get("status") or "unknown")[:80],
+        "context_role": str(
+            value.get("context_role") or "read_only_supplemental_technical_confirmation"
+        )[:120],
+        "technical_context_count": int(value.get("technical_context_count", 0) or 0),
+        "technical_context_refs": [
+            {
+                "symbol": str(item.get("symbol") or "")[:40],
+                "setup_type": str(item.get("setup_type") or "")[:100],
+                "technical_score": item.get("technical_score"),
+                "obvious_technical_context_flag": bool(item.get("obvious_technical_context_flag")),
+            }
+            for item in refs[:6]
+            if isinstance(item, dict)
+        ],
+        "active_required_challenges": tuple(str(item)[:240] for item in challenges[:8]),
+        "active_required_challenge_count": len(challenges),
+        "source_quorum_credit_allowed": False,
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+        "boundary": str(value.get("boundary") or "TradingView MCP is read-only technical context.")[:700],
+    }
+
+
 def _safe_strategy_research_context(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {
@@ -272,6 +325,9 @@ def _safe_source_context(value: dict[str, Any] | None) -> dict[str, Any]:
         "preference_mcp_shadow_context": _safe_preference_shadow_context(
             value.get("preference_mcp_shadow_context")
         ),
+        "tradingview_mcp_technical_context": _safe_tradingview_mcp_context(
+            value.get("tradingview_mcp_technical_context")
+        ),
         "strategy_research_intake": _safe_strategy_research_context(
             value.get("strategy_research_intake")
         ),
@@ -323,6 +379,13 @@ def _strategy_review(
         preference_context.get("active_required_challenges") if isinstance(preference_context, dict) else (),
     )
     questions.extend(preference_challenges)
+    tradingview_context = source_context.get("tradingview_mcp_technical_context", {})
+    tradingview_challenges = _safe_tuple(
+        tradingview_context.get("active_required_challenges")
+        if isinstance(tradingview_context, dict)
+        else (),
+    )
+    questions.extend(tradingview_challenges)
     strategy_research_context = source_context.get("strategy_research_intake", {})
     strategy_research_challenges: tuple[str, ...] = ()
     if isinstance(strategy_research_context, dict):
@@ -357,6 +420,14 @@ def _strategy_review(
         if isinstance(preference_context, dict)
         else "not_available",
         "preference_mcp_challenge_count": len(preference_challenges),
+        "tradingview_mcp_context_status": tradingview_context.get("status", "not_available")
+        if isinstance(tradingview_context, dict)
+        else "not_available",
+        "tradingview_mcp_challenge_count": len(tradingview_challenges),
+        "tradingview_mcp_trade_candidate_creation_allowed": False,
+        "tradingview_mcp_execution_allowed": False,
+        "tradingview_mcp_paper_order_allowed": False,
+        "tradingview_mcp_broker_write_allowed": False,
         "strategy_research_context_status": strategy_research_context.get("status", "not_available")
         if isinstance(strategy_research_context, dict)
         else "not_available",

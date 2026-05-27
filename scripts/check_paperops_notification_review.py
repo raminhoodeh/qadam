@@ -249,14 +249,15 @@ def main() -> int:
         errors.append("paperops_notification_operations_record_not_eligible")
     if active_automation_record["status"] != "eligible_for_review":
         errors.append("paperops_notification_active_automation_record_not_eligible")
-    if qctrl_hold_record["status"] != "eligible_for_review":
-        errors.append("paperops_notification_qctrl_hold_record_not_eligible")
+    if written["source_qctrl_consultation_hold_count"] > 0:
+        if qctrl_hold_record["status"] != "eligible_for_review":
+            errors.append("paperops_notification_qctrl_hold_record_not_eligible")
+    elif qctrl_hold_record["status"] != "suppressed_no_matching_backend_state":
+        errors.append("paperops_notification_qctrl_hold_record_not_suppressed")
     if written["source_paperops_30_day_operations_count"] < 1:
         errors.append("paperops_notification_operations_source_missing")
     if written["source_active_paper_automation_count"] < 1:
         errors.append("paperops_notification_active_automation_source_missing")
-    if written["source_qctrl_consultation_hold_count"] < 1:
-        errors.append("paperops_notification_qctrl_hold_source_missing")
     if written["telegram_mode"] != "dry_run":
         errors.append("paperops_notification_not_dry_run")
     if written["telegram_send_gate"] != "disabled":

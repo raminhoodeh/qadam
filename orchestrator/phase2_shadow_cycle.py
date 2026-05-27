@@ -48,11 +48,20 @@ from orchestrator.phase1_live_adapters import (
     fetch_phase1_live_adapter_sample,
 )
 from orchestrator.strategy_lead import StrategyLeadShadowStore, queue_strategy_lead_shadow_packet
+from orchestrator.tradingview_mcp_adapter import (
+    fetch_tradingview_mcp_live,
+    fetch_tradingview_mcp_sample,
+    tradingview_mcp_adapter_status,
+    tradingview_mcp_packet_context,
+)
 from orchestrator.yahoo_finance_adapter import fetch_yahoo_finance_live, fetch_yahoo_finance_sample
 
 PHASE2_SHADOW_CYCLE_SCHEMA_VERSION = 1
 DEFAULT_PHASE2_SOURCES = ("nasa_firms", "fred", "rss", "polymarket", "alpaca", "telegram")
-SUPPLEMENTAL_PHASE2_SOURCES = {"yahoo_finance": "supplemental_market_confirmation"}
+SUPPLEMENTAL_PHASE2_SOURCES = {
+    "yahoo_finance": "supplemental_market_confirmation",
+    "tradingview_mcp": "supplemental_technical_confirmation",
+}
 
 SECRET_LIKE_PATTERNS = (
     re.compile(r"\d{6,}:[A-Za-z0-9_-]{20,}"),
@@ -83,6 +92,8 @@ class SourceCycleResult:
 def _sample_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
     if source_key == "yahoo_finance":
         return lambda: fetch_yahoo_finance_sample()
+    if source_key == "tradingview_mcp":
+        return lambda: fetch_tradingview_mcp_sample()
     fetchers: dict[str, Callable[[], dict[str, Any]]] = {
         "nasa_firms": lambda: fetch_nasa_firms_sample(days=1),
         "fred": lambda: fetch_fred_sample(series_ids=("DGS10", "DCOILWTICO", "VIXCLS")),
@@ -96,6 +107,8 @@ def _sample_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
 def _live_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
     if source_key == "yahoo_finance":
         return lambda: fetch_yahoo_finance_live()
+    if source_key == "tradingview_mcp":
+        return lambda: fetch_tradingview_mcp_live()
     fetchers: dict[str, Callable[[], dict[str, Any]]] = {
         "nasa_firms": lambda: fetch_nasa_firms_live_sync(days=1),
         "fred": lambda: fetch_fred_live_sync(series_ids=("DGS10", "DCOILWTICO", "VIXCLS"), limit=20),
@@ -222,6 +235,7 @@ def run_phase2_shadow_cycle(
     preference_packet_context = {
         "preference_mcp": preference_shadow_packet_context(preference_shadow_context)
     }
+    tradingview_mcp_context = tradingview_mcp_packet_context(settings)
     strategy_research_context = strategy_research_decision_context(settings)
 
     if durable_replay:
@@ -268,11 +282,14 @@ def run_phase2_shadow_cycle(
         source_packet_count = 0
         if not degraded:
             for event in event_records[: max(0, events_per_source)]:
+                packet_context = dict(preference_packet_context)
+                if source_key == "tradingview_mcp":
+                    packet_context["tradingview_mcp"] = tradingview_mcp_context
                 packet = create_shadow_triage_packet(
                     source_event_refs=(_event_ref(event),),
                     summary=_event_summary(event),
                     uncertainty=_uncertainty(event, degraded=degraded),
-                    read_only_context=preference_packet_context,
+                    read_only_context=packet_context,
                     settings=settings,
                     event_log=event_log,
                 )
@@ -355,6 +372,24 @@ def run_phase2_shadow_cycle(
         "preference_mcp_risk_handoff_allowed": False,
         "preference_mcp_execution_allowed": False,
         "preference_mcp_broker_write_allowed": False,
+        "tradingview_mcp_technical_context": tradingview_mcp_context,
+        "tradingview_mcp_status": tradingview_mcp_context.get("status"),
+        "tradingview_mcp_context_role": tradingview_mcp_context.get("context_role"),
+        "tradingview_mcp_technical_context_count": tradingview_mcp_context.get(
+            "technical_context_count",
+            0,
+        ),
+        "tradingview_mcp_active_required_challenge_count": len(
+            tradingview_mcp_context.get("active_required_challenges", [])
+            if isinstance(tradingview_mcp_context.get("active_required_challenges"), list)
+            else []
+        ),
+        "tradingview_mcp_source_quorum_credit_allowed": False,
+        "tradingview_mcp_trade_candidate_creation_allowed": False,
+        "tradingview_mcp_risk_handoff_allowed": False,
+        "tradingview_mcp_execution_allowed": False,
+        "tradingview_mcp_paper_order_allowed": False,
+        "tradingview_mcp_broker_write_allowed": False,
         "strategy_research_intake": strategy_research_context,
         "strategy_research_intake_status": strategy_research_context.get("status"),
         "strategy_research_candidate_count": strategy_research_context.get("candidate_count", 0),
@@ -444,6 +479,34 @@ def run_phase2_shadow_cycle(
             "preference_mcp_broker_write_allowed"
         ],
         "preference_mcp_shadow_context": preference_packet_context["preference_mcp"],
+        "tradingview_mcp_adapter_status": tradingview_mcp_adapter_status(settings).get("status"),
+        "tradingview_mcp_status": strategy_source_context["tradingview_mcp_status"],
+        "tradingview_mcp_context_role": strategy_source_context["tradingview_mcp_context_role"],
+        "tradingview_mcp_technical_context_count": strategy_source_context[
+            "tradingview_mcp_technical_context_count"
+        ],
+        "tradingview_mcp_active_required_challenge_count": strategy_source_context[
+            "tradingview_mcp_active_required_challenge_count"
+        ],
+        "tradingview_mcp_source_quorum_credit_allowed": strategy_source_context[
+            "tradingview_mcp_source_quorum_credit_allowed"
+        ],
+        "tradingview_mcp_trade_candidate_creation_allowed": strategy_source_context[
+            "tradingview_mcp_trade_candidate_creation_allowed"
+        ],
+        "tradingview_mcp_risk_handoff_allowed": strategy_source_context[
+            "tradingview_mcp_risk_handoff_allowed"
+        ],
+        "tradingview_mcp_execution_allowed": strategy_source_context[
+            "tradingview_mcp_execution_allowed"
+        ],
+        "tradingview_mcp_paper_order_allowed": strategy_source_context[
+            "tradingview_mcp_paper_order_allowed"
+        ],
+        "tradingview_mcp_broker_write_allowed": strategy_source_context[
+            "tradingview_mcp_broker_write_allowed"
+        ],
+        "tradingview_mcp_technical_context": tradingview_mcp_context,
         "strategy_research_intake_status": strategy_source_context[
             "strategy_research_intake_status"
         ],

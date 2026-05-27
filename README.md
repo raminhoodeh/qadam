@@ -195,7 +195,8 @@ Supplemental market confirmation: Yahoo Finance/yfinance from `yahoo-finance-api
 TradingView boundary:
 
 - A paid TradingView account does not provide a standard retail data API key for Qadam to pull market data directly.
-- TradingView MCP is useful as read-only market and technical-analysis tooling through Codex/MCP, and does not require a TradingView login.
+- TradingView MCP is now wired as a Qadam read-only supplemental technical-analysis adapter through `orchestrator/tradingview_mcp_adapter.py`. It can observe and analyse market structure, indicator state, volatility, support/resistance, and watchlist context.
+- TradingView MCP cannot create source quorum, trade candidates, paper orders, broker writes, fills, receipts, reconciliation truth, quantum jobs, or live capital. Qadam governs the decision chain and Alpaca Paper remains the execution rail.
 - TradingView paid-account alerts now have a local D7 intake contract: Qadam can represent an alert as an observed signal, deduplicate it, write a safe Event Log entry, and show it in the cockpit.
 - The public TradingView webhook URL remains later work. It requires a secure authenticated receiver and still cannot trigger execution.
 

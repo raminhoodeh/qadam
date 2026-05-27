@@ -564,8 +564,14 @@ def _packet_projection(packet: dict[str, Any]) -> dict[str, Any]:
         "created_at": str(packet.get("created_at", "")),
     }
     preference_context = _packet_preference_context(packet)
+    tradingview_context = _packet_tradingview_mcp_context(packet)
+    read_only_context: dict[str, Any] = {}
     if preference_context:
-        projection["read_only_context"] = {"preference_mcp": preference_context}
+        read_only_context["preference_mcp"] = preference_context
+    if tradingview_context:
+        read_only_context["tradingview_mcp"] = tradingview_context
+    if read_only_context:
+        projection["read_only_context"] = read_only_context
     return projection
 
 
@@ -616,6 +622,47 @@ def _packet_preference_context(packet: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _packet_tradingview_mcp_context(packet: dict[str, Any]) -> dict[str, Any]:
+    context = packet.get("read_only_context")
+    if not isinstance(context, dict):
+        return {}
+    tradingview = context.get("tradingview_mcp")
+    if not isinstance(tradingview, dict):
+        return {}
+    refs = tradingview.get("technical_context_refs", [])
+    if not isinstance(refs, list):
+        refs = []
+    challenges = tradingview.get("active_required_challenges", [])
+    if not isinstance(challenges, list):
+        challenges = []
+    return {
+        "source_key": "tradingview_mcp",
+        "status": str(tradingview.get("status") or "unknown")[:80],
+        "context_role": str(
+            tradingview.get("context_role") or "read_only_supplemental_technical_confirmation"
+        )[:120],
+        "technical_context_count": int(tradingview.get("technical_context_count", 0) or 0),
+        "technical_context_refs": [
+            {
+                "symbol": str(item.get("symbol") or "")[:40],
+                "setup_type": str(item.get("setup_type") or "")[:100],
+                "technical_score": item.get("technical_score"),
+                "obvious_technical_context_flag": bool(item.get("obvious_technical_context_flag")),
+            }
+            for item in refs[:6]
+            if isinstance(item, dict)
+        ],
+        "active_required_challenges": [str(item)[:220] for item in challenges[:6]],
+        "source_quorum_credit_allowed": False,
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+    }
+
+
 def _preference_context_digest_from_packets(packets: tuple[dict[str, Any], ...]) -> str | None:
     contexts = [_packet_preference_context(packet) for packet in packets]
     contexts = [context for context in contexts if context]
@@ -636,6 +683,29 @@ def _preference_context_digest_from_packets(packets: tuple[dict[str, Any], ...])
         f"Preference MCP read-only context: status={latest.get('status')}, "
         f"observations={latest.get('shadow_observation_count')}, "
         f"domain_packs={','.join(packs[:6]) or 'none'}, challenges={challenge_text}"
+    )[:700]
+
+
+def _tradingview_mcp_digest_from_packets(packets: tuple[dict[str, Any], ...]) -> str | None:
+    contexts = [_packet_tradingview_mcp_context(packet) for packet in packets]
+    contexts = [context for context in contexts if context]
+    if not contexts:
+        return None
+    latest = contexts[-1]
+    symbols = sorted(
+        {
+            str(item.get("symbol"))
+            for context in contexts
+            for item in context.get("technical_context_refs", [])
+            if isinstance(item, dict) and item.get("symbol")
+        }
+    )
+    challenges = latest.get("active_required_challenges", [])
+    challenge_text = "; ".join(str(item) for item in challenges[:3]) or "no active challenge"
+    return (
+        f"TradingView MCP read-only technical context: status={latest.get('status')}, "
+        f"contexts={latest.get('technical_context_count')}, "
+        f"symbols={','.join(symbols[:6]) or 'none'}, challenges={challenge_text}"
     )[:700]
 
 
@@ -713,6 +783,7 @@ def _deterministic_local_research_assessment(
     focus = _instrument_focus(summaries)
     paper_digest = _paper_account_digest(paper_account_context)
     preference_digest = _preference_context_digest_from_packets(packets)
+    tradingview_digest = _tradingview_mcp_digest_from_packets(packets)
     confidence = round(min(0.82, 0.4 + _keyword_strength(summaries) * 0.45), 3)
     anomalies: tuple[str, ...] = ("no queued packets",)
     next_questions: tuple[str, ...] = ("wait for source heartbeat and shadow triage inputs",)
@@ -720,7 +791,12 @@ def _deterministic_local_research_assessment(
         anomalies = tuple(
             str(packet.get("summary", "shadow packet requires review"))[:180]
             for packet in packets[-3:]
-        ) + ((preference_digest,) if preference_digest else ()) + (paper_digest,)
+        )
+        if preference_digest:
+            anomalies += (preference_digest,)
+        if tradingview_digest:
+            anomalies += (tradingview_digest,)
+        anomalies += (paper_digest,)
         next_questions = (
             "Which independent source can corroborate this observation?",
             "Does the catalyst map to a Phase 1 instrument without forcing a trade?",
@@ -732,6 +808,8 @@ def _deterministic_local_research_assessment(
         missing_correlations += ("second_independent_source",)
     if preference_digest:
         missing_correlations += ("preference_mcp_canonical_corroboration",)
+    if tradingview_digest:
+        missing_correlations += ("tradingview_mcp_canonical_corroboration",)
     return LocalResearchAssessment(
         schema_version=LOCAL_RESEARCH_ASSESSMENT_SCHEMA_VERSION,
         assessment_id=str(uuid4()),
@@ -1069,6 +1147,7 @@ def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
     ref_text = ", ".join(ref for ref in refs if isinstance(ref, str)) or "no source refs"
     summary = str(packet.get("summary", "")).strip() or "Research Analyst queued an empty shadow packet."
     preference_context = _packet_preference_context(packet)
+    tradingview_context = _packet_tradingview_mcp_context(packet)
     if preference_context:
         challenges = preference_context.get("active_required_challenges", [])
         observation_refs = preference_context.get("observation_refs", [])
@@ -1090,6 +1169,26 @@ def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
             f"challenges={'; '.join(str(item) for item in challenges[:3])}."
         )
         summary = f"{summary} {preference_summary}"[:1000]
+    if tradingview_context:
+        refs = tradingview_context.get("technical_context_refs", [])
+        symbols = sorted(
+            {
+                str(item.get("symbol"))
+                for item in refs
+                if isinstance(item, dict) and item.get("symbol")
+            }
+        )
+        challenges = tradingview_context.get("active_required_challenges", [])
+        tradingview_summary = (
+            "TradingView MCP read-only technical context attached: "
+            f"status={tradingview_context.get('status')}; "
+            f"role={tradingview_context.get('context_role')}; "
+            f"symbols={','.join(symbols[:6]) or 'none'}; "
+            "technical context is supplemental only and cannot create source quorum, "
+            "trade candidates, paper orders, or broker writes; "
+            f"challenges={'; '.join(str(item) for item in challenges[:3])}."
+        )
+        summary = f"{summary} {tradingview_summary}"[:1000]
     uncertainty = str(packet.get("uncertainty", "unknown")).lower()
     trust_score = 0.56
     if uncertainty in {"low", "bounded", "known"}:

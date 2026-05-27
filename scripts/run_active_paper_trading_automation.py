@@ -20,6 +20,12 @@ from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E40
     validate_paperops_active_paper_trading_automation,
     write_paperops_active_paper_trading_automation,
 )
+from orchestrator.telegram_trade_notifications import (  # noqa: E402
+    build_telegram_trade_notifications,
+    telegram_trade_notifications_paths,
+    validate_telegram_trade_notifications,
+    write_telegram_trade_notifications,
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -90,6 +96,76 @@ def _run_step(label: str, script: str, *args: str) -> dict[str, Any]:
     }
 
 
+def _run_telegram_trade_notifications(settings: Settings) -> dict[str, Any]:
+    output_path, history_path, event_path = telegram_trade_notifications_paths(settings)
+    if event_path.exists():
+        event_path.unlink()
+    artifact = build_telegram_trade_notifications(
+        settings=settings,
+        send_requested=True,
+    )
+    output_path, history_path, event_path, written = write_telegram_trade_notifications(
+        artifact,
+        settings=settings,
+        record_event=True,
+        event_log_path=event_path,
+    )
+    validation_errors = validate_telegram_trade_notifications(written)
+    first_record = next(
+        (record for record in written.get("records", []) if isinstance(record, dict)),
+        {},
+    )
+    return {
+        "label": "telegram_trade_notification",
+        "script": "orchestrator.telegram_trade_notifications",
+        "args": ["send_requested=True"],
+        "returncode": 0 if not validation_errors else 1,
+        "ok": not validation_errors,
+        "parsed": {
+            "telegram_trade_notifications_status": str(written.get("status")),
+            "telegram_trade_notifications_eligible_count": str(
+                written.get("eligible_notification_count", 0)
+            ),
+            "telegram_trade_notifications_live_send_attempted_count": str(
+                written.get("live_send_attempted_count", 0)
+            ),
+            "telegram_trade_notifications_live_send_succeeded_count": str(
+                written.get("live_send_succeeded_count", 0)
+            ),
+            "telegram_trade_notifications_trade_summary": str(
+                first_record.get("trade_summary", "")
+            ),
+            "telegram_trade_notifications_portfolio_value_gbp": str(
+                first_record.get("portfolio_value_gbp", "")
+            ),
+            "telegram_trade_notifications_portfolio_performance_pct": str(
+                first_record.get("portfolio_performance_pct", "")
+            ),
+            "telegram_trade_notifications_artifact_path": str(output_path),
+            "telegram_trade_notifications_history_path": str(history_path),
+        },
+        "stdout_tail": [
+            f"telegram_trade_notifications_status={written.get('status')}",
+            "telegram_trade_notifications_eligible_count="
+            f"{written.get('eligible_notification_count', 0)}",
+            "telegram_trade_notifications_live_send_attempted_count="
+            f"{written.get('live_send_attempted_count', 0)}",
+            "telegram_trade_notifications_live_send_succeeded_count="
+            f"{written.get('live_send_succeeded_count', 0)}",
+            "telegram_trade_notifications_trade_summary="
+            f"{first_record.get('trade_summary', '')}",
+            "telegram_trade_notifications_portfolio_value_gbp="
+            f"{first_record.get('portfolio_value_gbp', '')}",
+            "telegram_trade_notifications_portfolio_performance_pct="
+            f"{first_record.get('portfolio_performance_pct', '')}",
+        ],
+        "stderr_tail": [],
+        "live_endpoint_called_count": 0,
+        "live_capital_enabled": False,
+        "secret_value_exposed": False,
+    }
+
+
 def main() -> int:
     args = _parse_args()
     settings = Settings.from_env()
@@ -143,6 +219,10 @@ def main() -> int:
             )
             action_records.append(exit_step)
             command_failed = command_failed or not exit_step["ok"]
+
+        telegram_step = _run_telegram_trade_notifications(settings)
+        action_records.append(telegram_step)
+        command_failed = command_failed or not telegram_step["ok"]
 
     final = build_paperops_active_paper_trading_automation(
         settings=settings,

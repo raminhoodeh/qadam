@@ -52,6 +52,8 @@ class Settings:
     pending_fund_managers: tuple[str, ...]
     telegram_enabled: bool
     telegram_dry_run: bool
+    telegram_trade_group_notifications_enabled: bool
+    telegram_trade_group_notifications_dry_run: bool
     telegram_bot_configured: bool
     telegram_bot_username_configured: bool
     telegram_default_chat_configured: bool
@@ -73,6 +75,9 @@ class Settings:
     preference_mcp_tool_allowlist: tuple[str, ...]
     preference_mcp_domain_allowlist: tuple[str, ...]
     preference_mcp_timeout_seconds: int
+    tradingview_mcp_enabled: bool
+    tradingview_mcp_live_calls_enabled: bool
+    tradingview_mcp_symbol_allowlist: tuple[str, ...]
     paper_operational_enabled: bool
     alpaca_paper_submit_enabled: bool
     alpaca_paper_exit_enabled: bool
@@ -112,6 +117,14 @@ class Settings:
             pending_fund_managers=pending,
             telegram_enabled=_bool_env("QADAM_TELEGRAM_ENABLED", False),
             telegram_dry_run=_bool_env("QADAM_TELEGRAM_DRY_RUN", True),
+            telegram_trade_group_notifications_enabled=_bool_env(
+                "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED",
+                _bool_env("QADAM_TELEGRAM_ENABLED", False),
+            ),
+            telegram_trade_group_notifications_dry_run=_bool_env(
+                "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
+                _bool_env("QADAM_TELEGRAM_DRY_RUN", True),
+            ),
             telegram_bot_configured=bool(os.getenv("TELEGRAM_BOT_TOKEN", "").strip()),
             telegram_bot_username_configured=bool(os.getenv("TELEGRAM_BOT_USERNAME", "").strip()),
             telegram_default_chat_configured=bool(os.getenv("TELEGRAM_DEFAULT_CHAT_ID", "").strip()),
@@ -145,6 +158,13 @@ class Settings:
                 )
             ),
             preference_mcp_timeout_seconds=int(os.getenv("PREFERENCE_MCP_TIMEOUT_SECONDS", "15")),
+            tradingview_mcp_enabled=_bool_env("TRADINGVIEW_MCP_ENABLED", True),
+            tradingview_mcp_live_calls_enabled=_bool_env(
+                "TRADINGVIEW_MCP_LIVE_CALLS_ENABLED", False
+            ),
+            tradingview_mcp_symbol_allowlist=_csv_tuple(
+                os.getenv("TRADINGVIEW_MCP_SYMBOL_ALLOWLIST", "USO,SLV,SMH,XLE,LMT,NVDA")
+            ),
             paper_operational_enabled=_bool_env("QADAM_PAPER_OPERATIONAL_ENABLED", False),
             alpaca_paper_submit_enabled=_bool_env("QADAM_ALPACA_PAPER_SUBMIT_ENABLED", False),
             alpaca_paper_exit_enabled=_bool_env("QADAM_ALPACA_PAPER_EXIT_ENABLED", False),

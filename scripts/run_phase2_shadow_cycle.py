@@ -74,6 +74,19 @@ def main() -> int:
         "phase2_shadow_cycle_preference_mcp_broker_write_allowed="
         f"{report['preference_mcp_broker_write_allowed']}"
     )
+    print(f"phase2_shadow_cycle_tradingview_mcp_status={report['tradingview_mcp_status']}")
+    print(f"phase2_shadow_cycle_tradingview_mcp_role={report['tradingview_mcp_context_role']}")
+    print(
+        "phase2_shadow_cycle_tradingview_mcp_context_count="
+        f"{report['tradingview_mcp_technical_context_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_tradingview_mcp_trade_candidate_creation_allowed="
+        f"{report['tradingview_mcp_trade_candidate_creation_allowed']}"
+    )
+    print(f"phase2_shadow_cycle_tradingview_mcp_execution_allowed={report['tradingview_mcp_execution_allowed']}")
+    print(f"phase2_shadow_cycle_tradingview_mcp_paper_order_allowed={report['tradingview_mcp_paper_order_allowed']}")
+    print(f"phase2_shadow_cycle_tradingview_mcp_broker_write_allowed={report['tradingview_mcp_broker_write_allowed']}")
     print(f"phase2_shadow_cycle_strategy_research_intake_status={report['strategy_research_intake_status']}")
     print(f"phase2_shadow_cycle_strategy_research_candidate_count={report['strategy_research_candidate_count']}")
     print(f"phase2_shadow_cycle_strategy_research_challenge_count={report['strategy_research_challenge_count']}")
@@ -323,6 +336,16 @@ def main() -> int:
     if report["preference_mcp_risk_handoff_allowed"]:
         return 1
     if report["preference_mcp_execution_allowed"] or report["preference_mcp_broker_write_allowed"]:
+        return 1
+    if report["tradingview_mcp_source_quorum_credit_allowed"]:
+        return 1
+    if report["tradingview_mcp_trade_candidate_creation_allowed"]:
+        return 1
+    if report["tradingview_mcp_risk_handoff_allowed"]:
+        return 1
+    if report["tradingview_mcp_execution_allowed"]:
+        return 1
+    if report["tradingview_mcp_paper_order_allowed"] or report["tradingview_mcp_broker_write_allowed"]:
         return 1
     if report["strategy_research_intake_status"] != "ready_for_strategy_review":
         return 1

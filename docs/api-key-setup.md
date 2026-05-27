@@ -44,6 +44,8 @@ TELEGRAM_DEFAULT_CHAT_ID=
 TELEGRAM_GROUP_CHAT_ID=
 QADAM_TELEGRAM_ENABLED=false
 QADAM_TELEGRAM_DRY_RUN=true
+QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false
+QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true
 ```
 
 The larger placeholder ledger is in `docs/api-specs.md`. Do not copy unused keys into runtime storage unless you are actively configuring that provider.
@@ -69,7 +71,7 @@ Use TradingView in two separate ways:
 
 | Use | Status | Qadam treatment |
 | --- | --- | --- |
-| TradingView MCP | Now | Read-only market and technical-analysis tooling through Codex/MCP. No TradingView login or API key expected. |
+| TradingView MCP | Now | Read-only supplemental technical-analysis adapter. It observes and analyses; Qadam governs; Alpaca Paper executes. No TradingView login or API key expected. |
 | TradingView paid-account alerts | Local D7 contract now; public webhook later | Qadam can store and display observed alert fixtures with duplicate protection and no execution path. A real TradingView webhook URL waits for the secure bridge. |
 
 Setup command for the MCP tool after installing `uv`:
@@ -77,6 +79,14 @@ Setup command for the MCP tool after installing `uv`:
 ```bash
 codex mcp add tradingview -- uvx --from tradingview-mcp-server tradingview-mcp
 ```
+
+Qadam also checks the local `tradingview-mcp-main/` checkout directly:
+
+```bash
+.venv/bin/python scripts/check_tradingview_mcp_adapter.py
+```
+
+The adapter must remain read-only. It can produce technical context and evidence packets, but it cannot create trade candidates, submit Alpaca orders, or bypass Qadam risk/quantum gates.
 
 ## Telegram Bot
 
@@ -92,6 +102,8 @@ Required later for Phase D8A/T1:
 | `TELEGRAM_GROUP_CHAT_ID` | Optional private group target for founding-member delivery tests. |
 | `QADAM_TELEGRAM_ENABLED=false` | Global send gate. Defaults disabled. |
 | `QADAM_TELEGRAM_DRY_RUN=true` | Writes outbox messages without sending. Defaults dry-run. |
+| `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false` | Dedicated gate for outbound group alerts when Qadam has already submitted a paper order. |
+| `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true` | Keeps paper-trade group alerts in validation mode until explicitly flipped false. |
 
 Setup path:
 
@@ -100,8 +112,10 @@ Setup path:
 3. Send one message to the bot, then capture `TELEGRAM_DEFAULT_CHAT_ID` locally.
 4. Add the bot to the intended private test group, then capture `TELEGRAM_GROUP_CHAT_ID` locally.
 5. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
-5. Verify the dashboard shows Telegram as disabled/dry-run.
-6. Send one explicit private test message only after the local checks pass.
+6. Keep paper-trade group alerts dry-run with `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true`.
+7. Verify the dashboard shows Telegram as disabled/dry-run.
+8. Send one explicit private test message only after the local checks pass.
+9. To let active PaperOps send group alerts after submitted paper orders, set `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=true` and `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=false`. Those alerts include the submitted trade, current paper portfolio value, total paper P&L, and signed performance percentage.
 
 Never commit the bot token or chat IDs. If either appears in chat, Git, screenshots, or public dashboard output, rotate the token and replace the chat registry before using Telegram for real delivery.
 

@@ -37,6 +37,7 @@ SYSTEM_MAP_BOUNDARY = (
 REQUIRED_NODE_KEYS: tuple[str, ...] = (
     "watching",
     "yahoo_finance",
+    "tradingview_mcp",
     "preference_mcp",
     "event_log",
     "live_bridge",
@@ -181,7 +182,7 @@ def _lanes() -> list[dict[str, Any]]:
             "summary": "Canonical and supplemental inputs enter as observations only.",
             "handoff": "Observed facts must be logged before they count.",
             "tone": "online",
-            "node_keys": ["watching", "yahoo_finance", "preference_mcp"],
+            "node_keys": ["watching", "yahoo_finance", "tradingview_mcp", "preference_mcp"],
         },
         {
             "key": "coo_memory",
@@ -295,6 +296,30 @@ def _build_nodes(payload: dict[str, Any]) -> list[dict[str, Any]]:
             output_text="Supplemental market confirmation",
             handoff="market context",
             counts={"symbol_allowlist_count": _get(payload, "yahoo_finance.symbol_allowlist_count", 0)},
+        ),
+        _node(
+            payload,
+            key="tradingview_mcp",
+            label="TradingView MCP Technical",
+            lane="Observation",
+            backend_status_path="tradingview_mcp.status",
+            current_process=(
+                "read-only technical analysis; "
+                f"{_get(payload, 'tradingview_mcp.technical_context_count', 0)} contexts"
+            ),
+            authority="read_only_supplemental",
+            role="Technical context",
+            input_text="Market structure, indicators, volatility, and support/resistance context",
+            output_text="Supplemental technical confirmation",
+            handoff="technical context",
+            counts={
+                "technical_context_count": _get(payload, "tradingview_mcp.technical_context_count", 0),
+                "obvious_context_count": _get(
+                    payload,
+                    "tradingview_mcp.obvious_technical_context_count",
+                    0,
+                ),
+            },
         ),
         _node(
             payload,
@@ -762,6 +787,21 @@ def _source_posture(payload: dict[str, Any]) -> dict[str, Any]:
             ),
             "authority": "supplemental_challenge_only",
         },
+        "tradingview_mcp": {
+            "status": _get(payload, "tradingview_mcp.status", "not_exported"),
+            "role": _get(
+                payload,
+                "tradingview_mcp.technical_confirmation_role",
+                "supplemental_technical_confirmation_only",
+            ),
+            "source_quorum_credit_allowed": bool(
+                _get(payload, "tradingview_mcp.source_quorum_credit_allowed", False)
+            ),
+            "trade_candidate_creation_allowed": bool(
+                _get(payload, "tradingview_mcp.trade_candidate_creation_allowed", False)
+            ),
+            "authority": "supplemental_technical_confirmation_only",
+        },
     }
 
 
@@ -981,10 +1021,17 @@ def validate_phase5_system_map_bundle(bundle: dict[str, Any]) -> list[str]:
         canonical = posture.get("canonical", {})
         yahoo = posture.get("yahoo_finance", {})
         preference = posture.get("preference_mcp", {})
+        tradingview = posture.get("tradingview_mcp", {})
         if canonical.get("expected_source_count") != EXPECTED_SOURCE_COUNT:
             errors.append("system_map_canonical_source_count_mismatch")
         if yahoo.get("role") != "supplemental_market_confirmation_only":
             errors.append("system_map_yahoo_role_invalid")
+        if tradingview.get("role") != "supplemental_technical_confirmation_only":
+            errors.append("system_map_tradingview_mcp_role_invalid")
+        if tradingview.get("source_quorum_credit_allowed") is not False:
+            errors.append("system_map_tradingview_mcp_source_quorum_enabled")
+        if tradingview.get("trade_candidate_creation_allowed") is not False:
+            errors.append("system_map_tradingview_mcp_candidate_creation_enabled")
         if preference.get("source_36") is not False:
             errors.append("system_map_preference_source_36")
         if preference.get("source_quorum_credit_allowed") is not False:

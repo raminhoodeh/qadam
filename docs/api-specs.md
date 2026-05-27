@@ -189,7 +189,7 @@ These are not all World Monitor data sources, but they are required to make Qada
 | Prediction markets | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Read-only first; guarded execution later. |
 | Prediction markets | Polymarket / pmxt / Polyrouter | `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER_ADDRESS`, `POLYMARKET_CHAIN_ID`, `POLYROUTER_API_KEY`, `PMXT_CONFIG_PATH` | Disabled until paper/sandbox-safe path is explicit. |
 | Charts / alerts | TradingView | `TRADINGVIEW_WEBHOOK_SECRET`, `TRADINGVIEW_ALERT_RECEIVER_URL` | Paid-account alerts become observed signals only. No normal retail market-data API key. |
-| Member alerts | Telegram Bot API | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Outbound notifications only. No Telegram trade commands. |
+| Member alerts | Telegram Bot API | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Outbound notifications only. Paper trade group alerts include the submitted paper trade, portfolio value, total paper P&L, and signed performance percentage. No Telegram trade commands. |
 | Email fallback | Resend or SMTP | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` | Delivery fallback only. |
 | External uptime | UptimeRobot or equivalent | `UPTIMEROBOT_API_KEY` | Optional monitor for public cockpit availability. |
 
@@ -344,6 +344,8 @@ TELEGRAM_DEFAULT_CHAT_ID=
 TELEGRAM_GROUP_CHAT_ID=
 QADAM_TELEGRAM_ENABLED=false
 QADAM_TELEGRAM_DRY_RUN=true
+QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false
+QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true
 
 # Optional email fallback
 RESEND_API_KEY=

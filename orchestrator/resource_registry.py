@@ -211,6 +211,24 @@ RESOURCE_ENTRIES: tuple[ResourceEntry, ...] = (
         ),
     ),
     ResourceEntry(
+        "tradingview_mcp",
+        "TradingView MCP",
+        "supplemental_data_plane",
+        "tradingview-mcp-main/.codex-mcp.json",
+        "Read-only technical-analysis context for market structure, indicators, volatility, and watchlists.",
+        (
+            "research_analyst",
+            "strategy_lead",
+            "signal_integrity",
+            "fund_manager_cockpit",
+        ),
+        validation_status="read_only_adapter",
+        decision_notes=(
+            "Supplemental technical confirmation only; cannot create source quorum, trade candidates, "
+            "paper orders, broker writes, quantum jobs, or live capital."
+        ),
+    ),
+    ResourceEntry(
         "prive_x_starter",
         "PriveX Starter",
         "technical_infrastructure",

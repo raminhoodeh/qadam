@@ -33,6 +33,7 @@ from orchestrator.signal_integrity import signal_integrity_summary
 from orchestrator.source_health import source_heartbeat_summary
 from orchestrator.staged_paper_order import staged_paper_order_summary
 from orchestrator.telegram_comms import telegram_status
+from orchestrator.tradingview_mcp_adapter import tradingview_mcp_adapter_status
 from orchestrator.world_model import world_model_summary
 from orchestrator.yahoo_finance_adapter import yahoo_finance_adapter_status
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, unresolved_sources
@@ -61,6 +62,7 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
     telegram = telegram_status(settings)
     quantum = quantum_oracle_summary(settings)
     yahoo_finance = yahoo_finance_adapter_status(settings)
+    tradingview_mcp = tradingview_mcp_adapter_status(settings)
     quantum_status = "oracle_ready" if quantum.get("result_count", 0) else "ready_classical_fallback"
     yahoo_status = (
         "read_only_ready"
@@ -115,6 +117,12 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
             "label": "Yahoo Finance Adapter",
             "owner": "Supplemental Market Confirmation",
             "status": yahoo_status,
+        },
+        {
+            "key": "tradingview_mcp_adapter",
+            "label": "TradingView MCP Adapter",
+            "owner": "Supplemental Technical Analysis",
+            "status": "read_only_ready" if tradingview_mcp.get("connected") else "degraded",
         },
         {"key": "cockpit", "label": "Cockpit", "owner": "qadam.trade", "status": "shell"},
     ]

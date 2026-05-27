@@ -44,6 +44,7 @@ REQUIRED_REVIEW_FIELDS = {
     "source_count",
     "source_signal_id",
     "status",
+    "technical_context_policy",
     "trade_candidate_created",
     "worldview_prior_status",
 }
@@ -94,6 +95,24 @@ REQUIRED_PREFERENCE_POLICY_FIELDS = {
     "trade_candidate_creation_allowed",
     "wallet_kol_company_truth_allowed",
     "wallet_kol_role",
+}
+
+REQUIRED_TECHNICAL_POLICY_FIELDS = {
+    "boundary",
+    "broker_write_authority",
+    "context_stale_hold",
+    "live_capital_authority",
+    "order_authority",
+    "paper_order_authority",
+    "risk_handoff_allowed",
+    "signal_authority",
+    "source_quorum_credit_allowed",
+    "status",
+    "technical_context_only_confirmation_allowed",
+    "technical_context_present",
+    "technical_item_count",
+    "trade_candidate_creation_allowed",
+    "tradingview_mcp_context_only_hold",
 }
 
 
@@ -226,6 +245,52 @@ def _preference_policy_contract_probes() -> tuple[dict[str, Any], ...]:
     )
 
 
+def _technical_policy_contract_probes() -> tuple[dict[str, Any], ...]:
+    now = datetime.now(timezone.utc)
+    tradingview_context = EvidenceItem(
+        evidence_id="synthetic:tradingview_mcp:technical",
+        source="market.tradingview_mcp",
+        event_type="technical_analysis_context",
+        summary=(
+            "TradingView MCP read-only technical context attached. Technical context is "
+            "supplemental only and cannot create source quorum, trade candidates, paper "
+            "orders, or broker writes."
+        ),
+        trust_score=0.57,
+        observed_at=now.isoformat(),
+        raw_ref="synthetic",
+    )
+    canonical = EvidenceItem(
+        evidence_id="synthetic:rss:technical_catalyst",
+        source="news.rss",
+        event_type="news_observation",
+        summary="Canonical catalyst context for a technical setup; still needs market confirmation.",
+        trust_score=0.74,
+        observed_at=now.isoformat(),
+        raw_ref="synthetic",
+    )
+    tradingview_stale = EvidenceItem(
+        evidence_id="synthetic:tradingview_mcp:stale",
+        source="market.tradingview_mcp",
+        event_type="technical_analysis_context",
+        summary="TradingView MCP stale technical context.",
+        trust_score=0.57,
+        observed_at=(now - timedelta(days=5)).isoformat(),
+        raw_ref="synthetic",
+    )
+    return (
+        build_signal_integrity_review(
+            _synthetic_signal("synthetic_tradingview_mcp_only", (tradingview_context,))
+        ).to_dict(),
+        build_signal_integrity_review(
+            _synthetic_signal("synthetic_tradingview_mcp_with_canonical", (tradingview_context, canonical))
+        ).to_dict(),
+        build_signal_integrity_review(
+            _synthetic_signal("synthetic_tradingview_mcp_stale", (tradingview_stale, canonical))
+        ).to_dict(),
+    )
+
+
 def _check_market_policy(review: dict[str, Any]) -> str | None:
     policy = review.get("market_confirmation_policy")
     if not isinstance(policy, dict):
@@ -279,6 +344,39 @@ def _check_preference_policy(review: dict[str, Any]) -> str | None:
     return None
 
 
+def _check_technical_policy(review: dict[str, Any]) -> str | None:
+    policy = review.get("technical_context_policy")
+    if not isinstance(policy, dict):
+        return "missing_policy"
+    missing = sorted(REQUIRED_TECHNICAL_POLICY_FIELDS - set(policy))
+    if missing:
+        return "missing_fields:" + ",".join(missing)
+    for key in (
+        "source_quorum_credit_allowed",
+        "technical_context_only_confirmation_allowed",
+        "signal_authority",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "order_authority",
+        "paper_order_authority",
+        "broker_write_authority",
+        "live_capital_authority",
+    ):
+        if policy.get(key) is not False:
+            return f"authority_enabled:{key}"
+    boundary = str(policy.get("boundary") or "")
+    for phrase in (
+        "TradingView MCP technical context can corroborate technical setup only",
+        "cannot satisfy source quorum",
+        "create trade candidates",
+        "create paper orders",
+        "write to brokers",
+    ):
+        if phrase not in boundary:
+            return "boundary_weak"
+    return None
+
+
 def main() -> int:
     settings = Settings.from_env()
     result = run_signal_integrity_gate(settings=settings, seed_sample_if_empty=True)
@@ -313,6 +411,12 @@ def main() -> int:
         for review in preference_policy_probes
     }
     print(f"signal_integrity_gate_preference_policy_probe_statuses={preference_policy_statuses}")
+    technical_policy_probes = _technical_policy_contract_probes()
+    technical_policy_statuses = {
+        review["source_signal_id"]: review["technical_context_policy"]["status"]
+        for review in technical_policy_probes
+    }
+    print(f"signal_integrity_gate_technical_policy_probe_statuses={technical_policy_statuses}")
 
     if result["status"] != "ok":
         return 1
@@ -361,6 +465,13 @@ def main() -> int:
             print(
                 "signal_integrity_gate_preference_policy_invalid="
                 f"{review.get('review_id', 'unknown')}:{preference_policy_error}"
+            )
+            return 1
+        technical_policy_error = _check_technical_policy(review)
+        if technical_policy_error:
+            print(
+                "signal_integrity_gate_technical_policy_invalid="
+                f"{review.get('review_id', 'unknown')}:{technical_policy_error}"
             )
             return 1
         if "cannot approve" not in review["boundary"] or "create trade candidates" not in review["boundary"]:
@@ -418,6 +529,33 @@ def main() -> int:
         if probe["source_signal_id"] == "synthetic_preference_only_orderbook":
             if "preference_only_confirmation_hold" not in probe["failure_reasons"]:
                 print("signal_integrity_gate_preference_only_probe_failure_missing=true")
+                return 1
+
+    expected_technical_statuses = {
+        "synthetic_tradingview_mcp_only": "tradingview_mcp_context_only_hold",
+        "synthetic_tradingview_mcp_with_canonical": "supplemental_technical_confirmation_available",
+        "synthetic_tradingview_mcp_stale": "technical_context_stale_hold",
+    }
+    if technical_policy_statuses != expected_technical_statuses:
+        print("signal_integrity_gate_technical_policy_probe_mismatch=true")
+        return 1
+    for probe in technical_policy_probes:
+        policy_error = _check_technical_policy(probe)
+        if policy_error:
+            print(f"signal_integrity_gate_technical_policy_probe_invalid={probe['source_signal_id']}:{policy_error}")
+            return 1
+        if probe["status"] != "hold_for_corroboration":
+            print(f"signal_integrity_gate_technical_policy_probe_not_held={probe['source_signal_id']}")
+            return 1
+        if probe["execution_allowed"] is not False or probe["paper_order_allowed"] is not False:
+            print(f"signal_integrity_gate_technical_policy_probe_authority_enabled={probe['source_signal_id']}")
+            return 1
+        if probe["trade_candidate_created"] is not False:
+            print(f"signal_integrity_gate_technical_policy_probe_trade_candidate={probe['source_signal_id']}")
+            return 1
+        if probe["source_signal_id"] == "synthetic_tradingview_mcp_only":
+            if "tradingview_mcp_context_only_hold" not in probe["failure_reasons"]:
+                print("signal_integrity_gate_tradingview_only_probe_failure_missing=true")
                 return 1
 
     print("signal_integrity_gate_check=ok")
