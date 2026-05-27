@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam User Guide</title>
-    <meta name="description" content="Private user guide for the Qadam founding Fund Manager cockpit.">
+    <meta name="description" content="Private user guide for the Qadam paper trading dashboard.">
     <link rel="stylesheet" href="/whitepaper.css?v=20260517-guide">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
@@ -60,7 +60,7 @@
                         <p>Review evidence, challenge assumptions, comment on outcomes, and improve the process.</p>
                     </div>
                     <div class="guide-card">
-                        <span>COO</span>
+                        <span>Orchestrator</span>
                         <h3>Python Orchestrator</h3>
                         <p>Coordinates modules, checks health, writes logs, and routes work through the system.</p>
                     </div>
@@ -140,7 +140,7 @@
                 <h2>First 10-Minute Tour</h2>
                 <ol>
                     <li>Start in the Overview view.</li>
-                    <li>Read the single safety strip first: it should say Paper only, Read-only, Live capital off, No UI-to-broker path, and No LLM-to-broker path.</li>
+                    <li>Read Safety Status first: it should say Paper only, Read-only, Live capital off, Dashboard cannot place orders, and AI cannot bypass risk checks.</li>
                     <li>Use Overview's health readout and mini-map to understand whether Qadam is watching sources, forming hypotheses, seeing trade candidates, or blocked.</li>
                     <li>Open Evidence to inspect source health, setup evidence, and supplemental context.</li>
                     <li>Open Reasoning to separate private priors, factual evidence, hypotheses, missing corroboration, Strategy Lead review, and quant annotations.</li>
@@ -158,12 +158,12 @@
                     <div class="guide-card">
                         <span>Default view</span>
                         <h3>Overview view</h3>
-                        <p>Shows the operating readout, current review state, compact system mini-map, and the single safety strip.</p>
+                        <p>Shows the operating readout, current review state, compact system mini-map, and Safety Status.</p>
                     </div>
                     <div class="guide-card">
                         <span>Trade review</span>
                         <h3>Trades view</h3>
-                        <p>Shows signals, candidates, blocks, paper order state, paper-account performance, and Phase 7 proof status.</p>
+                        <p>Shows signals, trade ideas, blocks, paper order state, paper-account performance, and verified records.</p>
                     </div>
                     <div class="guide-card">
                         <span>Sources</span>
@@ -178,20 +178,20 @@
                     <div class="guide-card">
                         <span>Diagnostics</span>
                         <h3>Operations view</h3>
-                        <p>Shows the full expandable system map, event trail, safety diagnostics, Telegram state, and governance comments.</p>
+                        <p>Shows the full system map, event trail, safety diagnostics, Telegram state, and governance comments.</p>
                     </div>
                 </div>
             </section>
 
             <section>
-                <h2>Single Safety Strip</h2>
-                <p>The single safety strip is the dashboard's global authority summary. Read it before interpreting any panel.</p>
+                <h2>Safety Status</h2>
+                <p>Safety Status is the dashboard's global authority summary. Read it before interpreting any panel.</p>
                 <div class="guide-table">
                     <div><strong>Paper only</strong><span>Qadam is in paper/demo-proof mode, not live-capital mode.</span></div>
                     <div><strong>Read-only</strong><span>The dashboard reads backend-derived status; it is not a command surface.</span></div>
                     <div><strong>Live capital off</strong><span>No live money trading authority is available from the dashboard.</span></div>
-                    <div><strong>No UI-to-broker path</strong><span>The browser cannot place, approve, modify, close, or resize broker orders.</span></div>
-                    <div><strong>No LLM-to-broker path</strong><span>Models can inform reasoning, but cannot bypass risk gates or submit trades.</span></div>
+                    <div><strong>Dashboard cannot place orders</strong><span>The browser cannot place, approve, modify, close, or resize broker orders.</span></div>
+                    <div><strong>AI cannot bypass risk checks</strong><span>Models can inform reasoning, but cannot bypass risk gates or submit trades.</span></div>
                 </div>
             </section>
 
@@ -200,13 +200,13 @@
                 <p>You may still see older module names in code, event logs, or status metadata. Use this mapping when reading old notes.</p>
                 <div class="guide-table">
                     <div><strong>Mission Control</strong><span>Overview.</span></div>
-                    <div><strong>System Operating Map</strong><span>Overview mini-map or Operations full map.</span></div>
+                    <div><strong>System map</strong><span>Overview mini-map or Operations full map.</span></div>
                     <div><strong>Watching</strong><span>Evidence.</span></div>
                     <div><strong>Cognition</strong><span>Reasoning.</span></div>
                     <div><strong>Worldview / Private Edge</strong><span>Reasoning prior context.</span></div>
                     <div><strong>Trade Layer</strong><span>Trades.</span></div>
                     <div><strong>Money / Paper Account Timeline</strong><span>Trades paper account and Phase 7 proof area.</span></div>
-                    <div><strong>Forbidden</strong><span>Operations safety diagnostics plus the single safety strip.</span></div>
+                    <div><strong>Forbidden</strong><span>Operations safety diagnostics plus Safety Status.</span></div>
                     <div><strong>Process Console</strong><span>Operations event trail.</span></div>
                     <div><strong>Fund Manager Comments</strong><span>Operations governance.</span></div>
                     <div><strong>Communications / Telegram</strong><span>Operations communications.</span></div>
@@ -222,7 +222,7 @@
                     <div><strong>Degraded</strong><span>The module is partially available but has a known limitation.</span></div>
                     <div><strong>Blocked</strong><span>Qadam is deliberately prevented from using that path.</span></div>
                     <div><strong>Local-only</strong><span>The capability exists on the MacBook but is not exposed to the web.</span></div>
-                    <div><strong>Read-only ready</strong><span>The bridge can serve the public-safe snapshot, but cannot run commands or write trades.</span></div>
+                    <div><strong>Read-only ready</strong><span>The bridge can serve dashboard status, but cannot run commands or write trades.</span></div>
                     <div><strong>Dry-run</strong><span>Qadam can render or queue a message locally, but no live send is allowed.</span></div>
                     <div><strong>Notify-only</strong><span>A module can communicate status but cannot approve or create trade actions.</span></div>
                     <div><strong>Certified</strong><span>A phase gate has passed its explicit checker.</span></div>
@@ -303,12 +303,12 @@
                 <h2>Daily Operating Routine</h2>
                 <ol>
                     <li>Start with Overview.</li>
-                    <li>Read the single safety strip and confirm paper-only, read-only, live-capital off, no UI-to-broker path, and no LLM-to-broker path.</li>
+                    <li>Read Safety Status and confirm paper-only, read-only, live-capital off, Dashboard cannot place orders, and AI cannot bypass risk checks.</li>
                     <li>Scan the Overview mini-map and review card for the current operating posture.</li>
                     <li>Open Evidence and review degraded, missing, stale, or supplemental-only sources.</li>
                     <li>Open Reasoning and separate priors, evidence, hypotheses, missing corroboration, and analyst review.</li>
-                    <li>Open Trades and separate observations, candidates, blocked ideas, paper order state, paper-account state, and Phase 7 proof status.</li>
-                    <li>Open Operations only for the full expandable system map, event trail, safety diagnostics, Telegram communications, or governance comments.</li>
+                    <li>Open Trades and separate observations, trade ideas, blocked ideas, paper order state, paper-account state, and verified records.</li>
+                    <li>Open Operations only for the full system map, event trail, safety diagnostics, Telegram communications, or governance comments.</li>
                     <li>Record a no-trade rationale when there is no qualified setup. Do not force a paper trade to satisfy cadence.</li>
                     <li>Add a comment if something looks wrong, unclear, or strategically important.</li>
                 </ol>
@@ -339,7 +339,7 @@
                             <li>Use the Secure Live Bridge to run commands or trade.</li>
                             <li>Bypass the Risk Agent or Signal Integrity Gate.</li>
                             <li>Bypass the Event Log.</li>
-                            <li>Treat a candidate as an order.</li>
+                            <li>Treat a trade idea as an order.</li>
                             <li>Turn worldview priors into trade evidence.</li>
                         </ul>
                     </div>
@@ -355,7 +355,7 @@
                     <li>One source is rarely enough.</li>
                     <li>Stale data should block or degrade a trade.</li>
                     <li>Private priors are not evidence.</li>
-                    <li>Raw payloads and secrets must not appear in the cockpit.</li>
+                    <li>Raw payloads and secrets must not appear in the dashboard.</li>
                     <li>Broker data and order receipts are separate from market context.</li>
                 </ul>
             </section>
@@ -378,7 +378,7 @@
                 <div class="guide-table">
                     <div><strong>Dashboard will not load</strong><span>Confirm login, allowlist status, and the static snapshot or read-only bridge.</span></div>
                     <div><strong>Sources look stale</strong><span>Check Evidence for degraded reasons and treat affected signals as lower confidence.</span></div>
-                    <div><strong>Trade state looks wrong</strong><span>Check Trades, the single safety strip, and Operations before assuming anything traded.</span></div>
+                    <div><strong>Trade state looks wrong</strong><span>Check Trades, Safety Status, and Operations before assuming anything traded.</span></div>
                     <div><strong>Telegram contradicts dashboard</strong><span>Trust the backend-derived dashboard and inspect Operations communications.</span></div>
                 </div>
             </section>

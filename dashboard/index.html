@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qadam System Map</title>
-    <meta name="description" content="Private Qadam founding Fund Manager cockpit.">
-    <link rel="stylesheet" href="/auth.css?v=20260526-advanced-debug-overview">
+    <title>Qadam Dashboard</title>
+    <meta name="description" content="Private Qadam paper trading dashboard.">
+    <link rel="stylesheet" href="/auth.css?v=20260526-language-cleanup">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -27,13 +27,13 @@
         <section id="dashboard-main" class="dashboard-workspace hidden" data-dashboard tabindex="-1">
             <section class="dashboard-hero">
                 <div>
-                    <p class="eyebrow">Qadam cockpit - D9 secure bridge</p>
-                    <h1>System Operating Map</h1>
-                    <p class="copy">Logged in as <span data-user-email></span>. The homepage describes Qadam as a hedge fund team inside a laptop. This cockpit is that team in operating form: sources feed the COO, analysts turn evidence into hypotheses, quant and risk gate the ideas, and the paper desk records outcomes.</p>
+                    <p class="eyebrow">Qadam paper trading dashboard</p>
+                    <h1>Paper Trading Overview</h1>
+                    <p class="copy">Logged in as <span data-user-email></span>. This dashboard shows how Qadam reads data, forms trade ideas, checks risk, tracks paper trades, and records performance.</p>
                 </div>
-                <div class="mode-stack" aria-label="Cockpit status">
-                    <span>D9 operating cockpit</span>
-                    <span>Fund manager operating view</span>
+                <div class="mode-stack" aria-label="Dashboard status">
+                    <span>Paper trading mode</span>
+                    <span>Overview</span>
                 </div>
             </section>
 
@@ -58,28 +58,28 @@
 
             <section class="dashboard-safety-strip online" aria-label="Single dashboard safety strip" data-dashboard-safety-strip>
                 <div class="dashboard-safety-strip-main">
-                    <p class="label">Single safety strip</p>
-                    <h2>Paper only · read-only · live capital off</h2>
-                    <p>One dashboard-wide authority state. Panels below explain evidence and context without repeating the control rail.</p>
+                <p class="label">Safety status</p>
+                <h2>Paper only · read-only · live capital off</h2>
+                    <p>One dashboard-wide safety state. Sections below explain what Qadam is reading, thinking, and tracking.</p>
                 </div>
                 <div class="dashboard-safety-strip-badges">
                     <span class="inline-badge online"><span class="dot"></span><span data-mode-label>Paper only</span></span>
                     <span class="inline-badge online" data-capital-label>Loading paper account</span>
                     <span class="inline-badge online" data-live-capital-label>Live capital off</span>
                     <span class="inline-badge online">Read-only</span>
-                    <span class="inline-badge online">No UI-to-broker path</span>
-                    <span class="inline-badge online">No LLM-to-broker path</span>
-                    <span class="inline-badge online">No proof-credit inference</span>
+                    <span class="inline-badge online">Dashboard cannot place orders</span>
+                    <span class="inline-badge online">AI cannot bypass risk checks</span>
+                    <span class="inline-badge online">Performance proof requires verified records</span>
                 </div>
                 <div class="info-hover safety-strip-info">
-                    <button class="info-button" type="button" aria-label="About the single safety strip">i</button>
+                    <button class="info-button" type="button" aria-label="About Safety Status">i</button>
                     <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety" data-tooltip-contract="compact">
-                        <strong>Single Safety Strip</strong>
-                        <p>One place for mode, capital, and authority state.</p>
+                        <strong>Safety Status</strong>
+                        <p>One place for paper mode, capital, and order safety.</p>
                         <dl class="explainer-grid compact">
-                            <div><dt>Shows</dt><dd>Paper mode, live-capital state, broker routes.</dd></div>
-                            <div><dt>Watch</dt><dd>Any change from read-only paper operation.</dd></div>
-                            <div><dt>Limits</dt><dd>Status only; no approval or order path.</dd></div>
+                            <div><dt>Shows</dt><dd>Paper mode, live-capital state, order safety.</dd></div>
+                            <div><dt>Watch</dt><dd>Any change from read-only paper trading.</dd></div>
+                            <div><dt>Limits</dt><dd>Readout only; this page cannot place orders.</dd></div>
                         </dl>
                     </div>
                 </div>
@@ -95,11 +95,11 @@
                         <button class="info-button" type="button" aria-label="About the overview">i</button>
                         <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control" data-tooltip-contract="compact">
                             <strong>Overview</strong>
-                            <p>The shortest answer before deeper review.</p>
+                            <p>The current status of Qadam's paper trading system.</p>
                             <dl class="explainer-grid compact">
-                                <div><dt>Shows</dt><dd>Current answer, next focus, compact map.</dd></div>
-                                <div><dt>Watch</dt><dd>Weak evidence, due postmortems, review flags.</dd></div>
-                                <div><dt>Limits</dt><dd>Summary only; use views for detail.</dd></div>
+                                <div><dt>Shows</dt><dd>Status, data, strategy, thoughts, trades, capacity.</dd></div>
+                                <div><dt>Watch</dt><dd>Weak evidence, risk blocks, stale account data.</dd></div>
+                                <div><dt>Limits</dt><dd>Summary only; Advanced mode has diagnostics.</dd></div>
                             </dl>
                         </div>
                     </div>
@@ -108,13 +108,13 @@
                 <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
                     <div class="overview-section-head">
                         <span>System map</span>
-                        <strong>How observations become paper states</strong>
+                        <strong>How data becomes paper trade decisions</strong>
                     </div>
                     <div class="overview-system-grid">
                         <div class="overview-oversight" data-overview-oversight>
-                            <span>Fund Manager oversight</span>
-                            <strong>You supervise the fund team</strong>
-                            <p>Human oversight sits above the chain; it is not an automated execution node.</p>
+                            <span>Human oversight</span>
+                            <strong>You supervise Qadam</strong>
+                            <p>You review the system, challenge ideas, and decide whether Qadam is mature enough to advance.</p>
                         </div>
                         <div class="overview-mini-map" data-overview-mini-map>
                             <span>Loading system connectivity.</span>
@@ -122,16 +122,16 @@
                     </div>
                     <div class="overview-feed-strip" data-overview-feed-strip></div>
                     <div class="overview-boundary-rail" data-overview-boundary-rail>
-                        <span>Reading rule</span>
-                        <p>Use the single safety strip for authority state. Overview items are readouts, and candidates are not orders.</p>
+                        <span>How to read this</span>
+                        <p>Use Safety Status for order authority. Overview sections are readouts, and trade ideas are not orders.</p>
                     </div>
                 </section>
 
                 <section class="overview-command-surface" aria-label="Fund manager overview" data-overview-command-surface data-dashboard-debug-only hidden>
                     <article class="overview-hero" data-overview-hero data-mission-primary>
-                        <span>Fund Manager read</span>
+                        <span>Current summary</span>
                         <h3>Loading Qadam overview</h3>
-                        <p>Waiting for the public-safe cockpit snapshot.</p>
+                        <p>Waiting for the latest dashboard status.</p>
                         <div class="overview-hero-metrics" data-overview-hero-metrics></div>
                         <div class="overview-readout-list" data-overview-metrics></div>
                     </article>
@@ -165,13 +165,13 @@
 
                 <section class="overview-proof-flow" aria-label="Proof and trade lifecycle" data-overview-proof-flow data-dashboard-debug-only hidden>
                     <div class="overview-section-head">
-                        <span>Proof and trade path</span>
+                        <span>Paper trade lifecycle</span>
                         <strong data-overview-lifecycle-summary>Loading lifecycle</strong>
                     </div>
                     <div class="overview-status-rail" data-overview-status-rail>
                         <span class="overview-status-chip"><strong>Loading</strong><em>Proof window</em></span>
                         <span class="overview-status-chip"><strong>Loading</strong><em>Weekly cadence</em></span>
-                        <span class="overview-status-chip"><strong>Loading</strong><em>Eligible setups</em></span>
+                        <span class="overview-status-chip"><strong>Loading</strong><em>Potential setups</em></span>
                     </div>
                     <ol class="overview-lifecycle-strip" data-overview-lifecycle>
                         <li>Loading trade lifecycle.</li>
@@ -203,26 +203,26 @@
                     <article class="overview-trade-considerations-panel" data-overview-trade-considerations>
                         <div class="overview-section-head">
                             <span>Trades being considered</span>
-                            <strong>Loading candidate state</strong>
+                            <strong>Loading trade ideas</strong>
                         </div>
                     </article>
                 </section>
             </section>
 
-            <section id="strategy-manifestation" class="operating-review-panel" aria-label="Phase 4 strategy manifestation" data-dashboard-view-section="reasoning" data-cockpit-section="Strategy" hidden>
+            <section id="strategy-manifestation" class="operating-review-panel" aria-label="Strategy approval status" data-dashboard-view-section="reasoning" data-cockpit-section="Strategy" hidden>
                 <div class="panel-heading">
                     <div>
-                        <p class="label">Strategy manifestation</p>
-                        <h2>Phase 4 status, approval gate, and shadow-only strategy toggles</h2>
+                        <p class="label">Strategy status</p>
+                        <h2>Strategy approval, research visibility, and safety limits</h2>
                     </div>
                     <div class="info-hover">
-                        <button class="info-button" type="button" aria-label="About Phase 4 strategy manifestation">i</button>
+                        <button class="info-button" type="button" aria-label="About strategy status">i</button>
                         <div class="info-card section-explainer" role="tooltip" data-section-explainer="phase4_strategy" data-tooltip-contract="compact">
-                            <strong>Phase 4 Strategy</strong>
+                            <strong>Strategy Status</strong>
                             <p>Strategy visibility and approval state.</p>
                             <dl class="explainer-grid compact">
-                                <div><dt>Shows</dt><dd>Docs, approval, toggles, certification posture.</dd></div>
-                                <div><dt>Watch</dt><dd>Approved-shadow toggles before explicit approval.</dd></div>
+                                <div><dt>Shows</dt><dd>Approved strategy families and review gates.</dd></div>
+                                <div><dt>Watch</dt><dd>Ideas that lack approval or evidence.</dd></div>
                                 <div><dt>Limits</dt><dd>Governance only; no provider or broker action.</dd></div>
                             </dl>
                         </div>
@@ -238,16 +238,16 @@
                     <section class="panel-brief blocked" data-panel-brief="phase4_strategy">
                         <div class="panel-brief-main">
                             <p class="label">Panel readout</p>
-                            <h3>Is Phase 4 visible but non-executable?</h3>
-                            <p>Static fallback shows the Phase 4 governance boundary while strategy status, approval state, and toggles load.</p>
+                            <h3>Are strategies visible but unable to trade directly?</h3>
+                            <p>Strategy status, approval state, and research flags load here.</p>
                         </div>
                         <dl class="panel-brief-facts">
                             <div><dt>State</dt><dd><span class="inline-badge blocked">Waiting for approval state</span></dd></div>
-                            <div><dt>Watch</dt><dd>Explicit Fund Manager approval, approved-shadow toggles, validation errors, and certification state.</dd></div>
-                            <div><dt>Boundary</dt><dd>No execution. Strategy visibility cannot create candidates, stage orders, write brokers, or enable live capital.</dd></div>
+                            <div><dt>Watch</dt><dd>Explicit approval, research flags, validation errors, and certification state.</dd></div>
+                            <div><dt>Boundary</dt><dd>No execution. Strategy visibility cannot create trade ideas, stage orders, write brokers, or enable live capital.</dd></div>
                         </dl>
                     </section>
-                    <p class="empty-state">Phase 4 strategy visibility is governance-only until the public-safe status snapshot renders the latest approval event.</p>
+                    <p class="empty-state">Strategy visibility is governance-only until the latest approval event is available.</p>
                 </div>
             </section>
 
@@ -255,35 +255,35 @@
                 <div class="map-title-row">
                     <div>
                         <p class="label">End-to-end flow</p>
-                        <h2>How the fund team turns observations into controlled paper states</h2>
+                        <h2>How Qadam turns data into controlled paper trades</h2>
                     </div>
                     <div class="info-hover">
-                        <button class="info-button" type="button" aria-label="About the System Operating Map">i</button>
+                        <button class="info-button" type="button" aria-label="About the system map">i</button>
                         <div class="info-card section-explainer" role="tooltip" data-section-explainer="system_operating_map" data-tooltip-contract="compact">
-                            <strong>System Operating Map</strong>
-                            <p>How nodes hand evidence into paper-state review.</p>
+                            <strong>System Map</strong>
+                            <p>How data, reasoning, risk, and paper trades connect.</p>
                             <dl class="explainer-grid compact">
-                                <div><dt>Shows</dt><dd>Sources, event log, research, risk, paper desk.</dd></div>
+                                <div><dt>Shows</dt><dd>Data sources, reasoning, risk, paper trades.</dd></div>
                                 <div><dt>Watch</dt><dd>Stopped handoffs or unclear authority changes.</dd></div>
                                 <div><dt>Limits</dt><dd>Map only; nodes are not controls.</dd></div>
                             </dl>
                         </div>
                     </div>
-                    <p class="mini" data-snapshot-meta>Loading cockpit status snapshot...</p>
+                    <p class="mini" data-snapshot-meta>Loading dashboard status...</p>
                 </div>
 
                 <div class="fund-model-grid" data-fund-model>
                     <article class="fund-model-card">
-                        <span>Fund Manager</span>
-                        <h3>You supervise the fund</h3>
+                        <span>Human oversight</span>
+                        <h3>You supervise Qadam</h3>
                         <p>Review the operating map, challenge ideas, and add governance comments.</p>
                         <small>Paper mode · static shell</small>
                     </article>
                     <article class="fund-model-card">
-                        <span>COO</span>
-                        <h3>Python keeps the book</h3>
+                        <span>Orchestrator</span>
+                        <h3>Python records the system</h3>
                         <p>The orchestrator turns source, model, and trade events into auditable state.</p>
-                        <small>Event Log first</small>
+                        <small>Logged state first</small>
                     </article>
                     <article class="fund-model-card">
                         <span>Analysts</span>
@@ -295,18 +295,18 @@
                         <span>Quant + Risk</span>
                         <h3>Models inform, gates decide</h3>
                         <p>Quant checks are bounded; risk blocks weak, stale, or unauthorized ideas.</p>
-                        <small>Fail closed</small>
+                        <small>Blocked unless safe</small>
                     </article>
                     <article class="fund-model-card">
-                        <span>Paper desk</span>
-                        <h3>Ideas become paper states</h3>
-                        <p>Candidates are not orders. Proof comes from positions, exits, and postmortems.</p>
+                        <span>Paper trading</span>
+                        <h3>Ideas become paper trades</h3>
+                        <p>Trade ideas are not orders. Verified records come from positions, exits, and postmortems.</p>
                         <small>Live capital off</small>
                     </article>
                 </div>
 
                 <div class="snapshot-banner" data-status-banner>
-                    <span>D0 static cockpit proof.</span>
+                    <span>Dashboard status loaded.</span>
                     <span>Read-only operating map. If the live bridge is unavailable, this page falls back to the sanitized status snapshot without implying control authority.</span>
                 </div>
 
@@ -317,13 +317,13 @@
                                 <div>
                                     <p class="label">Operations workspace</p>
                                     <h3>Operations readout and full system map</h3>
-                                    <p>Read-only runtime diagnostics and full system connectivity load here: bridge health, safety stops, team roles, feed plumbing, map edges, event trail, governance, and outbound communications.</p>
+                                    <p>Read-only runtime diagnostics and full system connectivity load here: bridge health, safety stops, system roles, data pipelines, map edges, event trail, governance, and notifications.</p>
                                 </div>
                                 <article class="operations-broken-card pending">
                                     <span>What is broken?</span>
                                     <strong>Loading</strong>
                                     <ul>
-                                        <li>Waiting for the public-safe operations snapshot.</li>
+                                        <li>Waiting for the latest operations status.</li>
                                     </ul>
                                 </article>
                             </div>
@@ -338,21 +338,21 @@
                                 <div class="metric"><span>Live capital</span><strong>Off</strong></div>
                             </div>
                         </section>
-                        <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
+                        <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in Safety Status above. Operations below show the evidence behind that state.</p>
                         <div class="operations-review-groups" data-operations-review-groups>
                             <details class="operations-review-group" data-operations-review-group="runtime_safety" open>
-                                <summary><strong>Runtime, bridge, and safety</strong><span>Read-only bridge state, static fallback, exporter/cache posture, hard blocks, and kill-switch ledger.</span><em>Loading</em></summary>
+                                <summary><strong>Runtime, bridge, and safety</strong><span>Read-only bridge state, latest status, exporter/cache posture, safety stops, and kill switches.</span><em>Loading</em></summary>
                             </details>
                             <details class="operations-review-group" data-operations-review-group="team_data_plumbing">
-                                <summary><strong>Operating team and data plumbing</strong><span>The hedge-fund team roles and intelligence feed clusters that move observations into review.</span><em>Loading</em></summary>
+                                <summary><strong>Operating team and data plumbing</strong><span>The roles and source groups that move observations into review.</span><em>Loading</em></summary>
                             </details>
                             <details class="operations-review-group" data-operations-review-group="system_map_event_trail" open>
                                 <summary><strong>Full system map and event trail</strong><span>Node-by-node connectivity, handoff edge states, recent runtime events, and closed-loop logging rule.</span><em>Loading</em></summary>
-                                <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
+                                <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable system map">
                                     <div class="operations-edge-legend">
                                         <span>Edge state</span>
                                         <span class="inline-badge online">Current</span>
-                                        <span class="inline-badge shadow-context-only">shadow/context-only</span>
+                                        <span class="inline-badge shadow-context-only">research only</span>
                                         <span class="inline-badge degraded">degraded</span>
                                         <span class="inline-badge pending">Read-only lock</span>
                                         <span class="inline-badge blocked">Safety stop</span>
@@ -401,13 +401,13 @@
                             <header class="flow-lane-header">
                                 <span>02</span>
                                 <div>
-                                    <h3>COO Memory</h3>
-                                    <p>The orchestrator records state and exposes only a safe cockpit mirror.</p>
+                                    <h3>System Memory</h3>
+                                    <p>The orchestrator records state and exposes only a safe dashboard mirror.</p>
                                 </div>
                             </header>
                             <div class="flow-lane-track">
                                 <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status local-only">Local only</b><span>02 · COO memory</span></div>
+                                    <div class="node-topline"><b class="node-status local-only">Local only</b><span>02 · System memory</span></div>
                                     <h3>Event Log</h3>
                                     <p class="flow-summary">Every meaningful source, model, risk, and trade state must be logged before it counts.</p>
                                     <dl class="node-facts">
@@ -443,7 +443,7 @@
                                 <article class="flow-node system-map-node">
                                     <div class="node-topline"><b class="node-status pending">Waiting for evidence</b><span>04 · Research desk</span></div>
                                     <h3>Research Analyst</h3>
-                                    <p class="flow-summary">Filters noisy events locally and compresses evidence into shadow-only reasoning.</p>
+                                    <p class="flow-summary">Filters noisy events locally and compresses evidence into research notes.</p>
                                     <dl class="node-facts">
                                         <div><dt>Input</dt><dd>Noisy observations</dd></div>
                                         <div><dt>Output</dt><dd>Shadow analysis</dd></div>
@@ -493,7 +493,7 @@
                                         <div><dt>Input</dt><dd>Trade intents</dd></div>
                                         <div><dt>Output</dt><dd>Blocks or gates</dd></div>
                                     </dl>
-                                    <span class="node-authority">Fail closed</span>
+                                    <span class="node-authority">Blocked unless safe</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Only passed gates can become paper-trial state.</span></div>
@@ -504,17 +504,17 @@
                                 <span>05</span>
                                 <div>
                                     <h3>Paper Trial</h3>
-                                    <p>Candidates become paper states only after gates; outcomes return to learning.</p>
+                                    <p>Trade ideas become paper trades only after gates; outcomes return to learning.</p>
                                 </div>
                             </header>
                             <div class="flow-lane-track">
                                 <article class="flow-node system-map-node">
                                     <div class="node-topline"><b class="node-status blocked">Paper only</b><span>08 · Paper desk</span></div>
-                                    <h3>Trade Layer</h3>
-                                    <p class="flow-summary">Shows observed signals, candidates, blocks, staged paper orders, and positions.</p>
+                                    <h3>Paper Trading</h3>
+                                    <p class="flow-summary">Shows observed signals, trade ideas, blocks, paper orders, and positions.</p>
                                     <dl class="node-facts">
                                         <div><dt>Input</dt><dd>Approved intents</dd></div>
-                                        <div><dt>Output</dt><dd>Paper states</dd></div>
+                                        <div><dt>Output</dt><dd>Paper trade states</dd></div>
                                     </dl>
                                     <span class="node-authority">Live capital off</span>
                                 </article>
@@ -558,7 +558,7 @@
 
                         <div class="flow-return-loop">
                             <strong>Closed-loop rule</strong>
-                            <span>Every observation, hypothesis, risk decision, paper state, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
+                            <span>Every observation, hypothesis, risk decision, paper trade, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
                         </div>
                     </div>
                 </div>
@@ -583,7 +583,7 @@
                         </div>
                     </div>
                 </div>
-                <p class="mini">Trades explain lifecycle state, Sources explain input health, Reasoning explains hypotheses, Performance explains the paper account, Operations explains runtime health, and Governance explains approvals and comments.</p>
+                    <p class="mini">Trades explain lifecycle state, Evidence explains input health, Reasoning explains hypotheses, Operations explains runtime health, and governance comments explain requested changes.</p>
             </section>
 
             <section class="dashboard-detail-flow" aria-label="Dashboard operating detail">
@@ -613,12 +613,12 @@
                                     <div>
                                         <p class="label">Evidence workspace</p>
                                         <h3>Source reliability and corroboration</h3>
-                                        <p>Loading source quorum, factual evidence packets, supplemental inputs, and source-linked candidate state.</p>
+                                        <p>Loading source quorum, factual evidence packets, supplemental inputs, and source-linked trade ideas.</p>
                                     </div>
                                     <div class="source-quorum-card pending">
                                         <span>Source quorum</span>
                                         <strong>Loading</strong>
-                                        <p>Public-safe source status will render from the cockpit snapshot.</p>
+                                        <p>Source status will render from the latest dashboard data.</p>
                                     </div>
                                 </div>
                                 <section class="evidence-consolidated-readout pending" data-evidence-consolidated-readout>
@@ -635,7 +635,7 @@
                                 </section>
                                 <div class="evidence-review-groups" data-evidence-review-groups>
                                     <details class="evidence-review-group" open data-evidence-review-group="setup_evidence">
-                                        <summary><strong>Setup evidence</strong><span>Loading source-linked observations and candidate records.</span><em>0 records</em></summary>
+                                        <summary><strong>Setup evidence</strong><span>Loading source-linked observations and trade-idea records.</span><em>0 records</em></summary>
                                     </details>
                                     <details class="evidence-review-group" data-evidence-review-group="source_reliability">
                                         <summary><strong>Source reliability</strong><span>Loading credential, heartbeat, adapter, and quorum state.</span><em>0 records</em></summary>
@@ -644,7 +644,7 @@
                                         <summary><strong>Supplemental context</strong><span>Loading Yahoo Finance and Preference/PREF context.</span><em>0 records</em></summary>
                                     </details>
                                     <details class="evidence-review-group" data-evidence-review-group="factual_packets">
-                                        <summary><strong>Factual evidence packets</strong><span>Loading public-safe research evidence packets.</span><em>0 records</em></summary>
+                                        <summary><strong>Factual evidence packets</strong><span>Loading research evidence packets.</span><em>0 records</em></summary>
                                     </details>
                                 </div>
                             </section>
@@ -653,7 +653,7 @@
                             <details class="evidence-source-ledger" data-evidence-source-ledger>
                                 <summary>
                                     <strong>Detailed source ledger</strong>
-                                    <span>Static fallback rows are diagnostics only until the snapshot renders source details.</span>
+                                    <span>Placeholder rows are diagnostics only until source details load.</span>
                                 </summary>
                                 <div class="evidence-source-ledger-body">
                                     <details class="pipeline-row" open>
@@ -666,7 +666,7 @@
                                                 <div class="source-main">
                                                     <b class="node-status pending">Static</b>
                                                     <div>
-                                                        <strong>D0 source registry shell</strong>
+                                                        <strong>Source registry placeholder</strong>
                                                         <span>Shows what Qadam is meant to watch; the JSON snapshot adds heartbeat and credential detail.</span>
                                                     </div>
                                                 </div>
@@ -705,14 +705,14 @@
                                 <div>
                                     <p class="label">Reasoning workspace</p>
                                     <h2>Why does Qadam care, and what is still missing?</h2>
-                                    <p>Static fallback separates worldview priors from factual evidence before live reasoning loads.</p>
+                                    <p>This view separates prior assumptions from factual evidence before live reasoning loads.</p>
                                 </div>
                                 <div class="reasoning-boundary-card">
                                     <span class="inline-badge blocked">Research-only</span>
                                     <span class="inline-badge blocked">Prior, not evidence</span>
-                                    <span class="inline-badge blocked">Hypothesis, not candidate</span>
+                                    <span class="inline-badge blocked">Hypothesis, not trade idea</span>
                                     <span class="inline-badge online">No paper/order authority</span>
-                                    <p>The browser cannot create candidates, stage paper orders, write brokers, or enable live capital.</p>
+                                    <p>The browser cannot create trade ideas, stage paper orders, write brokers, or enable live capital.</p>
                                 </div>
                             </div>
                             <section class="reasoning-consolidated-readout pending" data-reasoning-consolidated-readout>
@@ -759,23 +759,23 @@
                         <details class="reasoning-review-group reasoning-advanced-diagnostics" data-reasoning-review-group="advanced_diagnostics">
                             <summary>
                                 <strong>Advanced cognition diagnostics</strong>
-                                <span>Static fallback for model activity, local research, strategy handoff, and signal integrity detail.</span>
+                                <span>Advanced details for model activity, local research, strategy handoff, and signal integrity.</span>
                                 <em>0 records</em>
                             </summary>
                         </details>
                     </div>
                 </article>
 
-                <article id="forbidden" class="panel-card guardrail-panel legacy-operations-panel" aria-label="Forbidden actions" data-dashboard-view-section="operations" data-cockpit-section="Safety" hidden>
+                <article id="forbidden" class="panel-card guardrail-panel legacy-operations-panel" aria-label="Safety stops" data-dashboard-view-section="operations" data-cockpit-section="Safety" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Forbidden</p>
-                            <h2>Hard blocks</h2>
+                            <p class="label">Safety</p>
+                            <h2>Safety stops</h2>
                         </div>
                         <div class="info-hover">
-                            <button class="info-button" type="button" aria-label="About Forbidden actions">i</button>
+                            <button class="info-button" type="button" aria-label="About safety stops">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="forbidden_actions" data-tooltip-contract="compact">
-                                <strong>Forbidden</strong>
+                                <strong>Safety Stops</strong>
                                 <p>Active hard stops.</p>
                                 <dl class="explainer-grid compact">
                                     <div><dt>Shows</dt><dd>Live-capital, broker, data, risk, kill-switch blocks.</dd></div>
@@ -790,7 +790,7 @@
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>Which paths have hard safety stops?</h3>
-                                <p>Static fallback lists the hard stops that keep the cockpit inside paper-mode authority.</p>
+                                <p>Placeholder safety stops keep the dashboard inside paper-mode authority.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge blocked">Safety stops active</span></dd></div>
@@ -799,9 +799,9 @@
                             </dl>
                         </section>
                         <ul class="status-list" data-forbidden-actions>
-                            <li><strong>live capital disabled</strong><span>D0 cannot place or prepare live-capital trades.</span></li>
+                            <li><strong>live capital disabled</strong><span>The dashboard cannot place or prepare live-capital trades.</span></li>
                             <li><strong>broker writes blocked</strong><span>The browser has no order route.</span></li>
-                            <li><strong>orchestrator private</strong><span>The local MacBook runtime is not exposed to Vercel.</span></li>
+                            <li><strong>orchestrator private</strong><span>The local runtime is not exposed to the web dashboard.</span></li>
                         </ul>
                     </div>
                 </article>
@@ -810,7 +810,7 @@
                     <div class="panel-heading">
                         <div>
                             <p class="label">Communications</p>
-                            <h2>Telegram rail</h2>
+                            <h2>Telegram notifications</h2>
                         </div>
                         <div class="info-hover">
                             <button class="info-button" type="button" aria-label="About Telegram communications">i</button>
@@ -830,7 +830,7 @@
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>What has Qadam told founding members?</h3>
-                                <p>Static fallback shows the outbound-only Telegram rail before dry-run queue and delivery state load.</p>
+                                <p>Telegram notification state loads here before queue and delivery details appear.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">Dry-run planned</span></dd></div>
@@ -852,17 +852,17 @@
                     <div class="panel-heading">
                         <div>
                             <p class="label">Trades</p>
-                            <h2>Trade lifecycle and paper-state review</h2>
+                            <h2>Trade lifecycle and paper trade review</h2>
                         </div>
                         <div class="info-hover">
-                            <button class="info-button" type="button" aria-label="About Trade Layer">i</button>
+                            <button class="info-button" type="button" aria-label="About trade lifecycle">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="trade_layer" data-tooltip-contract="compact">
-                                <strong>Trade Layer</strong>
+                                <strong>Trade Lifecycle</strong>
                                 <p>Paper trade lifecycle state.</p>
                                 <dl class="explainer-grid compact">
-                                    <div><dt>Shows</dt><dd>Signals, candidates, risk checks, paper states.</dd></div>
-                                    <div><dt>Watch</dt><dd>Candidates without checks or overdue postmortems.</dd></div>
-                                    <div><dt>Limits</dt><dd>Candidate/order separation stays explicit.</dd></div>
+                                    <div><dt>Shows</dt><dd>Signals, trade ideas, risk checks, paper trades.</dd></div>
+                                    <div><dt>Watch</dt><dd>Trade ideas without checks or overdue postmortems.</dd></div>
+                                    <div><dt>Limits</dt><dd>A trade idea is not an order.</dd></div>
                                 </dl>
                             </div>
                         </div>
@@ -874,11 +874,11 @@
                                     <div>
                                         <p class="label">Trades workspace</p>
                                         <h3>Trade lifecycle board</h3>
-                                        <p>Loading observed signals, candidates, paper lifecycle state, and postmortems.</p>
+                                        <p>Loading observed signals, trade ideas, paper lifecycle state, and postmortems.</p>
                                     </div>
                                     <div class="trade-lifecycle-safety">
-                                        <strong>No UI proof credit</strong>
-                                        <span>Phase 5 test trades stay separate from Phase 7 proof trades.</span>
+                                        <strong>Verified performance only</strong>
+                                        <span>Test trades stay separate from verified paper-trading performance.</span>
                                     </div>
                                 </div>
                             </section>
@@ -889,13 +889,13 @@
                             </section>
                             <div class="trade-diagnostic-groups" data-trade-diagnostic-groups>
                                 <details class="trade-review-group" open data-trade-review-group="proof_lifecycle">
-                                    <summary><strong>Proof and paper lifecycle</strong><span>Loading proof and paper-state diagnostics.</span></summary>
+                                    <summary><strong>Paper trade lifecycle</strong><span>Loading paper-trade diagnostics.</span></summary>
                                 </details>
                                 <details class="trade-review-group" data-trade-review-group="gate_chain">
                                     <summary><strong>Gate chain and broker readiness</strong><span>Loading risk, execution, and broker-readiness diagnostics.</span></summary>
                                 </details>
                                 <details class="trade-review-group" data-trade-review-group="signal_records">
-                                    <summary><strong>Signals, candidates, and paper states</strong><span>Loading signal and candidate diagnostics.</span></summary>
+                                    <summary><strong>Signals, trade ideas, and paper trades</strong><span>Loading signal and trade-idea diagnostics.</span></summary>
                                 </details>
                             </div>
                         </div>
@@ -927,13 +927,13 @@
                                 <div>
                                     <p class="label">Performance workspace</p>
                                     <h2>30-day demo proof and paper account performance</h2>
-                                    <p>Static fallback separates demo-proof operating completion from 100-trade maturity before the backend snapshot loads.</p>
+                                    <p>This view separates the 30-day paper run from the larger trade sample before backend status loads.</p>
                                 </div>
                                 <div class="performance-boundary-card">
                                     <span class="inline-badge pending">30-day run separate from 100-trade maturity</span>
                                     <span class="inline-badge online">No forced trades</span>
                                     <span class="inline-badge online">Phase 5 trades excluded</span>
-                                    <span class="inline-badge online">No proof-credit inference</span>
+                                    <span class="inline-badge online">Verified records only</span>
                                     <p>The dashboard cannot force trades, grant proof credit, write brokers, or enable live capital.</p>
                                 </div>
                             </div>
@@ -972,7 +972,7 @@
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>Is the paper account proving or losing trust?</h3>
-                                <p>Static fallback shows the starting paper account until the local mirror writes balance, P&amp;L, drawdown, and maturity state.</p>
+                                <p>The starting paper account appears until the local mirror writes balance, P&amp;L, drawdown, and maturity state.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge online">&pound;1,000 paper</span></dd></div>
@@ -993,7 +993,7 @@
                 <article id="process-console" class="panel-card process-panel legacy-operations-panel" aria-label="Process console" data-dashboard-view-section="operations" data-cockpit-section="Process Console" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Process console</p>
+                            <p class="label">Runtime events</p>
                             <h2>Runtime events</h2>
                         </div>
                         <div class="info-hover">
@@ -1014,7 +1014,7 @@
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>What did Qadam last report about itself?</h3>
-                                <p>Static fallback shows the runtime event stream while the snapshot loads recent checks and bridge source state.</p>
+                                <p>Runtime events load here with recent checks and bridge state.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">Static events</span></dd></div>
@@ -1023,23 +1023,23 @@
                             </dl>
                         </section>
                         <ol class="console-feed" data-process-console>
-                            <li><time>D0</time><span>Static cockpit proof is loaded after Supabase allowlist access.</span></li>
-                            <li><time>D0</time><span>Status snapshot may enhance this page, but the browser cannot operate the local orchestrator.</span></li>
+                            <li><time>Load</time><span>Dashboard shell loaded after account access.</span></li>
+                            <li><time>Load</time><span>Status data may enhance this page, but the browser cannot operate the local orchestrator.</span></li>
                             <li><time>Gate</time><span>Live capital and broker writes remain blocked.</span></li>
                         </ol>
                     </div>
                 </article>
 
-                <article id="worldview" class="panel-card worldview-panel" aria-label="Private edge layer" data-dashboard-view-section="reasoning" data-cockpit-section="Private Edge" hidden>
+                <article id="worldview" class="panel-card worldview-panel" aria-label="Prior assumptions" data-dashboard-view-section="reasoning" data-cockpit-section="Private Edge" hidden>
                     <div class="panel-heading">
                         <div>
-                            <p class="label">Private edge layer</p>
-                            <h2>Prior index merged into Reasoning</h2>
+                            <p class="label">Prior assumptions</p>
+                            <h2>Prior context inside Reasoning</h2>
                         </div>
                         <div class="info-hover">
-                            <button class="info-button" type="button" aria-label="About Private Edge Layer">i</button>
+                            <button class="info-button" type="button" aria-label="About prior assumptions">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="private_edge_layer" data-tooltip-contract="compact">
-                                <strong>Private Edge Layer</strong>
+                                <strong>Prior Assumptions</strong>
                                 <p>Private priors inside Reasoning.</p>
                                 <dl class="explainer-grid compact">
                                     <div><dt>Shows</dt><dd>Worldview claims, channels, observables.</dd></div>
@@ -1052,14 +1052,14 @@
                     <div class="panel-scroll" data-worldview>
                         <section class="reasoning-merge-note">
                             <p class="label">Merged into Reasoning workspace</p>
-                            <h3>Private Edge is prior context, not a separate proof layer</h3>
+                            <h3>Prior assumptions are context, not proof</h3>
                             <p>The main Reasoning workspace now separates private priors from factual evidence, hypotheses, missing corroboration, Strategy Lead review, and Head of Quant annotation.</p>
                         </section>
                         <section class="panel-brief pending" data-panel-brief="private_edge_layer">
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>Which private priors are shaping the questions?</h3>
-                                <p>Static fallback shows the worldview boundary before claim cards and live checks load.</p>
+                                <p>Prior-assumption boundaries load before claim cards and live checks appear.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">Prior only</span></dd></div>
@@ -1071,7 +1071,7 @@
                             <div class="metric"><span>Authority</span><strong>Prior only</strong></div>
                             <div class="metric"><span>Evidence</span><strong>None</strong></div>
                         </div>
-                        <p class="empty-state">The private worldview layer can shape better questions. It cannot become evidence or trigger trades without live corroboration.</p>
+                        <p class="empty-state">Prior assumptions can shape better questions. They cannot become evidence or trigger trades without live corroboration.</p>
                     </div>
                 </article>
 
@@ -1079,7 +1079,7 @@
                     <div class="panel-heading">
                         <div>
                             <p class="label">Fund Manager comments</p>
-                            <h2>Improvement forum</h2>
+                            <h2>Governance feedback</h2>
                         </div>
                         <div class="info-hover">
                             <button class="info-button" type="button" aria-label="About Fund Manager comments">i</button>
@@ -1100,7 +1100,7 @@
                                 <div>
                                     <p class="label">Governance workspace</p>
                                     <h3>Comments, approvals, reviews, and outbound communications</h3>
-                                    <p>Static fallback groups Fund Manager comments, approval records, weekly review packs, live-promotion workflow state, and Telegram outbound state before the backend snapshot renders.</p>
+                                    <p>This area groups Fund Manager comments, approval records, weekly reviews, live-promotion workflow state, and Telegram notifications before backend status renders.</p>
                                 </div>
                                 <article class="governance-boundary-card">
                                     <span class="inline-badge online">comments governance-only</span>
@@ -1112,14 +1112,14 @@
                             </div>
                             <section class="governance-comment-targets">
                                 <div class="overview-section-head">
-                                    <span>Contextual comment entry points</span>
-                                    <strong>Comment without memorizing internal reference keys.</strong>
+                                    <span>Comment shortcuts</span>
+                                    <strong>Comment on a clear dashboard area.</strong>
                                 </div>
                                 <div class="governance-target-grid">
                                     <button type="button" class="governance-target-button" data-comment-target-button data-target-type="module" data-target-key="trade_layer">
                                         <span>Trades</span>
                                         <strong>Trade lifecycle board</strong>
-                                        <p>Comment on candidates, risk checks, blocks, paper states, or postmortems.</p>
+                                        <p>Comment on trade ideas, risk checks, blocks, paper trades, or postmortems.</p>
                                     </button>
                                     <button type="button" class="governance-target-button" data-comment-target-button data-target-type="source" data-target-key="source_health">
                                         <span>Sources</span>
@@ -1138,7 +1138,7 @@
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>What should the founding Fund Managers improve?</h3>
-                                <p>Static fallback keeps governance notes tied to modules, sources, signals, trades, strategies, and postmortems.</p>
+                                <p>Governance notes stay tied to modules, sources, signals, trades, strategies, and postmortems.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">No comments loaded</span></dd></div>
@@ -1154,7 +1154,7 @@
                                         <option value="module">Module</option>
                                         <option value="source">Source</option>
                                         <option value="signal">Signal</option>
-                                        <option value="trade_candidate">Trade candidate</option>
+                                        <option value="trade_candidate">Trade idea</option>
                                         <option value="postmortem">Postmortem</option>
                                         <option value="resource">Resource</option>
                                         <option value="strategy">Strategy</option>
@@ -1200,7 +1200,7 @@
                         <ul class="status-list comments-list" data-comments-list>
                             <li>
                                 <strong>No comments loaded</strong>
-                                <span>The local governance mirror or Supabase forum has not returned comments yet.</span>
+                                <span>The governance forum has not returned comments yet.</span>
                             </li>
                         </ul>
                     </div>
@@ -1210,7 +1210,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260526-advanced-debug-overview"></script>
+    <script src="/dashboard.js?v=20260526-language-cleanup"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

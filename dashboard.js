@@ -1,7 +1,7 @@
 const STATUS_SOURCES = [
     {
         key: "live_bridge",
-        label: "D9 read-only live bridge",
+        label: "read-only live status",
         url: "/api/cockpit-status",
         requiresAuth: true
     },
@@ -71,10 +71,10 @@ const OPERATIONS_ROLE_SPINE = [
     },
     {
         key: "coo",
-        label: "Python COO",
-        role: "Local orchestrator",
+        label: "Qadam Orchestrator",
+        role: "Local coordinator",
         node_keys: ["event_log", "live_bridge"],
-        summary: "Keeps the book, exports public-safe state, and makes the dashboard read-only.",
+        summary: "Records system events, exports sanitized state, and keeps the dashboard read-only.",
         authority: "Exporter only; no browser shell or broker route.",
         href: "#operations"
     },
@@ -83,7 +83,7 @@ const OPERATIONS_ROLE_SPINE = [
         label: "Local LLM Research Analyst",
         role: "Local research desk",
         node_keys: ["research_analyst", "shadow_intelligence"],
-        summary: "Compresses noisy observations into shadow-only research packets.",
+        summary: "Compresses noisy observations into research packets.",
         authority: "No execution authority.",
         href: "#reasoning"
     },
@@ -111,7 +111,7 @@ const OPERATIONS_ROLE_SPINE = [
         role: "Safety and sizing gates",
         node_keys: ["signal_integrity_gate", "approval_policy_router", "risk_agent", "kill_switch_ledger", "execution_policy", "execution_adapter_status", "staged_order_contract", "broker_reconciliation", "paper_submit_receipt", "prediction_market_adapter"],
         summary: "Blocks stale, weak, oversized, unauthorized, or write-capable paths before paper state.",
-        authority: "Fail closed.",
+        authority: "Blocked unless safe.",
         href: "#trades"
     },
     {
@@ -119,7 +119,7 @@ const OPERATIONS_ROLE_SPINE = [
         label: "Paper Lifecycle",
         role: "Paper execution mirror",
         node_keys: ["trade_layer", "paper_account", "position_monitor"],
-        summary: "Tracks observed signals, candidates, staged/submitted paper orders, positions, exits, and receipts.",
+        summary: "Tracks observed signals, trade ideas, paper orders, positions, exits, and receipts.",
         authority: "Paper/demo state only; live capital disabled.",
         href: "#trades"
     },
@@ -144,7 +144,7 @@ const CANONICAL_STATUS_LANGUAGE = {
     current: {
         label: "Current",
         tone: "online",
-        description: "Fresh enough to read as the current public-safe state.",
+        description: "Fresh enough to read as the current dashboard state.",
         tokens: ["online", "ok", "ready", "connected", "available", "active", "configured", "validated", "certified", "approved", "passed", "complete", "written"]
     },
     "read-only": {
@@ -690,7 +690,7 @@ const FLOW_NODE_DETAILS = {
         authority: "Observation only"
     },
     event_log: {
-        role: "COO memory",
+        role: "System memory",
         input: "Every material event",
         output: "Audit trail",
         authority: "Source of truth"
@@ -702,7 +702,7 @@ const FLOW_NODE_DETAILS = {
         authority: "No command route"
     },
     worldview: {
-        role: "Private edge",
+        role: "Prior assumptions",
         input: "World-model priors",
         output: "Sharper questions",
         authority: "Context only"
@@ -721,21 +721,21 @@ const FLOW_NODE_DETAILS = {
     },
     head_of_quant: {
         role: "Quant desk",
-        input: "Bounded scenarios",
-        output: "Oracle check",
+        input: "Bounded scenarios and Fire Opal/IBM readiness",
+        output: "Oracle check and hardware gate status",
         authority: "Non-executable"
     },
     shadow_intelligence: {
         role: "Research queue",
         input: "Model packets",
         output: "Hypotheses",
-        authority: "Shadow only"
+        authority: "Research only"
     },
     execution_registry: {
         role: "Risk desk",
         input: "Trade intents",
         output: "Blocks or gates",
-        authority: "Fail closed"
+        authority: "Blocked unless safe"
     },
     staged_order_contract: {
         role: "Paper gate",
@@ -750,9 +750,9 @@ const FLOW_NODE_DETAILS = {
         authority: "Read-only; no submit"
     },
     trade_layer: {
-        role: "Paper desk",
+        role: "Paper trading",
         input: "Approved intents",
-        output: "Paper states",
+        output: "Paper trade states",
         authority: "Live capital off"
     },
     telegram_bot: {
@@ -847,7 +847,7 @@ function dashboardModelEmptyState(key, count = 0, override = {}) {
         },
         normal_no_trade: {
             title: "No paper trade right now",
-            body: "There is no active paper trade in the current public-safe status.",
+            body: "There is no active paper trade in the current dashboard status.",
             tone: "neutral"
         },
         normal_no_position: {
@@ -877,7 +877,7 @@ function dashboardModelEmptyState(key, count = 0, override = {}) {
         },
         missing: {
             title: "Missing setup",
-            body: "The dashboard has no public-safe status for this panel yet. This does not create trading authority.",
+            body: "The dashboard has no status for this panel yet. This does not create trading authority.",
             tone: "neutral"
         }
     };
@@ -1067,23 +1067,23 @@ function buildSourcesModel(status = {}) {
         })),
         ...candidates.map((candidate) => ({
             kind: "candidate",
-            label: candidate.instrument || candidate.strategy || "Trade candidate",
-            stage: "Candidate",
+            label: candidate.instrument || candidate.strategy || "Trade idea",
+            stage: "Trade idea",
             source_ref: candidate.source_signal_id || candidate.source_type || "source signal not exported",
             status: candidate.status || "candidate",
             href: "#trade-layer",
-            summary: candidate.evidence_summary || candidate.catalyst || "Candidate evidence pending.",
-            proof_boundary: "Candidate needs corroboration, Strategy Lead review, and risk gates before paper state."
+            summary: candidate.evidence_summary || candidate.catalyst || "Trade-idea evidence pending.",
+            proof_boundary: "A trade idea needs corroboration, Strategy Lead review, and risk gates before paper trading."
         })),
         modelNumber(phase7.candidate_setup_count, 0) ? {
             kind: "qualified_setup_pool",
             label: "Phase 7 setup pool",
-            stage: modelNumber(phase7.eligible_setup_count, 0) ? "Eligible setup available" : "Candidate setup not eligible",
+            stage: modelNumber(phase7.eligible_setup_count, 0) ? "Potential setup available" : "Candidate setup not eligible",
             source_ref: "phase7_qualified_setup_ledger",
             status: phase7.proof_state || "ready_no_closed_trades",
             href: "#trades",
-            summary: `${modelNumber(phase7.candidate_setup_count, 0)} candidate setups and ${modelNumber(phase7.eligible_setup_count, 0)} paper-size eligible setups exported by backend status.`,
-            proof_boundary: "Setup visibility is not proof credit and cannot create an order."
+            summary: `${modelNumber(phase7.candidate_setup_count, 0)} candidate setups and ${modelNumber(phase7.eligible_setup_count, 0)} potential paper setups exported by backend status.`,
+            proof_boundary: "Setup visibility is not verified performance and cannot create an order."
         } : null
     ].filter(Boolean);
     const tone = missing || missingCredentialCount || degraded ? "degraded" : (watching.length ? "online" : "pending");
@@ -1103,14 +1103,14 @@ function buildSourcesModel(status = {}) {
                 "Factual evidence packet exported from the research queue."
             ),
             sources: itemSources.length ? itemSources.join(", ") : "sources not exported",
-            boundary: "Factual evidence can support review, but cannot create candidates, orders, broker writes, or proof credit."
+            boundary: "Factual evidence can support review, but cannot create trade ideas, orders, broker writes, or performance credit."
         };
     });
     const reviewGroups = [
         {
             id: "setup_evidence",
             label: "Setup evidence",
-            summary: "Observed signals, candidates, and setup-pool records tied back to source refs.",
+            summary: "Observed signals, trade ideas, and setup-pool records tied back to source refs.",
             record_count: sourceSetupLinks.length,
             tone: sourceSetupLinks.length ? "pending" : "online"
         },
@@ -1156,7 +1156,7 @@ function buildSourcesModel(status = {}) {
             evidence_packets: evidencePacketCards.length
         },
         reliability: [
-            { key: "online", label: "Online", count: online, tone: online ? "online" : "pending", detail: "Sources reporting online in the public-safe snapshot." },
+            { key: "online", label: "Online", count: online, tone: online ? "online" : "pending", detail: "Sources reporting online in the dashboard status." },
             { key: "degraded", label: "Degraded", count: degraded, tone: degraded ? "degraded" : "online", detail: "Sources reporting degraded runtime state." },
             { key: "missing_credential", label: "Missing credential", count: missingCredentialSources.length, tone: missingCredentialSources.length ? "degraded" : "online", detail: "Credential-required sources without configured credentials." },
             { key: "stale_heartbeat", label: "Stale heartbeat", count: staleHeartbeatSources.length, tone: staleHeartbeatSources.length ? "degraded" : "online", detail: "Sources missing heartbeat freshness in this snapshot." },
@@ -1175,10 +1175,10 @@ function buildSourcesModel(status = {}) {
         evidence_review_groups: reviewGroups,
         source_setup_links: sourceSetupLinks,
         source_to_setup_summary: sourceSetupLinks.length
-            ? `${sourceSetupLinks.length} source-linked observed/candidate/setup records need corroboration review.`
-            : "No active source-linked setup or candidate records are exported.",
+            ? `${sourceSetupLinks.length} source-linked observed/trade-idea/setup records need corroboration review.`
+            : "No active source-linked setup or trade-idea records are exported.",
         empty_state: watching.length ? null : dashboardModelEmptyState("missing"),
-        boundary: "Sources create observations only. Supplemental sources cannot be sole proof and no source can create trade candidates, orders, broker writes, or live-capital authority."
+        boundary: "Sources create observations only. Supplemental sources cannot be sole proof and no source can create trade ideas, orders, broker writes, or live-capital authority."
     };
 }
 
@@ -1201,7 +1201,7 @@ function tradeLifecycleRecord(kind, item = {}, index = 0, options = {}) {
     const stageLabels = {
         observed_signal: "Observed signal",
         qualified_setup: "Qualified setup",
-        candidate: "Candidate",
+        candidate: "Trade idea",
         blocked: "Blocked idea",
         draft_paper_order: "Draft paper order",
         submitted_paper_order: "Submitted paper order",
@@ -1251,7 +1251,7 @@ function tradeLifecycleRecord(kind, item = {}, index = 0, options = {}) {
         risk_decision: firstPresent(item.risk_state, item.blocked_reason, item.status, options.risk_decision, "not reviewed"),
         broker_receipt_status: options.broker_receipt_status || "not present",
         references: options.references || [],
-        boundary: firstPresent(item.boundary, options.boundary, "Lifecycle display is read-only. Candidate is not an order.")
+        boundary: firstPresent(item.boundary, options.boundary, "Lifecycle display is read-only. A trade idea is not an order.")
     };
 }
 
@@ -1266,7 +1266,7 @@ function tradeLifecycleCountRecord(kind, count, options = {}) {
         ...options,
         summary: `${count} ${options.summary_label || options.title || "records"} reported by backend status.`,
         proof_scope: options.proof_scope || "phase7_demo_proof",
-        proof_scope_label: options.proof_scope_label || "Phase 7 proof candidate"
+        proof_scope_label: options.proof_scope_label || "Verified paper-trading setup"
     });
 }
 
@@ -1292,7 +1292,7 @@ function buildTradesModel(status = {}, sharedModels = {}) {
     const lifecycle = [
         { key: "observed_signal", label: "Observed signals", count: observed.length, tone: observed.length ? "online" : "pending" },
         { key: "qualified_setup", label: "Qualified setups", count: modelNumber(phase7.eligible_setup_count, 0), tone: modelNumber(phase7.eligible_setup_count, 0) ? "online" : "pending" },
-        { key: "candidate", label: "Candidates", count: candidates.length, tone: candidates.length ? "pending" : "online" },
+        { key: "candidate", label: "Trade ideas", count: candidates.length, tone: candidates.length ? "pending" : "online" },
         { key: "blocked", label: "Blocked ideas", count: blocked.length, tone: blocked.length ? "blocked" : "online" },
         { key: "draft_paper_order", label: "Draft paper orders", count: staged.length, tone: staged.length ? "pending" : "online" },
         { key: "submitted_paper_order", label: "Submitted paper orders", count: submittedLifecycle.length, tone: submittedLifecycle.length ? "online" : "pending" },
@@ -1324,14 +1324,14 @@ function buildTradesModel(status = {}, sharedModels = {}) {
             references: baseReferences
         })),
         tradeLifecycleCountRecord("qualified_setup", modelNumber(phase7.candidate_setup_count, 0), {
-            title: "Phase 7 candidate setup pool",
+            title: "Paper-trading setup pool",
             status: phase7.eligible_setup_count ? "eligible_setup_available" : "candidate_setup_not_eligible",
             tone: phase7.eligible_setup_count ? "online" : "pending",
             summary_label: "candidate setups",
             risk_decision: "awaiting proof eligibility",
             source_quorum_status: sourceQuorumStatus,
             references: baseReferences,
-            boundary: "Phase 7 candidate setup count is not proof credit and cannot create an order."
+            boundary: "Candidate setup count is not verified performance and cannot create an order."
         }),
         ...candidates.map((item, index) => tradeLifecycleRecord("candidate", item, index, {
             source_quorum_status: sourceQuorumStatus,
@@ -1372,9 +1372,9 @@ function buildTradesModel(status = {}, sharedModels = {}) {
     return {
         id: "trades",
         label: "Trades",
-        question: "What happened to setups, candidates, orders, positions, exits, and postmortems?",
+        question: "What happened to setups, trade ideas, orders, positions, exits, and postmortems?",
         tone: blocked.length || postmortemsDue.length ? "blocked" : (candidates.length || submitted.length || closedTrades.length ? "pending" : "online"),
-        summary: `${observed.length} observed signals, ${candidates.length} candidates, ${submittedLifecycle.length} submitted paper orders, ${openPositions.length} open positions, ${closedTrades.length} closed paper trades.`,
+        summary: `${observed.length} observed signals, ${candidates.length} trade ideas, ${submittedLifecycle.length} submitted paper orders, ${openPositions.length} open positions, ${closedTrades.length} closed paper trades.`,
         counts: {
             observed_signal: observed.length,
             qualified_setup: modelNumber(phase7.eligible_setup_count, 0),
@@ -1406,7 +1406,7 @@ function buildTradesModel(status = {}, sharedModels = {}) {
                 counts_for_phase7_proof: false
             },
             phase7_demo_proof: {
-                label: "Phase 7 proof trades",
+                label: "Verified paper trades",
                 record_count: lifecycleRecords.filter((record) => record.proof_scope === "phase7_demo_proof").length,
                 qualified_setup_count: modelNumber(phase7.qualified_setup_count, 0),
                 eligible_setup_count: modelNumber(phase7.eligible_setup_count, 0),
@@ -1427,8 +1427,8 @@ function buildTradesModel(status = {}, sharedModels = {}) {
         consolidated_review_groups: [
             {
                 id: "proof_lifecycle",
-                label: "Proof and paper lifecycle",
-                summary: "Paper drill, Phase 5 certification, Phase 6 handoff and learning state, Phase 6 certification, and Phase 7 proof visibility."
+                label: "Paper trade lifecycle",
+                summary: "Paper drill, certification state, learning handoff, and verified performance visibility."
             },
             {
                 id: "gate_chain",
@@ -1437,8 +1437,8 @@ function buildTradesModel(status = {}, sharedModels = {}) {
             },
             {
                 id: "signal_records",
-                label: "Signals, candidates, and paper states",
-                summary: "TradingView observations, candidate records, blocked ideas, and explicit paper lifecycle states."
+                label: "Signals, trade ideas, and paper trades",
+                summary: "TradingView observations, trade-idea records, blocked ideas, and explicit paper lifecycle states."
             }
         ],
         proof_credit: {
@@ -1454,7 +1454,7 @@ function buildTradesModel(status = {}, sharedModels = {}) {
         empty_state: observed.length || candidates.length || submittedLifecycle.length || openPositions.length || closedTrades.length
             ? null
             : dashboardModelEmptyState("normal_no_trade"),
-        boundary: tradeLayer.boundary || "Candidate is not an order. Live capital stays disabled; only explicit paper state counts."
+        boundary: tradeLayer.boundary || "A trade idea is not an order. Live capital stays disabled; only explicit paper trade state counts."
     };
 }
 
@@ -1476,6 +1476,7 @@ function buildReasoningModel(status = {}) {
     const latestStrategyReview = latestStrategyPacket.strategy_review || {};
     const latestSignalReview = signalReviews[signalReviews.length - 1] || {};
     const quantumRouting = quantum.latest_output_routing || {};
+    const fireOpalIbm = status.qctrl_fire_opal_ibm_readiness || quantum.fire_opal_ibm_readiness || {};
     const evidenceBySignal = evidencePackets.reduce((acc, packet) => {
         if (packet.signal_id) acc[packet.signal_id] = packet;
         return acc;
@@ -1526,7 +1527,7 @@ function buildReasoningModel(status = {}) {
             is_trade_candidate: false,
             paper_order_allowed: false,
             order_authority: false,
-            boundary: "Hypothesis, not candidate. It cannot stage orders, write brokers, or enable live capital."
+            boundary: "Hypothesis, not trade idea. It cannot stage orders, write brokers, or enable live capital."
         };
     });
     const evidenceIndex = evidencePackets.slice(0, 5).map((packet) => ({
@@ -1546,7 +1547,7 @@ function buildReasoningModel(status = {}) {
             trust_score: item.trust_score,
             evidence_role: "factual_evidence_item"
         })),
-        boundary: "Evidence packet only. It can support review but cannot create a candidate or order."
+        boundary: "Evidence packet only. It can support review but cannot create a trade idea or order."
     }));
     const missingCorroboration = compactUnique([
         ...hypotheses.flatMap((hypothesis) => asArray(hypothesis.missing_correlations)),
@@ -1604,10 +1605,13 @@ function buildReasoningModel(status = {}) {
             key: "head_of_quant",
             label: "Head of Quant annotation",
             role: "Quantum/classical oracle",
-            status: dashboardText(quantum.latest_output_routing_status || quantum.status, "not_exported"),
-            summary: dashboardText(quantumRouting.boundary || quantum.boundary, "No oracle annotation exported."),
+            status: dashboardText(fireOpalIbm.status || quantum.latest_output_routing_status || quantum.status, "not_exported"),
+            summary: dashboardText(fireOpalIbm.boundary || quantumRouting.boundary || quantum.boundary, "No oracle annotation exported."),
             focus: dashboardText(quantum.latest_recommendation || quantumRouting.recommendation, "hold"),
-            missing_corroboration: asArray(Object.entries(quantum.latest_validation_checks || {}).map(([key, value]) => `${key}: ${value}`)).slice(0, 6),
+            missing_corroboration: compactUnique([
+                fireOpalIbm.blocker && fireOpalIbm.blocker !== "none" ? `Fire Opal IBM: ${fireOpalIbm.blocker}` : null,
+                ...Object.entries(quantum.latest_validation_checks || {}).map(([key, value]) => `${key}: ${value}`)
+            ], 6),
             can_advance_trade: false,
             boundary: "Head of Quant output is a shadow annotation only."
         }
@@ -1619,11 +1623,17 @@ function buildReasoningModel(status = {}) {
         route_type: dashboardText(quantum.latest_output_route_type || quantumRouting.route_type, "shadow annotation"),
         annotation_target: dashboardText(quantum.latest_output_annotation_target || quantumRouting.annotation_target, "reviewed shadow context"),
         hardware_submitted_count: modelNumber(quantum.hardware_submitted_count, 0),
+        fire_opal_ibm_status: dashboardText(fireOpalIbm.status, "not exported"),
+        fire_opal_ibm_blocker: dashboardText(fireOpalIbm.blocker, "not exported"),
+        fire_opal_access_verified: Boolean(fireOpalIbm.fire_opal_product_access_verified),
+        qiskit_runtime_ready: Boolean(fireOpalIbm.qiskit_ibm_runtime_importable && fireOpalIbm.qiskit_importable),
+        ibm_credentials_configured: Boolean(fireOpalIbm.ibm_quantum_token_configured && fireOpalIbm.ibm_quantum_instance_configured),
+        hardware_submission_allowed: Boolean(fireOpalIbm.hardware_submission_allowed),
         trade_candidate_created_count: modelNumber(quantum.trade_candidate_created_count || quantumRouting.trade_candidate_created_count, 0),
         paper_order_allowed: Boolean(quantumRouting.paper_order_allowed),
         execution_allowed: Boolean(quantumRouting.execution_allowed),
         boundary: dashboardText(
-            quantumRouting.boundary || quantum.boundary,
+            fireOpalIbm.boundary || quantumRouting.boundary || quantum.boundary,
             "Head of Quant output is a shadow annotation only."
         )
     };
@@ -1649,8 +1659,8 @@ function buildReasoningModel(status = {}) {
             label: "Hypothesis queue",
             status: hypotheses.length ? "pending" : "neutral",
             summary: `${hypotheses.length} hypotheses remain before candidate state.`,
-            watch: "Hypothesis, not candidate",
-            boundary: "Hypotheses cannot be mistaken for trade candidates or orders."
+            watch: "Hypothesis, not trade idea",
+            boundary: "Hypotheses cannot be mistaken for trade ideas or orders."
         },
         {
             key: "missing_corroboration",
@@ -1751,10 +1761,10 @@ function buildReasoningModel(status = {}) {
         },
         empty_state: hypotheses.length ? null : dashboardModelEmptyState("missing", 0, {
             title: "No hypotheses visible",
-            body: "Qadam has no public-safe hypotheses in this status snapshot yet.",
+            body: "Qadam has no hypotheses in this status snapshot yet.",
             tone: "neutral"
         }),
-        boundary: `${cognition.boundary || "Reasoning is research-only until backend gates say otherwise."} Priors are not evidence, hypotheses are not candidates, and model output cannot create orders.`
+        boundary: `${cognition.boundary || "Reasoning is research-only until backend gates say otherwise."} Priors are not evidence, hypotheses are not trade ideas, and model output cannot create orders.`
     };
 }
 
@@ -1802,7 +1812,7 @@ function buildPerformanceModel(status = {}) {
         label: "Performance",
         question: "Is the paper/demo-proof account proving anything?",
         tone,
-        summary: `${completedDays}/${requiredDays} demo days, week ${currentWeek}/${proofWeeks}, ${closedProof}/${proofTarget} closed proof trades, ${formatMoney(totalPnl)} paper P&L, drawdown ${drawdownWithinCap ? "within cap" : "breached"}.`,
+        summary: `${completedDays}/${requiredDays} demo days, week ${currentWeek}/${proofWeeks}, ${closedProof}/${proofTarget} verified paper trades, ${formatMoney(totalPnl)} paper P&L, drawdown ${drawdownWithinCap ? "within cap" : "breached"}.`,
         paper_account: {
             starting_balance_gbp: modelNumber(capital.starting_balance_gbp, 0),
             current_balance_gbp: modelNumber(capital.current_balance_gbp, 0),
@@ -1904,7 +1914,7 @@ function buildPerformanceModel(status = {}) {
             blockers: asArray(phase7.blockers)
         },
         empty_state: asArray(capital.closed_trades).length ? null : dashboardModelEmptyState("normal_no_trade"),
-        boundary: `${capital.boundary || "Read-only paper account mirror. No funding authority and no live broker-write authority."} Phase 7 proof progress is backend-derived; no forced trades, proof-credit inference, broker writes, or live-capital authority can come from this view.`
+        boundary: `${capital.boundary || "Read-only paper account mirror. No funding authority and no live broker-write authority."} Paper-trading performance is backend-derived; this view cannot force trades, infer performance credit, write brokers, or enable live capital.`
     };
 }
 
@@ -1938,7 +1948,7 @@ function buildOperationsFeedClusters(status = {}, sourcePosture = {}) {
             pending_count: modelNumber(pipeline.pending_count, 0),
             missing_credential_count: modelNumber(pipeline.missing_credential_count, 0),
             adapter_ready_count: modelNumber(pipeline.adapter_ready_count, 0),
-            provenance: "source registry and public-safe cockpit snapshot",
+            provenance: "source registry and sanitized dashboard status",
             sources: sources
                 .slice()
                 .sort((a, b) => String(a.source_name || a.source_key).localeCompare(String(b.source_name || b.source_key)))
@@ -2171,7 +2181,7 @@ function buildSystemConnectivityModel(status = {}) {
             role_keys: OPERATIONS_ROLE_SPINE.map((role) => role.key),
             edge_states: ["active", "shadow/context-only", "degraded", "locked", "blocked"]
         },
-        boundary: backendMap.boundary || "The system map is read-only and public-safe."
+        boundary: backendMap.boundary || "The system map is read-only and sanitized for the dashboard."
     };
 }
 
@@ -2468,7 +2478,7 @@ function buildGovernanceApprovalRecords(status = {}) {
         governanceRecord(
             "Weekly review pack",
             phase7.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "not ready",
-            `${phase7.weekly_proof_trade_target || 3} proof trades per week where qualified setups exist; ${phase7.closed_proof_trade_count || 0}/${phase7.mature_benchmark || 100} closed proof trades.`,
+            `${phase7.weekly_proof_trade_target || 3} verified paper trades per week where qualified setups exist; ${phase7.closed_proof_trade_count || 0}/${phase7.mature_benchmark || 100} verified paper trades.`,
             phase7.q7_16_weekly_review_pack_stage_allowed ? "online" : "pending",
             {
                 event_log_written: phase7.event_log_written,
@@ -2549,7 +2559,7 @@ function buildGovernanceOpenActions(status = {}) {
     }
     return actions.length ? actions : [{
         label: "No open governance actions exported",
-        detail: "The public-safe snapshot does not expose any governance action that requires attention.",
+        detail: "The dashboard status does not expose any governance action that requires attention.",
         tone: "online",
         href: "#operations"
     }];
@@ -2620,7 +2630,7 @@ function buildGovernanceModel(status = {}) {
         open_actions: openActions,
         empty_state: comments.length ? null : dashboardModelEmptyState("missing", 0, {
             title: "No governance comments loaded",
-            body: "No public-safe governance comments are loaded for this dashboard snapshot yet.",
+            body: "No governance comments are loaded for this dashboard status yet.",
             tone: "neutral"
         }),
         boundary: notes.boundary || status.communications?.boundary || "Governance notes only. No trade approval, order placement, or local secret access."
@@ -2672,16 +2682,16 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         {
             id: "trade_path",
             label: "Trade path",
-            state: `${trades.counts.candidate} candidates`,
+            state: `${trades.counts.candidate} trade ideas`,
             tone: trades.tone,
-            summary: `${trades.counts.qualified_setup} eligible setups; ${trades.counts.submitted_paper_order} submitted paper orders; ${trades.counts.postmortem_due} postmortems due.`
+            summary: `${trades.counts.qualified_setup} potential setups; ${trades.counts.submitted_paper_order} submitted paper orders; ${trades.counts.postmortem_due} postmortems due.`
         },
         {
             id: "proof_run",
             label: "Proof run",
             state: `${demoProof.completed_calendar_day_count}/${demoProof.required_calendar_day_count} days`,
             tone: performance.tone,
-            summary: `Week ${demoProof.current_proof_week_number}/${demoProof.proof_week_count}; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} closed proof trades; ${formatMoney(paperPnl)} paper P&L.`
+            summary: `Week ${demoProof.current_proof_week_number}/${demoProof.proof_week_count}; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} verified paper trades; ${formatMoney(paperPnl)} paper P&L.`
         },
         {
             id: "review_focus",
@@ -2706,13 +2716,13 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         },
         {
             id: "eligible_setups",
-            label: "Eligible setups",
+            label: "Potential setups",
             value: `${demoProof.eligible_setup_count}`,
             tone: demoProof.eligible_setup_count ? "online" : "pending"
         },
         {
             id: "candidates",
-            label: "Candidates",
+            label: "Trade ideas",
             value: `${trades.counts.candidate}`,
             tone: trades.counts.candidate ? "pending" : "online"
         },
@@ -2736,7 +2746,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             label: "Review trades",
             reason: trades.counts.postmortem_due
                 ? "A postmortem is due."
-                : `${trades.counts.qualified_setup} eligible setups and ${trades.counts.candidate} candidates.`
+                : `${trades.counts.qualified_setup} potential setups and ${trades.counts.candidate} trade ideas.`
         },
         {
             view_id: "evidence",
@@ -2775,8 +2785,8 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             value: operations.runtime?.live_bridge_read_only === false ? "Review bridge" : "Read-only bridge",
             tone: operations.runtime?.live_bridge_read_only === false ? "blocked" : "online",
             summary: source?.key === "live_bridge"
-                ? "Protected status endpoint is serving the cockpit."
-                : "Static public-safe snapshot is serving the cockpit."
+                ? "Protected status endpoint is serving the dashboard."
+                : "Sanitized status snapshot is serving the dashboard."
         },
         {
             id: "sources",
@@ -2788,7 +2798,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         {
             id: "trades",
             label: "Trade desk",
-            value: `${trades.counts.candidate} candidates`,
+            value: `${trades.counts.candidate} trade ideas`,
             tone: trades.counts.postmortem_due ? "blocked" : (trades.counts.candidate ? "pending" : "online"),
             summary: `${trades.counts.observed_signal} observed signals, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.open_position} open positions.`
         }
@@ -2921,7 +2931,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         label: "Overview",
         question: "What is happening now?",
         tone: readouts.some((item) => item.tone === "blocked") ? "blocked" : (readouts.some((item) => item.tone === "degraded") ? "degraded" : "online"),
-        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} eligible setups; ${trades.counts.candidate} candidates; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} closed proof trades; next review: ${actionNeeded[0]}.`,
+        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} potential setups; ${trades.counts.candidate} trade ideas; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} verified paper trades; next review: ${actionNeeded[0]}.`,
         cards: readouts,
         readouts,
         status_chips: statusChips,
@@ -2939,7 +2949,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         trade_considerations: tradeConsiderations,
         paper_capacity: paperCapacity,
         lifecycle: trades.lifecycle,
-        lifecycle_summary: `${trades.counts.qualified_setup} eligible setups, ${trades.counts.candidate} candidates, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.closed_paper_trade} closed paper trades.`,
+        lifecycle_summary: `${trades.counts.qualified_setup} potential setups, ${trades.counts.candidate} trade ideas, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.closed_paper_trade} closed paper trades.`,
         action_needed: actionNeeded,
         next_review_links: nextReviewLinks,
         mini_map: {
@@ -2948,8 +2958,8 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             node_keys: operations.system_connectivity_model.overview_scope.node_keys,
             health: operations.system_connectivity_model.authority_violations.length ? "blocked" : "online"
         },
-        system_summary: "Live feeds -> Python COO -> model research -> quant/risk gates -> paper lifecycle -> learning loop.",
-        scope_note: "Use the single safety strip for authority state. Overview only answers what changed and which deeper view to open next.",
+        system_summary: "Live data -> Qadam Orchestrator -> model research -> quant/risk checks -> paper trading -> learning loop.",
+        scope_note: "Use Safety Status for order authority. Overview only answers what changed and where to review next.",
         model_dependencies: {
             sources_model: sources.id || "sources",
             trades_model: trades.id || "trades",
@@ -2958,7 +2968,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             operations_model: operations.id || "operations",
             system_connectivity_model: operations.system_connectivity_model?.id || "system_connectivity_model"
         },
-        boundary: "Overview is a read-only triage surface. It cannot approve, place, modify, close, fund, or grant proof credit for trades."
+        boundary: "Overview is a read-only triage surface. It cannot approve, place, modify, close, fund, or verify performance credit for trades."
     };
 }
 
@@ -2979,20 +2989,20 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         id: "dashboard_safety_strip",
         tone,
         headline: tone === "blocked"
-            ? "Review authority before reading the dashboard"
+            ? "Review safety before reading the dashboard"
             : "Paper only, read-only, live capital off",
-        summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off; no UI/LLM order path.`,
+        summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off; dashboard and AI cannot bypass risk checks.`,
         mode_label: modeLabel,
         capital_label: `${formatMoney(paperBalance)} paper account`,
         live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "Live capital off",
         read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "Read-only",
-        ui_broker_label: "No UI-to-broker path",
-        llm_broker_label: "No LLM-to-broker path",
-        proof_label: "No proof-credit inference",
+        ui_broker_label: "Dashboard cannot place orders",
+        llm_broker_label: "AI cannot bypass risk checks",
+        proof_label: "Performance proof requires verified records",
         live_capital_enabled: liveCapitalEnabled,
         write_authority: writeAuthority,
         authority_flag_count: authorityFlags.length,
-        boundary: "Single display strip only. It cannot approve, place, modify, resize, close, fund, or grant proof credit for trades."
+        boundary: "Single display strip only. It cannot approve, place, modify, resize, close, fund, or verify performance credit for trades."
     };
 }
 
@@ -3056,7 +3066,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         generated_at: status.generated_at || null,
         status_source: source?.key || "unknown",
         public_safe: true,
-        authority_boundary: "View models are read-only projections of the public-safe cockpit status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
+        authority_boundary: "View models are read-only projections of sanitized dashboard status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
         model_graph: modelGraph,
         safety_strip_model: safetyStrip,
         overview_model: overview,
@@ -3362,7 +3372,7 @@ function renderSourcesWorkspace(model) {
                     <div class="evidence-packet-mini-grid">
                         ${asArray(model.evidence_packets).length
         ? asArray(model.evidence_packets).map(renderEvidencePacketMiniCard).join("")
-        : `<article class="evidence-packet-mini-card pending"><h3>No factual evidence packets</h3><p>No public-safe evidence packets are exported in this snapshot.</p></article>`}
+        : `<article class="evidence-packet-mini-card pending"><h3>No factual evidence packets</h3><p>No evidence packets are exported in this snapshot.</p></article>`}
                     </div>
                 `)}
             </div>
@@ -3595,14 +3605,14 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                 </div>
                 <div class="tag-row">
                     ${renderInlineBadge("Read-only bridge", runtime.live_bridge_read_only === false ? "blocked" : "online")}
-                    ${renderInlineBadge("Static fallback safe", runtime.public_safe ? "online" : "blocked")}
+                    ${renderInlineBadge("Sanitized status available", runtime.public_safe ? "online" : "blocked")}
                     ${renderInlineBadge("No browser shell", "online")}
                     ${renderInlineBadge(communications.command_path_enabled ? "Telegram command path enabled" : "No Telegram command path", communications.command_path_enabled ? "blocked" : "online")}
                     ${renderInlineBadge(safety.live_capital_enabled ? "Live capital enabled" : "Live capital disabled", safety.live_capital_enabled ? "blocked" : "online")}
                 </div>
             </section>
 
-            <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in the single safety strip above. Operations below show the evidence behind that state.</p>
+            <p class="operations-safety-reference" data-operations-safety-reference>Dashboard authority is summarized once in Safety Status above. Operations below show the evidence behind that state.</p>
 
             <div class="operations-review-groups" data-operations-review-groups>
                 ${renderOperationsReviewGroup(groupById.get("runtime_safety"), `
@@ -3656,7 +3666,7 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                     <section class="operations-role-spine" aria-label="Operations role spine">
                         <div class="overview-section-head">
                             <span>First-class operating roles</span>
-                            <strong>Fund Manager, live data feeds, COO, analysts, quant, gates, paper lifecycle, and learning loop.</strong>
+                            <strong>Human oversight, live data feeds, orchestrator, analysts, quant, risk gates, paper trading, and learning loop.</strong>
                         </div>
                         <div class="operations-role-grid">
                             ${asArray(model.role_spine).map(renderOperationsRoleNode).join("")}
@@ -3674,11 +3684,11 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                 `)}
 
                 ${renderOperationsReviewGroup(groupById.get("system_map_event_trail"), `
-                    <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable System Operating Map">
+                    <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable system map">
                         <div class="operations-full-map-head">
                             <div>
                                 <p class="label">Q5-13 Functional System Map Dashboard</p>
-                                <h3>Full expandable System Operating Map</h3>
+                                <h3>Full system map</h3>
                                 <p>${htmlText(connectivity.boundary)} Advanced phase labels and raw operational terms are intentionally kept in Operations.</p>
                             </div>
                             <div class="summary-strip compact">
@@ -3773,9 +3783,9 @@ function renderFundModel(status, source) {
             metric: `${status.mode || "paper"} mode · ${sourceMode}`
         },
         {
-            kicker: "COO",
-            title: "Python keeps the book",
-            body: "The orchestrator converts source, model, and trade events into public-safe state. If it is not logged, it does not count.",
+            kicker: "Orchestrator",
+            title: "Python records the system",
+            body: "The orchestrator converts source, model, and trade events into sanitized dashboard state. If it is not logged, it does not count.",
             metric: `${asArray(status.process_console).length} recent events`
         },
         {
@@ -3791,10 +3801,10 @@ function renderFundModel(status, source) {
             metric: `${asArray(tradeLayer.blocked).length} blocked · live capital ${capital.live_capital_enabled ? "enabled" : "off"}`
         },
         {
-            kicker: "Paper desk",
-            title: "Ideas become paper states only",
-            body: "Observed signals and candidates are not orders. The paper account shows paper lifecycle states; Phase 7 proof trades are tracked separately.",
-            metric: `${asArray(tradeLayer.candidates).length} candidates · ${communications.status || "comms pending"} comms`
+            kicker: "Paper trading",
+            title: "Ideas become paper trades only",
+            body: "Observed signals and trade ideas are not orders. The paper account shows paper lifecycle states; verified paper trades are tracked separately.",
+            metric: `${asArray(tradeLayer.candidates).length} trade ideas · ${communications.status || "comms pending"} comms`
         }
     ];
     target.innerHTML = cards.map((card) => `
@@ -3848,7 +3858,7 @@ function renderFlowMap(status, source, viewModels) {
                     ${renderInlineBadge(`paper submit path ${guardrails.paper_submit_path_available_count || 0}`, guardrails.paper_submit_path_available_count ? "online" : "blocked")}
                     ${renderInlineBadge(guardrails.dashboard_claims_trading_now ? "dashboard says trading" : "dashboard does not say trading", guardrails.dashboard_claims_trading_now ? "blocked" : "online")}
                 </div>
-                <p class="mini">${htmlText(backendMap.boundary, "The system map is read-only and public-safe.")}</p>
+                <p class="mini">${htmlText(backendMap.boundary, "The system map is read-only and sanitized for the dashboard.")}</p>
             </section>
             <div class="system-flow-diagram">
                 ${lanes.map(systemMapLane).join("")}
@@ -3882,7 +3892,7 @@ function renderFlowMap(status, source, viewModels) {
             label: "Watched Sources",
             owner: "Source Registry",
             status: watching.length ? "online" : "pending",
-            current_process: `${watching.length} sources in the public-safe snapshot`,
+            current_process: `${watching.length} sources in the dashboard status`,
             authority: "read_only",
             handoff: "observed facts"
         },
@@ -3890,7 +3900,7 @@ function renderFlowMap(status, source, viewModels) {
             ...(findModule(status, "event_log") || {
                 key: "event_log",
                 label: "Event Log",
-                owner: "COO memory",
+                owner: "System memory",
                 status: "local_only",
                 current_process: "Local append-only runtime state",
                 authority: "source_of_truth"
@@ -3904,7 +3914,7 @@ function renderFlowMap(status, source, viewModels) {
             status: liveBridge.status === "read_only_ready" ? "online" : (liveBridge.status || "pending"),
             current_process: `${asArray(liveBridge.allowed_methods).join("/")} status only · fallback ${liveBridge.static_fallback || "static snapshot"}`,
             authority: liveBridge.browser_authority || "read_only",
-            handoff: "public-safe dashboard state"
+            handoff: "sanitized dashboard state"
         },
         {
             key: "worldview",
@@ -4100,8 +4110,8 @@ function renderFlowMap(status, source, viewModels) {
             ["watching"]
         ),
         makeLane(
-            "COO Memory",
-            "The orchestrator records state and exposes only a safe cockpit mirror.",
+            "System Memory",
+            "The orchestrator records state and exposes only a safe dashboard mirror.",
             "Logged state becomes dashboard state and research input.",
             "online",
             ["event_log", "live_bridge"]
@@ -4122,7 +4132,7 @@ function renderFlowMap(status, source, viewModels) {
         ),
         makeLane(
             "Paper Trial",
-            "Candidates become paper states only after gates; outcomes return to learning.",
+            "Trade ideas become paper trades only after gates; outcomes return to learning.",
             "Closed paper outcomes and lessons return to memory.",
             "online",
             ["trade_layer", "paper_account", "postmortem_loop"]
@@ -4156,8 +4166,8 @@ function renderSnapshotMeta(status, source) {
     const generatedAt = formatTime(status.generated_at);
     const sourceLabel = source?.label || "static snapshot";
     const bridgeSourceLabel = source?.key === "live_bridge"
-        ? "D9 live bridge connected"
-        : "D9 static fallback loaded";
+        ? "Live status connected"
+        : "Sanitized status loaded";
     const paperBalance = capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
     setText("[data-mode-label]", `${dashboardText(status.mode).toUpperCase()} MODE`);
     setText("[data-capital-label]", `${formatMoney(paperBalance)} paper account`);
@@ -4172,8 +4182,8 @@ function renderSnapshotMeta(status, source) {
         banner.classList.remove("snapshot-error");
         banner.innerHTML = `
             <span>${status.d0_shell?.status === "frozen" ? "D0 shell frozen" : "D0 shell unknown"}</span>
-            <span>${d1Snapshot.public_safe ? "D1 public-safe snapshot loaded" : "D1 snapshot metadata missing"}</span>
-            <span>${liveBridge.status === "read_only_ready" ? bridgeSourceLabel : "D9 bridge contract pending"}</span>
+            <span>${d1Snapshot.public_safe ? "Dashboard status loaded" : "Dashboard metadata missing"}</span>
+            <span>${liveBridge.status === "read_only_ready" ? bridgeSourceLabel : "Live status pending"}</span>
             <span>${status.boundary || "Read-only dashboard snapshot."}</span>
         `;
     }
@@ -4190,7 +4200,7 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
     target.classList.add(statusClass(strip.tone));
     target.innerHTML = `
         <div class="dashboard-safety-strip-main">
-            <p class="label">Single safety strip</p>
+            <p class="label">Safety status</p>
             <h2>${htmlText(strip.headline)}</h2>
             <p>${htmlText(strip.summary)}</p>
         </div>
@@ -4204,14 +4214,14 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
             ${renderInlineBadge(strip.proof_label, "online")}
         </div>
         <div class="info-hover safety-strip-info">
-            <button class="info-button" type="button" aria-label="About the single safety strip">i</button>
+            <button class="info-button" type="button" aria-label="About Safety Status">i</button>
             <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety" data-tooltip-contract="compact">
-                <strong>Single Safety Strip</strong>
-                <p>One place for mode, capital, and authority state.</p>
+                <strong>Safety Status</strong>
+                <p>One place for paper mode, capital, and order safety.</p>
                 <dl class="explainer-grid compact">
                     <div><dt>Shows</dt><dd>${htmlText(strip.mode_label)} · ${htmlText(strip.live_capital_label)}</dd></div>
                     <div><dt>Watch</dt><dd>${htmlText(strip.authority_flag_count)} active authority flags.</dd></div>
-                    <div><dt>Limits</dt><dd>Status only; no approval or order path.</dd></div>
+                    <div><dt>Limits</dt><dd>Readout only; this page cannot place orders.</dd></div>
                 </dl>
             </div>
         </div>
@@ -4440,7 +4450,7 @@ function fallbackMissionControl(status, source) {
             raw_response_exposed_count: providerReadiness.raw_response_exposed_count || 0,
             local_absolute_path_exposed_count: 0,
             cloud_job_identifier_exposed_count: 0,
-            boundary: "Phase 3 cockpit visibility is provider/scheduler readiness only, not execution readiness. It exposes sanitized status and counters only; no secret values, raw provider responses, local absolute paths, provider payloads, or unsanitized cloud job identifiers."
+            boundary: "Provider and scheduler readiness is status only, not execution readiness. It exposes sanitized counters only; no secret values, raw provider responses, local absolute paths, provider payloads, or unsanitized cloud job identifiers."
         },
         phase4_strategy: {
             phase: phase4.phase || "Q4",
@@ -4747,13 +4757,13 @@ function fallbackMissionControl(status, source) {
             strategy_packet_count: asArray(cognition.strategy_lead_packets).length,
             signal_integrity_status: cognition.signal_integrity?.status || "pending",
             blocked_reasons: cognition.blocked_reasons || [],
-            boundary: cognition.boundary || "Cognition is shadow-only and cannot execute trades."
+            boundary: cognition.boundary || "Reasoning is research-only and cannot execute trades."
         },
         trade_intent: {
             state: candidates.length ? "candidate_review" : (observedSignals.length ? "observed_signal_review" : "no_trade_candidate"),
             summary: candidates.length
                 ? `${candidates.length} candidate ideas are waiting behind risk and execution gates.`
-                : (observedSignals.length ? `${observedSignals.length} observed signals are being watched, but none are orders.` : "No executable trade candidate exists in the current public-safe snapshot."),
+                : (observedSignals.length ? `${observedSignals.length} observed signals are being watched, but none are orders.` : "No executable trade idea exists in the current dashboard status."),
             observed_signal_count: observedSignals.length,
             candidate_count: candidates.length,
             blocked_count: blockedTrades.length,
@@ -4851,7 +4861,7 @@ function renderMissionControl(status, source) {
     if (stackTarget) {
         stackTarget.innerHTML = `
             <span>System stack</span>
-            <h3>COO ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
+            <h3>Orchestrator ${htmlText(stack.coo)} · Local LLM ${htmlText(stack.local_llm)}</h3>
             <p>Frontier LLM ${htmlText(stack.frontier_llm)} · quantum oracle ${htmlText(stack.quant_oracle)} via ${htmlText(stack.quant_oracle_backend, "classical_fallback")} / ${htmlText(stack.quant_oracle_mode, "not_run")} · risk ${htmlText(stack.risk_gate)}</p>
             <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · Qiskit ${phase3.qiskit_available ? "yes" : "no"} / Aer ${phase3.qiskit_aer_available ? "yes" : "no"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
             <p>Phase 5 ${htmlText(phase5.layer, "Layer B")} · plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"} · implementation ${phase5.implementation_allowed ? "allowed" : "blocked"} · Phase 6 plan ${phase5.phase6_learning_loop_plan_allowed ? "allowed" : "blocked"} · learning implementation ${phase5.phase6_learning_loop_implementation_allowed ? "allowed" : "blocked"} · ${htmlText(phase5.nonapproval_blocker_count || 0)} non-approval blockers</p>
@@ -5004,7 +5014,7 @@ function renderOperatingSummary(status, source) {
     const liveCapital = Boolean(capital.live_capital_enabled);
     const brokerWriteBlocked = forbiddenActions.some((action) => /broker|write/i.test(`${action.action || ""} ${action.reason || ""}`));
     const liveBridge = status.live_bridge || {};
-    const bridgeLabel = source?.key === "live_bridge" ? "Live bridge" : "Static fallback";
+    const bridgeLabel = source?.key === "live_bridge" ? "Live status" : "Sanitized status";
     const bridgeMeta = liveBridge.status === "read_only_ready" ? "read-only ready" : dashboardText(liveBridge.status, "bridge pending");
     const phase4 = phase4StrategyStatus(status);
     const phase4ApprovalState = phase4.approval_event_status || phase4.approval_event?.approval_state || "missing";
@@ -5016,7 +5026,7 @@ function renderOperatingSummary(status, source) {
             "Paper account",
             formatMoney(capital.current_balance_gbp),
             `${formatMoney(pnlTotal)} total P&L · ${formatPercent(capital.drawdown_pct)} drawdown · ${maturityCount}/${maturityTarget} closed paper trades`,
-            "Authority shown in single safety strip",
+            "Authority shown in Safety Status",
             capital.live_capital_enabled ? "blocked" : "online"
         ),
         renderPriorityCard(
@@ -5079,7 +5089,7 @@ const OVERVIEW_NODE_LABELS = {
 
 const OVERVIEW_NODE_ROLES = {
     watching: "Intelligence pipelines",
-    event_log: "COO",
+    event_log: "Orchestrator",
     research_analyst: "Research Analyst",
     strategy_lead: "Strategy Lead",
     head_of_quant: "Head of Quant",
@@ -5214,8 +5224,8 @@ function renderOverviewFirstScreen(viewModels) {
     const proof = overview.demo_proof || {};
     const readouts = asArray(overview.readouts || overview.cards);
     const review = overview.review_focus || {};
-    const setupText = `${proof.eligible_setup_count || 0} eligible setups`;
-    const proofText = `${proof.closed_proof_trade_count || 0}/${proof.mature_benchmark || 100} closed proof trades`;
+    const setupText = `${proof.eligible_setup_count || 0} potential setups`;
+    const proofText = `${proof.closed_proof_trade_count || 0}/${proof.mature_benchmark || 100} verified paper trades`;
 
     const statusRail = dashboardQuery("[data-overview-status-rail]");
     if (statusRail) {
@@ -5227,7 +5237,7 @@ function renderOverviewFirstScreen(viewModels) {
     const hero = dashboardQuery("[data-overview-hero]");
     if (hero) {
         hero.innerHTML = `
-            <span>Fund Manager read</span>
+            <span>Current summary</span>
             <h3>${htmlText(overview.summary)}</h3>
             <p>${htmlText(overview.scope_note || overview.boundary)}</p>
             <div class="overview-hero-metrics" data-overview-hero-metrics>
@@ -5305,7 +5315,7 @@ function renderOverviewFirstScreen(viewModels) {
     if (oversight) {
         oversight.innerHTML = `
             <span>Fund Manager oversight</span>
-            <strong>You supervise the fund team</strong>
+            <strong>You supervise Qadam</strong>
             <p>${htmlText(overview.system_summary || "Live feeds, Python, models, gates, paper lifecycle, and learning loop stay visible from one map.")}</p>
         `;
     }
@@ -5334,8 +5344,8 @@ function renderOverviewFirstScreen(viewModels) {
     const boundary = dashboardQuery("[data-overview-boundary-rail]");
     if (boundary) {
         boundary.innerHTML = `
-            <span>Reading rule</span>
-            <p>${htmlText(overview.scope_note || "Use the single safety strip for authority state.")} Candidate is not an order.</p>
+            <span>How to read this</span>
+            <p>${htmlText(overview.scope_note || "Use Safety Status for order authority.")} A trade idea is not an order.</p>
         `;
     }
 
@@ -5476,11 +5486,11 @@ function renderTradeLifecycleWorkspace(model) {
                 <div>
                     <p class="label">Trades workspace</p>
                     <h3>Trade lifecycle board</h3>
-                    <p>${htmlText(model.summary)} ${htmlText(model.boundary)}</p>
+                    <p>${htmlText(model.summary)} ${htmlText(model.boundary)} A trade idea is not an order.</p>
                 </div>
                 <div class="trade-lifecycle-safety">
-                    <strong>No UI proof credit</strong>
-                    <span>Phase 5 test trades stay separate from Phase 7 proof trades; proof credit cannot be inferred from this screen.</span>
+                    <strong>Verified performance only</strong>
+                    <span>Test trades stay separate from verified paper-trading performance.</span>
                 </div>
             </div>
             <div class="trade-lifecycle-filters" data-trade-lifecycle-filters>
@@ -5631,7 +5641,7 @@ function renderPhase4Strategy(status) {
         : `
             <article class="cognition-card strategy-toggle-card">
                 <h3>No strategy toggles exported</h3>
-                <p>The cockpit has no public-safe Phase 4 toggle records in this snapshot.</p>
+                <p>The dashboard has no strategy toggle records in this snapshot.</p>
             </article>
         `;
 
@@ -5989,7 +5999,7 @@ function renderReasoningHypothesisSummary(hypothesis) {
             <h3>${htmlText(hypothesis.title, "Shadow hypothesis")}</h3>
             <p>${htmlText(hypothesis.thesis, "No thesis exported.")}</p>
             <div class="tag-row">
-                ${renderInlineBadge("Hypothesis, not candidate", "blocked")}
+                ${renderInlineBadge("Hypothesis, not trade idea", "blocked")}
                 ${renderInlineBadge("No paper/order authority", "online")}
                 ${renderInlineBadge(`state ${dashboardText(hypothesis.advancement_state, "blocked")}`, "blocked")}
                 ${renderInlineBadge(`packet ${dashboardText(hypothesis.evidence_packet_id, "not linked")}`, hypothesis.evidence_packet_id === "not linked" ? "pending" : "online")}
@@ -6029,7 +6039,7 @@ function renderReasoningEvidenceSummary(packet) {
                 <small>${htmlText(item.summary, "No summary.")}</small>
             </li>
         `).join("")
-        : `<li><strong>No evidence items</strong><span>Waiting for public-safe source observations.</span></li>`;
+        : `<li><strong>No evidence items</strong><span>Waiting for source observations.</span></li>`;
     return `
         <article class="reasoning-evidence-card">
             <div class="source-workspace-topline">
@@ -6111,8 +6121,14 @@ function renderQuantAnnotationCard(annotation) {
                 ${renderMetric("Target", annotation.annotation_target || "reviewed context")}
                 ${renderMetric("Hardware jobs", annotation.hardware_submitted_count || 0)}
                 ${renderMetric("Candidates", annotation.trade_candidate_created_count || 0)}
+                ${renderMetric("Fire Opal IBM", annotation.fire_opal_ibm_status || "not exported")}
+                ${renderMetric("IBM blocker", annotation.fire_opal_ibm_blocker || "not exported")}
             </div>
             <div class="tag-row">
+                ${renderInlineBadge(annotation.fire_opal_access_verified ? "Fire Opal verified" : "Fire Opal pending", annotation.fire_opal_access_verified ? "online" : "blocked")}
+                ${renderInlineBadge(annotation.qiskit_runtime_ready ? "IBM runtime installed" : "IBM runtime missing", annotation.qiskit_runtime_ready ? "online" : "blocked")}
+                ${renderInlineBadge(annotation.ibm_credentials_configured ? "IBM credentials configured" : "IBM credentials missing", annotation.ibm_credentials_configured ? "online" : "blocked")}
+                ${renderInlineBadge(annotation.hardware_submission_allowed ? "hardware submission allowed" : "hardware submission blocked", annotation.hardware_submission_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(annotation.execution_allowed ? "execution allowed" : "execution blocked", annotation.execution_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(annotation.paper_order_allowed ? "paper order allowed" : "paper order blocked", annotation.paper_order_allowed ? "blocked" : "online")}
                 ${renderInlineBadge("Shadow annotation", "pending")}
@@ -6138,10 +6154,10 @@ function renderReasoningWorkspace(model) {
     const lanesHtml = asArray(model.lanes).map(renderReasoningLaneCard).join("");
     const hypothesesHtml = asArray(model.hypothesis_queue).length
         ? asArray(model.hypothesis_queue).map(renderReasoningHypothesisSummary).join("")
-        : `<article class="reasoning-hypothesis-card"><h3>No hypotheses visible</h3><p>Qadam has no public-safe hypotheses in this snapshot.</p></article>`;
+        : `<article class="reasoning-hypothesis-card"><h3>No hypotheses visible</h3><p>Qadam has no hypotheses in this snapshot.</p></article>`;
     const evidenceHtml = asArray(model.evidence_packets).length
         ? asArray(model.evidence_packets).map(renderReasoningEvidenceSummary).join("")
-        : `<article class="reasoning-evidence-card"><h3>No factual evidence packets</h3><p>Evidence packets appear after source observations are compressed into public-safe records.</p></article>`;
+        : `<article class="reasoning-evidence-card"><h3>No factual evidence packets</h3><p>Evidence packets appear after source observations are compressed into dashboard-safe records.</p></article>`;
     const missingHtml = asArray(model.missing_corroboration).length
         ? asArray(model.missing_corroboration).map(renderMissingCorroborationCard).join("")
         : `<article class="reasoning-missing-card online"><h3>No missing corroboration exported</h3><p>No missing corroboration blocker is visible in this snapshot.</p></article>`;
@@ -6161,7 +6177,7 @@ function renderReasoningWorkspace(model) {
                 <div class="reasoning-boundary-card">
                     ${renderInlineBadge("Research-only", "blocked")}
                     ${renderInlineBadge("Prior, not evidence", "blocked")}
-                    ${renderInlineBadge("Hypothesis, not candidate", "blocked")}
+                    ${renderInlineBadge("Hypothesis, not trade idea", "blocked")}
                     ${renderInlineBadge("No paper/order authority", "online")}
                     <p>${htmlText(model.boundary, "Reasoning is read-only and cannot create trade state.")}</p>
                 </div>
@@ -6182,7 +6198,7 @@ function renderReasoningWorkspace(model) {
                 </div>
                 <div class="tag-row">
                     ${renderInlineBadge("Prior is not evidence", "blocked")}
-                    ${renderInlineBadge("Hypothesis is not candidate", "blocked")}
+                    ${renderInlineBadge("Hypothesis is not trade idea", "blocked")}
                     ${renderInlineBadge("Model output cannot create orders", "online")}
                     ${renderInlineBadge("Review chain is challenge-only", "pending")}
                 </div>
@@ -6209,7 +6225,7 @@ function renderReasoningWorkspace(model) {
                                 <p class="label">Hypothesis queue</p>
                                 <h3>Why ideas advanced, stalled, or were blocked</h3>
                             </div>
-                            ${renderInlineBadge("Hypothesis, not candidate", "blocked")}
+                            ${renderInlineBadge("Hypothesis, not trade idea", "blocked")}
                         </div>
                         <div class="reasoning-hypothesis-stack">${hypothesesHtml}</div>
                     </section>
@@ -6830,7 +6846,7 @@ function renderGovernanceWorkspace(model) {
 
             <section class="governance-comment-targets">
                 <div class="overview-section-head">
-                    <span>Contextual comment entry points</span>
+                    <span>Comment shortcuts</span>
                     <strong>Comment without memorizing internal reference keys.</strong>
                 </div>
                 <div class="governance-target-grid">
@@ -7674,7 +7690,7 @@ function renderTrades(status, viewModels = {}) {
             <div>
                 <p class="label">Consolidated trade readout</p>
                 <h3>${htmlText(tradesModel.summary)}</h3>
-                <p>${htmlText(tradeLayer.boundary, "No broker order path exists. Candidate is not an order.")}</p>
+                <p>${htmlText(tradeLayer.boundary, "No broker order path exists. A trade idea is not an order.")}</p>
             </div>
             <div class="trade-consolidated-metrics">
                 ${renderMetric("Observed signals", observedSignals.length)}
@@ -7695,7 +7711,7 @@ function renderTrades(status, viewModels = {}) {
         <div class="trade-diagnostic-groups" data-trade-diagnostic-groups>
             <details class="trade-review-group" open data-trade-review-group="proof_lifecycle">
                 <summary>
-                    <strong>Proof and paper lifecycle</strong>
+                    <strong>Paper trade lifecycle</strong>
                     <span>Paper drill, certification, learning, and Phase 7 proof visibility live together here.</span>
                 </summary>
                 <div class="trade-review-group-body">
@@ -8072,8 +8088,8 @@ function renderTrades(status, viewModels = {}) {
             </details>
             <details class="trade-review-group" data-trade-review-group="signal_records">
                 <summary>
-                    <strong>Signals, candidates, and paper states</strong>
-                    <span>TradingView observations, candidates, blocked ideas, and explicit paper lifecycle states.</span>
+                    <strong>Signals, trade ideas, and paper trades</strong>
+                    <span>TradingView observations, trade ideas, blocked ideas, and explicit paper lifecycle states.</span>
                 </summary>
                 <div class="trade-review-group-body">
         <section class="trade-intent-section">
@@ -8160,7 +8176,7 @@ function renderPerformanceSourceRecord(record) {
         <li>
             <strong>${htmlText(record.stage)} · ${htmlText(record.key)}</strong>
             <span>${htmlText(record.status)} · backend ${htmlText(record.backend_status)}</span>
-            <small>${record.event_log_written ? "event log written" : "event log missing"} · ${record.ui_inferred_readiness ? "UI inferred readiness" : "backend-derived"} · ${record.public_safe ? "public-safe" : "not public-safe"}</small>
+            <small>${record.event_log_written ? "event log written" : "event log missing"} · ${record.ui_inferred_readiness ? "UI inferred readiness" : "backend-derived"} · ${record.public_safe ? "sanitized" : "not sanitized"}</small>
         </li>
     `;
 }
@@ -8192,7 +8208,7 @@ function renderPerformanceWorkspace(model) {
                     ${renderInlineBadge("30-day run separate from 100-trade maturity", "pending")}
                     ${renderInlineBadge("No forced trades", forcedTradeTone)}
                     ${renderInlineBadge("Phase 5 trades excluded", demo.phase5_test_trades_count_for_phase7 ? "blocked" : "online")}
-                    ${renderInlineBadge("No proof-credit inference", demo.display_proof_credit_allowed ? "blocked" : "online")}
+                    ${renderInlineBadge("Verified records only", demo.display_proof_credit_allowed ? "blocked" : "online")}
                     ${renderInlineBadge(risk.live_capital_enabled ? "live capital enabled" : "live capital disabled", risk.live_capital_enabled ? "blocked" : "online")}
                     <p>${htmlText(model.boundary, "Read-only performance view.")}</p>
                 </div>
@@ -8432,7 +8448,7 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
                 <div>
                     <p class="label">Live paper equity graph</p>
                     <h3>${formatMoney(stats.last)} in the paper trading account</h3>
-                    <p>The line is drawn from the read-only cockpit status equity curve. It updates when the dashboard refreshes the live status snapshot.</p>
+                    <p>The line is drawn from the read-only dashboard equity curve. It updates when the dashboard refreshes live status.</p>
                 </div>
                 <div class="paper-equity-chart-badges">
                     ${renderInlineBadge(`change ${formatMoney(stats.change)}`, tone)}
@@ -8610,7 +8626,7 @@ function renderCapital(status, viewModels = {}) {
                 <span style="width: ${safeMaturityPct}%"></span>
             </div>
             <p class="mini">${maturityCount} of ${maturityTarget} closed paper trades · ${capital.postmortem_complete_count || 0} postmortems complete · ${postmortemsDue.length} due.</p>
-            <p class="mini">Phase 7 proof: ${phase7ProofCount} of ${phase7ProofTarget} closed proof trades · ${phase7ProofCreditAllowed ? "proof credit allowed" : "no Phase 7 proof credit"} · ${phase5TradesCountForPhase7 ? "Phase 5 trades count for proof" : "Phase 5 trades excluded from proof"}.</p>
+            <p class="mini">Verified paper trades: ${phase7ProofCount} of ${phase7ProofTarget} · ${phase7ProofCreditAllowed ? "performance credit allowed" : "no verified performance credit"} · ${phase5TradesCountForPhase7 ? "test trades count for performance" : "test trades excluded from performance"}.</p>
         </section>
         <section class="paper-account-section paper-account-grid">
             <div>
