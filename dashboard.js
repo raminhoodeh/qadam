@@ -5473,7 +5473,7 @@ function renderOverviewFirstScreen(viewModels) {
 
     const tradeConsiderations = dashboardQuery("[data-overview-trade-considerations]");
     if (tradeConsiderations) {
-        const visibleTradeIdeas = asArray(overview.trade_considerations).slice(0, 3);
+        const visibleTradeIdeas = asArray(overview.trade_considerations).slice(0, 5);
         tradeConsiderations.innerHTML = `
             <div class="overview-section-head">
                 <span>Trades being considered</span>
@@ -5484,7 +5484,7 @@ function renderOverviewFirstScreen(viewModels) {
         ? visibleTradeIdeas.map(renderOverviewPlainCard).join("")
         : `<article class="overview-plain-card online"><span>No active trade idea</span><strong>Monitoring only</strong><p>Qadam has not exported an observed signal or candidate in this snapshot.</p></article>`}
             </div>
-            <p class="mini">A candidate is still only something Qadam is thinking about. It is not an order.</p>
+            <p class="mini">Candidate, not order. A candidate is still only something Qadam is thinking about.</p>
         `;
     }
 
