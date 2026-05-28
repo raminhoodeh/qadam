@@ -1919,7 +1919,17 @@ function buildPerformanceModel(status = {}) {
                 "Selective larger paper moves when evidence, strategy, Q-CTRL, risk, and Alpaca Paper gates agree."
             ),
             operation_allowed: Boolean(paperLive.paper_live_operation_allowed),
-            certified: Boolean(paperLive.paper_live_certified)
+            certified: Boolean(paperLive.paper_live_certified),
+            unattended_execution_delegation_enabled: Boolean(
+                paperLive.paper_live_unattended_execution_delegation_enabled
+            ),
+            unattended_execution_delegation_reason: dashboardText(
+                paperLive.paper_live_unattended_execution_delegation_reason,
+                "not armed"
+            ),
+            submission_delegation_allowed: Boolean(
+                paperLive.paper_live_submission_delegation_allowed
+            )
         },
         paper_account: {
             starting_balance_gbp: modelNumber(capital.starting_balance_gbp, 0),
@@ -2752,9 +2762,28 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const performance = sharedModels.performance_model || buildPerformanceModel(status);
     const operations = sharedModels.operations_model || sharedOperations || buildOperationsModel(status, source, sharedModels);
     const phase7 = status.phase7_demo_proof || {};
+    const paperLive = status.paper_live_certification || {};
+    const activeAutomation = status.paperops_active_paper_trading_automation || {};
     const capital = status.capital || {};
     const tradeLayer = status.trade_layer || {};
     const phase4 = status.phase4_strategy || {};
+    const unattendedArmed = Boolean(
+        paperLive.paper_live_unattended_execution_delegation_enabled
+            || activeAutomation.unattended_paper_execution_delegation_enabled
+    );
+    const freshSubmitCount = modelNumber(
+        activeAutomation.paperops2_fresh_eligible_submit_record_count,
+        0
+    );
+    const duplicateSubmitCount = modelNumber(
+        activeAutomation.paperops2_duplicate_submit_record_count,
+        0
+    );
+    const automationReason = dashboardText(
+        paperLive.paper_live_unattended_execution_delegation_reason
+            || activeAutomation.unattended_paper_execution_delegation_reason,
+        "not armed"
+    );
     const actionNeeded = [];
     if (sources.quorum.status !== "ok") actionNeeded.push("Review source quorum");
     if (trades.counts.postmortem_due > 0 || performance.paper_account.postmortem_due_count > 0) actionNeeded.push("Review due postmortem");
@@ -2795,11 +2824,11 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             summary: `${trades.counts.qualified_setup} potential setups; ${trades.counts.submitted_paper_order} submitted paper orders; ${trades.counts.postmortem_due} postmortems due.`
         },
         {
-            id: "proof_run",
-            label: "Proof run",
-            state: `${demoProof.completed_calendar_day_count}/${demoProof.required_calendar_day_count} days`,
+            id: "growth_trial",
+            label: "Paper growth trial",
+            state: `${formatMoney(performance.growth_trial.current_value_gbp || 0)}`,
             tone: performance.tone,
-            summary: `Week ${demoProof.current_proof_week_number}/${demoProof.proof_week_count}; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} verified paper trades; ${formatMoney(paperPnl)} paper P&L.`
+            summary: `${formatMoney(performance.growth_trial.starting_value_gbp || 100000)} to ${formatMoney(performance.growth_trial.target_value_gbp || 200000)} over ${performance.growth_trial.horizon_days || 60} days; ${formatMoney(paperPnl)} paper P&L.`
         },
         {
             id: "review_focus",
@@ -2811,16 +2840,16 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     ];
     const statusChips = [
         {
-            id: "proof_day",
-            label: "Proof window",
-            value: `Day ${demoProof.completed_calendar_day_count}/${demoProof.required_calendar_day_count}`,
+            id: "paper_growth",
+            label: "Paper growth trial",
+            value: `${formatMoney(performance.growth_trial.current_value_gbp || 0)}`,
             tone: performance.tone
         },
         {
-            id: "proof_week",
-            label: "Weekly cadence",
-            value: `Week ${demoProof.current_proof_week_number}/${demoProof.proof_week_count}`,
-            tone: performance.tone
+            id: "automation",
+            label: "Autonomous runner",
+            value: unattendedArmed ? "Armed" : "Needs review",
+            tone: unattendedArmed ? "online" : "blocked"
         },
         {
             id: "eligible_setups",
@@ -2909,6 +2938,26 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             value: `${trades.counts.candidate} trade ideas`,
             tone: trades.counts.postmortem_due ? "blocked" : (trades.counts.candidate ? "pending" : "online"),
             summary: `${trades.counts.observed_signal} observed signals, ${trades.counts.submitted_paper_order} submitted paper orders, ${trades.counts.open_position} open positions.`
+        },
+        {
+            id: "automation",
+            label: "Autonomous runner",
+            value: unattendedArmed ? "Armed" : "Needs review",
+            tone: unattendedArmed ? "online" : "blocked",
+            summary: freshSubmitCount
+                ? `${freshSubmitCount} fresh paper order can be submitted by the hourly runner.`
+                : `${automationReason}; ${duplicateSubmitCount} already-submitted staged order protected by idempotency.`
+        },
+        {
+            id: "paper_submit",
+            label: "Paper submit",
+            value: paperLive.paper_live_submission_delegation_allowed
+                ? "Fresh order ready"
+                : (duplicateSubmitCount ? "No duplicate submit" : "Waiting"),
+            tone: paperLive.paper_live_submission_delegation_allowed ? "pending" : "online",
+            summary: paperLive.paper_live_submission_delegation_allowed
+                ? "The next hourly run may submit one fresh eligible Alpaca Paper order."
+                : "Alpaca Paper execution is guarded by fresh-order and duplicate-submit checks."
         }
     ];
     const sourceGroups = asArray(sources.pipelines).slice(0, 5).map((pipeline) => ({
@@ -5372,7 +5421,7 @@ function renderOverviewFirstScreen(viewModels) {
             <h3>${htmlText(overview.summary)}</h3>
             <p>${htmlText(overview.scope_note || overview.boundary)}</p>
             <div class="overview-hero-metrics" data-overview-hero-metrics>
-                ${renderMetric("Proof progress", proofText)}
+                ${renderMetric("Paper growth", `${formatMoney(overview.paper_capacity?.equity_gbp || 0)} / ${formatMoney(overview.paper_capacity?.target_gbp || 0)}`)}
                 ${renderMetric("Setups", setupText)}
                 ${renderMetric("Next review", review.state || "Continue monitoring")}
             </div>

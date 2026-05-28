@@ -5994,7 +5994,7 @@ html[data-dashboard-debug="off"] .overview-system-grid {
 
 .overview-mini-map,
 html[data-dashboard-debug="off"] .overview-mini-map {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 178px), 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .overview-mini-node,
@@ -6081,6 +6081,11 @@ html[data-dashboard-debug="off"] .overview-boundary-rail {
     .safety-strip-info {
         grid-column: auto;
         grid-row: auto;
+    }
+
+    .overview-mini-map,
+    html[data-dashboard-debug="off"] .overview-mini-map {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
