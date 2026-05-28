@@ -1,14 +1,24 @@
 # Qadam Telegram Bot Implementation Plan
 
-This plan defines Telegram as Qadam's member communications rail.
+This plan defines Telegram as Qadam's member communications and read-only
+member research-intake rail.
 
-The Telegram bot is not a trading interface. It is a supervised outbound channel that sends Qadam trade lifecycle updates, insight digests, system warnings, and postmortem summaries to the founding Fund Managers. The dashboard remains the canonical control surface; Telegram is the high-signal alert layer.
+The Telegram bot is not a trading interface. It has two supervised paths:
+outbound notifications for trade lifecycle updates, insight digests, system
+warnings, and postmortem summaries; and inbound read-only intake for member
+articles, world-event context, trading strategy notes, trading philosophy, or
+approach ideas. The dashboard remains the canonical control surface; Telegram
+is a high-signal alert and research-input layer.
 
 ## 1. Purpose
 
-The bot should answer one practical question:
+The bot should answer two practical questions:
 
-What does Qadam need the members to know without requiring them to keep the dashboard open?
+What does Qadam need the members to know without requiring them to keep the
+dashboard open?
+
+What useful member-submitted context should Qadam preserve as a datapoint or
+strategy consideration before the next research/trading cycle?
 
 It should send:
 
@@ -16,6 +26,13 @@ It should send:
 - Insight communications: high-confidence hypothesis, major evidence change, worldview lens applied, source corroboration found, source contradiction found.
 - Risk and governance communications: live capital blocked, stale data block, kill-switch activation, broker degraded, source outage, model unavailable.
 - Daily/weekly digests: what Qadam watched, what it learned, what it blocked, current paper-account state, and next focus.
+
+It should ingest:
+
+- News articles, world-event teachings, geopolitical context, macro context,
+  filings context, or source links as read-only world-event datapoints.
+- Trading strategies, trading philosophy, approach notes, entry/exit ideas, and
+  sizing/risk concepts as Strategy Lead considerations.
 
 It should not send:
 
@@ -30,17 +47,23 @@ It should not send:
 
 First release boundary:
 
-- Telegram is outbound-only.
+- Telegram has an outbound notify-only rail and an inbound read-only research
+  intake rail.
 - No Telegram command can place, modify, close, approve, reject, or resize a trade.
+- No Telegram message can force a strategy mutation, qualified setup, paper
+  order, broker write, Q-CTRL job, or live-capital authority.
 - No LLM can directly send Telegram messages.
 - Messages are created from structured Event Log/status records through a template renderer.
-- Every sent, skipped, retried, failed, or suppressed message is logged locally.
+- Every sent, skipped, retried, failed, suppressed, ingested, ignored, or
+  classified message is logged locally.
 - Bot token and chat IDs are local secrets and never appear in the public cockpit snapshot.
 - Dashboard shows bot health and delivery status, not secret identifiers.
+- Inbound intake stores hashed Telegram references and sanitized excerpts only.
 
 Later boundary:
 
-- Read-only inbound commands can be considered after the D9 secure bridge has proven stable in read-only status mode.
+- Read-only slash commands can be considered after the D9 secure bridge has
+  proven stable in read-only status mode.
 - Emergency commands such as `/status` or `/kill_switch_request` require explicit design, member identity verification, confirmation, and Event Log audit.
 - Telegram still cannot become a broker path.
 
@@ -58,6 +81,13 @@ Qadam Event Log / runtime state
 Dispatcher status
   -> cockpit-status.json
   -> qadam.trade dashboard Communications panel
+
+Telegram Bot API getUpdates
+  -> Inbound Intake Classifier
+  -> World-event datapoint ledger / Strategy consideration ledger
+  -> Research Analyst shadow triage / Strategy Lead context
+  -> cockpit-status.json
+  -> qadam.trade dashboard Communications panel
 ```
 
 ### Components
@@ -69,6 +99,7 @@ Dispatcher status
 | Message Template Renderer | Converts structured events into short, consistent, non-hype messages. |
 | Local Telegram Outbox | JSONL/SQLite queue for pending, sent, failed, retried, and suppressed messages. |
 | Telegram Dispatcher | Sends messages through the Telegram Bot API with rate limits and retries. |
+| Telegram Inbound Intake | Polls Telegram for member-submitted context, sanitizes text, hashes identifiers, classifies messages, and writes read-only datapoints or strategy considerations. |
 | Cockpit Communications Panel | Shows bot health, subscriber count, queue count, last sent, failed deliveries, and message categories. |
 | Acceptance Check | Validates no secrets leak, no execution authority exists, and test messages render safely. |
 
@@ -90,6 +121,9 @@ Local files:
 - `data/runtime/telegram-outbox.jsonl`
 - `data/runtime/telegram-deliveries.jsonl`
 - `data/runtime/telegram-digests.jsonl`
+- `data/runtime/telegram_inbound_intake.jsonl`
+- `data/runtime/telegram_world_event_datapoints.jsonl`
+- `data/runtime/telegram_strategy_considerations.jsonl`
 
 Public status export must redact:
 

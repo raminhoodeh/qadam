@@ -53,6 +53,10 @@ def main() -> int:
     print(f"strategy_research_intake_event_log_path={event_path}")
     print(f"strategy_research_intake_source_note_exists={written['source_note_exists']}")
     print(f"strategy_research_intake_candidate_count={written['candidate_count']}")
+    print(
+        "strategy_research_intake_user_strategy_consideration_count="
+        f"{written['user_strategy_consideration_count']}"
+    )
     print(f"strategy_research_intake_candidate_refs={','.join(context['candidate_refs'])}")
     print(f"strategy_research_intake_best_initial_candidate={context['best_initial_research_candidate']}")
     print(f"strategy_research_intake_benchmark_candidate={context['benchmark_candidate']}")
@@ -76,6 +80,10 @@ def main() -> int:
         errors.extend(validation_errors)
     if written["candidate_count"] != 4:
         errors.append("candidate_count_not_four")
+    if written["user_strategy_consideration_count"] != len(written["user_strategy_considerations"]):
+        errors.append("user_strategy_consideration_count_mismatch")
+    if context["telegram_strategy_consideration_count"] != written["user_strategy_consideration_count"]:
+        errors.append("context_user_strategy_consideration_count_mismatch")
     if not written["source_note_exists"]:
         errors.append("source_note_missing")
     if context["best_initial_research_candidate"] != "pead_long_only_concordant":

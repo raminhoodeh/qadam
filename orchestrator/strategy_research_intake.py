@@ -15,6 +15,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.telegram_inbound_intake import TelegramInboundIntakeStore
 
 
 STRATEGY_RESEARCH_INTAKE_SCHEMA_VERSION = 1
@@ -361,7 +362,32 @@ def _compact_candidates(candidates: tuple[ResearchStrategyCandidate, ...]) -> li
     ]
 
 
-def _decision_context(candidates: tuple[ResearchStrategyCandidate, ...]) -> dict[str, Any]:
+def _telegram_strategy_considerations(settings: Settings) -> list[dict[str, Any]]:
+    rows = TelegramInboundIntakeStore(settings=settings).read_strategy_considerations(limit=20)
+    considerations: list[dict[str, Any]] = []
+    for row in rows:
+        considerations.append(
+            {
+                "consideration_id": str(row.get("consideration_id") or "")[:160],
+                "summary": str(row.get("summary") or "")[:500],
+                "topic_tags": list(row.get("topic_tags") or [])[:8],
+                "observed_at": str(row.get("observed_at") or ""),
+                "strategy_lead_context_allowed": row.get("strategy_lead_context_allowed") is True,
+                "trade_candidate_creation_allowed": False,
+                "risk_handoff_allowed": False,
+                "execution_allowed": False,
+                "paper_order_allowed": False,
+                "broker_write_allowed": False,
+                "live_capital_enabled": False,
+            }
+        )
+    return considerations
+
+
+def _decision_context(
+    candidates: tuple[ResearchStrategyCandidate, ...],
+    telegram_considerations: list[dict[str, Any]],
+) -> dict[str, Any]:
     challenge_rows = [
         {
             "candidate_key": candidate.candidate_key,
@@ -370,17 +396,30 @@ def _decision_context(candidates: tuple[ResearchStrategyCandidate, ...]) -> dict
         for candidate in candidates
         for challenge in candidate.strategy_lead_challenges
     ]
+    member_challenges = [
+        {
+            "candidate_key": "telegram_member_strategy_consideration",
+            "consideration_id": row["consideration_id"],
+            "challenge": (
+                "Does this member-submitted strategy consideration survive "
+                "source corroboration, backtest, paper sizing, and risk-policy review?"
+            ),
+        }
+        for row in telegram_considerations
+    ]
     return {
         "status": "ready_for_strategy_review",
         "context_role": "strategy_research_challenge_context",
         "source_note_ref": SOURCE_NOTE_REF,
         "candidate_count": len(candidates),
+        "telegram_strategy_consideration_count": len(telegram_considerations),
+        "telegram_strategy_considerations": telegram_considerations,
         "active_decision_candidate_count": 0,
         "best_initial_research_candidate": "pead_long_only_concordant",
         "benchmark_candidate": "trend_following_baseline_control",
         "candidate_refs": [candidate.candidate_key for candidate in candidates],
-        "strategy_lead_challenge_count": len(challenge_rows),
-        "strategy_lead_challenges": challenge_rows[:12],
+        "strategy_lead_challenge_count": len(challenge_rows) + len(member_challenges),
+        "strategy_lead_challenges": (challenge_rows + member_challenges)[:16],
         "paperops_candidate_count": sum(
             1 for candidate in candidates if "blocked" not in candidate.paperops_readiness
         ),
@@ -398,6 +437,7 @@ def _decision_context(candidates: tuple[ResearchStrategyCandidate, ...]) -> dict
 def build_strategy_research_intake(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     candidates = _research_candidates()
+    telegram_considerations = _telegram_strategy_considerations(settings)
     source_note_exists = (_repo_root() / SOURCE_NOTE_REF).exists()
     candidate_rows = [candidate.to_dict() for candidate in candidates]
     artifact = {
@@ -419,7 +459,9 @@ def build_strategy_research_intake(settings: Settings | None = None) -> dict[str
         "candidate_count": len(candidates),
         "candidate_records": candidate_rows,
         "compact_candidates": _compact_candidates(candidates),
-        "decision_engine_context": _decision_context(candidates),
+        "user_strategy_consideration_count": len(telegram_considerations),
+        "user_strategy_considerations": telegram_considerations,
+        "decision_engine_context": _decision_context(candidates, telegram_considerations),
         "strategy_lead_context_allowed": True,
         "phase4_candidate_annotation_allowed": True,
         "paperops_backtest_request_allowed": True,
@@ -456,6 +498,28 @@ def validate_strategy_research_intake(artifact: dict[str, Any]) -> list[str]:
         candidates = []
     if artifact.get("candidate_count") != len(candidates):
         errors.append("strategy_research_candidate_count_mismatch")
+    telegram_considerations = artifact.get("user_strategy_considerations", [])
+    if not isinstance(telegram_considerations, list):
+        errors.append("strategy_research_user_considerations_invalid")
+        telegram_considerations = []
+    if artifact.get("user_strategy_consideration_count") != len(telegram_considerations):
+        errors.append("strategy_research_user_consideration_count_mismatch")
+    for row in telegram_considerations:
+        if not isinstance(row, dict):
+            errors.append("strategy_research_user_consideration_row_invalid")
+            continue
+        if row.get("strategy_lead_context_allowed") is not True:
+            errors.append("strategy_research_user_consideration_not_allowed_for_context")
+        for field in (
+            "trade_candidate_creation_allowed",
+            "risk_handoff_allowed",
+            "execution_allowed",
+            "paper_order_allowed",
+            "broker_write_allowed",
+            "live_capital_enabled",
+        ):
+            if row.get(field) is not False:
+                errors.append(f"strategy_research_user_consideration_authority_enabled:{field}")
     required_candidate_fields = {
         "candidate_key",
         "name",
@@ -535,6 +599,10 @@ def validate_strategy_research_intake(artifact: dict[str, Any]) -> list[str]:
             errors.append("strategy_research_active_decision_candidate_nonzero")
         if int(context.get("strategy_lead_challenge_count", 0) or 0) < 4:
             errors.append("strategy_research_strategy_lead_challenges_missing")
+        if int(context.get("telegram_strategy_consideration_count", 0) or 0) != len(
+            telegram_considerations
+        ):
+            errors.append("strategy_research_context_telegram_consideration_count_mismatch")
         for field in (
             "trade_candidate_creation_allowed",
             "risk_handoff_allowed",
@@ -591,6 +659,7 @@ def write_strategy_research_intake(
             payload={
                 "status": written["status"],
                 "candidate_count": written["candidate_count"],
+                "user_strategy_consideration_count": written["user_strategy_consideration_count"],
                 "strategy_lead_challenge_count": written["decision_engine_context"][
                     "strategy_lead_challenge_count"
                 ],

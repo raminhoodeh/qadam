@@ -161,7 +161,7 @@ Core modules:
 | Knowledge Graph | Resolved catalyst memory and nearest-neighbour recall. |
 | Cockpit | `qadam.trade` login, dashboard, system map, signal review, comments forum, postmortems. |
 | Fund Manager Forum | Private suggestions and governance comments from Ramin, Troy, Akber, Anas, and Ion. |
-| Telegram Bot Communications | Outbound-only member alerts for trade lifecycle updates, insight digests, system warnings, and dashboard links. No execution authority. |
+| Telegram Bot Communications And Intake | Outbound member alerts for trade lifecycle updates, insight digests, system warnings, and dashboard links; inbound read-only member research intake for world-event datapoints and strategy considerations. No execution authority. |
 | Future Compute Sharing | Optional later layer where Fund Managers can contribute local RAM/compute/storage safely. |
 
 ## 5. Non-Negotiable Build Rules
@@ -179,6 +179,10 @@ Core modules:
 - No venue can write orders until it has passed read-only health, permission, position, and reconciliation checks.
 - No Telegram command can place, modify, close, approve, reject, or resize a trade.
 - Telegram messages must be derived from structured Event Log/status records, not raw model text.
+- Telegram inbound messages may create sanitized world-event datapoints,
+  Research Analyst review packets, or Strategy Lead considerations only; they
+  cannot create trade candidates, orders, broker writes, Q-CTRL jobs, or live
+  capital authority.
 - Never retry order-creating POST requests automatically.
 - Venue account/subaccount/network scope must be explicit before any order path is enabled.
 - Quantum is a weekly oracle, not a real-time trading brain.

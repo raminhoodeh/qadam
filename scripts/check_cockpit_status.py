@@ -36,6 +36,7 @@ from orchestrator.phase6_certification import (
     PUBLIC_STATUS_FIELDS as PHASE6_CERTIFICATION_REQUIRED_FIELDS,
 )  # noqa: E402
 from orchestrator.telegram_comms import ensure_d8a_telegram_dry_run  # noqa: E402
+from orchestrator.telegram_inbound_intake import ensure_sample_telegram_inbound_intake  # noqa: E402
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
 
 
@@ -2720,7 +2721,7 @@ FUND_MANAGER_COMMENT_REQUIRED_FIELDS = {
     "visibility",
 }
 
-COMMUNICATIONS_REQUIRED_FIELDS = {"boundary", "telegram"}
+COMMUNICATIONS_REQUIRED_FIELDS = {"boundary", "telegram", "telegram_intake"}
 
 TELEGRAM_COMMUNICATIONS_REQUIRED_FIELDS = {
     "active_message_classes",
@@ -2760,6 +2761,33 @@ TELEGRAM_MESSAGE_REQUIRED_FIELDS = {
     "status",
     "target_ref",
     "title",
+}
+
+TELEGRAM_INTAKE_REQUIRED_FIELDS = {
+    "bot_configured",
+    "boundary",
+    "broker_write_allowed",
+    "enabled",
+    "execution_allowed",
+    "ignored_message_count",
+    "latest_intake_type",
+    "latest_observed_at",
+    "latest_status",
+    "live_capital_enabled",
+    "paper_order_allowed",
+    "polling_mode",
+    "recent_records",
+    "recent_strategy_considerations",
+    "recent_world_events",
+    "record_count",
+    "research_triage_packet_count",
+    "risk_handoff_allowed",
+    "schema_version",
+    "status",
+    "strategy_consideration_count",
+    "telegram_command_authority",
+    "trade_candidate_creation_allowed",
+    "world_event_datapoint_count",
 }
 
 LIVE_BRIDGE_REQUIRED_FIELDS = {
@@ -2812,6 +2840,7 @@ LIVE_BRIDGE_SIGNATURE_REQUIRED_FIELDS = {
 def main() -> int:
     settings = Settings.from_env()
     ensure_d8a_telegram_dry_run(settings)
+    ensure_sample_telegram_inbound_intake(settings)
     result = export_cockpit_status(settings=settings, landing_repo_path=ROOT / "landing-page-repo")
     runtime_path = Path(result["runtime_path"])
     landing_path = Path(result["landing_path"]) if result.get("landing_path") else None
@@ -2947,6 +2976,19 @@ def main() -> int:
     print(f"cockpit_status_telegram_status={payload['communications']['telegram'].get('status')}")
     print(f"cockpit_status_telegram_pending_queue_count={payload['communications']['telegram'].get('pending_queue_count')}")
     print(f"cockpit_status_telegram_dry_run_message_count={payload['communications']['telegram'].get('dry_run_message_count')}")
+    print(f"cockpit_status_telegram_inbound_status={payload['communications']['telegram_intake'].get('status')}")
+    print(
+        "cockpit_status_telegram_inbound_world_event_datapoint_count="
+        f"{payload['communications']['telegram_intake'].get('world_event_datapoint_count')}"
+    )
+    print(
+        "cockpit_status_telegram_inbound_strategy_consideration_count="
+        f"{payload['communications']['telegram_intake'].get('strategy_consideration_count')}"
+    )
+    print(
+        "cockpit_status_telegram_inbound_research_triage_packet_count="
+        f"{payload['communications']['telegram_intake'].get('research_triage_packet_count')}"
+    )
     print(f"cockpit_status_live_bridge_status={payload['live_bridge'].get('status')}")
     print(f"cockpit_status_live_bridge_endpoint={payload['live_bridge'].get('endpoint')}")
     print(f"cockpit_status_durable_ingestion_status={payload.get('durable_ingestion', {}).get('status')}")
@@ -6552,6 +6594,49 @@ def main() -> int:
         if "chat_id" in message or "handle" in message:
             print("cockpit_status_telegram_identifier_leaked=true")
             return 1
+    telegram_intake = communications["telegram_intake"]
+    missing_telegram_intake_fields = sorted(TELEGRAM_INTAKE_REQUIRED_FIELDS - set(telegram_intake))
+    if missing_telegram_intake_fields:
+        print("cockpit_status_telegram_intake_fields_missing=" + ",".join(missing_telegram_intake_fields))
+        return 1
+    if telegram_intake.get("status") not in {"ready", "ready_no_messages"}:
+        print("cockpit_status_telegram_intake_not_ready=true")
+        return 1
+    if telegram_intake.get("world_event_datapoint_count", 0) < 1:
+        print("cockpit_status_telegram_world_event_datapoint_missing=true")
+        return 1
+    if telegram_intake.get("strategy_consideration_count", 0) < 1:
+        print("cockpit_status_telegram_strategy_consideration_missing=true")
+        return 1
+    if telegram_intake.get("research_triage_packet_count", 0) < 1:
+        print("cockpit_status_telegram_research_triage_missing=true")
+        return 1
+    if "read-only member research intake" not in telegram_intake.get("boundary", ""):
+        print("cockpit_status_telegram_intake_boundary_weak=true")
+        return 1
+    for field in (
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "telegram_command_authority",
+        "live_capital_enabled",
+    ):
+        if telegram_intake.get(field) is not False:
+            print(f"cockpit_status_telegram_intake_authority_enabled={field}")
+            return 1
+    telegram_intake_encoded = json.dumps(telegram_intake, sort_keys=True)
+    if (
+        "chat_id" in telegram_intake_encoded
+        or "username" in telegram_intake_encoded
+        or "first_name" in telegram_intake_encoded
+        or "last_name" in telegram_intake_encoded
+        or "/Users/" in telegram_intake_encoded
+        or "@" in telegram_intake_encoded
+    ):
+        print("cockpit_status_telegram_intake_identifier_leaked=true")
+        return 1
     fund_manager_notes = payload["fund_manager_notes"]
     missing_fund_manager_fields = sorted(FUND_MANAGER_NOTES_REQUIRED_FIELDS - set(fund_manager_notes))
     if missing_fund_manager_fields:

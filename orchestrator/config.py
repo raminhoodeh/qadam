@@ -106,6 +106,7 @@ class Settings:
     telegram_dry_run: bool
     telegram_trade_group_notifications_enabled: bool
     telegram_trade_group_notifications_dry_run: bool
+    telegram_inbound_intake_enabled: bool
     telegram_bot_configured: bool
     telegram_bot_username_configured: bool
     telegram_default_chat_configured: bool
@@ -177,6 +178,7 @@ class Settings:
                 "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
                 _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
             ),
+            telegram_inbound_intake_enabled=_bool_config("QADAM_TELEGRAM_INBOUND_INTAKE_ENABLED", True),
             telegram_bot_configured=bool(_config_env("TELEGRAM_BOT_TOKEN").strip()),
             telegram_bot_username_configured=bool(_config_env("TELEGRAM_BOT_USERNAME").strip()),
             telegram_default_chat_configured=bool(_config_env("TELEGRAM_DEFAULT_CHAT_ID").strip()),

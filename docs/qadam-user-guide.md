@@ -359,11 +359,15 @@ Use this mapping when reading old notes:
 | Forbidden | Operations safety diagnostics plus Safety Status |
 | Process Console | Operations event trail |
 | Fund Manager Comments | Operations governance |
-| Communications / Telegram | Operations communications |
+| Communications / Telegram | Operations communications and member research intake |
 
-Telegram is an outbound member notification rail. It cannot place, approve,
-reject, modify, close, or resize trades, and it should never show bot tokens,
-chat IDs, handles, raw message payloads, or local paths.
+Telegram has two separate rails. The outbound rail sends member notifications.
+The inbound rail treats member messages as read-only research intake: useful
+news, world-event context, articles, trading strategies, trading philosophy, or
+approach notes can become logged datapoints or Strategy Lead considerations.
+Telegram cannot place, approve, reject, modify, close, or resize trades, and it
+should never show bot tokens, chat IDs, handles, raw message payloads, or local
+paths.
 
 ## 10. Status Labels
 
@@ -499,6 +503,8 @@ Members can:
 - suggest improvements
 - challenge assumptions
 - review Telegram communications once configured
+- send useful world-event articles or context to Qadam in Telegram
+- send trading strategy, philosophy, or approach notes to Qadam in Telegram
 - help decide strategy-level changes after review periods
 
 Members cannot:
@@ -506,6 +512,8 @@ Members cannot:
 - use the dashboard to place live trades
 - use Telegram to place trades
 - Use Telegram to approve, reject, modify, close, or resize trades
+- use Telegram to force a strategy change, qualified setup, paper order, or
+  broker action
 - Use the Secure Live Bridge to run commands or trade
 - bypass the Risk Agent
 - bypass the Signal Integrity Gate
@@ -649,7 +657,8 @@ If a trade state looks wrong:
 If Telegram contradicts the dashboard:
 
 1. Trust the backend-derived dashboard state.
-2. Check Operations for dry-run, suppressed, failed, or stale Telegram messages.
+2. Check Operations for dry-run, suppressed, failed, or stale Telegram messages,
+   plus inbound world-event and strategy-intake counters.
 3. Escalate with a comment.
 
 ## 20. Red Flags

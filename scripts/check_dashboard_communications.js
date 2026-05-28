@@ -39,6 +39,33 @@ const TELEGRAM_FIELDS = [
     "verified_member_count"
 ];
 
+const TELEGRAM_INTAKE_FIELDS = [
+    "bot_configured",
+    "boundary",
+    "broker_write_allowed",
+    "enabled",
+    "execution_allowed",
+    "ignored_message_count",
+    "latest_intake_type",
+    "latest_observed_at",
+    "latest_status",
+    "live_capital_enabled",
+    "paper_order_allowed",
+    "polling_mode",
+    "recent_records",
+    "recent_strategy_considerations",
+    "recent_world_events",
+    "record_count",
+    "research_triage_packet_count",
+    "risk_handoff_allowed",
+    "schema_version",
+    "status",
+    "strategy_consideration_count",
+    "telegram_command_authority",
+    "trade_candidate_creation_allowed",
+    "world_event_datapoint_count"
+];
+
 const MESSAGE_FIELDS = [
     "created_at",
     "message_class",
@@ -61,9 +88,12 @@ function missingFields(value, fields) {
 async function main() {
     const communications = status.communications || {};
     const telegram = communications.telegram || {};
+    const telegramIntake = communications.telegram_intake || {};
     const messages = Array.isArray(telegram.recent_messages) ? telegram.recent_messages : [];
     const missing = missingFields(telegram, TELEGRAM_FIELDS);
+    const missingIntake = missingFields(telegramIntake, TELEGRAM_INTAKE_FIELDS);
     assert(!missing.length, `communications.telegram missing fields: ${missing.join(", ")}`);
+    assert(!missingIntake.length, `communications.telegram_intake missing fields: ${missingIntake.join(", ")}`);
 
     assert(telegram.status === "dry_run", "Telegram status is not dry_run");
     assert(telegram.mode === "dry_run", "Telegram mode is not dry_run");
@@ -93,6 +123,26 @@ async function main() {
     assert(!/@/.test(JSON.stringify(telegram)), "Telegram public status leaked handle-like content");
     assert(!/\/Users\//.test(JSON.stringify(telegram)), "Telegram public status leaked local path");
     assert(!/\d{6,}:[A-Za-z0-9_-]{20,}/.test(JSON.stringify(telegram)), "Telegram public status leaked token-like content");
+    assert(telegramIntake.world_event_datapoint_count >= 1, "Telegram intake world-event datapoints missing");
+    assert(telegramIntake.strategy_consideration_count >= 1, "Telegram intake strategy considerations missing");
+    assert(telegramIntake.research_triage_packet_count >= 1, "Telegram intake research packet missing");
+    assert(/read-only member research intake/i.test(telegramIntake.boundary || ""), "Telegram intake boundary is weak");
+    [
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "telegram_command_authority",
+        "live_capital_enabled"
+    ].forEach((field) => {
+        assert(telegramIntake[field] === false, `Telegram intake authority enabled: ${field}`);
+    });
+    const intakePublic = JSON.stringify(telegramIntake);
+    assert(!/@/.test(intakePublic), "Telegram intake public status leaked handle-like content");
+    assert(!/\/Users\//.test(intakePublic), "Telegram intake public status leaked local path");
+    assert(!/chat_id|username|first_name|last_name/i.test(intakePublic), "Telegram intake public status leaked identifiers");
+    assert(!/\d{6,}:[A-Za-z0-9_-]{20,}/.test(intakePublic), "Telegram intake public status leaked token-like content");
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-flow-map]", "Telegram Bot");
@@ -104,6 +154,11 @@ async function main() {
     assertIncludes(rendered, "[data-communications]", "blocked trade");
     assertIncludes(rendered, "[data-communications]", "insight digest");
     assertIncludes(rendered, "[data-communications]", "outbound-only");
+    assertIncludes(rendered, "[data-communications]", "Inbound member research");
+    assertIncludes(rendered, "[data-communications]", "World datapoints");
+    assertIncludes(rendered, "[data-communications]", "Strategy notes");
+    assertIncludes(rendered, "[data-communications]", "Research packets");
+    assertIncludes(rendered, "[data-communications]", "read-only member research intake");
 
     const html = fs.readFileSync(htmlPath, "utf8");
     const renderer = fs.readFileSync(rendererPath, "utf8");
@@ -116,8 +171,10 @@ async function main() {
     [
         "function renderCommunications",
         "status.communications?.telegram",
+        "status.communications?.telegram_intake",
         "Telegram Bot",
         "notify_only",
+        "Inbound member research",
         "renderCommunications(status)"
     ].forEach((needle) => assert(renderer.includes(needle), `dashboard renderer missing ${needle}`));
 

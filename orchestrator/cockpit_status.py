@@ -204,6 +204,7 @@ from orchestrator.staged_paper_order import StagedPaperOrderReviewStore, staged_
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
 from orchestrator.telegram_comms import telegram_status
+from orchestrator.telegram_inbound_intake import telegram_inbound_intake_public_status
 from orchestrator.trade_intent import TradeIntentStore, trade_intent_summary
 from orchestrator.tradingview_alerts import (
     TradingViewAlertStore,
@@ -2965,11 +2966,44 @@ def _communications(settings: Settings) -> dict[str, Any]:
                 "reject, modify, close, or resize trades."
             ),
         }
+    try:
+        telegram_intake = telegram_inbound_intake_public_status(settings)
+    except Exception:  # noqa: BLE001 - public status should degrade safely
+        telegram_intake = {
+            "status": "degraded",
+            "schema_version": 1,
+            "enabled": False,
+            "bot_configured": False,
+            "polling_mode": "getUpdates_explicit_poll",
+            "record_count": 0,
+            "world_event_datapoint_count": 0,
+            "strategy_consideration_count": 0,
+            "ignored_message_count": 0,
+            "research_triage_packet_count": 0,
+            "latest_intake_type": None,
+            "latest_status": None,
+            "latest_observed_at": None,
+            "recent_records": [],
+            "recent_strategy_considerations": [],
+            "recent_world_events": [],
+            "trade_candidate_creation_allowed": False,
+            "risk_handoff_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+            "telegram_command_authority": False,
+            "live_capital_enabled": False,
+            "boundary": (
+                "Telegram inbound intake is read-only member research intake. It cannot "
+                "create signals, trade candidates, orders, broker writes, commands, or live capital."
+            ),
+        }
     return {
         "telegram": telegram,
+        "telegram_intake": telegram_intake,
         "boundary": (
-            "Communications are notify-only. The browser and Telegram rail cannot create "
-            "broker actions or hidden approvals."
+            "Communications are notify-only and intake-only. The browser and Telegram "
+            "rail cannot create broker actions, commands, or hidden approvals."
         ),
     }
 

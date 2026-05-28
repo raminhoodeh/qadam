@@ -56,8 +56,10 @@ ACTIVE_RUNNER_COMMAND_FRAGMENT = (
     "scripts/run_active_paper_trading_automation.py --execute-paper-automation"
 )
 ACTIVE_CHECK_COMMAND_FRAGMENT = "scripts/check_paperops_active_paper_trading_automation.py"
+TELEGRAM_INBOUND_INTAKE_COMMAND_FRAGMENT = "scripts/poll_telegram_inbound_intake.py"
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
+    TELEGRAM_INBOUND_INTAKE_COMMAND_FRAGMENT,
     ACTIVE_CHECK_COMMAND_FRAGMENT,
     ACTIVE_RUNNER_COMMAND_FRAGMENT,
 )
@@ -70,6 +72,7 @@ REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
     "do not enable live capital",
     "do not call broker live endpoints",
     "do not grant proof credit",
+    "Telegram inbound intake is read-only",
 )
 
 PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES = frozenset(
@@ -90,7 +93,10 @@ PAPEROPS_ACTIVE_AUTOMATION_BOUNDARY = (
     "parity is required, must only submit to Alpaca paper, cannot edit .env or "
     "secrets, cannot force trades, cannot use live credentials, cannot call "
     "broker live endpoints, cannot grant proof credit, cannot let "
-    "Q-CTRL execute orders, and cannot enable live capital."
+    "Q-CTRL execute orders, and cannot enable live capital. Telegram inbound "
+    "intake is read-only member research intake; it can add world-event "
+    "datapoints and strategy considerations, but it cannot create commands or "
+    "trade authority."
 )
 
 PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
@@ -828,6 +834,7 @@ def validate_paperops_active_paper_trading_automation(
         "cannot call broker live endpoints",
         "cannot grant proof credit",
         "cannot enable live capital",
+        "Telegram inbound intake is read-only member research intake",
     ):
         if phrase not in boundary:
             errors.append("paperops_active_automation_boundary_weak")
