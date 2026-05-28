@@ -4365,6 +4365,176 @@ function renderFlowMap(status, source, viewModels) {
     }
 }
 
+function tradeEventTimestamp(record = {}) {
+    return record.closed_at
+        || record.filled_at
+        || record.submitted_at
+        || record.opened_at
+        || record.created_at
+        || record.updated_at
+        || record.observed_at
+        || record.received_at
+        || null;
+}
+
+function pushTradeTimelineEvent(events, source = {}, defaults = {}) {
+    const label = dashboardText(
+        source.instrument || source.symbol || source.strategy || defaults.label,
+        defaults.label || "Paper trade event"
+    );
+    const detail = dashboardText(
+        defaults.detail
+            || source.status
+            || source.direction
+            || source.close_reason
+            || source.blocked_reason,
+        "status unknown"
+    );
+    const timestamp = tradeEventTimestamp(source);
+    events.push({
+        id: [
+            defaults.kind || "event",
+            source.order_id || source.trade_id || source.intent_id || source.alert_id || label,
+            timestamp || "no_time"
+        ].join(":"),
+        kind: defaults.kind || "event",
+        label,
+        detail,
+        timestamp,
+        tone: defaults.tone || source.status || "pending"
+    });
+}
+
+function buildTradeTimelineTokens(status = {}) {
+    const capital = status.capital || {};
+    const tradeLayer = status.trade_layer || {};
+    const events = [];
+
+    asArray(capital.closed_trades).forEach((trade) => pushTradeTimelineEvent(events, trade, {
+        kind: "closed",
+        detail: `${formatMoney(trade.realized_pnl_gbp)} realized · ${dashboardText(trade.postmortem_status, "postmortem unknown")}`,
+        tone: modelNumber(trade.realized_pnl_gbp, 0) < 0 ? "degraded" : "online"
+    }));
+    asArray(capital.open_positions).forEach((position) => pushTradeTimelineEvent(events, position, {
+        kind: "open",
+        detail: `${dashboardText(position.direction, "open")} · ${formatMoney(position.unrealized_pnl_gbp)} unrealized`,
+        tone: modelNumber(position.unrealized_pnl_gbp, 0) < 0 ? "degraded" : "online"
+    }));
+    asArray(capital.orders).forEach((order) => pushTradeTimelineEvent(events, order, {
+        kind: dashboardText(order.status, "order"),
+        detail: `${dashboardText(order.direction, "order")} ${dashboardText(order.order_type, "paper")} · ${formatMoney(order.notional_gbp)}`,
+        tone: /filled|submitted|accepted/i.test(String(order.status || "")) ? "online" : "pending"
+    }));
+    asArray(tradeLayer.submitted_orders).forEach((order) => pushTradeTimelineEvent(events, order, {
+        kind: "submitted",
+        detail: `${dashboardText(order.direction, "paper")} · ${formatMoney(order.notional_gbp || order.risk_size_gbp)}`,
+        tone: "online"
+    }));
+    asArray(tradeLayer.staged_orders).forEach((order) => pushTradeTimelineEvent(events, order, {
+        kind: "staged",
+        detail: `${dashboardText(order.direction, "paper")} · staged only`,
+        tone: "pending"
+    }));
+
+    if (events.length < 4) {
+        asArray(tradeLayer.candidates).forEach((candidate) => pushTradeTimelineEvent(events, candidate, {
+            kind: "candidate",
+            detail: "candidate, not order",
+            tone: "pending"
+        }));
+        asArray(tradeLayer.blocked).forEach((blocked) => pushTradeTimelineEvent(events, blocked, {
+            kind: "blocked",
+            detail: dashboardText(blocked.blocked_reason, "blocked before order"),
+            tone: "blocked"
+        }));
+    }
+
+    const unique = new Map();
+    events.forEach((event) => {
+        if (!unique.has(event.id)) unique.set(event.id, event);
+    });
+
+    return [...unique.values()]
+        .sort((a, b) => {
+            const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+            const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+        })
+        .slice(0, 5);
+}
+
+function buildBalanceTickerModel(status = {}, viewModels = {}) {
+    const capital = status.capital || {};
+    const performance = viewModels.performance_model || buildPerformanceModel(status);
+    const account = performance.paper_account || {};
+    const equity = modelNumber(
+        capital.equity_gbp ?? capital.current_balance_gbp ?? account.current_balance_gbp,
+        modelNumber(account.current_balance_gbp, 0)
+    );
+    const starting = modelNumber(
+        capital.starting_balance_gbp ?? account.starting_balance_gbp,
+        equity
+    );
+    const realized = modelNumber(capital.realized_pnl_gbp ?? account.realized_pnl_gbp, 0);
+    const unrealized = modelNumber(capital.unrealized_pnl_gbp ?? account.unrealized_pnl_gbp, 0);
+    const totalPnl = modelNumber(account.total_pnl_gbp, realized + unrealized);
+    const drawdown = modelNumber(capital.drawdown_pct ?? account.drawdown_pct, 0);
+    const openPositions = modelNumber(capital.open_position_count, asArray(capital.open_positions).length);
+    const orders = modelNumber(capital.order_count, asArray(capital.orders).length);
+    const closedTrades = modelNumber(capital.closed_trade_count, asArray(capital.closed_trades).length);
+    const liveCapitalEnabled = Boolean(capital.live_capital_enabled);
+    const writeAuthority = Boolean(capital.write_authority);
+    const tone = liveCapitalEnabled || writeAuthority
+        ? "blocked"
+        : (totalPnl < 0 || drawdown > 0 ? "degraded" : "online");
+    const changePct = starting ? ((equity - starting) / starting) * 100 : 0;
+    return {
+        equity,
+        starting,
+        total_pnl_gbp: totalPnl,
+        drawdown_pct: drawdown,
+        change_pct: changePct,
+        open_position_count: openPositions,
+        order_count: orders,
+        closed_trade_count: closedTrades,
+        observed_at: capital.observed_at || status.generated_at,
+        tone,
+        timeline: buildTradeTimelineTokens(status),
+        boundary: capital.boundary || "Read-only paper account mirror."
+    };
+}
+
+function renderBalanceTicker(status, viewModels = {}) {
+    const model = buildBalanceTickerModel(status, viewModels);
+    const ticker = dashboardQuery("[data-balance-ticker]");
+    if (ticker) {
+        ["online", "pending", "degraded", "blocked"].forEach((name) => ticker.classList.remove(name));
+        ticker.classList.add(statusClass(model.tone));
+        ticker.innerHTML = `
+            <span>Paper balance</span>
+            <strong>${htmlText(formatMoney(model.equity))}</strong>
+            <em>${htmlText(formatMoney(model.total_pnl_gbp))} P&L · ${htmlText(formatPercent(model.drawdown_pct))} DD · ${htmlText(model.closed_trade_count)} closed</em>
+        `;
+        ticker.setAttribute(
+            "title",
+            `${formatMoney(model.equity)} equity; ${formatMoney(model.total_pnl_gbp)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; observed ${formatTime(model.observed_at)}.`
+        );
+    }
+
+    const rail = dashboardQuery("[data-trade-toast-rail]");
+    if (!rail) return;
+    const events = asArray(model.timeline);
+    rail.innerHTML = events.length
+        ? events.map((event) => `
+            <span class="trade-toast-token ${statusClass(event.tone)}" title="${literalHtmlText(`${event.kind}: ${event.label} · ${event.detail} · ${formatTime(event.timestamp)}`)}">
+                <em>${htmlText(event.kind)}</em>
+                <strong>${htmlText(event.label)}</strong>
+                <em>${htmlText(formatTime(event.timestamp))}</em>
+            </span>
+        `).join("")
+        : `<span class="trade-toast-token pending">No paper trade timeline yet</span>`;
+}
+
 function renderSnapshotMeta(status, source) {
     const capital = status.capital || {};
     const d1Snapshot = status.d1_snapshot || {};
@@ -8981,6 +9151,7 @@ async function renderQadamDashboardStatus(session) {
             window.qadamDashboardViewModels = viewModels;
         }
         renderSnapshotMeta(status, source);
+        renderBalanceTicker(status, viewModels);
         renderDashboardSafetyStrip(status, viewModels);
         renderMissionControl(status, source);
         renderOperatingSummary(status, source);

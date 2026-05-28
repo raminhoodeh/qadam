@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260528-opportunity-scan">
+    <link rel="stylesheet" href="/auth.css?v=20260528-balance-ticker">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -17,11 +17,21 @@
             <a class="logo-link" href="/" aria-label="Qadam home">
                 <img src="/logo.png" alt="QADAM Logo">
             </a>
-            <nav class="nav-actions" aria-label="Dashboard navigation">
-                <a class="button" href="/guide/">User Guide</a>
-                <a class="button" href="/whitepaper/">Whitepaper</a>
-                <button type="button" data-signout>Sign Out</button>
-            </nav>
+            <div class="topbar-right">
+                <section class="balance-ticker pending" aria-label="Live paper account balance" data-balance-ticker>
+                    <span>Paper balance</span>
+                    <strong>Loading</strong>
+                    <em>Waiting for mirror</em>
+                </section>
+                <section class="trade-toast-rail" aria-label="Recent paper trade timeline" data-trade-toast-rail>
+                    <span class="trade-toast-token pending">Loading trade timeline</span>
+                </section>
+                <nav class="nav-actions" aria-label="Dashboard navigation">
+                    <a class="button" href="/guide/">User Guide</a>
+                    <a class="button" href="/whitepaper/">Whitepaper</a>
+                    <button type="button" data-signout>Sign Out</button>
+                </nav>
+            </div>
         </header>
 
         <section id="dashboard-main" class="dashboard-workspace hidden" data-dashboard tabindex="-1">
@@ -1207,7 +1217,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260528-opportunity-scan"></script>
+    <script src="/dashboard.js?v=20260528-balance-ticker"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 
