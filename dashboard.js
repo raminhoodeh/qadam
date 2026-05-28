@@ -5628,14 +5628,16 @@ function renderOverviewMiniNode(node, index, total) {
     const guideId = `overview-node-guide-${String(node.key || index).replace(/[^a-z0-9_-]/gi, "-")}`;
     const connector = index < total - 1 ? `<span class="overview-mini-connector" aria-hidden="true">&rarr;</span>` : "";
     return `
-        <article class="overview-mini-node ${statusClass(node.health || node.status)}" tabindex="0" aria-describedby="${guideId}">
-            <div class="overview-mini-top">
-                <span class="overview-mini-step">${index + 1}</span>
-                <span class="overview-mini-role">${htmlText(role)}</span>
-            </div>
-            <strong>${htmlText(label)}</strong>
-            <p>${htmlText(node.status)}</p>
-            <div class="overview-mini-guide" id="${guideId}" role="tooltip" aria-label="${htmlText(label)} guide">
+        <details class="overview-mini-node ${statusClass(node.health || node.status)}">
+            <summary aria-controls="${guideId}">
+                <div class="overview-mini-top">
+                    <span class="overview-mini-step">${index + 1}</span>
+                    <span class="overview-mini-role">${htmlText(role)}</span>
+                </div>
+                <strong>${htmlText(label)}</strong>
+                <p>${htmlText(node.status)}</p>
+            </summary>
+            <div class="overview-mini-guide" id="${guideId}" aria-label="${htmlText(label)} guide">
                 <span>How to read this node</span>
                 <strong>${htmlText(guide.role)}: ${htmlText(guide.label)}</strong>
                 <dl>
@@ -5646,7 +5648,7 @@ function renderOverviewMiniNode(node, index, total) {
                     <div><dt>Next handoff</dt><dd>${htmlText(guide.handoff)}</dd></div>
                 </dl>
             </div>
-        </article>
+        </details>
         ${connector}
     `;
 }
