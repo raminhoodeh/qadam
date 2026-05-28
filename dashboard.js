@@ -2764,6 +2764,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const phase7 = status.phase7_demo_proof || {};
     const paperLive = status.paper_live_certification || {};
     const activeAutomation = status.paperops_active_paper_trading_automation || {};
+    const opportunityScan = status.paperops_opportunity_scan_cadence || {};
     const capital = status.capital || {};
     const tradeLayer = status.trade_layer || {};
     const phase4 = status.phase4_strategy || {};
@@ -2784,6 +2785,14 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             || activeAutomation.unattended_paper_execution_delegation_reason,
         "not armed"
     );
+    const opportunityScanInterval = modelNumber(opportunityScan.opportunity_scan_interval_minutes, 20);
+    const paperSubmitRunnerInterval = modelNumber(opportunityScan.paper_submit_runner_interval_minutes, 60);
+    const opportunityScanStatus = opportunityScan.status || "not_run";
+    const opportunityScanTone = /invalid|blocked/i.test(opportunityScanStatus)
+        ? "blocked"
+        : (opportunityScan.twenty_minute_scan_ready ? "online" : "pending");
+    const opportunityScanSummary = opportunityScan.recommended_next_action
+        || `Refresh opportunity state every ${opportunityScanInterval} minutes; guarded paper submission stays on the ${paperSubmitRunnerInterval}-minute runner.`;
     const actionNeeded = [];
     if (sources.quorum.status !== "ok") actionNeeded.push("Review source quorum");
     if (trades.counts.postmortem_due > 0 || performance.paper_account.postmortem_due_count > 0) actionNeeded.push("Review due postmortem");
@@ -2945,8 +2954,15 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             value: unattendedArmed ? "Armed" : "Needs review",
             tone: unattendedArmed ? "online" : "blocked",
             summary: freshSubmitCount
-                ? `${freshSubmitCount} fresh paper order can be submitted by the hourly runner.`
-                : `${automationReason}; ${duplicateSubmitCount} already-submitted staged order protected by idempotency.`
+                ? `${freshSubmitCount} fresh paper order can be submitted by the guarded ${paperSubmitRunnerInterval}-minute PaperOps runner.`
+                : `${automationReason}; ${duplicateSubmitCount} already-submitted staged order protected by idempotency. The ${opportunityScanInterval}-minute scanner only refreshes candidate state.`
+        },
+        {
+            id: "opportunity_scan",
+            label: "Opportunity scanner",
+            value: `${opportunityScanInterval} min read-only`,
+            tone: opportunityScanTone,
+            summary: opportunityScanSummary
         },
         {
             id: "paper_submit",
@@ -2956,8 +2972,8 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
                 : (duplicateSubmitCount ? "No duplicate submit" : "Waiting"),
             tone: paperLive.paper_live_submission_delegation_allowed ? "pending" : "online",
             summary: paperLive.paper_live_submission_delegation_allowed
-                ? "The next hourly run may submit one fresh eligible Alpaca Paper order."
-                : "Alpaca Paper execution is guarded by fresh-order and duplicate-submit checks."
+                ? `The next guarded ${paperSubmitRunnerInterval}-minute run may submit one fresh eligible Alpaca Paper order.`
+                : `The ${opportunityScanInterval}-minute scanner cannot submit. Alpaca Paper execution remains guarded by fresh-order, duplicate-submit, and PaperOps checks.`
         }
     ];
     const sourceGroups = asArray(sources.pipelines).slice(0, 5).map((pipeline) => ({
@@ -3097,7 +3113,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         label: "Overview",
         question: "What is happening now?",
         tone: readouts.some((item) => item.tone === "blocked") ? "blocked" : (readouts.some((item) => item.tone === "degraded") ? "degraded" : "online"),
-        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} potential setups; ${trades.counts.candidate} trade ideas; ${formatMoney(paperEquity)} toward ${formatMoney(growthTarget)} in ${modelNumber(growthTrial.horizon_days, 60)} days; next review: ${actionNeeded[0]}.`,
+        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} potential setups; ${trades.counts.candidate} trade ideas; ${opportunityScanInterval}-minute opportunity scan; ${formatMoney(paperEquity)} toward ${formatMoney(growthTarget)} in ${modelNumber(growthTrial.horizon_days, 60)} days; next review: ${actionNeeded[0]}.`,
         cards: readouts,
         readouts,
         status_chips: statusChips,
@@ -3110,6 +3126,21 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         demo_proof: demoProof,
         system_status: systemStatus,
         data_sources_connected: sourceGroups,
+        opportunity_scan_cadence: {
+            status: opportunityScanStatus,
+            interval_minutes: opportunityScanInterval,
+            frequency_per_hour: modelNumber(opportunityScan.opportunity_scan_frequency_per_hour, 3),
+            model_review_interval_minutes: modelNumber(opportunityScan.model_review_interval_minutes, 60),
+            paper_submit_runner_interval_minutes: paperSubmitRunnerInterval,
+            recurring_scheduler_active: Boolean(opportunityScan.twenty_minute_recurring_scheduler_active),
+            recurring_scheduler_status: opportunityScan.recurring_scheduler_status || "not_run",
+            trade_submission_allowed_by_scan: Boolean(opportunityScan.trade_submission_allowed_by_scan),
+            fresh_eligible_submit_count: modelNumber(opportunityScan.fresh_eligible_submit_count, 0),
+            duplicate_submit_count: modelNumber(opportunityScan.duplicate_submit_count, 0),
+            escalation_to_hourly_runner_recommended: Boolean(opportunityScan.escalation_to_hourly_runner_recommended),
+            summary: opportunityScanSummary,
+            boundary: opportunityScan.boundary || "The opportunity scanner is read-only and cannot submit orders."
+        },
         trading_strategies: tradingStrategies,
         thought_feed: thoughtFeed,
         trade_considerations: tradeConsiderations,
