@@ -27,10 +27,10 @@ quantum-local = [
   "qiskit-aer>=0.14",
 ]
 qctrl-paper = [
-  "fire-opal>=8.0",
+  "fire-opal>=11.1.0",
 ]
 quantum-ibm = [
-  "fire-opal>=8.0",
+  "fire-opal>=11.1.0",
   "qiskit>=1.0",
   "qiskit-ibm-runtime>=0.23",
 ]

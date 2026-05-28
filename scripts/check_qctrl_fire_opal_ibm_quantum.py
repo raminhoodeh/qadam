@@ -85,6 +85,31 @@ def main() -> int:
                 "provider_call_count": 1,
                 "provider_failure_category": "provider_probe_timeout",
                 "provider_failure_class": "TimeoutError",
+                "provider_failure_stage": "provider_probe",
+                "provider_http_status_code": None,
+                "provider_failure_message_hash": None,
+                "fire_opal_async_action_submitted": readiness.get(
+                    "fire_opal_async_action_submitted", False
+                ),
+                "fire_opal_async_action_completed": readiness.get(
+                    "fire_opal_async_action_completed", False
+                ),
+                "fire_opal_async_action_status": readiness.get(
+                    "fire_opal_async_action_status"
+                ),
+                "fire_opal_async_action_id_hash": readiness.get(
+                    "fire_opal_async_action_id_hash"
+                ),
+                "ibm_runtime_preflight_attempted": readiness.get(
+                    "ibm_runtime_preflight_attempted", False
+                ),
+                "ibm_runtime_preflight_succeeded": readiness.get(
+                    "ibm_runtime_preflight_succeeded", False
+                ),
+                "ibm_runtime_backend_count": readiness.get("ibm_runtime_backend_count", 0),
+                "ibm_runtime_backend_name_hashes": readiness.get(
+                    "ibm_runtime_backend_name_hashes", []
+                ),
                 "blocker": "provider_probe_timeout",
                 "next_required_action": (
                     "Retry the explicit read-only device probe after the IBM/FIRE Opal "
@@ -157,6 +182,46 @@ def main() -> int:
     print(
         "fire_opal_ibm_provider_failure_category="
         f"{readiness.get('provider_failure_category')}"
+    )
+    print(
+        "fire_opal_ibm_provider_failure_class="
+        f"{readiness.get('provider_failure_class')}"
+    )
+    print(
+        "fire_opal_ibm_provider_failure_stage="
+        f"{readiness.get('provider_failure_stage')}"
+    )
+    print(
+        "fire_opal_ibm_provider_http_status_code="
+        f"{readiness.get('provider_http_status_code')}"
+    )
+    print(
+        "fire_opal_ibm_provider_failure_message_hash="
+        f"{readiness.get('provider_failure_message_hash')}"
+    )
+    print(
+        "fire_opal_ibm_fire_opal_async_action_submitted="
+        f"{readiness.get('fire_opal_async_action_submitted')}"
+    )
+    print(
+        "fire_opal_ibm_fire_opal_async_action_completed="
+        f"{readiness.get('fire_opal_async_action_completed')}"
+    )
+    print(
+        "fire_opal_ibm_fire_opal_async_action_status="
+        f"{readiness.get('fire_opal_async_action_status')}"
+    )
+    print(
+        "fire_opal_ibm_ibm_runtime_preflight_attempted="
+        f"{readiness.get('ibm_runtime_preflight_attempted')}"
+    )
+    print(
+        "fire_opal_ibm_ibm_runtime_preflight_succeeded="
+        f"{readiness.get('ibm_runtime_preflight_succeeded')}"
+    )
+    print(
+        "fire_opal_ibm_ibm_runtime_backend_count="
+        f"{readiness.get('ibm_runtime_backend_count')}"
     )
     print(f"fire_opal_ibm_supported_device_count={readiness.get('supported_device_count')}")
     print(f"fire_opal_ibm_blocker={readiness.get('blocker')}")
