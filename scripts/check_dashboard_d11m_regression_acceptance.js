@@ -181,6 +181,8 @@ async function assertRenderedDashboardContract() {
         ["[data-dashboard-safety-strip]", "OK - live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders"],
         ["[data-dashboard-safety-strip]", "AI cannot bypass risk checks"],
+        ["[data-balance-ticker]", "Paper balance"],
+        ["[data-trade-toast-rail]", "crude oil"],
         ["[data-overview-hero]", "Current summary"],
         ["[data-overview-review-card]", "Needs review"],
         ["[data-overview-boundary-rail]", "Safety Status"],
@@ -208,6 +210,8 @@ async function assertRenderedDashboardContract() {
 
     const publicRendered = [
         "[data-dashboard-safety-strip]",
+        "[data-balance-ticker]",
+        "[data-trade-toast-rail]",
         "[data-overview-hero]",
         "[data-overview-review-card]",
         "[data-overview-boundary-rail]",

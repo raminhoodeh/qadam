@@ -64,6 +64,8 @@ const selectors = [
     "[data-governance-workspace]",
     "[data-process-console]",
     "[data-status-banner]",
+    "[data-balance-ticker]",
+    "[data-trade-toast-rail]",
     "[data-mode-label]",
     "[data-capital-label]",
     "[data-live-capital-label]",
@@ -95,6 +97,7 @@ class FakeElement {
         this._innerHTML = "";
         this._textContent = "";
         this.dataset = {};
+        this.attributes = {};
         this.classList = new FakeClassList();
     }
 
@@ -114,6 +117,10 @@ class FakeElement {
 
     get textContent() {
         return this._textContent;
+    }
+
+    setAttribute(name, value) {
+        this.attributes[name] = String(value);
     }
 }
 
