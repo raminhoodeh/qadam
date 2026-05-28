@@ -42,6 +42,20 @@ The Fire Opal on IBM Quantum guide is captured in
 This gate is readiness and device discovery only; hardware submission remains
 separately blocked.
 
+Update on 2026-05-28: strict `.env.local` is now an accepted local secret
+fallback after `data/runtime/qadam-secrets.env`, so IBM Quantum token and
+instance values can be visible to the Python runtime without being committed or
+printed. The closeout gate is:
+
+```bash
+.venv/bin/python scripts/check_qadam_paper_closeout.py
+```
+
+This gate separates required paper-operation blockers from optional quality
+gaps. With IBM credentials visible, Fire Opal plus IBM Quantum should move from
+missing credentials to `ready_for_explicit_device_probe` until an explicit
+read-only device probe is run.
+
 PaperOps is now `ready_for_full_paper_ops`. The safe cycle reports
 `paper_cycle_full_paper_operational_ready` with 34/34 commands passing. One
 Alpaca paper order was submitted and accepted, and the lifecycle poller mirrors

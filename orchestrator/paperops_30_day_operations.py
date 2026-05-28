@@ -1,8 +1,8 @@
-"""PaperOps-6 30-day paper run operations contract.
+"""PaperOps-6 paper run operations contract.
 
-This stage binds the active Phase 7 30-day demo-proof run to the recurring
-PaperOps operational pass. It records scheduler, cycle, calendar, and cockpit
-mirror state without creating orders, calling brokers, sending notifications, or
+This stage binds the active paper growth trial to the recurring PaperOps
+operational pass. It records scheduler, cycle, calendar, and cockpit mirror
+state without creating orders, calling brokers, sending notifications, or
 granting proof credit.
 """
 
@@ -28,7 +28,7 @@ PAPEROPS_30_DAY_OPERATIONS_EVENT_TYPE = "paperops_30_day_operations_recorded"
 PAPEROPS_30_DAY_OPERATIONS_COMPONENT = "paperops_30_day_operations"
 
 PAPEROPS_30_DAY_AUTOMATION_ID = "qadam-phase-7-demo-proof-runner"
-PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps 30-Day Runner"
+PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps Autonomous Runner"
 SELF_OBSERVER_CYCLE_FAILURE_LABELS = frozenset(
     {
         "paperops_notification_review",
@@ -55,14 +55,12 @@ REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     "scripts/check_paperops_cockpit_notification_upgrade.py",
     "scripts/check_paperops_30_day_operations.py",
     "scripts/check_paper_live_certification.py",
-    "scripts/check_phase7_demo_proof_run.py",
-    "scripts/check_phase7_certification.py",
-    "scripts/check_phase7_live_promotion_review.py",
+    "scripts/check_qadam_paper_closeout.py",
     "scripts/check_cockpit_status.py",
 )
 
 REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
-    "Preserve the actual 30 consecutive calendar day run",
+    "Preserve the actual paper growth trial calendar",
     "without backfilling or simulating elapsed time",
     "Do not force trades",
     "do not edit secrets or .env files",
@@ -71,7 +69,7 @@ REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
     "do not call broker live endpoints",
     "only submit to Alpaca paper",
     "respect the Q-CTRL paper consultation hold",
-    "do not grant Phase 7 proof credit",
+    "do not grant proof credit",
 )
 
 PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
@@ -195,15 +193,15 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
 )
 
 PAPEROPS_30_DAY_BOUNDARY = (
-    "PaperOps-6 operates the actual 30 consecutive calendar day Phase 7 paper "
-    "run by verifying the hourly scheduler, PaperOps cycle, and public-safe "
+    "PaperOps-6 operates the active paper growth trial "
+    "by verifying the hourly scheduler, PaperOps cycle, and public-safe "
     "dashboard mirror. It may bind the scheduler to the PT-8 active paper "
     "runner, but only through Alpaca paper and the recorded PaperOps gates. It "
     "cannot backfill days, cannot simulate elapsed time, cannot force trades, "
     "cannot create trades without qualified setups, cannot submit broker "
     "orders outside the guarded PaperOps gates, cannot call live endpoints, "
     "cannot send live Telegram messages, cannot load live credentials, cannot "
-    "bypass the Q-CTRL paper consultation hold, cannot grant Phase 7 proof "
+    "bypass the Q-CTRL paper consultation hold, cannot grant proof "
     "credit, and cannot enable live capital. PT-9 cockpit and notification "
     "visibility remains public-safe and review-only."
     " PT-10 paper-live certification may evaluate the state only; it cannot "
@@ -478,9 +476,9 @@ def _blockers(artifact: dict[str, Any]) -> list[str]:
 
 def _recommended_next_action(artifact: dict[str, Any]) -> str:
     if artifact.get("status") == "operations_active":
-        return "Keep the hourly PaperOps runner active and collect proof trades only where Q7-qualified setups exist"
+        return "Keep the hourly PaperOps runner active and submit only fresh eligible Alpaca paper setups"
     if artifact.get("status") == "operations_complete_pending_certification":
-        return "Rerun Phase 7 certification and live-promotion review after the preserved 30-day window"
+        return "Rerun paper-live certification after the preserved paper growth trial window"
     if artifact.get("automation_prompt_paperops_bound") is not True:
         return "Update the existing hourly automation prompt to run the PaperOps cycle and PaperOps-6 checker"
     if artifact.get("dashboard_mirror_public_safe") is not True:
@@ -931,13 +929,13 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
             errors.append("paperops_30_day_operations_event_correlation_missing")
     boundary = str(artifact.get("boundary") or "")
     for phrase in (
-        "actual 30 consecutive calendar day",
+        "active paper growth trial",
         "cannot backfill days",
         "cannot simulate elapsed time",
         "cannot force trades",
         "cannot submit broker orders",
         "cannot call live endpoints",
-        "cannot grant Phase 7 proof credit",
+        "cannot grant proof credit",
         "cannot enable live capital",
     ):
         if phrase not in boundary:

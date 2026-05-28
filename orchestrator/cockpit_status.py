@@ -6931,7 +6931,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError("PaperOps 30-day operations dashboard mirror is not public-safe")
     operations_boundary = str(paperops_30_day.get("boundary") or "")
     for phrase in (
-        "actual 30 consecutive calendar day",
+        "active paper growth trial",
         "cannot backfill days",
         "cannot force trades",
         "cannot enable live capital",

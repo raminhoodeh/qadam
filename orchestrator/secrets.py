@@ -58,12 +58,34 @@ def load_secret_file(path: str | Path) -> dict[str, str]:
     return values
 
 
+def _repo_root_from_settings(settings: Settings) -> Path:
+    secret_path = Path(settings.secrets_file)
+    if not secret_path.is_absolute():
+        secret_path = Path.cwd() / secret_path
+    try:
+        return secret_path.resolve().parents[2]
+    except IndexError:
+        return Path.cwd()
+
+
+def _load_local_env_file(settings: Settings) -> dict[str, str]:
+    local_env_path = _repo_root_from_settings(settings) / ".env.local"
+    if not local_env_path.exists():
+        return {}
+    if not _is_strict_mode(local_env_path):
+        return {}
+    return load_secret_file(local_env_path)
+
+
 def secret_value(key: str, settings: Settings | None = None) -> str | None:
     settings = settings or Settings.from_env()
     env_value = os.getenv(key)
     if env_value:
         return env_value
-    return load_secret_file(settings.secrets_file).get(key)
+    secret_file_value = load_secret_file(settings.secrets_file).get(key)
+    if secret_file_value:
+        return secret_file_value
+    return _load_local_env_file(settings).get(key)
 
 
 def secret_status(key: str, settings: Settings | None = None) -> SecretStatus:
@@ -72,10 +94,14 @@ def secret_status(key: str, settings: Settings | None = None) -> SecretStatus:
         return SecretStatus(key=key, configured=True, source="environment")
 
     values = load_secret_file(settings.secrets_file)
+    if values.get(key):
+        return SecretStatus(key=key, configured=True, source="local_secret_file")
+
+    local_env_values = _load_local_env_file(settings)
     return SecretStatus(
         key=key,
-        configured=bool(values.get(key)),
-        source="local_secret_file" if values.get(key) else "missing",
+        configured=bool(local_env_values.get(key)),
+        source="local_env_file" if local_env_values.get(key) else "missing",
     )
 
 

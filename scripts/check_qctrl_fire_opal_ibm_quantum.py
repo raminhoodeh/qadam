@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import signal
 import sys
 from pathlib import Path
 
@@ -48,15 +49,51 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Explicitly call Fire Opal to discover IBM Quantum devices; never submits jobs.",
     )
+    parser.add_argument(
+        "--probe-timeout-seconds",
+        type=int,
+        default=45,
+        help="Maximum wall-clock seconds for the explicit provider device probe.",
+    )
     return parser.parse_args()
+
+
+def _timeout(_signum: int, _frame: object) -> None:
+    raise TimeoutError("fire_opal_ibm_provider_probe_timeout")
 
 
 def main() -> int:
     args = _parse_args()
-    readiness = qctrl_fire_opal_ibm_readiness(
-        Settings.from_env(),
-        probe_devices=args.probe_devices,
-    )
+    settings = Settings.from_env()
+    if args.probe_devices:
+        signal.signal(signal.SIGALRM, _timeout)
+        signal.alarm(max(1, args.probe_timeout_seconds))
+    try:
+        readiness = qctrl_fire_opal_ibm_readiness(
+            settings,
+            probe_devices=args.probe_devices,
+        )
+    except TimeoutError:
+        readiness = qctrl_fire_opal_ibm_readiness(settings, probe_devices=False)
+        readiness.update(
+            {
+                "status": "blocked_provider_probe_failed",
+                "provider_device_probe_requested": True,
+                "provider_call_attempted": True,
+                "provider_call_succeeded": False,
+                "provider_call_count": 1,
+                "provider_failure_category": "provider_probe_timeout",
+                "provider_failure_class": "TimeoutError",
+                "blocker": "provider_probe_timeout",
+                "next_required_action": (
+                    "Retry the explicit read-only device probe after the IBM/FIRE Opal "
+                    "provider call path responds within the timeout."
+                ),
+            }
+        )
+    finally:
+        if args.probe_devices:
+            signal.alarm(0)
     validate_qctrl_fire_opal_ibm_readiness(readiness)
 
     print(f"fire_opal_ibm_readiness_status={readiness.get('status')}")

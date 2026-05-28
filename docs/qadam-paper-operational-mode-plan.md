@@ -21,6 +21,35 @@ certifies paper operation against the active paper growth trial while live
 capital, live broker endpoints, UI-to-broker controls, and LLM-to-broker bypass
 remain disabled.
 
+## 2026-05-28 Closeout State
+
+Qadam is now certified and armed for unattended paper operation. The current
+closeout check is:
+
+```bash
+.venv/bin/python scripts/check_qadam_paper_closeout.py
+```
+
+That check is public-safe and reports required gaps separately from optional
+quality gaps. Required paper-operation gaps should be zero before treating the
+system as leave-running-ready. Optional gaps, such as live Telegram sends or
+Unusual Whales enrichment, do not block Alpaca Paper operation.
+
+Local secret resolution now accepts two strict local stores, in order:
+environment variables, `data/runtime/qadam-secrets.env`, then `.env.local`.
+Both file-backed stores must remain untracked and permissioned for the local
+user only. This lets the IBM Quantum token and instance be visible to the
+Python runtime without committing them and without copying secret values into
+docs or cockpit output.
+
+The Q-CTRL paper consultation path is the required paper-trading quantum gate.
+The Fire Opal plus IBM Quantum readiness path is a separate hardware-readiness
+visibility gate. Once `IBM_QUANTUM_TOKEN` and `IBM_QUANTUM_INSTANCE` are visible,
+the expected next state is `ready_for_explicit_device_probe`; running
+`scripts/check_qctrl_fire_opal_ibm_quantum.py --probe-devices` may record
+device discovery, but still cannot submit hardware jobs, approve trades, submit
+paper orders, or enable live capital.
+
 ## Scope
 
 Paper Operational Mode is the near-term target for Qadam: the system should run

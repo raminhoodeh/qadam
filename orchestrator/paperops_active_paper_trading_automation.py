@@ -50,7 +50,7 @@ PAPEROPS_ACTIVE_AUTOMATION_EVENT_TYPE = (
 PAPEROPS_ACTIVE_AUTOMATION_COMPONENT = "paperops_active_paper_trading_automation"
 
 PAPEROPS_30_DAY_AUTOMATION_ID = "qadam-phase-7-demo-proof-runner"
-PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps 30-Day Runner"
+PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps Autonomous Runner"
 
 ACTIVE_RUNNER_COMMAND_FRAGMENT = (
     "scripts/run_active_paper_trading_automation.py --execute-paper-automation"
@@ -69,7 +69,7 @@ REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
     "do not edit secrets or .env files",
     "do not enable live capital",
     "do not call broker live endpoints",
-    "do not grant Phase 7 proof credit",
+    "do not grant proof credit",
 )
 
 PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES = frozenset(
@@ -89,7 +89,7 @@ PAPEROPS_ACTIVE_AUTOMATION_BOUNDARY = (
     "It must respect the Q-CTRL paper consultation hold when quantum paper "
     "parity is required, must only submit to Alpaca paper, cannot edit .env or "
     "secrets, cannot force trades, cannot use live credentials, cannot call "
-    "broker live endpoints, cannot grant Phase 7 proof credit, cannot let "
+    "broker live endpoints, cannot grant proof credit, cannot let "
     "Q-CTRL execute orders, and cannot enable live capital."
 )
 
@@ -826,7 +826,7 @@ def validate_paperops_active_paper_trading_automation(
         "cannot edit .env",
         "cannot force trades",
         "cannot call broker live endpoints",
-        "cannot grant Phase 7 proof credit",
+        "cannot grant proof credit",
         "cannot enable live capital",
     ):
         if phrase not in boundary:
