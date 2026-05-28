@@ -1090,6 +1090,28 @@ function buildSourcesModel(status = {}) {
                         promoted_adapter: Boolean(source.promoted_adapter),
                         can_influence_signals: Boolean(source.can_influence_signals),
                         heartbeat: source.last_heartbeat
+                    })),
+                sources: sources
+                    .slice()
+                    .sort((a, b) => String(a.source_name || a.source_key).localeCompare(String(b.source_name || b.source_key)))
+                    .map((source) => ({
+                        key: source.source_key,
+                        label: source.source_name || source.source_key,
+                        pipeline: source.pipeline || pipeline,
+                        status: source.display_status,
+                        raw_status: source.raw_status || source.status || "pending",
+                        readiness: source.readiness || source.registry_status || "not exported",
+                        credential_status: source.credential_status || "not exported",
+                        auth_class: source.auth_class || "not exported",
+                        cadence: source.cadence || "cadence unknown",
+                        tier: source.tier || "n/a",
+                        trust_score: source.trust_score,
+                        promoted_adapter: Boolean(source.promoted_adapter),
+                        can_influence_signals: Boolean(source.can_influence_signals),
+                        heartbeat: source.last_heartbeat,
+                        payload_time: source.last_payload_time,
+                        degraded_reason: source.degraded_reason || null,
+                        influence_boundary: source.influence_boundary || "blocked until signal integrity gate"
                     }))
             };
         });
@@ -1246,6 +1268,28 @@ function buildSourcesModel(status = {}) {
             status: missing || (expected && replayed < expected) ? "degraded" : "ok"
         },
         pipelines: pipelineRecords,
+        all_sources: displaySources
+            .slice()
+            .sort((a, b) => String(a.source_name || a.source_key).localeCompare(String(b.source_name || b.source_key)))
+            .map((source) => ({
+                key: source.source_key,
+                label: source.source_name || source.source_key,
+                pipeline: source.pipeline || "unknown",
+                status: source.display_status,
+                raw_status: source.raw_status || source.status || "pending",
+                readiness: source.readiness || source.registry_status || "not exported",
+                credential_status: source.credential_status || "not exported",
+                auth_class: source.auth_class || "not exported",
+                cadence: source.cadence || "cadence unknown",
+                tier: source.tier || "n/a",
+                trust_score: source.trust_score,
+                promoted_adapter: Boolean(source.promoted_adapter),
+                can_influence_signals: Boolean(source.can_influence_signals),
+                heartbeat: source.last_heartbeat,
+                payload_time: source.last_payload_time,
+                degraded_reason: source.degraded_reason || null,
+                influence_boundary: source.influence_boundary || "blocked until signal integrity gate"
+            })),
         supplemental,
         evidence_packets: evidencePacketCards,
         evidence_review_groups: reviewGroups,
@@ -7345,8 +7389,10 @@ function renderCommunications(status) {
     const target = dashboardQuery("[data-communications]");
     if (!target) return;
     const telegram = status.communications?.telegram || {};
+    const telegramIntake = status.communications?.telegram_intake || {};
     const messages = asArray(telegram.recent_messages);
     const classes = asArray(telegram.active_message_classes);
+    const intakeRecords = asArray(telegramIntake.recent_records);
     const messageRows = messages.length
         ? messages.map((message) => `
             <li>
@@ -7366,15 +7412,35 @@ function renderCommunications(status) {
                 <span>No dry-run member communications have been queued yet.</span>
             </li>
         `;
+    const intakeRows = intakeRecords.length
+        ? intakeRecords.map((record) => `
+            <li>
+                <strong>${htmlText(record.intake_type, "member research")}</strong>
+                <span>${htmlText(record.summary, "Telegram member-submitted research")}</span>
+                <div class="comment-meta">
+                    ${renderInlineBadge(record.status || "recorded", record.status || "online")}
+                    ${renderInlineBadge(`${record.url_count || 0} source links`, record.url_count ? "online" : "pending")}
+                    ${renderInlineBadge(record.research_triage_packet_created ? "Research packet" : "No research packet", record.research_triage_packet_created ? "online" : "pending")}
+                    ${renderInlineBadge(record.strategy_consideration_written ? "Strategy consideration" : "World datapoint", record.strategy_consideration_written ? "online" : "pending")}
+                </div>
+                <small>${formatTime(record.observed_at)}</small>
+            </li>
+        `).join("")
+        : `
+            <li>
+                <strong>No member research intake yet</strong>
+                <span>Telegram messages that look like world events or strategy notes will appear here after ingestion.</span>
+            </li>
+        `;
     target.innerHTML = `
         ${renderPanelBrief({
             id: "telegram_communications",
-            question: "What has Qadam told founding members?",
-            state: telegram.status || "dry_run",
-            tone: telegram.failed_count ? "degraded" : (telegram.status === "dry_run" ? "pending" : "online"),
-            primary: `${telegram.pending_queue_count || 0} queued, ${telegram.sent_count || 0} sent, ${telegram.failed_count || 0} failed, and ${telegram.suppressed_count || 0} suppressed notifications are visible in the outbox mirror.`,
-            secondary: "Dry-run/live-send mode, failed sends, suppressed messages, queue growth, and whether the bot/chat configuration is only reported as configured.",
-            boundary: telegram.boundary || status.communications?.boundary || "Telegram is outbound notify-only and cannot place, approve, reject, modify, close, or resize trades."
+            question: "What has Qadam told or learned from Telegram?",
+            state: telegramIntake.status || telegram.status || "dry_run",
+            tone: telegram.failed_count ? "degraded" : (telegramIntake.status === "ready" ? "online" : "pending"),
+            primary: `${telegram.pending_queue_count || 0} queued outbound messages, ${telegramIntake.world_event_datapoint_count || 0} member world-event datapoints, and ${telegramIntake.strategy_consideration_count || 0} member strategy considerations are visible.`,
+            secondary: "Outbound bot updates, inbound member research, Research Analyst packet creation, Strategy Lead consideration intake, and command-authority boundaries.",
+            boundary: telegramIntake.boundary || telegram.boundary || status.communications?.boundary || "Telegram is outbound notify-only and inbound read-only. It cannot place, approve, reject, modify, close, or resize trades."
         })}
         <div class="summary-strip compact">
             ${renderMetric("Status", telegram.status || "disabled")}
@@ -7382,6 +7448,10 @@ function renderCommunications(status) {
             ${renderMetric("Verified", telegram.verified_member_count || 0)}
             ${renderMetric("Pending", telegram.pending_member_count || 0)}
             ${renderMetric("Queued", telegram.pending_queue_count || 0)}
+            ${renderMetric("Inbound records", telegramIntake.record_count || 0)}
+            ${renderMetric("World datapoints", telegramIntake.world_event_datapoint_count || 0)}
+            ${renderMetric("Strategy notes", telegramIntake.strategy_consideration_count || 0)}
+            ${renderMetric("Research packets", telegramIntake.research_triage_packet_count || 0)}
             ${renderMetric("Failed", telegram.failed_count || 0)}
             ${renderMetric("Suppressed", telegram.suppressed_count || 0)}
             ${renderMetric("Last sent", formatTime(telegram.last_sent_time))}
@@ -7391,16 +7461,28 @@ function renderCommunications(status) {
             ${renderInlineBadge(telegram.bot_configured ? "bot configured" : "bot token missing", telegram.bot_configured ? "online" : "pending")}
             ${renderInlineBadge(telegram.default_chat_configured ? "chat configured" : "chat pending", telegram.default_chat_configured ? "online" : "pending")}
             ${renderInlineBadge(`${telegram.dry_run_message_count || 0} dry-run messages`, telegram.dry_run_message_count ? "online" : "pending")}
+            ${renderInlineBadge(telegramIntake.enabled ? "inbound intake enabled" : "inbound intake disabled", telegramIntake.enabled ? "online" : "pending")}
+            ${renderInlineBadge(telegramIntake.telegram_command_authority ? "command authority" : "no Telegram command authority", telegramIntake.telegram_command_authority ? "blocked" : "online")}
         </div>
         <section class="trade-intent-section">
             <p class="label">Message classes</p>
             <div class="tag-row">${renderTagList(classes, "No message classes queued")}</div>
         </section>
         <section class="trade-intent-section">
+            <p class="label">Inbound member research</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Polling", telegramIntake.polling_mode || "not exported")}
+                ${renderMetric("Ignored", telegramIntake.ignored_message_count || 0)}
+                ${renderMetric("Latest type", telegramIntake.latest_intake_type || "none")}
+                ${renderMetric("Latest", formatTime(telegramIntake.latest_observed_at))}
+            </div>
+            <ul class="status-list communications-list">${intakeRows}</ul>
+        </section>
+        <section class="trade-intent-section">
             <p class="label">Recent outbox</p>
             <ul class="status-list communications-list">${messageRows}</ul>
         </section>
-        <p class="mini">${htmlText(telegram.boundary || status.communications?.boundary || "Telegram is outbound-only and notify-only.")}</p>
+        <p class="mini">${htmlText(telegram.boundary || status.communications?.boundary || "Telegram is outbound-only and notify-only.")} ${htmlText(telegramIntake.boundary || "Telegram inbound intake is read-only member research intake.")}</p>
     `;
 }
 
