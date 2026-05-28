@@ -109,6 +109,8 @@ function assertNoUnsafePublicText(text, label) {
 [
     "dashboard-detail-flow",
     "data-dashboard-safety-strip",
+    "data-balance-ticker",
+    "data-trade-toast-rail",
     "data-overview-first-screen",
     "Paper Trading Overview",
     "data-overview-command-surface",
@@ -173,6 +175,9 @@ function assertNoUnsafePublicText(text, label) {
     "function renderMissionControl",
     "function renderOverviewFirstScreen",
     "function renderDashboardSafetyStrip",
+    "function buildBalanceTickerModel",
+    "function renderBalanceTicker",
+    "function buildTradeTimelineTokens",
     "function renderFlowMap",
     "function renderOperatingSummary",
     "DASHBOARD_LEGACY_HASH_TARGETS",
