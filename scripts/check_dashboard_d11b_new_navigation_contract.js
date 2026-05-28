@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260528-opportunity-scan",
-    "/dashboard.js?v=20260528-opportunity-scan",
+    "/auth.css?v=20260528-balance-ticker",
+    "/dashboard.js?v=20260528-balance-ticker",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"
