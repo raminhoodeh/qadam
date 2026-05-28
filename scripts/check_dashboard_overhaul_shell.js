@@ -142,7 +142,7 @@ function loadShellHarness() {
         }
     }));
     const current = new FakeElement({ text: "Overview" });
-    const debugToggle = new FakeElement({ text: "Advanced / Debug Mode" });
+    const debugToggle = new FakeElement({ text: "Diagnostics" });
     const advancedLinks = new FakeElement({ id: "dashboard-debug-tabs", hidden: true });
     const standaloneDebug = [
         new FakeElement({ id: "overview-command-surface", dataset: { dashboardDebugOnly: "true" }, hidden: true }),

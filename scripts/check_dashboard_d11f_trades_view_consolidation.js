@@ -141,7 +141,7 @@ async function main() {
         "Q5-14 End-To-End Paper Trade Drill",
         "Q5-15 Phase 5 Certification",
         "Q6-16 Learning Loop Journal Visibility",
-        "Q7-15 Phase 7 Demo Proof Visibility",
+        "Paper Growth Trial Visibility",
         "Signal Review UI and governance actions",
         "Risk Agent policy router",
         "Execution Policy and kill switches",

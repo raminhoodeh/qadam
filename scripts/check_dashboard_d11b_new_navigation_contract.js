@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260527-health-language",
-    "/dashboard.js?v=20260527-health-language",
+    "/auth.css?v=20260527-mission-control-ux",
+    "/dashboard.js?v=20260527-mission-control-ux",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"
@@ -195,8 +195,9 @@ const window = loadRendererContext();
 });
 
 includesAll(contract, [
-    "only Overview is visible",
-    "Advanced / Debug Mode",
+    "exposes all five as primary Fund",
+    "Manager navigation",
+    "Diagnostics toggle",
     "`#evidence`",
     "`Executive / Terminal` density switcher is removed",
     "`#sources`",
@@ -220,8 +221,8 @@ includesAll(plan, [
     excludesAll(nextLinks, ["#sources", "#performance", "#governance"], "rendered overview next links");
     console.log("dashboard_d11b_new_navigation_contract=ok");
     console.log("dashboard_d11b_registered_view_count=5");
-    console.log("dashboard_d11b_default_visible_view=overview");
-    console.log("dashboard_d11b_advanced_debug_mode=True");
+    console.log("dashboard_d11b_primary_views_visible=overview,trades,evidence,reasoning,operations");
+    console.log("dashboard_d11b_diagnostics_toggle=True");
     console.log("dashboard_d11b_density_toggle_removed=True");
     console.log("dashboard_d11b_legacy_redirect_count=10");
     console.log("dashboard_authority_unchanged=True");

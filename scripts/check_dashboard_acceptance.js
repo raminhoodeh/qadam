@@ -110,7 +110,7 @@ function assertNoUnsafePublicText(text, label) {
     "dashboard-detail-flow",
     "data-dashboard-safety-strip",
     "data-overview-first-screen",
-    "What is happening now?",
+    "Paper Trading Overview",
     "data-overview-command-surface",
     "data-overview-review-card",
     "data-overview-proof-flow",
@@ -128,8 +128,8 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260527-health-language",
-    "/dashboard.js?v=20260527-health-language"
+    "/auth.css?v=20260527-mission-control-ux",
+    "/dashboard.js?v=20260527-mission-control-ux"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [

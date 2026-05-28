@@ -94,34 +94,33 @@ async function main() {
     assertNoPublicLeak(phase7, "$.phase7_demo_proof");
 
     assert(dashboardCode.includes("data-phase7-demo-proof"), "Dashboard missing Q7-15 panel selector");
-    assert(dashboardCode.includes("status.phase7_demo_proof"), "Dashboard does not read backend Phase 7 demo proof");
-    assert(dashboardCode.includes("htmlText(phase7DemoProof.boundary"), "Dashboard does not escape Phase 7 boundary");
-    assert(!/phase7DemoProof\\.status\\s*=/.test(dashboardCode), "Dashboard mutates Phase 7 demo proof status");
+    assert(dashboardCode.includes("status.phase7_demo_proof"), "Dashboard does not read backend paper growth proof");
+    assert(dashboardCode.includes("htmlText(phase7DemoProof.boundary"), "Dashboard does not escape paper growth boundary");
+    assert(!/phase7DemoProof\\.status\\s*=/.test(dashboardCode), "Dashboard mutates paper growth status");
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-mission-stack]", "Q7-15");
-    assertIncludes(rendered, "[data-mission-stack]", "proof trades 0/100");
-    assertIncludes(rendered, "[data-mission-stack]", "no Phase 7 proof credit");
-    assertIncludes(rendered, "[data-trade-layer]", "Q7-15 Phase 7 Demo Proof Visibility");
+    assertIncludes(rendered, "[data-mission-stack]", "Paper growth");
+    assertIncludes(rendered, "[data-mission-stack]", "verified paper trades 0/100");
+    assertIncludes(rendered, "[data-mission-stack]", "no false growth maturity");
+    assertIncludes(rendered, "[data-trade-layer]", "Paper Growth Trial Visibility");
     assertIncludes(rendered, "[data-trade-layer]", "backend-derived");
     assertIncludes(rendered, "[data-trade-layer]", "display derived from backend");
     assertIncludes(rendered, "[data-trade-layer]", "no UI inference");
     assertIncludes(rendered, "[data-trade-layer]", "Phase 5 trades excluded from proof");
-    assertIncludes(rendered, "[data-trade-layer]", "no Phase 7 proof credit");
+    assertIncludes(rendered, "[data-trade-layer]", "no false growth maturity");
     assertIncludes(rendered, "[data-trade-layer]", "live capital disabled");
     assertIncludes(rendered, "[data-trade-layer]", "statistical immaturity visible");
-    assertIncludes(rendered, "[data-trade-layer]", "100-trade maturity not met");
-    assertIncludes(rendered, "[data-trade-layer]", "Q7-16");
-    assertIncludes(rendered, "[data-trade-layer]", "No Q7-15 blockers exported");
+    assertIncludes(rendered, "[data-trade-layer]", "verified maturity not met");
+    assertIncludes(rendered, "[data-trade-layer]", "Weekly review");
 
     const unsafeStatus = JSON.parse(JSON.stringify(status));
     unsafeStatus.phase7_demo_proof.proof_state = "<script>alert(1)</script>";
     unsafeStatus.phase7_demo_proof.boundary = "<script>alert(2)</script>";
     const unsafe = await renderWithStatus(unsafeStatus);
     const tradeHtml = html(unsafe, "[data-trade-layer]");
-    assert(!tradeHtml.includes("<script>"), "Phase 7 panel emitted raw script tag");
-    assert(tradeHtml.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "Phase 7 panel did not escape proof state");
-    assert(tradeHtml.includes("&lt;script&gt;alert(2)&lt;/script&gt;"), "Phase 7 panel did not escape boundary");
+    assert(!tradeHtml.includes("<script>"), "Paper growth panel emitted raw script tag");
+    assert(tradeHtml.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "Paper growth panel did not escape proof state");
+    assert(tradeHtml.includes("&lt;script&gt;alert(2)&lt;/script&gt;"), "Paper growth panel did not escape boundary");
 
     console.log("dashboard_phase7_demo_proof=ok");
 }

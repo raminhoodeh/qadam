@@ -237,7 +237,7 @@ async function main() {
     assertIncludes(rendered, "[data-mission-stack]", "Q5-6");
     assertIncludes(rendered, "[data-mission-stack]", "Q5-14");
     assertIncludes(rendered, "[data-mission-stack]", "Q5E-10");
-    assertIncludes(rendered, "[data-mission-stack]", "Q7-15");
+    assertIncludes(rendered, "[data-mission-stack]", "Paper growth visible");
     assertIncludes(rendered, "[data-mission-strategy]", "Phase 4 strategy");
     assertIncludes(rendered, "[data-mission-strategy]", "approved");
     assertIncludes(rendered, "[data-mission-strategy]", "certification certified");
@@ -277,7 +277,7 @@ async function main() {
     assertIncludes(rendered, "[data-flow-map]", "Prediction-Market Adapter");
     assertIncludes(rendered, "[data-flow-map]", "Position Monitor");
     assertIncludes(rendered, "[data-flow-map]", "Signal Review");
-    assertIncludes(rendered, "[data-trade-layer]", "Q7-15 Phase 7 Demo Proof Visibility");
+    assertIncludes(rendered, "[data-trade-layer]", "Verified paper trades");
     assertIncludes(rendered, "[data-source-summary]", "Sources");
     assertIncludes(rendered, "[data-source-summary]", "Preference MCP");
     assertIncludes(rendered, "[data-watching-list]", "pipeline-row");
@@ -304,7 +304,7 @@ async function main() {
     );
     assertIncludes(rendered, "[data-trade-layer]", "paper submit path available");
     assertIncludes(rendered, "[data-trade-layer]", "no broker POST");
-    assertIncludes(rendered, "[data-trade-layer]", "no Phase 7 proof credit");
+    assertIncludes(rendered, "[data-trade-layer]", "no false growth maturity");
     assertIncludes(rendered, "[data-trade-layer]", "Q5-15 Phase 5 Certification");
     assertIncludes(rendered, "[data-trade-layer]", "Q5E-10 Phase 6 Handoff Closeout");
     assertIncludes(rendered, "[data-trade-layer]", "Phase 5 certified");

@@ -7044,7 +7044,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "cannot bypass Q-CTRL product access",
         "cannot submit paper orders",
         "cannot call brokers",
-        "cannot certify an incomplete 30-day proof run",
+        "cannot mark paper performance as mature without verified records",
         "cannot enable live capital",
     ):
         if phrase not in pt10_boundary:

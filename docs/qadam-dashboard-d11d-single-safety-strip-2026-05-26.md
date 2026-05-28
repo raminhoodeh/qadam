@@ -31,7 +31,7 @@ The strip owns these dashboard-wide facts:
 - Live capital off
 - Dashboard cannot place orders
 - AI cannot bypass risk checks
-- Performance proof requires verified records
+- Paper growth maturity requires verified records
 
 Other panels can still show detailed evidence, blockers, risk checks, and
 capability boundaries, but they should reference Safety Status instead of

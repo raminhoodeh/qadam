@@ -94,7 +94,7 @@ function assertCanonicalViewNav() {
     includesAll(dashboardHtml, [
         "data-dashboard-debug-toggle",
         "data-dashboard-advanced-links hidden",
-        "Advanced / Debug Mode",
+        "Diagnostics",
         "data-dashboard-debug-only"
     ], "advanced debug navigation shell");
     includesAll(renderer, [
@@ -116,7 +116,7 @@ function assertSafetyStripIsSingleGlobalAuthority() {
         "OK - live capital off",
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
-        "Performance proof requires verified records"
+        "One place for paper mode, capital, and order authority"
     ], "single safety strip static shell");
     includesAll(renderer, [
         "renderDashboardSafetyStrip(status, viewModels)",
@@ -189,7 +189,7 @@ async function assertRenderedDashboardContract() {
         ["[data-trade-layer]", "Paper trade lifecycle"],
         ["[data-trade-layer]", "Gate chain and broker readiness"],
         ["[data-trade-layer]", "Signals, trade ideas, and paper trades"],
-        ["[data-capital]", "30-day demo proof"],
+        ["[data-capital]", "60-day paper growth"],
         ["[data-capital]", "Paper trading account"],
         ["[data-capital]", "Verified paper trades"],
         ["[data-sources-workspace-slot]", "Evidence workspace"],
@@ -228,8 +228,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260527-health-language",
-        "/dashboard.js?v=20260527-health-language"
+        "/auth.css?v=20260527-mission-control-ux",
+        "/dashboard.js?v=20260527-mission-control-ux"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();
@@ -243,8 +243,8 @@ async function main() {
 
     console.log("dashboard_d11m_regression_acceptance=ok");
     console.log("dashboard_d11m_views=overview,trades,evidence,reasoning,operations");
-    console.log("dashboard_d11m_default_mode=overview_only");
-    console.log("dashboard_d11m_advanced_debug_tabs_hidden=True");
+    console.log("dashboard_d11m_primary_views_visible=True");
+    console.log("dashboard_d11m_diagnostics_toggle=True");
     console.log("dashboard_d11m_single_safety_strip=True");
     console.log("dashboard_d11m_authority_unchanged=True");
 }

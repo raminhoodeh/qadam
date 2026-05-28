@@ -89,14 +89,14 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260527-health-language",
-        "/dashboard.js?v=20260527-health-language",
+        "/auth.css?v=20260527-mission-control-ux",
+        "/dashboard.js?v=20260527-mission-control-ux",
         "Qadam paper trading dashboard",
         "Paper Trading Overview",
         "Safety status",
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
-        "Performance proof requires verified records",
+        "60-day paper growth trial",
         "How data becomes paper trade decisions",
         "Loading trade ideas"
     ], "D12 dashboard shell");
@@ -104,7 +104,7 @@ async function main() {
     includesAll(renderer, [
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
-        "Performance proof requires verified records",
+        "Paper growth maturity requires verified records",
         "Use Safety Status for order authority",
         "Current summary",
         "Potential setups",
@@ -144,7 +144,7 @@ async function main() {
     includesAll(overviewText, [
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
-        "Performance proof requires verified records",
+        "toward £200,000",
         "Potential setups",
         "Current summary",
         "Trade ideas",
@@ -158,7 +158,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260527-health-language");
+    console.log("dashboard_d12_cache_key=20260527-mission-control-ux");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

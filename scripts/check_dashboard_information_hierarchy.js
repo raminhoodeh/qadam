@@ -48,7 +48,7 @@ assert(detailIntro < detailFlow, "detail panels must appear after the section in
     "data-overview-lifecycle",
     "data-overview-mini-map",
     "data-overview-boundary-rail",
-    "What is happening now?",
+    "Paper Trading Overview",
     "data-mission-primary",
     "Current summary",
     "Needs review",

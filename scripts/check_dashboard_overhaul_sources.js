@@ -171,7 +171,7 @@ async function main() {
         "Source to setup links",
         "Observed signal",
         "Trade idea",
-        "Phase 7 setup pool",
+        "Paper growth setup pool",
         "Pipeline groups",
         "Reliability state by intelligence pipeline",
         "credential required",

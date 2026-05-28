@@ -94,8 +94,8 @@ requiredExplainers.forEach((id) => {
 });
 
 [
-    "One place for paper mode, capital, and order safety.",
-    "Summary only; Advanced mode has diagnostics.",
+    "One place for paper mode, capital, and order authority.",
+    "Summary only; Diagnostics has technical detail.",
     "Map only; nodes are not controls.",
     "Observation only; no order creation.",
     "Hypothesis only; risk still decides.",
@@ -117,7 +117,7 @@ requiredExplainers.forEach((id) => {
 
 assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
 assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
-assertIncludes(html, "/auth.css?v=20260527-health-language", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260527-mission-control-ux", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

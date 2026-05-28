@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260527-health-language"
+        "20260527-mission-control-ux"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -236,7 +236,7 @@ async function main() {
 
     includesAll(paperCapacity, [
         "Paper capacity",
-        "£0 of £100,000 deployed",
+        "toward £200,000",
         "data-paper-capacity-line",
         "P&amp;L"
     ], "rendered D11E paper capacity");

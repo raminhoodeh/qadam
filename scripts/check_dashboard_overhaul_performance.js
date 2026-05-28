@@ -79,11 +79,11 @@ function loadRendererWindow() {
 async function main() {
     includesAll(dashboardHtml, [
         "Performance workspace",
-        "30-day demo proof and paper account performance",
-        "30-day run separate from 100-trade maturity",
+        "60-day paper growth trial and account performance",
+        "2x target over 60 days",
         "No forced trades",
         "Phase 5 trades excluded",
-        "Performance proof requires verified records"
+        "Verified records only"
     ], "Performance workspace static shell");
 
     includesAll(css, [
@@ -156,16 +156,16 @@ async function main() {
     const performanceHtml = html(rendered, "[data-capital]");
     [
         "Performance workspace",
-        "30-day demo proof and paper account performance",
-        "30-day run separate from 100-trade maturity",
+        "60-day paper growth trial and account performance",
+        "2x paper target over 60 days",
         "No forced trades",
         "Phase 5 trades excluded",
         "Verified records only",
-        "Demo day",
-        "Proof week",
+        "Growth window",
+        "Paper target",
         "Qualified setups",
         "Drawdown and halt state",
-        "Proof cadence",
+        "Trade selectivity",
         "Setup funnel",
         "Paper mirror",
         "Paper trading account",
@@ -173,7 +173,7 @@ async function main() {
         "Paper trading account equity over time",
         "Proof lifecycle",
         "Operational completion vs maturity",
-        "100-trade maturity benchmark",
+        "Verified performance maturity",
         "Statistical maturity is tracked separately",
         "No forced trade pressure",
         "Backend source records",

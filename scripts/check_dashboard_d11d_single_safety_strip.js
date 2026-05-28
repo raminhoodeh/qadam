@@ -83,7 +83,7 @@ includesAll(dashboardHtml, [
     "OK - read-only",
     "Dashboard cannot place orders",
     "AI cannot bypass risk checks",
-    "Performance proof requires verified records",
+    "One place for paper mode, capital, and order authority",
     "Use Safety Status for order authority",
     "data-operations-safety-reference"
 ], "static single safety strip shell");
@@ -100,7 +100,7 @@ includesAll(renderer, [
     "function renderDashboardSafetyStrip",
     "safety_strip_model",
     "data-dashboard-safety-strip",
-    "Performance proof requires verified records",
+    "Paper growth maturity requires verified records",
     "renderDashboardSafetyStrip(status, viewModels)",
     "window.buildQadamDashboardSafetyStripModel"
 ], "single safety strip renderer");
@@ -118,7 +118,7 @@ includesAll(contract, [
     "data-dashboard-safety-strip",
     "buildDashboardSafetyStripModel",
     "renderDashboardSafetyStrip",
-    "Performance proof requires verified records",
+    "Paper growth maturity requires verified records",
     "Existing authority remains unchanged and read-only"
 ], "D11D contract document");
 
@@ -150,7 +150,7 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
         "OK - read-only",
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
-        "Performance proof requires verified records"
+        "One place for paper mode, capital, and order authority"
     ], "rendered safety strip");
 
     includesAll(overviewBoundaryHtml, [

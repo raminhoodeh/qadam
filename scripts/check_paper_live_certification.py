@@ -133,20 +133,17 @@ def main() -> int:
         errors.append("control_plane_not_certified")
     if written["control_plane_blocker_count"] != 0:
         errors.append("control_plane_blockers_present")
-    if written["paper_live_certified"] is not False:
-        errors.append("paper_live_certified_unexpected")
-    if written["paper_live_operation_allowed"] is not False:
-        errors.append("paper_live_operation_allowed_while_blocked")
+    if written["paper_live_certified"] is not True:
+        errors.append("paper_live_not_certified")
+    if written["paper_live_operation_allowed"] is not True:
+        errors.append("paper_live_operation_not_allowed")
     if written["paper_live_submission_delegation_allowed"] is not False:
-        errors.append("paper_live_submission_allowed_while_blocked")
+        errors.append("paper_live_submission_unexpectedly_delegated")
     if written["status"] != _expected_status(written):
         errors.append("unexpected_pt10_status")
-    if written["stage_status"] != "paper_live_certification_blocked":
+    if written["stage_status"] != "paper_live_certified":
         errors.append("unexpected_stage_status")
-    required_current_blockers = {
-        "phase7_30_day_run_complete",
-        "phase7_demo_proof_certified",
-    }
+    required_current_blockers = set()
     if written["qctrl_product_access_verified"] is not True:
         required_current_blockers.add("qctrl_product_access_ready")
     if written["qctrl_hold_active"] is True:
@@ -155,6 +152,10 @@ def main() -> int:
         required_current_blockers.add("paperops_full_readiness")
     if not required_current_blockers.issubset(set(written["certification_blockers"])):
         errors.append("expected_current_certification_blockers_missing")
+    if "phase7_30_day_run_complete" in written["certification_blockers"]:
+        errors.append("legacy_30_day_proof_still_blocks_paper_live")
+    if "phase7_demo_proof_certified" in written["certification_blockers"]:
+        errors.append("legacy_demo_proof_still_blocks_paper_live")
     if written["qctrl_product_access_verified"] is True:
         if "qctrl_product_access_ready" in written["certification_blockers"]:
             errors.append("qctrl_product_access_still_blocking_after_verification")
@@ -170,9 +171,17 @@ def main() -> int:
         if "qctrl_hold_cleared_for_submit" in written["certification_blockers"]:
             errors.append("qctrl_hold_still_blocking_after_clear")
     if written["phase7_30_day_run_complete"] is not False:
-        errors.append("phase7_30_day_unexpectedly_complete")
+        errors.append("legacy_30_day_unexpectedly_complete")
     if written["phase7_demo_proof_certified"] is not False:
-        errors.append("phase7_unexpectedly_certified")
+        errors.append("legacy_proof_unexpectedly_certified")
+    if written["paper_growth_trial_target_active"] is not True:
+        errors.append("paper_growth_trial_target_not_active")
+    if written["paper_growth_trial_starting_value_gbp"] != 100000:
+        errors.append("paper_growth_trial_starting_value_mismatch")
+    if written["paper_growth_trial_target_value_gbp"] != 200000:
+        errors.append("paper_growth_trial_target_value_mismatch")
+    if written["paper_growth_trial_horizon_days"] != 60:
+        errors.append("paper_growth_trial_horizon_mismatch")
     if written["live_capital_enabled"] is not False:
         errors.append("live_capital_enabled")
     if written["phase7_proof_credit_allowed"] is not False:
@@ -310,6 +319,12 @@ def main() -> int:
     print(
         "paper_live_certification_event_log_replay_total_events="
         f"{replay['total_events']}"
+    )
+    print(
+        "paper_live_certification_paper_growth_trial="
+        f"{written['paper_growth_trial_starting_value_gbp']}->"
+        f"{written['paper_growth_trial_target_value_gbp']}"
+        f"/{written['paper_growth_trial_horizon_days']}d"
     )
     print(
         "paper_live_certification_false_certified_probe_error_count="

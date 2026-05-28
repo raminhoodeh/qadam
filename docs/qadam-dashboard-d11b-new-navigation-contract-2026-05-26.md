@@ -11,9 +11,9 @@ brokers, send Telegram commands, or enable live capital.
 
 ## Primary View Contract
 
-The dashboard keeps five registered views, but only Overview is visible in the
-default cockpit. Trades, Evidence, Reasoning, and Operations are now Advanced /
-Debug views so the normal dashboard does not present technical tabs first.
+The dashboard keeps five registered views and exposes all five as primary Fund
+Manager navigation. Overview remains the first-read surface, while Trades,
+Evidence, Reasoning, and Operations are no longer hidden behind diagnostics.
 
 | Order | View | Hash | Purpose |
 | --- | --- | --- | --- |
@@ -24,15 +24,14 @@ Debug views so the normal dashboard does not present technical tabs first.
 | 5 | Operations | `#operations` | Runtime, system map, safety counters, communications, governance, and diagnostics. |
 
 The `Executive / Terminal` density switcher is removed. The dashboard now uses
-view ownership plus an explicit Advanced / Debug Mode toggle to manage
-complexity.
+view ownership plus an explicit Diagnostics toggle for deeper debug-only panels.
 
 ## Section Ownership
 
 | Section id | D11B owner view | Reason |
 | --- | --- | --- |
 | `mission-control` | Overview | First-read operating summary. |
-| `review-sequence` | Overview, debug-only | Hidden in the default cockpit; available only when Advanced / Debug Mode is enabled. |
+| `review-sequence` | Overview, debug-only | Hidden in the default cockpit; available only when Diagnostics is enabled. |
 | `trade-layer` | Trades | Canonical trade lifecycle. |
 | `money` | Trades | Paper account belongs with trade outcomes. |
 | `watching` | Evidence | Sources become evidence quality. |
@@ -64,10 +63,9 @@ Old links remain usable:
 
 ## Acceptance
 
-- The visible default dashboard nav has Overview plus an Advanced / Debug Mode
-  toggle.
-- Advanced / Debug Mode reveals the Trades, Evidence, Reasoning, and Operations
-  links.
+- The visible default dashboard nav has Overview, Trades, Evidence, Reasoning,
+  and Operations as primary links.
+- Diagnostics reveals debug-only details without owning the core views.
 - `Sources` is renamed to `Evidence`.
 - `Performance` is no longer a primary nav item.
 - `Governance` is no longer a primary nav item.

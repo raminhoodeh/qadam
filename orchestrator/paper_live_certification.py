@@ -3,8 +3,8 @@
 PT-10 aggregates the paper-live activation path through PT-9 and records whether
 Qadam can be certified for active paper-live operation. It is intentionally
 fail-closed: the control plane can be certified as safe and visible while full
-paper-live certification remains blocked by any mandatory Q-CTRL gate or the
-incomplete Phase 7 proof run.
+paper-live certification remains blocked by any mandatory Q-CTRL or PaperOps
+control-plane gate.
 """
 
 from __future__ import annotations
@@ -25,6 +25,16 @@ PAPER_LIVE_CERTIFICATION_HISTORY = "paper_live_certification_history.jsonl"
 PAPER_LIVE_CERTIFICATION_EVENT_LOG = "paper_live_certification_events.jsonl"
 PAPER_LIVE_CERTIFICATION_EVENT_TYPE = "paper_live_certification_evaluated"
 PAPER_LIVE_CERTIFICATION_COMPONENT = "paper_live_certification"
+PAPER_GROWTH_TRIAL_NAME = "60-day paper growth trial"
+PAPER_GROWTH_TRIAL_STARTING_VALUE_GBP = 100_000
+PAPER_GROWTH_TRIAL_TARGET_VALUE_GBP = 200_000
+PAPER_GROWTH_TRIAL_TARGET_MULTIPLE = 2.0
+PAPER_GROWTH_TRIAL_HORIZON_DAYS = 60
+PAPER_GROWTH_TRIAL_MINDSET = (
+    "Event-driven, evidence-gated, probability/pricing-mispricing trading "
+    "with selective larger paper positions when the strategy, risk, Q-CTRL, "
+    "and Alpaca Paper gates agree."
+)
 
 PAPER_LIVE_CERTIFICATION_BOUNDARY = (
     "PT-10 is a paper-live certification gate only. It can certify that the "
@@ -33,8 +43,8 @@ PAPER_LIVE_CERTIFICATION_BOUNDARY = (
     "bypass the Q-CTRL paper consultation hold, cannot submit paper orders, "
     "cannot call brokers, cannot call live endpoints, cannot send Telegram "
     "messages, cannot enable Telegram commands, cannot force trades, cannot "
-    "grant Phase 7 proof credit, cannot certify an incomplete 30-day proof run, "
-    "and cannot enable live capital."
+    "grant paper growth proof credit, cannot mark paper performance as mature "
+    "without verified records, and cannot enable live capital."
 )
 
 PT10_PUBLIC_FIELDS: tuple[str, ...] = (
@@ -58,6 +68,13 @@ PT10_PUBLIC_FIELDS: tuple[str, ...] = (
     "paper_live_operation_allowed",
     "paper_live_submission_delegation_allowed",
     "paper_live_certification_blocked",
+    "paper_growth_trial_name",
+    "paper_growth_trial_starting_value_gbp",
+    "paper_growth_trial_target_value_gbp",
+    "paper_growth_trial_target_multiple",
+    "paper_growth_trial_horizon_days",
+    "paper_growth_trial_mindset",
+    "paper_growth_trial_target_active",
     "input_gate_count",
     "input_gate_passed_count",
     "input_gate_blocked_count",
@@ -118,6 +135,7 @@ PT10_PUBLIC_FIELDS: tuple[str, ...] = (
     "outbox_message_written_count",
     "phase7_proof_credit_allowed",
     "unsafe_write_counter_total",
+    "paper_growth_trial_unblocks_paper_operation",
     "recommended_next_action",
     "boundary",
     "validation_error_count",
@@ -419,32 +437,38 @@ def _gate_records(settings: Settings, snapshot: dict[str, dict[str, Any]]) -> li
         ),
         _gate(
             key="phase7_demo_run_active",
-            stage="Q7",
+            stage="Paper Growth Trial",
             passed=demo_run.get("run_state") in {"active", "complete_pending_certification"},
             status=str(demo_run.get("run_state") or "missing"),
-            detail="The real 30-day Phase 7 demo-proof run must be active or complete.",
+            detail="The paper growth trial observation run must be active or complete.",
         ),
         _gate(
             key="phase7_30_day_run_complete",
-            stage="Q7",
+            stage="Paper Growth Trial",
             passed=demo_run.get("phase7_30_day_run_complete") is True,
             status=str(demo_run.get("run_state") or "missing"),
-            detail="Full paper-live certification cannot certify an incomplete 30-day proof run.",
+            detail=(
+                "Legacy 30-day proof completion is tracked for performance "
+                "history, but no longer blocks paper-mode operation."
+            ),
             required_for_control_plane=False,
-            required_for_paper_live_certification=True,
+            required_for_paper_live_certification=False,
         ),
         _gate(
             key="phase7_demo_proof_certified",
-            stage="Q7",
+            stage="Paper Growth Trial",
             passed=phase7_certification.get("phase7_demo_proof_certified") is True,
             status=str(phase7_certification.get("status") or "missing"),
-            detail="Phase 7 proof must certify before paper-live certification can pass.",
+            detail=(
+                "Legacy proof certification is a performance-readiness metric, "
+                "not a prerequisite for Alpaca paper operation."
+            ),
             required_for_control_plane=False,
-            required_for_paper_live_certification=True,
+            required_for_paper_live_certification=False,
         ),
         _gate(
             key="live_promotion_still_blocked",
-            stage="Q7",
+            stage="Paper Growth Trial",
             passed=live_promotion.get("live_capital_enabled") is not True
             and live_promotion.get("live_promotion_live_capital_enabled") is not True,
             status=str(live_promotion.get("status") or "missing"),
@@ -456,13 +480,12 @@ def _gate_records(settings: Settings, snapshot: dict[str, dict[str, Any]]) -> li
 def _recommended_next_action(blockers: list[str]) -> str:
     if "qctrl_product_access_ready" in blockers or "qctrl_hold_cleared_for_submit" in blockers:
         return "Resolve Q-CTRL product access so PT-8 can clear the paper-submit hold."
-    if "phase7_30_day_run_complete" in blockers:
-        return "Continue the actual 30-day Phase 7 paper run without backfill or forced trades."
-    if "phase7_demo_proof_certified" in blockers:
-        return "Rerun Phase 7 certification after the 30-day proof window completes."
     if blockers:
         return "Resolve PT-10 certification blockers before treating paper-live as certified."
-    return "Keep PaperOps runner active and monitor certified paper-live operation."
+    return (
+        "Keep the 60-day paper growth trial active: target GBP 200,000 from "
+        "GBP 100,000 in 60 days, using Alpaca Paper only."
+    )
 
 
 def _blocked_certification_status(
@@ -582,6 +605,13 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         and submit_allowed
         and not qctrl_hold,
         "paper_live_certification_blocked": not paper_live_certified,
+        "paper_growth_trial_name": PAPER_GROWTH_TRIAL_NAME,
+        "paper_growth_trial_starting_value_gbp": PAPER_GROWTH_TRIAL_STARTING_VALUE_GBP,
+        "paper_growth_trial_target_value_gbp": PAPER_GROWTH_TRIAL_TARGET_VALUE_GBP,
+        "paper_growth_trial_target_multiple": PAPER_GROWTH_TRIAL_TARGET_MULTIPLE,
+        "paper_growth_trial_horizon_days": PAPER_GROWTH_TRIAL_HORIZON_DAYS,
+        "paper_growth_trial_mindset": PAPER_GROWTH_TRIAL_MINDSET,
+        "paper_growth_trial_target_active": True,
         "input_gate_count": len(gate_records),
         "input_gate_passed_count": sum(1 for gate in gate_records if gate["passed"]),
         "input_gate_blocked_count": sum(1 for gate in gate_records if not gate["passed"]),
@@ -683,6 +713,7 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         "outbox_message_written_count": 0,
         "phase7_proof_credit_allowed": False,
         "unsafe_write_counter_total": unsafe_total,
+        "paper_growth_trial_unblocks_paper_operation": paper_live_certified,
         "recommended_next_action": _recommended_next_action(certification_blockers),
         "boundary": PAPER_LIVE_CERTIFICATION_BOUNDARY,
         "validation_error_count": 0,
@@ -765,10 +796,6 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
             errors.append("paper_live_certified_with_qctrl_hold")
         if artifact.get("full_paper_operational_ready") is not True:
             errors.append("paper_live_certified_without_full_readiness")
-        if artifact.get("phase7_30_day_run_complete") is not True:
-            errors.append("paper_live_certified_before_phase7_complete")
-        if artifact.get("phase7_demo_proof_certified") is not True:
-            errors.append("paper_live_certified_before_phase7_certification")
     else:
         if artifact.get("status") == "paper_live_certified":
             errors.append("paper_live_uncertified_with_certified_status")
@@ -789,6 +816,14 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_live_certification_qctrl_hold_not_visible")
     if artifact.get("phase7_proof_credit_allowed") is not False:
         errors.append("paper_live_certification_phase7_proof_credit_allowed")
+    if artifact.get("paper_growth_trial_target_active") is not True:
+        errors.append("paper_live_certification_growth_trial_not_active")
+    if _int(artifact.get("paper_growth_trial_starting_value_gbp")) != PAPER_GROWTH_TRIAL_STARTING_VALUE_GBP:
+        errors.append("paper_live_certification_growth_trial_start_mismatch")
+    if _int(artifact.get("paper_growth_trial_target_value_gbp")) != PAPER_GROWTH_TRIAL_TARGET_VALUE_GBP:
+        errors.append("paper_live_certification_growth_trial_target_mismatch")
+    if _int(artifact.get("paper_growth_trial_horizon_days")) != PAPER_GROWTH_TRIAL_HORIZON_DAYS:
+        errors.append("paper_live_certification_growth_trial_horizon_mismatch")
     for key in (
         "live_capital_enabled",
         "live_credentials_loaded",
@@ -820,8 +855,8 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
         "cannot call brokers",
         "cannot call live endpoints",
         "cannot send Telegram messages",
-        "cannot grant Phase 7 proof credit",
-        "cannot certify an incomplete 30-day proof run",
+        "cannot grant paper growth proof credit",
+        "cannot mark paper performance as mature without verified records",
         "cannot enable live capital",
     ):
         if phrase not in boundary:
@@ -954,9 +989,17 @@ def paper_live_certification_public_status(
                 "gate_records": [],
                 "safe_to_continue_paper_only": False,
                 "full_paper_operational_ready": False,
+                "paper_growth_trial_name": PAPER_GROWTH_TRIAL_NAME,
+                "paper_growth_trial_starting_value_gbp": PAPER_GROWTH_TRIAL_STARTING_VALUE_GBP,
+                "paper_growth_trial_target_value_gbp": PAPER_GROWTH_TRIAL_TARGET_VALUE_GBP,
+                "paper_growth_trial_target_multiple": PAPER_GROWTH_TRIAL_TARGET_MULTIPLE,
+                "paper_growth_trial_horizon_days": PAPER_GROWTH_TRIAL_HORIZON_DAYS,
+                "paper_growth_trial_mindset": PAPER_GROWTH_TRIAL_MINDSET,
+                "paper_growth_trial_target_active": True,
                 "phase7_proof_credit_allowed": False,
                 "live_capital_enabled": False,
                 "unsafe_write_counter_total": 0,
+                "paper_growth_trial_unblocks_paper_operation": False,
                 "validation_error_count": 0,
                 "recommended_next_action": "Run PT-10 paper-live certification.",
                 "boundary": PAPER_LIVE_CERTIFICATION_BOUNDARY,

@@ -5,8 +5,8 @@ use it safely.
 
 Qadam is a local-first macro intelligence and paper-trading system. It watches
 world events and markets, builds trade hypotheses, checks them against evidence
-and risk rules, runs paper/demo-proof trades only when the gates allow it, and
-logs outcomes for review.
+and risk rules, runs paper trades only when the gates allow it, and logs
+outcomes for review.
 
 Qadam is not a public financial-advice product, not a signal channel, and not a
 live-capital trading bot. In the current first-release workflow, live capital is
@@ -80,20 +80,18 @@ the control system is working.
 
 ## 5. Current Operating Mode
 
-As of this guide update, Qadam is in Phase 7 demo-proof operation:
+As of this guide update, Qadam is in 60-day paper growth operation:
 
 - the available paper trading account is GBP 100,000
 - GBP 1,000 may appear only as a separate single-order/notional risk cap
-- the 30 consecutive calendar day demo-proof harness has started
-- proof trades are collected only where Q7-qualified setups exist
-- the discipline target is 3 proof trades per week where qualified setups exist
+- the paper portfolio target is GBP 200,000 within 60 days
+- Qadam should wait for evidence-gated probability or pricing mispricing
+  opportunities, then take selective larger paper positions only when strategy,
+  risk, Q-CTRL, and Alpaca Paper gates agree
 - no trades are forced
-- Phase 5 test trades do not count as Phase 7 proof trades
-- Phase 7 proof credit remains blocked until Phase 7 evidence earns it
 - the paper-live control plane is certified, visible, and guarded
 - Q-CTRL Fire Opal product access is verified for the `qadam` organization
-- the remaining full paper-live certification blockers are Phase 7 30-day proof
-  completion and certification
+- verified performance maturity remains separate from the 60-day target
 - Fire Opal plus IBM Quantum hardware discovery is a separate explicit gate; it
   needs IBM Quantum token/instance configuration before device probing
 - live capital is disabled
@@ -153,8 +151,7 @@ If you are a founding Fund Manager using the website, you need:
 - an allowlisted email address
 - a Supabase account created through the Qadam sign-up route
 - access to `qadam.trade`
-- enough context to understand that Qadam is in paper/demo-proof mode, not live
-  trading mode
+- enough context to understand that Qadam is in paper mode, not live trading mode
 
 If you are the local operator, you also need:
 
@@ -195,7 +192,7 @@ Use this sequence the first time you open Qadam.
 5. Open Reasoning to separate private priors, factual evidence, hypotheses,
    missing corroboration, Strategy Lead review, and quant annotations.
 6. Open Trades to inspect observed signals, candidates, blocked trades, paper
-   order state, paper-account performance, and Phase 7 proof status.
+   order state, and paper-account performance.
 7. Open Operations only when you need the full expandable system map, event
    trail, Telegram state, governance comments, or technical diagnostics.
 8. Treat a blocked/no-trade state as potentially healthy until the evidence
@@ -231,7 +228,7 @@ Use Trades to answer:
 - which ideas are blocked and why
 - whether any staged, submitted, open, closed, or postmortem states exist
 - how the paper account is performing
-- whether Phase 7 proof status is active, blocked, incomplete, or mature
+- whether the paper growth trial is active, blocked, incomplete, or mature
 
 Trade states:
 
@@ -358,7 +355,7 @@ Use this mapping when reading old notes:
 | Cognition | Reasoning |
 | Worldview / Private Edge | Reasoning prior context |
 | Trade Layer | Trades |
-| Money / Paper Account Timeline | Trades paper account and Phase 7 proof area |
+| Money / Paper Account Timeline | Trades paper account and 60-day growth trial area |
 | Forbidden | Operations safety diagnostics plus Safety Status |
 | Process Console | Operations event trail |
 | Fund Manager Comments | Operations governance |
@@ -390,7 +387,7 @@ Important labels:
 | Paper order staged | A guarded paper order preparation record exists. |
 | Paper order submitted | A paper order has been submitted to the paper broker under the allowed path. |
 | Q-CTRL hold | Paper submission remains held while Q-CTRL product access or consultation is unresolved. The hold is clear when PT-1 reports `qctrl_paper_consultation_ready`. |
-| Phase 7 proof credit | Credit for the 30-day proof sample; it is granted only by backend Phase 7 proof artifacts. |
+| Paper growth proof | Verified account-performance evidence for the 60-day paper growth trial. |
 
 ## 11. How Qadam Makes A Trade
 
@@ -449,24 +446,25 @@ When Qadam shows a signal or candidate, ask:
 
 If those answers are missing, the idea should remain blocked or under review.
 
-## 14. Demo-Proof Rules
+## 14. Paper Growth Rules
 
-Phase 7 is the demo-proof phase.
+Qadam's current paper mandate is the 60-day paper growth trial.
 
 Operating rules:
 
-- 30 consecutive calendar days
-- 3 proof trades per week only where qualified setups exist
+- start from GBP 100,000 paper capital
+- target GBP 200,000 paper portfolio value within 60 days
+- favor fewer, larger, evidence-gated paper moves over low-conviction churn
+- trade only where qualified setups exist
 - no forced trades
-- no manual trade-level overrides during the proof sample
-- 100 closed proof trades is the maturity benchmark
+- no manual trade-level overrides during the paper growth sample
+- verified performance maturity remains separate from the 60-day growth target
 - max drawdown must stay within the configured cap
-- postmortems are required for closed proof trades
-- Phase 5 test trades do not count as Phase 7 proof trades
+- postmortems are required for closed paper trades
 - live capital stays disabled
 
 If a day has no qualified setup, the correct action is to record the no-trade
-rationale. Qadam should not trade just to satisfy a quota.
+rationale. Qadam should not trade just to satisfy the 60-day target.
 
 ## 15. Daily Operating Routine
 
@@ -481,7 +479,7 @@ Use this routine when checking Qadam.
 5. Open Reasoning and separate priors, evidence, hypotheses, missing
    corroboration, and analyst review.
 6. Open Trades and separate observations, candidates, blocked ideas, paper
-   order state, paper-account state, and Phase 7 proof status.
+   order state, and paper-account state.
 7. Open Operations only for the full expandable system map, event trail,
    safety diagnostics, Telegram communications, or governance comments.
 8. Record a no-trade rationale when there is no qualified setup. Do not force a
@@ -514,7 +512,7 @@ Members cannot:
 - bypass the Event Log
 - turn worldview priors into trade evidence
 - treat a candidate as an order
-- manually interfere with individual proof trades during a clean demo-proof
+- manually interfere with individual paper trades during a clean paper growth
   sample
 
 ## 17. Local Operator Instructions
@@ -547,11 +545,11 @@ scripts/start_postgres_timescale_ingestion.sh
 .venv/bin/python scripts/check_cockpit_status.py
 ```
 
-### Running the Phase 7 demo-proof harness
+### Running the paper trading routine
 
-The actual demo-proof runner should be allowed to advance by real calendar
-time. Do not reset or backfill it unless there is an explicit governance
-decision to restart the proof window.
+The actual paper trading runner should be allowed to advance by real market and
+calendar time. Do not reset or backfill it unless there is an explicit
+governance decision to restart the paper growth trial.
 
 Run one operational pass:
 
@@ -582,7 +580,7 @@ The runner must preserve:
 - no live credentials loaded
 - no live capital
 - no broker live endpoints
-- no Phase 7 proof credit unless a later gate earns it
+- no mature performance claim unless verified records support it
 
 ### Source and dashboard checks
 
@@ -687,7 +685,7 @@ Escalate or comment if:
 | Money | Older implementation name now represented inside Trades. |
 | Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |
 | Paper mode | Test-account mode; no live capital. |
-| Demo proof | The Phase 7 proof window for observing Qadam under real calendar time. |
+| Paper growth trial | The 60-day paper operating window targeting GBP 200,000 from GBP 100,000. |
 | Qualified setup | A setup that passes the current evidence, strategy, and risk prerequisites. |
 | No-trade rationale | The logged reason Qadam did not trade. |
 | Candidate | A structured trade idea, not an order. |

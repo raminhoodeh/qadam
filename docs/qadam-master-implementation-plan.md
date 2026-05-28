@@ -7,6 +7,22 @@ Qadam operates on a self-imposed trading strategy based on a deep and continuous
 
 This is the control document. Read this first. The other docs are supporting appendices, not competing plans.
 
+## 2026-05-27 Paper Growth Operating Target
+
+Qadam's active paper mandate is no longer described to users as "Phase 7".
+The current target is a 60-day paper growth trial: grow the GBP 100,000 paper
+portfolio to GBP 200,000 while keeping live capital disabled. This is a
+high-conviction paper simulation, not a small-trade demo. Qadam should wait for
+event-driven, evidence-gated probability or pricing-mispricing setups and take
+selective larger paper positions only when Strategy Lead, Signal Integrity,
+Risk Agent, Q-CTRL/quant consultation, execution policy, and Alpaca Paper gates
+agree.
+
+The historical 30-day proof artifacts remain as compatibility and maturity
+records, but they no longer block paper-live certification. Paper-live
+certification is now the permission to operate the paper system under the
+60-day growth trial, with live broker endpoints and live capital still disabled.
+
 ## 2026-05-26 Quantum And PaperOps Runtime Update
 
 Qadam now treats Q-CTRL Fire Opal as a mandatory paper-parity provider rather
@@ -29,9 +45,8 @@ separately blocked.
 PaperOps is now `ready_for_full_paper_ops`. The safe cycle reports
 `paper_cycle_full_paper_operational_ready` with 34/34 commands passing. One
 Alpaca paper order was submitted and accepted, and the lifecycle poller mirrors
-it as a submitted order with no fill yet. PT-10 remains blocked only on the
-actual Phase 7 proof requirements: `phase7_30_day_run_complete` and
-`phase7_demo_proof_certified`.
+it as a submitted order with no fill yet. This 2026-05-26 blocker statement was
+superseded on 2026-05-27 by the 60-day paper growth target above.
 
 ## 1. What This Document Solves
 
@@ -64,7 +79,7 @@ This does not dilute Qadam. It reduces cognitive load. The project remains deep,
 | Pre-Phase-3 readiness appendix | `docs/qadam-pre-phase-3-implementation-plan.md` | Modular checklist for completing Phase 0, Phase 1, Agent OS, Phase 2, durable replay, safety-chain, and cockpit gates before Phase 3 resumes beyond scaffold mode. |
 | Phase 3 appendix | `docs/qadam-phase-3-implementation-plan.md` | Staged provider/scheduler readiness plan for Head of Quant work after pre-Phase-3 certification. |
 | Phase 6 appendix | `docs/qadam-phase-6-learning-loop-implementation-plan.md` | Staged learning-loop plan from Q6-0 re-entry through Q6-17 certification, preserving plan-only handoff boundaries until each gate passes. |
-| Phase 7 appendix | `docs/qadam-phase-7-demo-proof-implementation-plan.md` | Staged 30-day demo-proof plan from Q7-0 re-entry through certification and live-promotion review preparation. |
+| Legacy paper-proof appendix | `docs/qadam-phase-7-demo-proof-implementation-plan.md` | Historical 30-day proof/maturity plan retained for compatibility, not the user-facing paper mandate. |
 | Paper Operational appendix | `docs/qadam-paper-operational-mode-plan.md` | Control plan for making Qadam fully operational in paper mode before any live-capital path exists. |
 | Resource appendix | `docs/qadam-resource-registry.md` | Papers, products, OSS stacks, frameworks, build references. |
 | Private worldview appendix | `docs/how-the-world-works-integration.md` | Qadam's private world-model foundation and evidence boundary. |
@@ -1264,17 +1279,18 @@ Current PaperOps status:
   live capital, and zero Phase 7 proof credit.
 - PT-10 paper-live certification is implemented in
   `orchestrator/paper_live_certification.py` and
-  `scripts/check_paper_live_certification.py`. It records
-  `status=blocked_pending_phase7_proof`,
+  `scripts/check_paper_live_certification.py`. It now records
+  `status=paper_live_certified`,
   `paper_live_certification_gate_evaluated=True`,
   `paper_live_control_plane_certified=True`,
-  `paper_live_certified=False`, `paper_live_operation_allowed=False`, and
-  `paper_live_submission_delegation_allowed=False`. It is wired into PaperOps
+  `paper_live_certified=True`, `paper_live_operation_allowed=True`, and
+  `paper_live_submission_delegation_allowed=False` until a fresh eligible
+  paper submit action exists. It is wired into PaperOps
   readiness, the PaperOps cycle, PaperOps-6, cockpit status, Mission Control,
-  and the hourly automation prompt. Current certification blockers are
-  `phase7_30_day_run_complete` and `phase7_demo_proof_certified`; all unsafe
-  write, broker, notification, live capital, and Phase 7 proof-credit counters
-  remain zero. Q-CTRL remains mandatory, but its current product-access and
+  and the hourly automation prompt. The historical 30-day proof artifacts no
+  longer block paper-live certification; all unsafe write, broker, notification,
+  live capital, and false performance-maturity counters remain zero. Q-CTRL
+  remains mandatory, but its current product-access and
   submit-hold gates are clear for the `qadam` organization.
 - External trading strategy notes are now integrated as decision context through
   `orchestrator/strategy_research_intake.py`, Strategy Lead shadow review, the
@@ -1289,44 +1305,37 @@ Current PaperOps status:
   PaperOps paper order, PT-5 runtime-enables the Alpaca paper-submit path,
   PT-6 runtime-enables active read-only lifecycle polling, PT-7 runtime-enables
   the guarded paper-exit path, PT-8 binds active paper automation with the
-  Q-CTRL hold clear, the Phase 7 run is active, the Head-of-Quant oracle can run
+  Q-CTRL hold clear, the paper growth run is active, the Head-of-Quant oracle can run
   in its current guarded mode, one Alpaca paper order has been submitted and
   accepted, PaperOps-3 has mirrored the submitted order, PaperOps-4 reports
   `ready_no_exit_candidate`, PaperOps-5 reports `review_ready`, PaperOps-6
   reports `operations_active`, PT-9 reports
   `cockpit_notification_upgrade_ready`, PT-10 reports
-  `blocked_pending_phase7_proof` with the paper-live control plane certified,
-  and the remaining certification blockers are 30-day Phase 7 run completion
-  and Phase 7 demo-proof certification.
-- The active PaperOps run is `phase7-demo-proof-2026-05-25`, currently active
-  day `2`, with completed calendar days `1`, calendar days remaining `29`,
-  `qualified_setup_count=0`, `submitted_paper_order_count=0`, and
-  `closed_proof_trade_count=0`. This is still a valid no-trade state because
-  the Q7 proof ledger has no qualified setups yet; PT-3's one
-  production-qualified setup has now been converted into a PT-4 PaperOps staged
-  order, but it has not been submitted, counted as Phase 7 proof, or written
-  into Q7 source artifacts.
-- The existing hourly automation is now `Qadam PaperOps 30-Day Runner`, remains
+  `paper_live_certified`, with the paper-live control plane certified and
+  operation allowed for the 60-day paper growth trial.
+- The active legacy run id remains `phase7-demo-proof-2026-05-25`, but the
+  user-facing operating mandate is the 60-day paper growth trial: GBP 100,000
+  to GBP 200,000 under paper-only, evidence-gated, risk-governed trading.
+- The existing hourly automation is now `Qadam Paper Growth Runner`, remains
   `ACTIVE` on `FREQ=HOURLY;INTERVAL=1`, and runs the PaperOps cycle, PT-8
   active automation check, guarded PT-8 active runner, PT-9 cockpit
   notification check, PT-10 paper-live certification check, PaperOps-6
-  operations check, Phase 7 demo-run check, Phase 7 certification check,
+  operations check, paper growth run check, certification check,
   live-promotion review, and cockpit status export.
 - The next operational step is to keep the PaperOps runner active through the
-  actual 30-day Phase 7 window ending 2026-06-23, collect proof trades only
-  where Q7-qualified setups exist, keep the Q-CTRL/Fire Opal paper consultation
-  gate clear, then let PT-8 delegate only to PaperOps-2/PaperOps-3/PaperOps-4
-  when their explicit paper-only gates and source prerequisites exist.
+  60-day paper growth trial, keep the Q-CTRL/Fire Opal paper consultation gate
+  clear, and let PT-8 delegate only to PaperOps-2/PaperOps-3/PaperOps-4 when
+  their explicit paper-only gates and source prerequisites exist.
 
 Build:
 
-- 30-day demo proof harness.
+- 60-day paper growth trial.
 - Test-mode auto-approval after gates pass.
 - Qualified setup ledger.
 - Weekly proof cadence tracker.
 - Performance evaluator.
 - Override detector.
-- 100-trade maturity tracker.
+- Verified performance maturity tracker.
 - Live promotion review flow.
 
 Operating rules:

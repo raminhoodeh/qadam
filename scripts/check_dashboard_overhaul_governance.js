@@ -167,7 +167,7 @@ async function main() {
         "Trade candidate:",
         "Observed signal:",
         "Strategy Lead / reasoning chain",
-        "30-day demo proof",
+        "60-day paper growth trial",
         "Operations health",
         "Approval and review records",
         "Phase 4 strategy approval",

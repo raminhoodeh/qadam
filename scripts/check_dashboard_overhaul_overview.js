@@ -176,7 +176,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-system-status]", "System status");
     assertIncludes(rendered, "[data-overview-system-status]", "Paper trading");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper capacity");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "£0 of £100,000 deployed");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "toward £200,000");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
     assertIncludes(rendered, "[data-overview-metrics]", "Source health");
     assertIncludes(rendered, "[data-overview-metrics]", "Trade path");

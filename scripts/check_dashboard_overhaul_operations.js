@@ -202,7 +202,7 @@ async function main() {
         "Bridge and snapshot",
         "Exporter and cache",
         "Module health",
-        "Phase/certification diagnostics",
+        "Certification diagnostics",
         "Kill-switch ledger",
         "Full system map",
         "Q5-13 Functional System Map Dashboard",

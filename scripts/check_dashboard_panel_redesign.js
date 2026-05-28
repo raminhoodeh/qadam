@@ -68,8 +68,8 @@ function staticBriefBlock(id) {
     ".panel-brief.blocked"
 ].forEach((needle) => assertText(css, needle, "panel redesign CSS"));
 
-assertText(html, "/auth.css?v=20260527-health-language", "stylesheet cache key");
-assertText(html, "/dashboard.js?v=20260527-health-language", "dashboard script cache key");
+assertText(html, "/auth.css?v=20260527-mission-control-ux", "stylesheet cache key");
+assertText(html, "/dashboard.js?v=20260527-mission-control-ux", "dashboard script cache key");
 assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
 
 (async () => {

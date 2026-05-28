@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260527-health-language",
-        "/dashboard.js?v=20260527-health-language"
+        "/auth.css?v=20260527-mission-control-ux",
+        "/dashboard.js?v=20260527-mission-control-ux"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -132,7 +132,7 @@ async function main() {
         ["[data-source-summary]", "Sources"],
         ["[data-cognition]", "Reasoning readout"],
         ["[data-flow-map]", "Full system map"],
-        ["[data-capital]", "30-day demo proof"]
+        ["[data-capital]", "60-day paper growth"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     assertNoUnsafePublicText(html, "D11L dashboard HTML");
@@ -141,7 +141,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260527-health-language");
+    console.log("dashboard_d11l_cache_key=20260527-mission-control-ux");
     console.log("dashboard_authority_unchanged=True");
 }
 

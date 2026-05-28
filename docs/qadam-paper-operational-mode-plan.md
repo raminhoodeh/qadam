@@ -1,6 +1,25 @@
 # Qadam Paper Operational Mode Plan
 
-Date: 2026-05-26
+Date: 2026-05-27
+
+## 2026-05-27 Superseding Operating Target
+
+Qadam paper operation is now framed as a 60-day paper growth trial, not a
+phase-numbered proof exercise. The explicit paper objective is to grow the GBP
+100,000 paper portfolio to GBP 200,000 within 60 days while preserving the same
+governance chain that would apply to live mode.
+
+This does not mean forcing trades. It means Qadam should behave like a
+high-conviction macro fund in paper mode: wait for evidence-gated probability
+or pricing-mispricing opportunities, then take selective larger paper positions
+only when the source stack, Strategy Lead, Signal Integrity, Risk Agent,
+Q-CTRL/quant consultation, execution policy, and Alpaca Paper route agree.
+
+The earlier 30-day proof artifacts remain useful historical and maturity
+monitoring records, but they no longer block paper-live certification. PT-10
+certifies paper operation against the active paper growth trial while live
+capital, live broker endpoints, UI-to-broker controls, and LLM-to-broker bypass
+remain disabled.
 
 ## Scope
 
@@ -36,8 +55,9 @@ it. The lifecycle poller has mirrored it as a submitted order with
 `paper_exit_path_status=ready_no_exit_candidate`.
 
 The remaining PT-10 full paper-live certification blockers are no longer
-Q-CTRL blockers. They are the actual Phase 7 proof requirements:
-`phase7_30_day_run_complete` and `phase7_demo_proof_certified`.
+Q-CTRL blockers and no longer the historical 30-day proof artifacts. Paper-live
+certification is governed by the 60-day paper growth trial and by the live
+capital, broker, risk, execution-policy, Q-CTRL, and Alpaca Paper safety gates.
 
 The attached Fire Opal on IBM Quantum guide is now represented as a separate
 readiness gate: `scripts/check_qctrl_fire_opal_ibm_quantum.py`. That check
@@ -57,9 +77,9 @@ Qadam is paper-operational when it can repeatedly run this loop:
    provider gate is enabled.
 4. Hand off Strategy Lead, Signal Integrity, Risk Agent, Execution Policy, and
    kill-switch decisions.
-5. Record qualified setups for Phase 7.
+5. Record qualified paper growth setups.
 6. Auto-approve only qualified paper setups without manual trade-level approval.
-7. Stage a Phase 7 proof paper order with idempotency and pre-trade snapshot.
+7. Stage a paper growth order with idempotency and pre-trade snapshot.
 8. Submit eligible orders only to Alpaca paper.
 9. Mirror submitted paper orders, positions, exits, closed proof trades, and
    reconciliation state.
@@ -117,26 +137,25 @@ Implemented:
   PT-3 production-qualified setup, records one PaperOps test-mode
   auto-approval, stages one Alpaca-paper order with deterministic idempotency,
   Event Log prewrite metadata, and pre-trade snapshot, and keeps submit,
-  broker, live endpoint, Q7 artifact mutation, forced-trade, and Phase 7
-  proof-credit authority false.
-- Phase 7 demo-proof run ledger is active.
+  broker, live endpoint, legacy artifact mutation, forced-trade, and false
+  performance-maturity authority false.
+- Paper growth run ledger is active.
 - Q7 qualified setup, auto-approval, staging, guarded submit, lifecycle,
   postmortem, performance, drawdown, override, signal-funnel, maturity, cockpit,
   weekly review, certification, and live-promotion review artifacts exist.
 - Paper-only safety boundaries are explicit.
-- Q7 certification correctly blocks because the run has not completed and
-  there is no proof sample yet.
-- PaperOps-Q exists as a Q-CTRL paper consultation gate. The SDK is importable,
-  but the flagged provider probe currently fails safely because product access
-  is not active for the configured identity.
+- Legacy proof certification remains useful as a maturity record, but it no
+  longer blocks active paper operation.
+- PaperOps-Q exists as a Q-CTRL paper consultation gate. The SDK is importable
+  and product access is verified for the configured `qadam` identity.
 - PT-5 exists as a runtime Alpaca paper-submit enablement gate. It enables the
   PaperOps-2 submit path through a public-safe artifact rather than editing
   `.env`; the configured env flag remains false.
 - PaperOps-2 exists as an explicit Alpaca paper POST gate. The default check is
   non-submit, and a paper order POST requires paper mode, live capital disabled,
   either `QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true` or PT-5 runtime enablement,
-  paper endpoint classification, paper credentials, a PT-4/Q7 eligible staged
-  paper order, source prewrite, pre-trade snapshot, Phase 7 idempotency, and
+  paper endpoint classification, paper credentials, a PT-4 eligible staged
+  paper order, source prewrite, pre-trade snapshot, paper-growth idempotency, and
   the explicit `--submit-paper-order` CLI flag.
 - PaperOps-3 exists as a read-only paper lifecycle poller. It consumes only
   successful PaperOps-2 submitted paper orders and now requires PT-6 runtime
@@ -152,24 +171,23 @@ Implemented:
 - PaperOps-5 exists as a notification and review layer. It renders public-safe
   PaperOps lifecycle notification review records, but it does not send Telegram
   live messages, accept Telegram commands, approve trades, write brokers, close
-  positions, or grant proof credit.
-- PaperOps-6 exists as the active 30-day paper run operations binding. It keeps
-  the hourly PaperOps runner active through the actual Phase 7 window and
+  positions, or mark performance as mature without verified records.
+- PaperOps-6 exists as the active paper run operations binding. It keeps the
+  hourly PaperOps runner active through the 60-day paper growth trial and
   preserves the no-forced-trades rule.
 - PT-8 exists as the active paper trading automation controller. It binds the
   hourly runner to the existing guarded PaperOps-2 submit, PaperOps-3 poll, and
-  PaperOps-4 exit paths, but currently holds paper submit because Q-CTRL paper
-  consultation product access is not ready.
+  PaperOps-4 exit paths. Q-CTRL product access is ready for paper consultation;
+  submission still depends on a fresh eligible paper action.
 - PT-9 exists as the cockpit and notification upgrade layer. It exposes
-  public-safe Fund Manager readouts for PaperOps-5, PaperOps-6, PT-8, and the
-  current Q-CTRL hold, while keeping Telegram live-send, outbox writes, Telegram
-  commands, broker calls, paper-order authority, live capital, and Phase 7 proof
-  credit disabled.
+  public-safe Fund Manager readouts for PaperOps-5, PaperOps-6, PT-8, and
+  Q-CTRL paper consultation, while keeping Telegram live-send, outbox writes,
+  Telegram commands, broker calls outside the Alpaca Paper route, live capital,
+  and false performance-maturity claims disabled.
 - PT-10 exists as the paper-live certification gate. It certifies the paper-live
-  control plane as safe and visible, but correctly blocks full paper-live
-  certification until Q-CTRL product access is active, the Q-CTRL submit hold is
-  cleared, full PaperOps readiness is achieved, and the actual 30-day Phase 7
-  proof run is complete and certified.
+  control plane as safe, visible, and allowed for paper operation under the
+  60-day growth trial once Q-CTRL product access, the Q-CTRL submit hold, full
+  PaperOps readiness, and Alpaca Paper route controls are satisfied.
 
 Remaining paper-operational gaps:
 
@@ -179,11 +197,12 @@ Remaining paper-operational gaps:
 - `QADAM_ALPACA_PAPER_SUBMIT_ENABLED` is still false by default, but PT-5 now
   records `alpaca_paper_submit_effective=True` through a runtime artifact.
 - `QADAM_ALPACA_PAPER_EXIT_ENABLED` is still false by default.
-- `QADAM_QCTRL_PAPER_CONSULTATION_ENABLED` is still false by default.
-- Q7 currently has zero ledger-qualified setups, so no Phase 7 proof paper
-  order can be submitted or credited. PT-3 finds one production-qualified setup
-  and PT-4 has converted it into one PaperOps staged paper order, but both
-  intentionally leave the Q7 source ledger count at zero.
+- `QADAM_QCTRL_PAPER_CONSULTATION_ENABLED` remains a guarded
+  runtime-controlled path; product access is verified for the `qadam`
+  organization.
+- The legacy setup ledger is no longer the paper-live blocker. PT-3 finds one
+  production-qualified setup and PT-4 has converted it into one PaperOps staged
+  paper order under the guarded paper route.
 - The explicit Alpaca paper POST gate has submitted one PaperOps paper order to
   Alpaca paper. The broker accepted it and the sanitized receipt is preserved
   across normal safe cycles.
@@ -683,11 +702,11 @@ Status after implementation:
   scheduler, preserved 30-day calendar, PaperOps cycle, public-safe cockpit
   mirror, and zero unsafe side effects.
 - The existing Codex automation `qadam-phase-7-demo-proof-runner` was updated
-  in place and renamed `Qadam PaperOps 30-Day Runner`; it remains `ACTIVE` on
+  in place and renamed `Qadam Paper Growth Runner`; it remains `ACTIVE` on
   `FREQ=HOURLY;INTERVAL=1`, bound to `/Users/raminhoodeh/Desktop/qadam`, and
   now runs the PaperOps cycle, PT-8 active automation checker, the guarded PT-8
   active runner, PT-9 cockpit notification checker, PT-10 paper-live
-  certification checker, PaperOps-6 checker, Phase 7 demo run, certification,
+  certification checker, PaperOps-6 checker, paper growth run, certification,
   live-promotion review, and cockpit status checks.
 - The scheduler prompt now has ten required command fragments, including
   `scripts/check_paper_live_certification.py`.
@@ -695,8 +714,9 @@ Status after implementation:
   `data/runtime/paperops_30_day_operations_history.jsonl`, and
   `data/runtime/paperops_30_day_operations_events.jsonl`.
 - Current PaperOps-6 status is `operations_active`.
-- Current run state is `phase7-demo-proof-2026-05-25`, active day `2`,
-  completed calendar days `1`, and calendar days remaining `29`.
+- Legacy run state remains recorded as `phase7-demo-proof-2026-05-25`, active
+  day `2`, completed calendar days `1`, and calendar days remaining `29`, but
+  the active user-facing mandate is the 60-day paper growth trial.
 - Current no-trade state is valid: `qualified_setup_count=0`,
   `submitted_paper_order_count=0`, `closed_proof_trade_count=0`, and
   `no_trade_rationale=no_q7_qualified_setups_detected_for_active_observation`.

@@ -36,8 +36,8 @@ function assertIncludes(text, needle, label) {
     "data-dashboard-view-target=\"operations\"",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links hidden",
-    "/auth.css?v=20260527-health-language",
-    "/dashboard.js?v=20260527-health-language"
+    "/auth.css?v=20260527-mission-control-ux",
+    "/dashboard.js?v=20260527-mission-control-ux"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
 
 [

@@ -92,7 +92,7 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", certified ? "Phase 5 certified" : "Phase 5 not certified");
     assertIncludes(rendered, "[data-trade-layer]", certified ? "Q5-14 exit passed" : "Q5-14 exit blocked");
     assertIncludes(rendered, "[data-trade-layer]", certified ? "Phase 6 handoff allowed" : "Phase 6 handoff blocked");
-    assertIncludes(rendered, "[data-trade-layer]", "no Phase 7 proof credit");
+    assertIncludes(rendered, "[data-trade-layer]", "no false growth maturity");
     assertIncludes(rendered, "[data-trade-layer]", "live capital disabled");
 
     console.log("dashboard_phase5_certification=ok");

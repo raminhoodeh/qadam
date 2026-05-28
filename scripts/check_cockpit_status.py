@@ -7320,14 +7320,14 @@ def main() -> int:
     if paper_live_certification.get("paper_live_control_plane_certified") is not True:
         print("cockpit_status_paper_live_control_plane_not_certified=true")
         return 1
-    if paper_live_certification.get("paper_live_certified") is not False:
-        print("cockpit_status_paper_live_unexpectedly_certified=true")
+    if paper_live_certification.get("paper_live_certified") is not True:
+        print("cockpit_status_paper_live_not_certified=true")
         return 1
-    if paper_live_certification.get("paper_live_operation_allowed") is not False:
-        print("cockpit_status_paper_live_operation_allowed=true")
+    if paper_live_certification.get("paper_live_operation_allowed") is not True:
+        print("cockpit_status_paper_live_operation_not_allowed=true")
         return 1
-    if int(paper_live_certification.get("certification_blocker_count", 0) or 0) < 1:
-        print("cockpit_status_paper_live_certification_blockers_missing=true")
+    if int(paper_live_certification.get("certification_blocker_count", 0) or 0) != 0:
+        print("cockpit_status_paper_live_certification_blockers_present=true")
         return 1
     if (
         paper_live_certification.get("qctrl_hold_active") is True
@@ -7355,7 +7355,7 @@ def main() -> int:
             print(f"cockpit_status_paper_live_certification_unsafe_{key}=true")
             return 1
     if (
-        "cannot certify an incomplete 30-day proof run"
+        "cannot mark paper performance as mature without verified records"
         not in paper_live_certification.get("boundary", "")
     ):
         print("cockpit_status_paper_live_certification_boundary_weak=true")

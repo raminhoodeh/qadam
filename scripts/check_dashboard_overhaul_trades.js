@@ -81,7 +81,7 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-trades-workspace",
         "Trade lifecycle board",
-        "Performance proof requires verified records"
+        "Verified performance only"
     ], "Trades workspace static shell");
 
     includesAll(css, [

@@ -57,7 +57,7 @@ such as:
 - Replaced `Single safety strip` with `Safety Status`.
 - Replaced broker-path jargon with direct user-facing safety statements:
   `Dashboard cannot place orders`, `AI cannot bypass risk checks`, and
-  `Performance proof requires verified records`.
+  `Paper growth maturity requires verified records`.
 - Replaced Overview filler copy with direct explanations of status, sources,
   strategies, thoughts, trade ideas, and paper capacity.
 - Replaced `Eligible setups` with `Potential setups` in the Overview.
