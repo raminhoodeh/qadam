@@ -19,6 +19,12 @@ const TELEGRAM_FIELDS = [
     "active_message_classes",
     "bot_configured",
     "boundary",
+    "daily_portfolio_digest_daily_trade_count",
+    "daily_portfolio_digest_due_for_delivery",
+    "daily_portfolio_digest_enabled",
+    "daily_portfolio_digest_portfolio_balance_gbp",
+    "daily_portfolio_digest_portfolio_performance_pct",
+    "daily_portfolio_digest_status",
     "default_chat_configured",
     "delivery_target_count",
     "delivery_target_modes",
@@ -66,6 +72,35 @@ const TELEGRAM_INTAKE_FIELDS = [
     "world_event_datapoint_count"
 ];
 
+const TELEGRAM_DAILY_DIGEST_FIELDS = [
+    "already_sent",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_write_allowed",
+    "daily_trade_count",
+    "daily_trade_summaries",
+    "delivery_after_local_time",
+    "dry_run",
+    "due_for_delivery",
+    "enabled",
+    "last_delivery_failure_category",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "local_date",
+    "paper_order_allowed",
+    "portfolio_balance_gbp",
+    "portfolio_performance_pct",
+    "portfolio_total_pnl_gbp",
+    "schema_version",
+    "status",
+    "target",
+    "telegram_command_path_enabled",
+    "telegram_message_id_present",
+    "timezone"
+];
+
 const MESSAGE_FIELDS = [
     "created_at",
     "message_class",
@@ -89,11 +124,14 @@ async function main() {
     const communications = status.communications || {};
     const telegram = communications.telegram || {};
     const telegramIntake = communications.telegram_intake || {};
+    const telegramDailyDigest = communications.telegram_daily_portfolio_digest || {};
     const messages = Array.isArray(telegram.recent_messages) ? telegram.recent_messages : [];
     const missing = missingFields(telegram, TELEGRAM_FIELDS);
     const missingIntake = missingFields(telegramIntake, TELEGRAM_INTAKE_FIELDS);
+    const missingDailyDigest = missingFields(telegramDailyDigest, TELEGRAM_DAILY_DIGEST_FIELDS);
     assert(!missing.length, `communications.telegram missing fields: ${missing.join(", ")}`);
     assert(!missingIntake.length, `communications.telegram_intake missing fields: ${missingIntake.join(", ")}`);
+    assert(!missingDailyDigest.length, `communications.telegram_daily_portfolio_digest missing fields: ${missingDailyDigest.join(", ")}`);
 
     assert(telegram.status === "dry_run", "Telegram status is not dry_run");
     assert(telegram.mode === "dry_run", "Telegram mode is not dry_run");
@@ -123,6 +161,16 @@ async function main() {
     assert(!/@/.test(JSON.stringify(telegram)), "Telegram public status leaked handle-like content");
     assert(!/\/Users\//.test(JSON.stringify(telegram)), "Telegram public status leaked local path");
     assert(!/\d{6,}:[A-Za-z0-9_-]{20,}/.test(JSON.stringify(telegram)), "Telegram public status leaked token-like content");
+    assert(telegram.daily_portfolio_digest_enabled === true, "Daily portfolio digest is not enabled");
+    assert(["not_due", "ready_to_send", "sent", "already_sent", "dry_run_ready"].includes(telegram.daily_portfolio_digest_status), "Daily portfolio digest status is invalid");
+    assert(telegramDailyDigest.enabled === true, "Daily portfolio digest public status is not enabled");
+    assert(telegramDailyDigest.target === "group", "Daily portfolio digest target is not group");
+    assert(Number(telegramDailyDigest.portfolio_balance_gbp) >= 0, "Daily portfolio digest balance is invalid");
+    assert(telegramDailyDigest.telegram_command_path_enabled === false, "Daily portfolio digest command authority enabled");
+    assert(telegramDailyDigest.broker_write_allowed === false, "Daily portfolio digest broker write allowed");
+    assert(telegramDailyDigest.paper_order_allowed === false, "Daily portfolio digest paper order allowed");
+    assert(telegramDailyDigest.live_capital_enabled === false, "Daily portfolio digest live capital enabled");
+    assert(/Daily Telegram portfolio digests/i.test(telegramDailyDigest.boundary || ""), "Daily portfolio digest boundary is weak");
     assert(telegramIntake.world_event_datapoint_count >= 1, "Telegram intake world-event datapoints missing");
     assert(telegramIntake.strategy_consideration_count >= 1, "Telegram intake strategy considerations missing");
     assert(telegramIntake.research_triage_packet_count >= 1, "Telegram intake research packet missing");
@@ -158,6 +206,9 @@ async function main() {
     assertIncludes(rendered, "[data-communications]", "World datapoints");
     assertIncludes(rendered, "[data-communications]", "Strategy notes");
     assertIncludes(rendered, "[data-communications]", "Research packets");
+    assertIncludes(rendered, "[data-communications]", "Daily portfolio digest");
+    assertIncludes(rendered, "[data-communications]", "Portfolio balance");
+    assertIncludes(rendered, "[data-communications]", "Trades today");
     assertIncludes(rendered, "[data-communications]", "read-only member research intake");
 
     const html = fs.readFileSync(htmlPath, "utf8");
@@ -171,9 +222,11 @@ async function main() {
     [
         "function renderCommunications",
         "status.communications?.telegram",
+        "status.communications?.telegram_daily_portfolio_digest",
         "status.communications?.telegram_intake",
         "Telegram Bot",
         "notify_only",
+        "Daily portfolio digest",
         "Inbound member research",
         "renderCommunications(status)"
     ].forEach((needle) => assert(renderer.includes(needle), `dashboard renderer missing ${needle}`));

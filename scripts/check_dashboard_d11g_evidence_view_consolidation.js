@@ -93,8 +93,8 @@ async function main() {
         "data-evidence-review-group=\"supplemental_context\"",
         "data-evidence-review-group=\"factual_packets\"",
         "data-evidence-source-ledger",
-        "/auth.css?v=20260528-telegram-intake",
-        "/dashboard.js?v=20260528-telegram-intake"
+        "/auth.css?v=20260528-daily-digest",
+        "/dashboard.js?v=20260528-daily-digest"
     ], "D11G Evidence static shell");
 
     excludesAll(dashboardHtml, [

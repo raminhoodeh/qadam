@@ -106,6 +106,10 @@ class Settings:
     telegram_dry_run: bool
     telegram_trade_group_notifications_enabled: bool
     telegram_trade_group_notifications_dry_run: bool
+    telegram_daily_portfolio_digest_enabled: bool
+    telegram_daily_portfolio_digest_dry_run: bool
+    telegram_daily_portfolio_digest_timezone: str
+    telegram_daily_portfolio_digest_after_local_time: str
     telegram_inbound_intake_enabled: bool
     telegram_bot_configured: bool
     telegram_bot_username_configured: bool
@@ -178,6 +182,30 @@ class Settings:
                 "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
                 _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
             ),
+            telegram_daily_portfolio_digest_enabled=_bool_config(
+                "QADAM_TELEGRAM_DAILY_PORTFOLIO_DIGEST_ENABLED",
+                _bool_config(
+                    "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED",
+                    _bool_config("QADAM_TELEGRAM_ENABLED", False),
+                ),
+            ),
+            telegram_daily_portfolio_digest_dry_run=_bool_config(
+                "QADAM_TELEGRAM_DAILY_PORTFOLIO_DIGEST_DRY_RUN",
+                _bool_config(
+                    "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
+                    _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
+                ),
+            ),
+            telegram_daily_portfolio_digest_timezone=os.getenv(
+                "QADAM_TELEGRAM_DAILY_PORTFOLIO_DIGEST_TIMEZONE",
+                "America/Los_Angeles",
+            ).strip()
+            or "America/Los_Angeles",
+            telegram_daily_portfolio_digest_after_local_time=os.getenv(
+                "QADAM_TELEGRAM_DAILY_PORTFOLIO_DIGEST_AFTER_LOCAL_TIME",
+                "17:00",
+            ).strip()
+            or "17:00",
             telegram_inbound_intake_enabled=_bool_config("QADAM_TELEGRAM_INBOUND_INTAKE_ENABLED", True),
             telegram_bot_configured=bool(_config_env("TELEGRAM_BOT_TOKEN").strip()),
             telegram_bot_username_configured=bool(_config_env("TELEGRAM_BOT_USERNAME").strip()),

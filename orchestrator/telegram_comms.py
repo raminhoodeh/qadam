@@ -351,6 +351,18 @@ class TelegramCommunicationsStore:
                     trade_notifications = payload
             except json.JSONDecodeError:
                 trade_notifications = {"status": "invalid_json"}
+        daily_digest_path = _runtime_path(
+            self.settings,
+            "telegram_daily_portfolio_digest.json",
+        )
+        daily_digest: dict[str, Any] = {}
+        if daily_digest_path.exists():
+            try:
+                payload = json.loads(daily_digest_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    daily_digest = payload
+            except json.JSONDecodeError:
+                daily_digest = {"status": "invalid_json"}
         bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
         bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
         default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
@@ -423,6 +435,29 @@ class TelegramCommunicationsStore:
             ),
             "trade_group_notifications_live_send_succeeded_count": int(
                 trade_notifications.get("live_send_succeeded_count", 0) or 0
+            ),
+            "daily_portfolio_digest_enabled": (
+                self.settings.telegram_daily_portfolio_digest_enabled
+            ),
+            "daily_portfolio_digest_dry_run": (
+                self.settings.telegram_daily_portfolio_digest_dry_run
+            ),
+            "daily_portfolio_digest_status": daily_digest.get("status", "not_run"),
+            "daily_portfolio_digest_local_date": daily_digest.get("local_date"),
+            "daily_portfolio_digest_due_for_delivery": (
+                daily_digest.get("due_for_delivery") is True
+            ),
+            "daily_portfolio_digest_portfolio_balance_gbp": daily_digest.get(
+                "portfolio_balance_gbp"
+            ),
+            "daily_portfolio_digest_portfolio_performance_pct": daily_digest.get(
+                "portfolio_performance_pct"
+            ),
+            "daily_portfolio_digest_daily_trade_count": int(
+                daily_digest.get("daily_trade_count", 0) or 0
+            ),
+            "daily_portfolio_digest_live_send_succeeded": (
+                daily_digest.get("live_send_succeeded") is True
             ),
             "recent_messages": [
                 {

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -2721,7 +2722,12 @@ FUND_MANAGER_COMMENT_REQUIRED_FIELDS = {
     "visibility",
 }
 
-COMMUNICATIONS_REQUIRED_FIELDS = {"boundary", "telegram", "telegram_intake"}
+COMMUNICATIONS_REQUIRED_FIELDS = {
+    "boundary",
+    "telegram",
+    "telegram_daily_portfolio_digest",
+    "telegram_intake",
+}
 
 TELEGRAM_COMMUNICATIONS_REQUIRED_FIELDS = {
     "active_message_classes",
@@ -2750,6 +2756,35 @@ TELEGRAM_COMMUNICATIONS_REQUIRED_FIELDS = {
     "status",
     "suppressed_count",
     "verified_member_count",
+}
+
+TELEGRAM_DAILY_PORTFOLIO_DIGEST_REQUIRED_FIELDS = {
+    "already_sent",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_write_allowed",
+    "daily_trade_count",
+    "daily_trade_summaries",
+    "delivery_after_local_time",
+    "dry_run",
+    "due_for_delivery",
+    "enabled",
+    "last_delivery_failure_category",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "local_date",
+    "paper_order_allowed",
+    "portfolio_balance_gbp",
+    "portfolio_performance_pct",
+    "portfolio_total_pnl_gbp",
+    "schema_version",
+    "status",
+    "target",
+    "telegram_command_path_enabled",
+    "telegram_message_id_present",
+    "timezone",
 }
 
 TELEGRAM_MESSAGE_REQUIRED_FIELDS = {
@@ -6636,6 +6671,54 @@ def main() -> int:
         or "@" in telegram_intake_encoded
     ):
         print("cockpit_status_telegram_intake_identifier_leaked=true")
+        return 1
+    telegram_daily_digest = communications["telegram_daily_portfolio_digest"]
+    missing_telegram_daily_digest_fields = sorted(
+        TELEGRAM_DAILY_PORTFOLIO_DIGEST_REQUIRED_FIELDS - set(telegram_daily_digest)
+    )
+    if missing_telegram_daily_digest_fields:
+        print(
+            "cockpit_status_telegram_daily_digest_fields_missing="
+            + ",".join(missing_telegram_daily_digest_fields)
+        )
+        return 1
+    if telegram_daily_digest.get("status") not in {
+        "already_sent",
+        "blocked_pending_enablement",
+        "degraded",
+        "dry_run_ready",
+        "failed",
+        "not_due",
+        "not_run",
+        "ready_to_send",
+        "sent",
+    }:
+        print("cockpit_status_telegram_daily_digest_status_invalid=true")
+        return 1
+    if telegram_daily_digest.get("target") != "group":
+        print("cockpit_status_telegram_daily_digest_target_not_group=true")
+        return 1
+    if "Daily Telegram portfolio digests" not in telegram_daily_digest.get("boundary", ""):
+        print("cockpit_status_telegram_daily_digest_boundary_weak=true")
+        return 1
+    for field in (
+        "telegram_command_path_enabled",
+        "broker_write_allowed",
+        "paper_order_allowed",
+        "live_capital_enabled",
+    ):
+        if telegram_daily_digest.get(field) is not False:
+            print(f"cockpit_status_telegram_daily_digest_authority_enabled={field}")
+            return 1
+    telegram_daily_digest_encoded = json.dumps(telegram_daily_digest, sort_keys=True)
+    if (
+        "chat_id" in telegram_daily_digest_encoded
+        or "bot_token" in telegram_daily_digest_encoded
+        or "/Users/" in telegram_daily_digest_encoded
+        or "@" in telegram_daily_digest_encoded
+        or re.search(r"\d{6,}:[A-Za-z0-9_-]{20,}", telegram_daily_digest_encoded)
+    ):
+        print("cockpit_status_telegram_daily_digest_secret_or_identifier_leaked=true")
         return 1
     fund_manager_notes = payload["fund_manager_notes"]
     missing_fund_manager_fields = sorted(FUND_MANAGER_NOTES_REQUIRED_FIELDS - set(fund_manager_notes))

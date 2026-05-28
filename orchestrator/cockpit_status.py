@@ -204,6 +204,11 @@ from orchestrator.staged_paper_order import StagedPaperOrderReviewStore, staged_
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
 from orchestrator.telegram_comms import telegram_status
+from orchestrator.telegram_daily_portfolio_digest import (
+    TELEGRAM_DAILY_PORTFOLIO_DIGEST_BOUNDARY,
+    TELEGRAM_DAILY_PORTFOLIO_DIGEST_SCHEMA_VERSION,
+    telegram_daily_portfolio_digest_public_status,
+)
 from orchestrator.telegram_inbound_intake import telegram_inbound_intake_public_status
 from orchestrator.trade_intent import TradeIntentStore, trade_intent_summary
 from orchestrator.tradingview_alerts import (
@@ -2998,9 +3003,41 @@ def _communications(settings: Settings) -> dict[str, Any]:
                 "create signals, trade candidates, orders, broker writes, commands, or live capital."
             ),
         }
+    try:
+        telegram_daily_digest = telegram_daily_portfolio_digest_public_status(settings)
+    except Exception:  # noqa: BLE001 - public status should degrade safely
+        telegram_daily_digest = {
+            "schema_version": TELEGRAM_DAILY_PORTFOLIO_DIGEST_SCHEMA_VERSION,
+            "status": "degraded",
+            "enabled": False,
+            "dry_run": True,
+            "target": "group",
+            "local_date": None,
+            "timezone": settings.telegram_daily_portfolio_digest_timezone,
+            "delivery_after_local_time": settings.telegram_daily_portfolio_digest_after_local_time,
+            "due_for_delivery": False,
+            "already_sent": False,
+            "portfolio_balance_gbp": None,
+            "portfolio_total_pnl_gbp": None,
+            "portfolio_performance_pct": None,
+            "daily_trade_count": 0,
+            "daily_trade_summaries": [],
+            "live_send_attempted": False,
+            "live_send_succeeded": False,
+            "telegram_message_id_present": False,
+            "last_delivery_failure_category": "daily portfolio digest status unavailable",
+            "blocker_count": 1,
+            "blockers": ["daily_portfolio_digest_status_unavailable"],
+            "telegram_command_path_enabled": False,
+            "broker_write_allowed": False,
+            "paper_order_allowed": False,
+            "live_capital_enabled": False,
+            "boundary": TELEGRAM_DAILY_PORTFOLIO_DIGEST_BOUNDARY,
+        }
     return {
         "telegram": telegram,
         "telegram_intake": telegram_intake,
+        "telegram_daily_portfolio_digest": telegram_daily_digest,
         "boundary": (
             "Communications are notify-only and intake-only. The browser and Telegram "
             "rail cannot create broker actions, commands, or hidden approvals."

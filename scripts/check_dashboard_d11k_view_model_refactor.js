@@ -139,8 +139,8 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260528-telegram-intake",
-        "/dashboard.js?v=20260528-telegram-intake"
+        "/auth.css?v=20260528-daily-digest",
+        "/dashboard.js?v=20260528-daily-digest"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");

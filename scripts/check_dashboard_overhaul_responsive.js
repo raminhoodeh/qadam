@@ -33,7 +33,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260528-telegram-intake",
+        "/auth.css?v=20260528-daily-digest",
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "aria-label=\"Dashboard views\"",

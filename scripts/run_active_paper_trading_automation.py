@@ -26,6 +26,12 @@ from orchestrator.telegram_trade_notifications import (  # noqa: E402
     validate_telegram_trade_notifications,
     write_telegram_trade_notifications,
 )
+from orchestrator.telegram_daily_portfolio_digest import (  # noqa: E402
+    build_daily_portfolio_digest,
+    telegram_daily_portfolio_digest_paths,
+    validate_daily_portfolio_digest,
+    write_daily_portfolio_digest,
+)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -166,6 +172,73 @@ def _run_telegram_trade_notifications(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _run_daily_portfolio_digest(settings: Settings) -> dict[str, Any]:
+    output_path, history_path, event_path = telegram_daily_portfolio_digest_paths(settings)
+    if event_path.exists():
+        event_path.unlink()
+    artifact = build_daily_portfolio_digest(
+        settings=settings,
+        send_requested=True,
+        force=False,
+    )
+    output_path, history_path, event_path, written = write_daily_portfolio_digest(
+        artifact,
+        settings=settings,
+        record_event=True,
+        event_log_path=event_path,
+    )
+    validation_errors = validate_daily_portfolio_digest(written)
+    return {
+        "label": "telegram_daily_portfolio_digest",
+        "script": "orchestrator.telegram_daily_portfolio_digest",
+        "args": ["send_requested=True", "force=False"],
+        "returncode": 0 if not validation_errors and written.get("status") != "failed" else 1,
+        "ok": not validation_errors and written.get("status") != "failed",
+        "parsed": {
+            "telegram_daily_portfolio_digest_status": str(written.get("status")),
+            "telegram_daily_portfolio_digest_due_for_delivery": str(
+                written.get("due_for_delivery")
+            ),
+            "telegram_daily_portfolio_digest_portfolio_balance_gbp": str(
+                written.get("portfolio_balance_gbp", "")
+            ),
+            "telegram_daily_portfolio_digest_portfolio_performance_pct": str(
+                written.get("portfolio_performance_pct", "")
+            ),
+            "telegram_daily_portfolio_digest_daily_trade_count": str(
+                written.get("daily_trade_count", 0)
+            ),
+            "telegram_daily_portfolio_digest_live_send_attempted": str(
+                written.get("live_send_attempted")
+            ),
+            "telegram_daily_portfolio_digest_live_send_succeeded": str(
+                written.get("live_send_succeeded")
+            ),
+            "telegram_daily_portfolio_digest_artifact_path": str(output_path),
+            "telegram_daily_portfolio_digest_history_path": str(history_path),
+        },
+        "stdout_tail": [
+            f"telegram_daily_portfolio_digest_status={written.get('status')}",
+            "telegram_daily_portfolio_digest_due_for_delivery="
+            f"{written.get('due_for_delivery')}",
+            "telegram_daily_portfolio_digest_portfolio_balance_gbp="
+            f"{written.get('portfolio_balance_gbp', '')}",
+            "telegram_daily_portfolio_digest_portfolio_performance_pct="
+            f"{written.get('portfolio_performance_pct', '')}",
+            "telegram_daily_portfolio_digest_daily_trade_count="
+            f"{written.get('daily_trade_count', 0)}",
+            "telegram_daily_portfolio_digest_live_send_attempted="
+            f"{written.get('live_send_attempted')}",
+            "telegram_daily_portfolio_digest_live_send_succeeded="
+            f"{written.get('live_send_succeeded')}",
+        ],
+        "stderr_tail": [],
+        "live_endpoint_called_count": 0,
+        "live_capital_enabled": False,
+        "secret_value_exposed": False,
+    }
+
+
 def main() -> int:
     args = _parse_args()
     settings = Settings.from_env()
@@ -224,6 +297,10 @@ def main() -> int:
         action_records.append(telegram_step)
         command_failed = command_failed or not telegram_step["ok"]
 
+        daily_digest_step = _run_daily_portfolio_digest(settings)
+        action_records.append(daily_digest_step)
+        command_failed = command_failed or not daily_digest_step["ok"]
+
     final = build_paperops_active_paper_trading_automation(
         settings=settings,
         execute_automation_requested=args.execute_paper_automation,
@@ -278,6 +355,27 @@ def main() -> int:
         f"{written['qctrl_consultation_hold_active']}"
     )
     print(f"paperops_active_runner_action_record_count={written['action_record_count']}")
+    daily_digest_record = next(
+        (
+            record
+            for record in action_records
+            if record.get("label") == "telegram_daily_portfolio_digest"
+        ),
+        {"parsed": {}},
+    )
+    daily_digest_parsed = daily_digest_record.get("parsed", {})
+    print(
+        "paperops_active_runner_daily_portfolio_digest_status="
+        f"{daily_digest_parsed.get('telegram_daily_portfolio_digest_status', 'not_run')}"
+    )
+    print(
+        "paperops_active_runner_daily_portfolio_digest_due_for_delivery="
+        f"{daily_digest_parsed.get('telegram_daily_portfolio_digest_due_for_delivery', 'False')}"
+    )
+    print(
+        "paperops_active_runner_daily_portfolio_digest_live_send_succeeded="
+        f"{daily_digest_parsed.get('telegram_daily_portfolio_digest_live_send_succeeded', 'False')}"
+    )
     print(
         "paperops_active_runner_live_endpoint_called_count="
         f"{written['live_endpoint_called_count']}"
