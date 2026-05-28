@@ -111,9 +111,9 @@ Setup path:
 2. Store the token only in `data/runtime/qadam-secrets.env`.
 3. Send one message to the bot, then capture `TELEGRAM_DEFAULT_CHAT_ID` locally.
 4. Add the bot to the intended private test group, then capture `TELEGRAM_GROUP_CHAT_ID` locally.
-5. Start with `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`.
-6. Keep paper-trade group alerts dry-run with `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true`.
-7. Verify the dashboard shows Telegram as disabled/dry-run.
+5. Keep the general member outbox at `QADAM_TELEGRAM_ENABLED=false` and `QADAM_TELEGRAM_DRY_RUN=true`; it has no command authority.
+6. For submitted-paper-order group alerts, set `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=true` and `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=false` only after the group chat target exists.
+7. Verify the dashboard shows Telegram as dry-run for the general outbox and live-ready for paper-trade group notifications.
 8. Send one explicit private test message only after the local checks pass.
 9. To let active PaperOps send group alerts after submitted paper orders, set `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=true` and `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=false`. Those alerts include the submitted trade, current paper portfolio value, total paper P&L, and signed performance percentage.
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 
 from orchestrator.release_contract import (
     LIVE_CAPITAL_ENABLED,
@@ -27,6 +29,56 @@ def _csv_tuple(value: str) -> tuple[str, ...]:
 def _bool_env(name: str, default: bool) -> bool:
     value = os.getenv(name)
     if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_strict_mode(path: Path) -> bool:
+    try:
+        return path.stat().st_mode & 0o077 == 0
+    except OSError:
+        return False
+
+
+def _load_key_value_file(path: Path) -> dict[str, str]:
+    if not path.exists() or not _is_strict_mode(path):
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            values[key] = value
+    return values
+
+
+@lru_cache(maxsize=1)
+def _file_env_values() -> dict[str, str]:
+    repo_root = Path(__file__).resolve().parents[1]
+    secrets_path = Path(os.getenv("QADAM_SECRETS_FILE", "./data/runtime/qadam-secrets.env"))
+    if not secrets_path.is_absolute():
+        secrets_path = repo_root / secrets_path
+    local_env_path = repo_root / ".env.local"
+    values: dict[str, str] = {}
+    values.update(_load_key_value_file(secrets_path))
+    values.update(_load_key_value_file(local_env_path))
+    return values
+
+
+def _config_env(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value is not None:
+        return value
+    return _file_env_values().get(name, default)
+
+
+def _bool_config(name: str, default: bool) -> bool:
+    value = _config_env(name, "")
+    if not value:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
@@ -115,19 +167,19 @@ class Settings:
             secrets_file=os.getenv("QADAM_SECRETS_FILE", "./data/runtime/qadam-secrets.env"),
             fund_manager_allowlist=allowlist,
             pending_fund_managers=pending,
-            telegram_enabled=_bool_env("QADAM_TELEGRAM_ENABLED", False),
-            telegram_dry_run=_bool_env("QADAM_TELEGRAM_DRY_RUN", True),
-            telegram_trade_group_notifications_enabled=_bool_env(
+            telegram_enabled=_bool_config("QADAM_TELEGRAM_ENABLED", False),
+            telegram_dry_run=_bool_config("QADAM_TELEGRAM_DRY_RUN", True),
+            telegram_trade_group_notifications_enabled=_bool_config(
                 "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED",
-                _bool_env("QADAM_TELEGRAM_ENABLED", False),
+                _bool_config("QADAM_TELEGRAM_ENABLED", False),
             ),
-            telegram_trade_group_notifications_dry_run=_bool_env(
+            telegram_trade_group_notifications_dry_run=_bool_config(
                 "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
-                _bool_env("QADAM_TELEGRAM_DRY_RUN", True),
+                _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
             ),
-            telegram_bot_configured=bool(os.getenv("TELEGRAM_BOT_TOKEN", "").strip()),
-            telegram_bot_username_configured=bool(os.getenv("TELEGRAM_BOT_USERNAME", "").strip()),
-            telegram_default_chat_configured=bool(os.getenv("TELEGRAM_DEFAULT_CHAT_ID", "").strip()),
+            telegram_bot_configured=bool(_config_env("TELEGRAM_BOT_TOKEN").strip()),
+            telegram_bot_username_configured=bool(_config_env("TELEGRAM_BOT_USERNAME").strip()),
+            telegram_default_chat_configured=bool(_config_env("TELEGRAM_DEFAULT_CHAT_ID").strip()),
             live_bridge_enabled=_bool_env("QADAM_LIVE_BRIDGE_ENABLED", True),
             live_bridge_endpoint=os.getenv("QADAM_STATUS_BRIDGE_ENDPOINT", "/api/cockpit-status"),
             live_bridge_max_age_seconds=int(os.getenv("QADAM_STATUS_BRIDGE_MAX_AGE_SECONDS", "15")),

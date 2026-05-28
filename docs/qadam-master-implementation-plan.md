@@ -52,9 +52,15 @@ printed. The closeout gate is:
 ```
 
 This gate separates required paper-operation blockers from optional quality
-gaps. With IBM credentials visible, Fire Opal plus IBM Quantum should move from
-missing credentials to `ready_for_explicit_device_probe` until an explicit
-read-only device probe is run.
+gaps. With IBM credentials visible, Fire Opal plus IBM Quantum now records the
+latest explicit read-only device probe result in the runtime artifact. A
+sanitized provider-network failure remains an optional quality gap; it does not
+grant hardware-job, broker, paper-order, or live-capital authority.
+
+Telegram paper-trade notifications are also split from the general Telegram
+member outbox. The general outbox stays dry-run and commandless; the
+submitted-paper-order group rail can be enabled as outbound-only transport after
+`TELEGRAM_GROUP_CHAT_ID` is present.
 
 PaperOps is now `ready_for_full_paper_ops`. The safe cycle reports
 `paper_cycle_full_paper_operational_ready` with 34/34 commands passing. One

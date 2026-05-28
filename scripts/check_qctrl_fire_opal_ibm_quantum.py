@@ -24,6 +24,7 @@ from orchestrator.quantum import (  # noqa: E402
     QCTRL_FIRE_OPAL_IBM_READINESS_SCHEMA_VERSION,
     qctrl_fire_opal_ibm_readiness,
     validate_qctrl_fire_opal_ibm_readiness,
+    write_qctrl_fire_opal_ibm_readiness,
 )
 
 
@@ -95,6 +96,8 @@ def main() -> int:
         if args.probe_devices:
             signal.alarm(0)
     validate_qctrl_fire_opal_ibm_readiness(readiness)
+    if args.probe_devices:
+        write_qctrl_fire_opal_ibm_readiness(readiness, settings)
 
     print(f"fire_opal_ibm_readiness_status={readiness.get('status')}")
     print(

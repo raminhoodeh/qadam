@@ -32,8 +32,8 @@ closeout check is:
 
 That check is public-safe and reports required gaps separately from optional
 quality gaps. Required paper-operation gaps should be zero before treating the
-system as leave-running-ready. Optional gaps, such as live Telegram sends or
-Unusual Whales enrichment, do not block Alpaca Paper operation.
+system as leave-running-ready. Optional gaps, such as Unusual Whales enrichment
+or provider-device probe quality, do not block Alpaca Paper operation.
 
 Local secret resolution now accepts two strict local stores, in order:
 environment variables, `data/runtime/qadam-secrets.env`, then `.env.local`.
@@ -45,10 +45,18 @@ docs or cockpit output.
 The Q-CTRL paper consultation path is the required paper-trading quantum gate.
 The Fire Opal plus IBM Quantum readiness path is a separate hardware-readiness
 visibility gate. Once `IBM_QUANTUM_TOKEN` and `IBM_QUANTUM_INSTANCE` are visible,
-the expected next state is `ready_for_explicit_device_probe`; running
-`scripts/check_qctrl_fire_opal_ibm_quantum.py --probe-devices` may record
-device discovery, but still cannot submit hardware jobs, approve trades, submit
-paper orders, or enable live capital.
+running `scripts/check_qctrl_fire_opal_ibm_quantum.py --probe-devices` records
+the explicit read-only probe result in the public-safe runtime artifact. A
+provider network failure is recorded as an optional quality gap, not a broker or
+paper-trading blocker. The probe still cannot submit hardware jobs, approve
+trades, submit paper orders, or enable live capital.
+
+Telegram remains split into two rails: the general member outbox stays dry-run
+and commandless, while the submitted-paper-order group notification rail can be
+enabled separately with
+`QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=true` and
+`QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=false`. That rail is
+outbound-only and only sends after an Alpaca Paper order already exists.
 
 ## Scope
 

@@ -27,6 +27,7 @@ QUANTUM_PROVIDER_READINESS_SCHEMA_VERSION = 1
 QUANTUM_LOCAL_SIMULATOR_SCHEMA_VERSION = 1
 QCTRL_READINESS_SCHEMA_VERSION = 1
 QCTRL_FIRE_OPAL_IBM_READINESS_SCHEMA_VERSION = 1
+QCTRL_FIRE_OPAL_IBM_READINESS_RUNTIME_ARTIFACT = "qctrl_fire_opal_ibm_readiness.json"
 QUANTUM_HARDWARE_PROVIDER_STUB_SCHEMA_VERSION = 1
 QUANTUM_SCHEDULER_DRY_RUN_SCHEMA_VERSION = 1
 QUANTUM_ORACLE_INPUT_CONTRACT_SCHEMA_VERSION = 1
@@ -449,6 +450,40 @@ def _device_hashes(devices: Any) -> list[str]:
     return hashes
 
 
+def _fire_opal_ibm_readiness_path(settings: Settings | None = None) -> Path:
+    return Path((settings or Settings.from_env()).runtime_dir) / QCTRL_FIRE_OPAL_IBM_READINESS_RUNTIME_ARTIFACT
+
+
+def _persisted_fire_opal_ibm_probe(settings: Settings) -> dict[str, Any]:
+    payload = _read_runtime_json(settings, QCTRL_FIRE_OPAL_IBM_READINESS_RUNTIME_ARTIFACT)
+    if not payload:
+        return {}
+    try:
+        validate_qctrl_fire_opal_ibm_readiness(payload)
+    except ValueError:
+        return {}
+    if payload.get("provider_device_probe_requested") is not True:
+        return {}
+    if payload.get("provider_call_attempted") is not True:
+        return {}
+    return payload
+
+
+def write_qctrl_fire_opal_ibm_readiness(
+    readiness: dict[str, Any],
+    settings: Settings | None = None,
+) -> Path:
+    validate_qctrl_fire_opal_ibm_readiness(readiness)
+    path = _fire_opal_ibm_readiness_path(settings)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    public_safe = dict(readiness)
+    public_safe["secret_value_exposed"] = False
+    public_safe["raw_provider_response_persisted"] = False
+    public_safe["raw_response_exposed"] = False
+    path.write_text(json.dumps(public_safe, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
 def qctrl_fire_opal_ibm_readiness(
     settings: Settings | None = None,
     *,
@@ -492,6 +527,7 @@ def qctrl_fire_opal_ibm_readiness(
     provider_failure_class: str | None = None
     supported_device_count = 0
     supported_device_name_hashes: list[str] = []
+    persisted_probe = _persisted_fire_opal_ibm_probe(settings) if not probe_devices else {}
 
     if probe_devices and provider_probe_allowed:
         provider_call_attempted = True
@@ -546,6 +582,12 @@ def qctrl_fire_opal_ibm_readiness(
         status = "blocked_provider_probe_failed"
         blocker = provider_failure_category or "provider_probe_failed"
         next_required_action = "Resolve the sanitized provider probe failure, then rerun."
+    elif (
+        persisted_probe
+        and provider_probe_allowed
+        and persisted_probe.get("status") in {"device_probe_recorded", "blocked_provider_probe_failed"}
+    ):
+        return persisted_probe
     else:
         status = "ready_for_explicit_device_probe"
         blocker = "explicit_device_probe_not_run"

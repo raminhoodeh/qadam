@@ -116,10 +116,20 @@ def main() -> int:
 
     if fire_opal.get("status") == "ready_for_explicit_device_probe":
         optional_gaps.append("fire_opal_ibm_device_probe_not_recorded")
+    elif fire_opal.get("status") == "blocked_provider_probe_failed":
+        optional_gaps.append(
+            f"fire_opal_ibm_provider_probe_failed:{fire_opal.get('provider_failure_category') or 'unknown'}"
+        )
     if secret_status("UNUSUAL_WHALES_API_KEY", settings).configured is not True:
         optional_gaps.append("unusual_whales_api_key_missing")
-    if settings.telegram_enabled is not True or settings.telegram_dry_run is True:
-        gap = "telegram_live_notifications_not_enabled"
+    telegram_paper_trade_live_ready = (
+        settings.telegram_trade_group_notifications_enabled is True
+        and settings.telegram_trade_group_notifications_dry_run is False
+        and secret_status("TELEGRAM_BOT_TOKEN", settings).configured is True
+        and secret_status("TELEGRAM_GROUP_CHAT_ID", settings).configured is True
+    )
+    if telegram_paper_trade_live_ready is not True:
+        gap = "telegram_paper_trade_live_notifications_not_enabled"
         if args.require_telegram_live:
             required_gaps.append(gap)
         else:
@@ -162,6 +172,10 @@ def main() -> int:
     print(
         "qadam_paper_closeout_idempotency_ledger_active="
         f"{_bool_text(active_runner.get('paperops2_idempotency_ledger_active'))}"
+    )
+    print(
+        "qadam_paper_closeout_telegram_paper_trade_live_notifications_ready="
+        f"{_bool_text(telegram_paper_trade_live_ready)}"
     )
     print(f"qadam_paper_closeout_fire_opal_ibm_status={fire_opal.get('status')}")
     print(

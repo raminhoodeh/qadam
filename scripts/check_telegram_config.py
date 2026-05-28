@@ -39,6 +39,14 @@ def main() -> int:
     print(f"telegram_config_default_chat_configured={status['default_chat_configured']}")
     print(f"telegram_config_group_chat_configured={status['group_chat_configured']}")
     print(f"telegram_config_delivery_target_count={status['delivery_target_count']}")
+    print(
+        "telegram_config_trade_group_notifications_enabled="
+        f"{status['trade_group_notifications_enabled']}"
+    )
+    print(
+        "telegram_config_trade_group_notifications_dry_run="
+        f"{status['trade_group_notifications_dry_run']}"
+    )
     print(f"telegram_config_member_count={status['member_count']}")
     print(f"telegram_config_verified_member_count={status['verified_member_count']}")
     print(f"telegram_config_pending_member_count={status['pending_member_count']}")
@@ -57,6 +65,13 @@ def main() -> int:
         return 1
     if status["send_gate"] != "disabled":
         print("telegram_config_send_gate_not_disabled=true")
+        return 1
+    if (
+        status["trade_group_notifications_enabled"] is True
+        and status["trade_group_notifications_dry_run"] is False
+        and status["group_chat_configured"] is not True
+    ):
+        print("telegram_config_trade_group_live_without_group_chat=true")
         return 1
     if status["member_count"] != len(FOUNDING_TELEGRAM_MEMBERS):
         print("telegram_config_public_member_count_mismatch=true")
