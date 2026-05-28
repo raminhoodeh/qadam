@@ -25,6 +25,9 @@ Every source adapter must:
 - `ready_to_port`: World Monitor has usable implementation patterns.
 - `needs_new_adapter`: Specs define the source, but World Monitor does not implement it.
 - `needs_clarity`: Specs conflict or omit endpoint details.
+- `adapter_live_optional`: Qadam has a read-only adapter or public fallback that can run without mandatory credentials.
+- `adapter_live_requires_key`: Qadam has a read-only adapter, but live data requires a local credential.
+- `adapter_live_region_deferred`: Qadam has a read-only adapter, but provider eligibility or regional availability is the practical gate.
+- `adapter_live_broker_split`: Qadam has a read-only broker/account/data mirror contract, while execution is handled by a separate guarded broker path.
 - `local_bridge`: Requires a local process.
 - `derived`: Internal aggregation layer.
-

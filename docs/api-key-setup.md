@@ -2,7 +2,7 @@
 
 Qadam is a public repository and a local-first system. Real API keys belong only in local runtime storage, never in Git, screenshots, docs, or chat.
 
-For the full provider inventory, including all 35 World Monitor data sources, optional `world-monitor/` reference providers, model keys, quantum keys, broker rails, TradingView alert placeholders, and unresolved provider choices, use `docs/api-specs.md`.
+For the full provider inventory, including all 35 World Monitor data sources, optional `world-monitor/` reference providers, model keys, quantum keys, broker rails, TradingView alert placeholders, and the current provider decisions, use `docs/api-specs.md`.
 
 For the step-by-step acquisition order, cost posture, provider links, and validation command for each key, use `docs/qadam-api-key-acquisition-plan.md`.
 

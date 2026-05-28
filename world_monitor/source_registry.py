@@ -129,14 +129,15 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "world_monitor_physical_ais",
         "API key",
         (
+            "wss://stream.aisstream.io/v0/stream",
             "https://api.spire.com/v3/analytics/vessel",
             "https://services.marinetraffic.com/api/exportvessels/v:8",
         ),
         "15 minutes",
-        "quota/credit based; budget 96/day",
+        "provider dependent; budget 96/day for polling adapters",
         ("SPIRE_API_KEY", "MARINETRAFFIC_API_KEY", "AISSTREAM_API_KEY"),
-        "needs_choice",
-        "Spec names Spire/MarineTraffic; World Monitor uses AISStream WebSocket.",
+        "adapter_live_requires_key",
+        "Provider decision recorded: AISStream is the v1 read-only MVP path; Spire and MarineTraffic remain paid fallback candidates.",
     ),
     SourceSpec(
         "arcgis_usace",
@@ -155,13 +156,16 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "physical",
         4,
         "world_monitor_physical_space_track",
-        "Space-Track account",
-        ("https://www.space-track.org/basicspacedata/query/",),
+        "Space-Track account; CelesTrak public fallback",
+        (
+            "https://www.space-track.org/basicspacedata/query/",
+            "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json",
+        ),
         "6 hours",
-        "300 requests/hour; budget 4/day",
+        "Space-Track 300 requests/hour; CelesTrak public fallback budget 4/day",
         ("SPACE_TRACK_USERNAME", "SPACE_TRACK_PASSWORD"),
-        "needs_clarity",
-        "CelesTrak is named in qadam-specs, but no endpoint is detailed.",
+        "adapter_live_optional",
+        "Provider decision recorded: Space-Track remains authenticated primary; CelesTrak GP JSON is the public fallback/smoke path.",
     ),
     SourceSpec(
         "gps_jamming",
@@ -260,11 +264,15 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         (
             "https://minerals.usgs.gov/minerals/pubs/mcs/",
             "https://mrdata.usgs.gov/api/",
+            "https://earthquake.usgs.gov/fdsnws/event/1/query",
         ),
         "weekly or event-driven",
         "no documented limit",
-        status="needs_clarity",
-        notes="qadam-specs says Earthquake API; integration reference says commodity statistics.",
+        status="adapter_live_optional",
+        notes=(
+            "Scope decision recorded: USGS is a mineral/supply-chain context source for commodities and defence; "
+            "the public earthquake API is the event-driven physical-risk adapter path."
+        ),
     ),
     SourceSpec(
         "unusual_whales",
@@ -277,7 +285,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "5 minutes during market hours",
         "plan dependent; budget 200/day",
         ("UNUSUAL_WHALES_API_KEY",),
-        "needs_new_adapter",
+        "adapter_live_requires_key",
+        "Read-only adapter scaffolded for options flow/dark pool context; provider-specific enrichment waits for the API key.",
     ),
     SourceSpec(
         "polymarket",
@@ -289,8 +298,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://clob.polymarket.com/markets",),
         "5 minutes",
         "no documented limit",
-        status="needs_new_adapter",
-        notes="World Monitor uses Gamma discovery; Qadam needs CLOB/orderbook path.",
+        status="adapter_live_optional",
+        notes="Qadam uses the public CLOB/orderbook path as the v1 read-only adapter; Gamma remains discovery-only context.",
     ),
     SourceSpec(
         "kalshi",
@@ -303,7 +312,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "5 minutes",
         "100 requests/minute",
         ("KALSHI_API_KEY", "KALSHI_API_SECRET"),
-        "needs_new_adapter",
+        "adapter_live_region_deferred",
+        "Read-only market adapter is scaffolded; live usefulness depends on region/account eligibility and credentials.",
     ),
     SourceSpec(
         "hyperliquid",
@@ -323,11 +333,16 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         1,
         "world_monitor_market_alpaca",
         "API key and secret",
-        ("https://data.alpaca.markets/v2/", "https://api.alpaca.markets/v2/"),
+        (
+            "https://data.alpaca.markets/v2/",
+            "https://paper-api.alpaca.markets/v2/account",
+            "https://api.alpaca.markets/v2/",
+        ),
         "real-time stream plus REST fallback",
         "200 requests/minute data API",
         ("ALPACA_API_KEY", "ALPACA_API_SECRET"),
-        "needs_new_adapter",
+        "adapter_live_broker_split",
+        "Paper execution exists separately; this registry row is the read-only account/market-data mirror contract.",
     ),
     SourceSpec(
         "rapidapi",
@@ -450,12 +465,16 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "social",
         3,
         "world_monitor_social_stock_act",
-        "source dependent",
-        (),
+        "UnusualWhales API key or selected STOCK Act provider",
+        ("https://api.unusualwhales.com/api/congress/recent-trades",),
         "daily or event-driven",
-        "source dependent",
-        status="needs_clarity",
-        notes="qadam-specs names politician trade disclosures, but no endpoint is specified.",
+        "plan dependent; budget 24/day",
+        ("UNUSUAL_WHALES_API_KEY",),
+        status="adapter_live_requires_key",
+        notes=(
+            "Provider decision recorded for v1: use UnusualWhales Congress recent trades as the canonical read-only "
+            "STOCK Act feed; Capitol Trades/Quiver remain alternates if the account scope is insufficient."
+        ),
     ),
     SourceSpec(
         "patents",

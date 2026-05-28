@@ -62,6 +62,16 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         primary_endpoint="https://api.unusualwhales.com/api/option-trades/flow-alerts",
         required_any_secret_groups=(("UNUSUAL_WHALES_API_KEY",),),
     ),
+    "stock_act": Phase1AdapterConfig(
+        key="stock_act",
+        source_label="social.stock_act",
+        event_type="politician_trade_disclosure",
+        trust_score=0.72,
+        sample_summary="STOCK Act congressional trade disclosure requiring cross-check against price action and filings.",
+        primary_endpoint="https://api.unusualwhales.com/api/congress/recent-trades",
+        required_any_secret_groups=(("UNUSUAL_WHALES_API_KEY",),),
+        notes="V1 provider decision: UnusualWhales Congress recent trades. Output is read-only evidence, not trade authority.",
+    ),
     "polymarket": Phase1AdapterConfig(
         key="polymarket",
         source_label="market.polymarket",
@@ -99,7 +109,18 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         sample_summary="AIS vessel-density or route-change observation near an energy chokepoint.",
         primary_endpoint="https://stream.aisstream.io/v0/stream",
         required_any_secret_groups=(("AISSTREAM_API_KEY",), ("SPIRE_API_KEY",), ("MARINETRAFFIC_API_KEY",)),
-        notes="Provider choice remains explicit; live path is gated until one provider is configured.",
+        notes="AISStream is the v1 read-only MVP path; Spire and MarineTraffic remain paid fallback candidates.",
+    ),
+    "space_track_celestrak": Phase1AdapterConfig(
+        key="space_track_celestrak",
+        source_label="physical.space_track_celestrak",
+        event_type="space_infrastructure_state",
+        trust_score=0.66,
+        sample_summary="CelesTrak public GP/TLE observation for satellite infrastructure context.",
+        primary_endpoint="https://celestrak.org/NORAD/elements/gp.php",
+        public_live=True,
+        required_any_secret_groups=(("SPACE_TRACK_USERNAME", "SPACE_TRACK_PASSWORD"),),
+        notes="CelesTrak public GP JSON is the fallback/smoke path; Space-Track credentials remain the fuller authenticated path.",
     ),
     "wingbits": Phase1AdapterConfig(
         key="wingbits",
@@ -130,6 +151,19 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         sample_summary="ECB series observation available for liquidity, rates, or EUR macro context.",
         primary_endpoint="https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A",
         public_live=True,
+    ),
+    "usgs": Phase1AdapterConfig(
+        key="usgs",
+        source_label="macro.usgs",
+        event_type="physical_supply_risk",
+        trust_score=0.74,
+        sample_summary="USGS mineral/supply-chain or geophysical observation relevant to commodities and defence.",
+        primary_endpoint="https://earthquake.usgs.gov/fdsnws/event/1/query",
+        public_live=True,
+        notes=(
+            "Scope decision: minerals/supply-chain context is the strategic role; the public earthquake API is the "
+            "event-driven physical-risk adapter path."
+        ),
     ),
     "un_comtrade": Phase1AdapterConfig(
         key="un_comtrade",
@@ -223,10 +257,33 @@ def _safe_endpoint(endpoint: str) -> str:
 
 
 def _event_summary(config: Phase1AdapterConfig, record: dict[str, Any]) -> str:
-    for key in ("title", "name", "question", "headline", "summary", "event", "text", "ticker", "seriesID"):
+    properties = record.get("properties")
+    if isinstance(properties, dict):
+        for key in ("title", "place", "name", "event", "summary"):
+            value = properties.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()[:240]
+    for key in (
+        "title",
+        "name",
+        "question",
+        "headline",
+        "summary",
+        "event",
+        "text",
+        "ticker",
+        "seriesID",
+        "OBJECT_NAME",
+        "NORAD_CAT_ID",
+        "REPRESENTATIVE",
+        "ISSUER",
+        "REPORT_DATE",
+    ):
         value = record.get(key)
         if isinstance(value, str) and value.strip():
             return value.strip()[:240]
+        if isinstance(value, (int, float)):
+            return f"{key} {value}"[:240]
     return config.sample_summary[:240]
 
 
@@ -235,7 +292,7 @@ def _records_from_payload(payload: Any) -> list[dict[str, Any]]:
         return [record for record in payload if isinstance(record, dict)]
     if not isinstance(payload, dict):
         return []
-    for key in ("data", "events", "markets", "results", "articles", "observations", "series", "feed", "alerts"):
+    for key in ("data", "events", "markets", "results", "articles", "observations", "series", "feed", "alerts", "features"):
         value = payload.get(key)
         if isinstance(value, list):
             return [record for record in value if isinstance(record, dict)]
@@ -345,7 +402,7 @@ class Phase1ReadOnlyAdapter:
     def _request_headers(self) -> dict[str, str]:
         key = self.config.key
         headers = {"User-Agent": "Qadam/0.1 read-only source adapter"}
-        if key == "unusual_whales":
+        if key in {"unusual_whales", "stock_act"}:
             token = secret_value("UNUSUAL_WHALES_API_KEY", self.settings)
             if token:
                 headers["Authorization"] = f"Bearer {token}"
@@ -383,8 +440,12 @@ class Phase1ReadOnlyAdapter:
             return {"limit": 25}
         if key == "kalshi":
             return {"limit": 25}
-        if key == "unusual_whales":
+        if key in {"unusual_whales", "stock_act"}:
             return {"limit": 25}
+        if key == "space_track_celestrak":
+            return {"GROUP": "stations", "FORMAT": "json"}
+        if key == "usgs":
+            return {"format": "geojson", "orderby": "time", "minmagnitude": 4.5, "limit": 25}
         if key == "wingbits":
             return {"limit": 25}
         if key == "bls":

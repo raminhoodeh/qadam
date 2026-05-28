@@ -171,9 +171,9 @@ Current implementation start:
 - NASA FIRMS now has the first physical read-only adapter path, including bbox-first area requests, credential-gated live mode, high-confidence thermal anomaly filtering, raw archive, and degraded-state handling.
 - FRED now has the first macro read-only adapter path, including rate/dollar/volatility/credit/crude series, public CSV fallback, sigma calculation, raw archive, and degraded-state handling.
 - RSS now has the first narrative read-only adapter path, including feed validation, keyword filtering, raw archive, normalized headline events, and degraded-state handling.
-- A generic Phase 1 read-only adapter promotion layer now covers ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- A generic Phase 1 read-only adapter promotion layer now covers ACLED, UnusualWhales, STOCK Act via UnusualWhales Congress, Polymarket, Kalshi, Alpaca, AIS, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
 - The generic layer provides sample events, masked credential status, raw archive writes, normalized events, fail-closed live fetches, and no signal/order authority.
-- Phase 1 promoted adapter coverage is now 19 sources: the five dedicated adapters plus 14 generic live-adapter contracts.
+- Phase 1 promoted adapter coverage is now 22 sources: the five dedicated adapters plus 17 generic live-adapter contracts.
 - Historical backfill planning and a local sample-runner exist for 12 priority sources and report ready versus blocked jobs without pulling large datasets.
 - Trust Score seed exists for all 35 sources, with 22 sources above 0.5 and three physical/logistics sources meeting the current seed threshold; real-data scoring remains pending.
 - Postgres/Timescale durable ingestion has a non-destructive status check and remains `ready_waiting_for_local_service` until the local database is running.

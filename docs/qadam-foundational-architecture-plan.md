@@ -154,8 +154,8 @@ Implemented state:
 - RSS is implemented as the first narrative read-only adapter.
 - `scripts/check_rss_adapter.py` checks sample mode and optional live read-only mode with keyword filtering.
 - RSS feed failures, HTML responses, or XML parse failures are represented as degraded or partial source state with archived request metadata.
-- `orchestrator/phase1_live_adapters.py` adds generic read-only adapter contracts for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
-- `scripts/check_phase1_live_adapters.py` validates those 14 adapter contracts in sample mode without live network calls.
+- `orchestrator/phase1_live_adapters.py` adds generic read-only adapter contracts for ACLED, UnusualWhales, STOCK Act via UnusualWhales Congress, Polymarket, Kalshi, Alpaca, AIS, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- `scripts/check_phase1_live_adapters.py` validates those 17 adapter contracts in sample mode without live network calls.
 - The generic adapter layer masks credential status, redacts Telegram bot-token URL paths in archived request metadata, writes raw payloads, normalizes sample/live records, and cannot create signals or orders.
 - `orchestrator/historical_backfill.py` and `scripts/check_historical_backfills.py` define the credential-aware backfill plan and local sample-runner before large pulls are attempted.
 - `orchestrator/trust_scores.py` and `scripts/check_trust_score_seed.py` seed source Trust Scores across all 35 sources while marking real-data scoring as incomplete.

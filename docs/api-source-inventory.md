@@ -14,8 +14,8 @@ Key split decisions:
 
 - Polymarket and Kalshi are separate market sources, even though the integration reference combines them.
 - SEC EDGAR and STOCK Act / politician filings are separate narrative sources, even though the integration reference combines them.
-- Space-Track and CelesTrak remain one TLE source for now because only Space-Track has a detailed endpoint in the specs.
-- Spire and MarineTraffic remain one AIS source for now because the tool contract is identical.
+- Space-Track and CelesTrak remain one TLE source. Space-Track is the authenticated primary path; CelesTrak GP JSON is the public fallback/smoke path.
+- Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
 
@@ -26,17 +26,17 @@ Key split decisions:
 | ACLED | OAuth, `https://acleddata.com/api/acled/read` | World Monitor has reusable OAuth/token-cache logic; current live validation is degraded until token refresh, entitlement, or account scope is confirmed. |
 | Oref | Public, `https://www.oref.org.il/WarningMessages/alert/alerts.json` | Spec says 5s cadence, but practical relay code uses a slower protected path. |
 | NASA FIRMS | API key, FIRMS area CSV endpoint | Promoted as the first physical adapter; bbox-first, read-only, credential-gated, and paced conservatively. |
-| UnusualWhales | API key, `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Not implemented in World Monitor; build fresh. |
-| Polymarket | Public CLOB plus wallet/execution later | World Monitor uses Gamma discovery, not full CLOB execution. |
-| Kalshi | API key, trading API | Region/account gated for the current setup; keep as missing/deferred until credentials and eligibility are available. |
-| Alpaca | API key + secret, data/trading APIs | Not implemented in World Monitor; build fresh. |
+| UnusualWhales | API key, `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Read-only adapter scaffolded; provider-specific enrichment waits for the API key. |
+| Polymarket | Public CLOB plus wallet/execution later | Read-only CLOB adapter scaffolded; execution remains disabled. |
+| Kalshi | API key, trading API | Read-only adapter scaffolded; region/account eligibility remains the practical gate. |
+| Alpaca | API key + secret, data/trading APIs | Paper execution exists separately; registry row is the read-only account/market-data mirror contract. |
 
 ## Tier 2 - Wire Second
 
 | Source | Access | Notes |
 | --- | --- | --- |
 | FRED | API key, FRED observations endpoint | World Monitor has seeders and FRED fallback patterns. |
-| AIS Maritime | Spire or MarineTraffic API key | World Monitor uses AISStream WebSocket as an MVP substitute. |
+| AIS Maritime | AISStream, Spire, or MarineTraffic API key | AISStream is the v1 read-only MVP; Spire/MarineTraffic remain paid fallback candidates. |
 | Wingbits | API key | World Monitor has bbox and military-flight classification patterns. |
 | GDELT | Public doc API | World Monitor has retry and proxy-fallback logic. |
 | RSS / Atom | Public feeds | World Monitor has a large curated feed list and digest scoring. |
@@ -50,11 +50,11 @@ Key split decisions:
 | ECB | Public data API | Use SDMX JSON format. |
 | UN Comtrade | API key | Weekly/monthly context source. |
 | BIS | Public stats API | Weekly systemic-risk context. |
-| USGS | Conflict: main spec says earthquake API; integration ref says commodity stats | Needs final implementation choice. |
+| USGS | Public minerals data and earthquake API | Scope decision recorded: minerals/supply-chain context is the strategic role; the public earthquake API is the event-driven physical-risk adapter path. |
 | Reddit | OAuth app | Confirmation source, not primary. |
 | Telegram | Bot API plus Telethon/MTProto user session | World Monitor has strong channel polling logic. |
 | SEC EDGAR | Public API, User-Agent required | High-trust corporate filing source. |
-| STOCK Act filings | Endpoint not specified in current specs | Needed for politician trade disclosures. |
+| STOCK Act filings | UnusualWhales Congress recent trades endpoint | V1 provider decision recorded; needed for politician trade disclosures and cross-validation. |
 
 ## Tier 4 - Wire Last Or Phase 2
 
@@ -62,7 +62,7 @@ Key split decisions:
 | --- | --- | --- |
 | UCDP | Public REST API | Historical conflict base rates. |
 | ArcGIS / USACE | Public layers, optional ArcGIS token | Structural infrastructure context. |
-| Space-Track / CelesTrak | Space-Track account; CelesTrak endpoint unresolved in specs | Satellite/TLE context. |
+| Space-Track / CelesTrak | Space-Track account; CelesTrak GP JSON public fallback | Satellite/TLE context. |
 | GPS Jamming | Public `gpsjam.org` API | Electronic-warfare context. |
 | IODA Internet Outage | Public Georgia Tech API | Regional connectivity/cyber disruption context. |
 | Coinglass | API key | Crypto derivatives context. |
@@ -85,11 +85,26 @@ Key split decisions:
 | --- | --- | --- |
 | Preference / PREF MCP | Remote Streamable HTTP MCP at `https://pref.trade/mcp`; bearer key `pref_agent_*` or account key | Registered in the Resource Registry as `preference_mcp` with category `supplemental_data_plane`. It is a read-only data plane for prediction markets, orderbooks, physical movement, weather, filings, wallet intelligence, news, macro, sports lines, and other world data. Current Qadam posture is status/catalog/sample/provenance/domain-pack/shadow-context, public cockpit visibility, Preference-aware Phase 4 strategy manifestation, Q4-10/Q4-12 certification gating, and PREF-12 upstream source-promotion decisions only until identity and allowlist gates pass. PREF-12 currently promotes zero sources: Polymarket, Kalshi, SEC EDGAR, and vessel tracking map to existing registry entries; NOAA-style weather and KOL wallet context are deferred. It is not source 36, not an execution venue, not a broker, not a fill/receipt/reconciliation source, and cannot affect canonical trust rank unless a specific upstream source is separately promoted. |
 
+## Resolved Source-Registry Blockers
+
+The May 2026 source-registry blocker pass resolved the eight stale blockers into explicit v1 decisions:
+
+| Source | Decision | Remaining Gate |
+| --- | --- | --- |
+| `stock_act` | Use UnusualWhales Congress recent trades as the v1 STOCK Act provider. | Needs `UNUSUAL_WHALES_API_KEY`; alternate providers can be evaluated later. |
+| `usgs` | Treat USGS as mineral/supply-chain context first, with the public earthquake API as event-driven physical-risk input. | Provider-specific minerals parsing still needs deeper research normalization. |
+| `space_track_celestrak` | Keep Space-Track as authenticated primary and CelesTrak GP JSON as public fallback. | Space-Track credentials only needed for the fuller authenticated path. |
+| `ais_maritime` | Use AISStream as the v1 read-only MVP; keep Spire/MarineTraffic as paid fallbacks. | Needs one AIS credential before live vessel data is available. |
+| `unusual_whales` | Keep the read-only options-flow adapter contract. | Needs `UNUSUAL_WHALES_API_KEY`. |
+| `polymarket` | Use public CLOB/orderbook path, not Gamma-only discovery. | Execution remains separately disabled. |
+| `kalshi` | Keep read-only market adapter; classify region/account as the gate. | Needs account eligibility and credentials. |
+| `alpaca` | Separate read-only market/account mirror from Alpaca paper execution. | Broader market-data scope depends on account/data entitlements. |
+
 ## Conflicts To Carry Into Implementation
 
 - The documents say "35 sources", but the integration reference details fewer because some sources are combined. The registry resolves this by splitting Polymarket/Kalshi and SEC/STOCK Act.
-- `qadam-specs.md` names USGS Earthquake API, while the integration reference specifies USGS commodity/minerals data. The registry marks USGS as `needs_clarity`.
-- `qadam-specs.md` names Space-Track / CelesTrak, but only Space-Track has endpoint details.
+- `qadam-specs.md` names USGS Earthquake API, while the integration reference specifies USGS commodity/minerals data. The v1 decision is minerals/supply-chain context plus public earthquake event monitoring.
+- `qadam-specs.md` names Space-Track / CelesTrak, but only Space-Track has detailed authenticated endpoint specs. The v1 public fallback is CelesTrak GP JSON.
 - Oref cadence says 5 seconds, while the World Monitor implementation suggests a slower practical polling setup with Tzeva Adom/Oref fallback behavior.
 - World Monitor contains strong source-access patterns, but Qadam should not inherit its Redis/Railway/Vercel architecture.
 - Yahoo Finance creates a source-count decision: keep it supplemental for market confirmation, or deliberately promote it into the canonical registry with a new source count and acceptance gate.
