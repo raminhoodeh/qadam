@@ -250,6 +250,22 @@ def main() -> int:
         f"{written['paper_submit_step_allowed']}"
     )
     print(
+        "paperops_active_runner_unattended_delegation_enabled="
+        f"{written['unattended_paper_execution_delegation_enabled']}"
+    )
+    print(
+        "paperops_active_runner_unattended_delegation_reason="
+        f"{written['unattended_paper_execution_delegation_reason']}"
+    )
+    print(
+        "paperops_active_runner_fresh_submit_count="
+        f"{written['paperops2_fresh_eligible_submit_record_count']}"
+    )
+    print(
+        "paperops_active_runner_duplicate_submit_count="
+        f"{written['paperops2_duplicate_submit_record_count']}"
+    )
+    print(
         "paperops_active_runner_poll_step_allowed="
         f"{written['paper_poll_step_allowed']}"
     )

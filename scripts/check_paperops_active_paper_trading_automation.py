@@ -185,6 +185,18 @@ def main() -> int:
         f"{written['paperops2_eligible_submit_record_count']}"
     )
     print(
+        "paperops_active_automation_paperops2_fresh_eligible_submit_record_count="
+        f"{written['paperops2_fresh_eligible_submit_record_count']}"
+    )
+    print(
+        "paperops_active_automation_paperops2_duplicate_submit_record_count="
+        f"{written['paperops2_duplicate_submit_record_count']}"
+    )
+    print(
+        "paperops_active_automation_paperops2_idempotency_ledger_active="
+        f"{written['paperops2_idempotency_ledger_active']}"
+    )
+    print(
         "paperops_active_automation_paperops2_submit_called_count="
         f"{written['paperops2_submit_called_count']}"
     )
@@ -223,6 +235,14 @@ def main() -> int:
     print(
         "paperops_active_automation_submit_step_allowed="
         f"{written['paper_submit_step_allowed']}"
+    )
+    print(
+        "paperops_active_automation_unattended_delegation_enabled="
+        f"{written['unattended_paper_execution_delegation_enabled']}"
+    )
+    print(
+        "paperops_active_automation_unattended_delegation_reason="
+        f"{written['unattended_paper_execution_delegation_reason']}"
     )
     print(
         "paperops_active_automation_poll_step_allowed="
@@ -275,6 +295,10 @@ def main() -> int:
         errors.append("PT-8 PaperOps readiness is not safe to continue")
     if written["paper_endpoint_confirmed"] is not True:
         errors.append("PT-8 does not see an Alpaca paper endpoint")
+    if written["unattended_paper_execution_delegation_enabled"] is not True:
+        errors.append("PT-8 unattended paper execution delegation is not armed")
+    if written["paperops2_idempotency_ledger_active"] is not True:
+        errors.append("PT-8 does not see the PaperOps-2 idempotency ledger")
     if written["qctrl_consultation_hold_active"] is True and (
         written["paper_submit_step_allowed"] is True
     ):

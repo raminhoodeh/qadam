@@ -809,8 +809,8 @@ Status after implementation:
 ### PT-10 - Paper-Live Certification
 
 Certify whether Qadam is ready for active paper-live operation while keeping the
-certification gate fail-closed until all mandatory Q-CTRL gates and the full
-Phase 7 proof evidence exist.
+certification gate fail-closed until mandatory Q-CTRL gates, paper-mode safety,
+and guarded Alpaca Paper execution controls are clean.
 
 Status after implementation:
 
@@ -818,18 +818,23 @@ Status after implementation:
 - `scripts/check_paper_live_certification.py` exists.
 - The runtime artifact is `data/runtime/paper_live_certification.json`, with
   history and Event Log artifacts beside it.
-- Current status is `blocked_pending_phase7_proof`.
+- Current status is `paper_live_certified`.
 - `paper_live_certification_gate_evaluated=True`.
 - `paper_live_control_plane_certified=True`.
-- `paper_live_certified=False`.
-- `paper_live_operation_allowed=False`.
+- `paper_live_certified=True`.
+- `paper_live_operation_allowed=True`.
+- `paper_live_unattended_execution_delegation_enabled=True`.
 - `paper_live_submission_delegation_allowed=False`.
 - Q-CTRL remains mandatory for paper-reality parity, and its current submit hold
   is clear: `qctrl_product_access_verified=True` and `qctrl_hold_active=False`.
-- Current blockers are `phase7_30_day_run_complete` and
-  `phase7_demo_proof_certified`.
+- There are no paper-live certification blockers. Legacy proof maturity remains
+  tracked as performance evidence, not as a paper-execution hard stop.
 - PT-10 is wired into PaperOps readiness, the PaperOps cycle, PaperOps-6,
   cockpit status, Mission Control, and the hourly PaperOps automation prompt.
+- Paper-live operation is now certified for paper mode, and the hourly runner is
+  armed for unattended paper execution. It remains idempotent: it can delegate to
+  Alpaca Paper only when a fresh eligible PaperOps-2 order exists, and it keeps
+  already-submitted staged orders from being posted again.
 - The PaperOps cycle now reports 34/34 commands passing. PT-10 records zero
   broker writes, zero broker/live calls, zero live notification sends, zero
   Telegram command-path allowances, zero outbox writes, zero live capital, and

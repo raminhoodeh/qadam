@@ -1963,10 +1963,17 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paper_live_certified",
     "paper_live_certification_blocker_count",
     "paper_live_operation_allowed",
+    "paper_live_unattended_execution_delegation_enabled",
+    "paper_live_unattended_execution_delegation_reason",
     "paperops_active_paper_trading_automation",
     "paperops_active_paper_trading_automation_enabled",
     "paperops_active_paper_trading_qctrl_hold",
     "paperops_active_paper_trading_submit_allowed",
+    "paperops_active_paper_trading_unattended_delegation_enabled",
+    "paperops_active_paper_trading_unattended_delegation_reason",
+    "paperops_active_paper_trading_fresh_submit_count",
+    "paperops_active_paper_trading_duplicate_submit_count",
+    "paperops_active_paper_trading_idempotency_ledger_active",
     "paperops_qualified_setup_production",
     "paperops_qualified_setup_production_qualified_count",
     "paperops_qualified_setup_production_ready_to_stage",
@@ -3304,6 +3311,14 @@ def main() -> int:
         f"{paper_live_certification.get('paper_live_operation_allowed')}"
     )
     print(
+        "cockpit_status_paper_live_unattended_delegation_enabled="
+        f"{paper_live_certification.get('paper_live_unattended_execution_delegation_enabled')}"
+    )
+    print(
+        "cockpit_status_paper_live_unattended_delegation_reason="
+        f"{paper_live_certification.get('paper_live_unattended_execution_delegation_reason')}"
+    )
+    print(
         "cockpit_status_paper_live_certification_blocker_count="
         f"{paper_live_certification.get('certification_blocker_count')}"
     )
@@ -3350,6 +3365,26 @@ def main() -> int:
     print(
         "cockpit_status_paperops_active_automation_submit_allowed="
         f"{paperops_active_automation.get('paper_submit_step_allowed')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_unattended_delegation_enabled="
+        f"{paperops_active_automation.get('unattended_paper_execution_delegation_enabled')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_unattended_delegation_reason="
+        f"{paperops_active_automation.get('unattended_paper_execution_delegation_reason')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_fresh_submit_count="
+        f"{paperops_active_automation.get('paperops2_fresh_eligible_submit_record_count')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_duplicate_submit_count="
+        f"{paperops_active_automation.get('paperops2_duplicate_submit_record_count')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_idempotency_ledger_active="
+        f"{paperops_active_automation.get('paperops2_idempotency_ledger_active')}"
     )
     print(
         "cockpit_status_paperops_active_automation_poll_allowed="
@@ -6958,6 +6993,20 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_pt10_operation_allowed_mismatch=true")
         return 1
+    if mission_stack.get("paper_live_unattended_execution_delegation_enabled") != (
+        paper_live_certification.get(
+            "paper_live_unattended_execution_delegation_enabled"
+        )
+    ):
+        print("cockpit_status_mission_stack_pt10_unattended_delegation_mismatch=true")
+        return 1
+    if mission_stack.get("paper_live_unattended_execution_delegation_reason") != (
+        paper_live_certification.get(
+            "paper_live_unattended_execution_delegation_reason"
+        )
+    ):
+        print("cockpit_status_mission_stack_pt10_unattended_reason_mismatch=true")
+        return 1
     if mission_stack.get("paperops_active_paper_trading_automation") != (
         paperops_active_automation.get("status")
     ):
@@ -6977,6 +7026,35 @@ def main() -> int:
         paperops_active_automation.get("paper_submit_step_allowed")
     ):
         print("cockpit_status_mission_stack_active_paper_automation_submit_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_unattended_delegation_enabled") != (
+        paperops_active_automation.get(
+            "unattended_paper_execution_delegation_enabled"
+        )
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_unattended_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_unattended_delegation_reason") != (
+        paperops_active_automation.get(
+            "unattended_paper_execution_delegation_reason"
+        )
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_reason_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_fresh_submit_count") != (
+        paperops_active_automation.get("paperops2_fresh_eligible_submit_record_count")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_fresh_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_duplicate_submit_count") != (
+        paperops_active_automation.get("paperops2_duplicate_submit_record_count")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_duplicate_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_idempotency_ledger_active") != (
+        paperops_active_automation.get("paperops2_idempotency_ledger_active")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_ledger_mismatch=true")
         return 1
     if mission_stack.get("paperops_qualified_setup_production") != (
         paperops_qualified_setup_production.get("status")
@@ -7326,6 +7404,14 @@ def main() -> int:
     if paper_live_certification.get("paper_live_operation_allowed") is not True:
         print("cockpit_status_paper_live_operation_not_allowed=true")
         return 1
+    if (
+        paper_live_certification.get(
+            "paper_live_unattended_execution_delegation_enabled"
+        )
+        is not True
+    ):
+        print("cockpit_status_paper_live_unattended_delegation_not_enabled=true")
+        return 1
     if int(paper_live_certification.get("certification_blocker_count", 0) or 0) != 0:
         print("cockpit_status_paper_live_certification_blockers_present=true")
         return 1
@@ -7409,6 +7495,17 @@ def main() -> int:
         return 1
     if paperops_active_automation.get("paper_endpoint_confirmed") is not True:
         print("cockpit_status_paperops_active_automation_paper_endpoint_missing=true")
+        return 1
+    if (
+        paperops_active_automation.get(
+            "unattended_paper_execution_delegation_enabled"
+        )
+        is not True
+    ):
+        print("cockpit_status_paperops_active_automation_unattended_not_enabled=true")
+        return 1
+    if paperops_active_automation.get("paperops2_idempotency_ledger_active") is not True:
+        print("cockpit_status_paperops_active_automation_ledger_inactive=true")
         return 1
     if (
         paperops_active_automation.get("qctrl_consultation_hold_active") is True

@@ -161,17 +161,34 @@ def _source_paperops_2(settings: Settings) -> dict[str, Any]:
     return build_paperops_alpaca_paper_post(settings=settings, execute_post=False)
 
 
-def _submitted_paper_order_count(source: dict[str, Any]) -> int:
+def _submitted_paper_order_count(
+    source: dict[str, Any],
+    settings: Settings,
+) -> int:
     records = [
         record
         for record in source.get("selected_post_records", []) or []
         if isinstance(record, dict)
     ]
-    return sum(
+    source_submitted = sum(
         1
         for record in records
         if record.get("status") == "submitted_to_alpaca_paper"
         and record.get("alpaca_paper_post_succeeded") is True
+    )
+    if source_submitted:
+        return source_submitted
+    lifecycle = _read_json(_runtime_dir(settings) / "paperops_paper_lifecycle_poller.json")
+    lifecycle_count = _int(lifecycle.get("source_submitted_paper_order_count"))
+    if lifecycle_count:
+        return lifecycle_count
+    return len(
+        [
+            record
+            for record in lifecycle.get("poll_candidate_records", []) or []
+            if isinstance(record, dict)
+            and str(record.get("client_order_id") or record.get("idempotency_key") or "").strip()
+        ]
     )
 
 
@@ -201,6 +218,7 @@ def _blockers(
         blockers.append("paperops_2_paper_post_path_not_available")
     if source and source.get("status") not in {
         "ready_pending_explicit_execute",
+        "ready_no_fresh_eligible_order",
         "submitted_to_alpaca_paper",
         "broker_post_failed_sanitized",
     }:
@@ -234,7 +252,7 @@ def build_paperops_paper_lifecycle_polling_enablement(
     endpoint = _endpoint_context(settings)
     source = _source_paperops_2(settings)
     source_validation_errors = validate_paperops_alpaca_paper_post(source) if source else []
-    submitted_count = _submitted_paper_order_count(source)
+    submitted_count = _submitted_paper_order_count(source, settings)
     blockers = _blockers(
         settings=settings,
         source=source,

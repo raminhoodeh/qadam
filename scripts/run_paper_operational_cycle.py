@@ -1295,6 +1295,18 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             )
             == "True"
         ),
+        "paper_live_certification_unattended_delegation_enabled": (
+            paper_live_certification.get(
+                "paper_live_certification_unattended_delegation_enabled"
+            )
+            == "True"
+        ),
+        "paper_live_certification_unattended_delegation_reason": (
+            paper_live_certification.get(
+                "paper_live_certification_unattended_delegation_reason"
+            )
+            or "not_armed"
+        ),
         "paper_live_certification_submission_delegation_allowed": (
             paper_live_certification.get(
                 "paper_live_certification_submission_delegation_allowed"
@@ -1663,14 +1675,31 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_paper_live_certification_not_evaluated")
     if artifact.get("paper_live_certification_control_plane_certified") is not True:
         errors.append("paper_ops_cycle_paper_live_control_plane_not_certified")
-    if artifact.get("paper_live_certification_paper_live_certified") is not False:
-        errors.append("paper_ops_cycle_paper_live_certified_unexpected")
-    if artifact.get("paper_live_certification_operation_allowed") is not False:
-        errors.append("paper_ops_cycle_paper_live_operation_allowed")
+    paper_live_certified = (
+        artifact.get("paper_live_certification_paper_live_certified") is True
+    )
+    if paper_live_certified:
+        if artifact.get("paper_live_certification_operation_allowed") is not True:
+            errors.append("paper_ops_cycle_paper_live_certified_without_operation")
+        if (
+            artifact.get("paper_live_certification_unattended_delegation_enabled")
+            is not True
+        ):
+            errors.append("paper_ops_cycle_paper_live_certified_without_unattended")
+        if int(artifact.get("paper_live_certification_blocker_count", 0) or 0) != 0:
+            errors.append("paper_ops_cycle_paper_live_certified_with_blockers")
+    else:
+        if artifact.get("paper_live_certification_operation_allowed") is not False:
+            errors.append("paper_ops_cycle_paper_live_operation_allowed_while_blocked")
+        if (
+            artifact.get("paper_live_certification_unattended_delegation_enabled")
+            is not False
+        ):
+            errors.append("paper_ops_cycle_paper_live_unattended_while_blocked")
+        if int(artifact.get("paper_live_certification_blocker_count", 0) or 0) < 1:
+            errors.append("paper_ops_cycle_paper_live_blockers_missing")
     if artifact.get("paper_live_certification_submission_delegation_allowed") is not False:
         errors.append("paper_ops_cycle_paper_live_submission_allowed")
-    if int(artifact.get("paper_live_certification_blocker_count", 0) or 0) < 1:
-        errors.append("paper_ops_cycle_paper_live_blockers_missing")
     if (
         artifact.get("paper_live_certification_qctrl_hold_active") is True
         and artifact.get("paper_live_certification_qctrl_hold_visible") is not True

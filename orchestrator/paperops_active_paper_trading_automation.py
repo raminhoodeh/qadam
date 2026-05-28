@@ -18,7 +18,10 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
-from orchestrator.paperops_alpaca_paper_post import validate_paperops_alpaca_paper_post
+from orchestrator.paperops_alpaca_paper_post import (
+    build_paperops_alpaca_paper_post,
+    validate_paperops_alpaca_paper_post,
+)
 from orchestrator.paperops_guarded_paper_exit_enablement import (
     validate_paperops_guarded_paper_exit_enablement,
 )
@@ -139,6 +142,9 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops2_status",
     "paperops2_path_available",
     "paperops2_eligible_submit_record_count",
+    "paperops2_fresh_eligible_submit_record_count",
+    "paperops2_duplicate_submit_record_count",
+    "paperops2_idempotency_ledger_active",
     "paperops2_submit_called_count",
     "paperops2_submit_succeeded_count",
     "paperops3_status",
@@ -152,6 +158,8 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops4_close_called_count",
     "pt6_lifecycle_polling_ready",
     "pt7_guarded_exit_ready",
+    "unattended_paper_execution_delegation_enabled",
+    "unattended_paper_execution_delegation_reason",
     "paper_submit_step_allowed",
     "paper_poll_step_allowed",
     "paper_exit_step_allowed",
@@ -311,7 +319,10 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "qctrl_consultation": _read_json(
             runtime / "paperops_qctrl_paper_consultation.json"
         ),
-        "paperops2": _read_json(runtime / "paperops_alpaca_paper_post.json"),
+        "paperops2": build_paperops_alpaca_paper_post(
+            settings=settings,
+            execute_post=False,
+        ),
         "paperops3": _read_json(runtime / "paperops_paper_lifecycle_poller.json"),
         "paperops4": _read_json(runtime / "paperops_paper_exit_path.json"),
         "pt6": _read_json(runtime / "paperops_paper_lifecycle_polling_enablement.json"),
@@ -376,7 +387,7 @@ def _paperops2_ready(paperops2: dict[str, Any]) -> bool:
         paperops2.get("status") == "ready_pending_explicit_execute"
         and paperops2.get("paper_post_path_available") is True
         and paperops2.get("paper_endpoint_confirmed") is True
-        and _int(paperops2.get("eligible_submit_record_count")) >= 1
+        and _int(paperops2.get("fresh_eligible_submit_record_count")) >= 1
         and _int(paperops2.get("live_endpoint_called_count")) == 0
         and paperops2.get("live_capital_enabled") is False
         and not validate_paperops_alpaca_paper_post(paperops2)
@@ -501,6 +512,29 @@ def build_paperops_active_paper_trading_automation(
     paper_submit_allowed = not submit_failures
     paper_poll_allowed = not blockers and paperops3_ready
     paper_exit_allowed = not blockers and paperops4_ready
+    unattended_delegation_enabled = (
+        not blockers
+        and settings.mode == "paper"
+        and settings.live_capital_enabled is False
+        and automation.get("automation_active") is True
+        and automation.get("automation_prompt_active_trade_bound") is True
+        and readiness.get("safe_to_continue_paper_only") is True
+        and qctrl_ready
+    )
+    if not unattended_delegation_enabled:
+        unattended_delegation_reason = "blocked:" + ",".join(
+            blockers or ["paperops_or_qctrl_not_ready"]
+        )
+    elif paper_submit_allowed:
+        unattended_delegation_reason = "armed_fresh_paper_submit_ready"
+    elif paper_poll_allowed:
+        unattended_delegation_reason = "armed_paper_poll_ready"
+    elif paper_exit_allowed:
+        unattended_delegation_reason = "armed_paper_exit_ready"
+    elif _int(paperops2.get("duplicate_submit_record_count")) >= 1:
+        unattended_delegation_reason = "armed_idle_existing_order_already_submitted"
+    else:
+        unattended_delegation_reason = "armed_idle_waiting_for_fresh_eligible_setup"
 
     actions = action_records or []
     live_endpoint_called_count = sum(
@@ -560,6 +594,15 @@ def build_paperops_active_paper_trading_automation(
         "paperops2_eligible_submit_record_count": _int(
             paperops2.get("eligible_submit_record_count")
         ),
+        "paperops2_fresh_eligible_submit_record_count": _int(
+            paperops2.get("fresh_eligible_submit_record_count")
+        ),
+        "paperops2_duplicate_submit_record_count": _int(
+            paperops2.get("duplicate_submit_record_count")
+        ),
+        "paperops2_idempotency_ledger_active": (
+            paperops2.get("idempotency_ledger_active") is True
+        ),
         "paperops2_submit_called_count": _int(
             paperops2.get("alpaca_paper_post_called_count")
         ),
@@ -587,6 +630,12 @@ def build_paperops_active_paper_trading_automation(
         ),
         "pt6_lifecycle_polling_ready": pt6_ready,
         "pt7_guarded_exit_ready": pt7_ready,
+        "unattended_paper_execution_delegation_enabled": (
+            unattended_delegation_enabled
+        ),
+        "unattended_paper_execution_delegation_reason": (
+            unattended_delegation_reason
+        ),
         "paper_submit_step_allowed": paper_submit_allowed,
         "paper_poll_step_allowed": paper_poll_allowed,
         "paper_exit_step_allowed": paper_exit_allowed,
@@ -704,6 +753,15 @@ def validate_paperops_active_paper_trading_automation(
         errors.append("paperops_active_automation_paperops_not_safe")
     if artifact.get("paper_endpoint_confirmed") is not True:
         errors.append("paperops_active_automation_paper_endpoint_not_confirmed")
+    if artifact.get("unattended_paper_execution_delegation_enabled") is True:
+        if artifact.get("qctrl_paper_consultation_ready") is not True:
+            errors.append("paperops_active_automation_unattended_without_qctrl")
+        if artifact.get("paperops_safe_to_continue") is not True:
+            errors.append("paperops_active_automation_unattended_without_readiness")
+        if artifact.get("automation_prompt_active_trade_bound") is not True:
+            errors.append("paperops_active_automation_unattended_without_prompt")
+        if artifact.get("paperops2_idempotency_ledger_active") is not True:
+            errors.append("paperops_active_automation_unattended_without_idempotency")
     if artifact.get("active_paper_trading_automation_enabled") is True:
         if artifact.get("status") not in PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES:
             errors.append("paperops_active_automation_status_invalid")
@@ -716,6 +774,8 @@ def validate_paperops_active_paper_trading_automation(
             errors.append("paperops_active_automation_submit_without_paperops2_ready")
         if _int(artifact.get("paperops2_eligible_submit_record_count")) < 1:
             errors.append("paperops_active_automation_submit_without_eligible_order")
+        if _int(artifact.get("paperops2_fresh_eligible_submit_record_count")) < 1:
+            errors.append("paperops_active_automation_submit_without_fresh_order")
     if artifact.get("paper_poll_step_allowed") is True:
         if artifact.get("paperops3_status") != "ready_pending_explicit_poll":
             errors.append("paperops_active_automation_poll_without_paperops3_ready")
@@ -804,6 +864,12 @@ def write_paperops_active_paper_trading_automation(
                 "automation_prompt_active_trade_bound": written.get(
                     "automation_prompt_active_trade_bound"
                 ),
+                "unattended_paper_execution_delegation_enabled": written.get(
+                    "unattended_paper_execution_delegation_enabled"
+                ),
+                "unattended_paper_execution_delegation_reason": written.get(
+                    "unattended_paper_execution_delegation_reason"
+                ),
                 "paper_submit_step_allowed": written.get("paper_submit_step_allowed"),
                 "paper_poll_step_allowed": written.get("paper_poll_step_allowed"),
                 "paper_exit_step_allowed": written.get("paper_exit_step_allowed"),
@@ -841,6 +907,12 @@ def write_paperops_active_paper_trading_automation(
         "recorded_at": _now(),
         "active_paper_trading_automation_enabled": written.get(
             "active_paper_trading_automation_enabled"
+        ),
+        "unattended_paper_execution_delegation_enabled": written.get(
+            "unattended_paper_execution_delegation_enabled"
+        ),
+        "unattended_paper_execution_delegation_reason": written.get(
+            "unattended_paper_execution_delegation_reason"
         ),
         "paper_submit_step_allowed": written.get("paper_submit_step_allowed"),
         "paper_poll_step_allowed": written.get("paper_poll_step_allowed"),
@@ -882,6 +954,8 @@ def paperops_active_paper_trading_automation_public_status(
             "automation_prompt_active_trade_bound": False,
             "execute_automation_requested": False,
             "paper_endpoint_confirmed": False,
+            "unattended_paper_execution_delegation_enabled": False,
+            "unattended_paper_execution_delegation_reason": "pt8_not_run",
             "paper_submit_step_allowed": False,
             "paper_poll_step_allowed": False,
             "paper_exit_step_allowed": False,

@@ -551,6 +551,34 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     alpaca_paper_submit_effective = (
         settings.alpaca_paper_submit_enabled or alpaca_submit_enablement_ready
     )
+    alpaca_paper_post_status = str(alpaca_paper_post.get("status") or "missing")
+    alpaca_paper_post_fresh_count = _int(
+        alpaca_paper_post.get("fresh_eligible_submit_record_count")
+    )
+    alpaca_paper_post_duplicate_count = _int(
+        alpaca_paper_post.get("duplicate_submit_record_count")
+    )
+    alpaca_paper_post_submitted_count = _int(
+        alpaca_paper_post.get("alpaca_paper_post_succeeded_count")
+    )
+    alpaca_paper_post_idempotency_ready = (
+        alpaca_paper_post.get("idempotency_ledger_active") is True
+    )
+    alpaca_paper_post_order_state_ready = (
+        (
+            alpaca_paper_post_status == "ready_pending_explicit_execute"
+            and alpaca_paper_post_fresh_count >= 1
+        )
+        or (
+            alpaca_paper_post_status == "ready_no_fresh_eligible_order"
+            and alpaca_paper_post_duplicate_count >= 1
+            and alpaca_paper_post_idempotency_ready
+        )
+        or (
+            alpaca_paper_post_status == "submitted_to_alpaca_paper"
+            and alpaca_paper_post_submitted_count >= 1
+        )
+    )
     alpaca_paper_post_ready = (
         alpaca_paper_submit_effective
         and alpaca_paper_post.get("paper_post_path_available") is True
@@ -560,12 +588,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and alpaca_paper_post.get("live_capital_enabled") is False
         and _int(alpaca_paper_post.get("live_endpoint_called_count")) == 0
         and _int(alpaca_paper_post.get("unsafe_live_endpoint_called_count")) == 0
-        and _int(alpaca_paper_post.get("eligible_submit_record_count")) >= 1
-        and alpaca_paper_post.get("status")
-        in {
-            "ready_pending_explicit_execute",
-            "submitted_to_alpaca_paper",
-        }
+        and alpaca_paper_post_order_state_ready
     )
     paper_lifecycle_poller_ready = (
         paper_lifecycle_poller.get("status")
@@ -970,7 +993,10 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
             "detail": (
                 f"enabled={settings.alpaca_paper_submit_enabled}; "
                 f"path_available={alpaca_paper_post.get('paper_post_path_available')}; "
-                f"eligible={_int(alpaca_paper_post.get('eligible_submit_record_count'))}; "
+                f"source_eligible={_int(alpaca_paper_post.get('source_eligible_submit_record_count'))}; "
+                f"fresh={alpaca_paper_post_fresh_count}; "
+                f"duplicates={alpaca_paper_post_duplicate_count}; "
+                f"idempotency={alpaca_paper_post_idempotency_ready}; "
                 f"paper_posts={_int(alpaca_paper_post.get('alpaca_paper_post_called_count'))}"
             ),
             "required_for_full_paper_ops": True,
@@ -1746,6 +1772,18 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         "alpaca_paper_post_eligible_submit_record_count": _int(
             alpaca_paper_post.get("eligible_submit_record_count")
         ),
+        "alpaca_paper_post_source_eligible_submit_record_count": _int(
+            alpaca_paper_post.get("source_eligible_submit_record_count")
+        ),
+        "alpaca_paper_post_fresh_eligible_submit_record_count": _int(
+            alpaca_paper_post.get("fresh_eligible_submit_record_count")
+        ),
+        "alpaca_paper_post_duplicate_submit_record_count": _int(
+            alpaca_paper_post.get("duplicate_submit_record_count")
+        ),
+        "alpaca_paper_post_idempotency_ledger_active": (
+            alpaca_paper_post.get("idempotency_ledger_active") is True
+        ),
         "alpaca_paper_post_called_count": _int(
             alpaca_paper_post.get("alpaca_paper_post_called_count")
         ),
@@ -2056,6 +2094,18 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         ),
         "paper_live_operation_allowed": (
             paper_live_certification.get("paper_live_operation_allowed") is True
+        ),
+        "paper_live_unattended_execution_delegation_enabled": (
+            paper_live_certification.get(
+                "paper_live_unattended_execution_delegation_enabled"
+            )
+            is True
+        ),
+        "paper_live_unattended_execution_delegation_reason": (
+            paper_live_certification.get(
+                "paper_live_unattended_execution_delegation_reason"
+            )
+            or "not_armed"
         ),
         "paper_live_submission_delegation_allowed": (
             paper_live_certification.get("paper_live_submission_delegation_allowed")
@@ -2538,6 +2588,18 @@ def validate_paper_operational_readiness(artifact: dict[str, Any]) -> list[str]:
         "paper_live_certified"
     ) is not True:
         errors.append("paper_ops_paper_live_submission_allowed_while_blocked")
+    if (
+        artifact.get("paper_live_unattended_execution_delegation_enabled") is not False
+        and artifact.get("paper_live_certified") is not True
+    ):
+        errors.append("paper_ops_paper_live_unattended_allowed_while_blocked")
+    if artifact.get("paper_live_certified") is True:
+        if artifact.get("paper_live_operation_allowed") is not True:
+            errors.append("paper_ops_paper_live_certified_without_operation")
+        if artifact.get("paper_live_unattended_execution_delegation_enabled") is not True:
+            errors.append("paper_ops_paper_live_certified_without_unattended")
+        if artifact.get("paper_live_certification_blocker_count") != 0:
+            errors.append("paper_ops_paper_live_certified_with_blockers")
     if (
         artifact.get("paper_live_certification_qctrl_hold_active") is True
         and artifact.get("paper_live_certification_qctrl_hold_visible") is not True

@@ -830,6 +830,22 @@ def main() -> int:
         f"{written['alpaca_paper_post_eligible_submit_record_count']}"
     )
     print(
+        "paper_ops_alpaca_paper_post_source_eligible_submit_record_count="
+        f"{written['alpaca_paper_post_source_eligible_submit_record_count']}"
+    )
+    print(
+        "paper_ops_alpaca_paper_post_fresh_eligible_submit_record_count="
+        f"{written['alpaca_paper_post_fresh_eligible_submit_record_count']}"
+    )
+    print(
+        "paper_ops_alpaca_paper_post_duplicate_submit_record_count="
+        f"{written['alpaca_paper_post_duplicate_submit_record_count']}"
+    )
+    print(
+        "paper_ops_alpaca_paper_post_idempotency_ledger_active="
+        f"{written['alpaca_paper_post_idempotency_ledger_active']}"
+    )
+    print(
         "paper_ops_alpaca_paper_post_called_count="
         f"{written['alpaca_paper_post_called_count']}"
     )
@@ -1104,6 +1120,18 @@ def main() -> int:
         f"{written['paper_live_operation_allowed']}"
     )
     print(
+        "paper_ops_paper_live_unattended_delegation_enabled="
+        f"{written['paper_live_unattended_execution_delegation_enabled']}"
+    )
+    print(
+        "paper_ops_paper_live_unattended_delegation_reason="
+        f"{written['paper_live_unattended_execution_delegation_reason']}"
+    )
+    print(
+        "paper_ops_paper_live_submission_delegation_allowed="
+        f"{written['paper_live_submission_delegation_allowed']}"
+    )
+    print(
         "paper_ops_paper_live_certification_blocker_count="
         f"{written['paper_live_certification_blocker_count']}"
     )
@@ -1287,13 +1315,14 @@ def main() -> int:
         errors.append("paper ops hard safety is not clean")
     if written["full_paper_operational_ready"] is True and written["blocker_count"]:
         errors.append("paper ops claims full readiness while blockers exist")
-    expected_next_stage = (
-        "Run PaperOps-1 operational cycle"
-        if written["full_paper_operational_ready"] is True
-        else "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
-    )
-    if written["recommended_next_stage"] != expected_next_stage:
-        errors.append("paper ops next unblock is inconsistent with Q-CTRL readiness")
+    if written["full_paper_operational_ready"] is True:
+        if written["recommended_next_stage"] != "Run PaperOps-1 operational cycle":
+            errors.append("paper ops full-ready next step is not operational cycle")
+    elif written["paper_live_qctrl_product_access_verified"] is True and (
+        written["recommended_next_stage"]
+        == "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
+    ):
+        errors.append("paper ops next unblock is stale after Q-CTRL verification")
     if "paper_ops_live_capital_enabled" not in live_capital_errors:
         errors.append("live capital probe was not rejected")
     if (
@@ -1596,12 +1625,22 @@ def main() -> int:
         errors.append("PT-10 paper-live certification gate is not evaluated")
     if written["paper_live_control_plane_certified"] is not True:
         errors.append("PT-10 paper-live control plane is not certified")
-    if written["paper_live_certified"] is not False:
-        errors.append("PT-10 unexpectedly certified paper-live")
-    if written["paper_live_operation_allowed"] is not False:
-        errors.append("PT-10 unexpectedly allowed paper-live operation")
-    if written["paper_live_certification_blocker_count"] < 1:
-        errors.append("PT-10 certification blockers are missing")
+    if written["paper_live_certified"] is True:
+        if written["paper_live_operation_allowed"] is not True:
+            errors.append("PT-10 certified paper-live without paper operation")
+        if written["paper_live_unattended_execution_delegation_enabled"] is not True:
+            errors.append("PT-10 certified paper-live without unattended delegation")
+        if written["paper_live_certification_blocker_count"] != 0:
+            errors.append("PT-10 certified paper-live with blockers")
+    else:
+        if written["paper_live_operation_allowed"] is not False:
+            errors.append("PT-10 allowed paper-live operation while blocked")
+        if written["paper_live_unattended_execution_delegation_enabled"] is not False:
+            errors.append("PT-10 armed unattended delegation while blocked")
+        if written["paper_live_certification_blocker_count"] < 1:
+            errors.append("PT-10 certification blockers are missing")
+    if written["paper_live_submission_delegation_allowed"] is not False:
+        errors.append("PT-10 unexpectedly delegated immediate paper submission")
     if (
         written["paper_live_certification_qctrl_hold_active"] is True
         and written["paper_live_certification_submit_visible_as_held"] is not True

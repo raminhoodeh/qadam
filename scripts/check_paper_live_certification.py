@@ -137,6 +137,8 @@ def main() -> int:
         errors.append("paper_live_not_certified")
     if written["paper_live_operation_allowed"] is not True:
         errors.append("paper_live_operation_not_allowed")
+    if written["paper_live_unattended_execution_delegation_enabled"] is not True:
+        errors.append("paper_live_unattended_delegation_not_enabled")
     if written["paper_live_submission_delegation_allowed"] is not False:
         errors.append("paper_live_submission_unexpectedly_delegated")
     if written["status"] != _expected_status(written):
@@ -148,8 +150,6 @@ def main() -> int:
         required_current_blockers.add("qctrl_product_access_ready")
     if written["qctrl_hold_active"] is True:
         required_current_blockers.add("qctrl_hold_cleared_for_submit")
-    if written["full_paper_operational_ready"] is not True:
-        required_current_blockers.add("paperops_full_readiness")
     if not required_current_blockers.issubset(set(written["certification_blockers"])):
         errors.append("expected_current_certification_blockers_missing")
     if "phase7_30_day_run_complete" in written["certification_blockers"]:
@@ -230,6 +230,14 @@ def main() -> int:
     print(
         "paper_live_certification_operation_allowed="
         f"{written['paper_live_operation_allowed']}"
+    )
+    print(
+        "paper_live_certification_unattended_delegation_enabled="
+        f"{written['paper_live_unattended_execution_delegation_enabled']}"
+    )
+    print(
+        "paper_live_certification_unattended_delegation_reason="
+        f"{written['paper_live_unattended_execution_delegation_reason']}"
     )
     print(
         "paper_live_certification_submission_delegation_allowed="

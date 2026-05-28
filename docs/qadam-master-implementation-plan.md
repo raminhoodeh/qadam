@@ -1262,11 +1262,12 @@ Current PaperOps status:
   `scripts/check_paperops_active_paper_trading_automation.py`, and
   `scripts/run_active_paper_trading_automation.py`. It binds the hourly
   PaperOps runner to the existing PaperOps-2 submit, PaperOps-3 poll, and
-  PaperOps-4 exit gates without creating a direct broker shortcut. Current
-  status is `active_automation_enabled_idle`: Q-CTRL is ready, one Alpaca paper
-  order has been submitted and accepted, the lifecycle poller has mirrored the
-  submitted order, and no exit is eligible until an open-position readback
-  exists.
+  PaperOps-4 exit gates without creating a direct broker shortcut. The active
+  runner is now explicitly armed for unattended paper execution via
+  `unattended_paper_execution_delegation_enabled=True`, but it only submits when
+  PaperOps-2 reports a fresh eligible order. Already-submitted staged orders are
+  held by the PaperOps-2 idempotency ledger and surface as
+  `ready_no_fresh_eligible_order`, not as repeat submit opportunities.
 - PT-9 cockpit and notification upgrade is implemented in
   `orchestrator/paperops_cockpit_notification_upgrade.py` and
   `scripts/check_paperops_cockpit_notification_upgrade.py`. It exposes
@@ -1284,8 +1285,9 @@ Current PaperOps status:
   `paper_live_certification_gate_evaluated=True`,
   `paper_live_control_plane_certified=True`,
   `paper_live_certified=True`, `paper_live_operation_allowed=True`, and
-  `paper_live_submission_delegation_allowed=False` until a fresh eligible
-  paper submit action exists. It is wired into PaperOps
+  `paper_live_unattended_execution_delegation_enabled=True`. The narrower
+  `paper_live_submission_delegation_allowed` flag remains `False` until a fresh
+  eligible paper submit action exists. It is wired into PaperOps
   readiness, the PaperOps cycle, PaperOps-6, cockpit status, Mission Control,
   and the hourly automation prompt. The historical 30-day proof artifacts no
   longer block paper-live certification; all unsafe write, broker, notification,

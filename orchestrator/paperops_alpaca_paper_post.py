@@ -42,6 +42,9 @@ PAPEROPS_ALPACA_POST_SCHEMA_VERSION = 1
 PAPEROPS_ALPACA_POST_RUNTIME_ARTIFACT = "paperops_alpaca_paper_post.json"
 PAPEROPS_ALPACA_POST_HISTORY = "paperops_alpaca_paper_post_history.jsonl"
 PAPEROPS_ALPACA_POST_EVENT_LOG = "paperops_alpaca_paper_post_events.jsonl"
+PAPEROPS_ALPACA_POST_SUBMISSION_LEDGER = (
+    "paperops_alpaca_paper_post_submission_ledger.json"
+)
 PAPEROPS_ALPACA_POST_EVENT_TYPE = "paperops_alpaca_paper_post_recorded"
 PAPEROPS_ALPACA_POST_PREWRITE_EVENT_TYPE = "paperops_alpaca_paper_post_prewrite"
 PAPEROPS_ALPACA_POST_COMPONENT = "paperops_alpaca_paper_post"
@@ -123,6 +126,12 @@ def paperops_alpaca_paper_post_paths(
     )
 
 
+def paperops_alpaca_paper_post_submission_ledger_path(
+    settings: Settings | None = None,
+) -> Path:
+    return _runtime_dir(settings) / PAPEROPS_ALPACA_POST_SUBMISSION_LEDGER
+
+
 def read_latest_paperops_alpaca_paper_post(
     settings: Settings | None = None,
 ) -> dict[str, Any]:
@@ -130,6 +139,108 @@ def read_latest_paperops_alpaca_paper_post(
     if not output_path.exists():
         return {}
     return _read_json(output_path)
+
+
+def _submitted_candidate_keys_from_artifact(
+    artifact: dict[str, Any],
+) -> tuple[set[str], set[str]]:
+    client_order_ids: set[str] = set()
+    source_idempotency_keys: set[str] = set()
+    if artifact.get("status") != "submitted_to_alpaca_paper":
+        return client_order_ids, source_idempotency_keys
+    for record in artifact.get("selected_post_records", []) or []:
+        if not isinstance(record, dict):
+            continue
+        if record.get("alpaca_paper_post_succeeded") is not True:
+            continue
+        client_order_id = str(record.get("idempotency_key") or "").strip()
+        source_key = str(record.get("source_idempotency_key") or "").strip()
+        if client_order_id:
+            client_order_ids.add(client_order_id)
+        if source_key:
+            source_idempotency_keys.add(source_key)
+    return client_order_ids, source_idempotency_keys
+
+
+def _submitted_candidate_keys_from_lifecycle_artifact(
+    artifact: dict[str, Any],
+) -> tuple[set[str], set[str]]:
+    client_order_ids: set[str] = set()
+    source_idempotency_keys: set[str] = set()
+    candidate_records: list[Any] = []
+    candidate_records.extend(artifact.get("poll_candidate_records", []) or [])
+    for result in artifact.get("poll_result_records", []) or []:
+        if not isinstance(result, dict):
+            continue
+        candidate_records.append(result.get("candidate"))
+    for record in candidate_records:
+        if not isinstance(record, dict):
+            continue
+        client_order_id = str(
+            record.get("client_order_id") or record.get("idempotency_key") or ""
+        ).strip()
+        source_key = str(record.get("source_idempotency_key") or "").strip()
+        if client_order_id:
+            client_order_ids.add(client_order_id)
+        if source_key:
+            source_idempotency_keys.add(source_key)
+    return client_order_ids, source_idempotency_keys
+
+
+def _submission_ledger(settings: Settings) -> dict[str, Any]:
+    path = paperops_alpaca_paper_post_submission_ledger_path(settings)
+    payload = _read_json(path)
+    current_client_ids, current_source_keys = _submitted_candidate_keys_from_artifact(
+        read_latest_paperops_alpaca_paper_post(settings)
+    )
+    lifecycle_client_ids, lifecycle_source_keys = (
+        _submitted_candidate_keys_from_lifecycle_artifact(
+            _read_json(_runtime_dir(settings) / "paperops_paper_lifecycle_poller.json")
+        )
+    )
+    client_ids = set(payload.get("submitted_client_order_ids", []) or [])
+    source_keys = set(payload.get("submitted_source_idempotency_keys", []) or [])
+    client_ids.update(current_client_ids)
+    source_keys.update(current_source_keys)
+    client_ids.update(lifecycle_client_ids)
+    source_keys.update(lifecycle_source_keys)
+    return {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "artifact_type": "paperops_alpaca_paper_post_submission_ledger",
+        "artifact_id": "paperops:alpaca-paper-post:submission-ledger",
+        "submitted_client_order_ids": sorted(client_ids),
+        "submitted_source_idempotency_keys": sorted(source_keys),
+    }
+
+
+def _write_submission_ledger(
+    artifact: dict[str, Any],
+    settings: Settings,
+) -> None:
+    client_ids, source_keys = _submitted_candidate_keys_from_artifact(artifact)
+    existing = _submission_ledger(settings)
+    client_ids.update(existing.get("submitted_client_order_ids", []) or [])
+    source_keys.update(existing.get("submitted_source_idempotency_keys", []) or [])
+    if not client_ids and not source_keys:
+        return
+    path = paperops_alpaca_paper_post_submission_ledger_path(settings)
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+                "artifact_type": "paperops_alpaca_paper_post_submission_ledger",
+                "artifact_id": "paperops:alpaca-paper-post:submission-ledger",
+                "updated_at": _now(),
+                "public_safe": True,
+                "submitted_client_order_ids": sorted(client_ids),
+                "submitted_source_idempotency_keys": sorted(source_keys),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _contains_secret_shape(value: object) -> bool:
@@ -693,6 +804,7 @@ def _status(
     endpoint: dict[str, Any],
     effective_submit_enabled: bool,
     eligible_count: int,
+    duplicate_count: int,
     execute_post: bool,
     post_result: dict[str, Any] | None,
 ) -> str:
@@ -707,6 +819,8 @@ def _status(
     if not endpoint["alpaca_api_key_configured"] or not endpoint["alpaca_api_secret_configured"]:
         return "blocked_missing_alpaca_paper_credentials"
     if eligible_count < 1:
+        if duplicate_count >= 1:
+            return "ready_no_fresh_eligible_order"
         return "ready_no_eligible_order"
     if not execute_post:
         return "ready_pending_explicit_execute"
@@ -739,7 +853,34 @@ def build_paperops_alpaca_paper_post(
     q7_candidates = _q7_candidates(source_submit)
     pt4_candidates = _pt4_candidates(source_pt4)
     all_candidates = pt4_candidates + q7_candidates
-    eligible_candidates = _eligible_submit_candidates(all_candidates)
+    source_eligible_candidates = _eligible_submit_candidates(all_candidates)
+    submitted_ledger = _submission_ledger(settings)
+    submitted_client_order_ids = set(
+        submitted_ledger.get("submitted_client_order_ids", []) or []
+    )
+    submitted_source_idempotency_keys = set(
+        submitted_ledger.get("submitted_source_idempotency_keys", []) or []
+    )
+    for candidate in source_eligible_candidates:
+        previously_submitted = (
+            str(candidate.get("idempotency_key") or "") in submitted_client_order_ids
+            or str(candidate.get("source_idempotency_key") or "")
+            in submitted_source_idempotency_keys
+        )
+        candidate["previously_submitted_to_alpaca_paper"] = previously_submitted
+        candidate["fresh_for_paper_post"] = not previously_submitted
+        if previously_submitted:
+            candidate["status"] = "blocked_duplicate_paper_submit"
+    eligible_candidates = [
+        candidate
+        for candidate in source_eligible_candidates
+        if candidate.get("fresh_for_paper_post") is True
+    ]
+    duplicate_submit_candidates = [
+        candidate
+        for candidate in source_eligible_candidates
+        if candidate.get("previously_submitted_to_alpaca_paper") is True
+    ]
     selected_candidate = eligible_candidates[0] if eligible_candidates else None
     preconditions = _precondition_records(
         settings,
@@ -812,6 +953,7 @@ def build_paperops_alpaca_paper_post(
         endpoint=endpoint,
         effective_submit_enabled=effective_submit_enabled,
         eligible_count=len(eligible_candidates),
+        duplicate_count=len(duplicate_submit_candidates),
         execute_post=execute_post,
         post_result=post_result,
     )
@@ -888,7 +1030,15 @@ def build_paperops_alpaca_paper_post(
         ),
         "source_pt4_staged_order_validation_errors": source_pt4_validation_errors[:12],
         "source_submit_record_count": len(all_candidates),
+        "source_eligible_submit_record_count": len(source_eligible_candidates),
         "eligible_submit_record_count": len(eligible_candidates),
+        "fresh_eligible_submit_record_count": len(eligible_candidates),
+        "duplicate_submit_record_count": len(duplicate_submit_candidates),
+        "submitted_client_order_id_count": len(submitted_client_order_ids),
+        "submitted_source_idempotency_key_count": len(
+            submitted_source_idempotency_keys
+        ),
+        "idempotency_ledger_active": True,
         "blocked_source_record_count": len(all_candidates) - len(eligible_candidates),
         "selected_submit_record_count": len(submitted_records),
         "selected_source_family": (
@@ -1073,6 +1223,9 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         "event_log_written",
         "execute_post_requested",
         "explicit_submit_flag_required",
+        "fresh_eligible_submit_record_count",
+        "duplicate_submit_record_count",
+        "idempotency_ledger_active",
         "live_capital_enabled",
         "live_endpoint_allowed",
         "mode",
@@ -1090,9 +1243,12 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         "schema_version",
         "secret_value_exposed",
         "selected_post_records",
+        "source_eligible_submit_record_count",
         "source_event_log_prewrite_present_count",
         "stage",
         "status",
+        "submitted_client_order_id_count",
+        "submitted_source_idempotency_key_count",
     }
     missing = sorted(required - set(artifact))
     if missing:
@@ -1145,6 +1301,11 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
             "invalid",
         }:
             errors.append("paperops_alpaca_disabled_status_invalid")
+    if (
+        artifact.get("status") == "ready_no_fresh_eligible_order"
+        and _int(artifact.get("duplicate_submit_record_count")) < 1
+    ):
+        errors.append("paperops_alpaca_no_fresh_without_duplicate")
     if artifact.get("execute_post_requested") is not True:
         if _int(artifact.get("alpaca_paper_post_called_count")) != 0:
             errors.append("paperops_alpaca_post_called_without_explicit_execute")
@@ -1172,6 +1333,8 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         artifact.get("alpaca_paper_post_called_count")
     ):
         errors.append("paperops_alpaca_success_gt_called")
+    if artifact.get("idempotency_ledger_active") is not True:
+        errors.append("paperops_alpaca_idempotency_ledger_inactive")
     records = artifact.get("post_candidates", [])
     selected = artifact.get("selected_post_records", [])
     if not isinstance(records, list):
@@ -1182,13 +1345,34 @@ def validate_paperops_alpaca_paper_post(artifact: dict[str, Any]) -> list[str]:
         selected = []
     if artifact.get("source_submit_record_count") != len(records):
         errors.append("paperops_alpaca_source_record_count_mismatch")
-    eligible_records = [
+    source_eligible_records = [
         record
         for record in records
         if isinstance(record, dict) and record.get("eligible_for_paper_post") is True
     ]
-    if artifact.get("eligible_submit_record_count") != len(eligible_records):
+    fresh_eligible_records = [
+        record
+        for record in source_eligible_records
+        if record.get("fresh_for_paper_post") is True
+    ]
+    duplicate_records = [
+        record
+        for record in source_eligible_records
+        if record.get("previously_submitted_to_alpaca_paper") is True
+    ]
+    if artifact.get("source_eligible_submit_record_count") != len(source_eligible_records):
+        errors.append("paperops_alpaca_source_eligible_count_mismatch")
+    if artifact.get("eligible_submit_record_count") != len(fresh_eligible_records):
         errors.append("paperops_alpaca_eligible_count_mismatch")
+    if artifact.get("fresh_eligible_submit_record_count") != len(fresh_eligible_records):
+        errors.append("paperops_alpaca_fresh_eligible_count_mismatch")
+    if artifact.get("duplicate_submit_record_count") != len(duplicate_records):
+        errors.append("paperops_alpaca_duplicate_count_mismatch")
+    for record in duplicate_records:
+        if record.get("status") != "blocked_duplicate_paper_submit":
+            errors.append("paperops_alpaca_duplicate_status_invalid")
+        if record.get("fresh_for_paper_post") is not False:
+            errors.append("paperops_alpaca_duplicate_marked_fresh")
     for record in records + selected:
         if isinstance(record, dict):
             errors.extend(_record_errors(record))
@@ -1247,6 +1431,12 @@ def write_paperops_alpaca_paper_post(
                 ],
                 "paper_post_path_available": written["paper_post_path_available"],
                 "eligible_submit_record_count": written["eligible_submit_record_count"],
+                "fresh_eligible_submit_record_count": written.get(
+                    "fresh_eligible_submit_record_count"
+                ),
+                "duplicate_submit_record_count": written.get(
+                    "duplicate_submit_record_count"
+                ),
                 "selected_source_family": written.get("selected_source_family"),
                 "alpaca_paper_post_called_count": written[
                     "alpaca_paper_post_called_count"
@@ -1272,6 +1462,7 @@ def write_paperops_alpaca_paper_post(
         json.dumps(written, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    _write_submission_ledger(written, settings)
     history_record = {
         "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
         "artifact_id": written.get("artifact_id"),
@@ -1287,6 +1478,10 @@ def write_paperops_alpaca_paper_post(
         "execute_post_requested": written.get("execute_post_requested"),
         "paper_post_path_available": written.get("paper_post_path_available"),
         "eligible_submit_record_count": written.get("eligible_submit_record_count"),
+        "fresh_eligible_submit_record_count": written.get(
+            "fresh_eligible_submit_record_count"
+        ),
+        "duplicate_submit_record_count": written.get("duplicate_submit_record_count"),
         "selected_source_family": written.get("selected_source_family"),
         "alpaca_paper_post_called_count": written.get("alpaca_paper_post_called_count"),
         "alpaca_paper_post_succeeded_count": written.get(

@@ -151,6 +151,8 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops_active_automation_enabled",
     "paperops_active_automation_qctrl_hold",
     "paperops_active_automation_submit_step_allowed",
+    "paperops_active_automation_unattended_delegation_enabled",
+    "paperops_active_automation_unattended_delegation_reason",
     "paperops_active_automation_live_endpoint_called_count",
     "paperops_cockpit_notification_upgrade_status",
     "paperops_cockpit_notification_upgrade_ready",
@@ -167,6 +169,9 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "paper_live_certification_control_plane_certified",
     "paper_live_certification_paper_live_certified",
     "paper_live_certification_operation_allowed",
+    "paper_live_certification_unattended_delegation_enabled",
+    "paper_live_certification_unattended_delegation_reason",
+    "paper_live_certification_submission_delegation_allowed",
     "paper_live_certification_blocker_count",
     "paper_live_certification_qctrl_hold_visible",
     "paper_live_certification_submit_visible_as_held",
@@ -620,6 +625,18 @@ def build_paperops_30_day_operations(
         "paperops_active_automation_submit_step_allowed": (
             active_automation.get("paper_submit_step_allowed") is True
         ),
+        "paperops_active_automation_unattended_delegation_enabled": (
+            active_automation.get(
+                "unattended_paper_execution_delegation_enabled"
+            )
+            is True
+        ),
+        "paperops_active_automation_unattended_delegation_reason": (
+            active_automation.get(
+                "unattended_paper_execution_delegation_reason"
+            )
+            or "not_armed"
+        ),
         "paperops_active_automation_live_endpoint_called_count": (
             active_automation_live_endpoint_count
         ),
@@ -668,6 +685,22 @@ def build_paperops_30_day_operations(
         ),
         "paper_live_certification_operation_allowed": (
             paper_live_certification.get("paper_live_operation_allowed") is True
+        ),
+        "paper_live_certification_unattended_delegation_enabled": (
+            paper_live_certification.get(
+                "paper_live_unattended_execution_delegation_enabled"
+            )
+            is True
+        ),
+        "paper_live_certification_unattended_delegation_reason": (
+            paper_live_certification.get(
+                "paper_live_unattended_execution_delegation_reason"
+            )
+            or "not_armed"
+        ),
+        "paper_live_certification_submission_delegation_allowed": (
+            paper_live_certification.get("paper_live_submission_delegation_allowed")
+            is True
         ),
         "paper_live_certification_blocker_count": _int(
             paper_live_certification.get("certification_blocker_count")
@@ -863,12 +896,23 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         *PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES,
     }:
         errors.append("paperops_30_day_operations_paper_live_certification_not_evaluated")
-    if artifact.get("paper_live_certification_paper_live_certified") is not False:
-        errors.append("paperops_30_day_operations_paper_live_certified_unexpected")
-    if artifact.get("paper_live_certification_operation_allowed") is not False:
-        errors.append("paperops_30_day_operations_paper_live_operation_allowed")
-    if _int(artifact.get("paper_live_certification_blocker_count")) < 1:
-        errors.append("paperops_30_day_operations_paper_live_blockers_missing")
+    paper_live_certified = artifact.get("paper_live_certification_paper_live_certified") is True
+    if paper_live_certified:
+        if artifact.get("paper_live_certification_operation_allowed") is not True:
+            errors.append("paperops_30_day_operations_paper_live_certified_without_operation")
+        if artifact.get("paper_live_certification_unattended_delegation_enabled") is not True:
+            errors.append("paperops_30_day_operations_paper_live_certified_without_unattended")
+        if _int(artifact.get("paper_live_certification_blocker_count")) != 0:
+            errors.append("paperops_30_day_operations_paper_live_certified_with_blockers")
+    else:
+        if artifact.get("paper_live_certification_operation_allowed") is not False:
+            errors.append("paperops_30_day_operations_paper_live_operation_allowed_while_blocked")
+        if artifact.get("paper_live_certification_unattended_delegation_enabled") is not False:
+            errors.append("paperops_30_day_operations_paper_live_unattended_while_blocked")
+        if _int(artifact.get("paper_live_certification_blocker_count")) < 1:
+            errors.append("paperops_30_day_operations_paper_live_blockers_missing")
+    if artifact.get("paper_live_certification_submission_delegation_allowed") is not False:
+        errors.append("paperops_30_day_operations_paper_live_submission_delegated")
     if (
         artifact.get("paper_live_certification_qctrl_hold_visible") is True
         and artifact.get("paper_live_certification_submit_visible_as_held") is not True

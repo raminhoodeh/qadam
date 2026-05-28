@@ -202,6 +202,12 @@ def main() -> int:
     paper_live_certification_false_probe[
         "paper_live_certification_operation_allowed"
     ] = True
+    paper_live_certification_false_probe[
+        "paper_live_certification_unattended_delegation_enabled"
+    ] = True
+    paper_live_certification_false_probe[
+        "paper_live_certification_blocker_count"
+    ] = 1
     paper_live_certification_false_errors = validate_paper_operational_cycle(
         paper_live_certification_false_probe
     )
@@ -579,6 +585,14 @@ def main() -> int:
         f"{written['paper_live_certification_operation_allowed']}"
     )
     print(
+        "paper_ops_cycle_check_paper_live_certification_unattended_delegation_enabled="
+        f"{written['paper_live_certification_unattended_delegation_enabled']}"
+    )
+    print(
+        "paper_ops_cycle_check_paper_live_certification_unattended_delegation_reason="
+        f"{written['paper_live_certification_unattended_delegation_reason']}"
+    )
+    print(
         "paper_ops_cycle_check_paper_live_certification_blocker_count="
         f"{written['paper_live_certification_blocker_count']}"
     )
@@ -808,12 +822,20 @@ def main() -> int:
         errors.append("PaperOps-1 did not include evaluated PT-10 certification")
     if written["paper_live_certification_control_plane_certified"] is not True:
         errors.append("PaperOps-1 saw PT-10 control plane not certified")
-    if written["paper_live_certification_paper_live_certified"] is not False:
-        errors.append("PaperOps-1 unexpectedly saw PT-10 certify paper-live")
-    if written["paper_live_certification_operation_allowed"] is not False:
-        errors.append("PaperOps-1 unexpectedly saw PT-10 allow paper-live operation")
-    if written["paper_live_certification_blocker_count"] < 1:
-        errors.append("PaperOps-1 saw PT-10 blockers missing")
+    if written["paper_live_certification_paper_live_certified"] is True:
+        if written["paper_live_certification_operation_allowed"] is not True:
+            errors.append("PaperOps-1 saw PT-10 certify without paper operation")
+        if written["paper_live_certification_unattended_delegation_enabled"] is not True:
+            errors.append("PaperOps-1 saw PT-10 certify without unattended delegation")
+        if written["paper_live_certification_blocker_count"] != 0:
+            errors.append("PaperOps-1 saw PT-10 certify with blockers")
+    else:
+        if written["paper_live_certification_operation_allowed"] is not False:
+            errors.append("PaperOps-1 saw PT-10 allow operation while blocked")
+        if written["paper_live_certification_unattended_delegation_enabled"] is not False:
+            errors.append("PaperOps-1 saw PT-10 arm unattended delegation while blocked")
+        if written["paper_live_certification_blocker_count"] < 1:
+            errors.append("PaperOps-1 saw PT-10 blockers missing")
     if (
         written["paper_live_certification_qctrl_hold_visible"] is True
         and written["paper_live_certification_submit_visible_as_held"] is not True
@@ -828,10 +850,10 @@ def main() -> int:
     ):
         errors.append("PaperOps-1 PT-10 unsafe probe was not rejected")
     if (
-        "paper_ops_cycle_paper_live_certified_unexpected"
+        "paper_ops_cycle_paper_live_certified_with_blockers"
         not in paper_live_certification_false_errors
     ):
-        errors.append("PaperOps-1 PT-10 false certification probe was not rejected")
+        errors.append("PaperOps-1 PT-10 certified-with-blockers probe was not rejected")
     if written["paperops_30_day_operations_status"] != "operations_active":
         errors.append("PaperOps-1 did not include active PaperOps-6 operations")
     if written["paperops_30_day_operations_automation_active"] is not True:

@@ -5088,6 +5088,18 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "paper_live_operation_allowed",
                 False,
             ),
+            "paper_live_unattended_execution_delegation_enabled": (
+                paper_live_certification.get(
+                    "paper_live_unattended_execution_delegation_enabled",
+                    False,
+                )
+            ),
+            "paper_live_unattended_execution_delegation_reason": (
+                paper_live_certification.get(
+                    "paper_live_unattended_execution_delegation_reason",
+                    "not_armed",
+                )
+            ),
             "paperops_active_paper_trading_automation": (
                 paperops_active_automation.get("status", "not_run")
             ),
@@ -5102,6 +5114,36 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_active_paper_trading_submit_allowed": (
                 paperops_active_automation.get("paper_submit_step_allowed", False)
+            ),
+            "paperops_active_paper_trading_unattended_delegation_enabled": (
+                paperops_active_automation.get(
+                    "unattended_paper_execution_delegation_enabled",
+                    False,
+                )
+            ),
+            "paperops_active_paper_trading_unattended_delegation_reason": (
+                paperops_active_automation.get(
+                    "unattended_paper_execution_delegation_reason",
+                    "not_armed",
+                )
+            ),
+            "paperops_active_paper_trading_fresh_submit_count": (
+                paperops_active_automation.get(
+                    "paperops2_fresh_eligible_submit_record_count",
+                    0,
+                )
+            ),
+            "paperops_active_paper_trading_duplicate_submit_count": (
+                paperops_active_automation.get(
+                    "paperops2_duplicate_submit_record_count",
+                    0,
+                )
+            ),
+            "paperops_active_paper_trading_idempotency_ledger_active": (
+                paperops_active_automation.get(
+                    "paperops2_idempotency_ledger_active",
+                    False,
+                )
             ),
             "paperops_qualified_setup_production": (
                 paperops_qualified_setup_production.get("status", "not_run")
@@ -6692,6 +6734,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "not_run",
         "disabled_pending_enablement",
         "ready_no_eligible_order",
+        "ready_no_fresh_eligible_order",
         "ready_pending_explicit_execute",
         "submitted_to_alpaca_paper",
         "broker_post_failed_sanitized",

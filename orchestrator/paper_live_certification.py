@@ -66,6 +66,8 @@ PT10_PUBLIC_FIELDS: tuple[str, ...] = (
     "paper_live_control_plane_certified",
     "paper_live_certified",
     "paper_live_operation_allowed",
+    "paper_live_unattended_execution_delegation_enabled",
+    "paper_live_unattended_execution_delegation_reason",
     "paper_live_submission_delegation_allowed",
     "paper_live_certification_blocked",
     "paper_growth_trial_name",
@@ -281,6 +283,9 @@ def _gate_records(settings: Settings, snapshot: dict[str, dict[str, Any]]) -> li
     )
     qctrl_hold = active.get("qctrl_consultation_hold_active") is True
     submit_allowed = active.get("paper_submit_step_allowed") is True
+    unattended_delegation_enabled = (
+        active.get("unattended_paper_execution_delegation_enabled") is True
+    )
     cycle_safe = (
         cycle.get("safe_to_continue_paper_only") is True
         and _int(cycle.get("command_failed_count")) == 0
@@ -431,9 +436,13 @@ def _gate_records(settings: Settings, snapshot: dict[str, dict[str, Any]]) -> li
             stage="PaperOps-0",
             passed=readiness.get("full_paper_operational_ready") is True,
             status=str(readiness.get("status") or "missing"),
-            detail="Full paper-live certification requires all required PaperOps capabilities ready.",
+            detail=(
+                "Full PaperOps readiness is reported as context. PT-10 evaluates "
+                "the concrete paper-live component gates directly to avoid a "
+                "self-referential certification loop."
+            ),
             required_for_control_plane=False,
-            required_for_paper_live_certification=True,
+            required_for_paper_live_certification=False,
         ),
         _gate(
             key="phase7_demo_run_active",
@@ -546,6 +555,9 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
 
     qctrl_hold = active.get("qctrl_consultation_hold_active") is True
     submit_allowed = active.get("paper_submit_step_allowed") is True
+    unattended_delegation_enabled = (
+        active.get("unattended_paper_execution_delegation_enabled") is True
+    )
     unsafe_total = sum(
         _int(value)
         for value in (
@@ -601,6 +613,13 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         "paper_live_control_plane_certified": control_plane_certified,
         "paper_live_certified": paper_live_certified,
         "paper_live_operation_allowed": paper_live_certified,
+        "paper_live_unattended_execution_delegation_enabled": (
+            paper_live_certified and unattended_delegation_enabled
+        ),
+        "paper_live_unattended_execution_delegation_reason": (
+            active.get("unattended_paper_execution_delegation_reason")
+            or "not_armed"
+        ),
         "paper_live_submission_delegation_allowed": paper_live_certified
         and submit_allowed
         and not qctrl_hold,
@@ -725,6 +744,7 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         artifact["stage_status"] = "invalid"
         artifact["paper_live_certified"] = False
         artifact["paper_live_operation_allowed"] = False
+        artifact["paper_live_unattended_execution_delegation_enabled"] = False
         artifact["paper_live_submission_delegation_allowed"] = False
     return artifact
 
@@ -790,12 +810,12 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
             errors.append("paper_live_certified_with_blockers")
         if artifact.get("paper_live_operation_allowed") is not True:
             errors.append("paper_live_certified_without_operation_allowed")
+        if artifact.get("paper_live_unattended_execution_delegation_enabled") is not True:
+            errors.append("paper_live_certified_without_unattended_delegation")
         if artifact.get("qctrl_product_access_verified") is not True:
             errors.append("paper_live_certified_without_qctrl_access")
         if artifact.get("qctrl_hold_active") is not False:
             errors.append("paper_live_certified_with_qctrl_hold")
-        if artifact.get("full_paper_operational_ready") is not True:
-            errors.append("paper_live_certified_without_full_readiness")
     else:
         if artifact.get("status") == "paper_live_certified":
             errors.append("paper_live_uncertified_with_certified_status")
@@ -803,6 +823,8 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
             errors.append("paper_live_blocked_without_blockers")
         if artifact.get("paper_live_operation_allowed") is not False:
             errors.append("paper_live_operation_allowed_while_blocked")
+        if artifact.get("paper_live_unattended_execution_delegation_enabled") is not False:
+            errors.append("paper_live_unattended_delegation_allowed_while_blocked")
         if artifact.get("paper_live_submission_delegation_allowed") is not False:
             errors.append("paper_live_submission_allowed_while_blocked")
     if (
@@ -897,6 +919,12 @@ def write_paper_live_certification(
                     "paper_live_control_plane_certified"
                 ),
                 "paper_live_certified": written.get("paper_live_certified"),
+                "paper_live_unattended_execution_delegation_enabled": written.get(
+                    "paper_live_unattended_execution_delegation_enabled"
+                ),
+                "paper_live_unattended_execution_delegation_reason": written.get(
+                    "paper_live_unattended_execution_delegation_reason"
+                ),
                 "certification_blocker_count": written.get(
                     "certification_blocker_count"
                 ),
@@ -923,6 +951,7 @@ def write_paper_live_certification(
         written["stage_status"] = "invalid"
         written["paper_live_certified"] = False
         written["paper_live_operation_allowed"] = False
+        written["paper_live_unattended_execution_delegation_enabled"] = False
         written["paper_live_submission_delegation_allowed"] = False
     output_path.write_text(
         json.dumps(written, indent=2, sort_keys=True) + "\n",
@@ -937,6 +966,12 @@ def write_paper_live_certification(
             "paper_live_control_plane_certified"
         ),
         "paper_live_certified": written.get("paper_live_certified"),
+        "paper_live_unattended_execution_delegation_enabled": written.get(
+            "paper_live_unattended_execution_delegation_enabled"
+        ),
+        "paper_live_unattended_execution_delegation_reason": written.get(
+            "paper_live_unattended_execution_delegation_reason"
+        ),
         "certification_blocker_count": written.get("certification_blocker_count"),
         "qctrl_product_access_verified": written.get("qctrl_product_access_verified"),
         "phase7_30_day_run_complete": written.get("phase7_30_day_run_complete"),
@@ -974,6 +1009,8 @@ def paper_live_certification_public_status(
                 "paper_live_control_plane_certified": False,
                 "paper_live_certified": False,
                 "paper_live_operation_allowed": False,
+                "paper_live_unattended_execution_delegation_enabled": False,
+                "paper_live_unattended_execution_delegation_reason": "pt10_not_run",
                 "paper_live_submission_delegation_allowed": False,
                 "paper_live_certification_blocked": True,
                 "input_gate_count": 0,

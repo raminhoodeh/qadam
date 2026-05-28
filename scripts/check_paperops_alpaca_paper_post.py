@@ -136,18 +136,8 @@ def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
     output_path, history_path, event_path = paperops_alpaca_paper_post_paths(settings)
-    existing = read_latest_paperops_alpaca_paper_post(settings)
-    submitted_history = _latest_submitted_history_record(history_path)
-    preserve_submitted_paper_order = (
-        args.submit_paper_order is False
-        and existing.get("status") == "submitted_to_alpaca_paper"
-        and "mode" in existing
-    )
-    recover_submitted_paper_order = (
-        args.submit_paper_order is False
-        and preserve_submitted_paper_order is False
-        and bool(submitted_history)
-    )
+    preserve_submitted_paper_order = False
+    recover_submitted_paper_order = False
     if event_path.exists():
         event_path.unlink()
     submit_enablement = build_paperops_alpaca_paper_submit_enablement(settings=settings)
@@ -157,16 +147,10 @@ def main() -> int:
         record_event=True,
     )
 
-    artifact = (
-        existing
-        if preserve_submitted_paper_order
-        else _recovered_submitted_artifact(settings=settings, event_log_path=event_path)
-        if recover_submitted_paper_order
-        else build_paperops_alpaca_paper_post(
-            settings=settings,
-            execute_post=args.submit_paper_order,
-            event_log_path=event_path,
-        )
+    artifact = build_paperops_alpaca_paper_post(
+        settings=settings,
+        execute_post=args.submit_paper_order,
+        event_log_path=event_path,
     )
     output_path, history_path, event_path, written = write_paperops_alpaca_paper_post(
         artifact,
@@ -264,6 +248,18 @@ def main() -> int:
         f"{written['source_pt4_staged_order_count']}"
     )
     print(f"paperops_alpaca_post_eligible_record_count={written['eligible_submit_record_count']}")
+    print(
+        "paperops_alpaca_post_fresh_eligible_record_count="
+        f"{written['fresh_eligible_submit_record_count']}"
+    )
+    print(
+        "paperops_alpaca_post_duplicate_record_count="
+        f"{written['duplicate_submit_record_count']}"
+    )
+    print(
+        "paperops_alpaca_post_idempotency_ledger_active="
+        f"{written['idempotency_ledger_active']}"
+    )
     print(f"paperops_alpaca_post_selected_record_count={written['selected_submit_record_count']}")
     print(f"paperops_alpaca_post_selected_source_family={written['selected_source_family']}")
     print(
@@ -342,13 +338,11 @@ def main() -> int:
         errors.append("PaperOps-2 did not consume PT-5 runtime enablement")
     if written["submit_enablement_status"] != "enabled_pending_explicit_submit":
         errors.append("PaperOps-2 did not see PT-5 enablement")
-    if (
-        not args.submit_paper_order
-        and not preserve_submitted_paper_order
-        and not recover_submitted_paper_order
-        and written["status"] != "ready_pending_explicit_execute"
-    ):
-        errors.append("PaperOps-2 should be ready pending explicit execute")
+    if not args.submit_paper_order and written["status"] not in {
+        "ready_pending_explicit_execute",
+        "ready_no_fresh_eligible_order",
+    }:
+        errors.append("PaperOps-2 should be ready or idempotency-idle")
     if args.submit_paper_order and written["status"] not in {
         "submitted_to_alpaca_paper",
         "broker_post_failed_sanitized",
@@ -356,10 +350,22 @@ def main() -> int:
         errors.append("PaperOps-2 submit mode returned an unexpected status")
     if written["paper_post_path_available"] is not True:
         errors.append("PaperOps-2 paper POST path is not available")
-    if written["eligible_submit_record_count"] < 1:
-        errors.append("PaperOps-2 did not find an eligible PT-4/Q7 paper order")
-    if written["selected_source_family"] != "paperops_pt4_staged_order":
+    if (
+        written["eligible_submit_record_count"] < 1
+        and written["duplicate_submit_record_count"] < 1
+    ):
+        errors.append("PaperOps-2 did not find an eligible or duplicate PT-4/Q7 paper order")
+    if (
+        written["selected_source_family"] != "paperops_pt4_staged_order"
+        and written["duplicate_submit_record_count"] < 1
+    ):
         errors.append("PaperOps-2 did not select the PT-4 staged order source")
+    if written["idempotency_ledger_active"] is not True:
+        errors.append("PaperOps-2 idempotency ledger is not active")
+    if written["status"] == "ready_no_fresh_eligible_order" and written[
+        "duplicate_submit_record_count"
+    ] < 1:
+        errors.append("PaperOps-2 reported no fresh order without duplicate guard evidence")
     if (
         written["alpaca_paper_post_called_count"]
         and args.submit_paper_order is not True
