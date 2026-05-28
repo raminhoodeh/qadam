@@ -150,7 +150,7 @@ async function main() {
     assert(overview.lifecycle.length >= 8, "Overview lifecycle strip must expose trade lifecycle states");
     assert(overview.next_review_links.length === 4, "Overview must expose four next-review links after D11B");
     assert(overview.mini_map.source_model === "system_connectivity_model", "Overview mini-map must use shared connectivity model");
-    assert(overview.system_status.length === 4, "Overview must expose plain system status");
+    assert(overview.system_status.length >= 6, "Overview must expose paper system status and runner cards");
     assert(overview.data_sources_connected.length >= 3, "Overview must expose source groups on the main page");
     assert(overview.trading_strategies.length >= 5, "Overview must expose the approved strategy families on the main page");
     assert(overview.thought_feed.length >= 4, "Overview must expose Qadam's thought feed on the main page");
@@ -167,8 +167,8 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "OK - live capital off");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Day 0/30");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Week 0/5");
+    assertIncludes(rendered, "[data-overview-status-rail]", "Paper growth trial");
+    assertIncludes(rendered, "[data-overview-status-rail]", "Autonomous runner");
     assertIncludes(rendered, "[data-overview-status-rail]", "Potential setups");
     assertIncludes(rendered, "[data-overview-hero]", "Current summary");
     assertIncludes(rendered, "[data-overview-hero]", "Use Safety Status");
@@ -180,7 +180,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
     assertIncludes(rendered, "[data-overview-metrics]", "Source health");
     assertIncludes(rendered, "[data-overview-metrics]", "Trade path");
-    assertIncludes(rendered, "[data-overview-metrics]", "Proof run");
+    assertIncludes(rendered, "[data-overview-metrics]", "Paper growth trial");
     assertIncludes(rendered, "[data-overview-lifecycle]", "Observed signals");
     assertIncludes(rendered, "[data-overview-lifecycle]", "Postmortems due");
     assertIncludes(rendered, "[data-overview-oversight]", "You supervise Qadam");

@@ -1436,6 +1436,11 @@ def _module_authority(module_key: str, raw_status: str) -> str:
 
 
 def _module_process(module_key: str, raw_status: str) -> str:
+    if module_key == "research_analyst" and raw_status == "shadow_ready":
+        return "local shadow assessments available"
+    if module_key == "strategy_lead" and raw_status == "shadow_ready":
+        return "frontier challenge packets queued"
+
     processes = {
         "coo": "supervising local modules",
         "event_log": "recording local audit trail",

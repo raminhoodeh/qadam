@@ -22,7 +22,7 @@ from orchestrator.execution_policy import execution_policy_summary
 from orchestrator.governance import GovernanceStore
 from orchestrator.heartbeat import registry_heartbeats
 from orchestrator.ingestion import ingestion_spine_summary
-from orchestrator.intelligence import shadow_intelligence_summary
+from orchestrator.intelligence import LocalResearchAssessmentStore, shadow_intelligence_summary
 from orchestrator.local_store import local_store_health
 from orchestrator.paper_submit_receipt import paper_submit_receipt_summary
 from orchestrator.quantum import quantum_oracle_summary, quantum_providers
@@ -32,6 +32,7 @@ from orchestrator.secrets import validate_secret_file
 from orchestrator.signal_integrity import signal_integrity_summary
 from orchestrator.source_health import source_heartbeat_summary
 from orchestrator.staged_paper_order import staged_paper_order_summary
+from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.telegram_comms import telegram_status
 from orchestrator.tradingview_mcp_adapter import tradingview_mcp_adapter_status
 from orchestrator.world_model import world_model_summary
@@ -56,6 +57,24 @@ def _service_status(storage_health: dict[str, Any], key: str, fallback: str) -> 
     return fallback
 
 
+def _local_research_module_status(settings: Settings) -> str:
+    health = LocalResearchAssessmentStore(settings=settings).health()
+    if health.get("status") == "ok" and int(health.get("assessment_count", 0) or 0) > 0:
+        return "shadow_ready"
+    if health.get("status") == "degraded":
+        return "degraded"
+    return "pending"
+
+
+def _strategy_lead_module_status(settings: Settings) -> str:
+    health = StrategyLeadShadowStore(settings=settings).health()
+    if health.get("status") == "ok" and int(health.get("packet_count", 0) or 0) > 0:
+        return "shadow_ready"
+    if health.get("status") == "degraded":
+        return "degraded"
+    return "pending"
+
+
 def module_map(storage_health: dict[str, Any] | None = None, settings: Settings | None = None) -> list[dict[str, str]]:
     storage_health = storage_health or local_store_health()
     settings = settings or Settings.from_env()
@@ -63,6 +82,8 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
     quantum = quantum_oracle_summary(settings)
     yahoo_finance = yahoo_finance_adapter_status(settings)
     tradingview_mcp = tradingview_mcp_adapter_status(settings)
+    research_analyst_status = _local_research_module_status(settings)
+    strategy_lead_status = _strategy_lead_module_status(settings)
     quantum_status = "oracle_ready" if quantum.get("result_count", 0) else "ready_classical_fallback"
     yahoo_status = (
         "read_only_ready"
@@ -71,8 +92,8 @@ def module_map(storage_health: dict[str, Any] | None = None, settings: Settings 
     )
     return [
         {"key": "coo", "label": "COO", "owner": "Python Orchestrator", "status": "registered"},
-        {"key": "research_analyst", "label": "Research Analyst", "owner": "Local LLM", "status": "pending"},
-        {"key": "strategy_lead", "label": "Strategy Lead", "owner": "Frontier LLM", "status": "pending"},
+        {"key": "research_analyst", "label": "Research Analyst", "owner": "Local LLM", "status": research_analyst_status},
+        {"key": "strategy_lead", "label": "Strategy Lead", "owner": "Frontier LLM", "status": strategy_lead_status},
         {"key": "head_of_quant", "label": "Head of Quant", "owner": "Quantum Compute", "status": quantum_status},
         {
             "key": "event_log",

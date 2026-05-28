@@ -163,7 +163,7 @@ async function main() {
     assert(overview.review_focus.state, "Overview review focus missing state");
     assert(overview.scope_note.includes("Safety Status"), "Overview scope note must reference Safety Status");
     assert(!overview.summary.toLowerCase().includes("live capital"), "Overview summary must not duplicate live-capital safety copy");
-    assert(overview.system_status.length === 4, "Overview should expose four plain system status cards");
+    assert(overview.system_status.length >= 6, "Overview should expose paper system status and runner cards");
     assert(overview.data_sources_connected.length >= 3, "Overview should expose connected source groups");
     assert(overview.trading_strategies.length >= 5, "Overview should expose approved trading strategy families");
     assert(overview.thought_feed.length >= 4, "Overview should expose Qadam thought feed");
@@ -189,8 +189,8 @@ async function main() {
     ].join(" ");
 
     includesAll(statusRail, [
-        "Day 0/30",
-        "Week 0/5",
+        "Paper growth trial",
+        "Autonomous runner",
         "Potential setups",
         "Submitted paper orders",
         "Postmortems due"
@@ -212,7 +212,7 @@ async function main() {
     includesAll(metrics, [
         "Source health",
         "Trade path",
-        "Proof run",
+        "Paper growth trial",
         "Needs review"
     ], "rendered D11E readouts");
 

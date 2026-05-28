@@ -91,7 +91,7 @@ function assertModelShape(models) {
     assert(models.overview_model.readouts.length === 4, "Overview model should expose exactly four readouts");
     assert(models.overview_model.status_chips.length === 6, "Overview model should expose six compact status chips");
     assert(models.overview_model.review_focus.state, "Overview model should expose review focus");
-    assert(models.overview_model.system_status.length === 4, "Overview model should expose plain system status");
+    assert(models.overview_model.system_status.length >= 6, "Overview model should expose paper system status and runner cards");
     assert(models.overview_model.data_sources_connected.length >= 3, "Overview model should expose connected source groups");
     assert(models.overview_model.trading_strategies.length >= 5, "Overview model should expose trading strategy families");
     assert(models.overview_model.thought_feed.length >= 4, "Overview model should expose Qadam thought feed");
