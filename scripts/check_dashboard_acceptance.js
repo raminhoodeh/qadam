@@ -130,8 +130,8 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260528-daily-digest",
-    "/dashboard.js?v=20260528-daily-digest"
+    "/auth.css?v=20260528-overview-drilldown",
+    "/dashboard.js?v=20260528-overview-drilldown"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -164,6 +164,9 @@ function assertNoUnsafePublicText(text, label) {
     ".overview-readout-list",
     ".overview-lifecycle-strip",
     ".overview-mini-map",
+    ".overview-mini-guide",
+    ".overview-expandable-ledger",
+    ".overview-ledger-group",
     ".system-flow-diagram",
     ".panel-brief",
     ".section-explainer"
@@ -174,6 +177,9 @@ function assertNoUnsafePublicText(text, label) {
     "function replacePanelBrief",
     "function renderMissionControl",
     "function renderOverviewFirstScreen",
+    "function overviewNodeGuide",
+    "function renderOverviewSourcePipeline",
+    "function renderOverviewStrategyRow",
     "function renderDashboardSafetyStrip",
     "function buildBalanceTickerModel",
     "function renderBalanceTicker",
@@ -226,6 +232,15 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-mini-map]", "Python script"],
         ["[data-overview-mini-map]", "Local LLM"],
         ["[data-overview-mini-map]", "Quantum computer"],
+        ["[data-overview-mini-map]", "How to read this node"],
+        ["[data-overview-mini-map]", "Currently"],
+        ["[data-overview-mini-map]", "Next handoff"],
+        ["[data-overview-data-sources]", "Click to expand the full source list"],
+        ["[data-overview-data-sources]", "ACLED API"],
+        ["[data-overview-data-sources]", "credential"],
+        ["[data-overview-trading-strategies]", "Click to expand every strategy family"],
+        ["[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption"],
+        ["[data-overview-trading-strategies]", "no broker write"],
         ["[data-overview-boundary-rail]", "Safety Status"],
         ["[data-overview-next-links]", "#trades"],
         ["[data-mission-primary]", "Operating thesis"],

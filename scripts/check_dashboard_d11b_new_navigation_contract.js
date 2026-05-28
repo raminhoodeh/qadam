@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260528-daily-digest",
-    "/dashboard.js?v=20260528-daily-digest",
+    "/auth.css?v=20260528-overview-drilldown",
+    "/dashboard.js?v=20260528-overview-drilldown",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"

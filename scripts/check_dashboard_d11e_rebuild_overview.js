@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260528-daily-digest"
+        "20260528-overview-drilldown"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

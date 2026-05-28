@@ -317,6 +317,16 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "Phase 5 certified");
     assertIncludes(rendered, "[data-trade-layer]", "Q5-14 exit passed");
     assertIncludes(rendered, "[data-trade-layer]", "Phase 6 handoff allowed");
+    assertIncludes(rendered, "[data-overview-mini-map]", "How to read this node");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Strategy Lead");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Currently");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Next handoff");
+    assertIncludes(rendered, "[data-overview-data-sources]", "Click to expand the full source list");
+    assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
+    assertIncludes(rendered, "[data-overview-data-sources]", "FRED API");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Click to expand every strategy family");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "no broker write");
     assertIncludes(rendered, "[data-trade-layer]", "Signal Review");
     assertIncludes(rendered, "[data-trade-layer]", "Decision chain");
     assertIncludes(rendered, "[data-trade-layer]", "Governance comment");
