@@ -28,7 +28,7 @@
             <h1>How To Use Qadam</h1>
             <p class="lede">
                 Logged in as <span data-user-email></span>. This guide explains what Qadam is, how to read the
-                cockpit, how demo-proof trading works, what members can do, and which safety boundaries must never be
+                cockpit, how paper trading works, what members can do, and which safety boundaries must never be
                 crossed.
             </p>
         </section>
@@ -37,7 +37,7 @@
             <section>
                 <h2>The Short Version</h2>
                 <p>Qadam is a local-first macro intelligence and paper-trading system. It watches world events and
-                    markets, builds trade hypotheses, checks them against evidence and risk rules, runs paper/demo-proof
+                    markets, builds trade hypotheses, checks them against evidence and risk rules, runs paper
                     trades only when the gates allow it, and logs outcomes for review.</p>
                 <p>Qadam is not a public financial-advice product, not a signal channel, and not a live-capital trading
                     bot. In the first-release workflow, live capital is disabled and the cockpit is a read-only operating
@@ -112,14 +112,13 @@
 
             <section>
                 <h2>Current Operating Mode</h2>
-                <p>Qadam is operating in paper/demo-proof mode with GBP 100,000 available in the paper account. GBP
-                    1,000 may appear only as a separate single-order/notional risk cap. The Phase 7 harness collects
-                    proof trades only where Q7-qualified setups exist. No trades are forced, Phase 5 test trades do not
-                    count as Phase 7 proof trades, and Phase 7 proof credit remains blocked until earned by Phase 7
-                    evidence.</p>
-                <p>The paper-live control plane is certified, visible, and guarded, but full paper submission remains
-                    held until Q-CTRL and proof gates clear. Q-CTRL product access is currently a blocker, not active
-                    quantum execution. Live capital and broker live endpoints remain disabled.</p>
+                <p>Qadam is operating in paper mode with GBP 100,000 available in the paper account. The operating
+                    target is to grow that paper portfolio to GBP 200,000 over 60 days. The mindset is not to spray
+                    small trades; it is to wait for evidence-gated mispricing opportunities and take selective larger
+                    paper positions only when strategy, risk, Q-CTRL, and Alpaca Paper gates agree.</p>
+                <p>The paper-live control plane is certified, visible, and guarded for paper trading. It can submit only
+                    through Alpaca Paper when the backend route, risk controls, and quantum/classical consultation pass.
+                    Live capital and broker live endpoints remain disabled.</p>
             </section>
 
             <section>
@@ -144,7 +143,7 @@
                     <li>Use Overview's health readout and mini-map to understand whether Qadam is watching sources, forming hypotheses, seeing trade candidates, or blocked.</li>
                     <li>Open Evidence to inspect source health, setup evidence, and supplemental context.</li>
                     <li>Open Reasoning to separate private priors, factual evidence, hypotheses, missing corroboration, Strategy Lead review, and quant annotations.</li>
-                    <li>Open Trades to inspect observed signals, candidates, blocked trades, paper order state, paper-account performance, and Phase 7 proof status.</li>
+                    <li>Open Trades to inspect observed signals, candidates, blocked trades, paper order state, and paper-account performance.</li>
                     <li>Open Operations only when you need the full expandable system map, event trail, Telegram state, governance comments, or technical diagnostics.</li>
                     <li>Treat a blocked/no-trade state as potentially healthy until the evidence says otherwise.</li>
                 </ol>
@@ -187,7 +186,7 @@
                 <h2>Safety Status</h2>
                 <p>Safety Status is the dashboard's global authority summary. Read it before interpreting any panel.</p>
                 <div class="guide-table">
-                    <div><strong>OK - paper only</strong><span>Qadam is healthy for paper/demo-proof mode, not live-capital mode.</span></div>
+                    <div><strong>OK - paper only</strong><span>Qadam is healthy for paper mode, not live-capital mode.</span></div>
                     <div><strong>OK - read-only</strong><span>The dashboard reads backend-derived status; it is not a command surface.</span></div>
                     <div><strong>OK - live capital off</strong><span>No live money trading authority is available from the dashboard.</span></div>
                     <div><strong>Dashboard cannot place orders</strong><span>The browser cannot place, approve, modify, close, or resize broker orders.</span></div>
@@ -205,7 +204,7 @@
                     <div><strong>Cognition</strong><span>Reasoning.</span></div>
                     <div><strong>Worldview / Private Edge</strong><span>Reasoning prior context.</span></div>
                     <div><strong>Trade Layer</strong><span>Trades.</span></div>
-                    <div><strong>Money / Paper Account Timeline</strong><span>Trades paper account and Phase 7 proof area.</span></div>
+                    <div><strong>Money / Paper Account Timeline</strong><span>Trades paper account and 60-day growth trial area.</span></div>
                     <div><strong>Forbidden</strong><span>Operations safety diagnostics plus Safety Status.</span></div>
                     <div><strong>Process Console</strong><span>Operations event trail.</span></div>
                     <div><strong>Fund Manager Comments</strong><span>Operations governance.</span></div>
@@ -231,7 +230,7 @@
                     <div><strong>Paper-live control plane certified</strong><span>The guarded route, logs, checks, and dashboard visibility exist. This is not active submission.</span></div>
                     <div><strong>Paper-live certified</strong><span>Full paper-live operation is allowed only when PT-10 reports paper_live_certified=true.</span></div>
                     <div><strong>Q-CTRL hold</strong><span>Paper submission remains held while Q-CTRL product access or consultation is unresolved.</span></div>
-                    <div><strong>Phase 7 proof credit</strong><span>Credit for the 30-day proof sample; granted only by backend Phase 7 proof artifacts.</span></div>
+                    <div><strong>Paper growth proof</strong><span>Verified account-performance evidence for the 60-day paper growth trial.</span></div>
                 </div>
             </section>
 
@@ -363,9 +362,10 @@
             <section>
                 <h2>Local Operator Instructions</h2>
                 <p>Most members do not operate the code. The local operator keeps real secrets out of Git, starts the
-                    runtime, refreshes the demo-proof harness, and validates the dashboard with the repo check scripts.
-                    The Phase 7 runner must not backfill calendar days, simulate elapsed time, force trades, load live
-                    credentials, enable live capital, call broker live endpoints, or grant proof credit prematurely.</p>
+                    runtime, refreshes the paper trading routine, and validates the dashboard with the repo check
+                    scripts. The local operator must not backfill calendar days, simulate elapsed time, force trades,
+                    load live credentials, enable live capital, call broker live endpoints, or mark paper performance as
+                    mature without verified records.</p>
             </section>
 
             <section>

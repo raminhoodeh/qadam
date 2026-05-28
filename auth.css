@@ -967,10 +967,19 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     min-width: 2px;
 }
 
+.overview-capacity-bar.target {
+    border-color: rgba(var(--cyan-rgb), 0.35);
+    height: 8px;
+}
+
+.overview-capacity-bar.target span {
+    background: linear-gradient(90deg, var(--cyan), rgba(var(--amber-rgb), 0.82));
+}
+
 .overview-capacity-summary {
     display: grid;
     gap: 8px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .overview-thought-list {

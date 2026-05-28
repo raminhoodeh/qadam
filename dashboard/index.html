@@ -59,7 +59,7 @@
                 <div class="dashboard-safety-strip-main">
                 <p class="label">Safety status</p>
                 <h2>Paper-only, read-only, live capital off</h2>
-                    <p>This page cannot place orders. Qadam can only show status, evidence, trade ideas, paper-account mirror, and safety blocks.</p>
+                    <p>Dashboard cannot place orders. AI cannot bypass risk checks. Qadam can only show status, evidence, trade ideas, paper-account mirror, and safety blocks.</p>
                 </div>
                 <div class="dashboard-safety-strip-badges">
                     <span class="inline-badge online"><span class="dot"></span><span data-mode-label>OK - paper only</span></span>
@@ -85,8 +85,8 @@
                 <div class="panel-heading">
                     <div>
                         <p class="label">Overview</p>
-                        <h2>Mission control</h2>
-                        <p class="panel-subtitle">One screen for what Qadam is watching, thinking, considering, holding, and forbidden from doing.</p>
+                        <h2>Paper Trading Overview</h2>
+                        <p class="panel-subtitle">One screen for what Qadam is watching, thinking, considering, holding, and doing with the paper account.</p>
                     </div>
                     <div class="info-hover">
                         <button class="info-button" type="button" aria-label="About the overview">i</button>
@@ -96,7 +96,7 @@
                             <dl class="explainer-grid compact">
                                 <div><dt>Shows</dt><dd>Status, data, strategy, thoughts, trades, capacity.</dd></div>
                                 <div><dt>Watch</dt><dd>Weak evidence, risk blocks, stale account data.</dd></div>
-                                <div><dt>Limits</dt><dd>Summary only; Advanced mode has diagnostics.</dd></div>
+                                <div><dt>Limits</dt><dd>Summary only; Diagnostics has technical detail.</dd></div>
                             </dl>
                         </div>
                     </div>
@@ -104,7 +104,7 @@
 
                 <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
                     <div class="overview-section-head">
-                        <span>System map</span>
+                        <span>How data becomes paper trade decisions</span>
                         <strong>Operating flow</strong>
                     </div>
                     <div class="overview-system-grid">
@@ -903,15 +903,15 @@
                     <div class="panel-heading">
                         <div>
                             <p class="label">Performance</p>
-                            <h2>Demo proof and paper account timeline</h2>
+                            <h2>Paper growth and account timeline</h2>
                         </div>
                         <div class="info-hover">
                             <button class="info-button" type="button" aria-label="About Performance">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="money" data-tooltip-contract="compact">
                                 <strong>Performance</strong>
-                                <p>Paper account and demo-proof progress.</p>
+                                <p>Paper account progress against the 60-day growth target.</p>
                                 <dl class="explainer-grid compact">
-                                    <div><dt>Shows</dt><dd>P&amp;L, drawdown, proof cadence, maturity.</dd></div>
+                                    <div><dt>Shows</dt><dd>P&amp;L, drawdown, paper growth, maturity.</dd></div>
                                     <div><dt>Watch</dt><dd>Halts, stale mirror, missing postmortems.</dd></div>
                                     <div><dt>Limits</dt><dd>Paper mirror; no funding authority.</dd></div>
                                 </dl>
@@ -923,45 +923,45 @@
                             <div class="performance-workspace-head">
                                 <div>
                                     <p class="label">Performance workspace</p>
-                                    <h2>30-day demo proof and paper account performance</h2>
-                                    <p>This view separates the 30-day paper run from the larger trade sample before backend status loads.</p>
+                                    <h2>60-day paper growth trial and account performance</h2>
+                                    <p>This view tracks the GBP 100,000 paper account toward a GBP 200,000 target over 60 days before backend status loads.</p>
                                 </div>
                                 <div class="performance-boundary-card">
-                                    <span class="inline-badge pending">30-day run separate from 100-trade maturity</span>
+                                    <span class="inline-badge pending">2x target over 60 days</span>
                                     <span class="inline-badge online">No forced trades</span>
                                     <span class="inline-badge online">Phase 5 trades excluded</span>
                                     <span class="inline-badge online">Verified records only</span>
-                                    <p>The dashboard cannot force trades, grant proof credit, write brokers, or enable live capital.</p>
+                                    <p>The dashboard cannot force trades, mark performance as mature, write brokers, or enable live capital.</p>
                                 </div>
                             </div>
                             <div class="performance-status-grid">
                                 <article class="performance-progress-card pending">
                                     <div class="performance-progress-head">
                                         <div>
-                                            <p class="label">30-day operating window</p>
-                                            <h3>0/30</h3>
+                                            <p class="label">60-day growth window</p>
+                                            <h3>0/60</h3>
                                         </div>
                                         <span class="inline-badge pending">0%</span>
                                     </div>
                                     <div class="performance-progress-bar"><span style="width: 0%"></span></div>
-                                    <p>The 30 consecutive calendar-day run can complete before the 100-trade maturity sample is reached.</p>
+                                    <p>The operating target is to grow GBP 100,000 of paper capital into GBP 200,000 within 60 days.</p>
                                 </article>
                                 <article class="performance-progress-card pending">
                                     <div class="performance-progress-head">
                                         <div>
-                                            <p class="label">100-trade maturity benchmark</p>
-                                            <h3>0/100</h3>
+                                            <p class="label">Paper portfolio target</p>
+                                            <h3>&pound;200k</h3>
                                         </div>
                                         <span class="inline-badge pending">0%</span>
                                     </div>
                                     <div class="performance-progress-bar"><span style="width: 0%"></span></div>
-                                    <p>Statistical maturity is tracked separately and must not create pressure to force trades.</p>
+                                    <p>Qadam can take selective larger paper positions only when strategy, risk, Q-CTRL, and Alpaca Paper gates agree.</p>
                                 </article>
                                 <article class="performance-status-card online">
                                     <b class="node-status online">Online</b>
                                     <p class="label">Drawdown and halt state</p>
                                     <h3>Within cap</h3>
-                                    <p>Drawdown and halt state load from backend Phase 7 visibility records.</p>
+                                    <p>Drawdown and halt state load from backend paper growth trial records.</p>
                                 </article>
                             </div>
                         </section>
@@ -973,7 +973,7 @@
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge online">&pound;1,000 paper</span></dd></div>
-                                <div><dt>Watch</dt><dd>Open exposure, drawdown, stale mirror timestamps, closed trades without postmortems, and proof-trade maturity.</dd></div>
+                                <div><dt>Watch</dt><dd>Open exposure, drawdown, stale mirror timestamps, closed trades without postmortems, and paper growth maturity.</dd></div>
                                 <div><dt>Boundary</dt><dd>Read-only paper account mirror. No funding authority and no live broker-write authority.</dd></div>
                             </dl>
                         </section>
@@ -1165,7 +1165,7 @@
                                         <option value="trade_layer" data-target-type="module">Trades - trade lifecycle board</option>
                                         <option value="source_health" data-target-type="source">Sources - source health and provenance</option>
                                         <option value="strategy_lead" data-target-type="strategy">Reasoning - Strategy Lead</option>
-                                        <option value="phase7_demo_proof" data-target-type="system">Performance - 30-day demo proof</option>
+                                        <option value="phase7_demo_proof" data-target-type="system">Performance - 60-day paper growth trial</option>
                                         <option value="operations_health" data-target-type="system">Operations - runtime health</option>
                                         <option value="phase4_strategy_approval" data-target-type="strategy">Governance - approval records</option>
                                     </select>

@@ -481,7 +481,18 @@ function initCockpitNavigation() {
 
 function dashboardText(value, fallback = "Not connected yet") {
     if (value === null || value === undefined || value === "") return fallback;
-    return String(value).replaceAll("_", " ");
+    return String(value)
+        .replace(/\bPhase\s*7\b/gi, "60-day paper growth trial")
+        .replace(/\bQ7-15\b/g, "Paper Growth Trial")
+        .replace(/\bQ7-16\b/g, "Growth Review")
+        .replace(/\bQ7\b/g, "Paper Growth Trial")
+        .replace(/phase7[_ -]?demo[_ -]?proof/gi, "paper growth trial")
+        .replace(/phase7[_ -]?proof/gi, "paper growth proof")
+        .replace(/\bphase7\b/gi, "paper growth")
+        .replace(/30[- ]day demo[- ]proof/gi, "60-day paper growth")
+        .replace(/30 consecutive calendar day/gi, "60-day paper growth")
+        .replace(/100[- ]trade maturity/gi, "2x portfolio target")
+        .replaceAll("_", " ");
 }
 
 function normalizeCanonicalStatusToken(value) {
@@ -1137,7 +1148,7 @@ function buildSourcesModel(status = {}) {
         })),
         modelNumber(phase7.candidate_setup_count, 0) ? {
             kind: "qualified_setup_pool",
-            label: "Phase 7 setup pool",
+            label: "Paper growth setup pool",
             stage: modelNumber(phase7.eligible_setup_count, 0) ? "Potential setup available" : "Candidate setup not eligible",
             source_ref: "phase7_qualified_setup_ledger",
             status: phase7.proof_state || "ready_no_closed_trades",
@@ -1836,8 +1847,25 @@ function buildReasoningModel(status = {}) {
 function buildPerformanceModel(status = {}) {
     const capital = status.capital || {};
     const phase7 = status.phase7_demo_proof || {};
+    const paperLive = status.paper_live_certification || {};
     const closedProof = modelNumber(phase7.closed_proof_trade_count, 0);
     const proofTarget = modelNumber(phase7.mature_benchmark, 100);
+    const startingValue = modelNumber(
+        paperLive.paper_growth_trial_starting_value_gbp,
+        modelNumber(capital.starting_balance_gbp, 100000)
+    );
+    const targetValue = modelNumber(
+        paperLive.paper_growth_trial_target_value_gbp,
+        startingValue * 2
+    );
+    const targetDays = modelNumber(paperLive.paper_growth_trial_horizon_days, 60);
+    const currentValue = modelNumber(
+        capital.equity_gbp ?? capital.current_balance_gbp,
+        startingValue
+    );
+    const targetProgress = targetValue > startingValue
+        ? Math.min(1, Math.max(0, (currentValue - startingValue) / (targetValue - startingValue)))
+        : 0;
     const completedDays = modelNumber(phase7.completed_calendar_day_count, 0);
     const requiredDays = modelNumber(phase7.phase7_harness_day_count, 30);
     const proofWeeks = modelNumber(phase7.proof_week_count, 5);
@@ -1875,9 +1903,24 @@ function buildPerformanceModel(status = {}) {
     return {
         id: "performance",
         label: "Performance",
-        question: "Is the paper/demo-proof account proving anything?",
+        question: "Is the paper account growing toward target?",
         tone,
-        summary: `${completedDays}/${requiredDays} demo days, week ${currentWeek}/${proofWeeks}, ${closedProof}/${proofTarget} verified paper trades, ${formatMoney(totalPnl)} paper P&L, drawdown ${drawdownWithinCap ? "within cap" : "breached"}.`,
+        summary: `${formatMoney(currentValue)} toward ${formatMoney(targetValue)} over ${targetDays} days; ${formatMoney(totalPnl)} paper P&L, drawdown ${drawdownWithinCap ? "within cap" : "breached"}.`,
+        growth_trial: {
+            name: dashboardText(paperLive.paper_growth_trial_name, "60-day paper growth trial"),
+            starting_value_gbp: startingValue,
+            target_value_gbp: targetValue,
+            target_multiple: modelNumber(paperLive.paper_growth_trial_target_multiple, 2),
+            horizon_days: targetDays,
+            current_value_gbp: currentValue,
+            progress_fraction: targetProgress,
+            mindset: dashboardText(
+                paperLive.paper_growth_trial_mindset,
+                "Selective larger paper moves when evidence, strategy, Q-CTRL, risk, and Alpaca Paper gates agree."
+            ),
+            operation_allowed: Boolean(paperLive.paper_live_operation_allowed),
+            certified: Boolean(paperLive.paper_live_certified)
+        },
         paper_account: {
             starting_balance_gbp: modelNumber(capital.starting_balance_gbp, 0),
             current_balance_gbp: modelNumber(capital.current_balance_gbp, 0),
@@ -1956,7 +1999,7 @@ function buildPerformanceModel(status = {}) {
             phase7_statistical_immaturity_hidden: Boolean(phase7.phase7_statistical_immaturity_hidden),
             phase7_certification_blocked_by_maturity: Boolean(phase7.phase7_certification_blocked_by_maturity),
             operational_completion_erased_by_immaturity: Boolean(phase7.phase7_30_day_operational_result_erased_by_immaturity),
-            boundary: "30-day operational completion and 100-trade statistical maturity are separate. The UI must not force trades to reach maturity."
+            boundary: "The 60-day growth target and verified performance maturity are separate. The UI must not force trades to reach the target."
         },
         proof_quality: {
             complete_decision_chain_count: modelNumber(phase7.complete_decision_chain_count, 0),
@@ -2463,8 +2506,8 @@ function buildGovernanceCommentTargets(status = {}) {
             view: "Trades",
             target_type: phase7.postmortem_due_count ? "postmortem" : "system",
             target_key: phase7.postmortem_due_count ? "postmortem_due" : "phase7_demo_proof",
-            label: phase7.postmortem_due_count ? "Postmortem due" : "30-day demo proof",
-            helper: "Comment on proof cadence, drawdown, maturity, postmortems, or paper-account interpretation.",
+            label: phase7.postmortem_due_count ? "Postmortem due" : "60-day paper growth trial",
+            helper: "Comment on paper growth, drawdown, maturity, postmortems, or paper-account interpretation.",
             href: "#trades"
         },
         {
@@ -2547,14 +2590,14 @@ function buildGovernanceApprovalRecords(status = {}) {
             phase7.q7_16_weekly_review_pack_stage_allowed ? "online" : "pending",
             {
                 event_log_written: phase7.event_log_written,
-                boundary: "Weekly review packs summarize backend proof state only. They cannot force trades, grant proof credit, or approve live promotion.",
+                boundary: "Weekly review packs summarize backend paper-growth state only. They cannot force trades, mark performance as mature, or approve live promotion.",
                 href: "#trades"
             }
         ),
         governanceRecord(
             "Live-promotion review workflow",
             livePromotion.status || (phase7.phase7_30_day_run_complete ? "planning visible" : "not eligible"),
-            livePromotion.boundary || "Live promotion remains a review workflow only until demo proof, maturity, drawdown, postmortem, and approval gates pass.",
+            livePromotion.boundary || "Live promotion remains a review workflow only until paper-growth, maturity, drawdown, postmortem, and approval gates pass.",
             livePromotion.live_capital_enabled ? "blocked" : "pending",
             {
                 event_log_written: livePromotion.event_log_written,
@@ -2669,7 +2712,7 @@ function buildGovernanceModel(status = {}) {
             proof_week_count: modelNumber(phase7.proof_week_count, 5),
             closed_proof_trade_count: modelNumber(phase7.closed_proof_trade_count, 0),
             postmortem_due_count: modelNumber(phase7.postmortem_due_count, 0),
-            boundary: "Weekly review packs summarize backend proof state only. They cannot force trades, grant proof credit, or approve live promotion."
+            boundary: "Weekly review packs summarize backend paper-growth state only. They cannot force trades, mark performance as mature, or approve live promotion."
         },
         live_promotion: {
             status: status.phase7_live_promotion_review?.status || "not eligible",
@@ -2716,7 +2759,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     if (sources.quorum.status !== "ok") actionNeeded.push("Review source quorum");
     if (trades.counts.postmortem_due > 0 || performance.paper_account.postmortem_due_count > 0) actionNeeded.push("Review due postmortem");
     if (operations.safety.authority_flags.length) actionNeeded.push("Investigate authority flag");
-    if (operations.safety.readiness_warnings.includes("false_phase7_proof_credit")) actionNeeded.push("Reject false proof credit");
+    if (operations.safety.readiness_warnings.includes("false_phase7_proof_credit")) actionNeeded.push("Reject false performance proof");
     if (!actionNeeded.length) actionNeeded.push("Continue monitoring");
     const demoProof = {
         completed_calendar_day_count: modelNumber(phase7.completed_calendar_day_count, 0),
@@ -2962,6 +3005,11 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         modelNumber(performance.paper_account.current_balance_gbp, paperTotal)
     );
     const paperCash = modelNumber(capital.cash_gbp, modelNumber(performance.paper_account.cash_gbp, paperEquity));
+    const growthTrial = performance.growth_trial || {};
+    const growthTarget = modelNumber(growthTrial.target_value_gbp, paperTotal * 2);
+    const growthProgress = growthTarget > paperTotal
+        ? Math.min(1, Math.max(0, (paperEquity - paperTotal) / (growthTarget - paperTotal)))
+        : 0;
     const openExposure = asArray(capital.open_positions).reduce(
         (total, position) => total + modelNumber(position.notional_gbp ?? position.market_value_gbp ?? position.value_gbp, 0),
         0
@@ -2982,6 +3030,10 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         used_fraction: capacityUsedFraction,
         used_pct: Math.round(capacityUsedFraction * 1000) / 10,
         total_pnl_gbp: performance.paper_account.total_pnl_gbp || 0,
+        target_gbp: growthTarget,
+        target_horizon_days: modelNumber(growthTrial.horizon_days, 60),
+        target_progress_fraction: growthProgress,
+        paper_live_operation_allowed: Boolean(growthTrial.operation_allowed),
         drawdown_pct: performance.paper_account.drawdown_pct || capital.drawdown_pct || 0,
         open_position_count: performance.paper_account.open_position_count || asArray(capital.open_positions).length,
         order_count: performance.paper_account.order_count || asArray(capital.orders).length,
@@ -2989,14 +3041,14 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         observed_at: capital.observed_at || status.generated_at || null,
         equity_curve: paperAccountEquityPoints(capital),
         tone: deployedCapacity ? "pending" : "online",
-        summary: `${formatMoney(deployedCapacity)} deployed from ${formatMoney(paperTotal)} paper capacity; ${formatMoney(paperEquity)} current equity.`
+        summary: `${formatMoney(paperEquity)} current equity toward ${formatMoney(growthTarget)} target; ${formatMoney(deployedCapacity)} currently deployed from ${formatMoney(paperTotal)} starting paper capital.`
     };
     return {
         id: "overview",
         label: "Overview",
         question: "What is happening now?",
         tone: readouts.some((item) => item.tone === "blocked") ? "blocked" : (readouts.some((item) => item.tone === "degraded") ? "degraded" : "online"),
-        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} potential setups; ${trades.counts.candidate} trade ideas; ${demoProof.closed_proof_trade_count}/${demoProof.mature_benchmark} verified paper trades; next review: ${actionNeeded[0]}.`,
+        summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} potential setups; ${trades.counts.candidate} trade ideas; ${formatMoney(paperEquity)} toward ${formatMoney(growthTarget)} in ${modelNumber(growthTrial.horizon_days, 60)} days; next review: ${actionNeeded[0]}.`,
         cards: readouts,
         readouts,
         status_chips: statusChips,
@@ -3056,14 +3108,14 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         headline: tone === "blocked"
             ? "Review safety before reading the dashboard"
             : "OK - paper only, read-only, live capital off",
-        summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off; dashboard and AI cannot bypass risk checks.`,
+        summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off. Dashboard cannot place orders. AI cannot bypass risk checks.`,
         mode_label: modeLabel,
         capital_label: `${formatMoney(paperBalance)} paper account`,
         live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "OK - live capital off",
         read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "OK - read-only",
         ui_broker_label: "Dashboard cannot place orders",
         llm_broker_label: "AI cannot bypass risk checks",
-        proof_label: "Performance proof requires verified records",
+        proof_label: "Paper growth maturity requires verified records",
         live_capital_enabled: liveCapitalEnabled,
         write_authority: writeAuthority,
         authority_flag_count: authorityFlags.length,
@@ -3712,11 +3764,11 @@ function renderOperationsWorkspace(model = {}, status = {}) {
         ["Pending", diagnostics.module_health?.pending || 0],
         ["Local-only", diagnostics.module_health?.local_only || 0]
     ], diagnostics.module_health?.blocked ? "blocked" : (diagnostics.module_health?.degraded ? "degraded" : "online"))}
-                        ${renderOperationsDiagnosticCard("Phase/certification diagnostics", diagnostics.phase_certification?.phase7_visibility || "not exported", [
+                        ${renderOperationsDiagnosticCard("Certification diagnostics", diagnostics.phase_certification?.phase7_visibility || "not exported", [
         ["Phase 4", diagnostics.phase_certification?.phase4_certified ? "certified" : diagnostics.phase_certification?.phase4_stage || "not exported"],
         ["Phase 5", diagnostics.phase_certification?.phase5_certified ? "certified" : "not certified"],
         ["Phase 6", diagnostics.phase_certification?.phase6_certified ? "certified" : "not certified"],
-        ["Phase 7", diagnostics.phase_certification?.phase7_certified ? "certified" : diagnostics.phase_certification?.phase7_visibility || "visible"],
+        ["Paper growth", diagnostics.phase_certification?.phase7_certified ? "certified" : diagnostics.phase_certification?.phase7_visibility || "visible"],
         ["Authority", "read-only diagnostics"]
     ], "pending")}
                         ${renderOperationsDiagnosticCard("Kill-switch ledger", diagnostics.kill_switch?.status || "not exported", [
@@ -4810,7 +4862,7 @@ function fallbackMissionControl(status, source) {
             alpaca_post_called_count: phase7DemoProof.alpaca_post_called_count || 0,
             unsafe_write_counter_total: phase7DemoProof.unsafe_write_counter_total || 0,
             q7_16_weekly_review_pack_stage_allowed: Boolean(phase7DemoProof.q7_16_weekly_review_pack_stage_allowed),
-            boundary: phase7DemoProof.boundary || "Q7-15 Phase 7 demo-proof visibility is backend-derived and non-executable."
+            boundary: phase7DemoProof.boundary || "Paper growth trial visibility is backend-derived and non-executable."
         },
         thinking: {
             status: cognition.status || "pending",
@@ -4937,8 +4989,8 @@ function renderMissionControl(status, source) {
             <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · Qiskit ${phase3.qiskit_available ? "yes" : "no"} / Aer ${phase3.qiskit_aer_available ? "yes" : "no"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
             <p>Phase 5 ${htmlText(phase5.layer, "Layer B")} · plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"} · implementation ${phase5.implementation_allowed ? "allowed" : "blocked"} · Phase 6 plan ${phase5.phase6_learning_loop_plan_allowed ? "allowed" : "blocked"} · learning implementation ${phase5.phase6_learning_loop_implementation_allowed ? "allowed" : "blocked"} · ${htmlText(phase5.nonapproval_blocker_count || 0)} non-approval blockers</p>
             <p>Phase 6 ${htmlText(phase6.stage || "Q6-16")} · ${htmlText(phase6.learning_state || phase6.visibility_state || "not visible")} · approval ${htmlText(phase6.approval_state || "not requested")} · postmortems ${htmlText(phase6.postmortem_due_count || 0)} due / ${htmlText(phase6.postmortem_resolved_count || 0)} resolved · proposals ${(phase6.model_weight_proposal_count || 0) + (phase6.trust_score_proposal_count || 0)}</p>
-            <p>Q6-17 ${htmlText(phase6Certification.status || "not_run")} · ${phase6Certification.phase6_certified ? "certified" : "not certified"} · Phase 7 demo plan ${phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked"} · blockers ${htmlText(phase6Certification.certification_blocker_count || 0)}</p>
-            <p>Q7-15 ${htmlText(phase7DemoProof.status || "not_run")} · day ${htmlText(phase7DemoProof.completed_calendar_day_count || 0)}/${htmlText(phase7DemoProof.phase7_harness_day_count || 30)} · week ${htmlText(phase7DemoProof.current_proof_week_number || 0)}/${htmlText(phase7DemoProof.proof_week_count || 0)} · proof trades ${htmlText(phase7DemoProof.closed_proof_trade_count || 0)}/${htmlText(phase7DemoProof.mature_benchmark || 100)} · Q7-16 ${phase7DemoProof.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "blocked"}</p>
+            <p>Q6-17 ${htmlText(phase6Certification.status || "not_run")} · ${phase6Certification.phase6_certified ? "certified" : "not certified"} · paper growth plan ${phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked"} · blockers ${htmlText(phase6Certification.certification_blocker_count || 0)}</p>
+            <p>Paper growth ${htmlText(phase7DemoProof.status || "not_run")} · day ${htmlText(phase7DemoProof.completed_calendar_day_count || 0)}/${htmlText(phase7DemoProof.phase7_harness_day_count || 30)} · week ${htmlText(phase7DemoProof.current_proof_week_number || 0)}/${htmlText(phase7DemoProof.proof_week_count || 0)} · verified paper trades ${htmlText(phase7DemoProof.closed_proof_trade_count || 0)}/${htmlText(phase7DemoProof.mature_benchmark || 100)} · weekly review ${phase7DemoProof.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "blocked"}</p>
             <div class="mission-tag-row">
                 ${renderInlineBadge(`data ${dashboardText(stack.data_spine)}`, stack.data_spine)}
                 ${renderInlineBadge(`replay ${dashboardText(stack.durable_spine || durable.contract_status)}`, durable.status || stack.durable_spine)}
@@ -4966,10 +5018,10 @@ function renderMissionControl(status, source) {
                 ${renderInlineBadge(`Q6 writes ${phase5.phase6_learning_write_allowed || phase5.phase6_knowledge_graph_write_allowed ? "open" : "blocked"}`, phase5.phase6_learning_write_allowed || phase5.phase6_knowledge_graph_write_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(`Q6-16 ${dashboardText(stack.phase6_learning_loop || phase6.status || "not_run")}`, phase6.backend_derived && !phase6.ui_inferred_readiness_count ? "online" : "blocked")}
                 ${renderInlineBadge(`Q6-17 ${dashboardText(phase6Certification.status || "not_run")}`, phase6Certification.phase6_certified ? "online" : "blocked")}
-                ${renderInlineBadge(`Phase 7 demo ${phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked"}`, phase6Certification.phase7_demo_proof_planning_allowed ? "online" : "blocked")}
-                ${renderInlineBadge(`Q7-15 ${dashboardText(stack.phase7_demo_proof || phase7DemoProof.status || "not_run")}`, phase7DemoProof.backend_derived && !phase7DemoProof.ui_inferred_readiness_count ? "online" : "blocked")}
-                ${renderInlineBadge(`Q7 maturity ${htmlText(phase7DemoProof.closed_proof_trade_count || 0)}/${htmlText(phase7DemoProof.mature_benchmark || 100)}`, phase7DemoProof.phase7_mature_benchmark_met ? "online" : "pending")}
-                ${renderInlineBadge(phase7DemoProof.phase7_proof_credit_allowed ? "Q7 proof credit open" : "no Phase 7 proof credit", phase7DemoProof.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(`paper growth ${phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked"}`, phase6Certification.phase7_demo_proof_planning_allowed ? "online" : "blocked")}
+                ${renderInlineBadge(`growth status ${dashboardText(stack.phase7_demo_proof || phase7DemoProof.status || "not_run")}`, phase7DemoProof.backend_derived && !phase7DemoProof.ui_inferred_readiness_count ? "online" : "blocked")}
+                ${renderInlineBadge(`growth maturity ${htmlText(phase7DemoProof.closed_proof_trade_count || 0)}/${htmlText(phase7DemoProof.mature_benchmark || 100)}`, phase7DemoProof.phase7_mature_benchmark_met ? "online" : "pending")}
+                ${renderInlineBadge(phase7DemoProof.phase7_proof_credit_allowed ? "paper growth maturity open" : "no false growth maturity", phase7DemoProof.phase7_proof_credit_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(`learning ${dashboardText(phase6.learning_state || "not_run")}`, phase6.learning_state === "blocked_pending_learning_approval" ? "blocked" : "online")}
                 ${renderInlineBadge(`UI inferred ${phase6.ui_inferred_readiness_count || 0}`, phase6.ui_inferred_readiness_count ? "blocked" : "online")}
                 ${renderInlineBadge(`blocked authorities ${phase6.blocked_authority_count || 0}`, phase6.blocked_authority_count ? "online" : "blocked")}
@@ -5265,6 +5317,7 @@ function renderOverviewCapacityChart(capacity = {}) {
         .map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
         .join(" ");
     const usedWidth = Math.round(Math.min(1, Math.max(0, Number(capacity.used_fraction || 0))) * 100);
+    const targetWidth = Math.round(Math.min(1, Math.max(0, Number(capacity.target_progress_fraction || 0))) * 100);
 
     return `
         <div class="overview-capacity-chart-card ${statusClass(capacity.tone || "online")}">
@@ -5280,10 +5333,14 @@ function renderOverviewCapacityChart(capacity = {}) {
             <div class="overview-capacity-bar" aria-label="Paper capacity deployed">
                 <span style="width: ${usedWidth}%"></span>
             </div>
+            <div class="overview-capacity-bar target" aria-label="Paper growth target progress">
+                <span style="width: ${targetWidth}%"></span>
+            </div>
             <div class="overview-capacity-summary">
                 ${renderMetric("Deployed", formatMoney(capacity.deployed_gbp))}
-                ${renderMetric("Capacity", formatMoney(capacity.total_gbp))}
+                ${renderMetric("Start", formatMoney(capacity.total_gbp))}
                 ${renderMetric("Equity", formatMoney(capacity.equity_gbp))}
+                ${renderMetric("Target", formatMoney(capacity.target_gbp))}
                 ${renderMetric("P&L", formatMoney(capacity.total_pnl_gbp))}
             </div>
         </div>
@@ -5363,7 +5420,7 @@ function renderOverviewFirstScreen(viewModels) {
         paperCapacity.innerHTML = `
             <div class="overview-section-head">
                 <span>Paper capacity</span>
-                <strong>${formatMoney(capacity.deployed_gbp)} of ${formatMoney(capacity.total_gbp)} deployed</strong>
+                <strong>${formatMoney(capacity.equity_gbp)} toward ${formatMoney(capacity.target_gbp)} in ${htmlText(capacity.target_horizon_days)} days</strong>
             </div>
             <p>${htmlText(capacity.summary, "Paper capacity has not loaded.")}</p>
             ${renderOverviewCapacityChart(capacity)}
@@ -7693,7 +7750,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge(record.ui_inferred_readiness ? "UI inferred readiness" : "no UI inference", record.ui_inferred_readiness ? "blocked" : "online")}
                 ${renderInlineBadge(record.broker_post_called ? "broker POST called" : "no broker POST", record.broker_post_called ? "blocked" : "online")}
                 ${renderInlineBadge(record.live_capital_enabled ? "live capital enabled" : "live capital disabled", record.live_capital_enabled ? "blocked" : "online")}
-                ${renderInlineBadge(record.phase7_proof_credit_allowed ? "Phase 7 proof credit" : "no Phase 7 proof credit", record.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(record.phase7_proof_credit_allowed ? "paper growth maturity open" : "no false growth maturity", record.phase7_proof_credit_allowed ? "blocked" : "online")}
             </div>
         </article>
     `;
@@ -7720,7 +7777,7 @@ function renderTrades(status, viewModels = {}) {
             <div class="tag-row">
                 ${renderInlineBadge(record.display_derived_from_backend ? "backend-derived" : "display inferred", record.display_derived_from_backend ? "online" : "blocked")}
                 ${renderInlineBadge(record.ui_inferred_readiness ? "UI inferred readiness" : "no UI inference", record.ui_inferred_readiness ? "blocked" : "online")}
-                ${renderInlineBadge(record.phase7_proof_credit_allowed ? "Phase 7 proof credit" : "no Phase 7 proof credit", record.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(record.phase7_proof_credit_allowed ? "paper growth maturity open" : "no false growth maturity", record.phase7_proof_credit_allowed ? "blocked" : "online")}
             </div>
         </article>
     `;
@@ -7742,12 +7799,12 @@ function renderTrades(status, viewModels = {}) {
     const phase7SourceStatusHtml = asArray(phase7DemoProof.source_status_records).length
         ? asArray(phase7DemoProof.source_status_records).map((record) => `
             <li>
-                <strong>${htmlText(record.source_stage || record.source_key, "Phase 7 source")}</strong>
+                <strong>${htmlText(record.source_stage || record.source_key, "Paper growth source")}</strong>
                 <span>${htmlText(record.display_status || record.backend_status || "not_run")} · backend ${htmlText(record.backend_status || "not_run")}</span>
                 <small>${record.display_derived_from_backend ? "backend-derived" : "display inferred"} · UI inferred ${record.ui_inferred_readiness ? "true" : "false"} · ${htmlText(record.source_ref, "source ref withheld")}</small>
             </li>
         `).join("")
-        : `<li><strong>No Q7-15 source records</strong><span>The Phase 7 demo-proof visibility artifact has not exported source records yet.</span></li>`;
+        : `<li><strong>No paper growth source records</strong><span>The paper growth visibility artifact has not exported source records yet.</span></li>`;
 
     const orderStateHtml = rows.slice(3).map(([label, items]) => `
         <li>
@@ -7784,7 +7841,7 @@ function renderTrades(status, viewModels = {}) {
             <details class="trade-review-group" open data-trade-review-group="proof_lifecycle">
                 <summary>
                     <strong>Paper trade lifecycle</strong>
-                    <span>Paper drill, certification, learning, and Phase 7 proof visibility live together here.</span>
+                    <span>Paper drill, certification, learning, and paper growth visibility live together here.</span>
                 </summary>
                 <div class="trade-review-group-body">
         <section class="trade-intent-section" data-phase5-paper-trade-drill>
@@ -7837,7 +7894,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderMetric("Open", phase5Certification.open_position_count || 0)}
                 ${renderMetric("Closed", phase5Certification.closed_trade_count || 0)}
                 ${renderMetric("Phase 6", phase5Certification.phase6_handoff_allowed ? "allowed" : "blocked")}
-                ${renderMetric("Phase 7 plan", phase5Certification.phase7_planning_allowed ? "allowed" : "blocked")}
+                ${renderMetric("Paper growth plan", phase5Certification.phase7_planning_allowed ? "allowed" : "blocked")}
                 ${renderMetric("Proof credit", phase5Certification.phase7_proof_credit_allowed ? "allowed" : "blocked")}
                 ${renderMetric("Live capital", phase5Certification.live_capital_enabled_count || 0)}
             </div>
@@ -7845,7 +7902,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge(phase5Certification.phase5_certified ? "Phase 5 certified" : "Phase 5 not certified", phase5Certification.phase5_certified ? "online" : "blocked")}
                 ${renderInlineBadge(phase5Certification.paper_trade_drill_exit_gate_passed ? "Q5-14 exit passed" : "Q5-14 exit blocked", phase5Certification.paper_trade_drill_exit_gate_passed ? "online" : "blocked")}
                 ${renderInlineBadge(phase5Certification.phase6_handoff_allowed ? "Phase 6 handoff allowed" : "Phase 6 handoff blocked", phase5Certification.phase6_handoff_allowed ? "online" : "blocked")}
-                ${renderInlineBadge(phase5Certification.phase7_proof_credit_allowed ? "Phase 7 proof credit allowed" : "no Phase 7 proof credit", phase5Certification.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(phase5Certification.phase7_proof_credit_allowed ? "paper growth maturity allowed" : "no false growth maturity", phase5Certification.phase7_proof_credit_allowed ? "blocked" : "online")}
                 ${renderInlineBadge((phase5Certification.live_capital_enabled_count || 0) ? "live capital enabled" : "live capital disabled", (phase5Certification.live_capital_enabled_count || 0) ? "blocked" : "online")}
             </div>
             <div class="tag-row">${renderTagList(phase5Certification.certification_blockers, "No Q5-15 blockers exported")}</div>
@@ -7877,7 +7934,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge(phase5Phase6Handoff.phase6_learning_loop_plan_allowed ? "Phase 6 plan allowed" : "Phase 6 plan blocked", phase5Phase6Handoff.phase6_learning_loop_plan_allowed ? "online" : "blocked")}
                 ${renderInlineBadge(phase5Phase6Handoff.phase6_learning_loop_implementation_allowed ? "Phase 6 implementation allowed" : "Phase 6 implementation blocked", phase5Phase6Handoff.phase6_learning_loop_implementation_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(phase5Phase6Handoff.phase6_knowledge_graph_write_allowed ? "knowledge graph writes allowed" : "knowledge graph writes blocked", phase5Phase6Handoff.phase6_knowledge_graph_write_allowed ? "blocked" : "online")}
-                ${renderInlineBadge(phase5Phase6Handoff.phase7_proof_credit_allowed ? "Phase 7 proof credit allowed" : "no Phase 7 proof credit", phase5Phase6Handoff.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(phase5Phase6Handoff.phase7_proof_credit_allowed ? "paper growth maturity allowed" : "no false growth maturity", phase5Phase6Handoff.phase7_proof_credit_allowed ? "blocked" : "online")}
                 ${renderInlineBadge((phase5Phase6Handoff.live_capital_enabled_count || 0) ? "live capital enabled" : "live capital disabled", (phase5Phase6Handoff.live_capital_enabled_count || 0) ? "blocked" : "online")}
             </div>
             <div class="tag-row">${renderTagList(phase5Phase6Handoff.phase6_required_modules, "No Phase 6 module requirements exported")}</div>
@@ -7914,7 +7971,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge(phase6LearningLoop.phase6_model_weight_update_allowed ? "model updates open" : "model updates blocked", phase6LearningLoop.phase6_model_weight_update_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(phase6LearningLoop.phase6_trust_score_update_allowed ? "trust updates open" : "trust updates blocked", phase6LearningLoop.phase6_trust_score_update_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(phase6LearningLoop.phase6_architect_policy_mutation_allowed ? "policy mutation open" : "policy mutation blocked", phase6LearningLoop.phase6_architect_policy_mutation_allowed ? "blocked" : "online")}
-                ${renderInlineBadge(phase6LearningLoop.phase7_proof_credit_allowed ? "Phase 7 proof credit" : "no Phase 7 proof credit", phase6LearningLoop.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(phase6LearningLoop.phase7_proof_credit_allowed ? "paper growth maturity open" : "no false growth maturity", phase6LearningLoop.phase7_proof_credit_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(phase6LearningLoop.live_capital_enabled ? "live capital enabled" : "live capital disabled", phase6LearningLoop.live_capital_enabled ? "blocked" : "online")}
             </div>
             <div class="tag-row">
@@ -7936,7 +7993,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderMetric("State", phase6Certification.certification_state || "not_run")}
                 ${renderMetric("Certified", phase6Certification.phase6_certified ? "yes" : "no")}
                 ${renderMetric("Exit gate", phase6Certification.phase6_exit_gate ? "passed" : "blocked")}
-                ${renderMetric("Phase 7 demo", phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked")}
+                ${renderMetric("Paper growth plan", phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked")}
                 ${renderMetric("Proof credit", phase6Certification.phase7_proof_credit_allowed ? "allowed" : "blocked")}
                 ${renderMetric("Passed gates", phase6Certification.input_gate_passed_count || 0)}
                 ${renderMetric("Blocked gates", phase6Certification.input_gate_blocked_count || 0)}
@@ -7956,8 +8013,8 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge(phase6Certification.reviewed_postmortem_coverage_satisfied ? "postmortems reviewed/deferred" : "postmortems unresolved", phase6Certification.reviewed_postmortem_coverage_satisfied ? "online" : "blocked")}
                 ${renderInlineBadge(phase6Certification.learning_actions_review_satisfied ? "learning review done" : "learning approval pending", phase6Certification.learning_actions_review_satisfied ? "online" : "blocked")}
                 ${renderInlineBadge(phase6Certification.knowledge_graph_requirement_satisfied ? "KG requirement satisfied" : "KG blocked pending approval", phase6Certification.knowledge_graph_requirement_satisfied ? "online" : "blocked")}
-                ${renderInlineBadge(phase6Certification.phase7_demo_proof_planning_allowed ? "Phase 7 demo planning allowed" : "Phase 7 demo planning blocked", phase6Certification.phase7_demo_proof_planning_allowed ? "online" : "blocked")}
-                ${renderInlineBadge(phase6Certification.phase7_proof_credit_allowed ? "Phase 7 proof credit allowed" : "no Phase 7 proof credit", phase6Certification.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(phase6Certification.phase7_demo_proof_planning_allowed ? "paper growth planning allowed" : "paper growth planning blocked", phase6Certification.phase7_demo_proof_planning_allowed ? "online" : "blocked")}
+                ${renderInlineBadge(phase6Certification.phase7_proof_credit_allowed ? "paper growth maturity allowed" : "no false growth maturity", phase6Certification.phase7_proof_credit_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(phase6Certification.phase5_test_trades_count_for_phase7 ? "Phase 5 trades count for proof" : "Phase 5 trades excluded from proof", phase6Certification.phase5_test_trades_count_for_phase7 ? "blocked" : "online")}
                 ${renderInlineBadge(phase6Certification.live_capital_enabled ? "live capital enabled" : "live capital disabled", phase6Certification.live_capital_enabled ? "blocked" : "online")}
             </div>
@@ -7972,7 +8029,7 @@ function renderTrades(status, viewModels = {}) {
             <p class="mini">Next: ${htmlText(phase6Certification.recommended_next_stage, "Resolve or explicitly defer Q6 learning approval")}</p>
         </section>
         <section class="trade-intent-section" data-phase7-demo-proof>
-            <p class="label">Q7-15 Phase 7 Demo Proof Visibility</p>
+            <p class="label">Paper Growth Trial Visibility</p>
             <div class="summary-strip compact">
                 ${renderMetric("Status", phase7DemoProof.status || "not_run")}
                 ${renderMetric("State", phase7DemoProof.proof_state || "not_run")}
@@ -8000,7 +8057,7 @@ function renderTrades(status, viewModels = {}) {
                 ${renderMetric("Overrides", phase7DemoProof.override_count || 0)}
                 ${renderMetric("Maturity", `${phase7DemoProof.closed_proof_trade_count || 0}/${phase7DemoProof.mature_benchmark || 100}`)}
                 ${renderMetric("Remaining", phase7DemoProof.closed_trades_remaining_to_mature || 100)}
-                ${renderMetric("Q7-16", phase7DemoProof.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "blocked")}
+                ${renderMetric("Weekly review", phase7DemoProof.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "blocked")}
                 ${renderMetric("Live capital", phase7DemoProof.live_capital_enabled ? "enabled" : "disabled")}
             </div>
             <div class="tag-row">
@@ -8008,12 +8065,12 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge(phase7DemoProof.display_derived_from_backend ? "display derived from backend" : "display inferred", phase7DemoProof.display_derived_from_backend ? "online" : "blocked")}
                 ${renderInlineBadge((phase7DemoProof.ui_inferred_readiness_count || 0) ? "UI inferred readiness" : "no UI inference", phase7DemoProof.ui_inferred_readiness_count ? "blocked" : "online")}
                 ${renderInlineBadge(phase7DemoProof.phase5_test_trades_count_for_phase7 ? "Phase 5 trades count for proof" : "Phase 5 trades excluded from proof", phase7DemoProof.phase5_test_trades_count_for_phase7 ? "blocked" : "online")}
-                ${renderInlineBadge(phase7DemoProof.phase7_proof_credit_allowed ? "Phase 7 proof credit" : "no Phase 7 proof credit", phase7DemoProof.phase7_proof_credit_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(phase7DemoProof.phase7_proof_credit_allowed ? "paper growth maturity open" : "no false growth maturity", phase7DemoProof.phase7_proof_credit_allowed ? "blocked" : "online")}
                 ${renderInlineBadge(phase7DemoProof.live_capital_enabled ? "live capital enabled" : "live capital disabled", phase7DemoProof.live_capital_enabled ? "blocked" : "online")}
             </div>
             <div class="tag-row">
                 ${renderInlineBadge(phase7DemoProof.phase7_statistical_immaturity_hidden ? "statistical immaturity hidden" : "statistical immaturity visible", phase7DemoProof.phase7_statistical_immaturity_hidden ? "blocked" : "online")}
-                ${renderInlineBadge(phase7DemoProof.phase7_mature_benchmark_met ? "100-trade maturity met" : "100-trade maturity not met", phase7DemoProof.phase7_mature_benchmark_met ? "online" : "pending")}
+                ${renderInlineBadge(phase7DemoProof.phase7_mature_benchmark_met ? "verified maturity met" : "verified maturity not met", phase7DemoProof.phase7_mature_benchmark_met ? "online" : "pending")}
                 ${renderInlineBadge(phase7DemoProof.sample_contaminated ? "sample contaminated" : "sample clean", phase7DemoProof.sample_contaminated ? "blocked" : "online")}
                 ${renderInlineBadge(phase7DemoProof.new_proof_trades_frozen ? "new proof trades frozen" : "new proof trades not frozen", phase7DemoProof.new_proof_trades_frozen ? "blocked" : "online")}
                 ${renderInlineBadge(`${phase7DemoProof.broker_post_called_count || 0} broker paper POST calls`, phase7DemoProof.broker_post_called_count ? "pending" : "online")}
@@ -8283,7 +8340,7 @@ function renderPerformanceWorkspace(model) {
     const sourceRecords = asArray(quality.source_status_records);
     const sourceHtml = sourceRecords.length
         ? sourceRecords.map(renderPerformanceSourceRecord).join("")
-        : `<li><strong>No Phase 7 source records</strong><span>The backend has not exported demo-proof source status records.</span></li>`;
+        : `<li><strong>No paper growth source records</strong><span>The backend has not exported paper growth source status records.</span></li>`;
     const dayTone = demo.phase7_30_day_run_complete ? "online" : "pending";
     const drawdownTone = risk.risk_halt_active || !risk.drawdown_within_cap ? "blocked" : "online";
     const maturityTone = maturity.phase7_mature_benchmark_met ? "online" : "pending";
@@ -8293,11 +8350,11 @@ function renderPerformanceWorkspace(model) {
             <div class="performance-workspace-head">
                 <div>
                     <p class="label">Performance workspace</p>
-                    <h2>30-day demo proof and paper account performance</h2>
+                    <h2>60-day paper growth trial and account performance</h2>
                     <p>${htmlText(model.summary, "Performance state has not loaded.")}</p>
                 </div>
                 <div class="performance-boundary-card">
-                    ${renderInlineBadge("30-day run separate from 100-trade maturity", "pending")}
+                    ${renderInlineBadge("2x paper target over 60 days", "pending")}
                     ${renderInlineBadge("No forced trades", forcedTradeTone)}
                     ${renderInlineBadge("Phase 5 trades excluded", demo.phase5_test_trades_count_for_phase7 ? "blocked" : "online")}
                     ${renderInlineBadge("Verified records only", demo.display_proof_credit_allowed ? "blocked" : "online")}
@@ -8306,28 +8363,26 @@ function renderPerformanceWorkspace(model) {
                 </div>
             </div>
             <div class="summary-strip compact performance-summary-strip">
-                ${renderMetric("Demo day", `${demo.completed_calendar_day_count || 0}/${demo.required_calendar_day_count || 30}`)}
-                ${renderMetric("Proof week", `${demo.current_proof_week_number || 0}/${demo.proof_week_count || 5}`)}
-                ${renderMetric("Target", `${demo.weekly_proof_trade_target || 3}/week`)}
+                ${renderMetric("Growth window", `${model.growth_trial?.horizon_days || 60} days`)}
+                ${renderMetric("Paper target", formatMoney(model.growth_trial?.target_value_gbp || 200000))}
+                ${renderMetric("Target progress", formatPercent(model.growth_trial?.progress_fraction || 0))}
                 ${renderMetric("Qualified setups", demo.qualified_setup_count || 0)}
-                ${renderMetric("Closed proof", `${demo.closed_proof_trade_count || 0}/${demo.mature_benchmark || 100}`)}
+                ${renderMetric("Verified trades", `${demo.closed_proof_trade_count || 0}/${demo.mature_benchmark || 100}`)}
                 ${renderMetric("Drawdown", risk.drawdown_within_cap ? "within cap" : "breached")}
                 ${renderMetric("Postmortems due", paper.postmortem_due_count || 0)}
                 ${renderMetric("Live capital", risk.live_capital_enabled ? "enabled" : "disabled")}
             </div>
             <div class="performance-status-grid">
                 ${renderPerformanceProgress(
-                    "30-day operating window",
-                    demo.completed_calendar_day_count || 0,
-                    demo.required_calendar_day_count || 30,
-                    demo.day_progress_fraction || 0,
+                    "60-day paper growth target",
+                    formatMoney(model.growth_trial?.current_value_gbp || 0),
+                    formatMoney(model.growth_trial?.target_value_gbp || 200000),
+                    model.growth_trial?.progress_fraction || 0,
                     dayTone,
-                    demo.phase7_30_day_run_complete
-                        ? "The 30 consecutive calendar-day operating window is complete."
-                        : "The operating run can finish on calendar days even if the 100-trade maturity sample remains immature."
+                    `Target: ${formatMoney(model.growth_trial?.starting_value_gbp || 100000)} to ${formatMoney(model.growth_trial?.target_value_gbp || 200000)} in ${model.growth_trial?.horizon_days || 60} days.`
                 )}
                 ${renderPerformanceProgress(
-                    "100-trade maturity benchmark",
+                    "Verified performance maturity",
                     maturity.closed_proof_trade_count || 0,
                     maturity.maturity_benchmark || 100,
                     demo.maturity_progress_fraction || 0,
@@ -8341,9 +8396,9 @@ function renderPerformanceWorkspace(model) {
                     drawdownTone
                 )}
                 ${renderPerformanceStatusCard(
-                    "Proof cadence",
+                    "Trade selectivity",
                     `${demo.current_proof_week_number || 0}/${demo.proof_week_count || 5} weeks`,
-                    `${demo.weekly_proof_trade_target || 3} proof trades per week where qualified setups exist · formula ${dashboardText(demo.weekly_target_formula, "min(3, qualified_setup_count)")}`,
+                    "Selective larger paper positions only when evidence, strategy, quantum/classical consultation, risk, and Alpaca Paper agree.",
                     "pending"
                 )}
                 ${renderPerformanceStatusCard(
@@ -8416,7 +8471,7 @@ function renderPerformanceWorkspace(model) {
                         ${renderInlineBadge(`${safety.crypto_perps_write_allowed_count || 0} crypto-perps writes`, safety.crypto_perps_write_allowed_count ? "blocked" : "online")}
                         ${renderInlineBadge(`${safety.live_capital_enabled_count || 0} live-capital grants`, safety.live_capital_enabled_count ? "blocked" : "online")}
                     </div>
-                    <div class="tag-row">${renderTagList(safety.blockers, "No Phase 7 blockers exported")}</div>
+                    <div class="tag-row">${renderTagList(safety.blockers, "No paper growth blockers exported")}</div>
                 </div>
             </section>
             <section class="performance-section">
@@ -8629,7 +8684,7 @@ function renderCapital(status, viewModels = {}) {
                 <small>${htmlText(trade.close_reason, "No close reason")} · ${htmlText(trade.boundary, "Read-only closed trade.")}</small>
             </li>
         `).join("")
-        : `<li><strong>No closed trades</strong><span>The paper mirror has no closed paper trades. Phase 7 proof trades are tracked separately.</span></li>`;
+        : `<li><strong>No closed trades</strong><span>The paper mirror has no closed paper trades. Paper growth records are tracked separately.</span></li>`;
 
     const orderRows = orders.length
         ? orders.map((order) => `
@@ -8675,8 +8730,8 @@ function renderCapital(status, viewModels = {}) {
             question: "Is the paper account proving or losing trust?",
             state: formatMoney(equityStats.last || capital.current_balance_gbp),
             tone: accountTone,
-            primary: `${formatMoney(capital.realized_pnl_gbp)} realized, ${formatMoney(capital.unrealized_pnl_gbp)} unrealized, ${formatPercent(capital.drawdown_pct)} drawdown, ${maturityCount}/${maturityTarget} closed paper trades, and ${phase7ProofCount}/${phase7ProofTarget} Phase 7 proof trades.`,
-            secondary: "Open exposure, drawdown, stale paper-mirror timestamps, closed paper trades without postmortems, and Phase 7 proof maturity tracked separately.",
+            primary: `${formatMoney(capital.realized_pnl_gbp)} realized, ${formatMoney(capital.unrealized_pnl_gbp)} unrealized, ${formatPercent(capital.drawdown_pct)} drawdown, ${maturityCount}/${maturityTarget} closed paper trades, and ${phase7ProofCount}/${phase7ProofTarget} verified paper growth trades.`,
+            secondary: "Open exposure, drawdown, stale paper-mirror timestamps, closed paper trades without postmortems, and paper growth maturity tracked separately.",
             boundary: capital.boundary || "Read-only paper account mirror. No funding authority and no live broker-write authority."
         })}
         <div class="summary-strip">
