@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260528-telegram-intake">
+    <link rel="stylesheet" href="/auth.css?v=20260528-daily-digest">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -823,9 +823,9 @@
                             <button class="info-button" type="button" aria-label="About Telegram communications">i</button>
                             <div class="info-card section-explainer" role="tooltip" data-section-explainer="telegram_communications" data-tooltip-contract="compact">
                                 <strong>Telegram Communications</strong>
-                                <p>Outbound member notifications.</p>
+                                <p>Outbound member notifications and daily paper portfolio updates.</p>
                                 <dl class="explainer-grid compact">
-                                    <div><dt>Shows</dt><dd>Dry-run/live-send state, queue, failures, suppressions.</dd></div>
+                                    <div><dt>Shows</dt><dd>Dry-run/live-send state, daily portfolio digest, queue, failures, suppressions.</dd></div>
                                     <div><dt>Watch</dt><dd>Queue growth or private content exposure.</dd></div>
                                     <div><dt>Limits</dt><dd>Notify-only; no command path.</dd></div>
                                 </dl>
@@ -837,11 +837,11 @@
                             <div class="panel-brief-main">
                                 <p class="label">Panel readout</p>
                                 <h3>What has Qadam told founding members?</h3>
-                                <p>Telegram notification state loads here before queue and delivery details appear.</p>
+                                <p>Telegram notification state, daily portfolio balance, daily P&amp;L, and daily trade summary load here before queue and delivery details appear.</p>
                             </div>
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">Dry-run planned</span></dd></div>
-                                <div><dt>Watch</dt><dd>Queue pressure, failed sends, suppressed messages, and whether any notification should have stayed private.</dd></div>
+                                <div><dt>Watch</dt><dd>Queue pressure, failed sends, suppressed messages, end-of-day digest delivery, and whether any notification should have stayed private.</dd></div>
                                 <div><dt>Boundary</dt><dd>Telegram is outbound notify-only. Telegram cannot place, approve, reject, modify, close, or resize trades.</dd></div>
                             </dl>
                         </section>
@@ -1217,7 +1217,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260528-telegram-intake"></script>
+    <script src="/dashboard.js?v=20260528-daily-digest"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

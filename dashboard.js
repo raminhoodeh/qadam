@@ -5985,19 +5985,6 @@ function renderOverviewFirstScreen(viewModels) {
         `;
     }
 
-    const legacyStrategyTarget = null;
-    if (legacyStrategyTarget) {
-        legacyStrategyTarget.innerHTML = `
-            <div class="overview-section-head">
-                <span>Trading strategies</span>
-                <strong>Loading approved strategy families</strong>
-            </div>
-            <div class="overview-plain-card-grid">
-                ${[].map(renderOverviewPlainCard).join("")}
-            </div>
-        `;
-    }
-
     const thoughtFeed = dashboardQuery("[data-overview-thought-feed]");
     if (thoughtFeed) {
         const visibleThoughts = asArray(overview.thought_feed)
@@ -7585,10 +7572,12 @@ function renderCommunications(status) {
     const target = dashboardQuery("[data-communications]");
     if (!target) return;
     const telegram = status.communications?.telegram || {};
+    const telegramDailyDigest = status.communications?.telegram_daily_portfolio_digest || {};
     const telegramIntake = status.communications?.telegram_intake || {};
     const messages = asArray(telegram.recent_messages);
     const classes = asArray(telegram.active_message_classes);
     const intakeRecords = asArray(telegramIntake.recent_records);
+    const dailyDigestTrades = asArray(telegramDailyDigest.daily_trade_summaries);
     const messageRows = messages.length
         ? messages.map((message) => `
             <li>
@@ -7635,12 +7624,16 @@ function renderCommunications(status) {
             state: telegramIntake.status || telegram.status || "dry_run",
             tone: telegram.failed_count ? "degraded" : (telegramIntake.status === "ready" ? "online" : "pending"),
             primary: `${telegram.pending_queue_count || 0} queued outbound messages, ${telegramIntake.world_event_datapoint_count || 0} member world-event datapoints, and ${telegramIntake.strategy_consideration_count || 0} member strategy considerations are visible.`,
-            secondary: "Outbound bot updates, inbound member research, Research Analyst packet creation, Strategy Lead consideration intake, and command-authority boundaries.",
+            secondary: "Outbound bot updates, daily portfolio digests, inbound member research, Research Analyst packet creation, Strategy Lead consideration intake, and command-authority boundaries.",
             boundary: telegramIntake.boundary || telegram.boundary || status.communications?.boundary || "Telegram is outbound notify-only and inbound read-only. It cannot place, approve, reject, modify, close, or resize trades."
         })}
         <div class="summary-strip compact">
             ${renderMetric("Status", telegram.status || "disabled")}
             ${renderMetric("Mode", telegram.mode || "dry_run")}
+            ${renderMetric("Daily digest", telegramDailyDigest.status || telegram.daily_portfolio_digest_status || "not run")}
+            ${renderMetric("Portfolio balance", formatMoney(telegramDailyDigest.portfolio_balance_gbp || telegram.daily_portfolio_digest_portfolio_balance_gbp))}
+            ${renderMetric("P&L", `${formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0)} · ${formatPercent(telegramDailyDigest.portfolio_performance_pct || telegram.daily_portfolio_digest_portfolio_performance_pct || 0)}`)}
+            ${renderMetric("Trades today", telegramDailyDigest.daily_trade_count || telegram.daily_portfolio_digest_daily_trade_count || 0)}
             ${renderMetric("Verified", telegram.verified_member_count || 0)}
             ${renderMetric("Pending", telegram.pending_member_count || 0)}
             ${renderMetric("Queued", telegram.pending_queue_count || 0)}
@@ -7657,12 +7650,39 @@ function renderCommunications(status) {
             ${renderInlineBadge(telegram.bot_configured ? "bot configured" : "bot token missing", telegram.bot_configured ? "online" : "pending")}
             ${renderInlineBadge(telegram.default_chat_configured ? "chat configured" : "chat pending", telegram.default_chat_configured ? "online" : "pending")}
             ${renderInlineBadge(`${telegram.dry_run_message_count || 0} dry-run messages`, telegram.dry_run_message_count ? "online" : "pending")}
+            ${renderInlineBadge(telegramDailyDigest.enabled ? "daily portfolio digest enabled" : "daily portfolio digest disabled", telegramDailyDigest.enabled ? "online" : "pending")}
+            ${renderInlineBadge(telegramDailyDigest.dry_run ? "daily digest dry-run" : "daily digest live-send gate", telegramDailyDigest.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramIntake.enabled ? "inbound intake enabled" : "inbound intake disabled", telegramIntake.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramIntake.telegram_command_authority ? "command authority" : "no Telegram command authority", telegramIntake.telegram_command_authority ? "blocked" : "online")}
         </div>
         <section class="trade-intent-section">
             <p class="label">Message classes</p>
             <div class="tag-row">${renderTagList(classes, "No message classes queued")}</div>
+        </section>
+        <section class="trade-intent-section">
+            <p class="label">Daily portfolio digest</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Local date", telegramDailyDigest.local_date || "not run")}
+                ${renderMetric("Send after", `${telegramDailyDigest.delivery_after_local_time || "17:00"} ${telegramDailyDigest.timezone || ""}`)}
+                ${renderMetric("Due", telegramDailyDigest.due_for_delivery ? "yes" : "not yet")}
+                ${renderMetric("Sent today", telegramDailyDigest.live_send_succeeded || telegramDailyDigest.already_sent ? "yes" : "not yet")}
+            </div>
+            <ul class="status-list communications-list">
+                <li>
+                    <strong>Portfolio balance ${htmlText(formatMoney(telegramDailyDigest.portfolio_balance_gbp))}</strong>
+                    <span>${htmlText(formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0))} total P&amp;L · ${htmlText(formatPercent(telegramDailyDigest.portfolio_performance_pct || 0))} since paper allocation.</span>
+                    <div class="comment-meta">
+                        ${renderInlineBadge(telegramDailyDigest.status || "not_run", telegramDailyDigest.live_send_succeeded ? "online" : "pending")}
+                        ${renderInlineBadge(telegramDailyDigest.target === "group" ? "group chat" : "target pending", telegramDailyDigest.target === "group" ? "online" : "pending")}
+                        ${renderInlineBadge(telegramDailyDigest.telegram_command_path_enabled ? "command authority" : "notify only", telegramDailyDigest.telegram_command_path_enabled ? "blocked" : "online")}
+                    </div>
+                </li>
+                <li>
+                    <strong>Trades today</strong>
+                    <span>${dailyDigestTrades.length ? dailyDigestTrades.map((item) => htmlText(item)).join("; ") : "No paper trades recorded for this local day."}</span>
+                </li>
+            </ul>
+            <p class="mini">${htmlText(telegramDailyDigest.boundary || "Daily Telegram portfolio digests are outbound status reports only.")}</p>
         </section>
         <section class="trade-intent-section">
             <p class="label">Inbound member research</p>
