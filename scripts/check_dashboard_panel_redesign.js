@@ -68,8 +68,8 @@ function staticBriefBlock(id) {
     ".panel-brief.blocked"
 ].forEach((needle) => assertText(css, needle, "panel redesign CSS"));
 
-assertText(html, "/auth.css?v=20260528-balance-ticker", "stylesheet cache key");
-assertText(html, "/dashboard.js?v=20260528-balance-ticker", "dashboard script cache key");
+assertText(html, "/auth.css?v=20260528-telegram-intake", "stylesheet cache key");
+assertText(html, "/dashboard.js?v=20260528-telegram-intake", "dashboard script cache key");
 assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
 
 (async () => {
@@ -77,7 +77,7 @@ assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
     assertIncludes(rendered, "[data-cognition]", "Reasoning readout");
     assertIncludes(rendered, "[data-cognition]", "Can this idea move beyond research?");
     assertIncludes(rendered, "[data-worldview]", "Which private priors are shaping the questions?");
-    assertIncludes(rendered, "[data-communications]", "What has Qadam told founding members?");
+    assertIncludes(rendered, "[data-communications]", "What has Qadam told or learned from Telegram?");
     assertIncludes(rendered, "[data-trade-layer]", "Consolidated trade readout");
     assertIncludes(rendered, "[data-capital]", "Is the paper account proving or losing trust?");
     console.log("dashboard_panel_redesign=ok");

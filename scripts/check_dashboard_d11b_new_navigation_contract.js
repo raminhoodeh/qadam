@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260528-balance-ticker",
-    "/dashboard.js?v=20260528-balance-ticker",
+    "/auth.css?v=20260528-telegram-intake",
+    "/dashboard.js?v=20260528-telegram-intake",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"

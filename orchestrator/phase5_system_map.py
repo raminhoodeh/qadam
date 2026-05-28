@@ -352,7 +352,7 @@ def _build_nodes(payload: dict[str, Any]) -> list[dict[str, Any]]:
             lane="COO Memory",
             backend_status_path="modules.event_log.status",
             backend_status=_module_status(payload, "event_log", "online"),
-            current_process="records local audit trail and Q5 Event Log artifacts",
+            current_process="records local audit trail and Event Log artifacts",
             authority="source_of_truth",
             role="COO memory",
             input_text="Material module events",

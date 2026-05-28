@@ -366,8 +366,7 @@ The inbound rail treats member messages as read-only research intake: useful
 news, world-event context, articles, trading strategies, trading philosophy, or
 approach notes can become logged datapoints or Strategy Lead considerations.
 Telegram cannot place, approve, reject, modify, close, or resize trades, and it
-should never show bot tokens, chat IDs, handles, raw message payloads, or local
-paths.
+should never show bot tokens, chat IDs, handles, raw message payloads, or local paths.
 
 ## 10. Status Labels
 
