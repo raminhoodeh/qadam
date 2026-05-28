@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260527-mission-control-ux"
+        "20260528-opportunity-scan"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

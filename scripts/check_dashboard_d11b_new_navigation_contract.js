@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260527-mission-control-ux",
-    "/dashboard.js?v=20260527-mission-control-ux",
+    "/auth.css?v=20260528-opportunity-scan",
+    "/dashboard.js?v=20260528-opportunity-scan",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"

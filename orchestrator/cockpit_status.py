@@ -59,6 +59,10 @@ from orchestrator.paperops_notification_review import (
 from orchestrator.paperops_30_day_operations import (
     paperops_30_day_operations_public_status,
 )
+from orchestrator.paperops_opportunity_scan_cadence import (
+    PAPEROPS_OPPORTUNITY_SCAN_CADENCE_PUBLIC_FIELDS,
+    paperops_opportunity_scan_cadence_public_status,
+)
 from orchestrator.paperops_cockpit_notification_upgrade import (
     PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_FIELDS,
     paperops_cockpit_notification_upgrade_public_status,
@@ -4818,6 +4822,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
+    paperops_opportunity_scan = payload.get("paperops_opportunity_scan_cadence", {})
     paperops_cockpit_notification_upgrade = payload.get(
         "paperops_cockpit_notification_upgrade",
         {},
@@ -5052,6 +5057,36 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ),
             "paperops_30_day_operations_active_day_number": (
                 paperops_30_day_operations.get("active_day_number")
+            ),
+            "paperops_opportunity_scan_cadence": (
+                paperops_opportunity_scan.get("status", "not_run")
+            ),
+            "paperops_opportunity_scan_interval_minutes": (
+                paperops_opportunity_scan.get("opportunity_scan_interval_minutes", 20)
+            ),
+            "paperops_opportunity_scan_ready": (
+                paperops_opportunity_scan.get("twenty_minute_scan_ready", False)
+            ),
+            "paperops_opportunity_scan_recurring_active": (
+                paperops_opportunity_scan.get(
+                    "twenty_minute_recurring_scheduler_active",
+                    False,
+                )
+            ),
+            "paperops_opportunity_scan_scheduler_status": (
+                paperops_opportunity_scan.get(
+                    "recurring_scheduler_status",
+                    "not_run",
+                )
+            ),
+            "paperops_opportunity_scan_submission_allowed": (
+                paperops_opportunity_scan.get(
+                    "trade_submission_allowed_by_scan",
+                    False,
+                )
+            ),
+            "paperops_opportunity_scan_fresh_submit_count": (
+                paperops_opportunity_scan.get("fresh_eligible_submit_count", 0)
             ),
             "paperops_cockpit_notification_upgrade": (
                 paperops_cockpit_notification_upgrade.get("status", "not_run")
@@ -6265,6 +6300,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_paper_exit_path": paperops_paper_exit_path_public_status(settings),
         "paperops_notification_review": paperops_notification_review_public_status(settings),
         "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
+        "paperops_opportunity_scan_cadence": (
+            paperops_opportunity_scan_cadence_public_status(settings)
+        ),
         "paperops_cockpit_notification_upgrade": (
             paperops_cockpit_notification_upgrade_public_status(settings)
         ),
@@ -6389,6 +6427,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_paper_exit_path",
         "paperops_notification_review",
         "paperops_30_day_operations",
+        "paperops_opportunity_scan_cadence",
         "paperops_cockpit_notification_upgrade",
         "paper_live_certification",
         "paperops_active_paper_trading_automation",
@@ -6938,6 +6977,66 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in operations_boundary:
             raise ValueError("PaperOps 30-day operations boundary is weak")
+    paperops_opportunity_scan = payload["paperops_opportunity_scan_cadence"]
+    missing_opportunity_scan = sorted(
+        set(PAPEROPS_OPPORTUNITY_SCAN_CADENCE_PUBLIC_FIELDS)
+        - set(paperops_opportunity_scan)
+    )
+    if missing_opportunity_scan:
+        raise ValueError(
+            "PaperOps opportunity scan cadence public status missing fields: "
+            f"{missing_opportunity_scan}"
+        )
+    if paperops_opportunity_scan.get("status") not in {
+        "not_run",
+        "scan_ready_no_candidate",
+        "scan_ready_candidate_monitoring",
+        "scan_ready_fresh_submit_pending_hourly_runner",
+        "invalid",
+    }:
+        raise ValueError("PaperOps opportunity scan cadence status is invalid")
+    if paperops_opportunity_scan.get("public_safe") is not True:
+        raise ValueError("PaperOps opportunity scan cadence must be public-safe")
+    if paperops_opportunity_scan.get("opportunity_scan_interval_minutes") != 20:
+        raise ValueError("PaperOps opportunity scan cadence must remain 20 minutes")
+    if paperops_opportunity_scan.get("opportunity_scan_frequency_per_hour") != 3:
+        raise ValueError("PaperOps opportunity scan frequency must remain three per hour")
+    if paperops_opportunity_scan.get("trade_submission_allowed_by_scan") is not False:
+        raise ValueError("PaperOps opportunity scan must not allow submission")
+    for key in (
+        "forced_trades_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+    ):
+        if paperops_opportunity_scan.get(key) is not False:
+            raise ValueError(f"PaperOps opportunity scan forbidden: {key}")
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "live_endpoint_called_count",
+        "broker_write_allowed_count",
+        "unsafe_write_counter_total",
+    ):
+        if int(paperops_opportunity_scan.get(key, 0) or 0) != 0:
+            raise ValueError(f"PaperOps opportunity scan unsafe count nonzero: {key}")
+    if paperops_opportunity_scan.get("status") != "not_run":
+        if paperops_opportunity_scan.get("recorded") is not True:
+            raise ValueError("PaperOps opportunity scan cadence must be recorded")
+        if paperops_opportunity_scan.get("event_log_written") is not True:
+            raise ValueError("PaperOps opportunity scan event log missing")
+        if paperops_opportunity_scan.get("event_log_event_count") != 1:
+            raise ValueError("PaperOps opportunity scan event count mismatch")
+        if paperops_opportunity_scan.get("validation_error_count") != 0:
+            raise ValueError("PaperOps opportunity scan validation errors present")
+    opportunity_boundary = str(paperops_opportunity_scan.get("boundary") or "")
+    for phrase in (
+        "read-only candidate refresh cadence",
+        "every 20 minutes",
+        "cannot submit broker orders",
+        "hourly PaperOps runner remains the guarded submission transport",
+    ):
+        if phrase not in opportunity_boundary:
+            raise ValueError("PaperOps opportunity scan cadence boundary is weak")
     paperops_cockpit_notification = payload["paperops_cockpit_notification_upgrade"]
     missing_pt9 = sorted(
         PAPEROPS_COCKPIT_NOTIFICATION_UPGRADE_PUBLIC_REQUIRED_FIELDS
