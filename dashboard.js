@@ -3038,6 +3038,15 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             label: dashboardText(strategy.label, strategy.strategy_key || "Strategy family"),
             value: strategy.approval_state === "approved" ? "Active for paper research" : "Needs review",
             tone: strategy.approval_state === "approved" ? "online" : "pending",
+            approval_state: strategy.approval_state || "not exported",
+            toggle_state: strategy.toggle_state || "not exported",
+            visible_in_cockpit: Boolean(strategy.visible_in_cockpit),
+            event_log_required: Boolean(strategy.event_log_required),
+            execution_allowed: Boolean(strategy.execution_allowed),
+            paper_order_allowed: Boolean(strategy.paper_order_allowed),
+            broker_write_allowed: Boolean(strategy.broker_write_allowed),
+            live_capital_enabled: Boolean(strategy.live_capital_enabled),
+            boundary: strategy.boundary || "Strategy toggle visibility only; it cannot route execution.",
             summary: "Visible to Qadam's research and risk workflow; not an order route."
         }))
         : [{
@@ -3045,6 +3054,15 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             label: "Strategy families",
             value: phase4.strategy_document_status === "validated" ? "Ready for review" : "Not exported",
             tone: phase4.strategy_document_status === "validated" ? "online" : "pending",
+            approval_state: phase4.approval_event_status || "not exported",
+            toggle_state: phase4.strategy_document_status || "not exported",
+            visible_in_cockpit: false,
+            event_log_required: false,
+            execution_allowed: false,
+            paper_order_allowed: false,
+            broker_write_allowed: false,
+            live_capital_enabled: false,
+            boundary: phase4.boundary || phase4.no_execution_boundary || "Strategy-family metadata has not been exported in this snapshot.",
             summary: "Strategy-family metadata has not been exported in this snapshot."
         }];
     const latestLocalReview = asArray(reasoning.review_chain).find((review) => review.key === "research_analyst") || {};
@@ -5515,6 +5533,65 @@ const OVERVIEW_NODE_ROLES = {
     postmortem_loop: "Learning review"
 };
 
+const OVERVIEW_NODE_GUIDES = {
+    watching: {
+        does: "This is where Qadam sees the world: macro, conflict, logistics, broker, market, social, and supplemental data.",
+        watch: "Healthy means the feeds are fresh enough to support evidence review; it does not mean a trade is approved.",
+        handoff: "Observed facts move to the Python orchestrator and evidence ledger."
+    },
+    event_log: {
+        does: "The Python COO writes the audit trail, exports the sanitized dashboard snapshot, and keeps local runtime state replayable.",
+        watch: "Look for stale exports, failed checks, or any authority flag that would make the cockpit unsafe.",
+        handoff: "Clean status becomes the public read-only dashboard."
+    },
+    research_analyst: {
+        does: "The local LLM compresses noisy observations into shadow research so raw feed noise does not become a trade idea too quickly.",
+        watch: "Its output is useful when it has processed evidence packets, but it remains compression-only and cannot approve risk or orders.",
+        handoff: "Research packets move to Strategy Lead challenge review."
+    },
+    strategy_lead: {
+        does: "The frontier LLM challenges the current thesis, checks the strategy family, and asks what would invalidate the idea.",
+        watch: "A healthy Strategy Lead means the idea has been challenged, not approved. Missing challenge notes keep the idea in review.",
+        handoff: "Challenged ideas move to signal integrity, risk, and paper-only lifecycle gates."
+    },
+    head_of_quant: {
+        does: "The quantum/classical quant desk runs bounded scenario checks and reports whether hardware or classical fallback is being used.",
+        watch: "It can annotate uncertainty and comparison value, but it is not allowed to originate, approve, or place trades.",
+        handoff: "Quant annotations become one input to the risk and signal gates."
+    },
+    risk_agent: {
+        does: "This gate checks whether evidence, policy, sizing, kill switches, and execution boundaries allow the idea to continue.",
+        watch: "Any blocked status here is intentional until the relevant proof or approval exists.",
+        handoff: "Only guarded paper-eligible records can move onward."
+    },
+    trade_layer: {
+        does: "This is the paper/demo lifecycle: candidates, staged paper orders, submitted paper orders, positions, exits, and postmortems.",
+        watch: "Read the stage carefully. A candidate is not an order; a paper order is not live capital.",
+        handoff: "Closed paper outcomes move to postmortem and learning review."
+    },
+    postmortem_loop: {
+        does: "The learning loop compares closed paper outcomes against the original thesis and records what Qadam should learn.",
+        watch: "Learning proposals stay deferred until governance explicitly approves changes.",
+        handoff: "Approved lessons can later update trusted memory, strategy, or source weighting."
+    }
+};
+
+function overviewNodeGuide(node = {}, role = "", label = "") {
+    const guide = OVERVIEW_NODE_GUIDES[node.key] || {};
+    const expanded = node.expanded || {};
+    const current = dashboardText(expanded.current_process || node.purpose || node.status, "No current process exported.");
+    const boundary = dashboardText(node.authority || expanded.current_status, "Read-only dashboard status.");
+    return {
+        label: label || node.label || "System node",
+        role: role || node.role || "Qadam node",
+        does: guide.does || dashboardText(node.purpose, "This node contributes to Qadam's operating flow."),
+        current,
+        watch: guide.watch || "Use this status to decide whether the next node can trust the handoff.",
+        boundary,
+        handoff: guide.handoff || dashboardText(expanded.handoff || node.output, "It passes sanitized state to the next review point.")
+    };
+}
+
 function renderOverviewChip(chip) {
     return `
         <span class="overview-status-chip ${statusClass(chip.tone)}">
@@ -5547,15 +5624,28 @@ function renderOverviewLifecycleItem(item, index) {
 function renderOverviewMiniNode(node, index, total) {
     const label = OVERVIEW_NODE_LABELS[node.key] || node.label;
     const role = OVERVIEW_NODE_ROLES[node.key] || node.role;
+    const guide = overviewNodeGuide(node, role, label);
+    const guideId = `overview-node-guide-${String(node.key || index).replace(/[^a-z0-9_-]/gi, "-")}`;
     const connector = index < total - 1 ? `<span class="overview-mini-connector" aria-hidden="true">&rarr;</span>` : "";
     return `
-        <article class="overview-mini-node ${statusClass(node.health || node.status)}">
+        <article class="overview-mini-node ${statusClass(node.health || node.status)}" tabindex="0" aria-describedby="${guideId}">
             <div class="overview-mini-top">
                 <span class="overview-mini-step">${index + 1}</span>
                 <span class="overview-mini-role">${htmlText(role)}</span>
             </div>
             <strong>${htmlText(label)}</strong>
             <p>${htmlText(node.status)}</p>
+            <div class="overview-mini-guide" id="${guideId}" role="tooltip" aria-label="${htmlText(label)} guide">
+                <span>How to read this node</span>
+                <strong>${htmlText(guide.role)}: ${htmlText(guide.label)}</strong>
+                <dl>
+                    <div><dt>What it does</dt><dd>${htmlText(guide.does)}</dd></div>
+                    <div><dt>Currently</dt><dd>${htmlText(guide.current)}</dd></div>
+                    <div><dt>Watch for</dt><dd>${htmlText(guide.watch)}</dd></div>
+                    <div><dt>Boundary</dt><dd>${htmlText(guide.boundary)}</dd></div>
+                    <div><dt>Next handoff</dt><dd>${htmlText(guide.handoff)}</dd></div>
+                </dl>
+            </div>
         </article>
         ${connector}
     `;
@@ -5568,6 +5658,72 @@ function renderOverviewPlainCard(item) {
             <strong>${htmlText(item.value || item.state || item.status)}</strong>
             <p>${htmlText(item.summary)}</p>
         </article>
+    `;
+}
+
+function renderOverviewSourceRow(source = {}) {
+    const status = source.status || source.raw_status || "pending";
+    return `
+        <li class="source-row overview-source-row">
+            <div class="source-main">
+                ${renderStatusPill(status)}
+                <div>
+                    <strong>${htmlText(source.label, source.key || "Source")}</strong>
+                    <span>${htmlText(source.pipeline)} · ${htmlText(source.readiness)} · ${htmlText(source.cadence)}</span>
+                </div>
+            </div>
+            <div class="source-meta">
+                ${renderInlineBadge(source.credential_status, source.credential_status === "missing" ? "degraded" : "online")}
+                ${renderInlineBadge(source.promoted_adapter ? "adapter live" : "registry/pending", source.promoted_adapter ? "online" : "pending")}
+                ${renderInlineBadge(source.can_influence_signals ? "signal input" : "evidence only", source.can_influence_signals ? "online" : "optional")}
+                ${renderInlineBadge(`tier ${dashboardText(source.tier, "n/a")}`, source.tier ? "online" : "pending")}
+                ${renderInlineBadge(`trust ${dashboardText(source.trust_score, "n/a")}`, source.trust_score ? "online" : "pending")}
+                ${renderInlineBadge(formatTime(source.heartbeat), status)}
+            </div>
+            <p>${htmlText(source.degraded_reason || source.raw_status || status)} · ${htmlText(source.influence_boundary)}</p>
+        </li>
+    `;
+}
+
+function renderOverviewSourcePipeline(pipeline = {}) {
+    const sources = asArray(pipeline.sources);
+    return `
+        <details class="overview-ledger-group">
+            <summary>
+                <strong>${htmlText(OPERATIONS_PIPELINE_LABELS[pipeline.pipeline] || pipeline.label || pipeline.pipeline, "Source pipeline")}</strong>
+                <span>${htmlText(pipeline.online_count, "0")}/${htmlText(pipeline.source_count, sources.length)} connected · ${htmlText(pipeline.degraded_count, "0")} degraded · ${htmlText(pipeline.pending_count, "0")} pending</span>
+            </summary>
+            <ul class="source-table">
+                ${sources.map(renderOverviewSourceRow).join("")}
+            </ul>
+        </details>
+    `;
+}
+
+function renderOverviewStrategyRow(strategy = {}) {
+    const blockedAuthority = [
+        strategy.execution_allowed ? "execution allowed" : "no execution",
+        strategy.paper_order_allowed ? "paper order allowed" : "no paper order",
+        strategy.broker_write_allowed ? "broker write allowed" : "no broker write",
+        strategy.live_capital_enabled ? "live capital enabled" : "live capital off"
+    ];
+    const unsafeTone = strategy.execution_allowed || strategy.paper_order_allowed || strategy.broker_write_allowed || strategy.live_capital_enabled ? "blocked" : "online";
+    return `
+        <li class="source-row overview-strategy-row">
+            <div class="source-main">
+                ${renderStatusPill(strategy.tone || strategy.approval_state)}
+                <div>
+                    <strong>${htmlText(strategy.label, strategy.key || "Strategy family")}</strong>
+                    <span>${htmlText(strategy.approval_state)} · ${htmlText(strategy.toggle_state)} · ${strategy.visible_in_cockpit ? "visible in cockpit" : "not cockpit-visible"}</span>
+                </div>
+            </div>
+            <div class="source-meta">
+                ${renderInlineBadge(strategy.value || strategy.status || "review state", strategy.tone)}
+                ${blockedAuthority.map((label) => renderInlineBadge(label, label.startsWith("no ") || label.includes("off") ? "online" : unsafeTone)).join("")}
+                ${renderInlineBadge(strategy.event_log_required ? "event log required" : "event log not required", strategy.event_log_required ? "online" : "pending")}
+            </div>
+            <p>${htmlText(strategy.summary)} ${htmlText(strategy.boundary)}</p>
+        </li>
     `;
 }
 
@@ -5777,27 +5933,67 @@ function renderOverviewFirstScreen(viewModels) {
     const dataSources = dashboardQuery("[data-overview-data-sources]");
     if (dataSources) {
         const visibleSources = asArray(overview.data_sources_connected).slice(0, 4);
+        const sourceModel = viewModels?.sources_model || {};
+        const allSources = asArray(sourceModel.all_sources);
+        const pipelines = asArray(sourceModel.pipelines);
+        const connectedCount = modelNumber(sourceModel.counts?.online, visibleSources.length);
+        const totalCount = modelNumber(sourceModel.counts?.total, allSources.length || visibleSources.length);
         dataSources.innerHTML = `
-            <div class="overview-section-head">
-                <span>Data sources connected</span>
-                <strong>${htmlText(visibleSources.length)} source groups</strong>
-            </div>
-            <div class="overview-plain-card-grid">
-                ${visibleSources.map(renderOverviewPlainCard).join("")}
-            </div>
+            <details class="overview-expandable-ledger" data-overview-source-ledger>
+                <summary>
+                    <span>Data sources connected</span>
+                    <strong>${connectedCount}/${totalCount} connected</strong>
+                    <em>Click to expand the full source list and connection state.</em>
+                </summary>
+                <div class="overview-ledger-body">
+                    <p>${htmlText(sourceModel.summary, "Source health has not loaded.")}</p>
+                    <div class="overview-plain-card-grid">
+                        ${visibleSources.map(renderOverviewPlainCard).join("")}
+                    </div>
+                    <div class="overview-ledger-list">
+                        ${pipelines.length
+            ? pipelines.map(renderOverviewSourcePipeline).join("")
+            : `<ul class="source-table">${allSources.map(renderOverviewSourceRow).join("")}</ul>`}
+                    </div>
+                </div>
+            </details>
         `;
     }
 
     const strategies = dashboardQuery("[data-overview-trading-strategies]");
     if (strategies) {
         const visibleStrategies = asArray(overview.trading_strategies).slice(0, 5);
+        const allStrategies = asArray(overview.trading_strategies);
+        const approvedCount = allStrategies.filter((strategy) => strategy.approval_state === "approved").length;
         strategies.innerHTML = `
+            <details class="overview-expandable-ledger" data-overview-strategy-ledger>
+                <summary>
+                    <span>Trading strategies</span>
+                    <strong>${approvedCount}/${allStrategies.length || visibleStrategies.length} approved-shadow</strong>
+                    <em>Click to expand every strategy family Qadam is allowed to consider.</em>
+                </summary>
+                <div class="overview-ledger-body">
+                    <p>These are research and governance toggles. They tell Qadam what style of thesis it may consider; they do not approve orders.</p>
+                    <div class="overview-plain-card-grid strategy-grid">
+                        ${visibleStrategies.map(renderOverviewPlainCard).join("")}
+                    </div>
+                    <ul class="source-table">
+                        ${allStrategies.map(renderOverviewStrategyRow).join("")}
+                    </ul>
+                </div>
+            </details>
+        `;
+    }
+
+    const legacyStrategyTarget = null;
+    if (legacyStrategyTarget) {
+        legacyStrategyTarget.innerHTML = `
             <div class="overview-section-head">
                 <span>Trading strategies</span>
-                <strong>${htmlText(visibleStrategies.length)} paper-research families</strong>
+                <strong>Loading approved strategy families</strong>
             </div>
-            <div class="overview-plain-card-grid strategy-grid">
-                ${visibleStrategies.map(renderOverviewPlainCard).join("")}
+            <div class="overview-plain-card-grid">
+                ${[].map(renderOverviewPlainCard).join("")}
             </div>
         `;
     }
