@@ -4003,7 +4003,7 @@ html[data-dashboard-active-view="operations"] .legacy-operations-panel {
 .paper-account-live-board {
     display: grid;
     gap: 12px;
-    grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(180px, 0.65fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 16px 0;
 }
 
@@ -4071,6 +4071,48 @@ html[data-dashboard-active-view="operations"] .legacy-operations-panel {
 
 .paper-equity-chart-card.degraded {
     border-color: rgba(var(--amber-rgb), 0.32);
+}
+
+.paper-source-of-truth {
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.055), rgba(255, 255, 255, 0.026)),
+        rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(var(--cyan-rgb), 0.2);
+    border-radius: 8px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 12px;
+}
+
+.paper-source-of-truth.degraded {
+    border-color: rgba(var(--amber-rgb), 0.32);
+}
+
+.paper-source-of-truth.blocked {
+    border-color: rgba(var(--coral-rgb), 0.34);
+}
+
+.paper-source-of-truth span {
+    color: var(--muted-soft);
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.paper-source-of-truth strong {
+    color: var(--text);
+    display: block;
+    line-height: 1.25;
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+}
+
+.paper-source-of-truth p {
+    color: var(--muted);
+    line-height: 1.42;
+    margin-top: 6px;
 }
 
 .paper-equity-chart {
@@ -5255,6 +5297,7 @@ summary {
     .performance-status-grid,
     .performance-two-col,
     .paper-account-live-board,
+    .paper-source-of-truth,
     .paper-equity-chart-summary,
     .operations-consolidated-readout,
     .operations-consolidated-metrics,
@@ -5865,6 +5908,7 @@ button:hover,
 .performance-status-card,
 .performance-progress-card,
 .paper-account-balance-card,
+.paper-source-of-truth,
 .paper-equity-chart-card,
 .operations-full-map,
 .operations-role-node,

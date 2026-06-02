@@ -576,11 +576,33 @@ function statusClass(status) {
         .replace(/^-+|-+$/g, "") || "pending";
 }
 
-function formatMoney(value) {
+function normaliseCurrencyCode(value, fallback = "GBP") {
+    const code = String(value || fallback || "GBP").trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : fallback;
+}
+
+function formatMoney(value, currency = "GBP") {
     const amount = Number(value || 0);
     return new Intl.NumberFormat("en-GB", {
         style: "currency",
-        currency: "GBP",
+        currency: normaliseCurrencyCode(currency),
+        maximumFractionDigits: 0
+    }).format(amount);
+}
+
+function capitalCurrency(capital = {}) {
+    return normaliseCurrencyCode(capital.display_currency || capital.account_currency || "GBP");
+}
+
+function formatCapitalMoney(value, capital = {}) {
+    return formatMoney(value, capitalCurrency(capital));
+}
+
+function formatUsd(value) {
+    const amount = Number(value || 0);
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
         maximumFractionDigits: 0
     }).format(amount);
 }
@@ -2808,6 +2830,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const phase7 = status.phase7_demo_proof || {};
     const paperLive = status.paper_live_certification || {};
     const activeAutomation = status.paperops_active_paper_trading_automation || {};
+    const firstWeekMandate = status.paperops_first_week_paper_trade_mandate || {};
     const opportunityScan = status.paperops_opportunity_scan_cadence || {};
     const capital = status.capital || {};
     const tradeLayer = status.trade_layer || {};
@@ -2832,6 +2855,14 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const opportunityScanInterval = modelNumber(opportunityScan.opportunity_scan_interval_minutes, 20);
     const paperSubmitRunnerInterval = modelNumber(opportunityScan.paper_submit_runner_interval_minutes, 60);
     const opportunityScanStatus = opportunityScan.status || "not_run";
+    const mandateTarget = modelNumber(firstWeekMandate.daily_target_trade_count, 0);
+    const mandateSubmitted = modelNumber(firstWeekMandate.daily_submitted_count, 0);
+    const mandateReady = modelNumber(firstWeekMandate.daily_ready_submit_count, 0);
+    const mandateMinNotional = modelNumber(firstWeekMandate.minimum_notional_usd, 0);
+    const mandateActive = Boolean(firstWeekMandate.active);
+    const mandateTone = mandateActive
+        ? (mandateSubmitted >= mandateTarget && mandateTarget ? "online" : "pending")
+        : "pending";
     const opportunityScanTone = /invalid|blocked/i.test(opportunityScanStatus)
         ? "blocked"
         : (opportunityScan.twenty_minute_scan_ready ? "online" : "pending");
@@ -3000,6 +3031,15 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             summary: freshSubmitCount
                 ? `${freshSubmitCount} fresh paper order can be submitted by the guarded ${paperSubmitRunnerInterval}-minute PaperOps runner.`
                 : `${automationReason}; ${duplicateSubmitCount} already-submitted staged order protected by idempotency. The ${opportunityScanInterval}-minute scanner only refreshes candidate state.`
+        },
+        {
+            id: "first_week_paper_mandate",
+            label: "First-week paper mandate",
+            value: mandateActive && mandateTarget ? `${mandateSubmitted}/${mandateTarget} today` : "Not active",
+            tone: mandateTone,
+            summary: mandateActive
+                ? `${mandateReady} paper-only mandate slots remain ready; each slot targets at least ${formatUsd(mandateMinNotional)} notional through Alpaca Paper only.`
+                : "The first-week paper-only trade mandate is outside its active calendar window."
         },
         {
             id: "opportunity_scan",
@@ -3252,7 +3292,7 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
             : "OK - paper only, read-only, live capital off",
         summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off. Dashboard cannot place orders. AI cannot bypass risk checks.`,
         mode_label: modeLabel,
-        capital_label: `${formatMoney(paperBalance)} paper account`,
+        capital_label: `${formatCapitalMoney(paperBalance, capital)} paper account`,
         live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "OK - live capital off",
         read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "OK - read-only",
         ui_broker_label: "Dashboard cannot place orders",
@@ -4441,11 +4481,20 @@ function tradeEventTimestamp(record = {}) {
 
 function pushTradeTimelineEvent(events, source = {}, defaults = {}) {
     const label = dashboardText(
-        source.instrument || source.symbol || source.strategy || defaults.label,
+        source.instrument_name
+            || source.instrument
+            || source.symbol
+            || source.asset
+            || source.market
+            || source.strategy
+            || source.title
+            || defaults.label,
         defaults.label || "Paper trade event"
     );
     const detail = dashboardText(
         defaults.detail
+            || source.candidate_watchlist_context
+            || source.setup_type
             || source.status
             || source.direction
             || source.close_reason
@@ -4456,7 +4505,7 @@ function pushTradeTimelineEvent(events, source = {}, defaults = {}) {
     events.push({
         id: [
             defaults.kind || "event",
-            source.order_id || source.trade_id || source.intent_id || source.alert_id || label,
+            source.order_id || source.trade_id || source.intent_id || source.alert_id || source.event_id || label,
             timestamp || "no_time"
         ].join(":"),
         kind: defaults.kind || "event",
@@ -4471,25 +4520,26 @@ function buildTradeTimelineTokens(status = {}) {
     const capital = status.capital || {};
     const tradeLayer = status.trade_layer || {};
     const events = [];
+    const money = (value) => formatCapitalMoney(value, capital);
 
     asArray(capital.closed_trades).forEach((trade) => pushTradeTimelineEvent(events, trade, {
         kind: "closed",
-        detail: `${formatMoney(trade.realized_pnl_gbp)} realized · ${dashboardText(trade.postmortem_status, "postmortem unknown")}`,
+        detail: `${money(trade.realized_pnl_gbp)} realized · ${dashboardText(trade.postmortem_status, "postmortem unknown")}`,
         tone: modelNumber(trade.realized_pnl_gbp, 0) < 0 ? "degraded" : "online"
     }));
     asArray(capital.open_positions).forEach((position) => pushTradeTimelineEvent(events, position, {
         kind: "open",
-        detail: `${dashboardText(position.direction, "open")} · ${formatMoney(position.unrealized_pnl_gbp)} unrealized`,
+        detail: `${dashboardText(position.direction, "open")} · ${money(position.unrealized_pnl_gbp)} unrealized`,
         tone: modelNumber(position.unrealized_pnl_gbp, 0) < 0 ? "degraded" : "online"
     }));
     asArray(capital.orders).forEach((order) => pushTradeTimelineEvent(events, order, {
         kind: dashboardText(order.status, "order"),
-        detail: `${dashboardText(order.direction, "order")} ${dashboardText(order.order_type, "paper")} · ${formatMoney(order.notional_gbp)}`,
+        detail: `${dashboardText(order.direction, "order")} ${dashboardText(order.order_type, "paper")} · ${money(order.notional_gbp)}`,
         tone: /filled|submitted|accepted/i.test(String(order.status || "")) ? "online" : "pending"
     }));
     asArray(tradeLayer.submitted_orders).forEach((order) => pushTradeTimelineEvent(events, order, {
         kind: "submitted",
-        detail: `${dashboardText(order.direction, "paper")} · ${formatMoney(order.notional_gbp || order.risk_size_gbp)}`,
+        detail: `${dashboardText(order.direction, "paper")} · ${money(order.notional_gbp || order.risk_size_gbp)}`,
         tone: "online"
     }));
     asArray(tradeLayer.staged_orders).forEach((order) => pushTradeTimelineEvent(events, order, {
@@ -4498,31 +4548,40 @@ function buildTradeTimelineTokens(status = {}) {
         tone: "pending"
     }));
 
-    if (events.length < 4) {
-        asArray(tradeLayer.candidates).forEach((candidate) => pushTradeTimelineEvent(events, candidate, {
-            kind: "candidate",
-            detail: "candidate, not order",
-            tone: "pending"
-        }));
-        asArray(tradeLayer.blocked).forEach((blocked) => pushTradeTimelineEvent(events, blocked, {
-            kind: "blocked",
-            detail: dashboardText(blocked.blocked_reason, "blocked before order"),
-            tone: "blocked"
-        }));
-    }
+    asArray(tradeLayer.candidates).forEach((candidate) => pushTradeTimelineEvent(events, candidate, {
+        kind: "candidate",
+        detail: "candidate, not order",
+        tone: "pending"
+    }));
+    asArray(tradeLayer.blocked).forEach((blocked) => pushTradeTimelineEvent(events, blocked, {
+        kind: "blocked",
+        detail: dashboardText(blocked.blocked_reason, "blocked before order"),
+        tone: "blocked"
+    }));
+    asArray(status.tradingview_mcp?.technical_contexts).forEach((context) => pushTradeTimelineEvent(events, context, {
+        kind: "watch",
+        detail: dashboardText(context.candidate_watchlist_context || context.setup_type, "technical context only"),
+        tone: context.trade_candidate_created ? "pending" : "online"
+    }));
 
     const unique = new Map();
     events.forEach((event) => {
         if (!unique.has(event.id)) unique.set(event.id, event);
     });
 
-    return [...unique.values()]
+    const sorted = [...unique.values()]
         .sort((a, b) => {
             const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
             const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
             return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
-        })
-        .slice(0, 5);
+        });
+    const limited = sorted.slice(0, 5);
+    const reviewEvent = sorted.find((event) => /crude oil/i.test(`${event.label} ${event.detail}`))
+        || sorted.find((event) => event.kind === "candidate" || event.kind === "blocked" || event.kind === "watch");
+    if (reviewEvent && !limited.some((event) => event.id === reviewEvent.id)) {
+        limited[limited.length ? limited.length - 1 : 0] = reviewEvent;
+    }
+    return limited;
 }
 
 function buildBalanceTickerModel(status = {}, viewModels = {}) {
@@ -4554,6 +4613,7 @@ function buildBalanceTickerModel(status = {}, viewModels = {}) {
         equity,
         starting,
         total_pnl_gbp: totalPnl,
+        display_currency: capitalCurrency(capital),
         drawdown_pct: drawdown,
         change_pct: changePct,
         open_position_count: openPositions,
@@ -4574,12 +4634,12 @@ function renderBalanceTicker(status, viewModels = {}) {
         ticker.classList.add(statusClass(model.tone));
         ticker.innerHTML = `
             <span>Paper balance</span>
-            <strong>${htmlText(formatMoney(model.equity))}</strong>
-            <em>${htmlText(formatMoney(model.total_pnl_gbp))} P&L · ${htmlText(formatPercent(model.drawdown_pct))} DD · ${htmlText(model.closed_trade_count)} closed</em>
+            <strong>${htmlText(formatMoney(model.equity, model.display_currency))}</strong>
+            <em>${htmlText(formatMoney(model.total_pnl_gbp, model.display_currency))} P&L · ${htmlText(formatPercent(model.drawdown_pct))} DD · ${htmlText(model.closed_trade_count)} closed</em>
         `;
         ticker.setAttribute(
             "title",
-            `${formatMoney(model.equity)} equity; ${formatMoney(model.total_pnl_gbp)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; observed ${formatTime(model.observed_at)}.`
+            `${formatMoney(model.equity, model.display_currency)} equity; ${formatMoney(model.total_pnl_gbp, model.display_currency)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; observed ${formatTime(model.observed_at)}.`
         );
     }
 
@@ -4608,7 +4668,7 @@ function renderSnapshotMeta(status, source) {
         : "Sanitized status loaded";
     const paperBalance = capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
     setText("[data-mode-label]", `${dashboardText(status.mode).toUpperCase()} MODE`);
-    setText("[data-capital-label]", `${formatMoney(paperBalance)} paper account`);
+    setText("[data-capital-label]", `${formatCapitalMoney(paperBalance, capital)} paper account`);
     setText(
         "[data-live-capital-label]",
         capital.live_capital_enabled ? "Live capital enabled" : "OK - live capital off"
@@ -5213,6 +5273,10 @@ function fallbackMissionControl(status, source) {
             account_scope: capital.account_scope || "first_release_gbp_100000_paper",
             broker: capital.broker || "paper_broker",
             connection_status: capital.connection_status || "pending",
+            display_currency: capital.display_currency || capital.account_currency || "GBP",
+            portfolio_value_source: capital.portfolio_value_source || "paper account mirror",
+            mirror_freshness_label: capital.mirror_freshness_label || "freshness unknown",
+            portfolio_reconciliation: capital.portfolio_reconciliation || {},
             current_balance_gbp: capital.current_balance_gbp || capital.starting_balance_gbp || 0,
             total_pnl_gbp: totalPnl,
             drawdown_pct: capital.drawdown_pct || 0,
@@ -5388,15 +5452,17 @@ function renderMissionControl(status, source) {
 
     const portfolioTarget = dashboardQuery("[data-mission-portfolio]");
     if (portfolioTarget) {
+        const portfolioMoney = (value) => formatMoney(value, capitalCurrency(portfolio));
         const openPositionNames = asArray(portfolio.open_positions).map((position) => {
-            const pnl = position.unrealized_pnl_gbp === undefined ? "" : ` ${formatMoney(position.unrealized_pnl_gbp)}`;
+            const pnl = position.unrealized_pnl_gbp === undefined ? "" : ` ${portfolioMoney(position.unrealized_pnl_gbp)}`;
             return `${position.instrument || "position"}${pnl}`;
         });
         const orderNames = asArray(portfolio.orders).map((order) => `${order.instrument || "order"} ${order.status || "mirrored"}`);
+        const reconciliationStatus = dashboardText(portfolio.portfolio_reconciliation?.status, "not available");
         portfolioTarget.innerHTML = `
             <span>Paper account</span>
-            <h3>${formatMoney(portfolio.current_balance_gbp)} · ${formatMoney(portfolio.total_pnl_gbp)} P&L</h3>
-            <p>${htmlText(portfolio.connection_status, "pending")} · ${htmlText(portfolio.account_scope, "first release trial")} · drawdown ${formatPercent(portfolio.drawdown_pct)}</p>
+            <h3>${portfolioMoney(portfolio.current_balance_gbp)} · ${portfolioMoney(portfolio.total_pnl_gbp)} P&L</h3>
+            <p>${htmlText(portfolio.connection_status, "pending")} · ${htmlText(portfolio.mirror_freshness_label, "freshness unknown")} · ${htmlText(portfolio.portfolio_value_source, "paper mirror")} · history ${htmlText(reconciliationStatus)}</p>
             <div class="mission-mini-grid compact">
                 ${renderMetric("Open", portfolio.open_position_count || 0)}
                 ${renderMetric("Orders", portfolio.order_count || 0)}
@@ -5444,6 +5510,7 @@ function renderOperatingSummary(status, source) {
     const realized = Number(capital.realized_pnl_gbp || 0);
     const unrealized = Number(capital.unrealized_pnl_gbp || 0);
     const pnlTotal = realized + unrealized;
+    const money = (value) => formatCapitalMoney(value, capital);
 
     const forbiddenActions = asArray(status.forbidden_actions);
     const liveCapital = Boolean(capital.live_capital_enabled);
@@ -5459,8 +5526,8 @@ function renderOperatingSummary(status, source) {
     target.innerHTML = [
         renderPriorityCard(
             "Paper account",
-            formatMoney(capital.current_balance_gbp),
-            `${formatMoney(pnlTotal)} total P&L · ${formatPercent(capital.drawdown_pct)} drawdown · ${maturityCount}/${maturityTarget} closed paper trades`,
+            money(capital.current_balance_gbp),
+            `${money(pnlTotal)} total P&L · ${formatPercent(capital.drawdown_pct)} drawdown · ${maturityCount}/${maturityTarget} closed paper trades`,
             "Authority shown in Safety Status",
             capital.live_capital_enabled ? "blocked" : "online"
         ),
@@ -9043,7 +9110,8 @@ function paperAccountEquityPoints(capital = {}) {
         .map((point) => ({
             observed_at: point.observed_at || capital.observed_at || null,
             equity_gbp: modelNumber(point.equity_gbp, Number.NaN),
-            drawdown_pct: modelNumber(point.drawdown_pct, modelNumber(capital.drawdown_pct, 0))
+            drawdown_pct: modelNumber(point.drawdown_pct, modelNumber(capital.drawdown_pct, 0)),
+            display_currency: point.display_currency || capital.display_currency || capital.account_currency || "GBP"
         }))
         .filter((point) => Number.isFinite(point.equity_gbp));
     if (curve.length) return curve;
@@ -9052,7 +9120,8 @@ function paperAccountEquityPoints(capital = {}) {
     return [{
         observed_at: capital.observed_at || null,
         equity_gbp: fallbackEquity,
-        drawdown_pct: modelNumber(capital.drawdown_pct, 0)
+        drawdown_pct: modelNumber(capital.drawdown_pct, 0),
+        display_currency: capital.display_currency || capital.account_currency || "GBP"
     }];
 }
 
@@ -9086,6 +9155,17 @@ function paperAccountEquityStats(points = []) {
 function renderPaperAccountEquityChart(capital = {}, points = [], activity = {}) {
     const chartPoints = paperAccountEquityPoints({ ...capital, equity_curve: points });
     const stats = paperAccountEquityStats(chartPoints);
+    const currency = capitalCurrency(capital);
+    const money = (value) => formatMoney(value, currency);
+    const freshnessStatus = dashboardText(capital.mirror_freshness_status, "unknown");
+    const freshnessTone = freshnessStatus === "fresh"
+        ? "online"
+        : (freshnessStatus === "stale" || freshnessStatus === "unknown" ? "degraded" : "pending");
+    const reconciliation = capital.portfolio_reconciliation || {};
+    const reconciliationStatus = dashboardText(reconciliation.status, capital.broker_reconciliation_status || "not_available");
+    const reconciliationTone = reconciliationStatus === "ok"
+        ? "online"
+        : (/drift|unavailable|missing|unknown|error/i.test(reconciliationStatus) ? "degraded" : "pending");
     const width = 640;
     const height = 220;
     const left = 94;
@@ -9116,7 +9196,7 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
     const zeroLineY = min <= 0 && max >= 0 ? yFor(0) : null;
     const tone = stats.change < 0 || modelNumber(capital.drawdown_pct, 0) > 0 ? "degraded" : "online";
     const latestLabel = chartPoints.length
-        ? `${formatMoney(stats.last)} observed ${formatTime(chartPoints[chartPoints.length - 1].observed_at)}`
+        ? `${money(stats.last)} observed ${formatTime(chartPoints[chartPoints.length - 1].observed_at)}`
         : "No equity snapshots available";
     const activityLabels = [
         `${asArray(activity.orders).length} mirrored orders`,
@@ -9144,13 +9224,28 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
             <div class="performance-section-head">
                 <div>
                     <p class="label">Live paper equity graph</p>
-                    <h3>${formatMoney(stats.last)} in the paper trading account</h3>
-                    <p>The line is drawn from the read-only dashboard equity curve. It updates when the dashboard refreshes live status.</p>
+                    <h3>${money(stats.last)} in the paper trading account</h3>
+                    <p>The line is drawn from local account snapshots. Source of truth is ${htmlText(capital.portfolio_value_source, "paper account mirror")} and the dashboard warns if the broker sync is stale.</p>
                 </div>
                 <div class="paper-equity-chart-badges">
-                    ${renderInlineBadge(`change ${formatMoney(stats.change)}`, tone)}
+                    ${renderInlineBadge(`change ${money(stats.change)}`, tone)}
                     ${renderInlineBadge(`${formatPercent(Number(stats.change_pct.toFixed(2)))} from first sample`, tone)}
                     ${renderInlineBadge(`${stats.point_count} snapshots`, "pending")}
+                    ${renderInlineBadge(`${currency} display`, "online")}
+                    ${renderInlineBadge(capital.mirror_freshness_label || freshnessStatus, freshnessTone)}
+                    ${renderInlineBadge(`history check ${reconciliationStatus}`, reconciliationTone)}
+                </div>
+            </div>
+            <div class="paper-source-of-truth ${statusClass(freshnessTone)}">
+                <div>
+                    <span>Source of truth</span>
+                    <strong>${htmlText(capital.portfolio_value_source, "paper mirror")}</strong>
+                    <p>Last broker sync ${formatTime(capital.last_broker_sync_at || capital.observed_at)} · age ${htmlText(capital.last_broker_sync_age_seconds == null ? "unknown" : `${Math.round(capital.last_broker_sync_age_seconds / 60)} min`)} · stale after ${htmlText(capital.stale_after_seconds ? `${Math.round(capital.stale_after_seconds / 60)} min` : "unknown")}.</p>
+                </div>
+                <div>
+                    <span>Broker reconciliation</span>
+                    <strong>${htmlText(reconciliationStatus)}</strong>
+                    <p>${htmlText(reconciliation.detail || "No broker portfolio history reconciliation detail exported.")}</p>
                 </div>
             </div>
             <div class="paper-equity-chart-card ${statusClass(tone)}">
@@ -9166,18 +9261,18 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
                     <path class="paper-equity-line" d="${path}"></path>
                     ${coordinates.map((point) => `
                         <circle class="paper-equity-point" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="4">
-                            <title>${literalHtmlText(`${formatTime(point.observed_at)}: ${formatMoney(point.equity_gbp)} equity, ${formatPercent(point.drawdown_pct)} drawdown`)}</title>
+                            <title>${literalHtmlText(`${formatTime(point.observed_at)}: ${money(point.equity_gbp)} equity, ${formatPercent(point.drawdown_pct)} drawdown`)}</title>
                         </circle>
                     `).join("")}
-                    <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(formatMoney(stats.max))}</text>
-                    <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(formatMoney(stats.min))}</text>
+                    <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(money(stats.max))}</text>
+                    <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(money(stats.min))}</text>
                     <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(chartPoints[chartPoints.length - 1].observed_at))}</text>
                 </svg>
                 <div class="paper-equity-chart-summary">
-                    ${renderMetric("Now", formatMoney(stats.last))}
-                    ${renderMetric("First sample", formatMoney(stats.first))}
-                    ${renderMetric("High", formatMoney(stats.max))}
-                    ${renderMetric("Low", formatMoney(stats.min))}
+                    ${renderMetric("Now", money(stats.last))}
+                    ${renderMetric("First sample", money(stats.first))}
+                    ${renderMetric("High", money(stats.max))}
+                    ${renderMetric("Low", money(stats.min))}
                     ${renderMetric("Drawdown", formatPercent(capital.drawdown_pct))}
                     ${renderMetric("Observed", formatTime(capital.observed_at))}
                 </div>
@@ -9212,16 +9307,21 @@ function renderCapital(status, viewModels = {}) {
     const equityCurve = paperAccountEquityPoints(capital);
     const equityStats = paperAccountEquityStats(equityCurve);
     const totalPnl = modelNumber(capital.realized_pnl_gbp, 0) + modelNumber(capital.unrealized_pnl_gbp, 0);
+    const money = (value) => formatCapitalMoney(value, capital);
+    const freshnessStatus = dashboardText(capital.mirror_freshness_status, "unknown");
+    const freshnessIsStale = freshnessStatus === "stale" || freshnessStatus === "unknown";
+    const reconciliationStatus = dashboardText(capital.portfolio_reconciliation?.status, "not_available");
+    const reconciliationIsDrift = /drift|error|unavailable|missing|unknown/i.test(reconciliationStatus);
     const accountTone = capital.live_capital_enabled || capital.write_authority
         ? "blocked"
-        : (modelNumber(capital.drawdown_pct, 0) > 0 || equityStats.change < 0 ? "degraded" : "online");
+        : (freshnessIsStale || reconciliationIsDrift || modelNumber(capital.drawdown_pct, 0) > 0 || equityStats.change < 0 ? "degraded" : "online");
 
     const positionRows = openPositions.length
         ? openPositions.map((position) => `
             <li>
                 <strong>${htmlText(position.instrument, "Open paper position")}</strong>
-                <span>${htmlText(position.direction, "unknown")} · ${formatMoney(position.unrealized_pnl_gbp)} unrealized · ${htmlText(position.status, "open")}</span>
-                <small>${htmlText(position.quantity, "0")} units · risk ${formatMoney(position.risk_size_gbp)} · ${htmlText(position.boundary, "Read-only paper position.")}</small>
+                <span>${htmlText(position.direction, "unknown")} · ${money(position.unrealized_pnl_gbp)} unrealized · ${htmlText(position.status, "open")}</span>
+                <small>${htmlText(position.quantity, "0")} units · risk ${money(position.risk_size_gbp)} · ${htmlText(position.boundary, "Read-only paper position.")}</small>
             </li>
         `).join("")
         : `<li><strong>No open positions</strong><span>The paper mirror has no open positions.</span></li>`;
@@ -9230,7 +9330,7 @@ function renderCapital(status, viewModels = {}) {
         ? closedTrades.map((trade) => `
             <li>
                 <strong>${htmlText(trade.instrument, "Closed paper trade")}</strong>
-                <span>${formatMoney(trade.realized_pnl_gbp)} realized · ${htmlText(trade.postmortem_status, "postmortem state unknown")}</span>
+                <span>${money(trade.realized_pnl_gbp)} realized · ${htmlText(trade.postmortem_status, "postmortem state unknown")}</span>
                 <small>${htmlText(trade.close_reason, "No close reason")} · ${htmlText(trade.boundary, "Read-only closed trade.")}</small>
             </li>
         `).join("")
@@ -9241,7 +9341,7 @@ function renderCapital(status, viewModels = {}) {
             <li>
                 <strong>${htmlText(order.instrument, "Mirrored paper order")}</strong>
                 <span>${htmlText(order.status, "unknown")} · ${htmlText(order.direction, "unknown")} · ${htmlText(order.order_type, "order")}</span>
-                <small>${htmlText(order.quantity, "0")} units · notional ${formatMoney(order.notional_gbp)} · ${htmlText(order.boundary, "Read-only mirrored order.")}</small>
+                <small>${htmlText(order.quantity, "0")} units · notional ${money(order.notional_gbp)} · ${htmlText(order.boundary, "Read-only mirrored order.")}</small>
             </li>
         `).join("")
         : `<li><strong>No mirrored paper orders</strong><span>Alpaca returned no recent paper orders on the read-only mirror.</span></li>`;
@@ -9250,7 +9350,7 @@ function renderCapital(status, viewModels = {}) {
         ? equityCurve.slice(-5).map((point) => `
             <li>
                 <strong>${formatTime(point.observed_at)}</strong>
-                <span>${formatMoney(point.equity_gbp)} equity · ${htmlText(point.drawdown_pct, "0")}% drawdown</span>
+                <span>${money(point.equity_gbp)} equity · ${htmlText(point.drawdown_pct, "0")}% drawdown</span>
             </li>
         `).join("")
         : `<li><strong>No equity snapshots</strong><span>The mirror has not written an account snapshot yet.</span></li>`;
@@ -9260,13 +9360,18 @@ function renderCapital(status, viewModels = {}) {
         <section class="paper-account-live-board" aria-label="Paper trading account balance">
             <article class="paper-account-balance-card ${statusClass(accountTone)}">
                 <span>Paper trading account</span>
-                <strong>${formatMoney(equityStats.last || capital.current_balance_gbp)}</strong>
-                <p>${formatMoney(capital.cash_gbp)} cash · ${formatMoney(totalPnl)} total P&amp;L · ${formatPercent(capital.drawdown_pct)} drawdown</p>
+                <strong>${money(equityStats.last || capital.current_balance_gbp)}</strong>
+                <p>${money(capital.cash_gbp)} cash · ${money(totalPnl)} total P&amp;L · ${formatPercent(capital.drawdown_pct)} drawdown</p>
             </article>
             <article class="paper-account-balance-card">
-                <span>Read-only mirror</span>
-                <strong>${htmlText(capital.connection_status, "not connected")}</strong>
-                <p>${htmlText(capital.timeline_status, "not initialized")} · observed ${formatTime(capital.observed_at)}</p>
+                <span>Broker sync</span>
+                <strong>${htmlText(capital.mirror_freshness_label, "No broker sync")}</strong>
+                <p>${htmlText(capital.connection_status, "not connected")} · observed ${formatTime(capital.last_broker_sync_at || capital.observed_at)}</p>
+            </article>
+            <article class="paper-account-balance-card">
+                <span>Currency and history check</span>
+                <strong>${htmlText(capitalCurrency(capital))} · ${htmlText(reconciliationStatus)}</strong>
+                <p>${htmlText(capital.portfolio_value_source, "paper account mirror")} · history delta ${money(capital.portfolio_reconciliation?.delta || 0)}</p>
             </article>
             <article class="paper-account-balance-card">
                 <span>Trading activity</span>
@@ -9278,19 +9383,19 @@ function renderCapital(status, viewModels = {}) {
         ${renderPanelBrief({
             id: "money",
             question: "Is the paper account proving or losing trust?",
-            state: formatMoney(equityStats.last || capital.current_balance_gbp),
+            state: money(equityStats.last || capital.current_balance_gbp),
             tone: accountTone,
-            primary: `${formatMoney(capital.realized_pnl_gbp)} realized, ${formatMoney(capital.unrealized_pnl_gbp)} unrealized, ${formatPercent(capital.drawdown_pct)} drawdown, ${maturityCount}/${maturityTarget} closed paper trades, and ${phase7ProofCount}/${phase7ProofTarget} verified paper growth trades.`,
-            secondary: "Open exposure, drawdown, stale paper-mirror timestamps, closed paper trades without postmortems, and paper growth maturity tracked separately.",
+            primary: `${money(capital.realized_pnl_gbp)} realized, ${money(capital.unrealized_pnl_gbp)} unrealized, ${formatPercent(capital.drawdown_pct)} drawdown, ${maturityCount}/${maturityTarget} closed paper trades, and ${phase7ProofCount}/${phase7ProofTarget} verified paper growth trades.`,
+            secondary: `${capital.mirror_freshness_label || "Broker mirror freshness unknown"} · history check ${reconciliationStatus} · open exposure, drawdown, stale paper-mirror timestamps, closed paper trades without postmortems, and paper growth maturity tracked separately.`,
             boundary: capital.boundary || "Read-only paper account mirror. No funding authority and no live broker-write authority."
         })}
         <div class="summary-strip">
-            ${renderMetric("Starting", formatMoney(capital.starting_balance_gbp))}
-            ${renderMetric("Current", formatMoney(capital.current_balance_gbp))}
-            ${renderMetric("Cash", formatMoney(capital.cash_gbp))}
-            ${renderMetric("Equity", formatMoney(capital.equity_gbp))}
-            ${renderMetric("Realized", formatMoney(capital.realized_pnl_gbp))}
-            ${renderMetric("Unrealized", formatMoney(capital.unrealized_pnl_gbp))}
+            ${renderMetric("Starting", money(capital.starting_balance_gbp))}
+            ${renderMetric("Current", money(capital.current_balance_gbp))}
+            ${renderMetric("Cash", money(capital.cash_gbp))}
+            ${renderMetric("Equity", money(capital.equity_gbp))}
+            ${renderMetric("Realized", money(capital.realized_pnl_gbp))}
+            ${renderMetric("Unrealized", money(capital.unrealized_pnl_gbp))}
             ${renderMetric("Drawdown", formatPercent(capital.drawdown_pct))}
             ${renderMetric("Closed trades", `${maturityCount}/${maturityTarget}`)}
         </div>
@@ -9299,6 +9404,9 @@ function renderCapital(status, viewModels = {}) {
             ${renderInlineBadge(`mirror ${capital.mirror_status || "unknown"}`, capital.mirror_status === "ok" ? "online" : "degraded")}
             ${renderInlineBadge(capital.account_scope, "online")}
             ${renderInlineBadge(capital.broker, "pending")}
+            ${renderInlineBadge(`${capitalCurrency(capital)} display`, "online")}
+            ${renderInlineBadge(capital.mirror_freshness_label || freshnessStatus, freshnessIsStale ? "degraded" : "online")}
+            ${renderInlineBadge(`history ${reconciliationStatus}`, reconciliationIsDrift ? "degraded" : "online")}
             ${renderInlineBadge(capital.connection_status, capital.mirror_status === "ok" ? "online" : "pending")}
             ${renderInlineBadge(`${capital.write_authority ? "write enabled" : "OK - read-only"}`, capital.write_authority ? "blocked" : "online")}
             ${renderInlineBadge(`${capital.live_capital_enabled ? "live capital" : "OK - paper only"}`, capital.live_capital_enabled ? "blocked" : "online")}
@@ -9308,8 +9416,12 @@ function renderCapital(status, viewModels = {}) {
             <div class="summary-strip compact">
                 ${renderMetric("Timeline", capital.timeline_status || "not initialized")}
                 ${renderMetric("Observed", formatTime(capital.observed_at))}
-                ${renderMetric("Peak equity", formatMoney(capital.peak_equity_gbp))}
+                ${renderMetric("Last broker sync", formatTime(capital.last_broker_sync_at))}
+                ${renderMetric("Sync age", capital.last_broker_sync_age_seconds == null ? "unknown" : `${Math.round(capital.last_broker_sync_age_seconds / 60)} min`)}
+                ${renderMetric("Peak equity", money(capital.peak_equity_gbp))}
                 ${renderMetric("Max drawdown", formatPercent(capital.max_drawdown_pct))}
+                ${renderMetric("History latest", money(capital.portfolio_reconciliation?.history_latest_equity_gbp))}
+                ${renderMetric("History delta", money(capital.portfolio_reconciliation?.delta || 0))}
                 ${renderMetric("Open positions", capital.open_position_count || openPositions.length)}
                 ${renderMetric("Orders", capital.order_count || orders.length)}
                 ${renderMetric("Closed trades", capital.closed_trade_count || closedTrades.length)}
