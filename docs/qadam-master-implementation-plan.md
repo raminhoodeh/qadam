@@ -200,8 +200,8 @@ Operating constraints:
 - First-month sprint: use the £100,000 paper account as the proof surface, with TradingView as the visible market/chart layer and later alert source, before any live-capital path exists.
 - Execution: Qadam may submit guarded paper trades only after Phase 5/7 gates are met and Q-CTRL/proof holds clear.
 - Capital boundary: no live capital in the first release.
-- Access boundary: first-release login is limited to Ramin, Troy, Akber, Anas, and Ion.
-- Current allowlist emails: Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Akber `akber.ali@hotmail.co.uk`, Ion `isioras@yahoo.co.uk`.
+- Access boundary: first-release login is limited to Ramin, Troy, Akber, Ion, Dan, and pending Anas.
+- Current allowlist emails: Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Akber `akber.ali@hotmail.co.uk`, Ion `isioras@yahoo.co.uk`, Dan `danmerdad@hotmail.co.uk`.
 - Pending allowlist emails: Anas.
 - Approval boundary: test-mode trades do not require individual Fund Manager approval, because the point is to test whether Qadam's rules work cleanly without emotional interference.
 - Human controls: Fund Managers can review, comment, suggest improvements, and use allowed kill-switches, strategy toggles, and system-level approval gates; these are logged.
@@ -261,8 +261,8 @@ Build:
 - Dashboard worldview integration exists locally: `orchestrator/cockpit_status.py` exports `decision_philosophy` from the 4-file `how-the-world-works/` corpus, and the static cockpit renders the worldview lens in the system map, Private Edge panel, hypothesis cards, and each observed-signal/trade decision card.
 - Telegram Bot communications plan exists: `docs/qadam-telegram-bot-implementation-plan.md` defines outbound-only member alerts, local bot token storage, local chat-ID registry, dry-run outbox, message templates, dashboard Communications panel, and no trade execution authority.
 - Protected User Guide exists locally: `docs/qadam-user-guide.md` is the source guide, and `landing-page-repo/guide/index.html` is linked from the dashboard with Supabase allowlist protection.
-- Founding Fund Manager access list: Ramin, Troy, Akber, Anas, Ion.
-- Initial email allowlist: `raminhoodeh@gmail.com`, `troycookecareer@gmail.com`, `akber.ali@hotmail.co.uk`, `isioras@yahoo.co.uk`; Anas pending.
+- Founding Fund Manager access list: Ramin, Troy, Akber, Ion, Dan, Anas pending.
+- Initial email allowlist: `raminhoodeh@gmail.com`, `troycookecareer@gmail.com`, `akber.ali@hotmail.co.uk`, `isioras@yahoo.co.uk`, `danmerdad@hotmail.co.uk`; Anas pending.
 - Local comments/forum schema for signal, module, strategy, and postmortem suggestions.
 - Foundation check script expanded as the build grows.
 
@@ -1996,7 +1996,7 @@ Target state:
 - Top-right includes Login.
 - Login routes to Supabase Auth.
 - Successful sign-in routes to protected `/dashboard`.
-- Login allowlist is limited to Ramin, Troy, Akber, Anas, and Ion in the first release.
+- Login allowlist is limited to Ramin, Troy, Akber, Ion, Dan, and pending Anas in the first release.
 - `/dashboard` opens the System Map.
 - Dashboard includes a private comments/forum area for suggestions and improvement notes.
 - Dashboard includes a trade layer that shows candidates, blocked trades, paper orders, open positions, exits, and postmortems once those backends exist.

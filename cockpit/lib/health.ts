@@ -178,7 +178,7 @@ const fallbackHealth: CockpitHealth = {
   modules: fallbackModules,
   adapters: {},
   fund_managers: {
-    allowlist_emails: ["raminhoodeh@gmail.com", "troycookecareer@gmail.com", "akber.ali@hotmail.co.uk", "isioras@yahoo.co.uk"],
+    allowlist_emails: ["raminhoodeh@gmail.com", "troycookecareer@gmail.com", "akber.ali@hotmail.co.uk", "isioras@yahoo.co.uk", "danmerdad@hotmail.co.uk"],
     pending_names: ["Anas"],
     login_surface: "qadam.trade"
   },

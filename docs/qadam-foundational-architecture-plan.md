@@ -406,8 +406,8 @@ Deliverables:
 - Add protected `/dashboard` route for the authenticated System Map.
 - Redirect successful Supabase sign-in to `/dashboard`.
 - Redirect unauthenticated `/dashboard` visits back to login.
-- Restrict cockpit access to Ramin, Troy, Akber, Anas, and Ion.
-- Initial allowlisted emails are Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Akber `akber.ali@hotmail.co.uk`, and Ion `isioras@yahoo.co.uk`; Anas remains pending until his email is known.
+- Restrict cockpit access to Ramin, Troy, Akber, Ion, Dan, and pending Anas.
+- Initial allowlisted emails are Ramin `raminhoodeh@gmail.com`, Troy `troycookecareer@gmail.com`, Akber `akber.ali@hotmail.co.uk`, Ion `isioras@yahoo.co.uk`, and Dan `danmerdad@hotmail.co.uk`; Anas remains pending until his email is known.
 - Keep the local cockpit linked to Vercel project `prj_apm3Zfd9fpWq4wsJiSunkVmxdCVQ` through `cockpit/.vercel/project.json`.
 - Keep Vercel credentials runtime-only through `data/runtime/vercel.env` or an external secret store.
 - Use `scripts/inspect_vercel_project.sh` for read-only project verification.

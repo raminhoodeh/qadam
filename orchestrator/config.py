@@ -18,6 +18,7 @@ DEFAULT_FUND_MANAGER_EMAILS = (
     "troycookecareer@gmail.com",
     "akber.ali@hotmail.co.uk",
     "isioras@yahoo.co.uk",
+    "danmerdad@hotmail.co.uk",
 )
 DEFAULT_PENDING_FUND_MANAGERS = ("Anas",)
 

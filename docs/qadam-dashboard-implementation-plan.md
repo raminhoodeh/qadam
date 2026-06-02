@@ -553,7 +553,7 @@ Limit:
 - Explains Qadam but does not yet read live Qadam state.
 - No additional hardcoded dashboard claims should be added here unless they are explicitly marked as placeholders.
 - Live routing remains stable while D1/D2 are built behind it.
-- Anas cannot sign in until his allowlist email is known and added; the current email allowlist covers Ramin, Troy, Akber, and Ion.
+- Anas cannot sign in until his allowlist email is known and added; the current email allowlist covers Ramin, Troy, Akber, Ion, and Dan.
 
 Exit gate:
 

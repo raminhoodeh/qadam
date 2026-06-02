@@ -35,7 +35,7 @@ Qadam is an autonomous intelligence engine with a transparent recommendation int
 - Advisory on top: the cockpit at `qadam.trade` shows the founding Fund Managers what Qadam is watching, why a recommendation exists, the evidence behind it, how the autonomous engine would act, and how similar signals historically performed.
 - Internal first: no public community tier, no external broker-connected autopilot, and no signal publishing in v1.
 
-First-release cockpit access is limited to Ramin, Troy, Akber, Anas, and Ion. The cockpit includes a private comments/forum area where the founding Fund Managers can suggest improvements, debate signals, flag issues, and leave governance notes.
+First-release cockpit access is limited to Ramin, Troy, Akber, Ion, Dan, and pending Anas. The cockpit includes a private comments/forum area where the founding Fund Managers can suggest improvements, debate signals, flag issues, and leave governance notes.
 
 ## Operating Doctrine
 
@@ -129,7 +129,7 @@ Current local cockpit state:
 - If the COO is offline, the cockpit falls back to a degraded local shell instead of crashing.
 - Promoted adapters, source counts, unresolved sources, local-store status, execution venues, and Fund Manager access are rendered from the health contract.
 
-The dashboard should also include a small private comments/forum area for Ramin, Troy, Akber, Anas, and Ion. Comments are saved locally and linked to the relevant signal, module, strategy, or postmortem.
+The dashboard should also include a small private comments/forum area for Ramin, Troy, Akber, Ion, Dan, and pending Anas. Comments are saved locally and linked to the relevant signal, module, strategy, or postmortem.
 
 Future extension: once the founding Fund Managers understand Qadam better, they may optionally contribute local compute capacity such as RAM, processing time, storage, or model runtime. This is deferred until after the first release and must be explicit, permissioned, and measurable.
 
@@ -234,6 +234,7 @@ Current founding access list:
 - Troy: `troycookecareer@gmail.com`
 - Akber: `akber.ali@hotmail.co.uk`
 - Ion: `isioras@yahoo.co.uk`
+- Dan: `danmerdad@hotmail.co.uk`
 - Anas: email pending
 
 ## Local Start

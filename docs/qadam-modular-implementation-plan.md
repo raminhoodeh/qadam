@@ -610,7 +610,7 @@ Production routing requirement:
 - `qadam.trade` remains the public landing page.
 - Top-right Login routes to Supabase Auth.
 - Successful login routes to protected `/dashboard`.
-- Login allowlist is limited to Ramin, Troy, Akber, Anas, and Ion in the first release.
+- Login allowlist is limited to Ramin, Troy, Akber, Ion, Dan, and pending Anas in the first release.
 - Unauthenticated `/dashboard` redirects to login.
 - Cockpit includes a private comments/forum area for improvement suggestions.
 - Vercel production deploys are deliberate while the landing page is live.
