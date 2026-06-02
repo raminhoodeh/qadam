@@ -138,7 +138,13 @@ async function main() {
     assertIncludes(rendered, "[data-capital]", `${status.phase7_demo_proof.closed_proof_trade_count}/${status.phase7_demo_proof.mature_benchmark}`);
     assertIncludes(rendered, "[data-capital]", "no verified performance credit");
     assertIncludes(rendered, "[data-capital]", "Phase 5 trades excluded");
-    assertIncludes(rendered, "[data-capital]", "No open positions");
+    assertIncludes(
+        rendered,
+        "[data-capital]",
+        openPositions.length
+            ? String(openPositions[0].instrument || openPositions[0].symbol || "Open position").replaceAll("_", " ")
+            : "No open positions"
+    );
     assertIncludes(rendered, "[data-capital]", orders.length ? "Mirrored paper order" : "No mirrored paper orders");
     assertIncludes(
         rendered,
