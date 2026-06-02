@@ -13,7 +13,10 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
+from world_monitor.source_registry import (
+    EXPECTED_SOURCE_COUNT,
+    canonical_decision_source_coverage,
+)
 
 
 PHASE5_ARTIFACT_SCHEMA_VERSION = 1
@@ -89,6 +92,10 @@ PHASE5_COMMON_REQUIRED_FIELDS: tuple[str, ...] = (
 PHASE5_SOURCE_POSTURE_REQUIRED_FIELDS: tuple[str, ...] = (
     "canonical_source_required",
     "canonical_source_count",
+    "expected_canonical_source_count",
+    "canonical_source_keys",
+    "canonical_source_coverage_complete",
+    "decision_source_coverage",
     "supplemental_source_bypass_allowed",
     "yahoo_finance_role",
     "preference_mcp_role",
@@ -146,9 +153,14 @@ def phase5_authority_ledger() -> dict[str, Any]:
 
 
 def phase5_source_posture() -> dict[str, Any]:
+    coverage = canonical_decision_source_coverage(coverage_scope="phase5_source_posture")
     return {
         "canonical_source_required": True,
         "canonical_source_count": EXPECTED_SOURCE_COUNT,
+        "expected_canonical_source_count": EXPECTED_SOURCE_COUNT,
+        "canonical_source_keys": coverage["canonical_source_keys"],
+        "canonical_source_coverage_complete": coverage["all_canonical_sources_considered"],
+        "decision_source_coverage": coverage,
         "supplemental_source_bypass_allowed": False,
         "yahoo_finance_role": "supplemental_market_confirmation_only",
         "preference_mcp_role": "supplemental_multi_source_data_plane",
@@ -458,6 +470,22 @@ def _source_posture_errors(artifact: dict[str, Any]) -> list[str]:
         errors.append("canonical_source_not_required")
     if posture.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
         errors.append("canonical_source_count_mismatch")
+    if posture.get("expected_canonical_source_count") != EXPECTED_SOURCE_COUNT:
+        errors.append("expected_canonical_source_count_mismatch")
+    if posture.get("canonical_source_coverage_complete") is not True:
+        errors.append("canonical_source_coverage_incomplete")
+    if len(posture.get("canonical_source_keys", []) or []) != EXPECTED_SOURCE_COUNT:
+        errors.append("canonical_source_keys_count_mismatch")
+    coverage = posture.get("decision_source_coverage")
+    if not isinstance(coverage, dict):
+        errors.append("decision_source_coverage_missing_or_invalid")
+    else:
+        if coverage.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+            errors.append("decision_source_coverage_count_mismatch")
+        if coverage.get("all_canonical_sources_considered") is not True:
+            errors.append("decision_source_coverage_incomplete")
+        if coverage.get("source_quorum_bypass_allowed") is not False:
+            errors.append("decision_source_coverage_quorum_bypass_allowed")
     if posture.get("supplemental_source_bypass_allowed") is not False:
         errors.append("supplemental_source_bypass_allowed")
     if posture.get("yahoo_finance_role") != "supplemental_market_confirmation_only":

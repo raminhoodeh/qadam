@@ -65,6 +65,7 @@ PAPER_ORDER_STAGING_REQUIRED_CHECKS: tuple[str, ...] = (
     "risk_sizing_eligible",
     "paper_size_positive",
     "source_posture_valid",
+    "decision_source_coverage_complete",
     "kill_switch_ledger_valid",
     "kill_switch_clear",
     "execution_adapter_bundle_valid",
@@ -386,6 +387,13 @@ def _staging_gate_record(
             source_summary.get("source_weights_normalized") is True
             and not source_summary.get("zero_weight_sources"),
         ),
+        _check(
+            "decision_source_coverage_complete",
+            source_summary.get("canonical_source_count") == EXPECTED_SOURCE_COUNT
+            and source_summary.get("all_canonical_sources_considered") is True
+            and source_summary.get("decision_source_usage_complete") is True
+            and source_summary.get("source_quorum_bypass_allowed") is False,
+        ),
         _check("kill_switch_ledger_valid", kill_context["validation_error_count"] == 0),
         _check("kill_switch_clear", kill_context["clear"]),
         _check("execution_adapter_bundle_valid", not validate_phase5_execution_adapter_status_bundle(adapter_bundle)),
@@ -630,6 +638,16 @@ def _staging_status_errors(record: dict[str, Any]) -> list[str]:
             errors.append("staged_order_without_staging_allowed")
         if record.get("event_log_prewrite_ready") is not True:
             errors.append("staged_order_without_event_log_prewrite")
+        source_summary = record.get("source_summary", {})
+        if not isinstance(source_summary, dict):
+            errors.append("staged_order_without_source_summary")
+            source_summary = {}
+        if source_summary.get("decision_source_usage_complete") is not True:
+            errors.append("staged_order_without_decision_source_coverage")
+        if source_summary.get("all_canonical_sources_considered") is not True:
+            errors.append("staged_order_without_canonical_source_coverage")
+        if source_summary.get("source_quorum_bypass_allowed") is not False:
+            errors.append("staged_order_with_source_quorum_bypass")
         if not str(record.get("idempotency_key") or "").strip():
             errors.append("staged_order_without_idempotency_key")
         if _float(record.get("quantity"), 0.0) <= 0.0:

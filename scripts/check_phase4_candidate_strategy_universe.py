@@ -42,6 +42,13 @@ def main() -> int:
         if set(candidate.get("source_weights", {})) == set(candidate.get("required_source_groups", []))
         and 0.995 <= sum(float(value) for value in candidate.get("source_weights", {}).values()) <= 1.005
     )
+    decision_source_coverage_complete_count = sum(
+        1
+        for candidate in candidates
+        if candidate.get("decision_source_coverage", {}).get("all_canonical_sources_considered") is True
+        and candidate.get("decision_source_coverage", {}).get("decision_source_usage_complete") is True
+        and candidate.get("decision_source_coverage", {}).get("source_quorum_bypass_allowed") is False
+    )
     model_weight_complete_count = sum(
         1
         for candidate in candidates
@@ -96,6 +103,22 @@ def main() -> int:
     )
     preference_domain_probe_errors = validate_candidate_strategy_universe(preference_domain_probe)
 
+    decision_source_coverage_probe = deepcopy(artifact)
+    decision_source_coverage_probe["candidates"][0]["decision_source_coverage"][
+        "decision_source_usage_complete"
+    ] = False
+    decision_source_coverage_errors = validate_candidate_strategy_universe(
+        decision_source_coverage_probe
+    )
+
+    source_quorum_bypass_probe = deepcopy(artifact)
+    source_quorum_bypass_probe["candidates"][0]["decision_source_coverage"][
+        "source_quorum_bypass_allowed"
+    ] = True
+    source_quorum_bypass_errors = validate_candidate_strategy_universe(
+        source_quorum_bypass_probe
+    )
+
     research_authority_probe = deepcopy(artifact)
     research_authority_probe["candidates"][0]["strategy_research_context"]["trade_candidate_creation_allowed"] = True
     research_authority_errors = validate_candidate_strategy_universe(research_authority_probe)
@@ -115,6 +138,10 @@ def main() -> int:
     print(f"phase4_candidate_strategy_invalidation_complete_count={invalidation_complete_count}")
     print(f"phase4_candidate_strategy_preference_policy_complete_count={preference_policy_complete_count}")
     print(f"phase4_candidate_strategy_source_weight_complete_count={source_weight_complete_count}")
+    print(
+        "phase4_candidate_strategy_decision_source_coverage_complete_count="
+        f"{decision_source_coverage_complete_count}"
+    )
     print(f"phase4_candidate_strategy_model_weight_complete_count={model_weight_complete_count}")
     print(f"phase4_candidate_strategy_research_context_complete_count={research_context_complete_count}")
     print(f"phase4_candidate_strategy_research_family_coverage={research_context_with_matches_count}")
@@ -146,6 +173,14 @@ def main() -> int:
     print(
         "phase4_candidate_strategy_preference_domain_probe_error_count="
         f"{len(preference_domain_probe_errors)}"
+    )
+    print(
+        "phase4_candidate_strategy_decision_source_coverage_probe_error_count="
+        f"{len(decision_source_coverage_errors)}"
+    )
+    print(
+        "phase4_candidate_strategy_source_quorum_bypass_probe_error_count="
+        f"{len(source_quorum_bypass_errors)}"
     )
     print(
         "phase4_candidate_strategy_research_authority_probe_error_count="
@@ -193,6 +228,8 @@ def main() -> int:
         errors.append("preference_policy_incomplete")
     if source_weight_complete_count != artifact["strategy_family_candidate_count"]:
         errors.append("source_weights_incomplete")
+    if decision_source_coverage_complete_count != artifact["strategy_family_candidate_count"]:
+        errors.append("decision_source_coverage_incomplete")
     if model_weight_complete_count != artifact["strategy_family_candidate_count"]:
         errors.append("model_weights_incomplete")
     if research_context_complete_count != artifact["strategy_family_candidate_count"]:
@@ -240,6 +277,16 @@ def main() -> int:
         for error in preference_domain_probe_errors
     ):
         errors.append("preference_domain_probe_not_rejected")
+    if not any(
+        error.startswith("strategy_candidate_decision_source_usage_incomplete:")
+        for error in decision_source_coverage_errors
+    ):
+        errors.append("decision_source_coverage_probe_not_rejected")
+    if not any(
+        error.startswith("strategy_candidate_source_quorum_bypass_allowed:")
+        for error in source_quorum_bypass_errors
+    ):
+        errors.append("source_quorum_bypass_probe_not_rejected")
     if not any(
         error.startswith("strategy_candidate_research_authority_enabled:")
         for error in research_authority_errors

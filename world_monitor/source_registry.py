@@ -6,10 +6,11 @@ The registry intentionally records unresolved spec conflicts instead of hiding t
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
 
 EXPECTED_SOURCE_COUNT = 35
+DECISION_SOURCE_COVERAGE_SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True)
@@ -558,3 +559,95 @@ def missing_environment_variables(environ: dict[str, str]) -> dict[str, tuple[st
 
 def iter_external_sources() -> Iterable[SourceSpec]:
     return (source for source in SOURCE_SPECS if source.auth != "internal")
+
+
+def canonical_source_keys() -> tuple[str, ...]:
+    return tuple(source.key for source in SOURCE_SPECS)
+
+
+def _float(value: Any) -> float:
+    try:
+        return float(value or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def canonical_decision_source_coverage(
+    *,
+    required_source_groups: Iterable[str] = (),
+    source_weights: dict[str, Any] | None = None,
+    coverage_scope: str = "strategy_decision",
+) -> dict[str, Any]:
+    """Return the public-safe source-coverage contract for a decision artifact."""
+
+    canonical = canonical_source_keys()
+    canonical_set = set(canonical)
+    required = tuple(
+        dict.fromkeys(
+            str(source).strip()
+            for source in required_source_groups
+            if str(source).strip()
+        )
+    )
+    missing_required = tuple(source for source in required if source not in canonical_set)
+    missing_canonical = tuple(
+        source
+        for source in canonical
+        if source not in canonical_set
+    )
+    unresolved = tuple(source.key for source in unresolved_sources())
+    weights = source_weights or {}
+    weighted_keys = tuple(
+        sorted(str(source).strip() for source in weights if str(source).strip())
+    )
+    weighted_key_set = set(weighted_keys)
+    zero_weight_required = tuple(
+        sorted(
+            source
+            for source in required
+            if source in weights and _float(weights.get(source)) <= 0.0
+        )
+    )
+    required_weights_complete = bool(required) and weighted_key_set == set(required)
+    source_weight_sum = round(sum(_float(value) for value in weights.values()), 4)
+    source_weights_normalized = (
+        0.995 <= source_weight_sum <= 1.005 if weights else None
+    )
+    all_canonical_sources_considered = (
+        len(canonical) == EXPECTED_SOURCE_COUNT
+        and not missing_canonical
+        and not unresolved
+    )
+    decision_source_usage_complete = (
+        all_canonical_sources_considered
+        and not missing_required
+        and (not required or (required_weights_complete and not zero_weight_required))
+    )
+    return {
+        "schema_version": DECISION_SOURCE_COVERAGE_SCHEMA_VERSION,
+        "coverage_scope": coverage_scope,
+        "canonical_source_count": len(canonical),
+        "expected_canonical_source_count": EXPECTED_SOURCE_COUNT,
+        "canonical_source_keys": list(canonical),
+        "missing_canonical_source_keys": list(missing_canonical),
+        "unresolved_canonical_source_keys": list(unresolved),
+        "all_canonical_sources_considered": all_canonical_sources_considered,
+        "required_source_groups": list(required),
+        "required_source_group_count": len(required),
+        "missing_required_source_groups": list(missing_required),
+        "weighted_required_source_groups": list(weighted_keys),
+        "weighted_required_source_count": len(weighted_keys),
+        "required_source_weights_complete": required_weights_complete,
+        "zero_weight_required_source_groups": list(zero_weight_required),
+        "source_weight_sum": source_weight_sum,
+        "source_weights_normalized": source_weights_normalized,
+        "decision_source_usage_complete": decision_source_usage_complete,
+        "source_quorum_bypass_allowed": False,
+        "supplemental_source_bypass_allowed": False,
+        "decision_use_policy": (
+            "Every strategy decision must consider the full canonical source registry; "
+            "strategy-specific required source groups receive weights, while Yahoo Finance, "
+            "Preference/PREF MCP, TradingView MCP, private priors, and Q-CTRL remain "
+            "supplemental unless a later audited promotion changes the registry."
+        ),
+    }

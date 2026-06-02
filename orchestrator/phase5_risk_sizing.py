@@ -39,7 +39,10 @@ from orchestrator.phase5_artifacts import (
     validate_phase5_artifact,
 )
 from orchestrator.signal_integrity import SignalIntegrityReviewStore
-from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
+from world_monitor.source_registry import (
+    EXPECTED_SOURCE_COUNT,
+    canonical_decision_source_coverage,
+)
 
 
 PHASE5_RISK_SIZING_SCHEMA_VERSION = 1
@@ -298,8 +301,16 @@ def _source_summary(candidate: dict[str, Any]) -> dict[str, Any]:
         str(source) for source in candidate.get("required_source_groups", []) or []
     ]
     weights = [float(value or 0.0) for value in source_weights.values()]
+    coverage = candidate.get("decision_source_coverage")
+    if not isinstance(coverage, dict):
+        coverage = canonical_decision_source_coverage(
+            required_source_groups=required_sources,
+            source_weights=source_weights,
+            coverage_scope="phase5_risk_sizing_source_summary",
+        )
     return {
         "required_source_group_count": len(required_sources),
+        "required_source_groups": required_sources,
         "source_weight_count": len(source_weights),
         "source_weight_sum": round(sum(weights), 4),
         "min_source_weight": round(min(weights), 4) if weights else 0.0,
@@ -307,6 +318,18 @@ def _source_summary(candidate: dict[str, Any]) -> dict[str, Any]:
             source for source, weight in source_weights.items() if float(weight or 0.0) <= 0
         ),
         "source_weights_normalized": 0.995 <= sum(weights) <= 1.005,
+        "canonical_source_count": int(coverage.get("canonical_source_count", 0) or 0),
+        "expected_canonical_source_count": EXPECTED_SOURCE_COUNT,
+        "all_canonical_sources_considered": (
+            coverage.get("all_canonical_sources_considered") is True
+        ),
+        "decision_source_usage_complete": (
+            coverage.get("decision_source_usage_complete") is True
+        ),
+        "source_quorum_bypass_allowed": (
+            coverage.get("source_quorum_bypass_allowed") is True
+        ),
+        "decision_source_coverage": coverage,
     }
 
 
@@ -427,6 +450,13 @@ def _risk_review(
         _check("source_weights_present", source_summary["source_weight_count"] > 0),
         _check("source_weights_normalized", source_summary["source_weights_normalized"]),
         _check("source_weights_nonzero", not source_summary["zero_weight_sources"]),
+        _check(
+            "canonical_decision_source_coverage_complete",
+            source_summary["canonical_source_count"] == EXPECTED_SOURCE_COUNT
+            and source_summary["all_canonical_sources_considered"] is True
+            and source_summary["decision_source_usage_complete"] is True
+            and source_summary["source_quorum_bypass_allowed"] is False,
+        ),
         _check("signal_integrity_passed", signal_evidence["signal_integrity_passed"]),
         _check("signal_integrity_no_trade_candidate", signal_evidence["trade_candidate_created_count"] == 0),
         _check("signal_integrity_no_execution", signal_evidence["execution_allowed_count"] == 0),
@@ -801,6 +831,33 @@ def validate_phase5_risk_sizing_review(review: dict[str, Any]) -> list[str]:
         for field in ("risk_handoff_allowed", "execution_allowed", "paper_order_allowed", "broker_write_allowed"):
             if preference_policy.get(field) is not False:
                 errors.append(f"preference_policy_authority_enabled:{field}")
+    source_summary = review.get("source_summary", {})
+    if not isinstance(source_summary, dict):
+        errors.append("source_summary_invalid")
+    else:
+        coverage = source_summary.get("decision_source_coverage")
+        review_status = str(review.get("status") or "")
+        if source_summary.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+            errors.append("source_summary_canonical_source_count_mismatch")
+        if source_summary.get("all_canonical_sources_considered") is not True:
+            errors.append("source_summary_canonical_sources_not_considered")
+        if (
+            review_status == "eligible"
+            and source_summary.get("decision_source_usage_complete") is not True
+        ):
+            errors.append("source_summary_decision_source_usage_incomplete")
+        if source_summary.get("source_quorum_bypass_allowed") is not False:
+            errors.append("source_summary_source_quorum_bypass_allowed")
+        if not isinstance(coverage, dict):
+            errors.append("source_summary_decision_source_coverage_missing")
+        else:
+            if coverage.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+                errors.append("source_summary_coverage_count_mismatch")
+            if (
+                review_status == "eligible"
+                and coverage.get("decision_source_usage_complete") is not True
+            ):
+                errors.append("source_summary_coverage_usage_incomplete")
     for field in RISK_SIZING_BOUNDARY_FIELDS:
         if review.get(field) is not False:
             errors.append(f"risk_sizing_boundary_enabled:{field}")

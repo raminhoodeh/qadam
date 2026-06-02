@@ -16,6 +16,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog, EventLogEntry
+from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
 
 
 PAPEROPS_QUALIFIED_SETUP_SCHEMA_VERSION = 1
@@ -242,6 +243,11 @@ def _signal_evidence(record: dict[str, Any]) -> dict[str, Any]:
     return evidence if isinstance(evidence, dict) else {}
 
 
+def _source_summary(record: dict[str, Any]) -> dict[str, Any]:
+    summary = record.get("source_summary")
+    return summary if isinstance(summary, dict) else {}
+
+
 def _candidate_record(
     *,
     settings: Settings,
@@ -252,6 +258,7 @@ def _candidate_record(
 ) -> dict[str, Any]:
     strategy = str(staging_record.get("strategy_family_key") or "unknown")
     posture = _source_posture(staging_record) or _source_posture(risk_record)
+    source_summary = _source_summary(staging_record) or _source_summary(risk_record)
     signal = _signal_evidence(risk_record)
     checks = _records(staging_record, "checks")
     check_pass = {
@@ -263,6 +270,12 @@ def _candidate_record(
         and paper_mode.get("paper_operational_flag_disabled") is False
     )
     canonical_source_count = _int(posture.get("canonical_source_count"))
+    decision_source_coverage_complete = (
+        source_summary.get("canonical_source_count") == EXPECTED_SOURCE_COUNT
+        and source_summary.get("all_canonical_sources_considered") is True
+        and source_summary.get("decision_source_usage_complete") is True
+        and source_summary.get("source_quorum_bypass_allowed") is False
+    )
     source_quorum_bypass = posture.get("source_quorum_bypass_allowed") is True
     supplemental_bypass = posture.get("supplemental_source_bypass_allowed") is True
     yahoo_role = str(posture.get("yahoo_finance_role") or "missing")
@@ -307,10 +320,13 @@ def _candidate_record(
         ),
         _gate_record(
             "canonical_source_posture",
-            canonical_source_count > 0 and not source_quorum_bypass,
+            canonical_source_count == EXPECTED_SOURCE_COUNT
+            and not source_quorum_bypass
+            and decision_source_coverage_complete,
             (
                 f"canonical_sources={canonical_source_count}; "
-                f"source_quorum_bypass={source_quorum_bypass}"
+                f"source_quorum_bypass={source_quorum_bypass}; "
+                f"decision_source_coverage={decision_source_coverage_complete}"
             ),
         ),
         _gate_record(
@@ -436,6 +452,8 @@ def _candidate_record(
         "gate_results": gates,
         "canonical_source_quorum_passed": _gate_pass(gates, "canonical_source_posture"),
         "source_quorum_passed": _gate_pass(gates, "canonical_source_posture"),
+        "decision_source_coverage_complete": decision_source_coverage_complete,
+        "decision_source_coverage": source_summary.get("decision_source_coverage", {}),
         "signal_integrity_passed": _gate_pass(gates, "signal_integrity_passed"),
         "risk_paper_sizing_passed": _gate_pass(gates, "risk_agent_paper_sizing"),
         "kill_switches_clear": _gate_pass(gates, "kill_switches_clear"),
@@ -759,6 +777,8 @@ def validate_paperops_qualified_setup_production(
         for record in qualified_records:
             if record.get("all_required_gates_passed") is not True:
                 errors.append("paperops_qualified_setup_gate_false_positive")
+            if record.get("decision_source_coverage_complete") is not True:
+                errors.append("paperops_qualified_setup_without_decision_source_coverage")
             if record.get("phase5_lifecycle_counts_as_q7_proof") is not False:
                 errors.append("paperops_qualified_setup_phase5_lifecycle_reused")
             if record.get("proof_credit_allowed") is not False:
@@ -769,6 +789,11 @@ def validate_paperops_qualified_setup_production(
             continue
         if record.get("supplemental_only") is True:
             errors.append("paperops_qualified_setup_supplemental_only_candidate")
+        if (
+            record.get("source_quorum_passed") is True
+            and record.get("decision_source_coverage_complete") is not True
+        ):
+            errors.append("paperops_qualified_setup_source_quorum_without_decision_coverage")
         if record.get("broker_post_called") is not False:
             errors.append("paperops_qualified_setup_record_broker_post_called")
         if record.get("live_capital_enabled") is not False:

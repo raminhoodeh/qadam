@@ -44,7 +44,10 @@ from orchestrator.phase5_readiness import (
     build_phase5_layer_b_readiness,
     validate_phase5_layer_b_readiness,
 )
-from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
+from world_monitor.source_registry import (
+    EXPECTED_SOURCE_COUNT,
+    canonical_decision_source_coverage,
+)
 
 
 PHASE5_APPROVAL_POLICY_SCHEMA_VERSION = 1
@@ -179,6 +182,13 @@ def _source_weight_summary(candidate: dict[str, Any]) -> dict[str, Any]:
     weights = candidate.get("source_weights", {})
     if not isinstance(weights, dict):
         weights = {}
+    coverage = candidate.get("decision_source_coverage")
+    if not isinstance(coverage, dict):
+        coverage = canonical_decision_source_coverage(
+            required_source_groups=required_sources,
+            source_weights=weights,
+            coverage_scope="phase5_approval_policy_source_summary",
+        )
     missing_sources = sorted(set(required_sources) - set(weights))
     zero_weight_sources = sorted(
         source for source, weight in weights.items() if float(weight or 0.0) <= 0
@@ -191,6 +201,17 @@ def _source_weight_summary(candidate: dict[str, Any]) -> dict[str, Any]:
         "missing_source_weights": missing_sources,
         "zero_weight_sources": zero_weight_sources,
         "source_weights_normalized": 0.995 <= total_weight <= 1.005,
+        "canonical_source_count": int(coverage.get("canonical_source_count", 0) or 0),
+        "all_canonical_sources_considered": (
+            coverage.get("all_canonical_sources_considered") is True
+        ),
+        "decision_source_usage_complete": (
+            coverage.get("decision_source_usage_complete") is True
+        ),
+        "source_quorum_bypass_allowed": (
+            coverage.get("source_quorum_bypass_allowed") is True
+        ),
+        "decision_source_coverage": coverage,
     }
 
 
@@ -382,6 +403,13 @@ def _strategy_decision(
         _check("source_weights_present", source_summary["source_weight_count"] > 0),
         _check("source_weights_normalized", source_summary["source_weights_normalized"]),
         _check("source_weights_nonzero", not source_summary["zero_weight_sources"]),
+        _check(
+            "canonical_decision_source_coverage_complete",
+            source_summary["canonical_source_count"] == EXPECTED_SOURCE_COUNT
+            and source_summary["all_canonical_sources_considered"] is True
+            and source_summary["decision_source_usage_complete"] is True
+            and source_summary["source_quorum_bypass_allowed"] is False,
+        ),
         _check("model_weights_present", model_summary["model_weight_count"] > 0),
         _check("model_weights_normalized", model_summary["model_weights_normalized"]),
         _check("candidate_has_no_authority", _all_false(candidate, candidate_authority_fields)),
@@ -489,6 +517,17 @@ def _strategy_decision(
         "source_weight_count": source_summary["source_weight_count"],
         "source_weight_sum": source_summary["source_weight_sum"],
         "zero_weight_sources": source_summary["zero_weight_sources"],
+        "canonical_source_count": source_summary["canonical_source_count"],
+        "all_canonical_sources_considered": source_summary[
+            "all_canonical_sources_considered"
+        ],
+        "decision_source_usage_complete": source_summary[
+            "decision_source_usage_complete"
+        ],
+        "source_quorum_bypass_allowed": source_summary[
+            "source_quorum_bypass_allowed"
+        ],
+        "decision_source_coverage": source_summary["decision_source_coverage"],
         "model_weight_count": model_summary["model_weight_count"],
         "model_weight_sum": model_summary["model_weight_sum"],
         "market_confirmation_policy": market_summary,
@@ -699,6 +738,25 @@ def validate_phase5_approval_policy_decision(decision: dict[str, Any]) -> list[s
         errors.append("preference_source_quorum_credit_allowed")
     if decision.get("preference_only_confirmation_allowed") is not False:
         errors.append("preference_only_confirmation_allowed")
+    coverage = decision.get("decision_source_coverage")
+    if decision.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+        errors.append("canonical_source_count_mismatch")
+    if decision.get("all_canonical_sources_considered") is not True:
+        errors.append("canonical_sources_not_considered")
+    if decision.get("source_quorum_bypass_allowed") is not False:
+        errors.append("source_quorum_bypass_allowed")
+    if not isinstance(coverage, dict):
+        errors.append("decision_source_coverage_missing")
+    else:
+        if coverage.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+            errors.append("decision_source_coverage_count_mismatch")
+        if coverage.get("source_quorum_bypass_allowed") is not False:
+            errors.append("decision_source_coverage_quorum_bypass_allowed")
+        if (
+            decision.get("status") == "eligible"
+            and coverage.get("decision_source_usage_complete") is not True
+        ):
+            errors.append("eligible_without_decision_source_coverage")
     for field in POLICY_DECISION_ORDER_BOUNDARY_FIELDS:
         if decision.get(field) is not False:
             errors.append(f"policy_decision_order_boundary_enabled:{field}")

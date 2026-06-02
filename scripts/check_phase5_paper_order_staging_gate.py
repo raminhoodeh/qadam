@@ -97,6 +97,15 @@ def main() -> int:
     prewrite_probe["event_log_prewrite_ready"] = False
     prewrite_errors = validate_phase5_paper_order_staging_record(prewrite_probe)
 
+    source_coverage_probe = _staged_probe(first_record)
+    source_coverage_probe["source_summary"]["decision_source_usage_complete"] = False
+    source_coverage_probe["source_summary"]["decision_source_coverage"][
+        "decision_source_usage_complete"
+    ] = False
+    source_coverage_errors = validate_phase5_paper_order_staging_record(
+        source_coverage_probe
+    )
+
     idempotency_probe = _staged_probe(first_record)
     idempotency_probe["idempotency_key"] = None
     idempotency_errors = validate_phase5_paper_order_staging_record(idempotency_probe)
@@ -206,6 +215,10 @@ def main() -> int:
         f"{len(prewrite_errors)}"
     )
     print(
+        "phase5_paper_order_staging_source_coverage_probe_error_count="
+        f"{len(source_coverage_errors)}"
+    )
+    print(
         "phase5_paper_order_staging_idempotency_probe_error_count="
         f"{len(idempotency_errors)}"
     )
@@ -306,6 +319,8 @@ def main() -> int:
         errors.append("active_kill_probe_not_rejected")
     if "staged_order_without_event_log_prewrite" not in prewrite_errors:
         errors.append("prewrite_probe_not_rejected")
+    if "staged_order_without_decision_source_coverage" not in source_coverage_errors:
+        errors.append("source_coverage_probe_not_rejected")
     if "staged_order_without_idempotency_key" not in idempotency_errors:
         errors.append("idempotency_probe_not_rejected")
     if "staged_order_without_positive_quantity" not in quantity_errors:

@@ -90,10 +90,27 @@ def main() -> int:
         supplemental_probe
     )
 
+    source_coverage_probe = deepcopy(written)
+    if source_coverage_probe.get("candidate_setup_records"):
+        source_coverage_probe["candidate_setup_records"][0]["source_quorum_passed"] = True
+        source_coverage_probe["candidate_setup_records"][0][
+            "decision_source_coverage_complete"
+        ] = False
+    source_coverage_errors = validate_paperops_qualified_setup_production(
+        source_coverage_probe
+    )
+
     event_probe = deepcopy(written)
     event_probe["event_log_written"] = False
     event_probe["event_log_event_count"] = 0
     event_errors = validate_paperops_qualified_setup_production(event_probe)
+
+    source_coverage_complete_count = sum(
+        1
+        for record in written.get("candidate_setup_records", [])
+        if isinstance(record, dict)
+        and record.get("decision_source_coverage_complete") is True
+    )
 
     print(f"paperops_qualified_setup_status={written['status']}")
     print(
@@ -268,6 +285,14 @@ def main() -> int:
         f"{written['next_required_action']}"
     )
     print(f"paperops_qualified_setup_validation_errors={validation_errors}")
+    print(
+        "paperops_qualified_setup_source_coverage_probe_error_count="
+        f"{len(source_coverage_errors)}"
+    )
+    print(
+        "paperops_qualified_setup_source_coverage_complete_count="
+        f"{source_coverage_complete_count}"
+    )
 
     if validation_errors:
         errors.append(f"PT-3 validation failed: {validation_errors}")
@@ -282,14 +307,24 @@ def main() -> int:
         errors.append("PT-3 production path readiness is false")
     if written["production_candidate_count"] < 1:
         errors.append("PT-3 did not observe any production candidates")
-    if written["paper_size_eligible_count"] < 1:
-        errors.append("PT-3 did not observe the Q5 paper-size eligible setup")
-    if written["staged_order_count"] < 1:
-        errors.append("PT-3 did not observe the Q5 staged paper order")
-    if written["source_qualified_setup_ledger_count"] > written["qualified_setup_count"]:
-        errors.append("PT-3 observed more Q7 ledger setups than PT-3 qualified")
-    if written["phase7_demo_qualified_setup_count"] > written["qualified_setup_count"]:
-        errors.append("PT-3 observed more Phase 7 demo setups than PT-3 qualified")
+    if source_coverage_complete_count != written["production_candidate_count"]:
+        errors.append("PT-3 candidate source coverage incomplete")
+    if written["qualified_setup_count"] == 0:
+        if written["status"] != "production_path_ready_no_current_qualified_setup":
+            errors.append("PT-3 no-qualified status mismatch")
+        if written["ready_to_stage_q7_order"] is not False:
+            errors.append("PT-3 ready-to-stage true without current qualified setup")
+        if written["no_trade_rationale"] != "no_current_pt3_qualified_setup_detected":
+            errors.append("PT-3 no-trade rationale mismatch")
+    else:
+        if written["paper_size_eligible_count"] < 1:
+            errors.append("PT-3 did not observe the Q5 paper-size eligible setup")
+        if written["staged_order_count"] < 1:
+            errors.append("PT-3 did not observe the Q5 staged paper order")
+        if written["source_qualified_setup_ledger_count"] > written["qualified_setup_count"]:
+            errors.append("PT-3 observed more Q7 ledger setups than PT-3 qualified")
+        if written["phase7_demo_qualified_setup_count"] > written["qualified_setup_count"]:
+            errors.append("PT-3 observed more Phase 7 demo setups than PT-3 qualified")
     if written["live_capital_enabled"] is not False:
         errors.append("PT-3 enabled live capital")
     if written["paper_order_submission_allowed"] is not False:
@@ -348,6 +383,12 @@ def main() -> int:
         not in supplemental_errors
     ):
         errors.append("supplemental bypass probe was not rejected")
+    if (
+        source_coverage_probe.get("candidate_setup_records")
+        and "paperops_qualified_setup_source_quorum_without_decision_coverage"
+        not in source_coverage_errors
+    ):
+        errors.append("source-coverage probe was not rejected")
     if "paperops_qualified_setup_event_log_missing" not in event_errors:
         errors.append("event-log probe was not rejected")
 

@@ -25,6 +25,10 @@ from orchestrator.phase4_resource_validation import build_resource_validation
 from orchestrator.phase4_trust_scores import build_trust_score_recalculation
 from orchestrator.phase4_world_model_validation import build_world_model_validation
 from orchestrator.strategy_research_intake import build_strategy_research_intake
+from world_monitor.source_registry import (
+    EXPECTED_SOURCE_COUNT,
+    canonical_decision_source_coverage,
+)
 
 
 CANDIDATE_STRATEGY_UNIVERSE_SCHEMA_VERSION = 1
@@ -191,6 +195,7 @@ class StrategyFamilyCandidate:
     catalyst_classes: tuple[str, ...]
     required_source_groups: tuple[str, ...]
     source_weights: dict[str, float]
+    decision_source_coverage: dict[str, Any]
     model_weights: dict[str, float]
     market_confirmation_requirements: dict[str, Any]
     preference_context_policy: dict[str, Any]
@@ -761,6 +766,11 @@ def _candidate_from_blueprint(
     artifacts: dict[str, Any],
 ) -> StrategyFamilyCandidate:
     source_weights = _source_weights(blueprint.required_source_groups, artifacts["trust_scores"])
+    decision_source_coverage = canonical_decision_source_coverage(
+        required_source_groups=blueprint.required_source_groups,
+        source_weights=source_weights,
+        coverage_scope=f"phase4_candidate_strategy:{blueprint.candidate_key}",
+    )
     preference_policy = _preference_context_policy(blueprint, artifacts=artifacts)
     return StrategyFamilyCandidate(
         object_type="strategy_family_candidate",
@@ -771,6 +781,7 @@ def _candidate_from_blueprint(
         catalyst_classes=blueprint.catalyst_classes,
         required_source_groups=blueprint.required_source_groups,
         source_weights=source_weights,
+        decision_source_coverage=decision_source_coverage,
         model_weights=_model_weights(),
         market_confirmation_requirements=_market_confirmation_requirements(),
         preference_context_policy=preference_policy,
@@ -876,6 +887,9 @@ def build_candidate_strategy_universe(settings: Settings | None = None) -> dict[
             "trade_candidate_creation_allowed": False,
         },
         "preference_mcp_policy": _preference_artifact_policy(candidate_dicts),
+        "decision_source_coverage": canonical_decision_source_coverage(
+            coverage_scope="phase4_candidate_strategy_universe"
+        ),
         "strategy_research_intake_policy": {
             "source_artifact_id": artifacts["strategy_research_intake"].get("artifact_id"),
             "status": artifacts["strategy_research_intake"].get("status"),
@@ -935,6 +949,7 @@ def validate_candidate_strategy_universe(artifact: dict[str, Any]) -> list[str]:
         "catalyst_classes",
         "required_source_groups",
         "source_weights",
+        "decision_source_coverage",
         "model_weights",
         "market_confirmation_requirements",
         "preference_context_policy",
@@ -985,6 +1000,22 @@ def validate_candidate_strategy_universe(artifact: dict[str, Any]) -> list[str]:
                 errors.append(f"strategy_candidate_source_weights_mismatch:{candidate_key}")
             if not 0.995 <= sum(float(value) for value in source_weights.values()) <= 1.005:
                 errors.append(f"strategy_candidate_source_weights_not_normalized:{candidate_key}")
+        coverage = candidate.get("decision_source_coverage")
+        if not isinstance(coverage, dict):
+            errors.append(f"strategy_candidate_decision_source_coverage_missing:{candidate_key}")
+        else:
+            if coverage.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+                errors.append(f"strategy_candidate_canonical_source_count_mismatch:{candidate_key}")
+            if coverage.get("all_canonical_sources_considered") is not True:
+                errors.append(f"strategy_candidate_canonical_sources_not_considered:{candidate_key}")
+            if coverage.get("decision_source_usage_complete") is not True:
+                errors.append(f"strategy_candidate_decision_source_usage_incomplete:{candidate_key}")
+            if coverage.get("source_quorum_bypass_allowed") is not False:
+                errors.append(f"strategy_candidate_source_quorum_bypass_allowed:{candidate_key}")
+            if set(coverage.get("required_source_groups", [])) != set(
+                candidate.get("required_source_groups", [])
+            ):
+                errors.append(f"strategy_candidate_coverage_required_sources_mismatch:{candidate_key}")
 
         model_weights = candidate.get("model_weights")
         if not isinstance(model_weights, dict) or not model_weights:
@@ -1124,6 +1155,16 @@ def validate_candidate_strategy_universe(artifact: dict[str, Any]) -> list[str]:
                 errors.append(f"preference_mcp_policy_authority_enabled:{key}")
         if "hold-only" not in str(preference_policy.get("quota_freshness_degradation_rule") or ""):
             errors.append("preference_mcp_policy_quota_freshness_rule_missing")
+    artifact_coverage = artifact.get("decision_source_coverage")
+    if not isinstance(artifact_coverage, dict):
+        errors.append("artifact_decision_source_coverage_missing")
+    else:
+        if artifact_coverage.get("canonical_source_count") != EXPECTED_SOURCE_COUNT:
+            errors.append("artifact_decision_source_coverage_count_mismatch")
+        if artifact_coverage.get("all_canonical_sources_considered") is not True:
+            errors.append("artifact_decision_source_coverage_incomplete")
+        if artifact_coverage.get("source_quorum_bypass_allowed") is not False:
+            errors.append("artifact_decision_source_coverage_quorum_bypass_allowed")
     research_policy = artifact.get("strategy_research_intake_policy", {})
     if not isinstance(research_policy, dict):
         errors.append("strategy_research_intake_policy_missing")

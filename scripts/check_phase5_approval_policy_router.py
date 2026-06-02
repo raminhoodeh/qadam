@@ -80,6 +80,24 @@ def main() -> int:
     preference_probe["preference_source_quorum_credit_allowed"] = True
     preference_errors = validate_phase5_approval_policy_decision(preference_probe)
 
+    source_coverage_probe = deepcopy(_first_decision(written_bundle))
+    source_coverage_probe["status"] = "eligible"
+    source_coverage_probe["policy_decision"] = "eligible_for_q5_3_risk_sizing_contract"
+    source_coverage_probe["hold_reasons"] = []
+    source_coverage_probe["hold_reason_count"] = 0
+    source_coverage_probe["decision_source_usage_complete"] = False
+    source_coverage_probe["decision_source_coverage"]["decision_source_usage_complete"] = False
+    source_coverage_errors = validate_phase5_approval_policy_decision(source_coverage_probe)
+
+    source_coverage_complete_count = sum(
+        1
+        for decision in written_bundle.get("decisions", [])
+        if isinstance(decision, dict)
+        and decision.get("all_canonical_sources_considered") is True
+        and decision.get("decision_source_usage_complete") is True
+        and decision.get("source_quorum_bypass_allowed") is False
+    )
+
     print("phase5_approval_policy_status=" + written_bundle["status"])
     print(f"phase5_approval_policy_schema_version={PHASE5_APPROVAL_POLICY_SCHEMA_VERSION}")
     print(f"phase5_approval_policy_artifact_path={output_path}")
@@ -89,6 +107,10 @@ def main() -> int:
     print(f"phase5_approval_policy_eligible_count={written_bundle['eligible_count']}")
     print(f"phase5_approval_policy_hold_count={written_bundle['hold_count']}")
     print(f"phase5_approval_policy_blocked_count={written_bundle['blocked_count']}")
+    print(
+        "phase5_approval_policy_source_coverage_complete_count="
+        f"{source_coverage_complete_count}"
+    )
     print(
         "phase5_approval_policy_approved_shadow_toggle_count="
         f"{written_bundle['approved_shadow_toggle_count']}"
@@ -143,6 +165,10 @@ def main() -> int:
     print(f"phase5_approval_policy_position_probe_error_count={len(position_errors)}")
     print(f"phase5_approval_policy_yahoo_probe_error_count={len(yahoo_errors)}")
     print(f"phase5_approval_policy_preference_probe_error_count={len(preference_errors)}")
+    print(
+        "phase5_approval_policy_source_coverage_probe_error_count="
+        f"{len(source_coverage_errors)}"
+    )
     print("phase5_approval_policy_boundary=" + written_bundle["boundary"])
 
     if validation_errors:
@@ -151,12 +177,16 @@ def main() -> int:
         errors.append("approval_policy_bundle_not_ok")
     if written_bundle["decision_count"] != 5:
         errors.append("approval_policy_decision_count_not_five")
-    if written_bundle["eligible_count"] != 5:
-        errors.append("approval_policy_eligible_count_not_five")
-    if written_bundle["hold_count"] != 0:
-        errors.append("approval_policy_hold_count_not_zero")
-    if written_bundle["blocked_count"] != 0:
-        errors.append("approval_policy_blocked_count_not_zero")
+    if source_coverage_complete_count != written_bundle["decision_count"]:
+        errors.append("approval_policy_source_coverage_incomplete")
+    if written_bundle["eligible_count"] == 0:
+        if written_bundle["hold_count"] + written_bundle["blocked_count"] != written_bundle["decision_count"]:
+            errors.append("approval_policy_guarded_count_mismatch")
+    else:
+        if written_bundle["eligible_count"] + written_bundle["hold_count"] + written_bundle["blocked_count"] != written_bundle[
+            "decision_count"
+        ]:
+            errors.append("approval_policy_status_count_mismatch")
     if written_bundle["global_policy_error_count"] != 0:
         errors.append("approval_policy_global_errors_present")
     if written_bundle["phase4_certified"] is not True:
@@ -203,6 +233,8 @@ def main() -> int:
         errors.append("preference_source36_probe_not_rejected")
     if "preference_source_quorum_credit_allowed" not in preference_errors:
         errors.append("preference_source_quorum_probe_not_rejected")
+    if "eligible_without_decision_source_coverage" not in source_coverage_errors:
+        errors.append("source_coverage_probe_not_rejected")
 
     if errors:
         for error in errors:

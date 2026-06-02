@@ -83,6 +83,17 @@ def main() -> int:
     missing_invalidation_probe["invalidation_conditions"] = []
     missing_invalidation_errors = validate_phase5_risk_sizing_review(missing_invalidation_probe)
 
+    decision_source_coverage_probe = _eligible_probe(first_review)
+    decision_source_coverage_probe["source_summary"][
+        "decision_source_usage_complete"
+    ] = False
+    decision_source_coverage_probe["source_summary"][
+        "decision_source_coverage"
+    ]["decision_source_usage_complete"] = False
+    decision_source_coverage_errors = validate_phase5_risk_sizing_review(
+        decision_source_coverage_probe
+    )
+
     drawdown_probe = _eligible_probe(first_review)
     drawdown_probe["drawdown_pct"] = float(drawdown_probe["max_drawdown_pct"]) + 1.0
     drawdown_errors = validate_phase5_risk_sizing_review(drawdown_probe)
@@ -107,6 +118,15 @@ def main() -> int:
     preference_probe["preference_policy"]["source_quorum_credit_allowed"] = True
     preference_errors = validate_phase5_risk_sizing_review(preference_probe)
 
+    source_coverage_complete_count = sum(
+        1
+        for review in written_bundle.get("reviews", [])
+        if isinstance(review, dict)
+        and review.get("source_summary", {}).get("all_canonical_sources_considered") is True
+        and review.get("source_summary", {}).get("decision_source_usage_complete") is True
+        and review.get("source_summary", {}).get("source_quorum_bypass_allowed") is False
+    )
+
     print("phase5_risk_sizing_status=" + written_bundle["status"])
     print(f"phase5_risk_sizing_schema_version={PHASE5_RISK_SIZING_SCHEMA_VERSION}")
     print(f"phase5_risk_sizing_artifact_path={output_path}")
@@ -123,6 +143,10 @@ def main() -> int:
     print(
         "phase5_risk_sizing_approval_policy_eligible_count="
         f"{written_bundle['approval_policy_eligible_count']}"
+    )
+    print(
+        "phase5_risk_sizing_source_coverage_complete_count="
+        f"{source_coverage_complete_count}"
     )
     print(f"phase5_risk_sizing_event_log_written={written_bundle['event_log_written']}")
     print(f"phase5_risk_sizing_event_log_total_events={event_replay['total_events']}")
@@ -164,6 +188,10 @@ def main() -> int:
         "phase5_risk_sizing_missing_invalidation_probe_error_count="
         f"{len(missing_invalidation_errors)}"
     )
+    print(
+        "phase5_risk_sizing_decision_source_coverage_probe_error_count="
+        f"{len(decision_source_coverage_errors)}"
+    )
     print(f"phase5_risk_sizing_drawdown_probe_error_count={len(drawdown_errors)}")
     print(f"phase5_risk_sizing_broker_probe_error_count={len(broker_errors)}")
     print(f"phase5_risk_sizing_staged_order_probe_error_count={len(staged_order_errors)}")
@@ -180,13 +208,20 @@ def main() -> int:
         errors.append("risk_sizing_review_count_not_five")
     if written_bundle["global_risk_error_count"] != 0:
         errors.append("risk_sizing_global_errors_present")
-    if written_bundle["approval_policy_eligible_count"] != 5:
-        errors.append("approval_policy_eligible_count_not_five")
+    if source_coverage_complete_count != written_bundle["risk_review_count"]:
+        errors.append("risk_sizing_source_coverage_incomplete")
     if written_bundle["event_log_written"] is not True:
         errors.append("risk_sizing_event_log_not_written")
     if event_replay["total_events"] != written_bundle["risk_review_count"]:
         errors.append("risk_sizing_event_log_count_mismatch")
-    if written_bundle["paper_size_eligible_count"] != written_bundle["eligible_count"]:
+    if written_bundle["approval_policy_eligible_count"] == 0:
+        if written_bundle["eligible_count"] != 0:
+            errors.append("risk_sizing_eligible_without_policy")
+        if written_bundle["paper_size_eligible_count"] != 0:
+            errors.append("risk_sizing_paper_size_without_policy")
+        if written_bundle["blocked_count"] != written_bundle["risk_review_count"]:
+            errors.append("risk_sizing_blocked_count_mismatch_for_policy_hold")
+    elif written_bundle["paper_size_eligible_count"] != written_bundle["eligible_count"]:
         errors.append("risk_sizing_paper_size_count_mismatch")
     for key in (
         "risk_approval_allowed_count",
@@ -212,6 +247,8 @@ def main() -> int:
         errors.append("unapproved_probe_not_rejected")
     if "eligible_without_invalidation_conditions" not in missing_invalidation_errors:
         errors.append("missing_invalidation_probe_not_rejected")
+    if "source_summary_decision_source_usage_incomplete" not in decision_source_coverage_errors:
+        errors.append("decision_source_coverage_probe_not_rejected")
     if "eligible_with_drawdown_above_cap" not in drawdown_errors:
         errors.append("drawdown_probe_not_rejected")
     if "risk_sizing_boundary_enabled:broker_write_allowed" not in broker_errors:
