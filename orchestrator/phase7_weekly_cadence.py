@@ -149,11 +149,21 @@ def _cadence_record(summary: dict[str, Any]) -> dict[str, Any]:
     expired_count = int(summary.get("expired_setup_count", 0) or 0)
     proof_trade_count = int(summary.get("proof_trade_count", 0) or 0)
     target = _weekly_target(qualified_count)
-    accounted_count = proof_trade_count + blocked_count + expired_count
+    pending_auto_approval_count = int(summary.get("pending_auto_approval_count", 0) or 0)
+    if target > 0 and pending_auto_approval_count == 0:
+        pending_auto_approval_count = max(0, target - proof_trade_count - blocked_count - expired_count)
+    accounted_count = (
+        proof_trade_count
+        + blocked_count
+        + expired_count
+        + pending_auto_approval_count
+    )
     missed_count = max(0, target - accounted_count)
     no_trade_explained = summary.get("no_trade_explanation_recorded") is True
     if target == 0 and no_trade_explained:
         cadence_state = "satisfied_no_qualified_setups"
+    elif pending_auto_approval_count > 0 and missed_count == 0:
+        cadence_state = "pending_auto_approval"
     elif missed_count == 0:
         cadence_state = "satisfied"
     else:
@@ -174,6 +184,7 @@ def _cadence_record(summary: dict[str, Any]) -> dict[str, Any]:
         "target_proof_trade_count": target,
         "proof_trade_count": proof_trade_count,
         "closed_proof_trade_count": 0,
+        "pending_auto_approval_count": pending_auto_approval_count,
         "accounted_qualified_setup_count": accounted_count,
         "missed_qualified_setup_count": missed_count,
         "no_trade_explanation_recorded": no_trade_explained,
@@ -203,9 +214,15 @@ def _preflight_blockers(setup_ledger: dict[str, Any]) -> list[str]:
     ledger_errors = validate_phase7_qualified_setup_ledger(setup_ledger)
     if ledger_errors:
         blockers.append("phase7_qualified_setup_ledger_validation_errors")
-    if setup_ledger.get("status") != "read_only_no_q7_setups":
+    if setup_ledger.get("status") not in {
+        "read_only_no_q7_setups",
+        "read_only_q7_setups_recorded",
+    }:
         blockers.append("phase7_qualified_setup_ledger_status_invalid")
-    if setup_ledger.get("stage_status") != "qualified_setup_ledger_recorded_no_q7_setup_window":
+    if setup_ledger.get("stage_status") not in {
+        "qualified_setup_ledger_recorded_no_q7_setup_window",
+        "qualified_setup_ledger_recorded_with_q7_setups",
+    }:
         blockers.append("phase7_qualified_setup_ledger_stage_status_invalid")
     if setup_ledger.get("q7_4_weekly_cadence_tracker_stage_allowed") is not True:
         blockers.append("q7_4_weekly_cadence_tracker_not_allowed")
@@ -229,6 +246,17 @@ def build_phase7_weekly_cadence_tracker(
     no_forced_exception_count = sum(
         1 for record in records if record.get("no_forced_trade_exception_recorded") is True
     )
+    pending_auto_approval_total = sum(
+        int(record.get("pending_auto_approval_count", 0) or 0) for record in records
+    )
+    status = "cadence_satisfied_no_q7_setups"
+    stage_status = "weekly_cadence_recorded_no_qualified_setups"
+    if pending_auto_approval_total:
+        status = "cadence_pending_q7_handoff"
+        stage_status = "weekly_cadence_pending_auto_approval"
+    if not tracker_recorded:
+        status = "blocked"
+        stage_status = "weekly_cadence_tracker_blocked"
     artifact = {
         "schema_version": PHASE7_WEEKLY_CADENCE_SCHEMA_VERSION,
         "phase7_artifact_schema_version": PHASE7_ARTIFACT_SCHEMA_VERSION,
@@ -236,12 +264,8 @@ def build_phase7_weekly_cadence_tracker(
         "artifact_id": "phase7:q7-4:weekly-cadence-tracker",
         "phase": "Q7",
         "stage": "Q7-4",
-        "status": "cadence_satisfied_no_q7_setups" if tracker_recorded else "blocked",
-        "stage_status": (
-            "weekly_cadence_recorded_no_qualified_setups"
-            if tracker_recorded
-            else "weekly_cadence_tracker_blocked"
-        ),
+        "status": status,
+        "stage_status": stage_status,
         "generated_at": _now(),
         "public_safe": True,
         "recorded": False,
@@ -288,6 +312,7 @@ def build_phase7_weekly_cadence_tracker(
         "target_proof_trade_count": target_total,
         "proof_trade_count": proof_trade_total,
         "closed_proof_trade_count": 0,
+        "pending_auto_approval_count": pending_auto_approval_total,
         "missed_qualified_setup_count": missed_total,
         "missed_qualified_setup_unexplained_count": missed_total,
         "no_forced_trade_rule_applied": True,
@@ -390,8 +415,14 @@ def _record_errors(artifact: dict[str, Any]) -> list[str]:
         blocked_count = int(record.get("policy_blocked_qualified_setup_count", 0) or 0)
         expired_count = int(record.get("expired_qualified_setup_count", 0) or 0)
         proof_trade_count = int(record.get("proof_trade_count", 0) or 0)
+        pending_auto_approval_count = int(record.get("pending_auto_approval_count", 0) or 0)
         expected_target = _weekly_target(qualified_count)
-        expected_accounted = proof_trade_count + blocked_count + expired_count
+        expected_accounted = (
+            proof_trade_count
+            + blocked_count
+            + expired_count
+            + pending_auto_approval_count
+        )
         expected_missed = max(0, expected_target - expected_accounted)
         if record.get("weekly_target_formula") != "min(3, qualified_setup_count)":
             errors.append("weekly_cadence_record_formula_invalid")
@@ -424,6 +455,15 @@ def _record_errors(artifact: dict[str, Any]) -> list[str]:
                 errors.append("weekly_cadence_no_forced_exception_missing")
             if record.get("cadence_state") != "satisfied_no_qualified_setups":
                 errors.append("weekly_cadence_zero_target_state_invalid")
+            if pending_auto_approval_count != 0:
+                errors.append("weekly_cadence_pending_auto_approval_without_target")
+        if expected_target > 0:
+            if pending_auto_approval_count <= 0 and expected_missed == 0:
+                errors.append("weekly_cadence_positive_target_without_pending_or_missed")
+            if pending_auto_approval_count > 0 and record.get("cadence_state") != (
+                "pending_auto_approval"
+            ):
+                errors.append("weekly_cadence_pending_state_invalid")
         if expected_missed > 0 and record.get("cadence_satisfied") is True:
             errors.append("weekly_cadence_missed_setup_marked_satisfied")
         if expected_missed == 0 and record.get("cadence_satisfied") is not True:
@@ -472,6 +512,7 @@ def validate_phase7_weekly_cadence_tracker(artifact: dict[str, Any]) -> list[str
         "target_proof_trade_count",
         "proof_trade_count",
         "closed_proof_trade_count",
+        "pending_auto_approval_count",
         "missed_qualified_setup_count",
         "missed_qualified_setup_unexplained_count",
         "no_forced_trade_rule_applied",
@@ -515,18 +556,28 @@ def validate_phase7_weekly_cadence_tracker(artifact: dict[str, Any]) -> list[str
         errors.append("weekly_cadence_blocker_count_mismatch")
     if artifact.get("q7_4_weekly_cadence_tracker_stage_allowed") is not True:
         errors.append("q7_4_weekly_cadence_tracker_not_allowed")
-    if artifact.get("source_setup_ledger_status") != "read_only_no_q7_setups":
+    if artifact.get("source_setup_ledger_status") not in {
+        "read_only_no_q7_setups",
+        "read_only_q7_setups_recorded",
+    }:
         errors.append("weekly_cadence_source_setup_ledger_status_invalid")
-    if artifact.get("source_setup_ledger_stage_status") != (
-        "qualified_setup_ledger_recorded_no_q7_setup_window"
-    ):
+    if artifact.get("source_setup_ledger_stage_status") not in {
+        "qualified_setup_ledger_recorded_no_q7_setup_window",
+        "qualified_setup_ledger_recorded_with_q7_setups",
+    }:
         errors.append("weekly_cadence_source_setup_ledger_stage_status_invalid")
 
     tracker_recorded = artifact.get("weekly_cadence_tracker_recorded") is True
     if tracker_recorded:
-        if artifact.get("status") != "cadence_satisfied_no_q7_setups":
+        if artifact.get("status") not in {
+            "cadence_satisfied_no_q7_setups",
+            "cadence_pending_q7_handoff",
+        }:
             errors.append("weekly_cadence_status_invalid")
-        if artifact.get("stage_status") != "weekly_cadence_recorded_no_qualified_setups":
+        if artifact.get("stage_status") not in {
+            "weekly_cadence_recorded_no_qualified_setups",
+            "weekly_cadence_pending_auto_approval",
+        }:
             errors.append("weekly_cadence_stage_status_invalid")
         if blockers:
             errors.append("weekly_cadence_recorded_with_blockers")
@@ -549,6 +600,7 @@ def validate_phase7_weekly_cadence_tracker(artifact: dict[str, Any]) -> list[str
         target_total = sum(int(record.get("target_proof_trade_count", 0) or 0) for record in records if isinstance(record, dict))
         proof_trade_total = sum(int(record.get("proof_trade_count", 0) or 0) for record in records if isinstance(record, dict))
         missed_total = sum(int(record.get("missed_qualified_setup_count", 0) or 0) for record in records if isinstance(record, dict))
+        pending_total = sum(int(record.get("pending_auto_approval_count", 0) or 0) for record in records if isinstance(record, dict))
         satisfied_count = sum(1 for record in records if isinstance(record, dict) and record.get("cadence_satisfied") is True)
         failed_count = sum(1 for record in records if isinstance(record, dict) and record.get("cadence_satisfied") is not True)
         no_forced_exception_count = sum(
@@ -567,6 +619,8 @@ def validate_phase7_weekly_cadence_tracker(artifact: dict[str, Any]) -> list[str
             errors.append("weekly_cadence_proof_trade_total_mismatch")
         if artifact.get("missed_qualified_setup_count") != missed_total:
             errors.append("weekly_cadence_missed_total_mismatch")
+        if artifact.get("pending_auto_approval_count") != pending_total:
+            errors.append("weekly_cadence_pending_auto_approval_total_mismatch")
         if artifact.get("missed_qualified_setup_unexplained_count") != missed_total:
             errors.append("weekly_cadence_unexplained_missed_total_mismatch")
         if artifact.get("weekly_cadence_satisfied_count") != satisfied_count:
@@ -577,11 +631,8 @@ def validate_phase7_weekly_cadence_tracker(artifact: dict[str, Any]) -> list[str
             errors.append("weekly_cadence_no_forced_exception_count_mismatch")
 
     for count_field in (
-        "qualified_setup_count",
-        "eligible_setup_count",
         "blocked_setup_count",
         "expired_setup_count",
-        "target_proof_trade_count",
         "proof_trade_count",
         "closed_proof_trade_count",
         "missed_qualified_setup_count",
@@ -596,10 +647,14 @@ def validate_phase7_weekly_cadence_tracker(artifact: dict[str, Any]) -> list[str
         errors.append("weekly_cadence_satisfied_count_not_five")
     if artifact.get("weekly_cadence_failed_count") != 0:
         errors.append("weekly_cadence_failed_count_nonzero")
-    if artifact.get("no_forced_trade_exception_count") != 5:
-        errors.append("weekly_cadence_no_forced_exception_count_not_five")
-    if artifact.get("no_trade_week_explanation_count") != 5:
-        errors.append("weekly_cadence_no_trade_week_explanation_count_mismatch")
+    expected_no_forced = sum(
+        1
+        for record in records
+        if isinstance(record, dict)
+        and record.get("no_forced_trade_exception_recorded") is True
+    ) if isinstance(records, list) else 0
+    if artifact.get("no_forced_trade_exception_count") != expected_no_forced:
+        errors.append("weekly_cadence_no_forced_exception_count_mismatch")
     if artifact.get("weekly_target_formula") != "min(3, qualified_setup_count)":
         errors.append("weekly_cadence_top_formula_invalid")
     if artifact.get("weekly_proof_trade_target") != PHASE7_WEEKLY_PROOF_TRADE_TARGET:

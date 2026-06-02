@@ -25,11 +25,23 @@ ALPACA_API_SECRET=
 ALPACA_PAPER=true
 KALSHI_API_KEY=
 KALSHI_API_SECRET=
+AISSTREAM_API_KEY=
+AVIATIONSTACK_API_KEY=
+COMTRADE_API_KEY=
+COMTRADE_V1_PRIMARY_KEY=
+COMTRADE_V1_SECONDARY_KEY=
+COMTRADE_TOOLS_V1_PRIMARY_KEY=
+COMTRADE_TOOLS_V1_SECONDARY_KEY=
+COMTRADE_PUBLIC_V1_PRIMARY_KEY=
+COMTRADE_PUBLIC_V1_SECONDARY_KEY=
+X_BEARER_TOKEN=
+REDDIT_CLIENT_ID=
+REDDIT_CLIENT_SECRET=
+CAPITOL_TRADES_API_KEY=
 ACLED_EMAIL=
 ACLED_PASSWORD=
 ACLED_ACCESS_TOKEN=
 ACLED_REFRESH_TOKEN=
-UNUSUAL_WHALES_API_KEY=
 FRED_API_KEY=
 QCTRL_API_KEY=
 QCTRL_ORGANIZATION_SLUG=
@@ -60,7 +72,7 @@ If a key is ever pasted into a chat, committed, or shown publicly, rotate it at 
 | 2 | Alpaca Paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Required for the £100,000 paper-account proof rail once the execution adapter is built. | Create/sign in to Alpaca, open Paper Trading, generate paper API keys, and use the paper endpoint. |
 | 3 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Required for prediction-market monitoring and later guarded execution. | Create an API key from Kalshi account settings when the account and region are eligible. Store the private key immediately because it cannot be retrieved later. |
 | 4 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | High-value conflict and geopolitical event source. | Create a myACLED account, then request API auth and refresh tokens for `https://acleddata.com/api/acled/read`. Prefer token refresh automation over repeated password use. |
-| 5 | Unusual Whales | `UNUSUAL_WHALES_API_KEY` | Options flow, dark pool, congressional trading, and volatility context. | Subscribe/request API access, then create/copy the API token from the API dashboard. |
+| 5 | Capitol Trades / STOCK Act provider | `CAPITOL_TRADES_API_KEY` | Congressional trading context for the STOCK Act source. | Use the provider/API path selected for Qadam and store the key locally. |
 | 6 | FRED | `FRED_API_KEY` | Better official macro API access. | Log into a FRED account and request a distinct API key for Qadam. Qadam can still use public CSV fallback without it. |
 
 ## TradingView

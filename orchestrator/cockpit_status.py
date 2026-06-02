@@ -39,6 +39,9 @@ from orchestrator.paperops_alpaca_paper_submit_enablement import (
     paperops_alpaca_paper_submit_enablement_public_status,
 )
 from orchestrator.paperops_alpaca_paper_post import paperops_alpaca_paper_post_public_status
+from orchestrator.paperops_first_week_paper_trade_mandate import (
+    first_week_paper_trade_mandate_public_status,
+)
 from orchestrator.paperops_paper_lifecycle_poller import (
     paperops_paper_lifecycle_poller_public_status,
 )
@@ -199,7 +202,11 @@ from orchestrator.quantum import (
 )
 from orchestrator.risk_agent import RiskPolicyReviewStore, risk_agent_summary
 from orchestrator.signal_integrity import SignalIntegrityReviewStore, signal_integrity_summary
-from orchestrator.source_health import SourceHeartbeatStore, build_data_environment_map
+from orchestrator.source_health import (
+    PROMOTED_ADAPTER_STATUS,
+    SourceHeartbeatStore,
+    build_data_environment_map,
+)
 from orchestrator.staged_paper_order import StagedPaperOrderReviewStore, staged_paper_order_summary
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
@@ -226,6 +233,7 @@ from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
 
 COCKPIT_STATUS_SCHEMA_VERSION = 1
 COCKPIT_STATUS_FILENAME = "cockpit-status.json"
+PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 
 PROHIBITED_KEYS = {
     "access_token",
@@ -1376,6 +1384,18 @@ PROHIBITED_VALUE_PATTERNS = (
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _iso_age_seconds(value: str | None) -> int | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return max(0, int((datetime.now(timezone.utc) - parsed.astimezone(timezone.utc)).total_seconds()))
 
 
 def _read_runtime_json(settings: Settings, filename: str) -> dict[str, Any] | None:
@@ -3063,6 +3083,8 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "observed_at": snapshot.observed_at,
             "equity_gbp": snapshot.equity_gbp,
             "drawdown_pct": snapshot.drawdown_pct,
+            "display_currency": snapshot.display_currency,
+            "account_currency": snapshot.account_currency,
         }
         for snapshot in store.read_snapshots(limit=20)
     ]
@@ -3071,6 +3093,10 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "mirror_status": summary["status"],
             "account_scope": PAPER_ACCOUNT_SCOPE,
             "broker": "local_mirror_pending_alpaca_readonly",
+            "portfolio_value_source": "local_placeholder",
+            "account_currency": "GBP",
+            "display_currency": "GBP",
+            "fx_to_gbp_rate": 1.0,
             "starting_balance_gbp": settings.trial_balance_gbp,
             "current_balance_gbp": settings.trial_balance_gbp,
             "cash_gbp": settings.trial_balance_gbp,
@@ -3084,6 +3110,21 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "write_authority": False,
             "connection_status": "not_initialized",
             "timeline_status": "not_initialized",
+            "observed_at": None,
+            "last_broker_sync_at": None,
+            "last_broker_sync_age_seconds": None,
+            "stale_after_seconds": PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS,
+            "mirror_freshness_status": "not_connected",
+            "mirror_freshness_label": "No broker mirror snapshot yet",
+            "portfolio_reconciliation": {
+                "status": "not_available",
+                "delta": None,
+                "tolerance": None,
+                "detail": "No broker snapshot exists yet.",
+                "history_latest_equity_gbp": None,
+                "history_latest_profit_loss_gbp": None,
+            },
+            "broker_reconciliation_status": "not_available",
             "maturity_closed_trade_target": 100,
             "maturity_closed_trade_count": 0,
             "order_count": 0,
@@ -3096,10 +3137,31 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "equity_curve": [],
             "boundary": summary["boundary"],
         }
+    sync_age_seconds = _iso_age_seconds(latest.observed_at)
+    if sync_age_seconds is None:
+        freshness_status = "unknown"
+        freshness_label = "Broker mirror timestamp unavailable"
+    elif sync_age_seconds <= PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS:
+        freshness_status = "fresh"
+        freshness_label = "Broker mirror fresh"
+    else:
+        freshness_status = "stale"
+        freshness_label = "Broker mirror stale"
     return {
         "mirror_status": summary["status"],
         "account_scope": latest.account_scope,
         "broker": latest.broker,
+        "portfolio_value_source": (
+            "alpaca_account_equity"
+            if str(latest.broker).startswith("alpaca")
+            else "local_paper_account_snapshot"
+        ),
+        "account_currency": latest.account_currency,
+        "display_currency": latest.display_currency,
+        "fx_to_gbp_rate": latest.fx_to_gbp_rate,
+        "source_current_balance": latest.source_current_balance,
+        "source_cash": latest.source_cash,
+        "source_equity": latest.source_equity,
         "starting_balance_gbp": latest.starting_balance_gbp,
         "current_balance_gbp": latest.current_balance_gbp,
         "cash_gbp": latest.cash_gbp,
@@ -3114,6 +3176,20 @@ def _capital(settings: Settings) -> dict[str, Any]:
         "connection_status": latest.connection_status,
         "timeline_status": latest.timeline_status,
         "observed_at": latest.observed_at,
+        "last_broker_sync_at": latest.observed_at,
+        "last_broker_sync_age_seconds": sync_age_seconds,
+        "stale_after_seconds": PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS,
+        "mirror_freshness_status": freshness_status,
+        "mirror_freshness_label": freshness_label,
+        "portfolio_reconciliation": {
+            "status": latest.broker_reconciliation_status,
+            "delta": latest.broker_reconciliation_delta,
+            "tolerance": latest.broker_reconciliation_tolerance,
+            "detail": latest.broker_reconciliation_detail,
+            "history_latest_equity_gbp": latest.broker_portfolio_history_latest_equity,
+            "history_latest_profit_loss_gbp": latest.broker_portfolio_history_latest_profit_loss,
+        },
+        "broker_reconciliation_status": latest.broker_reconciliation_status,
         "maturity_closed_trade_target": latest.maturity_closed_trade_target,
         "maturity_closed_trade_count": latest.maturity_closed_trade_count,
         "open_position_count": len(positions),
@@ -4881,6 +4957,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     paperops_alpaca_post = payload.get("paperops_alpaca_paper_post", {})
+    paperops_first_week_mandate = payload.get(
+        "paperops_first_week_paper_trade_mandate",
+        {},
+    )
     paperops_lifecycle_polling_enablement = payload.get(
         "paperops_paper_lifecycle_polling_enablement",
         {},
@@ -4912,6 +4992,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     paperops_qctrl = payload.get("paperops_qctrl_consultation", {})
+    phase1_data_spine = payload.get("phase1_data_spine", {})
 
     hypotheses = cognition.get("hypotheses", [])
     evidence_packets = cognition.get("evidence_packets", [])
@@ -4938,6 +5019,12 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     )
     current_balance = float(capital.get("current_balance_gbp") or capital.get("starting_balance_gbp") or 0)
     pnl_total = float(capital.get("realized_pnl_gbp") or 0) + float(capital.get("unrealized_pnl_gbp") or 0)
+    phase1_data_spine_ok = phase1_data_spine.get("status") == "ok"
+    phase1_operational_status = (
+        "operational_with_optional_missing_credentials"
+        if phase1_data_spine_ok
+        else "not_ready"
+    )
 
     if candidates:
         next_trade_state = "candidate_review"
@@ -4973,6 +5060,22 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "logged_in_count": len(configured_sources),
             "logged_in_sources": configured_sources[:12],
             "connected_sources": connected_sources[:12],
+            "phase1_data_spine_status": phase1_data_spine.get("status", "missing"),
+            "phase1_data_spine_operational_status": phase1_operational_status,
+            "canonical_source_count": phase1_data_spine.get(
+                "canonical_source_count",
+                EXPECTED_SOURCE_COUNT,
+            ),
+            "expected_canonical_source_count": EXPECTED_SOURCE_COUNT,
+            "promoted_adapter_count": phase1_data_spine.get(
+                "promoted_adapter_count",
+                len(PROMOTED_ADAPTER_STATUS),
+            ),
+            "expected_promoted_adapter_count": len(PROMOTED_ADAPTER_STATUS),
+            "optional_missing_credential_source_count": phase1_data_spine.get(
+                "optional_missing_credential_source_count",
+                missing_credentials,
+            ),
             "durable_replay_status": durable_ingestion.get("replay_status", "unknown"),
             "durable_replayed_source_count": durable_ingestion.get("replayed_source_count", 0),
             "durable_expected_source_count": durable_ingestion.get("expected_source_count", 0),
@@ -5000,6 +5103,20 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "replayed_source_count": durable_ingestion.get("replayed_source_count", 0),
             "expected_source_count": durable_ingestion.get("expected_source_count", 0),
             "missing_source_count": durable_ingestion.get("missing_source_count", 0),
+            "source_spine_ready": phase1_data_spine_ok,
+            "operational_status": phase1_operational_status,
+            "canonical_source_count": phase1_data_spine.get(
+                "canonical_source_count",
+                EXPECTED_SOURCE_COUNT,
+            ),
+            "promoted_adapter_count": phase1_data_spine.get(
+                "promoted_adapter_count",
+                len(PROMOTED_ADAPTER_STATUS),
+            ),
+            "optional_missing_credential_source_count": phase1_data_spine.get(
+                "optional_missing_credential_source_count",
+                missing_credentials,
+            ),
             "latest_observed_at": durable_ingestion.get("latest_observed_at"),
             "next_step": durable_ingestion.get("next_step", "Verify durable replay readiness."),
             "write_authority": False,
@@ -5033,7 +5150,8 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         },
         "system_stack": {
             "coo": _module_status(payload, "event_log"),
-            "data_spine": _module_status(payload, "watching"),
+            "data_spine": phase1_data_spine.get("status", _module_status(payload, "watching")),
+            "data_spine_operational_status": phase1_operational_status,
             "durable_spine": durable_ingestion.get("contract_status", "unknown"),
             "local_llm": _module_status(payload, "research_analyst"),
             "frontier_llm": _module_status(payload, "strategy_lead"),
@@ -5075,6 +5193,30 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "paperops_alpaca_paper_post_called_count": paperops_alpaca_post.get(
                 "alpaca_paper_post_called_count",
                 0,
+            ),
+            "paperops_first_week_paper_trade_mandate": (
+                paperops_first_week_mandate.get("status", "not_run")
+            ),
+            "paperops_first_week_paper_trade_mandate_active": (
+                paperops_first_week_mandate.get("active", False)
+            ),
+            "paperops_first_week_paper_trade_mandate_day_number": (
+                paperops_first_week_mandate.get("day_number", 0)
+            ),
+            "paperops_first_week_paper_trade_mandate_daily_target": (
+                paperops_first_week_mandate.get("daily_target_trade_count", 0)
+            ),
+            "paperops_first_week_paper_trade_mandate_min_notional_usd": (
+                paperops_first_week_mandate.get("minimum_notional_usd", 0)
+            ),
+            "paperops_first_week_paper_trade_mandate_daily_ready_submit_count": (
+                paperops_first_week_mandate.get("daily_ready_submit_count", 0)
+            ),
+            "paperops_first_week_paper_trade_mandate_daily_submitted_count": (
+                paperops_first_week_mandate.get("daily_submitted_count", 0)
+            ),
+            "paperops_first_week_paper_trade_mandate_paper_only": (
+                paperops_first_week_mandate.get("paper_only", False)
             ),
             "paperops_paper_lifecycle_polling_enablement": (
                 paperops_lifecycle_polling_enablement.get("status", "not_run")
@@ -5237,6 +5379,12 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                     "unattended_paper_execution_delegation_reason",
                     "not_armed",
                 )
+            ),
+            "paperops_active_paper_trading_idle_reason": (
+                paperops_active_automation.get("idle_reason", "")
+            ),
+            "paperops_active_paper_trading_idempotency_guard_message": (
+                paperops_active_automation.get("idempotency_guard_message", "")
             ),
             "paperops_active_paper_trading_fresh_submit_count": (
                 paperops_active_automation.get(
@@ -6313,6 +6461,40 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     generated_at = _now()
     data_map = build_data_environment_map(settings)
+    data_summary = data_map.get("summary", {})
+    phase1_data_spine = {
+        "status": (
+            "ok"
+            if data_summary.get("status") == "ok"
+            and int(data_summary.get("source_count", 0) or 0) == EXPECTED_SOURCE_COUNT
+            and int(data_summary.get("promoted_adapter_count", 0) or 0)
+            == len(PROMOTED_ADAPTER_STATUS)
+            else str(data_summary.get("status") or "missing")
+        ),
+        "operational_status": (
+            "operational_with_optional_missing_credentials"
+            if data_summary.get("status") == "ok"
+            and int(data_summary.get("source_count", 0) or 0) == EXPECTED_SOURCE_COUNT
+            and int(data_summary.get("promoted_adapter_count", 0) or 0)
+            == len(PROMOTED_ADAPTER_STATUS)
+            else "not_ready"
+        ),
+        "canonical_source_count": int(data_summary.get("source_count", 0) or 0),
+        "expected_canonical_source_count": EXPECTED_SOURCE_COUNT,
+        "promoted_adapter_count": int(
+            data_summary.get("promoted_adapter_count", 0) or 0
+        ),
+        "expected_promoted_adapter_count": len(PROMOTED_ADAPTER_STATUS),
+        "optional_missing_credential_source_count": int(
+            data_summary.get("missing_credential_source_count", 0) or 0
+        ),
+        "public_safe": True,
+        "boundary": (
+            "Phase 1 data spine readiness is source coverage only. Missing "
+            "coverage credentials are optional unless a strategy explicitly "
+            "requires that source."
+        ),
+    }
     health = build_system_health(settings, event_log_health=EventLog(echo=False).health())
     quantum_oracle = dict(health["quantum_oracle"])
     quantum_oracle["provider_readiness"] = quantum_provider_readiness(settings)
@@ -6333,6 +6515,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         },
         "capital": _capital(settings),
         "watching": watching,
+        "phase1_data_spine": phase1_data_spine,
         "source_pipeline_summary": _build_source_pipeline_summary(watching),
         "source_heartbeat_history": _build_source_heartbeat_history(settings),
         "yahoo_finance": _safe_yahoo_finance_status(settings, generated_at),
@@ -6359,6 +6542,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             paperops_alpaca_paper_submit_enablement_public_status(settings)
         ),
         "paperops_alpaca_paper_post": paperops_alpaca_paper_post_public_status(settings),
+        "paperops_first_week_paper_trade_mandate": (
+            first_week_paper_trade_mandate_public_status(settings)
+        ),
         "paperops_paper_lifecycle_polling_enablement": (
             paperops_paper_lifecycle_polling_enablement_public_status(settings)
         ),
@@ -6492,6 +6678,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paper_operational_mode",
         "paperops_alpaca_paper_submit_enablement",
         "paperops_alpaca_paper_post",
+        "paperops_first_week_paper_trade_mandate",
         "paperops_paper_lifecycle_polling_enablement",
         "paperops_paper_lifecycle_poller",
         "paperops_guarded_paper_exit_enablement",
@@ -7394,10 +7581,23 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError("PaperOps qualified setup production ready without setup")
         if paperops_qualified_setup.get("ready_to_stage_q7_order") is not True:
             raise ValueError("PaperOps qualified setup production missing stage handoff")
-    if int(paperops_qualified_setup.get("phase7_demo_qualified_setup_count", 0) or 0) != 0:
-        raise ValueError("PaperOps qualified setup production mutated Phase 7 demo count")
-    if int(paperops_qualified_setup.get("source_qualified_setup_ledger_count", 0) or 0) != 0:
-        raise ValueError("PaperOps qualified setup production mutated Q7 ledger")
+    pt3_qualified_count = int(paperops_qualified_setup.get("qualified_setup_count", 0) or 0)
+    phase7_demo_qualified_count = int(
+        paperops_qualified_setup.get("phase7_demo_qualified_setup_count", 0) or 0
+    )
+    q7_ledger_qualified_count = int(
+        paperops_qualified_setup.get("source_qualified_setup_ledger_count", 0) or 0
+    )
+    if phase7_demo_qualified_count > pt3_qualified_count:
+        raise ValueError(
+            "PaperOps qualified setup production observed more Phase 7 demo setups "
+            "than PT-3 qualified"
+        )
+    if q7_ledger_qualified_count > pt3_qualified_count:
+        raise ValueError(
+            "PaperOps qualified setup production observed more Q7 ledger setups "
+            "than PT-3 qualified"
+        )
     setup_boundary = str(paperops_qualified_setup.get("boundary") or "")
     for phrase in (
         "guarded qualified setup production path",

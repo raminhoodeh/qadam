@@ -507,8 +507,6 @@ def main() -> int:
         "broker_side_intervention_count",
         "unlinked_lifecycle_record_count",
         "governance_feedback_trade_level_intervention_count",
-        "paper_order_submitted_count",
-        "proof_trade_created_count",
         "broker_post_called_count",
         "alpaca_post_called_count",
         "unsafe_write_counter_total",

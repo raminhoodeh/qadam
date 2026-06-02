@@ -1,0 +1,113 @@
+[
+  {
+    "label": "telegram_inbound",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "telegram_inbound_poll_record_count": "2",
+      "telegram_inbound_poll_world_event_datapoint_count": "1",
+      "telegram_inbound_poll_strategy_consideration_count": "1",
+      "telegram_inbound_poll_boundary": "read-only member research intake; no trade authority"
+    }
+  },
+  {
+    "label": "paper_ops_cycle",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "paper_ops_cycle_check_status": "paper_cycle_full_paper_operational_ready",
+      "paper_ops_cycle_check_qualified_setup_count": "0",
+      "paper_ops_cycle_check_submitted_paper_order_count": "0",
+      "paper_ops_cycle_check_closed_proof_trade_count": "0",
+      "paper_ops_cycle_check_broker_post_called_count": "0",
+      "paper_ops_cycle_check_alpaca_post_called_count": "0",
+      "paper_ops_cycle_check_blockers": "",
+      "paper_operational_cycle_contract_check": "ok"
+    }
+  },
+  {
+    "label": "active_automation_check",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "paperops_active_automation_status": "active_automation_enabled_idle",
+      "paperops_active_automation_paperops2_fresh_eligible_submit_record_count": "0",
+      "paperops_active_automation_paperops2_duplicate_submit_record_count": "1",
+      "paperops_active_automation_paperops3_open_position_count": "0"
+    }
+  },
+  {
+    "label": "active_automation_execute",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "paperops_active_runner_status": "active_automation_enabled_idle",
+      "paperops_active_runner_fresh_submit_count": "0",
+      "paperops_active_runner_duplicate_submit_count": "1"
+    }
+  },
+  {
+    "label": "cockpit_notification",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "paperops_cockpit_notification_upgrade_notification_live_send_allowed_count": "0",
+      "paperops_cockpit_notification_upgrade_notification_command_path_enabled_count": "0"
+    }
+  },
+  {
+    "label": "paperops_30_day_operations",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "paperops_30_day_operations_run_id": "phase7-demo-proof-2026-05-25",
+      "paperops_30_day_operations_run_state": "active",
+      "paperops_30_day_operations_active_day_number": "4",
+      "paperops_30_day_operations_completed_calendar_day_count": "3",
+      "paperops_30_day_operations_calendar_days_remaining": "27",
+      "paperops_30_day_operations_actual_calendar_run": "True",
+      "paperops_30_day_operations_backfill_used": "False",
+      "paperops_30_day_operations_simulated_time_used": "False",
+      "paperops_30_day_operations_no_forced_trades": "True",
+      "paperops_30_day_operations_qualified_setup_count": "0",
+      "paperops_30_day_operations_submitted_paper_order_count": "0",
+      "paperops_30_day_operations_closed_proof_trade_count": "0",
+      "paperops_30_day_operations_no_trade_rationale": "no_q7_qualified_setups_detected_for_active_observation",
+      "paperops_30_day_operations_live_capital_enabled": "False",
+      "paperops_30_day_operations_phase7_proof_credit_allowed": "False",
+      "paperops_30_day_operations_blockers": ""
+    }
+  },
+  {
+    "label": "paper_live_certification",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "paper_live_certification_status": "paper_live_certified"
+    }
+  },
+  {
+    "label": "paper_closeout",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "qadam_paper_closeout_status": "ready",
+      "qadam_paper_closeout_required_gaps": "",
+      "qadam_paper_closeout_optional_gaps": "unusual_whales_api_key_missing",
+      "qadam_paper_closeout_fire_opal_ibm_status": "device_probe_submitted"
+    }
+  },
+  {
+    "label": "cockpit_status",
+    "returncode": 0,
+    "ok": true,
+    "parsed": {
+      "cockpit_status_mission_control_status": "read_only_mission_control",
+      "cockpit_status_paper_mirror_status": "ok",
+      "cockpit_status_paper_open_position_count": "0",
+      "cockpit_status_paper_closed_trade_count": "1",
+      "cockpit_status_paper_order_count": "1",
+      "cockpit_status_live_capital_enabled": "False"
+    }
+  }
+]

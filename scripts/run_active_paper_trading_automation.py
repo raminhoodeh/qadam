@@ -84,6 +84,8 @@ def _run_step(label: str, script: str, *args: str) -> dict[str, Any]:
                     "paper_submit": "paperops_alpaca_post_live_endpoint_called_count",
                     "paper_poll": "paperops_lifecycle_poller_live_endpoint_called_count",
                     "paper_exit": "paperops_exit_live_endpoint_called_count",
+                    "first_week_trade_mandate": "live_endpoint_called_count",
+                    "first_week_trade_mandate_refresh": "live_endpoint_called_count",
                 }.get(label, "live_endpoint_called_count"),
                 "0",
             )
@@ -94,6 +96,12 @@ def _run_step(label: str, script: str, *args: str) -> dict[str, Any]:
                 "paper_submit": "paperops_alpaca_post_live_capital_enabled",
                 "paper_poll": "paperops_lifecycle_poller_live_capital_enabled",
                 "paper_exit": "paperops_exit_live_capital_enabled",
+                "first_week_trade_mandate": (
+                    "paperops_first_week_trade_mandate_live_capital_enabled"
+                ),
+                "first_week_trade_mandate_refresh": (
+                    "paperops_first_week_trade_mandate_live_capital_enabled"
+                ),
             }.get(label, "live_capital_enabled"),
             "False",
         )
@@ -248,15 +256,46 @@ def main() -> int:
     if event_path.exists():
         event_path.unlink()
 
-    initial = build_paperops_active_paper_trading_automation(
-        settings=settings,
-        execute_automation_requested=args.execute_paper_automation,
-    )
     action_records: list[dict[str, Any]] = []
     command_failed = False
 
     if args.execute_paper_automation:
-        if initial.get("paper_submit_step_allowed") is True:
+        mandate = _run_step(
+            "first_week_trade_mandate",
+            "scripts/check_paperops_first_week_paper_trade_mandate.py",
+        )
+        action_records.append(mandate)
+        command_failed = command_failed or not mandate["ok"]
+
+    initial = build_paperops_active_paper_trading_automation(
+        settings=settings,
+        execute_automation_requested=args.execute_paper_automation,
+        action_records=action_records,
+    )
+
+    if args.execute_paper_automation:
+        max_submit_attempts = max(
+            1,
+            min(
+                3,
+                int(
+                    initial.get(
+                        "first_week_paper_trade_mandate_daily_ready_submit_count",
+                        1,
+                    )
+                    or 1
+                ),
+            ),
+        )
+        submit_attempt_count = 0
+        while submit_attempt_count < max_submit_attempts:
+            current = build_paperops_active_paper_trading_automation(
+                settings=settings,
+                execute_automation_requested=args.execute_paper_automation,
+                action_records=action_records,
+            )
+            if current.get("paper_submit_step_allowed") is not True:
+                break
             submit = _run_step(
                 "paper_submit",
                 "scripts/check_paperops_alpaca_paper_post.py",
@@ -264,6 +303,19 @@ def main() -> int:
             )
             action_records.append(submit)
             command_failed = command_failed or not submit["ok"]
+            submit_attempt_count += 1
+
+            refresh = _run_step(
+                "first_week_trade_mandate_refresh",
+                "scripts/check_paperops_first_week_paper_trade_mandate.py",
+            )
+            action_records.append(refresh)
+            command_failed = command_failed or not refresh["ok"]
+
+            if submit["parsed"].get("paperops_alpaca_post_status") != (
+                "submitted_to_alpaca_paper"
+            ):
+                break
 
         after_submit = build_paperops_active_paper_trading_automation(
             settings=settings,
@@ -343,6 +395,53 @@ def main() -> int:
         f"{written['paperops2_duplicate_submit_record_count']}"
     )
     print(
+        "paperops_active_runner_duplicate_submit_interpretation="
+        f"{written['paperops2_duplicate_submit_interpretation']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_status="
+        f"{written['first_week_paper_trade_mandate_status']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_active="
+        f"{written['first_week_paper_trade_mandate_active']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_day_number="
+        f"{written['first_week_paper_trade_mandate_day_number']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_daily_target_trade_count="
+        f"{written['first_week_paper_trade_mandate_daily_target_trade_count']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_minimum_notional_usd="
+        f"{written['first_week_paper_trade_mandate_minimum_notional_usd']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_daily_ready_submit_count="
+        f"{written['first_week_paper_trade_mandate_daily_ready_submit_count']}"
+    )
+    print(
+        "paperops_active_runner_first_week_mandate_daily_submitted_count="
+        f"{written['first_week_paper_trade_mandate_daily_submitted_count']}"
+    )
+    submitted_paper_order_count = sum(
+        int(
+            record.get("parsed", {}).get(
+                "paperops_alpaca_post_succeeded_count",
+                "0",
+            )
+            or 0
+        )
+        for record in action_records
+        if record.get("label") == "paper_submit"
+    )
+    print(
+        "paperops_active_runner_submitted_paper_order_count="
+        f"{submitted_paper_order_count}"
+    )
+    print(
         "paperops_active_runner_poll_step_allowed="
         f"{written['paper_poll_step_allowed']}"
     )
@@ -353,6 +452,11 @@ def main() -> int:
     print(
         "paperops_active_runner_qctrl_hold="
         f"{written['qctrl_consultation_hold_active']}"
+    )
+    print(f"paperops_active_runner_idle_reason={written['idle_reason'] or ''}")
+    print(
+        "paperops_active_runner_idempotency_guard_message="
+        f"{written['idempotency_guard_message']}"
     )
     print(f"paperops_active_runner_action_record_count={written['action_record_count']}")
     daily_digest_record = next(

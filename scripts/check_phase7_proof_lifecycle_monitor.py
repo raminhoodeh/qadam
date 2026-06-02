@@ -436,22 +436,36 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_lifecycle_not_written")
-    if written["status"] != "ready_no_lifecycle_events":
+    has_lifecycle_event = written["lifecycle_event_count"] > 0
+    expected_status = (
+        "proof_lifecycle_events_recorded"
+        if has_lifecycle_event
+        else "ready_no_lifecycle_events"
+    )
+    expected_stage_status = (
+        "proof_lifecycle_events_recorded"
+        if has_lifecycle_event
+        else "proof_lifecycle_monitor_ready_no_submitted_orders"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_lifecycle_status_invalid")
-    if written["stage_status"] != "proof_lifecycle_monitor_ready_no_submitted_orders":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_lifecycle_stage_status_invalid")
     if written["phase7_proof_lifecycle_write_allowed"] is not True:
         errors.append("phase7_lifecycle_write_authority_missing")
     if written["q7_9_proof_postmortem_contract_stage_allowed"] is not True:
         errors.append("phase7_lifecycle_q7_9_not_allowed")
+    if has_lifecycle_event:
+        if written["source_submitted_paper_order_count"] != written["lifecycle_event_count"]:
+            errors.append("phase7_lifecycle_source_event_count_mismatch")
+        if written["proof_trade_count"] != written["lifecycle_event_count"]:
+            errors.append("phase7_lifecycle_proof_trade_count_mismatch")
+        if written["mirrored_submitted_order_count"] != written["lifecycle_event_count"]:
+            errors.append("phase7_lifecycle_mirrored_order_count_mismatch")
     for count_key in (
-        "source_submitted_paper_order_count",
-        "lifecycle_event_count",
-        "mirrored_submitted_order_count",
         "open_position_count",
         "exit_intent_count",
         "closed_proof_trade_count",
-        "proof_trade_count",
         "postmortem_due_count",
         "missing_broker_echo_count",
         "duplicate_fill_count",

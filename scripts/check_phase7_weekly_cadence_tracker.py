@@ -273,9 +273,20 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_weekly_cadence_not_written")
-    if written["status"] != "cadence_satisfied_no_q7_setups":
+    has_qualified_setup = written["qualified_setup_count"] > 0
+    expected_status = (
+        "cadence_pending_q7_handoff"
+        if has_qualified_setup
+        else "cadence_satisfied_no_q7_setups"
+    )
+    expected_stage_status = (
+        "weekly_cadence_pending_auto_approval"
+        if has_qualified_setup
+        else "weekly_cadence_recorded_no_qualified_setups"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_weekly_cadence_status_invalid")
-    if written["stage_status"] != "weekly_cadence_recorded_no_qualified_setups":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_weekly_cadence_stage_status_invalid")
     if written["weekly_cadence_record_count"] != 5:
         errors.append("phase7_weekly_cadence_record_count_mismatch")
@@ -283,10 +294,12 @@ def main() -> int:
         errors.append("phase7_weekly_cadence_satisfied_count_mismatch")
     if written["weekly_cadence_failed_count"] != 0:
         errors.append("phase7_weekly_cadence_failed_count_nonzero")
+    if has_qualified_setup:
+        if written["weekly_target_total"] <= 0:
+            errors.append("phase7_weekly_cadence_target_missing")
+        if written["pending_auto_approval_count"] != written["weekly_target_total"]:
+            errors.append("phase7_weekly_cadence_pending_count_mismatch")
     for count_key in (
-        "weekly_target_total",
-        "qualified_setup_count",
-        "target_proof_trade_count",
         "proof_trade_count",
         "missed_qualified_setup_count",
         "unsafe_write_counter_total",
@@ -294,9 +307,19 @@ def main() -> int:
     ):
         if written[count_key] != 0:
             errors.append(f"phase7_weekly_cadence_count_nonzero:{count_key}")
-    if written["no_forced_trade_exception_count"] != 5:
+    expected_no_forced = sum(
+        1
+        for record in written["weekly_cadence_records"]
+        if record.get("no_forced_trade_exception_recorded") is True
+    )
+    if written["no_forced_trade_exception_count"] != expected_no_forced:
         errors.append("phase7_weekly_cadence_no_forced_exception_count_mismatch")
-    if written["no_trade_week_explanation_count"] != 5:
+    expected_no_trade_weeks = sum(
+        1
+        for record in written["weekly_cadence_records"]
+        if record.get("no_trade_explanation_recorded") is True
+    )
+    if written["no_trade_week_explanation_count"] != expected_no_trade_weeks:
         errors.append("phase7_weekly_cadence_no_trade_week_count_mismatch")
     for flag_key in (
         "phase7_test_mode_auto_approval_allowed",

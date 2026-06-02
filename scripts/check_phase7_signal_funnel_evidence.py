@@ -523,24 +523,35 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_signal_evidence_not_written")
-    if written["status"] != "ready_no_proof_trades":
+    has_evidence = written["proof_trade_evidence_record_count"] > 0
+    expected_status = (
+        "signal_funnel_evidence_recorded"
+        if has_evidence
+        else "ready_no_proof_trades"
+    )
+    expected_stage_status = (
+        "signal_funnel_evidence_recorded"
+        if has_evidence
+        else "signal_funnel_evidence_ready_no_proof_trades"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_signal_evidence_status_invalid")
-    if written["stage_status"] != "signal_funnel_evidence_ready_no_proof_trades":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_signal_evidence_stage_status_invalid")
     if written["signal_funnel_evidence_write_allowed"] is not True:
         errors.append("phase7_signal_evidence_write_authority_missing")
     if written["q7_14_maturity_tracker_stage_allowed"] is not True:
         errors.append("phase7_signal_evidence_q7_14_not_allowed")
+    if has_evidence:
+        if written["complete_decision_chain_count"] != written["proof_trade_evidence_record_count"]:
+            errors.append("phase7_signal_evidence_complete_chain_count_mismatch")
+        if written["quantum_shadow_annotation_count"] > written["proof_trade_evidence_record_count"]:
+            errors.append("phase7_signal_evidence_quantum_count_invalid")
     for count_key in (
-        "proof_trade_evidence_record_count",
-        "complete_decision_chain_count",
         "missing_decision_chain_count",
         "private_priors_only_proof_trade_count",
         "challenge_only_preference_context_count",
         "yahoo_supplemental_context_count",
-        "quantum_shadow_annotation_count",
-        "paper_order_submitted_count",
-        "proof_trade_created_count",
         "broker_post_called_count",
         "alpaca_post_called_count",
         "unsafe_write_counter_total",

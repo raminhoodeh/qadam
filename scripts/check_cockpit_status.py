@@ -1835,8 +1835,10 @@ TRADINGVIEW_SUMMARY_REQUIRED_FIELDS = {
 
 CAPITAL_REQUIRED_FIELDS = {
     "account_scope",
+    "account_currency",
     "boundary",
     "broker",
+    "broker_reconciliation_status",
     "cash_gbp",
     "closed_trade_count",
     "closed_trades",
@@ -1850,6 +1852,8 @@ CAPITAL_REQUIRED_FIELDS = {
     "maturity_closed_trade_target",
     "max_drawdown_pct",
     "mirror_status",
+    "mirror_freshness_label",
+    "mirror_freshness_status",
     "observed_at",
     "open_order_count",
     "open_position_count",
@@ -1857,15 +1861,22 @@ CAPITAL_REQUIRED_FIELDS = {
     "order_count",
     "orders",
     "peak_equity_gbp",
+    "portfolio_reconciliation",
+    "portfolio_value_source",
     "postmortem_complete_count",
     "postmortem_due_count",
     "postmortems_complete",
     "postmortems_due",
     "realized_pnl_gbp",
     "starting_balance_gbp",
+    "stale_after_seconds",
     "timeline_status",
     "unrealized_pnl_gbp",
     "write_authority",
+    "display_currency",
+    "fx_to_gbp_rate",
+    "last_broker_sync_age_seconds",
+    "last_broker_sync_at",
 }
 
 MISSION_CONTROL_REQUIRED_FIELDS = {
@@ -3110,6 +3121,10 @@ def main() -> int:
         {},
     )
     paperops_alpaca_paper_post = payload.get("paperops_alpaca_paper_post", {})
+    paperops_first_week_mandate = payload.get(
+        "paperops_first_week_paper_trade_mandate",
+        {},
+    )
     paperops_lifecycle_polling_enablement = payload.get(
         "paperops_paper_lifecycle_polling_enablement",
         {},
@@ -3462,6 +3477,34 @@ def main() -> int:
     print(
         "cockpit_status_paperops_active_automation_idempotency_ledger_active="
         f"{paperops_active_automation.get('paperops2_idempotency_ledger_active')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_status="
+        f"{paperops_first_week_mandate.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_active="
+        f"{paperops_first_week_mandate.get('active')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_day_number="
+        f"{paperops_first_week_mandate.get('day_number')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_daily_target_trade_count="
+        f"{paperops_first_week_mandate.get('daily_target_trade_count')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_minimum_notional_usd="
+        f"{paperops_first_week_mandate.get('minimum_notional_usd')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_daily_ready_submit_count="
+        f"{paperops_first_week_mandate.get('daily_ready_submit_count')}"
+    )
+    print(
+        "cockpit_status_paperops_first_week_mandate_daily_submitted_count="
+        f"{paperops_first_week_mandate.get('daily_submitted_count')}"
     )
     print(
         "cockpit_status_paperops_active_automation_poll_allowed="
@@ -6797,6 +6840,19 @@ def main() -> int:
     if capital.get("account_scope") != PAPER_ACCOUNT_SCOPE:
         print("cockpit_status_paper_account_scope_mismatch=true")
         return 1
+    if not capital.get("account_currency") or not capital.get("display_currency"):
+        print("cockpit_status_paper_currency_missing=true")
+        return 1
+    if capital.get("mirror_freshness_status") not in {"fresh", "stale", "unknown", "not_connected"}:
+        print("cockpit_status_paper_freshness_status_invalid=true")
+        return 1
+    if int(capital.get("stale_after_seconds") or 0) <= 0:
+        print("cockpit_status_paper_stale_after_missing=true")
+        return 1
+    reconciliation = capital.get("portfolio_reconciliation", {})
+    if not isinstance(reconciliation, dict) or not reconciliation.get("status"):
+        print("cockpit_status_paper_reconciliation_missing=true")
+        return 1
     if capital.get("connection_status") not in {"local_mirror_not_broker_connected", "alpaca_paper_readonly_connected"}:
         print("cockpit_status_paper_connection_status_mismatch=true")
         return 1
@@ -7761,11 +7817,22 @@ def main() -> int:
     if int(paperops_qualified_setup_production.get("unsafe_write_counter_total", 0) or 0) != 0:
         print("cockpit_status_paperops_qualified_setup_production_unsafe_counter_nonzero=true")
         return 1
-    if int(paperops_qualified_setup_production.get("phase7_demo_qualified_setup_count", 0) or 0) != 0:
-        print("cockpit_status_paperops_qualified_setup_production_mutated_demo_count=true")
+    pt3_qualified_count = int(
+        paperops_qualified_setup_production.get("qualified_setup_count", 0) or 0
+    )
+    phase7_demo_qualified_count = int(
+        paperops_qualified_setup_production.get("phase7_demo_qualified_setup_count", 0)
+        or 0
+    )
+    q7_ledger_qualified_count = int(
+        paperops_qualified_setup_production.get("source_qualified_setup_ledger_count", 0)
+        or 0
+    )
+    if phase7_demo_qualified_count > pt3_qualified_count:
+        print("cockpit_status_paperops_qualified_setup_production_demo_count_exceeds_pt3=true")
         return 1
-    if int(paperops_qualified_setup_production.get("source_qualified_setup_ledger_count", 0) or 0) != 0:
-        print("cockpit_status_paperops_qualified_setup_production_mutated_q7_ledger=true")
+    if q7_ledger_qualified_count > pt3_qualified_count:
+        print("cockpit_status_paperops_qualified_setup_production_q7_count_exceeds_pt3=true")
         return 1
     qualified_setup_boundary = paperops_qualified_setup_production.get("boundary", "")
     if (

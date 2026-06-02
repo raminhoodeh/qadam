@@ -53,6 +53,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://ucdpapi.pcr.uu.se/api/gedevents/23.1",),
         "daily",
         "10 requests/hour recommended",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public historical conflict/base-rate adapter.",
     ),
     SourceSpec(
         "gdelt",
@@ -88,11 +90,11 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         1,
         "world_monitor_conflict_tracker",
         "internal",
-        (),
+        ("internal://conflict_tracker",),
         "derived",
         "n/a",
-        status="derived",
-        notes="Aggregation layer fusing ACLED and GDELT in Postgres.",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only derived adapter fusing ACLED/GDELT context; no external credential required.",
     ),
     SourceSpec(
         "nasa_firms",
@@ -109,17 +111,23 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "Promoted into Qadam as a read-only bbox-first adapter; live mode is credential-gated.",
     ),
     SourceSpec(
-        "wingbits",
-        "Wingbits ADS-B",
+        "aviationstack",
+        "Aviationstack Flight Data",
         "physical",
         2,
-        "world_monitor_physical_wingbits",
+        "world_monitor_physical_aviationstack",
         "API key",
-        ("https://api.wingbits.com/v1/aircraft",),
+        (
+            "https://api.aviationstack.com/v1/flights",
+            "https://api.aviationstack.com/v1/airports",
+            "https://api.aviationstack.com/v1/airlines",
+            "https://api.aviationstack.com/v1/routes",
+        ),
         "5 minutes",
-        "plan dependent; budget 288/day",
-        ("WINGBITS_API_KEY",),
-        "ready_to_port",
+        "plan dependent; budget 288/day only if quota permits",
+        ("AVIATIONSTACK_API_KEY",),
+        "adapter_live_requires_key",
+        "Provider update: Aviationstack replaces Wingbits as the v1 flight-data adapter for Qadam.",
     ),
     SourceSpec(
         "ais_maritime",
@@ -149,6 +157,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/",),
         "daily",
         "public layers no limit",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public geospatial/infrastructure adapter.",
     ),
     SourceSpec(
         "space_track_celestrak",
@@ -177,6 +187,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://gpsjam.org/api",),
         "30 minutes",
         "no documented limit; budget 48/day",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public GPS interference context adapter.",
     ),
     SourceSpec(
         "internet_outage",
@@ -188,6 +200,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://ioda.inetintel.cc.gatech.edu/api",),
         "30 minutes",
         "no documented limit",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public internet-outage context adapter.",
     ),
     SourceSpec(
         "fred",
@@ -230,6 +244,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://stats.bis.org/api/v1/data/",),
         "weekly",
         "no documented limit",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public macro/liquidity adapter.",
     ),
     SourceSpec(
         "ecb",
@@ -325,6 +341,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://api.hyperliquid.xyz/info",),
         "15 minutes",
         "no documented limit; budget 96/day",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public crypto/perps context adapter; no execution authority.",
     ),
     SourceSpec(
         "alpaca",
@@ -391,7 +409,9 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("ws://localhost:8765/bookmap",),
         "real-time",
         "local process",
+        ("BOOKMAP_BRIDGE_URL",),
         status="local_bridge",
+        notes="Read-only local bridge contract; Qadam shows it connected only when the local bridge is configured/running.",
     ),
     SourceSpec(
         "rss",
@@ -465,15 +485,15 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "social",
         3,
         "world_monitor_social_stock_act",
-        "UnusualWhales API key or selected STOCK Act provider",
-        ("https://api.unusualwhales.com/api/congress/recent-trades",),
+        "Capitol Trades or selected STOCK Act provider credential",
+        ("https://www.capitoltrades.com/trades",),
         "daily or event-driven",
         "plan dependent; budget 24/day",
-        ("UNUSUAL_WHALES_API_KEY",),
+        ("CAPITOL_TRADES_API_KEY",),
         status="adapter_live_requires_key",
         notes=(
-            "Provider decision recorded for v1: use UnusualWhales Congress recent trades as the canonical read-only "
-            "STOCK Act feed; Capitol Trades/Quiver remain alternates if the account scope is insufficient."
+            "Provider direction updated: use Capitol Trades or its selected API path for v1, not UnusualWhales. "
+            "The adapter remains read-only and provider-doc gated until the credential/API contract is supplied."
         ),
     ),
     SourceSpec(
@@ -486,6 +506,8 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://api.patentsview.org/patents/query", "https://ops.epo.org/3.2/rest-services/"),
         "weekly",
         "PatentsView no limit; EPO OPS 4,000/week",
+        status="adapter_live_optional",
+        notes="Promoted as a read-only public patent/intellectual-property context adapter.",
     ),
     SourceSpec(
         "github",

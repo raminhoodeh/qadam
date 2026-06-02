@@ -73,6 +73,18 @@ class PaperAccountSnapshot:
     timeline_status: str
     observed_at: str
     boundary: str
+    account_currency: str = "GBP"
+    display_currency: str = "GBP"
+    fx_to_gbp_rate: float = 1.0
+    source_current_balance: float | None = None
+    source_cash: float | None = None
+    source_equity: float | None = None
+    broker_portfolio_history_latest_equity: float | None = None
+    broker_portfolio_history_latest_profit_loss: float | None = None
+    broker_reconciliation_status: str = "not_available"
+    broker_reconciliation_delta: float | None = None
+    broker_reconciliation_tolerance: float = 1.0
+    broker_reconciliation_detail: str = "No broker portfolio history reconciliation was run."
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -414,6 +426,9 @@ def paper_account_summary(settings: Settings | None = None) -> dict[str, Any]:
         "postmortem_due_count": health.get("postmortem_due_count", 0),
         "postmortem_complete_count": health.get("postmortem_complete_count", 0),
         "current_balance_gbp": latest.current_balance_gbp if latest else settings.trial_balance_gbp,
+        "account_currency": latest.account_currency if latest else "GBP",
+        "display_currency": latest.display_currency if latest else "GBP",
+        "broker_reconciliation_status": latest.broker_reconciliation_status if latest else "not_available",
         "drawdown_pct": latest.drawdown_pct if latest else 0,
         "live_capital_enabled": latest.live_capital_enabled if latest else False,
         "write_authority": latest.write_authority if latest else False,
@@ -446,6 +461,9 @@ def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, 
         "mode": latest.mode if latest else "paper",
         "broker": latest.broker if latest else "local_mirror_pending_alpaca_readonly",
         "connection_status": latest.connection_status if latest else "local_mirror_not_broker_connected",
+        "account_currency": latest.account_currency if latest else "GBP",
+        "display_currency": latest.display_currency if latest else "GBP",
+        "fx_to_gbp_rate": latest.fx_to_gbp_rate if latest else 1.0,
         "trial_allocation_gbp": float(settings.trial_balance_gbp),
         "current_balance_gbp": current_balance,
         "cash_gbp": latest.cash_gbp if latest else float(settings.trial_balance_gbp),
@@ -461,6 +479,9 @@ def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, 
         "maturity_closed_trade_count": latest.maturity_closed_trade_count if latest else len(closed_trades),
         "timeline_status": latest.timeline_status if latest else "initialized_no_trades",
         "observed_at": latest.observed_at if latest else None,
+        "broker_reconciliation_status": latest.broker_reconciliation_status if latest else "not_available",
+        "broker_reconciliation_delta": latest.broker_reconciliation_delta if latest else None,
+        "broker_reconciliation_detail": latest.broker_reconciliation_detail if latest else "No mirror snapshot yet.",
         "position_summaries": [
             {
                 "instrument": position.instrument,
@@ -587,13 +608,17 @@ class AlpacaReadOnlyPaperMirror:
             if isinstance(item, dict) and item.get("status") == "filled"
         )
         latest_profit_loss = self._latest_profit_loss(history)
+        latest_history_equity = self._latest_history_money(history, "equity")
         unrealized = round(sum(position.unrealized_pnl_gbp for position in positions), 2)
         realized = round(latest_profit_loss - unrealized, 2) if latest_profit_loss is not None else 0.0
+        account_currency = self._account_currency(account)
+        display_currency = self._display_currency(account_currency)
         equity = self._money(account.get("equity") or account.get("portfolio_value"))
         cash = self._money(account.get("cash"))
         last_equity = self._money(account.get("last_equity") or equity)
         peak_equity = max(equity, last_equity, float(self.settings.trial_balance_gbp))
         drawdown_pct = round(max(0.0, (peak_equity - equity) / peak_equity * 100), 3) if peak_equity else 0.0
+        reconciliation = self._reconcile_account_to_history(equity, latest_history_equity)
         snapshot = PaperAccountSnapshot(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
             snapshot_id=str(uuid4()),
@@ -624,6 +649,18 @@ class AlpacaReadOnlyPaperMirror:
                 "Alpaca paper mirror is read-only: balance, positions, orders, and P&L only. "
                 "No broker write path, no live capital, no order placement."
             ),
+            account_currency=account_currency,
+            display_currency=display_currency,
+            fx_to_gbp_rate=self.fx_to_gbp,
+            source_current_balance=_optional_float(account.get("equity") or account.get("portfolio_value")),
+            source_cash=_optional_float(account.get("cash")),
+            source_equity=_optional_float(account.get("equity") or account.get("portfolio_value")),
+            broker_portfolio_history_latest_equity=latest_history_equity,
+            broker_portfolio_history_latest_profit_loss=latest_profit_loss,
+            broker_reconciliation_status=reconciliation["status"],
+            broker_reconciliation_delta=reconciliation["delta"],
+            broker_reconciliation_tolerance=reconciliation["tolerance"],
+            broker_reconciliation_detail=reconciliation["detail"],
         )
         self.store.replace_positions(positions)
         self.store.replace_orders(orders)
@@ -641,6 +678,9 @@ class AlpacaReadOnlyPaperMirror:
                 "write_authority": snapshot.write_authority,
                 "live_capital_enabled": snapshot.live_capital_enabled,
                 "execution_allowed": False,
+                "account_currency": snapshot.account_currency,
+                "display_currency": snapshot.display_currency,
+                "broker_reconciliation_status": snapshot.broker_reconciliation_status,
             },
         )
         report = {
@@ -653,6 +693,10 @@ class AlpacaReadOnlyPaperMirror:
             "write_authority": False,
             "live_capital_enabled": False,
             "readonly_paths": sorted(ALPACA_READONLY_PATHS),
+            "account_currency": snapshot.account_currency,
+            "display_currency": snapshot.display_currency,
+            "broker_reconciliation_status": snapshot.broker_reconciliation_status,
+            "broker_reconciliation_delta": snapshot.broker_reconciliation_delta,
             "boundary": snapshot.boundary,
         }
         self._write_report(report)
@@ -660,6 +704,14 @@ class AlpacaReadOnlyPaperMirror:
 
     def _money(self, value: Any) -> float:
         return round(_float(value) * self.fx_to_gbp, 2)
+
+    def _account_currency(self, account: dict[str, Any]) -> str:
+        return str(account.get("currency") or os.getenv("ALPACA_ACCOUNT_CURRENCY") or "USD").upper()
+
+    def _display_currency(self, account_currency: str) -> str:
+        if account_currency == "GBP" or self.fx_to_gbp != 1.0:
+            return "GBP"
+        return account_currency or "USD"
 
     def _position_from_alpaca(self, item: dict[str, Any]) -> PaperPosition:
         qty = _float(item.get("qty"))
@@ -719,10 +771,40 @@ class AlpacaReadOnlyPaperMirror:
         )
 
     def _latest_profit_loss(self, history: dict[str, Any]) -> float | None:
-        values = history.get("profit_loss")
+        return self._latest_history_money(history, "profit_loss")
+
+    def _latest_history_money(self, history: dict[str, Any], key: str) -> float | None:
+        values = history.get(key)
         if not isinstance(values, list) or not values:
             return None
-        return self._money(values[-1])
+        for value in reversed(values):
+            if value is not None and value != "":
+                return self._money(value)
+        return None
+
+    def _reconcile_account_to_history(self, account_equity: float, history_equity: float | None) -> dict[str, Any]:
+        tolerance = max(1.0, abs(account_equity) * 0.0025)
+        if history_equity is None:
+            return {
+                "status": "history_unavailable",
+                "delta": None,
+                "tolerance": round(tolerance, 2),
+                "detail": "Alpaca account equity is mirrored, but portfolio history did not return a comparable latest equity point.",
+            }
+        delta = round(account_equity - history_equity, 2)
+        if abs(delta) <= tolerance:
+            return {
+                "status": "ok",
+                "delta": delta,
+                "tolerance": round(tolerance, 2),
+                "detail": "Alpaca account equity reconciles with the latest portfolio history point inside tolerance.",
+            }
+        return {
+            "status": "drift",
+            "delta": delta,
+            "tolerance": round(tolerance, 2),
+            "detail": "Alpaca account equity and latest portfolio history differ beyond tolerance; use the live account equity as source of truth and treat the chart as lagging.",
+        }
 
     def _write_report(self, report: dict[str, Any]) -> Path:
         output_path = Path(self.settings.runtime_dir) / "alpaca_paper_mirror.json"

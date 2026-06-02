@@ -49,14 +49,7 @@ PAPER_LIVE_CERTIFICATION_ACCEPTED_STATUSES = {
 }
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
-    "scripts/check_paper_operational_cycle.py",
-    "scripts/check_paperops_active_paper_trading_automation.py",
-    "scripts/run_active_paper_trading_automation.py --execute-paper-automation",
-    "scripts/check_paperops_cockpit_notification_upgrade.py",
-    "scripts/check_paperops_30_day_operations.py",
-    "scripts/check_paper_live_certification.py",
-    "scripts/check_qadam_paper_closeout.py",
-    "scripts/check_cockpit_status.py",
+    "scripts/run_paperops_autonomous_pass.py",
 )
 
 REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
@@ -151,6 +144,8 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops_active_automation_submit_step_allowed",
     "paperops_active_automation_unattended_delegation_enabled",
     "paperops_active_automation_unattended_delegation_reason",
+    "paperops_active_automation_idle_reason",
+    "paperops_active_automation_idempotency_guard_message",
     "paperops_active_automation_live_endpoint_called_count",
     "paperops_cockpit_notification_upgrade_status",
     "paperops_cockpit_notification_upgrade_ready",
@@ -480,7 +475,7 @@ def _recommended_next_action(artifact: dict[str, Any]) -> str:
     if artifact.get("status") == "operations_complete_pending_certification":
         return "Rerun paper-live certification after the preserved paper growth trial window"
     if artifact.get("automation_prompt_paperops_bound") is not True:
-        return "Update the existing hourly automation prompt to run the PaperOps cycle and PaperOps-6 checker"
+        return "Update the existing hourly automation prompt to run the canonical PaperOps autonomous pass wrapper"
     if artifact.get("dashboard_mirror_public_safe") is not True:
         return "Refresh the public-safe cockpit mirror before continuing PaperOps operations"
     return "Resolve PaperOps-6 blockers before relying on the scheduled 30-day run"
@@ -634,6 +629,12 @@ def build_paperops_30_day_operations(
                 "unattended_paper_execution_delegation_reason"
             )
             or "not_armed"
+        ),
+        "paperops_active_automation_idle_reason": (
+            active_automation.get("idle_reason") or ""
+        ),
+        "paperops_active_automation_idempotency_guard_message": (
+            active_automation.get("idempotency_guard_message") or ""
         ),
         "paperops_active_automation_live_endpoint_called_count": (
             active_automation_live_endpoint_count

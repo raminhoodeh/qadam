@@ -38,6 +38,9 @@ from orchestrator.paperops_cockpit_notification_upgrade import (
     validate_paperops_cockpit_notification_upgrade,
 )
 from orchestrator.paper_live_certification import validate_paper_live_certification
+from orchestrator.postgres_store import durable_ingestion_status
+from orchestrator.source_health import PROMOTED_ADAPTER_STATUS, build_data_environment_map
+from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
 
 
 PAPER_OPS_SCHEMA_VERSION = 1
@@ -81,7 +84,10 @@ TARGET_CAPABILITIES: tuple[tuple[str, str], ...] = (
     ),
     ("strategy_research_intake_connected", "External strategy notes must be structured as decision context."),
     ("phase7_run_active", "The 30-day demo-proof run ledger must be active."),
-    ("source_spine_available", "Durable replay and current source status must be readable."),
+    (
+        "source_spine_available",
+        "Phase 1 data spine must be operational; durable mirror status is diagnostic.",
+    ),
     ("head_of_quant_oracle_connected", "The Head of Quant oracle must produce paper-run evidence."),
     (
         "qctrl_paper_consultation_connected",
@@ -204,8 +210,18 @@ def _runtime_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         strategy_research = build_strategy_research_intake(settings)
     except Exception as exc:  # noqa: BLE001 - readiness should report the failure.
         strategy_research = {"status": "error", "error": str(exc)}
+    try:
+        data_environment = build_data_environment_map(settings)
+    except Exception as exc:  # noqa: BLE001 - readiness should report the failure.
+        data_environment = {"summary": {"status": "error", "error": str(exc)}}
+    try:
+        durable_ingestion = durable_ingestion_status(settings)
+    except Exception as exc:  # noqa: BLE001 - readiness should report the failure.
+        durable_ingestion = {"status": "error", "error": str(exc)}
     return {
         "cockpit": _read_json(runtime / "cockpit-status.json"),
+        "data_environment": data_environment,
+        "durable_ingestion": durable_ingestion,
         "paper_live_activation": _read_json(runtime / "paper_live_activation.json"),
         "paper_live_qctrl_product_access": _read_json(
             runtime / "paper_live_qctrl_product_access.json"
@@ -262,6 +278,9 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     mission = cockpit.get("mission_control", {}) if isinstance(cockpit, dict) else {}
     durable = mission.get("durable_spine", {}) if isinstance(mission, dict) else {}
     portfolio = mission.get("portfolio", {}) if isinstance(mission, dict) else {}
+    data_environment = snapshot["data_environment"]
+    data_summary = data_environment.get("summary", {}) if isinstance(data_environment, dict) else {}
+    durable_ingestion = snapshot["durable_ingestion"]
     paper_live_activation = snapshot["paper_live_activation"]
     paper_live_qctrl_product_access = snapshot["paper_live_qctrl_product_access"]
     paper_operational_mode = snapshot["paper_operational_mode"]
@@ -293,6 +312,20 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
     qctrl_consultation = snapshot["qctrl_consultation"]
     quantum_summary = snapshot["quantum_summary"]
     strategy_research = snapshot["strategy_research"]
+    expected_promoted_adapter_count = len(PROMOTED_ADAPTER_STATUS)
+    phase1_data_spine_ready = (
+        data_summary.get("status") == "ok"
+        and _int(data_summary.get("source_count")) == EXPECTED_SOURCE_COUNT
+        and _int(data_summary.get("expected_source_count")) == EXPECTED_SOURCE_COUNT
+        and _int(data_summary.get("promoted_adapter_count"))
+        == expected_promoted_adapter_count
+    )
+    durable_replay_readable = (
+        durable_ingestion.get("status") == "ok"
+        or durable_ingestion.get("replay_status") == "ok"
+        or durable.get("status") == "ok"
+        or durable.get("replay_status") == "ok"
+    )
     paper_live_activation_ready = (
         paper_live_activation.get("status") == "approved_pending_later_enablement"
         and paper_live_activation.get("approval_state") == "approved"
@@ -848,11 +881,23 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         },
         {
             "key": "source_spine_available",
-            "ready": durable.get("status") == "ok" or durable.get("replay_status") == "ok",
-            "status": str(durable.get("status") or durable.get("replay_status") or "missing"),
+            "ready": phase1_data_spine_ready,
+            "status": (
+                "operational_with_optional_missing_credentials"
+                if phase1_data_spine_ready
+                else str(data_summary.get("status") or "phase1_data_spine_not_ready")
+            ),
             "detail": (
-                f"replayed={durable.get('replayed_source_count')}/"
-                f"{durable.get('expected_source_count')}"
+                f"canonical_sources={_int(data_summary.get('source_count'))}/"
+                f"{EXPECTED_SOURCE_COUNT}; "
+                f"promoted_adapters={_int(data_summary.get('promoted_adapter_count'))}/"
+                f"{expected_promoted_adapter_count}; "
+                f"optional_missing_credentials="
+                f"{_int(data_summary.get('missing_credential_source_count'))}; "
+                f"durable_replay_readable={durable_replay_readable}; "
+                f"durable_mirror_status={durable_ingestion.get('status', durable.get('status'))}; "
+                f"replayed={durable_ingestion.get('replayed_source_count', durable.get('replayed_source_count'))}/"
+                f"{durable_ingestion.get('expected_source_count', durable.get('expected_source_count'))}"
             ),
             "required_for_full_paper_ops": True,
         },
@@ -1138,8 +1183,12 @@ def _blockers(settings: Settings, capabilities: list[dict[str, Any]]) -> list[st
 def _recommended_next_stage(safe_to_continue: bool, blockers: list[str]) -> str:
     if not safe_to_continue:
         return "Restore paper-only safety before continuing"
+    if not blockers:
+        return "Run PaperOps-1 operational cycle"
     if "paper_live_activation_approved_not_ready" in blockers:
         return "Run PT-0 paper-live activation charter"
+    if "source_spine_available_not_ready" in blockers:
+        return "Refresh Phase 1 data spine and durable source mirror"
     if (
         "global_paper_operational_mode_enabled_not_ready" in blockers
         or "paper_operational_flag_disabled" in blockers
@@ -1214,6 +1263,10 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         and capability["ready"]
         for capability in capabilities
     )
+    data_environment = snapshot["data_environment"]
+    data_summary = data_environment.get("summary", {}) if isinstance(data_environment, dict) else {}
+    durable_ingestion = snapshot["durable_ingestion"]
+    expected_promoted_adapter_count = len(PROMOTED_ADAPTER_STATUS)
     paper_operational_enabled_effective = (
         settings.paper_operational_enabled or paper_operational_mode_ready
     )
@@ -1294,6 +1347,40 @@ def build_paper_operational_readiness(settings: Settings | None = None) -> dict[
         ),
         "paper_operational_mode_qctrl_product_access_blocker": (
             paper_operational_mode.get("qctrl_product_access_blocker", "missing")
+        ),
+        "phase1_data_spine_status": (
+            "ok"
+            if data_summary.get("status") == "ok"
+            and _int(data_summary.get("source_count")) == EXPECTED_SOURCE_COUNT
+            and _int(data_summary.get("promoted_adapter_count"))
+            == expected_promoted_adapter_count
+            else str(data_summary.get("status") or "missing")
+        ),
+        "phase1_data_spine_canonical_source_count": _int(
+            data_summary.get("source_count")
+        ),
+        "phase1_data_spine_expected_source_count": EXPECTED_SOURCE_COUNT,
+        "phase1_data_spine_promoted_adapter_count": _int(
+            data_summary.get("promoted_adapter_count")
+        ),
+        "phase1_data_spine_expected_promoted_adapter_count": (
+            expected_promoted_adapter_count
+        ),
+        "phase1_data_spine_optional_missing_credential_source_count": _int(
+            data_summary.get("missing_credential_source_count")
+        ),
+        "phase1_data_spine_operational_status": (
+            "operational_with_optional_missing_credentials"
+            if data_summary.get("status") == "ok"
+            and _int(data_summary.get("source_count")) == EXPECTED_SOURCE_COUNT
+            and _int(data_summary.get("promoted_adapter_count"))
+            == expected_promoted_adapter_count
+            else "not_ready"
+        ),
+        "durable_source_mirror_status": durable_ingestion.get("status", "missing"),
+        "durable_source_mirror_replay_status": durable_ingestion.get(
+            "replay_status",
+            "missing",
         ),
         "alpaca_paper_submit_enabled": settings.alpaca_paper_submit_enabled,
         "alpaca_paper_submit_effective": (

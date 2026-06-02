@@ -284,6 +284,13 @@ def _base_decision_record(
         "source_artifact_ref": setup.get("source_artifact_ref"),
         "strategy_family_key": setup.get("strategy_family_key", "unknown"),
         "instrument": setup.get("instrument", "unknown"),
+        "selected_venue": setup.get("selected_venue", "alpaca_paper"),
+        "side": setup.get("side"),
+        "quantity": setup.get("quantity"),
+        "order_type": setup.get("order_type", "market"),
+        "time_in_force": setup.get("time_in_force", "day"),
+        "notional_gbp": setup.get("notional_gbp"),
+        "risk_gbp": setup.get("risk_gbp"),
         "approval_mode": "test_mode_auto_approval",
         "decision_state": decision_state,
         "auto_approved": auto_approved,
@@ -764,9 +771,15 @@ def validate_phase7_test_mode_auto_approval_router(
 
     if artifact.get("q7_5_test_mode_auto_approval_router_stage_allowed") is not True:
         errors.append("q7_5_test_mode_auto_approval_router_not_allowed")
-    if artifact.get("source_setup_ledger_status") != "read_only_no_q7_setups":
+    if artifact.get("source_setup_ledger_status") not in {
+        "read_only_no_q7_setups",
+        "read_only_q7_setups_recorded",
+    }:
         errors.append("auto_approval_source_setup_status_invalid")
-    if artifact.get("source_weekly_cadence_status") != "cadence_satisfied_no_q7_setups":
+    if artifact.get("source_weekly_cadence_status") not in {
+        "cadence_satisfied_no_q7_setups",
+        "cadence_pending_q7_handoff",
+    }:
         errors.append("auto_approval_source_cadence_status_invalid")
 
     errors.extend(_authority_errors(artifact))

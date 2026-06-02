@@ -264,15 +264,33 @@ def recommended_next_stage(
 ) -> str:
     if not safe_to_continue:
         return "Fix failed PaperOps command or hard safety failure"
+    if not blockers:
+        return "PaperOps-4 paper exit path"
+    if "source_spine_available_not_ready" in blockers:
+        return "Refresh Phase 1 data spine and durable source mirror"
+    if "paper_live_activation_approved_not_ready" in blockers:
+        return "PT-0 paper-live activation charter"
     if (
         "global_paper_operational_mode_enabled_not_ready" in blockers
         or "paper_operational_flag_disabled" in blockers
     ):
         return "PT-2 global PaperOps runtime mode enablement"
+    if "paperops_30_day_operations_active_not_ready" in blockers:
+        return "PaperOps-6 30-day paper operations scheduler binding"
+    if "active_paper_trading_automation_connected_not_ready" in blockers:
+        return "PT-8 active paper-trading automation binding"
+    if "cockpit_notification_upgrade_connected_not_ready" in blockers:
+        return "PT-9 cockpit and notification upgrade"
+    if "paper_live_certification_gate_connected_not_ready" in blockers:
+        return "PT-10 paper-live certification gate"
     if "paperops_auto_approval_staged_order_connected_not_ready" in blockers:
         return "PT-4 auto-approval and staged paper-order handoff"
     if "alpaca_paper_submit_runtime_enablement_connected_not_ready" in blockers:
         return "PT-5 Alpaca paper-submit runtime enablement"
+    if "paper_lifecycle_polling_runtime_enablement_connected_not_ready" in blockers:
+        return "PT-6 active paper lifecycle polling enablement"
+    if "guarded_paper_exit_runtime_enablement_connected_not_ready" in blockers:
+        return "PT-7 guarded paper-exit runtime enablement"
     if "qctrl_paper_consultation_connected_not_ready" in blockers:
         return "Resolve PaperOps-Q Q-CTRL product access for successful paper consultation"
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:

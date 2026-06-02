@@ -193,8 +193,40 @@ def main() -> int:
         f"{written['paperops2_duplicate_submit_record_count']}"
     )
     print(
+        "paperops_active_automation_paperops2_duplicate_submit_interpretation="
+        f"{written['paperops2_duplicate_submit_interpretation']}"
+    )
+    print(
         "paperops_active_automation_paperops2_idempotency_ledger_active="
         f"{written['paperops2_idempotency_ledger_active']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_status="
+        f"{written['first_week_paper_trade_mandate_status']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_active="
+        f"{written['first_week_paper_trade_mandate_active']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_day_number="
+        f"{written['first_week_paper_trade_mandate_day_number']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_daily_target_trade_count="
+        f"{written['first_week_paper_trade_mandate_daily_target_trade_count']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_minimum_notional_usd="
+        f"{written['first_week_paper_trade_mandate_minimum_notional_usd']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_daily_ready_submit_count="
+        f"{written['first_week_paper_trade_mandate_daily_ready_submit_count']}"
+    )
+    print(
+        "paperops_active_automation_first_week_mandate_daily_submitted_count="
+        f"{written['first_week_paper_trade_mandate_daily_submitted_count']}"
     )
     print(
         "paperops_active_automation_paperops2_submit_called_count="
@@ -243,6 +275,11 @@ def main() -> int:
     print(
         "paperops_active_automation_unattended_delegation_reason="
         f"{written['unattended_paper_execution_delegation_reason']}"
+    )
+    print(f"paperops_active_automation_idle_reason={written['idle_reason'] or ''}")
+    print(
+        "paperops_active_automation_idempotency_guard_message="
+        f"{written['idempotency_guard_message']}"
     )
     print(
         "paperops_active_automation_poll_step_allowed="
@@ -299,6 +336,11 @@ def main() -> int:
         errors.append("PT-8 unattended paper execution delegation is not armed")
     if written["paperops2_idempotency_ledger_active"] is not True:
         errors.append("PT-8 does not see the PaperOps-2 idempotency ledger")
+    if written["first_week_paper_trade_mandate_active"] is True:
+        if written["first_week_paper_trade_mandate_daily_target_trade_count"] != 3:
+            errors.append("PT-8 first-week mandate target is not three paper trades")
+        if float(written["first_week_paper_trade_mandate_minimum_notional_usd"]) < 6000:
+            errors.append("PT-8 first-week mandate notional is below USD 6000")
     if written["qctrl_consultation_hold_active"] is True and (
         written["paper_submit_step_allowed"] is True
     ):

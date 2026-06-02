@@ -5,7 +5,8 @@ still paper-only and opt-in. The default builder evaluates readiness without
 performing a network call. A POST can only happen when the caller passes the
 explicit execution flag, Qadam is in paper mode, live capital is disabled, the
 Alpaca endpoint is classified as paper, paper credentials are configured, and a
-Q7 guarded submit record is eligible.
+Q7 guarded submit record, PT-4 staged order, or first-week paper-only mandate
+record is eligible.
 """
 
 from __future__ import annotations
@@ -29,6 +30,14 @@ from orchestrator.paperops_alpaca_paper_submit_enablement import (
 from orchestrator.paperops_auto_approval_staged_order import (
     read_latest_paperops_auto_approval_staged_order,
     validate_paperops_auto_approval_staged_order,
+)
+from orchestrator.paperops_first_week_paper_trade_mandate import (
+    MANDATE_IDEMPOTENCY_NAMESPACE,
+    MANDATE_ID_PREFIX,
+    MANDATE_MIN_NOTIONAL_USD,
+    build_first_week_paper_trade_mandate,
+    read_latest_first_week_paper_trade_mandate,
+    validate_first_week_paper_trade_mandate,
 )
 from orchestrator.phase7_guarded_alpaca_paper_submit import (
     build_phase7_guarded_alpaca_paper_submit_path,
@@ -71,9 +80,10 @@ PAPEROPS_ALPACA_POST_BOUNDARY = (
     "Alpaca /v2/orders only when QADAM_MODE=paper, live capital is disabled, "
     "QADAM_ALPACA_PAPER_SUBMIT_ENABLED=true or PT-5 runtime PaperOps "
     "enablement is recorded, the endpoint is classified as paper, paper API "
-    "credentials are configured, a PT-4 staged paper order or Q7 guarded "
-    "submit record exists, the source Event Log prewrite exists, a pre-trade "
-    "snapshot exists, the idempotency key is phase7_demo_proof scoped, and "
+    "credentials are configured, a PT-4 staged paper order, Q7 guarded "
+    "submit record, or first-week paper mandate record exists, the source "
+    "Event Log prewrite exists, a pre-trade snapshot exists, the idempotency "
+    "key is either phase7_demo_proof scoped or first-week mandate scoped, and "
     "the caller passes the explicit submit flag. It cannot call live "
     "endpoints, cannot use live credentials, cannot submit non-Q7/PaperOps "
     "orders, cannot submit prediction-market or crypto-perps orders, cannot "
@@ -334,6 +344,13 @@ def _source_pt4_staged_order(settings: Settings) -> dict[str, Any]:
     return read_latest_paperops_auto_approval_staged_order(settings)
 
 
+def _source_first_week_mandate(settings: Settings) -> dict[str, Any]:
+    artifact = read_latest_first_week_paper_trade_mandate(settings)
+    if artifact:
+        return artifact
+    return build_first_week_paper_trade_mandate(settings=settings)
+
+
 def _source_submit_enablement(settings: Settings) -> dict[str, Any]:
     enablement = read_latest_paperops_alpaca_paper_submit_enablement(settings)
     if enablement:
@@ -479,6 +496,8 @@ def _pt4_record_errors(record: dict[str, Any], *, source: dict[str, Any]) -> lis
 
 
 def _client_order_id(source_idempotency_key: str) -> str:
+    if source_idempotency_key.startswith(MANDATE_ID_PREFIX):
+        return source_idempotency_key[:48]
     digest = sha256(source_idempotency_key.encode("utf-8")).hexdigest()[:24]
     return f"q7-6-stage-{digest}"
 
@@ -535,15 +554,99 @@ def _pt4_request_preview(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _alpaca_post_body(preview: dict[str, Any]) -> dict[str, str]:
+def _mandate_record_errors(record: dict[str, Any], *, source: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    pre_trade_snapshot = record.get("pre_trade_snapshot")
+    if source.get("status") not in {
+        "active_ready_for_paper_orders",
+        "active_daily_target_met",
+    }:
+        errors.append("mandate_source_status_not_active")
+    if validate_first_week_paper_trade_mandate(source):
+        errors.append("mandate_source_validation_errors")
+    if record.get("status") != "ready_for_paperops2_submit":
+        errors.append("mandate_record_not_ready_for_paperops2")
+    if record.get("ready_for_paperops2_submit") is not True:
+        errors.append("mandate_record_ready_flag_false")
+    if record.get("selected_venue") != "alpaca_paper":
+        errors.append("mandate_record_venue_not_alpaca_paper")
+    if record.get("idempotency_namespace") != MANDATE_IDEMPOTENCY_NAMESPACE:
+        errors.append("mandate_record_idempotency_namespace_invalid")
+    if not str(record.get("idempotency_key") or "").startswith(MANDATE_ID_PREFIX):
+        errors.append("mandate_record_idempotency_key_invalid")
+    if not str(record.get("event_log_prewrite_ref") or "").strip():
+        errors.append("mandate_record_event_log_prewrite_ref_missing")
+    if record.get("event_log_prewrite_written") is not True:
+        errors.append("mandate_record_event_log_prewrite_not_written")
+    if not isinstance(pre_trade_snapshot, dict) or not pre_trade_snapshot:
+        errors.append("mandate_record_pre_trade_snapshot_missing")
+    if not str(record.get("alpaca_symbol") or record.get("instrument") or "").strip():
+        errors.append("mandate_record_symbol_missing")
+    if str(record.get("side") or "").lower() not in {"buy", "sell"}:
+        errors.append("mandate_record_side_invalid")
+    try:
+        if float(record.get("notional_usd") or 0.0) < MANDATE_MIN_NOTIONAL_USD:
+            errors.append("mandate_record_notional_below_minimum")
+    except (TypeError, ValueError):
+        errors.append("mandate_record_notional_invalid")
+    if str(record.get("order_type") or "").lower() != "market":
+        errors.append("mandate_record_order_type_invalid")
+    if str(record.get("time_in_force") or "").lower() != "day":
+        errors.append("mandate_record_time_in_force_invalid")
+    for key in (
+        "broker_post_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "proof_credit_allowed",
+        "paper_growth_proof_credit_allowed",
+        "secret_value_exposed",
+        "raw_payload_exposed",
+    ):
+        if record.get(key) is not False and key in record:
+            errors.append(f"mandate_record_forbidden:{key}")
+    return sorted(set(errors))
+
+
+def _mandate_request_preview(record: dict[str, Any]) -> dict[str, Any]:
+    source_key = str(record.get("idempotency_key") or "")
     return {
+        "request_type": "paperops_alpaca_paper_order_post",
+        "method": "POST",
+        "path": "/v2/orders",
+        "symbol": str(record.get("alpaca_symbol") or record.get("instrument") or "").upper(),
+        "symbol_source": "first_week_paper_trade_mandate",
+        "instrument": record.get("instrument"),
+        "qty": "",
+        "notional": f"{float(record.get('notional_usd') or 0.0):.2f}",
+        "notional_currency": "USD",
+        "side": str(record.get("side") or "").lower(),
+        "type": str(record.get("order_type") or "market").lower(),
+        "time_in_force": str(record.get("time_in_force") or "day").lower(),
+        "client_order_id": _client_order_id(source_key),
+        "source_idempotency_key": source_key,
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "base_url_exposed": False,
+        "authorization_header_included": False,
+        "raw_payload_exposed": False,
+        "broker_identifier_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+    }
+
+
+def _alpaca_post_body(preview: dict[str, Any]) -> dict[str, str]:
+    body = {
         "symbol": str(preview.get("symbol") or ""),
-        "qty": str(preview.get("qty") or ""),
         "side": str(preview.get("side") or ""),
         "type": str(preview.get("type") or ""),
         "time_in_force": str(preview.get("time_in_force") or ""),
         "client_order_id": str(preview.get("client_order_id") or ""),
     }
+    if str(preview.get("notional") or "").strip():
+        body["notional"] = str(preview.get("notional") or "")
+    else:
+        body["qty"] = str(preview.get("qty") or "")
+    return body
 
 
 def _source_record_to_submit_candidate(record: dict[str, Any]) -> dict[str, Any]:
@@ -648,6 +751,65 @@ def _pt4_record_to_submit_candidate(
     }
 
 
+def _mandate_record_to_submit_candidate(
+    record: dict[str, Any],
+    *,
+    source: dict[str, Any],
+) -> dict[str, Any]:
+    source_errors = _mandate_record_errors(record, source=source)
+    preview = _mandate_request_preview(record)
+    source_key = str(record.get("idempotency_key") or "")
+    pre_trade_snapshot = record.get("pre_trade_snapshot")
+    snapshot_fingerprint = (
+        _fingerprint(pre_trade_snapshot) if isinstance(pre_trade_snapshot, dict) else None
+    )
+    return {
+        "schema_version": PAPEROPS_ALPACA_POST_SCHEMA_VERSION,
+        "record_type": "paperops_alpaca_paper_post_candidate",
+        "source_family": "paperops_first_week_paper_trade_mandate",
+        "source_phase": "PaperOps-first-week",
+        "source_submit_record_artifact_id": None,
+        "source_staged_order_artifact_id": record.get("artifact_id"),
+        "source_first_week_mandate_artifact_id": source.get("artifact_id"),
+        "source_proof_order_id": None,
+        "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
+        "source_setup_record_id": record.get("source_setup_record_id"),
+        "source_idempotency_key": source_key,
+        "idempotency_key": preview["client_order_id"],
+        "idempotency_namespace": record.get("idempotency_namespace"),
+        "source_event_log_prewrite_ref": record.get("event_log_prewrite_ref"),
+        "source_pre_trade_snapshot_present": isinstance(pre_trade_snapshot, dict)
+        and bool(pre_trade_snapshot),
+        "source_pre_trade_snapshot_fingerprint": snapshot_fingerprint,
+        "selected_venue": "alpaca_paper",
+        "endpoint_classification": "alpaca_paper_endpoint",
+        "instrument": record.get("instrument"),
+        "alpaca_symbol": preview["symbol"],
+        "alpaca_symbol_source": preview["symbol_source"],
+        "paper_trade_mandate_day_number": record.get("day_number"),
+        "paper_trade_mandate_daily_slot": record.get("daily_slot"),
+        "minimum_notional_usd": record.get("minimum_notional_usd"),
+        "notional_usd": record.get("notional_usd"),
+        "request_preview": preview,
+        "request_fingerprint": _fingerprint(preview),
+        "source_record_errors": source_errors,
+        "eligible_for_paper_post": not source_errors,
+        "status": "eligible" if not source_errors else "blocked_source_contract",
+        "broker_post_called": False,
+        "alpaca_paper_post_called": False,
+        "alpaca_paper_post_succeeded": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "authorization_header_exposed": False,
+        "base_url_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+        "manual_trade_level_override_allowed": False,
+    }
+
+
 def _eligible_submit_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [candidate for candidate in candidates if candidate["eligible_for_paper_post"]]
 
@@ -669,6 +831,19 @@ def _pt4_candidates(source_pt4: dict[str, Any]) -> list[dict[str, Any]]:
     ]
     return [
         _pt4_record_to_submit_candidate(record, source=source_pt4)
+        for record in records
+    ]
+
+
+def _mandate_candidates(source_mandate: dict[str, Any]) -> list[dict[str, Any]]:
+    records = [
+        record
+        for record in source_mandate.get("mandate_records", []) or []
+        if isinstance(record, dict)
+        and record.get("ready_for_paperops2_submit") is True
+    ]
+    return [
+        _mandate_record_to_submit_candidate(record, source=source_mandate)
         for record in records
     ]
 
@@ -840,6 +1015,7 @@ def build_paperops_alpaca_paper_post(
     endpoint = _endpoint_context(settings)
     source_submit = _source_guarded_submit(settings)
     source_pt4 = _source_pt4_staged_order(settings)
+    source_mandate = _source_first_week_mandate(settings)
     submit_enablement = _source_submit_enablement(settings)
     runtime_submit_enabled = _runtime_submit_enabled(submit_enablement)
     effective_submit_enabled = (
@@ -847,12 +1023,16 @@ def build_paperops_alpaca_paper_post(
     )
     source_validation_errors = validate_phase7_guarded_alpaca_paper_submit_path(source_submit)
     source_pt4_validation_errors = validate_paperops_auto_approval_staged_order(source_pt4)
+    source_mandate_validation_errors = validate_first_week_paper_trade_mandate(
+        source_mandate
+    )
     submit_enablement_validation_errors = (
         validate_paperops_alpaca_paper_submit_enablement(submit_enablement)
     )
     q7_candidates = _q7_candidates(source_submit)
     pt4_candidates = _pt4_candidates(source_pt4)
-    all_candidates = pt4_candidates + q7_candidates
+    mandate_candidates = _mandate_candidates(source_mandate)
+    all_candidates = mandate_candidates + pt4_candidates + q7_candidates
     source_eligible_candidates = _eligible_submit_candidates(all_candidates)
     submitted_ledger = _submission_ledger(settings)
     submitted_client_order_ids = set(
@@ -1029,6 +1209,33 @@ def build_paperops_alpaca_paper_post(
             source_pt4_validation_errors
         ),
         "source_pt4_staged_order_validation_errors": source_pt4_validation_errors[:12],
+        "source_first_week_mandate_artifact_id": source_mandate.get("artifact_id"),
+        "source_first_week_mandate_status": source_mandate.get("status"),
+        "source_first_week_mandate_active": source_mandate.get("active") is True,
+        "source_first_week_mandate_day_number": source_mandate.get("day_number", 0),
+        "source_first_week_mandate_daily_target_trade_count": source_mandate.get(
+            "daily_target_trade_count",
+            0,
+        ),
+        "source_first_week_mandate_minimum_notional_usd": source_mandate.get(
+            "minimum_notional_usd",
+            0,
+        ),
+        "source_first_week_mandate_daily_ready_submit_count": source_mandate.get(
+            "daily_ready_submit_count",
+            0,
+        ),
+        "source_first_week_mandate_daily_submitted_count": source_mandate.get(
+            "daily_submitted_count",
+            0,
+        ),
+        "source_first_week_mandate_validation_error_count": len(
+            source_mandate_validation_errors
+        ),
+        "source_first_week_mandate_validation_errors": (
+            source_mandate_validation_errors[:12]
+        ),
+        "source_first_week_mandate_candidate_count": len(mandate_candidates),
         "source_submit_record_count": len(all_candidates),
         "source_eligible_submit_record_count": len(source_eligible_candidates),
         "eligible_submit_record_count": len(eligible_candidates),
@@ -1141,17 +1348,34 @@ def _record_errors(record: dict[str, Any]) -> list[str]:
         errors.append("paperops_alpaca_record_venue_invalid")
     if record.get("endpoint_classification") != "alpaca_paper_endpoint":
         errors.append("paperops_alpaca_record_endpoint_invalid")
-    if record.get("idempotency_namespace") != "phase7_demo_proof":
-        errors.append("paperops_alpaca_record_namespace_invalid")
-    if record.get("source_family") not in {
+    source_family = record.get("source_family")
+    namespace = record.get("idempotency_namespace")
+    source_key = str(record.get("source_idempotency_key") or "")
+    client_key = str(record.get("idempotency_key") or "")
+    if source_family not in {
         "phase7_guarded_submit_record",
         "paperops_pt4_staged_order",
+        "paperops_first_week_paper_trade_mandate",
     }:
         errors.append("paperops_alpaca_record_source_family_invalid")
-    if not str(record.get("source_idempotency_key") or "").startswith("q7-6-stage-"):
-        errors.append("paperops_alpaca_record_source_idempotency_invalid")
-    if not str(record.get("idempotency_key") or "").startswith("q7-6-stage-"):
-        errors.append("paperops_alpaca_record_client_id_invalid")
+    if source_family == "paperops_first_week_paper_trade_mandate":
+        if namespace != MANDATE_IDEMPOTENCY_NAMESPACE:
+            errors.append("paperops_alpaca_record_namespace_invalid")
+        if not source_key.startswith(MANDATE_ID_PREFIX):
+            errors.append("paperops_alpaca_record_source_idempotency_invalid")
+        if not client_key.startswith(MANDATE_ID_PREFIX):
+            errors.append("paperops_alpaca_record_client_id_invalid")
+        if float(record.get("notional_usd") or 0.0) < MANDATE_MIN_NOTIONAL_USD:
+            errors.append("paperops_alpaca_record_mandate_notional_too_small")
+        if float(preview.get("notional") or 0.0) < MANDATE_MIN_NOTIONAL_USD:
+            errors.append("paperops_alpaca_record_preview_notional_too_small")
+    else:
+        if namespace != "phase7_demo_proof":
+            errors.append("paperops_alpaca_record_namespace_invalid")
+        if not source_key.startswith("q7-6-stage-"):
+            errors.append("paperops_alpaca_record_source_idempotency_invalid")
+        if not client_key.startswith("q7-6-stage-"):
+            errors.append("paperops_alpaca_record_client_id_invalid")
     if not str(record.get("source_event_log_prewrite_ref") or "").strip():
         errors.append("paperops_alpaca_record_source_prewrite_missing")
     if record.get("source_pre_trade_snapshot_present") is not True:
@@ -1514,6 +1738,12 @@ def paperops_alpaca_paper_post_public_status(
             "eligible_submit_record_count": 0,
             "selected_source_family": None,
             "source_pt4_staged_order_count": 0,
+            "source_first_week_mandate_status": "not_run",
+            "source_first_week_mandate_active": False,
+            "source_first_week_mandate_daily_target_trade_count": 0,
+            "source_first_week_mandate_minimum_notional_usd": 0,
+            "source_first_week_mandate_daily_ready_submit_count": 0,
+            "source_first_week_mandate_daily_submitted_count": 0,
             "alpaca_paper_post_called_count": 0,
             "alpaca_paper_post_succeeded_count": 0,
             "live_endpoint_called_count": 0,
@@ -1550,6 +1780,38 @@ def paperops_alpaca_paper_post_public_status(
         "selected_source_phase": artifact.get("selected_source_phase"),
         "source_pt4_staged_order_count": artifact.get(
             "source_pt4_staged_order_count",
+            0,
+        ),
+        "source_first_week_mandate_status": artifact.get(
+            "source_first_week_mandate_status",
+            "not_run",
+        ),
+        "source_first_week_mandate_active": artifact.get(
+            "source_first_week_mandate_active",
+            False,
+        ),
+        "source_first_week_mandate_day_number": artifact.get(
+            "source_first_week_mandate_day_number",
+            0,
+        ),
+        "source_first_week_mandate_daily_target_trade_count": artifact.get(
+            "source_first_week_mandate_daily_target_trade_count",
+            0,
+        ),
+        "source_first_week_mandate_minimum_notional_usd": artifact.get(
+            "source_first_week_mandate_minimum_notional_usd",
+            0,
+        ),
+        "source_first_week_mandate_daily_ready_submit_count": artifact.get(
+            "source_first_week_mandate_daily_ready_submit_count",
+            0,
+        ),
+        "source_first_week_mandate_daily_submitted_count": artifact.get(
+            "source_first_week_mandate_daily_submitted_count",
+            0,
+        ),
+        "source_first_week_mandate_candidate_count": artifact.get(
+            "source_first_week_mandate_candidate_count",
             0,
         ),
         "source_event_log_prewrite_present_count": artifact.get(

@@ -52,6 +52,7 @@ PAPEROPS_ACTIVE_AUTOMATION_COMPONENT = "paperops_active_paper_trading_automation
 PAPEROPS_30_DAY_AUTOMATION_ID = "qadam-phase-7-demo-proof-runner"
 PAPEROPS_30_DAY_AUTOMATION_NAME = "Qadam PaperOps Autonomous Runner"
 
+AUTONOMOUS_PASS_COMMAND_FRAGMENT = "scripts/run_paperops_autonomous_pass.py"
 ACTIVE_RUNNER_COMMAND_FRAGMENT = (
     "scripts/run_active_paper_trading_automation.py --execute-paper-automation"
 )
@@ -59,9 +60,7 @@ ACTIVE_CHECK_COMMAND_FRAGMENT = "scripts/check_paperops_active_paper_trading_aut
 TELEGRAM_INBOUND_INTAKE_COMMAND_FRAGMENT = "scripts/poll_telegram_inbound_intake.py"
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
-    TELEGRAM_INBOUND_INTAKE_COMMAND_FRAGMENT,
-    ACTIVE_CHECK_COMMAND_FRAGMENT,
-    ACTIVE_RUNNER_COMMAND_FRAGMENT,
+    AUTONOMOUS_PASS_COMMAND_FRAGMENT,
 )
 
 REQUIRED_AUTOMATION_GUARDRAIL_FRAGMENTS: tuple[str, ...] = (
@@ -150,7 +149,16 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops2_eligible_submit_record_count",
     "paperops2_fresh_eligible_submit_record_count",
     "paperops2_duplicate_submit_record_count",
+    "paperops2_duplicate_submit_interpretation",
     "paperops2_idempotency_ledger_active",
+    "first_week_paper_trade_mandate_status",
+    "first_week_paper_trade_mandate_active",
+    "first_week_paper_trade_mandate_day_number",
+    "first_week_paper_trade_mandate_daily_target_trade_count",
+    "first_week_paper_trade_mandate_minimum_notional_usd",
+    "first_week_paper_trade_mandate_daily_ready_submit_count",
+    "first_week_paper_trade_mandate_daily_submitted_count",
+    "first_week_paper_trade_mandate_candidate_count",
     "paperops2_submit_called_count",
     "paperops2_submit_succeeded_count",
     "paperops3_status",
@@ -166,6 +174,8 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "pt7_guarded_exit_ready",
     "unattended_paper_execution_delegation_enabled",
     "unattended_paper_execution_delegation_reason",
+    "idle_reason",
+    "idempotency_guard_message",
     "paper_submit_step_allowed",
     "paper_poll_step_allowed",
     "paper_exit_step_allowed",
@@ -507,6 +517,20 @@ def build_paperops_active_paper_trading_automation(
     paperops2_ready = _paperops2_ready(paperops2)
     paperops3_ready = _paperops3_poll_ready(paperops3, pt6_ready)
     paperops4_ready = _paperops4_exit_ready(paperops4, pt7_ready)
+    first_week_mandate_active = (
+        paperops2.get("source_first_week_mandate_active") is True
+    )
+    first_week_mandate_daily_target = _int(
+        paperops2.get("source_first_week_mandate_daily_target_trade_count")
+    )
+    first_week_mandate_daily_submitted = _int(
+        paperops2.get("source_first_week_mandate_daily_submitted_count")
+    )
+    first_week_mandate_target_met = (
+        first_week_mandate_active
+        and first_week_mandate_daily_target > 0
+        and first_week_mandate_daily_submitted >= first_week_mandate_daily_target
+    )
 
     submit_failures: list[str] = []
     if blockers:
@@ -531,16 +555,30 @@ def build_paperops_active_paper_trading_automation(
         unattended_delegation_reason = "blocked:" + ",".join(
             blockers or ["paperops_or_qctrl_not_ready"]
         )
+        idle_reason = None
     elif paper_submit_allowed:
         unattended_delegation_reason = "armed_fresh_paper_submit_ready"
+        idle_reason = None
     elif paper_poll_allowed:
         unattended_delegation_reason = "armed_paper_poll_ready"
+        idle_reason = None
     elif paper_exit_allowed:
         unattended_delegation_reason = "armed_paper_exit_ready"
+        idle_reason = None
+    elif first_week_mandate_target_met:
+        unattended_delegation_reason = "armed_idle_first_week_paper_target_met"
+        idle_reason = "daily_paper_trade_target_met"
     elif _int(paperops2.get("duplicate_submit_record_count")) >= 1:
         unattended_delegation_reason = "armed_idle_existing_order_already_submitted"
+        idle_reason = "no_fresh_eligible_candidate"
     else:
         unattended_delegation_reason = "armed_idle_waiting_for_fresh_eligible_setup"
+        idle_reason = "no_fresh_eligible_candidate"
+    duplicate_submit_interpretation = (
+        "idempotency guard active: existing paper submit already recorded"
+        if _int(paperops2.get("duplicate_submit_record_count")) >= 1
+        else "no duplicate paper submit recorded"
+    )
 
     actions = action_records or []
     live_endpoint_called_count = sum(
@@ -606,8 +644,32 @@ def build_paperops_active_paper_trading_automation(
         "paperops2_duplicate_submit_record_count": _int(
             paperops2.get("duplicate_submit_record_count")
         ),
+        "paperops2_duplicate_submit_interpretation": duplicate_submit_interpretation,
         "paperops2_idempotency_ledger_active": (
             paperops2.get("idempotency_ledger_active") is True
+        ),
+        "first_week_paper_trade_mandate_status": paperops2.get(
+            "source_first_week_mandate_status",
+            "not_run",
+        ),
+        "first_week_paper_trade_mandate_active": first_week_mandate_active,
+        "first_week_paper_trade_mandate_day_number": _int(
+            paperops2.get("source_first_week_mandate_day_number")
+        ),
+        "first_week_paper_trade_mandate_daily_target_trade_count": (
+            first_week_mandate_daily_target
+        ),
+        "first_week_paper_trade_mandate_minimum_notional_usd": float(
+            paperops2.get("source_first_week_mandate_minimum_notional_usd") or 0
+        ),
+        "first_week_paper_trade_mandate_daily_ready_submit_count": _int(
+            paperops2.get("source_first_week_mandate_daily_ready_submit_count")
+        ),
+        "first_week_paper_trade_mandate_daily_submitted_count": (
+            first_week_mandate_daily_submitted
+        ),
+        "first_week_paper_trade_mandate_candidate_count": _int(
+            paperops2.get("source_first_week_mandate_candidate_count")
         ),
         "paperops2_submit_called_count": _int(
             paperops2.get("alpaca_paper_post_called_count")
@@ -642,6 +704,8 @@ def build_paperops_active_paper_trading_automation(
         "unattended_paper_execution_delegation_reason": (
             unattended_delegation_reason
         ),
+        "idle_reason": idle_reason,
+        "idempotency_guard_message": duplicate_submit_interpretation,
         "paper_submit_step_allowed": paper_submit_allowed,
         "paper_poll_step_allowed": paper_poll_allowed,
         "paper_exit_step_allowed": paper_exit_allowed,
@@ -782,6 +846,11 @@ def validate_paperops_active_paper_trading_automation(
             errors.append("paperops_active_automation_submit_without_eligible_order")
         if _int(artifact.get("paperops2_fresh_eligible_submit_record_count")) < 1:
             errors.append("paperops_active_automation_submit_without_fresh_order")
+    if artifact.get("first_week_paper_trade_mandate_active") is True:
+        if artifact.get("first_week_paper_trade_mandate_daily_target_trade_count") != 3:
+            errors.append("paperops_active_automation_first_week_target_invalid")
+        if float(artifact.get("first_week_paper_trade_mandate_minimum_notional_usd") or 0) < 6000:
+            errors.append("paperops_active_automation_first_week_notional_invalid")
     if artifact.get("paper_poll_step_allowed") is True:
         if artifact.get("paperops3_status") != "ready_pending_explicit_poll":
             errors.append("paperops_active_automation_poll_without_paperops3_ready")
@@ -878,6 +947,15 @@ def write_paperops_active_paper_trading_automation(
                     "unattended_paper_execution_delegation_reason"
                 ),
                 "paper_submit_step_allowed": written.get("paper_submit_step_allowed"),
+                "first_week_paper_trade_mandate_status": written.get(
+                    "first_week_paper_trade_mandate_status"
+                ),
+                "first_week_paper_trade_mandate_daily_ready_submit_count": written.get(
+                    "first_week_paper_trade_mandate_daily_ready_submit_count"
+                ),
+                "first_week_paper_trade_mandate_daily_submitted_count": written.get(
+                    "first_week_paper_trade_mandate_daily_submitted_count"
+                ),
                 "paper_poll_step_allowed": written.get("paper_poll_step_allowed"),
                 "paper_exit_step_allowed": written.get("paper_exit_step_allowed"),
                 "qctrl_consultation_hold_active": written.get(
@@ -922,6 +1000,15 @@ def write_paperops_active_paper_trading_automation(
             "unattended_paper_execution_delegation_reason"
         ),
         "paper_submit_step_allowed": written.get("paper_submit_step_allowed"),
+        "first_week_paper_trade_mandate_status": written.get(
+            "first_week_paper_trade_mandate_status"
+        ),
+        "first_week_paper_trade_mandate_daily_ready_submit_count": written.get(
+            "first_week_paper_trade_mandate_daily_ready_submit_count"
+        ),
+        "first_week_paper_trade_mandate_daily_submitted_count": written.get(
+            "first_week_paper_trade_mandate_daily_submitted_count"
+        ),
         "paper_poll_step_allowed": written.get("paper_poll_step_allowed"),
         "paper_exit_step_allowed": written.get("paper_exit_step_allowed"),
         "qctrl_consultation_hold_active": written.get(
@@ -963,6 +1050,17 @@ def paperops_active_paper_trading_automation_public_status(
             "paper_endpoint_confirmed": False,
             "unattended_paper_execution_delegation_enabled": False,
             "unattended_paper_execution_delegation_reason": "pt8_not_run",
+            "idle_reason": "pt8_not_run",
+            "idempotency_guard_message": "no duplicate paper submit recorded",
+            "paperops2_duplicate_submit_interpretation": "no duplicate paper submit recorded",
+            "first_week_paper_trade_mandate_status": "not_run",
+            "first_week_paper_trade_mandate_active": False,
+            "first_week_paper_trade_mandate_day_number": 0,
+            "first_week_paper_trade_mandate_daily_target_trade_count": 0,
+            "first_week_paper_trade_mandate_minimum_notional_usd": 0,
+            "first_week_paper_trade_mandate_daily_ready_submit_count": 0,
+            "first_week_paper_trade_mandate_daily_submitted_count": 0,
+            "first_week_paper_trade_mandate_candidate_count": 0,
             "paper_submit_step_allowed": False,
             "paper_poll_step_allowed": False,
             "paper_exit_step_allowed": False,

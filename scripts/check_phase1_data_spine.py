@@ -99,7 +99,7 @@ def main() -> int:
             trust_score = source.get("trust_score")
             if not isinstance(trust_score, (int, float)) or not 0 <= float(trust_score) <= 1:
                 errors.append(f"promoted_adapter_trust_score_missing:{key}")
-            if runtime_status not in {"live_optional", "unavailable_missing_credentials"}:
+            if runtime_status not in {"live_optional", "unavailable_missing_credentials", "local_bridge_required"}:
                 errors.append(f"promoted_adapter_bad_runtime:{key}:{runtime_status}")
         if (
             spec.status in {"needs_clarity", "needs_choice", "needs_new_adapter"}

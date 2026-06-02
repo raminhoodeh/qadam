@@ -321,9 +321,20 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_setup_ledger_not_written")
-    if written["status"] != "read_only_no_q7_setups":
+    has_qualified_setup = written["qualified_setup_count"] > 0
+    expected_status = (
+        "read_only_q7_setups_recorded"
+        if has_qualified_setup
+        else "read_only_no_q7_setups"
+    )
+    expected_stage_status = (
+        "qualified_setup_ledger_recorded_with_q7_setups"
+        if has_qualified_setup
+        else "qualified_setup_ledger_recorded_no_q7_setup_window"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_setup_ledger_status_invalid")
-    if written["stage_status"] != "qualified_setup_ledger_recorded_no_q7_setup_window":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_setup_ledger_stage_status_invalid")
     if written["calendar_day_record_count"] != PHASE7_HARNESS_DAY_COUNT:
         errors.append("phase7_setup_ledger_calendar_day_count_mismatch")
@@ -333,11 +344,14 @@ def main() -> int:
         errors.append("phase7_setup_ledger_weekly_summary_count_mismatch")
     if written["candidate_setup_record_count"] < 1:
         errors.append("phase7_setup_ledger_candidate_records_missing")
+    if has_qualified_setup:
+        if written["qualified_setup_record_count"] != written["qualified_setup_count"]:
+            errors.append("phase7_setup_ledger_qualified_record_count_mismatch")
+        if written["eligible_setup_count"] != written["qualified_setup_count"]:
+            errors.append("phase7_setup_ledger_eligible_count_mismatch")
+        if written["target_proof_trade_count"] <= 0:
+            errors.append("phase7_setup_ledger_target_count_missing")
     for count_key in (
-        "qualified_setup_record_count",
-        "eligible_setup_count",
-        "qualified_setup_count",
-        "blocked_setup_count",
         "expired_setup_count",
         "proof_trade_count",
         "closed_proof_trade_count",
@@ -346,9 +360,19 @@ def main() -> int:
     ):
         if written[count_key] != 0:
             errors.append(f"phase7_setup_ledger_count_nonzero:{count_key}")
-    if written["no_trade_day_explanation_count"] != PHASE7_HARNESS_DAY_COUNT:
+    expected_no_trade_days = sum(
+        1
+        for day in written["daily_setup_decisions"]
+        if day.get("no_trade_explanation_recorded") is True
+    )
+    expected_no_trade_weeks = sum(
+        1
+        for week in written["weekly_setup_summaries"]
+        if week.get("no_trade_explanation_recorded") is True
+    )
+    if written["no_trade_day_explanation_count"] != expected_no_trade_days:
         errors.append("phase7_setup_ledger_no_trade_day_count_mismatch")
-    if written["no_trade_week_explanation_count"] != 5:
+    if written["no_trade_week_explanation_count"] != expected_no_trade_weeks:
         errors.append("phase7_setup_ledger_no_trade_week_count_mismatch")
     if written["rejected_phase5_lifecycle_count"] < 1:
         errors.append("phase7_setup_ledger_phase5_rejection_missing")

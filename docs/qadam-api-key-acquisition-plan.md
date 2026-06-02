@@ -59,7 +59,7 @@ Still pending:
 - Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
 - Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
 - ACLED token refresh automation now exists in `scripts/refresh_acled_token.py`. A 2026-05-19 refresh run succeeded with the refresh-token grant, but the ACLED read endpoint still returned HTTP 403, so ACLED still needs provider entitlement/account-scope confirmation before it counts as durable live.
-- UnusualWhales, BLS, UN Comtrade, Reddit, X, AIS/Wingbits/logistics providers, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials.
+- UnusualWhales, BLS, Reddit, Kalshi, Capitol Trades/STOCK Act, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied.
 
 ## 3. Batch A - Get These First
 
@@ -112,7 +112,8 @@ Only buy these after Qadam shows that a source category genuinely improves trade
 | --- | --- | --- | --- |
 | UnusualWhales | Paid | `UNUSUAL_WHALES_API_KEY` | Buy only if options flow is central to the first demo strategy. |
 | AISStream / Spire / MarineTraffic | Free/cheap to expensive depending provider | `AISSTREAM_API_KEY`, `SPIRE_API_KEY`, `MARINETRAFFIC_API_KEY` | Start with AISStream if available. Upgrade to Spire/MarineTraffic only if vessel data becomes core to oil/logistics signals. |
-| Wingbits | TBD / likely account-dependent | `WINGBITS_API_KEY` | Add after AIS if aviation/logistics anomalies matter. |
+| Aviationstack | Free/freemium to paid depending usage | `AVIATIONSTACK_API_KEY` | Use as the v1 flight-data source instead of Wingbits. Keep it read-only and quota-aware. |
+| Capitol Trades / STOCK Act provider | Provider/account dependent | `CAPITOL_TRADES_API_KEY` | Use for congressional trade disclosures instead of routing STOCK Act through UnusualWhales. |
 | Coinglass | Paid/freemium | `COINGLASS_API_KEY` | Later crypto/liquidity context only. |
 | RapidAPI | Per-source paid | `RAPIDAPI_KEY` | Use only when a direct provider is unavailable. |
 

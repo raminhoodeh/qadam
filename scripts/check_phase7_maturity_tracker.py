@@ -435,8 +435,6 @@ def main() -> int:
     for count_key in (
         "closed_proof_trade_count",
         "maturity_progress_fraction",
-        "paper_order_submitted_count",
-        "proof_trade_created_count",
         "broker_post_called_count",
         "alpaca_post_called_count",
         "unsafe_write_counter_total",

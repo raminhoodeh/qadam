@@ -364,9 +364,18 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_auto_approval_not_written")
-    if written["status"] != "ready_no_auto_approved_setups":
+    has_auto_approval = written["auto_approved_setup_count"] > 0
+    expected_status = (
+        "auto_approval_ready" if has_auto_approval else "ready_no_auto_approved_setups"
+    )
+    expected_stage_status = (
+        "test_mode_auto_approval_decisions_recorded"
+        if has_auto_approval
+        else "test_mode_auto_approval_router_ready_no_q7_setups"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_auto_approval_status_invalid")
-    if written["stage_status"] != "test_mode_auto_approval_router_ready_no_q7_setups":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_auto_approval_stage_status_invalid")
     if written["test_mode_auto_approval_allowed"] is not True:
         errors.append("phase7_test_mode_auto_approval_not_allowed")
@@ -374,14 +383,13 @@ def main() -> int:
         errors.append("phase7_auto_approval_authority_not_granted")
     if written["q7_6_proof_order_staging_stage_allowed"] is not True:
         errors.append("phase7_auto_approval_q7_6_not_allowed")
-    if written["approval_decision_record_count"] != 1:
+    expected_decision_count = written["qualified_setup_count"] + 1
+    if written["approval_decision_record_count"] != expected_decision_count:
         errors.append("phase7_auto_approval_decision_record_count_mismatch")
-    if written["qualified_setup_count"] != 0:
-        errors.append("phase7_auto_approval_qualified_setup_count_nonzero")
-    if written["qualified_setup_decision_count"] != 0:
-        errors.append("phase7_auto_approval_qualified_decision_count_nonzero")
-    if written["auto_approved_setup_count"] != 0:
-        errors.append("phase7_auto_approval_auto_approved_count_nonzero")
+    if written["qualified_setup_decision_count"] != written["qualified_setup_count"]:
+        errors.append("phase7_auto_approval_qualified_decision_count_mismatch")
+    if written["auto_approved_setup_count"] != written["qualified_setup_count"]:
+        errors.append("phase7_auto_approval_auto_approved_count_mismatch")
     if written["rejected_setup_decision_count"] != 1:
         errors.append("phase7_auto_approval_rejected_count_mismatch")
     if written["phase5_candidate_rejected_count"] != 1:

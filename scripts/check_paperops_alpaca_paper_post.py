@@ -37,7 +37,7 @@ def _parse_args() -> argparse.Namespace:
         "--submit-paper-order",
         action="store_true",
         help=(
-            "Actually POST the first eligible Q7 guarded order to Alpaca paper. "
+            "Actually POST the first eligible guarded order to Alpaca paper. "
             "All PaperOps-2 gates must pass first."
         ),
     )
@@ -354,12 +354,20 @@ def main() -> int:
         written["eligible_submit_record_count"] < 1
         and written["duplicate_submit_record_count"] < 1
     ):
-        errors.append("PaperOps-2 did not find an eligible or duplicate PT-4/Q7 paper order")
+        errors.append(
+            "PaperOps-2 did not find an eligible or duplicate paper order source"
+        )
     if (
-        written["selected_source_family"] != "paperops_pt4_staged_order"
+        written["selected_source_family"]
+        not in {
+            "paperops_pt4_staged_order",
+            "paperops_first_week_paper_trade_mandate",
+            "phase7_guarded_submit_record",
+            None,
+        }
         and written["duplicate_submit_record_count"] < 1
     ):
-        errors.append("PaperOps-2 did not select the PT-4 staged order source")
+        errors.append("PaperOps-2 selected an unexpected paper order source")
     if written["idempotency_ledger_active"] is not True:
         errors.append("PaperOps-2 idempotency ledger is not active")
     if written["status"] == "ready_no_fresh_eligible_order" and written[

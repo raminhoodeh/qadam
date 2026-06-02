@@ -53,6 +53,26 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
             "automatic token renewal."
         ),
     ),
+    "ucdp": Phase1AdapterConfig(
+        key="ucdp",
+        source_label="conflict.ucdp",
+        event_type="conflict_base_rate",
+        trust_score=0.62,
+        sample_summary="UCDP historical conflict observation available for geopolitical base-rate context.",
+        primary_endpoint="https://ucdpapi.pcr.uu.se/api/gedevents/23.1",
+        public_live=True,
+        notes="Read-only historical conflict/base-rate context. It cannot create signal confidence by itself.",
+    ),
+    "conflict_tracker": Phase1AdapterConfig(
+        key="conflict_tracker",
+        source_label="conflict.tracker",
+        event_type="derived_conflict_context",
+        trust_score=0.72,
+        sample_summary="Derived conflict tracker fuses ACLED/GDELT context for corridor and escalation review.",
+        primary_endpoint="internal://conflict_tracker",
+        public_live=True,
+        notes="Internal read-only derived context. It cannot create orders or bypass source quorum.",
+    ),
     "unusual_whales": Phase1AdapterConfig(
         key="unusual_whales",
         source_label="market.unusual_whales",
@@ -68,9 +88,12 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="politician_trade_disclosure",
         trust_score=0.72,
         sample_summary="STOCK Act congressional trade disclosure requiring cross-check against price action and filings.",
-        primary_endpoint="https://api.unusualwhales.com/api/congress/recent-trades",
-        required_any_secret_groups=(("UNUSUAL_WHALES_API_KEY",),),
-        notes="V1 provider decision: UnusualWhales Congress recent trades. Output is read-only evidence, not trade authority.",
+        primary_endpoint="https://www.capitoltrades.com/trades",
+        required_any_secret_groups=(("CAPITOL_TRADES_API_KEY",),),
+        notes=(
+            "Provider direction updated: Capitol Trades or its selected API path is the v1 STOCK Act source. "
+            "Output is read-only evidence, not trade authority."
+        ),
     ),
     "polymarket": Phase1AdapterConfig(
         key="polymarket",
@@ -91,6 +114,17 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         required_any_secret_groups=(("KALSHI_API_KEY", "KALSHI_API_SECRET"),),
         notes="Kalshi is region/account gated for Ramin; authenticated paths stay read-only when available.",
     ),
+    "hyperliquid": Phase1AdapterConfig(
+        key="hyperliquid",
+        source_label="market.hyperliquid",
+        event_type="crypto_derivatives_context",
+        trust_score=0.48,
+        sample_summary="Hyperliquid public perps context available for crypto/liquidity regime monitoring.",
+        primary_endpoint="https://api.hyperliquid.xyz/info",
+        method="POST",
+        public_live=True,
+        notes="Read-only public crypto/perps context. Qadam cannot write orders through this adapter.",
+    ),
     "alpaca": Phase1AdapterConfig(
         key="alpaca",
         source_label="market.alpaca",
@@ -101,6 +135,17 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         required_any_secret_groups=(("ALPACA_API_KEY", "ALPACA_API_SECRET"),),
         notes="Read-only mirror target only. No order endpoint is implemented here.",
     ),
+    "bookmap": Phase1AdapterConfig(
+        key="bookmap",
+        source_label="market.bookmap",
+        event_type="local_orderflow_context",
+        trust_score=0.52,
+        sample_summary="Bookmap local order-flow bridge contract available when the local bridge is configured and running.",
+        primary_endpoint="ws://localhost:8765/bookmap",
+        public_live=True,
+        required_any_secret_groups=(("BOOKMAP_BRIDGE_URL",),),
+        notes="Local bridge only. It remains disconnected until BOOKMAP_BRIDGE_URL points at a running read-only bridge.",
+    ),
     "ais_maritime": Phase1AdapterConfig(
         key="ais_maritime",
         source_label="physical.ais_maritime",
@@ -110,6 +155,16 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         primary_endpoint="https://stream.aisstream.io/v0/stream",
         required_any_secret_groups=(("AISSTREAM_API_KEY",), ("SPIRE_API_KEY",), ("MARINETRAFFIC_API_KEY",)),
         notes="AISStream is the v1 read-only MVP path; Spire and MarineTraffic remain paid fallback candidates.",
+    ),
+    "arcgis_usace": Phase1AdapterConfig(
+        key="arcgis_usace",
+        source_label="physical.arcgis_usace",
+        event_type="infrastructure_context",
+        trust_score=0.58,
+        sample_summary="Public ArcGIS/USACE infrastructure layer available for ports, waterways, and physical-risk context.",
+        primary_endpoint="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/",
+        public_live=True,
+        notes="Public geospatial context only. Qadam treats it as background evidence.",
     ),
     "space_track_celestrak": Phase1AdapterConfig(
         key="space_track_celestrak",
@@ -122,14 +177,35 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         required_any_secret_groups=(("SPACE_TRACK_USERNAME", "SPACE_TRACK_PASSWORD"),),
         notes="CelesTrak public GP JSON is the fallback/smoke path; Space-Track credentials remain the fuller authenticated path.",
     ),
-    "wingbits": Phase1AdapterConfig(
-        key="wingbits",
-        source_label="physical.wingbits",
+    "gps_jamming": Phase1AdapterConfig(
+        key="gps_jamming",
+        source_label="physical.gps_jamming",
+        event_type="navigation_disruption",
+        trust_score=0.57,
+        sample_summary="GPS interference observation available for navigation and electronic-warfare context.",
+        primary_endpoint="https://gpsjam.org/api",
+        public_live=True,
+        notes="Public navigation-disruption context only.",
+    ),
+    "internet_outage": Phase1AdapterConfig(
+        key="internet_outage",
+        source_label="physical.internet_outage",
+        event_type="infrastructure_disruption",
+        trust_score=0.58,
+        sample_summary="IODA internet-outage observation available for infrastructure and political-risk context.",
+        primary_endpoint="https://ioda.inetintel.cc.gatech.edu/api",
+        public_live=True,
+        notes="Public internet-outage context only.",
+    ),
+    "aviationstack": Phase1AdapterConfig(
+        key="aviationstack",
+        source_label="physical.aviationstack",
         event_type="logistics_signal",
         trust_score=0.73,
         sample_summary="ADS-B flight activity anomaly near a conflict, defence, or supply-chain region.",
-        primary_endpoint="https://api.wingbits.com/v1/aircraft",
-        required_any_secret_groups=(("WINGBITS_API_KEY",),),
+        primary_endpoint="https://api.aviationstack.com/v1/flights",
+        required_any_secret_groups=(("AVIATIONSTACK_API_KEY",),),
+        notes="Aviationstack replaces Wingbits as Qadam's v1 flight-data provider.",
     ),
     "bls": Phase1AdapterConfig(
         key="bls",
@@ -142,6 +218,16 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         public_live=True,
         required_any_secret_groups=(("BLS_API_KEY",),),
         notes="Public mode may work without a key at lower limits; key remains recommended.",
+    ),
+    "bis": Phase1AdapterConfig(
+        key="bis",
+        source_label="macro.bis",
+        event_type="macro_release",
+        trust_score=0.78,
+        sample_summary="BIS statistics observation available for global liquidity, banking, and credit-cycle context.",
+        primary_endpoint="https://stats.bis.org/api/v1/data/",
+        public_live=True,
+        notes="Public macro/liquidity context only.",
     ),
     "ecb": Phase1AdapterConfig(
         key="ecb",
@@ -184,6 +270,16 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         public_live=True,
         required_any_secret_groups=(("SEC_USER_AGENT",),),
         notes="SEC requires a useful User-Agent. Default placeholder is treated as missing.",
+    ),
+    "patents": Phase1AdapterConfig(
+        key="patents",
+        source_label="social.patents",
+        event_type="patent_context",
+        trust_score=0.5,
+        sample_summary="Patent filing observation available for defence, semiconductor, and industrial-technology context.",
+        primary_endpoint="https://api.patentsview.org/patents/query",
+        public_live=True,
+        notes="Public patent context only; no strategy or execution authority.",
     ),
     "reddit": Phase1AdapterConfig(
         key="reddit",
@@ -278,6 +374,13 @@ def _event_summary(config: Phase1AdapterConfig, record: dict[str, Any]) -> str:
         "REPRESENTATIVE",
         "ISSUER",
         "REPORT_DATE",
+        "flight_status",
+        "callsign",
+        "airport_name",
+        "series",
+        "dataset",
+        "contract",
+        "patent_title",
     ):
         value = record.get(key)
         if isinstance(value, str) and value.strip():
@@ -292,7 +395,20 @@ def _records_from_payload(payload: Any) -> list[dict[str, Any]]:
         return [record for record in payload if isinstance(record, dict)]
     if not isinstance(payload, dict):
         return []
-    for key in ("data", "events", "markets", "results", "articles", "observations", "series", "feed", "alerts", "features"):
+    for key in (
+        "data",
+        "events",
+        "markets",
+        "results",
+        "Result",
+        "articles",
+        "observations",
+        "series",
+        "feed",
+        "alerts",
+        "features",
+        "patents",
+    ):
         value = payload.get(key)
         if isinstance(value, list):
             return [record for record in value if isinstance(record, dict)]
@@ -402,8 +518,12 @@ class Phase1ReadOnlyAdapter:
     def _request_headers(self) -> dict[str, str]:
         key = self.config.key
         headers = {"User-Agent": "Qadam/0.1 read-only source adapter"}
-        if key in {"unusual_whales", "stock_act"}:
+        if key == "unusual_whales":
             token = secret_value("UNUSUAL_WHALES_API_KEY", self.settings)
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+        elif key == "stock_act":
+            token = secret_value("CAPITOL_TRADES_API_KEY", self.settings)
             if token:
                 headers["Authorization"] = f"Bearer {token}"
         elif key == "alpaca":
@@ -434,6 +554,8 @@ class Phase1ReadOnlyAdapter:
 
     def _request_params(self) -> dict[str, Any]:
         key = self.config.key
+        if key == "ucdp":
+            return {"pagesize": 25}
         if key == "acled":
             return {"limit": 25, "_format": "json"}
         if key == "polymarket":
@@ -444,18 +566,29 @@ class Phase1ReadOnlyAdapter:
             return {"limit": 25}
         if key == "space_track_celestrak":
             return {"GROUP": "stations", "FORMAT": "json"}
+        if key == "arcgis_usace":
+            return {"f": "json"}
+        if key == "gps_jamming":
+            return {}
+        if key == "internet_outage":
+            return {}
         if key == "usgs":
             return {"format": "geojson", "orderby": "time", "minmagnitude": 4.5, "limit": 25}
-        if key == "wingbits":
-            return {"limit": 25}
+        if key == "aviationstack":
+            api_key = secret_value("AVIATIONSTACK_API_KEY", self.settings)
+            return {"access_key": api_key or "", "limit": 25}
         if key == "bls":
             return {}
         if key == "ecb":
             return {"lastNObservations": 25, "format": "jsondata"}
+        if key == "bis":
+            return {}
         if key == "un_comtrade":
             return {"max": 25}
         if key == "sec_edgar":
             return {}
+        if key == "patents":
+            return {"q": json.dumps({"_gte": {"patent_date": "2025-01-01"}}), "f": json.dumps(["patent_id", "patent_title", "patent_date"])}
         if key == "twitter_x":
             return {"query": "oil OR semiconductors OR defense", "max_results": 10}
         return {}
@@ -470,6 +603,8 @@ class Phase1ReadOnlyAdapter:
             if api_key:
                 body["registrationkey"] = api_key
             return body
+        if self.config.key == "hyperliquid":
+            return {"type": "metaAndAssetCtxs"}
         return None
 
     def _live_url(self) -> str:
@@ -477,6 +612,8 @@ class Phase1ReadOnlyAdapter:
             token = secret_value("TELEGRAM_BOT_TOKEN", self.settings)
             if token:
                 return f"https://api.telegram.org/bot{token}/getUpdates"
+        if self.config.key == "bookmap":
+            return secret_value("BOOKMAP_BRIDGE_URL", self.settings) or self.config.primary_endpoint
         return self.config.primary_endpoint
 
     async def fetch_live(self, *, timeout_seconds: float = 12.0) -> SourceEnvelope:
@@ -494,6 +631,41 @@ class Phase1ReadOnlyAdapter:
                 },
                 degraded=True,
                 degraded_reason="missing_credentials",
+            )
+
+        if self.config.key == "conflict_tracker":
+            return self.envelope_from_payload(
+                {
+                    "records": [
+                        {
+                            "id": "derived-conflict-tracker-status",
+                            "title": self.config.sample_summary,
+                            "observed_at": _now(),
+                            "derived": True,
+                            "inputs": ["acled", "gdelt"],
+                        }
+                    ],
+                    "_qadam_request": {
+                        "url": _safe_endpoint(self.config.primary_endpoint),
+                        "method": "DERIVED",
+                        "credential_configured": True,
+                    },
+                }
+            )
+        if self.config.key == "bookmap" and self._live_url().startswith("ws://"):
+            return self.envelope_from_payload(
+                {
+                    "records": [],
+                    "_qadam_request": {
+                        "url": _safe_endpoint(self._live_url()),
+                        "method": "WEBSOCKET_LOCAL_BRIDGE",
+                        "credential_configured": credential_state["credential_configured"],
+                    },
+                    "_qadam_error_type": "local_bridge_probe_required",
+                    "_qadam_error": "Bookmap uses a local WebSocket bridge; run a dedicated bridge probe before marking it connected.",
+                },
+                degraded=True,
+                degraded_reason="local_bridge_probe_required",
             )
 
         try:
@@ -534,7 +706,23 @@ class Phase1ReadOnlyAdapter:
                     "_qadam_request": {
                         "url": _safe_endpoint(url),
                         "method": self.config.method,
-                        "params": {key: "configured" if key in {"access_token", "email", "password"} else value for key, value in params.items()},
+                        "params": {
+                            key: (
+                                "configured"
+                                if key
+                                in {
+                                    "access_key",
+                                    "access_token",
+                                    "apikey",
+                                    "api_key",
+                                    "email",
+                                    "password",
+                                    "registrationkey",
+                                }
+                                else value
+                            )
+                            for key, value in params.items()
+                        },
                     },
                     "_qadam_error_type": exc.__class__.__name__,
                     "_qadam_error": repr(exc),

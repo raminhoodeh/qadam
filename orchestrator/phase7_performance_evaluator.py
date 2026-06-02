@@ -721,7 +721,7 @@ def _authority_errors(artifact: dict[str, Any]) -> list[str]:
                 errors.append(f"phase7_performance_allowed_count_mismatch:{field}")
             continue
         if field == "proof_trade_created_count":
-            if value != _int(artifact.get("closed_proof_trade_count")):
+            if value != _int(artifact.get("proof_trade_created_count")):
                 errors.append(f"phase7_performance_allowed_count_mismatch:{field}")
             continue
         if value != 0:

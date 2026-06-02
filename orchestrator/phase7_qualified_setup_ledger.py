@@ -48,6 +48,7 @@ PHASE7_QUALIFIED_SETUP_LEDGER_HISTORY = "phase7_qualified_setup_ledger_history.j
 PHASE7_QUALIFIED_SETUP_LEDGER_EVENT_LOG = "phase7_qualified_setup_ledger_events.jsonl"
 PHASE7_QUALIFIED_SETUP_LEDGER_EVENT_TYPE = PHASE7_EVENT_TYPES["qualified_setup"]
 PHASE7_QUALIFIED_SETUP_LEDGER_COMPONENT = "phase7_qualified_setup_ledger"
+PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT = "paperops_qualified_setup_production.json"
 
 QUALIFICATION_GATE_KEYS: tuple[str, ...] = (
     "source_quorum",
@@ -84,6 +85,10 @@ def _read_json(path: Path) -> dict[str, Any]:
         return {}
     payload = json.loads(path.read_text(encoding="utf-8"))
     return payload if isinstance(payload, dict) else {}
+
+
+def _int(value: Any) -> int:
+    return int(value or 0)
 
 
 def phase7_qualified_setup_ledger_paths(
@@ -150,6 +155,7 @@ def _provenance() -> dict[str, Any]:
             "data/runtime/phase5_signal_review.json",
             "data/runtime/phase5_risk_sizing_reviews.json",
             "data/runtime/phase5_paper_order_staging_gate.json",
+            f"data/runtime/{PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT}",
         )
     )
     provenance["decision_chain_refs"] = [
@@ -158,15 +164,77 @@ def _provenance() -> dict[str, Any]:
         "data/runtime/phase5_paper_order_staging_gate.json",
     ]
     provenance["execution_evidence_refs"] = [
-        "data/runtime/phase5_paper_trade_drill.json"
+        "data/runtime/phase5_paper_trade_drill.json",
+        f"data/runtime/{PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT}",
     ]
     return provenance
 
 
-def _daily_setup_decisions(calendar: dict[str, Any]) -> list[dict[str, Any]]:
+def _active_day_number_from_paperops_handoff(
+    paperops_handoff: dict[str, Any],
+) -> int | None:
+    candidates = (
+        paperops_handoff.get("phase7_active_day_number"),
+        paperops_handoff.get("phase7_demo_active_day_number"),
+        paperops_handoff.get("phase7_run", {}).get("active_day_number")
+        if isinstance(paperops_handoff.get("phase7_run"), dict)
+        else None,
+    )
+    for candidate in candidates:
+        try:
+            day_number = int(candidate or 0)
+        except (TypeError, ValueError):
+            continue
+        if 1 <= day_number <= PHASE7_HARNESS_DAY_COUNT:
+            return day_number
+    return None
+
+
+def _daily_setup_decisions(
+    calendar: dict[str, Any],
+    *,
+    qualified_setup_count: int = 0,
+    active_day_number: int | None = None,
+) -> list[dict[str, Any]]:
     decisions: list[dict[str, Any]] = []
     for day in calendar.get("proof_calendar_days", []):
         if not isinstance(day, dict):
+            continue
+        is_active_setup_day = (
+            qualified_setup_count > 0
+            and active_day_number is not None
+            and day.get("day_number") == active_day_number
+        )
+        if is_active_setup_day:
+            decisions.append(
+                {
+                    "decision_id": (
+                        f"q7-3:day:{day.get('day_number')}:paperops-qualified-handoff"
+                    ),
+                    "day_number": day.get("day_number"),
+                    "calendar_date": day.get("calendar_date"),
+                    "proof_week_number": day.get("proof_week_number"),
+                    "decision_state": "qualified_setup_pending_auto_approval",
+                    "setup_window_state": "paperops_qualified_setup_handoff_recorded",
+                    "no_trade_explanation_recorded": False,
+                    "no_trade_rationale": None,
+                    "eligible_setup_count": qualified_setup_count,
+                    "qualified_setup_count": qualified_setup_count,
+                    "blocked_setup_count": 0,
+                    "expired_setup_count": 0,
+                    "target_proof_trade_count": min(
+                        PHASE7_WEEKLY_PROOF_TRADE_TARGET,
+                        qualified_setup_count,
+                    ),
+                    "proof_trade_count": 0,
+                    "phase5_lifecycle_reuse_count": 0,
+                    "supplemental_only_setup_count": 0,
+                    "forced_trade_allowed": False,
+                    "proof_credit_allowed": False,
+                    "broker_post_allowed": False,
+                    "live_capital_enabled": False,
+                }
+            )
             continue
         decisions.append(
             {
@@ -194,11 +262,28 @@ def _daily_setup_decisions(calendar: dict[str, Any]) -> list[dict[str, Any]]:
     return decisions
 
 
-def _weekly_setup_summaries(calendar: dict[str, Any]) -> list[dict[str, Any]]:
+def _weekly_setup_summaries(
+    calendar: dict[str, Any],
+    *,
+    qualified_setup_count: int = 0,
+    active_day_number: int | None = None,
+) -> list[dict[str, Any]]:
     summaries: list[dict[str, Any]] = []
     for week in calendar.get("proof_weeks", []):
         if not isinstance(week, dict):
             continue
+        start_day = _int(week.get("start_day_number"))
+        end_day = _int(week.get("end_day_number"))
+        is_active_setup_week = (
+            qualified_setup_count > 0
+            and active_day_number is not None
+            and start_day <= active_day_number <= end_day
+        )
+        target_count = (
+            min(PHASE7_WEEKLY_PROOF_TRADE_TARGET, qualified_setup_count)
+            if is_active_setup_week
+            else 0
+        )
         summaries.append(
             {
                 "proof_week_number": week.get("proof_week_number"),
@@ -207,16 +292,27 @@ def _weekly_setup_summaries(calendar: dict[str, Any]) -> list[dict[str, Any]]:
                 "start_date": week.get("start_date"),
                 "end_date": week.get("end_date"),
                 "is_partial_week": week.get("is_partial_week") is True,
-                "weekly_setup_state": "no_q7_setup_window_not_started",
+                "weekly_setup_state": (
+                    "qualified_setups_pending_auto_approval"
+                    if is_active_setup_week
+                    else "no_q7_setup_window_not_started"
+                ),
                 "weekly_target_formula": "min(3, qualified_setup_count)",
                 "max_weekly_proof_trade_target": PHASE7_WEEKLY_PROOF_TRADE_TARGET,
-                "qualified_setup_count": 0,
-                "target_proof_trade_count": 0,
+                "qualified_setup_count": (
+                    qualified_setup_count if is_active_setup_week else 0
+                ),
+                "target_proof_trade_count": target_count,
                 "proof_trade_count": 0,
                 "blocked_setup_count": 0,
                 "expired_setup_count": 0,
-                "no_trade_explanation_recorded": True,
-                "no_trade_rationale": "phase7_calendar_scheduled_but_harness_not_started",
+                "pending_auto_approval_count": target_count,
+                "no_trade_explanation_recorded": not is_active_setup_week,
+                "no_trade_rationale": (
+                    None
+                    if is_active_setup_week
+                    else "phase7_calendar_scheduled_but_harness_not_started"
+                ),
                 "forced_trade_allowed": False,
                 "partial_week_trade_pressure_allowed": False,
             }
@@ -272,6 +368,244 @@ def _phase5_rejection_record(settings: Settings) -> dict[str, Any]:
     }
 
 
+def _paperops_qualified_setup_handoff(settings: Settings) -> dict[str, Any]:
+    runtime = _runtime_dir(settings)
+    return _read_json(runtime / PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT)
+
+
+def _paperops_gate_map(handoff: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    gate_results = handoff.get("gate_results", [])
+    mapped: dict[str, dict[str, Any]] = {}
+    if isinstance(gate_results, list):
+        for gate in gate_results:
+            if isinstance(gate, dict) and str(gate.get("gate_key") or "").strip():
+                mapped[str(gate.get("gate_key"))] = gate
+    return mapped
+
+
+def _pt3_gate_passed(gates: dict[str, dict[str, Any]], gate_key: str) -> bool:
+    gate = gates.get(gate_key, {})
+    return gate.get("passed") is True or gate.get("status") in {"pass", "passed"}
+
+
+def _q7_gate(
+    gate_key: str,
+    *,
+    passed: bool,
+    source_gate_keys: tuple[str, ...],
+    detail: str,
+) -> dict[str, Any]:
+    return {
+        "gate_key": gate_key,
+        "status": "pass" if passed else "blocked",
+        "passed": passed,
+        "source_gate_keys": list(source_gate_keys),
+        "source_stage": "PaperOps PT-3",
+        "detail": detail,
+    }
+
+
+def _paperops_q7_gate_results(handoff: dict[str, Any]) -> list[dict[str, Any]]:
+    gates = _paperops_gate_map(handoff)
+    canonical_source = (
+        _pt3_gate_passed(gates, "canonical_source_posture")
+        and handoff.get("canonical_source_quorum_passed") is True
+        and handoff.get("source_quorum_bypass_allowed") is not True
+    )
+    supplemental_context_only = _pt3_gate_passed(
+        gates,
+        "supplemental_sources_context_only",
+    )
+    signal_integrity = (
+        _pt3_gate_passed(gates, "signal_integrity_passed")
+        and handoff.get("signal_integrity_passed") is True
+    )
+    risk_sizing = _pt3_gate_passed(gates, "risk_agent_paper_sizing")
+    execution_policy = all(
+        _pt3_gate_passed(gates, key)
+        for key in (
+            "execution_adapter_read_ready",
+            "paper_order_staged_not_submitted",
+            "broker_write_blocked",
+        )
+    )
+    broker_paper_readiness = all(
+        _pt3_gate_passed(gates, key)
+        for key in ("venue_read_available", "paper_order_staged_not_submitted")
+    ) and handoff.get("broker_post_allowed") is False
+    return [
+        _q7_gate(
+            "source_quorum",
+            passed=canonical_source,
+            source_gate_keys=("canonical_source_posture",),
+            detail="PT-3 canonical source quorum passed with no source-quorum bypass.",
+        ),
+        _q7_gate(
+            "akber_filter",
+            passed=signal_integrity and canonical_source and supplemental_context_only,
+            source_gate_keys=(
+                "signal_integrity_passed",
+                "canonical_source_posture",
+                "supplemental_sources_context_only",
+            ),
+            detail=(
+                "PT-3 signal-integrity handoff preserves the Akber filter boundary "
+                "with canonical posture and supplemental sources as context only."
+            ),
+        ),
+        _q7_gate(
+            "signal_integrity",
+            passed=signal_integrity,
+            source_gate_keys=("signal_integrity_passed",),
+            detail="PT-3 signal integrity passed before Q7 handoff.",
+        ),
+        _q7_gate(
+            "risk_agent_paper_sizing",
+            passed=risk_sizing,
+            source_gate_keys=("risk_agent_paper_sizing",),
+            detail="PT-3 risk agent paper sizing passed.",
+        ),
+        _q7_gate(
+            "execution_policy",
+            passed=execution_policy,
+            source_gate_keys=(
+                "execution_adapter_read_ready",
+                "paper_order_staged_not_submitted",
+                "broker_write_blocked",
+            ),
+            detail="Execution adapter is read-ready while broker writes remain blocked.",
+        ),
+        _q7_gate(
+            "kill_switches",
+            passed=_pt3_gate_passed(gates, "kill_switches_clear"),
+            source_gate_keys=("kill_switches_clear",),
+            detail="PT-3 kill switches are clear.",
+        ),
+        _q7_gate(
+            "venue_availability",
+            passed=_pt3_gate_passed(gates, "venue_read_available"),
+            source_gate_keys=("venue_read_available",),
+            detail="Paper venue read availability was verified by PT-3.",
+        ),
+        _q7_gate(
+            "broker_paper_readiness",
+            passed=broker_paper_readiness,
+            source_gate_keys=(
+                "venue_read_available",
+                "paper_order_staged_not_submitted",
+            ),
+            detail="Paper broker readiness is read-only; no broker POST is allowed here.",
+        ),
+    ]
+
+
+def _paperops_q7_handoff_records(handoff: dict[str, Any]) -> list[dict[str, Any]]:
+    if not handoff:
+        return []
+    if (
+        handoff.get("path_ready") is not True
+        and handoff.get("qualified_setup_production_path_ready") is not True
+    ):
+        return []
+    source_records = handoff.get("qualified_setup_records")
+    if not isinstance(source_records, list):
+        source_records = [
+            record
+            for record in handoff.get("candidate_setup_records", [])
+            if isinstance(record, dict) and record.get("qualified_setup") is True
+        ]
+    if not isinstance(source_records, list):
+        return []
+    records: list[dict[str, Any]] = []
+    for source in source_records:
+        if not isinstance(source, dict):
+            continue
+        gate_results = _paperops_q7_gate_results(source)
+        passed_gates = {
+            gate.get("gate_key")
+            for gate in gate_results
+            if isinstance(gate, dict) and gate.get("status") == "pass"
+        }
+        handoff_forbidden = any(
+            source.get(field) is True
+            for field in (
+                "phase5_lifecycle_counts_as_q7_proof",
+                "phase5_test_trade_counted_for_phase7",
+                "supplemental_only",
+                "proof_trade_created",
+                "proof_credit_allowed",
+                "paper_order_submission_allowed",
+                "broker_post_allowed",
+                "broker_post_called",
+                "live_capital_enabled",
+            )
+        )
+        qualified = (
+            source.get("qualified_setup") is True
+            and source.get("eligible_setup") is True
+            and source.get("all_required_gates_passed") is True
+            and source.get("canonical_source_quorum_passed") is True
+            and passed_gates == set(QUALIFICATION_GATE_KEYS)
+            and not handoff_forbidden
+        )
+        strategy_key = str(source.get("strategy_family_key") or "unknown")
+        record = {
+            "setup_record_id": f"q7-3:paperops-handoff:{strategy_key}",
+            "setup_state": (
+                "qualified_pending_auto_approval" if qualified else "blocked"
+            ),
+            "decision_state": (
+                "qualified_for_q7_auto_approval"
+                if qualified
+                else "blocked_paperops_handoff"
+            ),
+            "strategy_family_key": strategy_key,
+            "instrument": source.get("instrument"),
+            "selected_venue": source.get("selected_venue"),
+            "side": source.get("side"),
+            "quantity": source.get("quantity"),
+            "order_type": source.get("order_type"),
+            "time_in_force": source.get("time_in_force"),
+            "notional_gbp": source.get("notional_gbp"),
+            "risk_gbp": source.get("risk_gbp"),
+            "source_phase": "Q7",
+            "source_origin_phase": "PaperOps",
+            "source_origin_record_id": source.get("setup_record_id"),
+            "source_artifact_ref": (
+                f"data/runtime/{PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT}"
+            ),
+            "source_artifact_id": handoff.get("artifact_id"),
+            "source_status": handoff.get("status"),
+            "paperops_path_ready": (
+                handoff.get("path_ready") is True
+                or handoff.get("qualified_setup_production_path_ready") is True
+            ),
+            "paperops_ready_to_stage_q7_order": (
+                handoff.get("ready_to_stage_q7_order") is True
+            ),
+            "eligible_setup": qualified,
+            "qualified_setup": qualified,
+            "source_quorum_passed": source.get("source_quorum_passed") is True,
+            "canonical_source_quorum_passed": (
+                source.get("canonical_source_quorum_passed") is True
+            ),
+            "supplemental_only": False,
+            "all_required_gates_passed": qualified,
+            "phase5_lifecycle_counts_as_q7_proof": False,
+            "phase5_test_trade_counted_for_phase7": False,
+            "proof_trade_created": False,
+            "proof_credit_allowed": False,
+            "paper_order_submission_allowed": False,
+            "broker_post_allowed": False,
+            "live_endpoint_allowed": False,
+            "live_capital_enabled": False,
+            "rejection_reasons": [] if qualified else ["paperops_q7_handoff_gate_blocked"],
+            "gate_results": gate_results,
+        }
+        records.append(record)
+    return records
+
+
 def _preflight_blockers(calendar: dict[str, Any]) -> list[str]:
     blockers: list[str] = []
     calendar_errors = validate_phase7_calendar_harness(calendar)
@@ -296,11 +630,41 @@ def build_phase7_qualified_setup_ledger(
     settings = settings or Settings.from_env()
     calendar = _calendar_harness(settings)
     blockers = _preflight_blockers(calendar)
-    daily_decisions = _daily_setup_decisions(calendar)
-    weekly_summaries = _weekly_setup_summaries(calendar)
-    candidate_records = [_phase5_rejection_record(settings)]
+    paperops_handoff = _paperops_qualified_setup_handoff(settings)
+    paperops_handoff_records = _paperops_q7_handoff_records(paperops_handoff)
+    qualified_records = [
+        record
+        for record in paperops_handoff_records
+        if record.get("qualified_setup") is True
+    ]
+    blocked_handoff_count = sum(
+        1
+        for record in paperops_handoff_records
+        if record.get("qualified_setup") is not True
+    )
+    qualified_setup_count = len(qualified_records)
+    active_day_number = _active_day_number_from_paperops_handoff(paperops_handoff)
+    daily_decisions = _daily_setup_decisions(
+        calendar,
+        qualified_setup_count=qualified_setup_count,
+        active_day_number=active_day_number,
+    )
+    weekly_summaries = _weekly_setup_summaries(
+        calendar,
+        qualified_setup_count=qualified_setup_count,
+        active_day_number=active_day_number,
+    )
+    candidate_records = [_phase5_rejection_record(settings), *paperops_handoff_records]
     unsafe_counts = phase7_unsafe_counter_defaults()
     ledger_recorded = not blockers
+    status = "read_only_no_q7_setups"
+    stage_status = "qualified_setup_ledger_recorded_no_q7_setup_window"
+    if qualified_setup_count:
+        status = "read_only_q7_setups_recorded"
+        stage_status = "qualified_setup_ledger_recorded_with_q7_setups"
+    if not ledger_recorded:
+        status = "blocked"
+        stage_status = "qualified_setup_ledger_blocked"
     artifact = {
         "schema_version": PHASE7_QUALIFIED_SETUP_LEDGER_SCHEMA_VERSION,
         "phase7_artifact_schema_version": PHASE7_ARTIFACT_SCHEMA_VERSION,
@@ -308,12 +672,8 @@ def build_phase7_qualified_setup_ledger(
         "artifact_id": "phase7:q7-3:qualified-setup-ledger",
         "phase": "Q7",
         "stage": "Q7-3",
-        "status": "read_only_no_q7_setups" if ledger_recorded else "blocked",
-        "stage_status": (
-            "qualified_setup_ledger_recorded_no_q7_setup_window"
-            if ledger_recorded
-            else "qualified_setup_ledger_blocked"
-        ),
+        "status": status,
+        "stage_status": stage_status,
         "generated_at": _now(),
         "public_safe": True,
         "recorded": False,
@@ -333,13 +693,26 @@ def build_phase7_qualified_setup_ledger(
         "daily_setup_decisions": daily_decisions,
         "weekly_setup_summaries": weekly_summaries,
         "candidate_setup_records": candidate_records,
-        "qualified_setup_records": [],
+        "qualified_setup_records": qualified_records,
         "boundary": PHASE7_QUALIFIED_SETUP_BOUNDARY,
         **phase7_authority_defaults(),
         **unsafe_counts,
         "source_calendar_artifact_id": calendar.get("artifact_id"),
         "source_calendar_status": calendar.get("status"),
         "source_calendar_stage_status": calendar.get("stage_status"),
+        "source_paperops_qualified_setup_artifact_id": paperops_handoff.get("artifact_id"),
+        "source_paperops_qualified_setup_status": paperops_handoff.get("status"),
+        "source_paperops_ready_to_stage_q7_order": (
+            paperops_handoff.get("ready_to_stage_q7_order") is True
+        ),
+        "source_paperops_path_ready": (
+            paperops_handoff.get("path_ready") is True
+            or paperops_handoff.get("qualified_setup_production_path_ready") is True
+        ),
+        "source_paperops_qualified_setup_count": int(
+            paperops_handoff.get("qualified_setup_count", 0) or 0
+        ),
+        "phase7_active_day_number": active_day_number,
         "q7_3_qualified_setup_ledger_stage_allowed": (
             calendar.get("q7_3_qualified_setup_ledger_stage_allowed") is True
         ),
@@ -351,10 +724,10 @@ def build_phase7_qualified_setup_ledger(
         "daily_setup_decision_count": len(daily_decisions),
         "weekly_setup_summary_count": len(weekly_summaries),
         "candidate_setup_record_count": len(candidate_records),
-        "qualified_setup_record_count": 0,
-        "eligible_setup_count": 0,
-        "qualified_setup_count": 0,
-        "blocked_setup_count": 0,
+        "qualified_setup_record_count": len(qualified_records),
+        "eligible_setup_count": qualified_setup_count,
+        "qualified_setup_count": qualified_setup_count,
+        "blocked_setup_count": blocked_handoff_count,
         "expired_setup_count": 0,
         "no_trade_day_explanation_count": sum(
             1 for day in daily_decisions if day.get("no_trade_explanation_recorded")
@@ -374,7 +747,10 @@ def build_phase7_qualified_setup_ledger(
         "q6_deferred_learning_counts_as_proof": False,
         "private_world_model_counts_as_proof": False,
         "phase7_demo_day_count": 0,
-        "target_proof_trade_count": 0,
+        "target_proof_trade_count": sum(
+            int(week.get("target_proof_trade_count", 0) or 0)
+            for week in weekly_summaries
+        ),
         "proof_trade_count": 0,
         "closed_proof_trade_count": 0,
         "postmortem_due_count": 0,
@@ -470,15 +846,26 @@ def _daily_decision_errors(artifact: dict[str, Any]) -> list[str]:
         if not isinstance(decision, dict):
             errors.append("daily_setup_decision_invalid")
             continue
-        if decision.get("decision_state") != "no_trade_no_q7_setup_window":
+        decision_state = decision.get("decision_state")
+        qualified_count = int(decision.get("qualified_setup_count", 0) or 0)
+        eligible_count = int(decision.get("eligible_setup_count", 0) or 0)
+        if decision_state == "no_trade_no_q7_setup_window":
+            if decision.get("no_trade_explanation_recorded") is not True:
+                errors.append("daily_setup_no_trade_explanation_missing")
+            if not str(decision.get("no_trade_rationale") or "").strip():
+                errors.append("daily_setup_no_trade_rationale_missing")
+            if qualified_count != 0 or eligible_count != 0:
+                errors.append("daily_setup_no_trade_count_nonzero")
+        elif decision_state == "qualified_setup_pending_auto_approval":
+            if qualified_count <= 0:
+                errors.append("daily_setup_qualified_count_missing")
+            if eligible_count != qualified_count:
+                errors.append("daily_setup_eligible_qualified_mismatch")
+            if decision.get("no_trade_explanation_recorded") is not False:
+                errors.append("daily_setup_qualified_no_trade_explanation_present")
+        else:
             errors.append("daily_setup_decision_state_invalid")
-        if decision.get("no_trade_explanation_recorded") is not True:
-            errors.append("daily_setup_no_trade_explanation_missing")
-        if not str(decision.get("no_trade_rationale") or "").strip():
-            errors.append("daily_setup_no_trade_rationale_missing")
         for count_field in (
-            "eligible_setup_count",
-            "qualified_setup_count",
             "blocked_setup_count",
             "expired_setup_count",
             "proof_trade_count",
@@ -511,21 +898,34 @@ def _weekly_summary_errors(artifact: dict[str, Any]) -> list[str]:
             continue
         if summary.get("proof_week_number") != expected_week:
             errors.append("weekly_setup_summary_week_mismatch")
-        if summary.get("weekly_setup_state") != "no_q7_setup_window_not_started":
+        setup_state = summary.get("weekly_setup_state")
+        qualified_count = int(summary.get("qualified_setup_count", 0) or 0)
+        target_count = int(summary.get("target_proof_trade_count", 0) or 0)
+        if setup_state not in {
+            "no_q7_setup_window_not_started",
+            "qualified_setups_pending_auto_approval",
+        }:
             errors.append("weekly_setup_state_invalid")
         if summary.get("weekly_target_formula") != "min(3, qualified_setup_count)":
             errors.append("weekly_setup_target_formula_invalid")
         if summary.get("max_weekly_proof_trade_target") != PHASE7_WEEKLY_PROOF_TRADE_TARGET:
             errors.append("weekly_setup_target_mismatch")
-        if summary.get("no_trade_explanation_recorded") is not True:
-            errors.append("weekly_setup_no_trade_explanation_missing")
-        for count_field in (
-            "qualified_setup_count",
-            "target_proof_trade_count",
-            "proof_trade_count",
-            "blocked_setup_count",
-            "expired_setup_count",
-        ):
+        expected_target = min(PHASE7_WEEKLY_PROOF_TRADE_TARGET, qualified_count)
+        if target_count != expected_target:
+            errors.append("weekly_setup_target_count_invalid")
+        if setup_state == "no_q7_setup_window_not_started":
+            if summary.get("no_trade_explanation_recorded") is not True:
+                errors.append("weekly_setup_no_trade_explanation_missing")
+            if qualified_count != 0:
+                errors.append("weekly_setup_no_trade_qualified_count_nonzero")
+        if setup_state == "qualified_setups_pending_auto_approval":
+            if qualified_count <= 0:
+                errors.append("weekly_setup_qualified_count_missing")
+            if summary.get("no_trade_explanation_recorded") is not False:
+                errors.append("weekly_setup_qualified_no_trade_explanation_present")
+            if int(summary.get("pending_auto_approval_count", 0) or 0) != target_count:
+                errors.append("weekly_setup_pending_auto_approval_count_invalid")
+        for count_field in ("proof_trade_count", "blocked_setup_count", "expired_setup_count"):
             if int(summary.get(count_field, 0) or 0) != 0:
                 errors.append(f"weekly_setup_count_nonzero:{count_field}")
         if summary.get("forced_trade_allowed") is not False:
@@ -675,10 +1075,21 @@ def validate_phase7_qualified_setup_ledger(artifact: dict[str, Any]) -> list[str
         errors.append("qualified_setup_calendar_day_count_mismatch")
 
     gate_passed = artifact.get("qualified_setup_ledger_recorded") is True
+    has_qualified_setups = int(artifact.get("qualified_setup_count", 0) or 0) > 0
     if gate_passed:
-        if artifact.get("status") != "read_only_no_q7_setups":
+        expected_status = (
+            "read_only_q7_setups_recorded"
+            if has_qualified_setups
+            else "read_only_no_q7_setups"
+        )
+        expected_stage_status = (
+            "qualified_setup_ledger_recorded_with_q7_setups"
+            if has_qualified_setups
+            else "qualified_setup_ledger_recorded_no_q7_setup_window"
+        )
+        if artifact.get("status") != expected_status:
             errors.append("qualified_setup_status_invalid")
-        if artifact.get("stage_status") != "qualified_setup_ledger_recorded_no_q7_setup_window":
+        if artifact.get("stage_status") != expected_stage_status:
             errors.append("qualified_setup_stage_status_invalid")
         if blockers:
             errors.append("qualified_setup_recorded_with_blockers")
@@ -700,28 +1111,65 @@ def validate_phase7_qualified_setup_ledger(artifact: dict[str, Any]) -> list[str
     errors.extend(_weekly_summary_errors(artifact))
     errors.extend(_candidate_record_errors(artifact))
 
+    qualified_records = artifact.get("qualified_setup_records", [])
+    if not isinstance(qualified_records, list):
+        errors.append("qualified_setup_records_not_list")
+        qualified_records = []
+    if artifact.get("qualified_setup_record_count") != len(qualified_records):
+        errors.append("qualified_setup_record_count_mismatch")
+    qualified_record_count = sum(
+        1
+        for record in qualified_records
+        if isinstance(record, dict) and record.get("qualified_setup") is True
+    )
+    if artifact.get("qualified_setup_count") != qualified_record_count:
+        errors.append("qualified_setup_count_mismatch")
+    if artifact.get("eligible_setup_count") != qualified_record_count:
+        errors.append("eligible_setup_count_mismatch")
+    for record in qualified_records:
+        if not isinstance(record, dict):
+            errors.append("qualified_setup_record_invalid")
+            continue
+        if record.get("source_phase") != "Q7":
+            errors.append("qualified_setup_record_non_q7_source")
+        if record.get("phase5_lifecycle_counts_as_q7_proof") is not False:
+            errors.append("qualified_setup_record_phase5_reuse")
+        if record.get("proof_trade_created") is not False:
+            errors.append("qualified_setup_record_proof_trade_created")
+        if record.get("proof_credit_allowed") is not False:
+            errors.append("qualified_setup_record_proof_credit_allowed")
+
     for count_field in (
-        "qualified_setup_record_count",
-        "eligible_setup_count",
-        "qualified_setup_count",
-        "blocked_setup_count",
         "expired_setup_count",
         "supplemental_only_setup_rejected_count",
         "phase7_demo_day_count",
-        "target_proof_trade_count",
         "proof_trade_count",
         "closed_proof_trade_count",
         "postmortem_due_count",
     ):
         if int(artifact.get(count_field, 0) or 0) != 0:
             errors.append(f"qualified_setup_count_nonzero:{count_field}")
+    if has_qualified_setups and int(artifact.get("target_proof_trade_count", 0) or 0) <= 0:
+        errors.append("qualified_setup_target_count_missing")
+    if not has_qualified_setups and int(artifact.get("target_proof_trade_count", 0) or 0) != 0:
+        errors.append("qualified_setup_target_count_without_setups")
     if artifact.get("daily_setup_decision_count") != len(artifact.get("daily_setup_decisions", [])):
         errors.append("daily_setup_decision_count_field_mismatch")
     if artifact.get("weekly_setup_summary_count") != len(artifact.get("weekly_setup_summaries", [])):
         errors.append("weekly_setup_summary_count_field_mismatch")
-    if artifact.get("no_trade_day_explanation_count") != PHASE7_HARNESS_DAY_COUNT:
+    expected_no_trade_days = sum(
+        1
+        for day in artifact.get("daily_setup_decisions", [])
+        if isinstance(day, dict) and day.get("no_trade_explanation_recorded") is True
+    )
+    expected_no_trade_weeks = sum(
+        1
+        for week in artifact.get("weekly_setup_summaries", [])
+        if isinstance(week, dict) and week.get("no_trade_explanation_recorded") is True
+    )
+    if artifact.get("no_trade_day_explanation_count") != expected_no_trade_days:
         errors.append("no_trade_day_explanation_count_mismatch")
-    if artifact.get("no_trade_week_explanation_count") != 5:
+    if artifact.get("no_trade_week_explanation_count") != expected_no_trade_weeks:
         errors.append("no_trade_week_explanation_count_mismatch")
     if artifact.get("rejected_phase5_lifecycle_count") < 1:
         errors.append("rejected_phase5_lifecycle_missing")

@@ -22,7 +22,7 @@ from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, g
 EXPECTED_DECISIONS = {
     "stock_act": {
         "status": "adapter_live_requires_key",
-        "endpoint_contains": "api.unusualwhales.com/api/congress/recent-trades",
+        "endpoint_contains": "capitoltrades.com/trades",
         "promoted": True,
     },
     "usgs": {

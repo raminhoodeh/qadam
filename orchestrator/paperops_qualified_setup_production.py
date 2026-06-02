@@ -571,6 +571,7 @@ def build_paperops_qualified_setup_production(
             qctrl["qctrl_live_endpoint_called_count"],
         )
     )
+    q7_ledger_consumed_count = _int(q7_ledger.get("qualified_setup_count"))
     path_ready = (
         settings.mode == "paper"
         and settings.live_capital_enabled is False
@@ -584,9 +585,14 @@ def build_paperops_qualified_setup_production(
     if ready_to_stage:
         status = "production_path_ready_with_qualified_setup"
         next_action = (
-            "Consume the qualified setup through the Q7 setup ledger, auto-approval, "
-            "and guarded proof-order staging path; do not submit until the explicit "
-            "Alpaca paper gate allows it."
+            "Continue the Q7 guarded proof lifecycle and closeout path; the "
+            "PaperOps qualified setup has been consumed by the Q7 setup ledger."
+            if q7_ledger_consumed_count
+            else (
+                "Consume the qualified setup through the Q7 setup ledger, "
+                "auto-approval, and guarded proof-order staging path; do not "
+                "submit until the explicit Alpaca paper gate allows it."
+            )
         )
         no_trade_rationale = None
     elif path_ready:
@@ -642,9 +648,7 @@ def build_paperops_qualified_setup_production(
         ),
         "staged_order_count": _int(snapshot["paper_staging"].get("staged_order_count")),
         "source_qualified_setup_ledger_status": q7_ledger.get("status", "missing"),
-        "source_qualified_setup_ledger_count": _int(
-            q7_ledger.get("qualified_setup_count")
-        ),
+        "source_qualified_setup_ledger_count": q7_ledger_consumed_count,
         "source_posture_canonical_source_count": _int(
             first_posture.get("canonical_source_count")
         ),

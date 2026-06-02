@@ -441,9 +441,20 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_guarded_submit_not_written")
-    if written["status"] != "ready_no_submit_candidates":
+    has_submitted_order = written["submitted_paper_order_count"] > 0
+    expected_status = (
+        "paper_submit_receipts_recorded"
+        if has_submitted_order
+        else "ready_no_submit_candidates"
+    )
+    expected_stage_status = (
+        "guarded_alpaca_submit_receipts_recorded"
+        if has_submitted_order
+        else "guarded_alpaca_submit_path_ready_no_staged_orders"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_guarded_submit_status_invalid")
-    if written["stage_status"] != "guarded_alpaca_submit_path_ready_no_staged_orders":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_guarded_submit_stage_status_invalid")
     if written["guarded_alpaca_paper_submit_path_available"] is not True:
         errors.append("phase7_guarded_submit_path_not_available")
@@ -451,18 +462,21 @@ def main() -> int:
         errors.append("phase7_guarded_submit_submission_authority_missing")
     if written["q7_8_proof_lifecycle_monitor_stage_allowed"] is not True:
         errors.append("phase7_guarded_submit_q7_8_not_allowed")
+    if has_submitted_order:
+        for count_key in (
+            "submit_record_count",
+            "broker_receipt_record_count",
+            "idempotency_key_count",
+            "paper_order_submitted_count",
+            "broker_submit_receipt_created_count",
+        ):
+            if written[count_key] != written["submitted_paper_order_count"]:
+                errors.append(f"phase7_guarded_submit_count_mismatch:{count_key}")
     for count_key in (
-        "source_staged_order_count",
-        "submit_record_count",
-        "submitted_paper_order_count",
-        "broker_receipt_record_count",
-        "idempotency_key_count",
         "duplicate_idempotency_key_count",
         "phase5_order_id_reuse_count",
         "broker_post_called_count",
         "alpaca_post_called_count",
-        "paper_order_submitted_count",
-        "broker_submit_receipt_created_count",
         "proof_trade_count",
         "unsafe_write_counter_total",
         "blocker_count",

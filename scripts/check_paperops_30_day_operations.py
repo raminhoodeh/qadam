@@ -368,6 +368,14 @@ def main() -> int:
         f"{written['paper_live_certification_unattended_delegation_reason']}"
     )
     print(
+        "paperops_30_day_operations_active_automation_idle_reason="
+        f"{written['paperops_active_automation_idle_reason']}"
+    )
+    print(
+        "paperops_30_day_operations_active_automation_idempotency_guard_message="
+        f"{written['paperops_active_automation_idempotency_guard_message']}"
+    )
+    print(
         "paperops_30_day_operations_paper_live_submission_delegation_allowed="
         f"{written['paper_live_certification_submission_delegation_allowed']}"
     )

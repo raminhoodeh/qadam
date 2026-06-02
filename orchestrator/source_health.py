@@ -124,14 +124,14 @@ def _secret_state(source: SourceSpec, settings: Settings) -> tuple[tuple[str, ..
 def _runtime_status(source: SourceSpec, missing_secrets: tuple[str, ...], promoted: bool) -> tuple[str, str | None]:
     if source.status == "derived":
         return "derived", None
+    if source.status == "local_bridge":
+        return "local_bridge_required", None
     if promoted and missing_secrets:
         return "unavailable_missing_credentials", "missing_credentials"
     if promoted:
         return "live_optional", None
     if source.status in {"needs_clarity", "needs_choice", "needs_new_adapter"}:
         return "deferred", source.status
-    if source.status == "local_bridge":
-        return "local_bridge_required", None
     if source.status == "fallback":
         return "fallback_only", None
     if missing_secrets:

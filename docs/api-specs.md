@@ -32,8 +32,8 @@ If any real credential appears in chat, Git, a screenshot, or a public dashboard
 Implemented locally:
 
 - Dedicated read-only adapters: GDELT, Oref, NASA FIRMS, FRED, RSS.
-- Generic Phase 1 read-only adapters: ACLED, UnusualWhales, STOCK Act via UnusualWhales Congress, Polymarket, Kalshi, Alpaca, AIS Maritime, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, Telegram.
-- Adapter coverage: 22 promoted source contracts out of the 35-source registry.
+- Generic Phase 1 read-only adapters: ACLED, UCDP, Conflict Tracker, UnusualWhales, STOCK Act via Capitol Trades/provider-selected feed, Polymarket, Kalshi, Hyperliquid, Alpaca, Bookmap local bridge, AIS Maritime, ArcGIS/USACE, Space-Track/CelesTrak, GPS jamming, IODA internet outages, Aviationstack, BLS, BIS, ECB, USGS, UN Comtrade, SEC EDGAR, patents, Reddit, X, Telegram.
+- Adapter coverage: 31 promoted source contracts out of the 35-source registry. Bookmap remains local-bridge-only until the local read-only bridge is running.
 - Every promoted adapter has sample mode, masked credential status, raw payload archival, normalized event output, degraded-state handling, and no signal/order authority.
 - `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
 - `scripts/check_supplied_credentials.py` validates the currently supplied Batch A credentials and local model settings in one read-only pass, writing the ignored local report `data/runtime/supplied_credential_validation.json`.
@@ -50,7 +50,7 @@ Not yet proven live:
 - Any credential-gated source without a configured local secret remains blocked as `missing_credentials`.
 - Any public or configured source that fails a read-only live check is kept as `degraded` with the provider error class preserved locally.
 - No adapter may promote signal confidence or create paper/live orders by itself.
-- The former eight source-registry blockers have been resolved into explicit v1 decisions: STOCK Act uses UnusualWhales Congress recent trades, USGS uses minerals/supply-chain context plus the public earthquake API for event-driven physical-risk reads, CelesTrak GP JSON is the public fallback for Space-Track, AISStream is the v1 AIS MVP, and UnusualWhales/Polymarket/Kalshi/Alpaca are registered read-only adapters with credential or region gates where applicable.
+- The former source-registry blockers have been resolved into explicit v1 decisions: STOCK Act now uses the Capitol Trades/provider-selected path, USGS uses minerals/supply-chain context plus the public earthquake API for event-driven physical-risk reads, CelesTrak GP JSON is the public fallback for Space-Track, AISStream is the v1 AIS MVP, Aviationstack replaces Wingbits for flight data, and UnusualWhales/Polymarket/Kalshi/Alpaca are registered read-only adapters with credential or region gates where applicable.
 
 Current supplied-credential snapshot as of 2026-05-19:
 
@@ -94,7 +94,7 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Reddit | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Retail attention and narrative saturation checks. |
 | Telegram MTProto | `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_SESSION` | OSINT channel ingestion, separate from the member bot. |
 | AIS provider | `AISSTREAM_API_KEY`, `SPIRE_API_KEY`, `MARINETRAFFIC_API_KEY` | Vessel movements, port congestion, chokepoints, tanker routes. AISStream is the v1 MVP; Spire/MarineTraffic are paid fallback candidates. |
-| Wingbits | `WINGBITS_API_KEY` | ADS-B aircraft enrichment and unusual aviation movements. |
+| Aviationstack | `AVIATIONSTACK_API_KEY` | Flight status, route, airport, airline, and aviation movement context. |
 
 ### Batch C - Physical, Crypto, And Specialist Feeds
 
@@ -135,7 +135,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 4 | Oref API | Conflict | 1 | `OREF_PROXY_AUTH` optional | `https://www.oref.org.il/WarningMessages/alert/alerts.json` | Israeli Home Front Command alerts; high-trust regional instability signal. |
 | 5 | Conflict Tracker | Conflict | 1 | none | Internal ACLED/GDELT fusion | Derived conflict layer; not an external credentialed API. |
 | 6 | NASA FIRMS | Physical | 1 | `NASA_FIRMS_API_KEY` | FIRMS area CSV endpoint | Thermal anomalies near refineries, ports, mining, logistics, and military infrastructure. |
-| 7 | Wingbits ADS-B | Physical | 2 | `WINGBITS_API_KEY` | `https://api.wingbits.com/v1/aircraft` | Aircraft enrichment, unusual routing, cargo and military aviation movements. |
+| 7 | Aviationstack Flight Data | Physical | 2 | `AVIATIONSTACK_API_KEY` | `https://api.aviationstack.com/v1/flights` | Flight status, unusual routing, cargo, airline, airport, and aviation movement context. |
 | 8 | AIS Maritime | Physical | 2 | `AISSTREAM_API_KEY`, `SPIRE_API_KEY`, `MARINETRAFFIC_API_KEY` | AISStream WebSocket first, Spire or MarineTraffic later | Vessel movements, tanker flows, port congestion, chokepoints, diversions. |
 | 9 | ArcGIS / USACE Geospatial | Physical | 4 | `ARCGIS_API_TOKEN` optional | ArcGIS REST feature services | Infrastructure, waterways, dams, canals, ports, and structural physical context. |
 | 10 | Space-Track / CelesTrak TLEs | Physical | 4 | `SPACE_TRACK_USERNAME`, `SPACE_TRACK_PASSWORD` optional for authenticated primary | Space-Track query API plus `https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=json` public fallback | Satellite/TLE context, orbital infrastructure, and space-linked disruption monitoring. |
@@ -161,7 +161,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 30 | Twitter / X API v2 | Social | 2 | `X_BEARER_TOKEN` | `https://api.twitter.com/2/tweets/search/recent` | High-velocity sentiment, breaking news, and social narrative acceleration. |
 | 31 | Reddit API | Social | 3 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | `https://oauth.reddit.com/r/{subreddit}/new` | Retail attention, options chatter, and saturation / edge-decay checks. |
 | 32 | SEC EDGAR API | Social | 3 | `SEC_USER_AGENT` | SEC search and submissions APIs | Corporate filings, 10-K/10-Q/8-K context, high-trust slow data. |
-| 33 | STOCK Act Filings | Social | 3 | `UNUSUAL_WHALES_API_KEY`; optional future `STOCK_ACT_API_KEY` if provider changes | `https://api.unusualwhales.com/api/congress/recent-trades` | Politician trade disclosures; must be cross-validated with price action, UnusualWhales flow, and SEC context. |
+| 33 | STOCK Act Filings | Social | 3 | `CAPITOL_TRADES_API_KEY` | `https://www.capitoltrades.com/trades` or provider-confirmed API path | Politician trade disclosures; must be cross-validated with price action, options flow where available, and SEC context. |
 | 34 | Patent Filings | Social | 4 | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` optional | PatentsView and EPO OPS | Long-cycle R&D, semiconductor, defence, and technology inflection signals. |
 | 35 | GitHub API | Social | 4 | `GITHUB_TOKEN` | `https://api.github.com/` | Developer activity, release-cycle changes, and weak tech-sector precursor signals. |
 
@@ -208,7 +208,7 @@ The pasted `world-monitor/` codebase includes many useful providers that are not
 | IMF SDMX | `IMF_API_KEY` | Optional macro reserve/debt dataset. |
 | OpenAQ | `OPENAQ_API_KEY` | Optional air-quality / environmental context. |
 | WAQI | `WAQI_API_KEY` | Optional air-quality supplement. |
-| AviationStack | `AVIATIONSTACK_API` | Optional aviation data supplement; Wingbits is canonical first ADS-B provider. |
+| Aviationstack | `AVIATIONSTACK_API_KEY` | Canonical v1 aviation provider for read-only flight and route context. |
 | ICAO | `ICAO_API_KEY` | Optional NOTAM/airport closure enrichment. |
 | Travelpayouts | `TRAVELPAYOUTS_API_TOKEN` | Not a Qadam first-release signal source. |
 | OpenSky | `OPENSKY_CLIENT_ID`, `OPENSKY_CLIENT_SECRET` | Optional aircraft feed fallback or supplement. |
@@ -292,7 +292,7 @@ OREF_PROXY_AUTH=
 
 # Physical / logistics pipeline
 NASA_FIRMS_API_KEY=
-WINGBITS_API_KEY=
+AVIATIONSTACK_API_KEY=
 AISSTREAM_API_KEY=
 SPIRE_API_KEY=
 MARINETRAFFIC_API_KEY=
@@ -309,6 +309,7 @@ USGS_API_MODE=
 
 # Market pipeline
 UNUSUAL_WHALES_API_KEY=
+CAPITOL_TRADES_API_KEY=
 RAPIDAPI_KEY=
 COINGLASS_API_KEY=
 ETH_RPC_URL=
@@ -327,7 +328,8 @@ X_BEARER_TOKEN=
 REDDIT_CLIENT_ID=
 REDDIT_CLIENT_SECRET=
 SEC_USER_AGENT=
-# STOCK Act v1 uses UNUSUAL_WHALES_API_KEY. Add STOCK_ACT_SOURCE_URL/STOCK_ACT_API_KEY only if provider changes.
+# STOCK Act v1 uses the Capitol Trades/provider-selected path once supplied.
+CAPITOL_TRADES_API_KEY=
 EPO_OPS_CONSUMER_KEY=
 EPO_OPS_CONSUMER_SECRET=
 GITHUB_TOKEN=
@@ -362,7 +364,7 @@ EIA_API_KEY=
 IMF_API_KEY=
 OPENAQ_API_KEY=
 WAQI_API_KEY=
-AVIATIONSTACK_API=
+AVIATIONSTACK_API_KEY=
 ICAO_API_KEY=
 TRAVELPAYOUTS_API_TOKEN=
 OPENSKY_CLIENT_ID=
@@ -386,7 +388,7 @@ These need to stay visible in the implementation plan:
 - USGS is no longer unresolved for v1. Qadam treats USGS as mineral/supply-chain context first and uses the public earthquake API as the event-driven physical-risk adapter. A future split into `USGS Minerals` and `USGS Earthquake` is optional, not a current blocker.
 - AIS provider choice is no longer unresolved for v1. AISStream is the read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Space-Track / CelesTrak is still one combined registry source. Space-Track remains authenticated primary; CelesTrak GP JSON is the public fallback/smoke path.
-- STOCK Act filings are no longer provider-unselected for v1. Qadam uses UnusualWhales Congress recent trades as the read-only source, credentialed by `UNUSUAL_WHALES_API_KEY`.
+- STOCK Act filings are no longer provider-unselected for v1. Qadam now tracks Capitol Trades/provider-selected congressional trade data as the read-only source, credentialed by `CAPITOL_TRADES_API_KEY` once supplied.
 - TradingView has account value through alerts and charting, not a normal retail market-data API key.
 - Yahoo Finance / yfinance is resolved for now as a supplemental market-confirmation tool, not a canonical source-registry change. The dormant wrapper and sample check exist; live mode still requires deliberate dependency installation, `YFINANCE_ENABLED=true`, public-safe cockpit status, and no execution/reconciliation authority.
 - The pasted `world-monitor/` cloud stack uses Redis, Railway, Convex, Clerk, Dodo, and Cloudflare. Qadam may reuse data-access ideas, but v1 must remain local-first and Supabase-authenticated.

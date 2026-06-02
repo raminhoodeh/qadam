@@ -37,7 +37,7 @@ Key split decisions:
 | --- | --- | --- |
 | FRED | API key, FRED observations endpoint | World Monitor has seeders and FRED fallback patterns. |
 | AIS Maritime | AISStream, Spire, or MarineTraffic API key | AISStream is the v1 read-only MVP; Spire/MarineTraffic remain paid fallback candidates. |
-| Wingbits | API key | World Monitor has bbox and military-flight classification patterns. |
+| Aviationstack | API key | World Monitor uses Aviationstack as the v1 flight-data source for route, airport, airline, and flight-status context. |
 | GDELT | Public doc API | World Monitor has retry and proxy-fallback logic. |
 | RSS / Atom | Public feeds | World Monitor has a large curated feed list and digest scoring. |
 | Twitter / X | Bearer token | Strict API limits; store tweet content carefully. |
@@ -54,7 +54,7 @@ Key split decisions:
 | Reddit | OAuth app | Confirmation source, not primary. |
 | Telegram | Bot API plus Telethon/MTProto user session | World Monitor has strong channel polling logic. |
 | SEC EDGAR | Public API, User-Agent required | High-trust corporate filing source. |
-| STOCK Act filings | UnusualWhales Congress recent trades endpoint | V1 provider decision recorded; needed for politician trade disclosures and cross-validation. |
+| STOCK Act filings | Capitol Trades/provider-selected congressional trades path | V1 provider direction recorded; needed for politician trade disclosures and cross-validation. |
 
 ## Tier 4 - Wire Last Or Phase 2
 
@@ -91,10 +91,11 @@ The May 2026 source-registry blocker pass resolved the eight stale blockers into
 
 | Source | Decision | Remaining Gate |
 | --- | --- | --- |
-| `stock_act` | Use UnusualWhales Congress recent trades as the v1 STOCK Act provider. | Needs `UNUSUAL_WHALES_API_KEY`; alternate providers can be evaluated later. |
+| `stock_act` | Use Capitol Trades or the selected STOCK Act provider path for v1 congressional trade disclosures. | Needs `CAPITOL_TRADES_API_KEY` and provider endpoint confirmation. |
 | `usgs` | Treat USGS as mineral/supply-chain context first, with the public earthquake API as event-driven physical-risk input. | Provider-specific minerals parsing still needs deeper research normalization. |
 | `space_track_celestrak` | Keep Space-Track as authenticated primary and CelesTrak GP JSON as public fallback. | Space-Track credentials only needed for the fuller authenticated path. |
 | `ais_maritime` | Use AISStream as the v1 read-only MVP; keep Spire/MarineTraffic as paid fallbacks. | Needs one AIS credential before live vessel data is available. |
+| `aviationstack` | Use Aviationstack as the v1 flight-data provider instead of Wingbits. | Needs `AVIATIONSTACK_API_KEY`; live adapter stays read-only and quota-aware. |
 | `unusual_whales` | Keep the read-only options-flow adapter contract. | Needs `UNUSUAL_WHALES_API_KEY`. |
 | `polymarket` | Use public CLOB/orderbook path, not Gamma-only discovery. | Execution remains separately disabled. |
 | `kalshi` | Keep read-only market adapter; classify region/account as the gate. | Needs account eligibility and credentials. |

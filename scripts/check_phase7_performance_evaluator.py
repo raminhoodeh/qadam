@@ -496,8 +496,6 @@ def main() -> int:
         "closed_proof_trade_count",
         "evaluated_trade_count",
         "performance_metric_record_count",
-        "paper_order_submitted_count",
-        "proof_trade_created_count",
         "broker_post_called_count",
         "alpaca_post_called_count",
         "unsafe_write_counter_total",

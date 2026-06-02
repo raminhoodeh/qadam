@@ -469,9 +469,18 @@ def main() -> int:
         errors.extend(validation_errors)
     if runtime_copy.get("artifact_id") != written["artifact_id"]:
         errors.append("runtime_phase7_proof_order_staging_not_written")
-    if written["status"] != "ready_no_staged_orders":
+    has_staged_order = written["staged_order_count"] > 0
+    expected_status = (
+        "staged_orders_recorded" if has_staged_order else "ready_no_staged_orders"
+    )
+    expected_stage_status = (
+        "proof_order_staging_records_written"
+        if has_staged_order
+        else "proof_order_staging_ready_no_auto_approved_setups"
+    )
+    if written["status"] != expected_status:
         errors.append("phase7_proof_order_staging_status_invalid")
-    if written["stage_status"] != "proof_order_staging_ready_no_auto_approved_setups":
+    if written["stage_status"] != expected_stage_status:
         errors.append("phase7_proof_order_staging_stage_status_invalid")
     if written["proof_order_staging_allowed"] is not True:
         errors.append("phase7_proof_order_staging_not_allowed")
@@ -479,20 +488,28 @@ def main() -> int:
         errors.append("phase7_proof_order_staging_authority_not_granted")
     if written["q7_7_guarded_alpaca_paper_submit_path_stage_allowed"] is not True:
         errors.append("phase7_proof_order_staging_q7_7_not_allowed")
-    if written["staging_decision_record_count"] != 1:
+    expected_decision_count = written["source_approval_decision_record_count"]
+    if written["staging_decision_record_count"] != expected_decision_count:
         errors.append("phase7_proof_order_staging_decision_count_mismatch")
-    if written["staged_order_count"] != 0:
-        errors.append("phase7_proof_order_staging_staged_order_count_nonzero")
-    if written["blocked_staging_decision_count"] != 1:
+    if written["staged_order_count"] != written["auto_approved_setup_count"]:
+        errors.append("phase7_proof_order_staging_staged_order_count_mismatch")
+    expected_blocked_count = (
+        written["staging_decision_record_count"] - written["staged_order_count"]
+    )
+    if written["blocked_staging_decision_count"] != expected_blocked_count:
         errors.append("phase7_proof_order_staging_blocked_decision_count_mismatch")
+    if has_staged_order:
+        for count_key in (
+            "idempotency_key_count",
+            "event_log_prewrite_ready_count",
+            "event_log_prewrite_written_count",
+            "pre_trade_snapshot_present_count",
+        ):
+            if written[count_key] != written["staged_order_count"]:
+                errors.append(f"phase7_proof_order_staging_count_mismatch:{count_key}")
     for count_key in (
-        "auto_approved_setup_count",
-        "idempotency_key_count",
         "duplicate_idempotency_key_count",
         "phase5_order_id_reuse_count",
-        "event_log_prewrite_ready_count",
-        "event_log_prewrite_written_count",
-        "pre_trade_snapshot_present_count",
         "proof_trade_count",
         "unsafe_write_counter_total",
         "blocker_count",
@@ -516,7 +533,7 @@ def main() -> int:
     if replay["total_events"] != 1:
         errors.append("phase7_proof_order_staging_event_log_replay_count_mismatch")
 
-    if valid_staged_errors:
+    if not has_staged_order and valid_staged_errors:
         errors.append("valid_staged_probe_rejected")
     if "proof_order_staging_duplicate_idempotency_key" not in duplicate_errors:
         errors.append("duplicate_idempotency_probe_not_rejected")

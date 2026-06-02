@@ -31,6 +31,22 @@ from orchestrator.secrets import secret_status  # noqa: E402
 from orchestrator.system_state import module_map  # noqa: E402
 
 
+OPTIONAL_COVERAGE_CREDENTIAL_GROUPS: tuple[
+    tuple[str, tuple[tuple[str, ...], ...]]
+] = (
+    ("twitter_x_bearer_token_missing", (("X_BEARER_TOKEN",),)),
+    ("reddit_credentials_missing", (("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),)),
+    (
+        "ais_maritime_credential_missing",
+        (("AISSTREAM_API_KEY",), ("SPIRE_API_KEY",), ("MARINETRAFFIC_API_KEY",)),
+    ),
+    ("aviationstack_api_key_missing", (("AVIATIONSTACK_API_KEY",),)),
+    ("un_comtrade_api_key_missing", (("COMTRADE_API_KEY",),)),
+    ("kalshi_credentials_missing", (("KALSHI_API_KEY", "KALSHI_API_SECRET"),)),
+    ("stock_act_capitol_trades_api_key_missing", (("CAPITOL_TRADES_API_KEY",),)),
+)
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -57,6 +73,16 @@ def _module_status(modules: list[dict[str, str]], key: str) -> str:
         if module.get("key") == key:
             return module.get("status", "missing")
     return "missing"
+
+
+def _any_secret_group_configured(
+    settings: Settings,
+    groups: tuple[tuple[str, ...], ...],
+) -> bool:
+    return any(
+        all(secret_status(name, settings).configured is True for name in group)
+        for group in groups
+    )
 
 
 def main() -> int:
@@ -101,27 +127,17 @@ def main() -> int:
         required_gaps.append("paper_submit_idempotency_ledger_not_active")
     if qctrl_access.get("status") != "qctrl_paper_consultation_ready":
         required_gaps.append("qctrl_paper_consultation_not_ready")
-    if fire_opal.get("fire_opal_product_access_verified") is not True:
-        required_gaps.append("fire_opal_product_access_not_verified")
-    if fire_opal.get("ibm_quantum_token_configured") is not True:
-        required_gaps.append("ibm_quantum_token_not_visible_to_runtime")
-    if fire_opal.get("ibm_quantum_instance_configured") is not True:
-        required_gaps.append("ibm_quantum_instance_not_visible_to_runtime")
-    if fire_opal.get("status") in {
-        "blocked_missing_fire_opal_access",
-        "blocked_missing_ibm_quantum_credentials",
-        "blocked_missing_ibm_runtime_package",
-    }:
-        required_gaps.append(f"fire_opal_ibm_{fire_opal.get('status')}")
-
     if fire_opal.get("status") == "ready_for_explicit_device_probe":
         optional_gaps.append("fire_opal_ibm_device_probe_not_recorded")
     elif fire_opal.get("status") == "blocked_provider_probe_failed":
         optional_gaps.append(
             f"fire_opal_ibm_provider_probe_failed:{fire_opal.get('provider_failure_category') or 'unknown'}"
         )
-    if secret_status("UNUSUAL_WHALES_API_KEY", settings).configured is not True:
-        optional_gaps.append("unusual_whales_api_key_missing")
+    elif fire_opal.get("status") not in {"device_probe_submitted", "ready"}:
+        optional_gaps.append(f"quantum_provider_diagnostic:{fire_opal.get('status')}")
+    for gap, groups in OPTIONAL_COVERAGE_CREDENTIAL_GROUPS:
+        if not _any_secret_group_configured(settings, groups):
+            optional_gaps.append(gap)
     telegram_paper_trade_live_ready = (
         settings.telegram_trade_group_notifications_enabled is True
         and settings.telegram_trade_group_notifications_dry_run is False
@@ -160,6 +176,14 @@ def main() -> int:
     print(
         "qadam_paper_closeout_active_runner_reason="
         f"{active_runner.get('unattended_paper_execution_delegation_reason')}"
+    )
+    print(
+        "qadam_paper_closeout_active_runner_idle_reason="
+        f"{active_runner.get('idle_reason') or ''}"
+    )
+    print(
+        "qadam_paper_closeout_idempotency_guard_message="
+        f"{active_runner.get('idempotency_guard_message') or ''}"
     )
     print(
         "qadam_paper_closeout_fresh_submit_count="

@@ -99,6 +99,11 @@ def main() -> int:
         return 1
 
     print("alpaca_paper_mirror_connection_status=" + latest.connection_status)
+    print("alpaca_paper_mirror_account_currency=" + latest.account_currency)
+    print("alpaca_paper_mirror_display_currency=" + latest.display_currency)
+    print(f"alpaca_paper_mirror_fx_to_gbp_rate={latest.fx_to_gbp_rate}")
+    print("alpaca_paper_mirror_broker_reconciliation_status=" + latest.broker_reconciliation_status)
+    print(f"alpaca_paper_mirror_broker_reconciliation_delta={latest.broker_reconciliation_delta}")
     print(f"alpaca_paper_mirror_current_balance_gbp={latest.current_balance_gbp}")
     print(f"alpaca_paper_mirror_cash_gbp={latest.cash_gbp}")
     print(f"alpaca_paper_mirror_equity_gbp={latest.equity_gbp}")
@@ -121,6 +126,17 @@ def main() -> int:
         return 1
     if latest.closed_trade_count != len(closed_trades):
         print("alpaca_paper_mirror_closed_trade_count_mismatch=true")
+        return 1
+    if not latest.account_currency or not latest.display_currency:
+        print("alpaca_paper_mirror_currency_missing=true")
+        return 1
+    if latest.broker == "alpaca_paper_readonly" and latest.broker_reconciliation_status not in {
+        "ok",
+        "drift",
+        "history_unavailable",
+        "not_available",
+    }:
+        print("alpaca_paper_mirror_reconciliation_status_invalid=true")
         return 1
 
     print("alpaca_paper_mirror_check=ok")
