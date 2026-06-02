@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://eipijgublkypksygsyet.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PWIXQ4VlNZb1O5bu-2aeXA_-3lNMq-y";
-const ALLOWLIST = ["raminhoodeh@gmail.com", "troycookecareer@gmail.com", "akber.ali@hotmail.co.uk", "isioras@yahoo.co.uk"];
+const ALLOWLIST = ["raminhoodeh@gmail.com", "troycookecareer@gmail.com", "akber.ali@hotmail.co.uk", "isioras@yahoo.co.uk", "danmerdad@hotmail.co.uk"];
 const COMMENT_TABLE = "fund_manager_comments";
 const COMMENT_TARGET_TYPES = new Set([
     "module",
