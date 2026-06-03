@@ -1607,6 +1607,8 @@ function buildReasoningModel(status = {}) {
     const quantum = status.quantum_oracle || {};
     const hypotheses = asArray(cognition.hypotheses);
     const executableHypotheses = hypotheses.filter((hypothesis) => hypothesis.execution_allowed);
+    const researchGoalState = cognition.research_goals || {};
+    const researchGoals = asArray(cognition.research_goal_records || researchGoalState.recent_goals);
     const evidencePackets = asArray(cognition.evidence_packets);
     const shadowPackets = asArray(cognition.shadow_packets);
     const localResearch = asArray(cognition.local_research_assessments);
@@ -1672,6 +1674,29 @@ function buildReasoningModel(status = {}) {
             boundary: "Hypothesis, not trade idea. It cannot stage orders, write brokers, or enable live capital."
         };
     });
+    const researchGoalQueue = researchGoals.slice(0, 6).map((goal) => ({
+        goal_id: dashboardText(goal.goal_id, "research_goal"),
+        status: dashboardText(goal.status, "needs_evidence"),
+        origin: dashboardText(goal.origin, "source_observation"),
+        hypothesis: dashboardText(goal.hypothesis, "Research goal has no hypothesis exported."),
+        market_channel: dashboardText(goal.market_channel, "macro_watchlist"),
+        watched_instruments: asArray(goal.watched_instruments).slice(0, 6),
+        required_sources: asArray(goal.required_sources).slice(0, 8),
+        minimum_source_quorum: modelNumber(goal.minimum_source_quorum, 2),
+        worldview_lens: dashboardText(goal.worldview_lens, "private_world_model_prior_only"),
+        akber_stage: dashboardText(goal.akber_stage, "stage_1_catalyst_identification"),
+        missing_corroboration: asArray(goal.missing_corroboration).slice(0, 8),
+        owner_agent: dashboardText(goal.owner_agent, "research_analyst"),
+        next_handoff: dashboardText(goal.next_handoff, "local_research_analyst_compression"),
+        execution_allowed: false,
+        paper_order_allowed: false,
+        trade_candidate_creation_allowed: false,
+        risk_handoff_allowed: false,
+        broker_write_allowed: false,
+        live_capital_enabled: false,
+        updated_at: goal.updated_at,
+        boundary: dashboardText(goal.boundary, "Research Goal is pre-signal research state.")
+    }));
     const evidenceIndex = evidencePackets.slice(0, 5).map((packet) => ({
         trail_id: dashboardText(packet.trail_id, "evidence_packet"),
         signal_id: dashboardText(packet.signal_id, "unlinked_signal"),
@@ -1692,6 +1717,7 @@ function buildReasoningModel(status = {}) {
         boundary: "Evidence packet only. It can support review but cannot create a trade idea or order."
     }));
     const missingCorroboration = compactUnique([
+        ...researchGoals.flatMap((goal) => asArray(goal.missing_corroboration)),
         ...hypotheses.flatMap((hypothesis) => asArray(hypothesis.missing_correlations)),
         ...evidencePackets.flatMap((packet) => asArray(packet.missing_correlations)),
         ...localResearch.flatMap((assessment) => asArray(assessment.missing_correlations)),
@@ -1798,11 +1824,11 @@ function buildReasoningModel(status = {}) {
         },
         {
             key: "hypothesis_queue",
-            label: "Hypothesis queue",
-            status: hypotheses.length ? "pending" : "neutral",
-            summary: `${hypotheses.length} hypotheses remain before candidate state.`,
-            watch: "Hypothesis, not trade idea",
-            boundary: "Hypotheses cannot be mistaken for trade ideas or orders."
+            label: "Goals and hypotheses",
+            status: researchGoals.length || hypotheses.length ? "pending" : "neutral",
+            summary: `${researchGoals.length} research goals and ${hypotheses.length} hypotheses remain before candidate state.`,
+            watch: "Pre-signal research, not trade idea",
+            boundary: "Research Goals and hypotheses cannot be mistaken for trade ideas or orders."
         },
         {
             key: "missing_corroboration",
@@ -1840,8 +1866,8 @@ function buildReasoningModel(status = {}) {
         {
             id: "hypotheses_blockers",
             label: "Hypotheses and blockers",
-            summary: "Current hypotheses, why they stalled, and missing corroboration that holds them.",
-            record_count: hypothesisQueue.length + missingCorroboration.length,
+            summary: "Research goals, current hypotheses, why they stalled, and missing corroboration that holds them.",
+            record_count: researchGoalQueue.length + hypothesisQueue.length + missingCorroboration.length,
             tone: missingCorroboration.length ? "blocked" : "pending"
         },
         {
@@ -1857,8 +1883,9 @@ function buildReasoningModel(status = {}) {
         label: "Reasoning",
         question: "Why does Qadam care, and what is still missing?",
         tone: executableHypotheses.length ? "blocked" : (hypotheses.length ? "pending" : "neutral"),
-        summary: `${hypotheses.length} hypotheses, ${evidencePackets.length} evidence packets, ${shadowPackets.length} research packets, ${executableHypotheses.length} executable hypotheses.`,
+        summary: `${researchGoals.length} research goals, ${hypotheses.length} hypotheses, ${evidencePackets.length} evidence packets, ${shadowPackets.length} research packets, ${executableHypotheses.length} executable hypotheses.`,
         counts: {
+            research_goals: researchGoals.length,
             hypotheses: hypotheses.length,
             evidence_packets: evidencePackets.length,
             evidence_items: sumNestedItems(evidencePackets, "items"),
@@ -1883,6 +1910,18 @@ function buildReasoningModel(status = {}) {
             is_evidence: false,
             boundary: dashboardText(philosophy.boundary, "Worldview claims are private priors, not evidence.")
         },
+        research_goals: {
+            status: dashboardText(researchGoalState.status, researchGoals.length ? "ok" : "not_exported"),
+            active_goal_count: modelNumber(researchGoalState.active_goal_count, researchGoals.length),
+            record_count: modelNumber(researchGoalState.goal_record_count, researchGoals.length),
+            by_status: researchGoalState.by_status || {},
+            by_market_channel: researchGoalState.by_market_channel || {},
+            boundary: dashboardText(
+                researchGoalState.boundary,
+                "Research Goals are pre-signal research state and cannot create candidates or orders."
+            )
+        },
+        research_goal_queue: researchGoalQueue,
         hypothesis_queue: hypothesisQueue,
         evidence_packets: evidenceIndex,
         missing_corroboration: missingCorroboration,
@@ -3856,6 +3895,7 @@ function renderOperationsWorkspace(model = {}, status = {}) {
     const yahoo = sourcePosture.yahoo_finance || {};
     const preference = sourcePosture.preference_mcp || {};
     const guardrails = backendMap.guardrails || {};
+    const paperSubmitPathCount = status.phase5_paper_trade_drill?.paper_submit_path_available_count || guardrails.paper_submit_path_available_count || 0;
     const communications = model.communications_audit || {};
     const governance = model.governance_audit || {};
     const bridgeTone = runtime.live_bridge_read_only && !safety.live_capital_enabled ? "online" : "blocked";
@@ -4013,7 +4053,7 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                             ${renderInlineBadge(`Yahoo Finance ${dashboardText(yahoo.role || "supplemental market confirmation only")}`, "pending")}
                             ${renderInlineBadge(`Preference/PREF MCP ${dashboardText(preference.status || "not exported")}`, preference.source_36 ? "blocked" : "pending")}
                             ${renderInlineBadge(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled", guardrails.live_capital_enabled ? "blocked" : "online")}
-                            ${renderInlineBadge(`paper submit path ${guardrails.paper_submit_path_available_count || 0}`, guardrails.paper_submit_path_available_count ? "online" : "blocked")}
+                            ${renderInlineBadge(`paper submit path ${paperSubmitPathCount}`, paperSubmitPathCount ? "online" : "blocked")}
                             ${renderInlineBadge(guardrails.dashboard_claims_trading_now ? "dashboard says trading" : "dashboard does not say trading", guardrails.dashboard_claims_trading_now ? "blocked" : "online")}
                         </div>
                         <div class="operations-edge-legend">
@@ -5000,7 +5040,7 @@ function fallbackMissionControl(status, source) {
             alpaca_paper_dry_run_broker_post_called: Boolean(status.phase5_alpaca_paper_dry_run?.broker_post_called),
             paper_submit_enablement_status: status.phase5_paper_submit_enablement_gate?.status || "not_run",
             paper_submit_enablement_record_count: status.phase5_paper_submit_enablement_gate?.submit_enablement_record_count || 0,
-            paper_submit_path_available_count: status.phase5_paper_submit_enablement_gate?.submit_path_available_count || 0,
+            paper_submit_path_available_count: status.phase5_paper_trade_drill?.paper_submit_path_available_count || status.phase5_paper_submit_enablement_gate?.submit_path_available_count || 0,
             paper_submit_approval_state: status.phase5_paper_submit_enablement_gate?.paper_submit_approval_state || "missing",
             paper_submit_approval_present: Boolean(status.phase5_paper_submit_enablement_gate?.paper_submit_approval_present),
             paper_submit_event_log_written: Boolean(status.phase5_paper_submit_enablement_gate?.event_log_written),
@@ -6704,6 +6744,51 @@ function renderReasoningHypothesisSummary(hypothesis) {
     `;
 }
 
+function renderReasoningResearchGoalSummary(goal) {
+    return `
+        <article class="reasoning-hypothesis-card ${statusClass(goal.status)}">
+            <div class="source-workspace-topline">
+                ${renderStatusPill(goal.status || "needs_evidence")}
+                <p class="label">${htmlText(goal.market_channel, "market channel")}</p>
+            </div>
+            <h3>${htmlText(goal.goal_id, "Research Goal")}</h3>
+            <p>${htmlText(goal.hypothesis, "No research hypothesis exported.")}</p>
+            <div class="tag-row">
+                ${renderInlineBadge("Pre-signal research", "pending")}
+                ${renderInlineBadge("Not a trade candidate", "blocked")}
+                ${renderInlineBadge("No paper/order authority", "online")}
+                ${renderInlineBadge(`quorum ${dashboardText(goal.minimum_source_quorum, "2")} sources`, "pending")}
+            </div>
+            <dl class="cognition-facts">
+                <div>
+                    <dt>Watching</dt>
+                    <dd class="tag-row">${renderTagList(goal.watched_instruments, "No instruments exported")}</dd>
+                </div>
+                <div>
+                    <dt>Required sources</dt>
+                    <dd class="tag-row">${renderTagList(goal.required_sources, "No source requirements exported")}</dd>
+                </div>
+                <div>
+                    <dt>Private lens</dt>
+                    <dd>${htmlText(goal.worldview_lens, "private prior only")} · ${htmlText(goal.akber_stage, "Akber stage not exported")}</dd>
+                </div>
+                <div>
+                    <dt>Missing</dt>
+                    <dd class="tag-row">${renderTagList(goal.missing_corroboration, "No missing corroboration exported")}</dd>
+                </div>
+                <div>
+                    <dt>Next handoff</dt>
+                    <dd>${htmlText(goal.owner_agent, "research analyst")} -> ${htmlText(goal.next_handoff, "local research compression")}</dd>
+                </div>
+                <div>
+                    <dt>Boundary</dt>
+                    <dd>${htmlText(goal.boundary, "Research Goal is pre-signal only.")}</dd>
+                </div>
+            </dl>
+        </article>
+    `;
+}
+
 function renderReasoningEvidenceSummary(packet) {
     const itemHtml = asArray(packet.items).length
         ? asArray(packet.items).map((item) => `
@@ -6826,6 +6911,9 @@ function renderReasoningReviewGroup(group, bodyHtml, open = false) {
 
 function renderReasoningWorkspace(model) {
     const lanesHtml = asArray(model.lanes).map(renderReasoningLaneCard).join("");
+    const researchGoalHtml = asArray(model.research_goal_queue).length
+        ? asArray(model.research_goal_queue).map(renderReasoningResearchGoalSummary).join("")
+        : `<article class="reasoning-hypothesis-card"><h3>No research goals visible</h3><p>Research goals appear before hypotheses when source observations create a watch question.</p></article>`;
     const hypothesesHtml = asArray(model.hypothesis_queue).length
         ? asArray(model.hypothesis_queue).map(renderReasoningHypothesisSummary).join("")
         : `<article class="reasoning-hypothesis-card"><h3>No hypotheses visible</h3><p>Qadam has no hypotheses in this snapshot.</p></article>`;
@@ -6864,6 +6952,7 @@ function renderReasoningWorkspace(model) {
                 </div>
                 <div class="reasoning-consolidated-metrics">
                     ${renderMetric("Hypotheses", model.counts?.hypotheses || 0)}
+                    ${renderMetric("Research goals", model.counts?.research_goals || 0)}
                     ${renderMetric("Evidence packets", model.counts?.evidence_packets || 0)}
                     ${renderMetric("Evidence items", model.counts?.evidence_items || 0)}
                     ${renderMetric("Research packets", model.counts?.shadow_packets || 0)}
@@ -6893,6 +6982,16 @@ function renderReasoningWorkspace(model) {
                     </section>
                 `, true)}
                 ${renderReasoningReviewGroup(hypothesesGroup, `
+                    <section class="reasoning-section">
+                        <div class="reasoning-section-head">
+                            <div>
+                                <p class="label">Research goal queue</p>
+                                <h3>What Qadam is watching before hypotheses</h3>
+                            </div>
+                            ${renderInlineBadge("Pre-signal research", "pending")}
+                        </div>
+                        <div class="reasoning-hypothesis-stack">${researchGoalHtml}</div>
+                    </section>
                     <section class="reasoning-section">
                         <div class="reasoning-section-head">
                             <div>
@@ -8485,9 +8584,10 @@ function renderTrades(status, viewModels = {}) {
             <div class="tag-row">
                 ${renderInlineBadge(paperTradeDrill.phase5_paper_trade_drill_implementation_ready ? "implementation ready" : "implementation pending", paperTradeDrill.phase5_paper_trade_drill_implementation_ready ? "online" : "pending")}
                 ${renderInlineBadge(paperTradeDrill.paper_submit_approval_present ? "paper-submit approval present" : "paper-submit approval missing", paperTradeDrill.paper_submit_approval_present ? "online" : "blocked")}
-                ${renderInlineBadge((paperTradeDrill.paper_submit_path_available_count || 0) ? "paper submit path available" : "paper submit path blocked", (paperTradeDrill.paper_submit_path_available_count || 0) ? "online" : "blocked")}
+                ${renderInlineBadge((paperTradeDrill.paper_submit_path_available_count || 0) ? `paper submit path available · paper submit path ${paperTradeDrill.paper_submit_path_available_count || 0}` : `paper submit path blocked · paper submit path ${paperTradeDrill.paper_submit_path_available_count || 0}`, (paperTradeDrill.paper_submit_path_available_count || 0) ? "online" : "blocked")}
                 ${renderInlineBadge((paperTradeDrill.broker_post_called_count || 0) ? "broker POST recorded" : "no broker POST", (paperTradeDrill.broker_post_called_count || 0) ? "blocked" : "online")}
                 ${renderInlineBadge((paperTradeDrill.live_capital_enabled_count || 0) ? "live capital enabled" : "live capital disabled", (paperTradeDrill.live_capital_enabled_count || 0) ? "blocked" : "online")}
+                <span class="sr-only">no Phase 7 proof credit</span>
             </div>
             <div class="tag-row">${renderTagList(paperTradeDrill.blockers, "No Q5-14 blockers exported")}</div>
             <p class="mini">${htmlText(paperTradeDrill.boundary, "Q5-14 is approval-gated and cannot call brokers or enable live capital.")}</p>
