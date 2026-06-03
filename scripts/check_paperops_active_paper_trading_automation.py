@@ -101,6 +101,36 @@ def main() -> int:
     proof_probe["phase7_proof_credit_allowed"] = True
     proof_errors = validate_paperops_active_paper_trading_automation(proof_probe)
 
+    daily_target_ceiling_probe = deepcopy(written)
+    daily_target_ceiling_probe["rs5_daily_target_met"] = True
+    daily_target_ceiling_probe["rs5_available_distinct_setup_count"] = 1
+    daily_target_ceiling_probe["rs5_additional_distinct_setup_available"] = True
+    daily_target_ceiling_probe["idle_reason"] = "daily_paper_trade_target_met"
+    daily_target_ceiling_errors = validate_paperops_active_paper_trading_automation(
+        daily_target_ceiling_probe
+    )
+
+    rs5_policy_probe = deepcopy(written)
+    rs5_policy_probe["rs5_daily_target_policy"] = "hard_ceiling"
+    rs5_policy_probe["rs5_daily_target_is_minimum"] = False
+    rs5_policy_probe["rs5_daily_target_blocks_additional_qualified_setups"] = True
+    rs5_policy_errors = validate_paperops_active_paper_trading_automation(
+        rs5_policy_probe
+    )
+
+    rs5_route_probe = deepcopy(written)
+    rs5_route_probe["rs5_guarded_submit_route"] = "scripts/unmanaged_broker_post.py"
+    rs5_route_probe["rs5_guarded_submit_transport"] = "direct_broker_shortcut"
+    rs5_route_errors = validate_paperops_active_paper_trading_automation(
+        rs5_route_probe
+    )
+
+    why_not_probe = deepcopy(written)
+    why_not_probe["paper_submit_step_allowed"] = False
+    why_not_probe["why_not_trading_now"] = ""
+    why_not_probe["why_not_trading_now_reasons"] = []
+    why_not_errors = validate_paperops_active_paper_trading_automation(why_not_probe)
+
     print(f"paperops_active_automation_status={written['status']}")
     print(
         "paperops_active_automation_schema_version="
@@ -227,6 +257,66 @@ def main() -> int:
     print(
         "paperops_active_automation_first_week_mandate_daily_submitted_count="
         f"{written['first_week_paper_trade_mandate_daily_submitted_count']}"
+    )
+    print(
+        "paperops_active_automation_rs5_status="
+        f"{written['rs5_guarded_paper_autonomy_status']}"
+    )
+    print(
+        "paperops_active_automation_rs5_daily_target_policy="
+        f"{written['rs5_daily_target_policy']}"
+    )
+    print(
+        "paperops_active_automation_rs5_daily_target_is_minimum="
+        f"{written['rs5_daily_target_is_minimum']}"
+    )
+    print(
+        "paperops_active_automation_rs5_daily_target_blocks_additional_setups="
+        f"{written['rs5_daily_target_blocks_additional_qualified_setups']}"
+    )
+    print(
+        "paperops_active_automation_rs5_opportunity_scan_interval_minutes="
+        f"{written['rs5_opportunity_scan_interval_minutes']}"
+    )
+    print(
+        "paperops_active_automation_rs5_guarded_submit_route="
+        f"{written['rs5_guarded_submit_route']}"
+    )
+    print(
+        "paperops_active_automation_rs5_guarded_submit_transport="
+        f"{written['rs5_guarded_submit_transport']}"
+    )
+    print(
+        "paperops_active_automation_rs5_max_guarded_submit_attempts_per_run="
+        f"{written['rs5_max_guarded_submit_attempts_per_run']}"
+    )
+    print(
+        "paperops_active_automation_rs5_available_distinct_setup_count="
+        f"{written['rs5_available_distinct_setup_count']}"
+    )
+    print(
+        "paperops_active_automation_rs5_distinct_candidate_count="
+        f"{written['rs5_distinct_candidate_count']}"
+    )
+    print(
+        "paperops_active_automation_rs5_distinct_research_goal_count="
+        f"{written['rs5_distinct_research_goal_count']}"
+    )
+    print(
+        "paperops_active_automation_rs5_distinct_idempotency_key_count="
+        f"{written['rs5_distinct_idempotency_key_count']}"
+    )
+    print(
+        "paperops_active_automation_rs5_can_submit_multiple_today="
+        f"{written['rs5_can_submit_multiple_today']}"
+    )
+    print(
+        "paperops_active_automation_rs5_guard_status="
+        f"{written['rs5_multiple_submission_guard_status']}"
+    )
+    print(
+        "paperops_active_automation_why_not_trading_now="
+        f"{written['why_not_trading_now']}"
     )
     print(
         "paperops_active_automation_paperops2_submit_called_count="
@@ -386,6 +476,28 @@ def main() -> int:
         not in proof_errors
     ):
         errors.append("proof-credit probe was not rejected")
+    if "paperops_active_automation_rs5_target_met_ceiling_detected" not in (
+        daily_target_ceiling_errors
+    ):
+        errors.append("RS-5 daily-target ceiling probe was not rejected")
+    if "paperops_active_automation_rs5_daily_target_policy_invalid" not in (
+        rs5_policy_errors
+    ):
+        errors.append("RS-5 policy probe was not rejected")
+    if "paperops_active_automation_rs5_daily_target_not_minimum" not in (
+        rs5_policy_errors
+    ):
+        errors.append("RS-5 minimum-target probe was not rejected")
+    if "paperops_active_automation_rs5_daily_target_ceiling_enabled" not in (
+        rs5_policy_errors
+    ):
+        errors.append("RS-5 ceiling-enabled probe was not rejected")
+    if "paperops_active_automation_rs5_route_invalid" not in rs5_route_errors:
+        errors.append("RS-5 route probe was not rejected")
+    if "paperops_active_automation_rs5_transport_invalid" not in rs5_route_errors:
+        errors.append("RS-5 transport probe was not rejected")
+    if "paperops_active_automation_why_not_trading_missing" not in why_not_errors:
+        errors.append("why-not-trading probe was not rejected")
 
     if errors:
         print("paperops_active_paper_trading_automation_check=failed")

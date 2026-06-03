@@ -2031,6 +2031,11 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_active_paper_trading_fresh_submit_count",
     "paperops_active_paper_trading_duplicate_submit_count",
     "paperops_active_paper_trading_idempotency_ledger_active",
+    "paperops_active_paper_trading_rs5_available_distinct_setup_count",
+    "paperops_active_paper_trading_rs5_can_submit_multiple_today",
+    "paperops_active_paper_trading_rs5_daily_target_policy",
+    "paperops_active_paper_trading_rs5_max_guarded_submit_attempts_per_run",
+    "paperops_active_paper_trading_why_not_trading_now",
     "paperops_qualified_setup_production",
     "paperops_qualified_setup_production_qualified_count",
     "paperops_qualified_setup_production_ready_to_stage",
@@ -2351,11 +2356,19 @@ PAPEROPS_ACTIVE_AUTOMATION_REQUIRED_FIELDS = {
     "qctrl_consultation_hold_active",
     "qctrl_direct_execution_allowed",
     "recorded",
+    "rs5_available_distinct_setup_count",
+    "rs5_can_submit_multiple_today",
+    "rs5_daily_target_blocks_additional_qualified_setups",
+    "rs5_daily_target_is_minimum",
+    "rs5_daily_target_policy",
+    "rs5_guarded_submit_transport",
+    "rs5_max_guarded_submit_attempts_per_run",
     "schema_version",
     "stage",
     "status",
     "unsafe_write_counter_total",
     "validation_error_count",
+    "why_not_trading_now",
 }
 
 MISSION_PHASE5_LAYER_B_REQUIRED_FIELDS = {
@@ -3543,6 +3556,26 @@ def main() -> int:
     print(
         "cockpit_status_paperops_active_automation_idempotency_ledger_active="
         f"{paperops_active_automation.get('paperops2_idempotency_ledger_active')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_rs5_daily_target_policy="
+        f"{paperops_active_automation.get('rs5_daily_target_policy')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_rs5_max_guarded_submit_attempts_per_run="
+        f"{paperops_active_automation.get('rs5_max_guarded_submit_attempts_per_run')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_rs5_available_distinct_setup_count="
+        f"{paperops_active_automation.get('rs5_available_distinct_setup_count')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_rs5_can_submit_multiple_today="
+        f"{paperops_active_automation.get('rs5_can_submit_multiple_today')}"
+    )
+    print(
+        "cockpit_status_paperops_active_automation_why_not_trading_now="
+        f"{paperops_active_automation.get('why_not_trading_now')}"
     )
     print(
         "cockpit_status_paper_authority_reconciliation_status="
@@ -7366,6 +7399,31 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_active_paper_automation_ledger_mismatch=true")
         return 1
+    if mission_stack.get("paperops_active_paper_trading_rs5_daily_target_policy") != (
+        paperops_active_automation.get("rs5_daily_target_policy")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_rs5_policy_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_active_paper_trading_rs5_max_guarded_submit_attempts_per_run"
+    ) != paperops_active_automation.get("rs5_max_guarded_submit_attempts_per_run"):
+        print("cockpit_status_mission_stack_active_paper_automation_rs5_attempts_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_active_paper_trading_rs5_available_distinct_setup_count"
+    ) != paperops_active_automation.get("rs5_available_distinct_setup_count"):
+        print("cockpit_status_mission_stack_active_paper_automation_rs5_setup_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_rs5_can_submit_multiple_today") != (
+        paperops_active_automation.get("rs5_can_submit_multiple_today")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_rs5_multi_submit_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_active_paper_trading_why_not_trading_now") != (
+        paperops_active_automation.get("why_not_trading_now")
+    ):
+        print("cockpit_status_mission_stack_active_paper_automation_why_not_mismatch=true")
+        return 1
     if mission_stack.get("paperops_qualified_setup_production") != (
         paperops_qualified_setup_production.get("status")
     ):
@@ -7919,6 +7977,44 @@ def main() -> int:
         if paperops_active_automation.get(key) is not False:
             print(f"cockpit_status_paperops_active_automation_forbidden={key}")
             return 1
+    if paperops_active_automation.get("rs5_daily_target_policy") != "minimum_not_ceiling":
+        print("cockpit_status_paperops_active_automation_rs5_policy_invalid=true")
+        return 1
+    if paperops_active_automation.get("rs5_daily_target_is_minimum") is not True:
+        print("cockpit_status_paperops_active_automation_rs5_target_not_minimum=true")
+        return 1
+    if (
+        paperops_active_automation.get(
+            "rs5_daily_target_blocks_additional_qualified_setups"
+        )
+        is not False
+    ):
+        print("cockpit_status_paperops_active_automation_rs5_target_ceiling=true")
+        return 1
+    if paperops_active_automation.get("rs5_guarded_submit_transport") != "paperops2_only":
+        print("cockpit_status_paperops_active_automation_rs5_transport_invalid=true")
+        return 1
+    if int(
+        paperops_active_automation.get("rs5_max_guarded_submit_attempts_per_run", 0)
+        or 0
+    ) > 3:
+        print("cockpit_status_paperops_active_automation_rs5_attempts_exceed_cap=true")
+        return 1
+    if (
+        paperops_active_automation.get("rs5_daily_target_met") is True
+        and int(
+            paperops_active_automation.get("rs5_available_distinct_setup_count", 0)
+            or 0
+        )
+        > 0
+        and paperops_active_automation.get("idle_reason")
+        == "daily_paper_trade_target_met"
+    ):
+        print("cockpit_status_paperops_active_automation_rs5_target_ceiling_detected=true")
+        return 1
+    if not str(paperops_active_automation.get("why_not_trading_now") or "").strip():
+        print("cockpit_status_paperops_active_automation_why_not_missing=true")
+        return 1
     for key in ("live_endpoint_called_count", "unsafe_write_counter_total"):
         if int(paperops_active_automation.get(key, 0) or 0) != 0:
             print(f"cockpit_status_paperops_active_automation_unsafe_counter={key}")

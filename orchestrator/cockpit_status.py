@@ -1369,11 +1369,19 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_REQUIRED_FIELDS = {
     "qctrl_consultation_hold_active",
     "qctrl_direct_execution_allowed",
     "recorded",
+    "rs5_available_distinct_setup_count",
+    "rs5_can_submit_multiple_today",
+    "rs5_daily_target_blocks_additional_qualified_setups",
+    "rs5_daily_target_is_minimum",
+    "rs5_daily_target_policy",
+    "rs5_guarded_submit_transport",
+    "rs5_max_guarded_submit_attempts_per_run",
     "schema_version",
     "stage",
     "status",
     "unsafe_write_counter_total",
     "validation_error_count",
+    "why_not_trading_now",
 }
 
 PROHIBITED_VALUE_PATTERNS = (
@@ -5499,6 +5507,24 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                     False,
                 )
             ),
+            "paperops_active_paper_trading_rs5_daily_target_policy": (
+                paperops_active_automation.get("rs5_daily_target_policy", "unknown")
+            ),
+            "paperops_active_paper_trading_rs5_max_guarded_submit_attempts_per_run": (
+                paperops_active_automation.get(
+                    "rs5_max_guarded_submit_attempts_per_run",
+                    0,
+                )
+            ),
+            "paperops_active_paper_trading_rs5_available_distinct_setup_count": (
+                paperops_active_automation.get("rs5_available_distinct_setup_count", 0)
+            ),
+            "paperops_active_paper_trading_rs5_can_submit_multiple_today": (
+                paperops_active_automation.get("rs5_can_submit_multiple_today", False)
+            ),
+            "paperops_active_paper_trading_why_not_trading_now": (
+                paperops_active_automation.get("why_not_trading_now", "")
+            ),
             "paperops_qualified_setup_production": (
                 paperops_qualified_setup_production.get("status", "not_run")
             ),
@@ -7681,6 +7707,46 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError(
                 f"PaperOps active paper automation unsafe count nonzero: {key}"
             )
+    if paperops_active_automation.get("rs5_daily_target_policy") != "minimum_not_ceiling":
+        raise ValueError("PaperOps active paper automation RS-5 target policy is invalid")
+    if paperops_active_automation.get("rs5_daily_target_is_minimum") is not True:
+        raise ValueError("PaperOps active paper automation RS-5 target is not minimum")
+    if (
+        paperops_active_automation.get(
+            "rs5_daily_target_blocks_additional_qualified_setups"
+        )
+        is not False
+    ):
+        raise ValueError("PaperOps active paper automation RS-5 target is a ceiling")
+    if paperops_active_automation.get("rs5_guarded_submit_transport") != "paperops2_only":
+        raise ValueError("PaperOps active paper automation RS-5 transport is invalid")
+    if (
+        int(
+            paperops_active_automation.get(
+                "rs5_max_guarded_submit_attempts_per_run",
+                0,
+            )
+            or 0
+        )
+        > 3
+    ):
+        raise ValueError("PaperOps active paper automation RS-5 attempts exceed cap")
+    if (
+        paperops_active_automation.get("rs5_daily_target_met") is True
+        and int(
+            paperops_active_automation.get(
+                "rs5_available_distinct_setup_count",
+                0,
+            )
+            or 0
+        )
+        > 0
+        and paperops_active_automation.get("idle_reason")
+        == "daily_paper_trade_target_met"
+    ):
+        raise ValueError("PaperOps active paper automation treated target as ceiling")
+    if not str(paperops_active_automation.get("why_not_trading_now") or "").strip():
+        raise ValueError("PaperOps active paper automation why-not-trading is missing")
     active_boundary = str(paperops_active_automation.get("boundary") or "")
     for phrase in (
         "PT-8 binds the hourly PaperOps automation",

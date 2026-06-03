@@ -274,18 +274,8 @@ def main() -> int:
     )
 
     if args.execute_paper_automation:
-        max_submit_attempts = max(
-            1,
-            min(
-                3,
-                int(
-                    initial.get(
-                        "first_week_paper_trade_mandate_daily_ready_submit_count",
-                        1,
-                    )
-                    or 1
-                ),
-            ),
+        max_submit_attempts = int(
+            initial.get("rs5_max_guarded_submit_attempts_per_run", 0) or 0
         )
         submit_attempt_count = 0
         while submit_attempt_count < max_submit_attempts:
@@ -425,6 +415,38 @@ def main() -> int:
     print(
         "paperops_active_runner_first_week_mandate_daily_submitted_count="
         f"{written['first_week_paper_trade_mandate_daily_submitted_count']}"
+    )
+    print(
+        "paperops_active_runner_rs5_daily_target_policy="
+        f"{written['rs5_daily_target_policy']}"
+    )
+    print(
+        "paperops_active_runner_rs5_daily_target_is_minimum="
+        f"{written['rs5_daily_target_is_minimum']}"
+    )
+    print(
+        "paperops_active_runner_rs5_daily_target_blocks_additional_setups="
+        f"{written['rs5_daily_target_blocks_additional_qualified_setups']}"
+    )
+    print(
+        "paperops_active_runner_rs5_max_guarded_submit_attempts_per_run="
+        f"{written['rs5_max_guarded_submit_attempts_per_run']}"
+    )
+    print(
+        "paperops_active_runner_rs5_available_distinct_setup_count="
+        f"{written['rs5_available_distinct_setup_count']}"
+    )
+    print(
+        "paperops_active_runner_rs5_can_submit_multiple_today="
+        f"{written['rs5_can_submit_multiple_today']}"
+    )
+    print(
+        "paperops_active_runner_rs5_guard_status="
+        f"{written['rs5_multiple_submission_guard_status']}"
+    )
+    print(
+        "paperops_active_runner_why_not_trading_now="
+        f"{written['why_not_trading_now']}"
     )
     submitted_paper_order_count = sum(
         int(

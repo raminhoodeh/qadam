@@ -239,6 +239,7 @@ def _why_not_trading_now(
     safety_blockers: list[str],
     operational_blockers: list[str],
     opportunity_or_risk_blockers: list[str],
+    active: dict[str, Any],
 ) -> str:
     if status == "blocked_by_safety":
         return "Safety blocker prevents paper operation: " + ", ".join(safety_blockers)
@@ -247,7 +248,10 @@ def _why_not_trading_now(
             "Paper trading is authorized, but the operational runner is not armed: "
             + ", ".join(operational_blockers)
         )
+    active_reason = str(active.get("why_not_trading_now") or "").strip()
     if status == "paper_authorized_waiting_for_setup":
+        if active_reason:
+            return "Paper trading is authorized; current runner state: " + active_reason
         return (
             "Paper trading is authorized; no fresh qualified setup is currently eligible: "
             + ", ".join(opportunity_or_risk_blockers)
@@ -258,6 +262,8 @@ def _why_not_trading_now(
         return "A paper order or position lifecycle poll is eligible through PaperOps."
     if status == "paper_authorized_ready_to_exit":
         return "A guarded paper exit step is eligible through PaperOps."
+    if active_reason:
+        return "Paper trading is authorized and idle; current runner state: " + active_reason
     return "Paper trading is authorized and idle; Qadam is waiting for the next qualified setup."
 
 
@@ -338,6 +344,7 @@ def build_paper_authority_reconciliation(
             safety_blockers=safety_blockers,
             operational_blockers=operational_blockers,
             opportunity_or_risk_blockers=opportunity_or_risk_blockers,
+            active=active,
         ),
         "next_required_action": _next_required_action(status),
         "rate_limit_policy": (

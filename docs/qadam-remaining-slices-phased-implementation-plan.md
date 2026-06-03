@@ -340,6 +340,35 @@ Acceptance:
 - `scripts/run_active_paper_trading_automation.py --execute-paper-automation`
   remains the guarded route.
 
+Implementation status, 2026-06-03:
+
+- RS-5 is implemented in
+  `orchestrator/paperops_active_paper_trading_automation.py`,
+  `scripts/check_paperops_active_paper_trading_automation.py`, and
+  `scripts/run_active_paper_trading_automation.py`.
+- The active automation artifact now exposes `rs5_daily_target_policy`,
+  `rs5_daily_target_is_minimum`,
+  `rs5_daily_target_blocks_additional_qualified_setups`,
+  `rs5_max_guarded_submit_attempts_per_run`,
+  `rs5_available_distinct_setup_count`,
+  `rs5_can_submit_multiple_today`, and `why_not_trading_now`.
+- The daily target is explicitly `minimum_not_ceiling`. The validator rejects
+  any state where `daily_paper_trade_target_met` causes Qadam to idle while a
+  fresh distinct setup remains available.
+- The guarded submit route remains
+  `scripts/run_active_paper_trading_automation.py --execute-paper-automation`
+  and the submit transport remains `paperops2_only`; direct broker shortcuts,
+  live capital, forced trades, Q-CTRL execution, and proof credit remain
+  forbidden.
+- The existing hourly PaperOps automation has been reactivated and its prompt
+  now records the RS-5 rule: multiple paper submits may happen in one day only
+  when each setup has distinct lineage, candidate identity, idempotency, risk,
+  exposure, drawdown, source-quorum, and paper-only checks.
+- Current validated runtime state: Qadam is armed and paper-authorized, but
+  `rs5_available_distinct_setup_count=0`, so it is idling with
+  `why_not_trading_now=daily_target_met_and_no_additional_distinct_setup`.
+  No paper order was submitted during the RS-5 implementation checks.
+
 ## 10. Phase RS-6 - Lifecycle, Portfolio, And Postmortem Hardening
 
 Objective: make every paper trade auditable from idea to outcome.

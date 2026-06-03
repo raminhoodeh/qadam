@@ -2096,10 +2096,19 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     evidence, and source-quorum result to each Research Goal while keeping
     candidate creation, risk approval, paper orders, broker writes, source
     quorum credit, and live capital disabled.
-23. Continue the remaining-slices rollout with RS-4: run the Local Research
-    Analyst and Strategy Lead over Research Goals plus RS-3 market context
-    packets, preserving explicit non-authority flags and batching/rate-limit
-    awareness before deepening guarded paper autonomy.
+23. RS-5 Guarded Paper Autonomy is implemented out of sequence as a safety and
+    authority hardening slice. The daily paper-trade target is now explicitly a
+    minimum, not a ceiling; multiple same-day Alpaca paper submits are allowed
+    only through the guarded PaperOps-2 route when each setup has a distinct
+    Research Goal, candidate, and idempotency key, passes risk/exposure/drawdown
+    and source-quorum checks, and live capital remains disabled. The current
+    runtime is armed and paper-authorized, but has no fresh distinct setup, so
+    the public why-not state is `daily_target_met_and_no_additional_distinct_setup`.
+    No paper order was submitted during the RS-5 implementation checks.
+24. Continue the remaining-slices rollout with RS-4 or RS-6 depending on the
+    immediate goal: RS-4 deepens Local Research Analyst and Strategy Lead runs
+    over Research Goals plus RS-3 market context packets; RS-6 hardens lifecycle,
+    portfolio, and postmortem handling after guarded paper submits occur.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

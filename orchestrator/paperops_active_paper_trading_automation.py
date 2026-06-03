@@ -58,6 +58,19 @@ ACTIVE_RUNNER_COMMAND_FRAGMENT = (
 )
 ACTIVE_CHECK_COMMAND_FRAGMENT = "scripts/check_paperops_active_paper_trading_automation.py"
 TELEGRAM_INBOUND_INTAKE_COMMAND_FRAGMENT = "scripts/poll_telegram_inbound_intake.py"
+RS5_DAILY_TARGET_POLICY = "minimum_not_ceiling"
+RS5_OPPORTUNITY_SCAN_INTERVAL_MINUTES = 20
+RS5_GUARDED_SUBMIT_ATTEMPT_CAP_PER_RUN = 3
+RS5_GUARDED_SUBMIT_REQUIREMENTS: tuple[str, ...] = (
+    "distinct_research_goal",
+    "distinct_candidate",
+    "distinct_idempotency_key",
+    "passing_risk_budget",
+    "no_duplicate_exposure_conflict",
+    "no_daily_drawdown_breach",
+    "no_source_quorum_breach",
+    "no_live_capital_route",
+)
 
 REQUIRED_AUTOMATION_COMMAND_FRAGMENTS: tuple[str, ...] = (
     AUTONOMOUS_PASS_COMMAND_FRAGMENT,
@@ -159,6 +172,31 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "first_week_paper_trade_mandate_daily_ready_submit_count",
     "first_week_paper_trade_mandate_daily_submitted_count",
     "first_week_paper_trade_mandate_candidate_count",
+    "rs5_guarded_paper_autonomy_status",
+    "rs5_daily_target_policy",
+    "rs5_daily_target_is_minimum",
+    "rs5_daily_target_blocks_additional_qualified_setups",
+    "rs5_opportunity_scan_interval_minutes",
+    "rs5_guarded_submit_route",
+    "rs5_guarded_submit_transport",
+    "rs5_max_guarded_submit_attempts_per_run",
+    "rs5_guarded_submit_attempt_cap_per_run",
+    "rs5_guarded_submit_requirement_count",
+    "rs5_guarded_submit_requirements",
+    "rs5_guarded_submit_requirement_records",
+    "rs5_guarded_submit_requirements_passed_count",
+    "rs5_guarded_submit_missing_requirements",
+    "rs5_daily_target_met",
+    "rs5_additional_distinct_setup_available",
+    "rs5_available_distinct_setup_count",
+    "rs5_distinct_candidate_count",
+    "rs5_distinct_research_goal_count",
+    "rs5_distinct_idempotency_key_count",
+    "rs5_duplicate_submit_record_count",
+    "rs5_can_submit_multiple_today",
+    "rs5_multiple_submission_guard_status",
+    "why_not_trading_now",
+    "why_not_trading_now_reasons",
     "paperops2_submit_called_count",
     "paperops2_submit_succeeded_count",
     "paperops3_status",
@@ -446,6 +484,132 @@ def _hold_reason(allowed: bool, failures: list[str], idle_reason: str) -> str:
     return idle_reason
 
 
+def _post_candidates(paperops2: dict[str, Any]) -> list[dict[str, Any]]:
+    records = paperops2.get("post_candidates", [])
+    if not isinstance(records, list):
+        return []
+    return [record for record in records if isinstance(record, dict)]
+
+
+def _fresh_post_candidates(paperops2: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        record
+        for record in _post_candidates(paperops2)
+        if record.get("eligible_for_paper_post") is True
+        and record.get("fresh_for_paper_post", True) is not False
+        and record.get("previously_submitted_to_alpaca_paper") is not True
+        and record.get("status") != "blocked_duplicate_paper_submit"
+    ]
+
+
+def _unique_count(records: list[dict[str, Any]], *keys: str) -> int:
+    values: set[str] = set()
+    for record in records:
+        for key in keys:
+            value = str(record.get(key) or "").strip()
+            if value:
+                values.add(value)
+                break
+    return len(values)
+
+
+def _rs5_requirement_records(
+    *,
+    settings: Settings,
+    paperops2: dict[str, Any],
+    paperops2_ready: bool,
+    qctrl_hold: bool,
+    blockers: list[str],
+    fresh_count: int,
+    distinct_candidate_count: int,
+    distinct_research_goal_count: int,
+    distinct_idempotency_key_count: int,
+) -> list[dict[str, Any]]:
+    upstream_gate_passed = paperops2_ready and not blockers and not qctrl_hold
+    return [
+        {
+            "key": "distinct_research_goal",
+            "passed": distinct_research_goal_count >= fresh_count and fresh_count > 0,
+            "detail": "Fresh eligible records must not collapse into one research-goal lineage.",
+        },
+        {
+            "key": "distinct_candidate",
+            "passed": distinct_candidate_count >= fresh_count and fresh_count > 0,
+            "detail": "Fresh eligible records must have distinct candidate/setup identity.",
+        },
+        {
+            "key": "distinct_idempotency_key",
+            "passed": distinct_idempotency_key_count >= fresh_count and fresh_count > 0,
+            "detail": "Fresh eligible records must have distinct paper-submit idempotency keys.",
+        },
+        {
+            "key": "passing_risk_budget",
+            "passed": upstream_gate_passed,
+            "detail": "Risk budget remains enforced upstream by the PaperOps-2 candidate contract.",
+        },
+        {
+            "key": "no_duplicate_exposure_conflict",
+            "passed": upstream_gate_passed,
+            "detail": "Duplicate exposure remains enforced upstream by PaperOps staging and idempotency.",
+        },
+        {
+            "key": "no_daily_drawdown_breach",
+            "passed": upstream_gate_passed,
+            "detail": "Drawdown and paper-account limits remain upstream gates before PaperOps-2 eligibility.",
+        },
+        {
+            "key": "no_source_quorum_breach",
+            "passed": upstream_gate_passed,
+            "detail": "Source quorum remains enforced before candidate eligibility.",
+        },
+        {
+            "key": "no_live_capital_route",
+            "passed": settings.live_capital_enabled is False
+            and paperops2.get("live_capital_enabled") is False
+            and paperops2.get("live_endpoint_allowed") is False,
+            "detail": "RS-5 can only use the Alpaca paper route; live capital remains unavailable.",
+        },
+    ]
+
+
+def _why_not_trading_now(
+    *,
+    paper_submit_allowed: bool,
+    paper_poll_allowed: bool,
+    paper_exit_allowed: bool,
+    blockers: list[str],
+    qctrl_hold: bool,
+    paperops2_ready: bool,
+    fresh_count: int,
+    duplicate_count: int,
+    first_week_mandate_target_met: bool,
+) -> tuple[str, list[str]]:
+    reasons: list[str] = []
+    if paper_submit_allowed:
+        return "fresh_guarded_paper_submit_ready", []
+    if blockers:
+        reasons.extend(blockers)
+    if qctrl_hold:
+        reasons.append("qctrl_paper_consultation_hold")
+    if not paperops2_ready:
+        if fresh_count < 1 and first_week_mandate_target_met:
+            reasons.append("daily_target_met_and_no_additional_distinct_setup")
+        elif fresh_count < 1 and duplicate_count >= 1:
+            reasons.append("idempotency_guard_holding_duplicate_or_already_submitted_setup")
+        elif fresh_count < 1:
+            reasons.append("no_fresh_qualified_setup")
+        else:
+            reasons.append("paperops2_submit_gate_not_ready")
+    if paper_poll_allowed:
+        reasons.append("paper_lifecycle_poll_ready_before_new_submit")
+    if paper_exit_allowed:
+        reasons.append("paper_exit_ready_before_new_submit")
+    unique_reasons = list(dict.fromkeys(reasons))
+    if not unique_reasons:
+        unique_reasons.append("waiting_for_fresh_qualified_setup")
+    return ",".join(unique_reasons), unique_reasons
+
+
 def _status(
     *,
     hard_blockers: list[str],
@@ -531,6 +695,42 @@ def build_paperops_active_paper_trading_automation(
         and first_week_mandate_daily_target > 0
         and first_week_mandate_daily_submitted >= first_week_mandate_daily_target
     )
+    fresh_submit_record_count = _int(paperops2.get("fresh_eligible_submit_record_count"))
+    duplicate_submit_record_count = _int(paperops2.get("duplicate_submit_record_count"))
+    fresh_candidate_records = _fresh_post_candidates(paperops2)
+    fresh_candidate_record_count = max(
+        fresh_submit_record_count,
+        len(fresh_candidate_records),
+    )
+    distinct_candidate_count = max(
+        fresh_candidate_record_count if fresh_candidate_record_count and not fresh_candidate_records else 0,
+        _unique_count(
+            fresh_candidate_records,
+            "source_setup_record_id",
+            "source_staged_order_artifact_id",
+            "source_submit_record_artifact_id",
+            "request_fingerprint",
+        ),
+    )
+    distinct_research_goal_count = max(
+        fresh_candidate_record_count if fresh_candidate_record_count and not fresh_candidate_records else 0,
+        _unique_count(
+            fresh_candidate_records,
+            "research_goal_id",
+            "source_setup_record_id",
+            "source_staged_order_artifact_id",
+            "source_submit_record_artifact_id",
+        ),
+    )
+    distinct_idempotency_key_count = max(
+        fresh_candidate_record_count if fresh_candidate_record_count and not fresh_candidate_records else 0,
+        _unique_count(
+            fresh_candidate_records,
+            "source_idempotency_key",
+            "idempotency_key",
+            "request_fingerprint",
+        ),
+    )
 
     submit_failures: list[str] = []
     if blockers:
@@ -574,9 +774,49 @@ def build_paperops_active_paper_trading_automation(
     else:
         unattended_delegation_reason = "armed_idle_waiting_for_fresh_eligible_setup"
         idle_reason = "no_fresh_eligible_candidate"
+    why_not_trading_now, why_not_trading_now_reasons = _why_not_trading_now(
+        paper_submit_allowed=paper_submit_allowed,
+        paper_poll_allowed=paper_poll_allowed,
+        paper_exit_allowed=paper_exit_allowed,
+        blockers=blockers,
+        qctrl_hold=qctrl_hold,
+        paperops2_ready=paperops2_ready,
+        fresh_count=fresh_candidate_record_count,
+        duplicate_count=duplicate_submit_record_count,
+        first_week_mandate_target_met=first_week_mandate_target_met,
+    )
+    rs5_requirement_records = _rs5_requirement_records(
+        settings=settings,
+        paperops2=paperops2,
+        paperops2_ready=paperops2_ready,
+        qctrl_hold=qctrl_hold,
+        blockers=blockers,
+        fresh_count=fresh_candidate_record_count,
+        distinct_candidate_count=distinct_candidate_count,
+        distinct_research_goal_count=distinct_research_goal_count,
+        distinct_idempotency_key_count=distinct_idempotency_key_count,
+    )
+    rs5_missing_requirements = [
+        str(record["key"])
+        for record in rs5_requirement_records
+        if record.get("passed") is not True
+    ]
+    rs5_max_submit_attempts = min(
+        RS5_GUARDED_SUBMIT_ATTEMPT_CAP_PER_RUN,
+        max(0, fresh_candidate_record_count),
+    )
+    rs5_guard_status = (
+        "ready_for_guarded_paper_submit"
+        if paper_submit_allowed
+        else (
+            "idle_no_fresh_distinct_setup"
+            if fresh_candidate_record_count < 1 and not blockers and not qctrl_hold
+            else "blocked_by_guardrail_or_gate"
+        )
+    )
     duplicate_submit_interpretation = (
         "idempotency guard active: existing paper submit already recorded"
-        if _int(paperops2.get("duplicate_submit_record_count")) >= 1
+        if duplicate_submit_record_count >= 1
         else "no duplicate paper submit recorded"
     )
 
@@ -671,6 +911,36 @@ def build_paperops_active_paper_trading_automation(
         "first_week_paper_trade_mandate_candidate_count": _int(
             paperops2.get("source_first_week_mandate_candidate_count")
         ),
+        "rs5_guarded_paper_autonomy_status": "guarded_paper_autonomy_contract_active",
+        "rs5_daily_target_policy": RS5_DAILY_TARGET_POLICY,
+        "rs5_daily_target_is_minimum": True,
+        "rs5_daily_target_blocks_additional_qualified_setups": False,
+        "rs5_opportunity_scan_interval_minutes": RS5_OPPORTUNITY_SCAN_INTERVAL_MINUTES,
+        "rs5_guarded_submit_route": ACTIVE_RUNNER_COMMAND_FRAGMENT,
+        "rs5_guarded_submit_transport": "paperops2_only",
+        "rs5_max_guarded_submit_attempts_per_run": rs5_max_submit_attempts,
+        "rs5_guarded_submit_attempt_cap_per_run": RS5_GUARDED_SUBMIT_ATTEMPT_CAP_PER_RUN,
+        "rs5_guarded_submit_requirement_count": len(RS5_GUARDED_SUBMIT_REQUIREMENTS),
+        "rs5_guarded_submit_requirements": list(RS5_GUARDED_SUBMIT_REQUIREMENTS),
+        "rs5_guarded_submit_requirement_records": rs5_requirement_records,
+        "rs5_guarded_submit_requirements_passed_count": len(RS5_GUARDED_SUBMIT_REQUIREMENTS)
+        - len(rs5_missing_requirements),
+        "rs5_guarded_submit_missing_requirements": rs5_missing_requirements,
+        "rs5_daily_target_met": first_week_mandate_target_met,
+        "rs5_additional_distinct_setup_available": fresh_candidate_record_count > 0,
+        "rs5_available_distinct_setup_count": fresh_candidate_record_count,
+        "rs5_distinct_candidate_count": distinct_candidate_count,
+        "rs5_distinct_research_goal_count": distinct_research_goal_count,
+        "rs5_distinct_idempotency_key_count": distinct_idempotency_key_count,
+        "rs5_duplicate_submit_record_count": duplicate_submit_record_count,
+        "rs5_can_submit_multiple_today": (
+            unattended_delegation_enabled
+            and paper_submit_allowed
+            and rs5_max_submit_attempts >= 1
+        ),
+        "rs5_multiple_submission_guard_status": rs5_guard_status,
+        "why_not_trading_now": why_not_trading_now,
+        "why_not_trading_now_reasons": why_not_trading_now_reasons,
         "paperops2_submit_called_count": _int(
             paperops2.get("alpaca_paper_post_called_count")
         ),
@@ -849,6 +1119,92 @@ def validate_paperops_active_paper_trading_automation(
             errors.append("paperops_active_automation_submit_without_eligible_order")
         if _int(artifact.get("paperops2_fresh_eligible_submit_record_count")) < 1:
             errors.append("paperops_active_automation_submit_without_fresh_order")
+        if artifact.get("why_not_trading_now") != "fresh_guarded_paper_submit_ready":
+            errors.append("paperops_active_automation_submit_why_not_mismatch")
+    if artifact.get("rs5_guarded_paper_autonomy_status") != (
+        "guarded_paper_autonomy_contract_active"
+    ):
+        errors.append("paperops_active_automation_rs5_status_invalid")
+    if artifact.get("rs5_daily_target_policy") != RS5_DAILY_TARGET_POLICY:
+        errors.append("paperops_active_automation_rs5_daily_target_policy_invalid")
+    if artifact.get("rs5_daily_target_is_minimum") is not True:
+        errors.append("paperops_active_automation_rs5_daily_target_not_minimum")
+    if artifact.get("rs5_daily_target_blocks_additional_qualified_setups") is not False:
+        errors.append("paperops_active_automation_rs5_daily_target_ceiling_enabled")
+    if _int(artifact.get("rs5_opportunity_scan_interval_minutes")) != (
+        RS5_OPPORTUNITY_SCAN_INTERVAL_MINUTES
+    ):
+        errors.append("paperops_active_automation_rs5_scan_interval_invalid")
+    if artifact.get("rs5_guarded_submit_route") != ACTIVE_RUNNER_COMMAND_FRAGMENT:
+        errors.append("paperops_active_automation_rs5_route_invalid")
+    if artifact.get("rs5_guarded_submit_transport") != "paperops2_only":
+        errors.append("paperops_active_automation_rs5_transport_invalid")
+    if _int(artifact.get("rs5_guarded_submit_attempt_cap_per_run")) != (
+        RS5_GUARDED_SUBMIT_ATTEMPT_CAP_PER_RUN
+    ):
+        errors.append("paperops_active_automation_rs5_attempt_cap_invalid")
+    max_attempts = _int(artifact.get("rs5_max_guarded_submit_attempts_per_run"))
+    if max_attempts < 0 or max_attempts > RS5_GUARDED_SUBMIT_ATTEMPT_CAP_PER_RUN:
+        errors.append("paperops_active_automation_rs5_attempt_count_invalid")
+    if artifact.get("rs5_guarded_submit_requirement_count") != len(
+        RS5_GUARDED_SUBMIT_REQUIREMENTS
+    ):
+        errors.append("paperops_active_automation_rs5_requirement_count_invalid")
+    if tuple(artifact.get("rs5_guarded_submit_requirements") or ()) != (
+        RS5_GUARDED_SUBMIT_REQUIREMENTS
+    ):
+        errors.append("paperops_active_automation_rs5_requirements_invalid")
+    requirement_records = artifact.get("rs5_guarded_submit_requirement_records", [])
+    if not isinstance(requirement_records, list):
+        errors.append("paperops_active_automation_rs5_requirement_records_invalid")
+        requirement_records = []
+    requirement_keys = {
+        str(record.get("key"))
+        for record in requirement_records
+        if isinstance(record, dict)
+    }
+    if requirement_keys != set(RS5_GUARDED_SUBMIT_REQUIREMENTS):
+        errors.append("paperops_active_automation_rs5_requirement_record_keys_invalid")
+    missing_requirements = [
+        str(record.get("key"))
+        for record in requirement_records
+        if isinstance(record, dict) and record.get("passed") is not True
+    ]
+    if artifact.get("rs5_guarded_submit_missing_requirements") != missing_requirements:
+        errors.append("paperops_active_automation_rs5_missing_requirements_mismatch")
+    if _int(artifact.get("rs5_guarded_submit_requirements_passed_count")) != (
+        len(RS5_GUARDED_SUBMIT_REQUIREMENTS) - len(missing_requirements)
+    ):
+        errors.append("paperops_active_automation_rs5_passed_requirements_mismatch")
+    if artifact.get("rs5_duplicate_submit_record_count") != artifact.get(
+        "paperops2_duplicate_submit_record_count"
+    ):
+        errors.append("paperops_active_automation_rs5_duplicate_count_mismatch")
+    if artifact.get("rs5_available_distinct_setup_count") != artifact.get(
+        "paperops2_fresh_eligible_submit_record_count"
+    ):
+        errors.append("paperops_active_automation_rs5_available_count_mismatch")
+    if artifact.get("rs5_additional_distinct_setup_available") != (
+        _int(artifact.get("rs5_available_distinct_setup_count")) > 0
+    ):
+        errors.append("paperops_active_automation_rs5_additional_setup_flag_mismatch")
+    if (
+        artifact.get("rs5_daily_target_met") is True
+        and _int(artifact.get("rs5_available_distinct_setup_count")) > 0
+        and artifact.get("idle_reason") == "daily_paper_trade_target_met"
+    ):
+        errors.append("paperops_active_automation_rs5_target_met_ceiling_detected")
+    if (
+        artifact.get("rs5_can_submit_multiple_today") is True
+        and artifact.get("paper_submit_step_allowed") is not True
+    ):
+        errors.append("paperops_active_automation_rs5_multi_submit_without_submit_gate")
+    if artifact.get("paper_submit_step_allowed") is not True:
+        why = str(artifact.get("why_not_trading_now") or "").strip()
+        if not why:
+            errors.append("paperops_active_automation_why_not_trading_missing")
+        if not isinstance(artifact.get("why_not_trading_now_reasons"), list):
+            errors.append("paperops_active_automation_why_not_reasons_invalid")
     if artifact.get("first_week_paper_trade_mandate_active") is True:
         if artifact.get("first_week_paper_trade_mandate_daily_target_trade_count") != 3:
             errors.append("paperops_active_automation_first_week_target_invalid")
@@ -950,6 +1306,17 @@ def write_paperops_active_paper_trading_automation(
                     "unattended_paper_execution_delegation_reason"
                 ),
                 "paper_submit_step_allowed": written.get("paper_submit_step_allowed"),
+                "rs5_daily_target_policy": written.get("rs5_daily_target_policy"),
+                "rs5_max_guarded_submit_attempts_per_run": written.get(
+                    "rs5_max_guarded_submit_attempts_per_run"
+                ),
+                "rs5_available_distinct_setup_count": written.get(
+                    "rs5_available_distinct_setup_count"
+                ),
+                "rs5_can_submit_multiple_today": written.get(
+                    "rs5_can_submit_multiple_today"
+                ),
+                "why_not_trading_now": written.get("why_not_trading_now"),
                 "first_week_paper_trade_mandate_status": written.get(
                     "first_week_paper_trade_mandate_status"
                 ),
@@ -1003,6 +1370,16 @@ def write_paperops_active_paper_trading_automation(
             "unattended_paper_execution_delegation_reason"
         ),
         "paper_submit_step_allowed": written.get("paper_submit_step_allowed"),
+        "rs5_daily_target_policy": written.get("rs5_daily_target_policy"),
+        "rs5_daily_target_is_minimum": written.get("rs5_daily_target_is_minimum"),
+        "rs5_max_guarded_submit_attempts_per_run": written.get(
+            "rs5_max_guarded_submit_attempts_per_run"
+        ),
+        "rs5_available_distinct_setup_count": written.get(
+            "rs5_available_distinct_setup_count"
+        ),
+        "rs5_can_submit_multiple_today": written.get("rs5_can_submit_multiple_today"),
+        "why_not_trading_now": written.get("why_not_trading_now"),
         "first_week_paper_trade_mandate_status": written.get(
             "first_week_paper_trade_mandate_status"
         ),
@@ -1064,6 +1441,31 @@ def paperops_active_paper_trading_automation_public_status(
             "first_week_paper_trade_mandate_daily_ready_submit_count": 0,
             "first_week_paper_trade_mandate_daily_submitted_count": 0,
             "first_week_paper_trade_mandate_candidate_count": 0,
+            "rs5_guarded_paper_autonomy_status": "guarded_paper_autonomy_contract_active",
+            "rs5_daily_target_policy": RS5_DAILY_TARGET_POLICY,
+            "rs5_daily_target_is_minimum": True,
+            "rs5_daily_target_blocks_additional_qualified_setups": False,
+            "rs5_opportunity_scan_interval_minutes": RS5_OPPORTUNITY_SCAN_INTERVAL_MINUTES,
+            "rs5_guarded_submit_route": ACTIVE_RUNNER_COMMAND_FRAGMENT,
+            "rs5_guarded_submit_transport": "paperops2_only",
+            "rs5_max_guarded_submit_attempts_per_run": 0,
+            "rs5_guarded_submit_attempt_cap_per_run": RS5_GUARDED_SUBMIT_ATTEMPT_CAP_PER_RUN,
+            "rs5_guarded_submit_requirement_count": len(RS5_GUARDED_SUBMIT_REQUIREMENTS),
+            "rs5_guarded_submit_requirements": list(RS5_GUARDED_SUBMIT_REQUIREMENTS),
+            "rs5_guarded_submit_requirement_records": [],
+            "rs5_guarded_submit_requirements_passed_count": 0,
+            "rs5_guarded_submit_missing_requirements": list(RS5_GUARDED_SUBMIT_REQUIREMENTS),
+            "rs5_daily_target_met": False,
+            "rs5_additional_distinct_setup_available": False,
+            "rs5_available_distinct_setup_count": 0,
+            "rs5_distinct_candidate_count": 0,
+            "rs5_distinct_research_goal_count": 0,
+            "rs5_distinct_idempotency_key_count": 0,
+            "rs5_duplicate_submit_record_count": 0,
+            "rs5_can_submit_multiple_today": False,
+            "rs5_multiple_submission_guard_status": "not_run",
+            "why_not_trading_now": "pt8_not_run",
+            "why_not_trading_now_reasons": ["pt8_not_run"],
             "paper_submit_step_allowed": False,
             "paper_poll_step_allowed": False,
             "paper_exit_step_allowed": False,
