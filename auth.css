@@ -3334,6 +3334,21 @@ html[data-dashboard-active-view="operations"] .legacy-operations-panel {
     border-color: rgba(var(--blue-rgb), 0.22);
 }
 
+.reasoning-market-context-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reasoning-market-context-grid section {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px;
+}
+
 .reasoning-quant-card {
     grid-column: 1 / -1;
 }
@@ -5192,6 +5207,7 @@ summary {
     .reasoning-lane-grid,
     .reasoning-prior-grid,
     .reasoning-evidence-grid,
+    .reasoning-market-context-grid,
     .reasoning-missing-grid,
     .reasoning-review-grid,
     .paper-account-grid {

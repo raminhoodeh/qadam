@@ -1609,6 +1609,8 @@ function buildReasoningModel(status = {}) {
     const executableHypotheses = hypotheses.filter((hypothesis) => hypothesis.execution_allowed);
     const researchGoalState = cognition.research_goals || {};
     const researchGoals = asArray(cognition.research_goal_records || researchGoalState.recent_goals);
+    const marketContextState = cognition.market_context || {};
+    const marketContextPackets = asArray(cognition.market_context_packets || marketContextState.recent_packets);
     const evidencePackets = asArray(cognition.evidence_packets);
     const shadowPackets = asArray(cognition.shadow_packets);
     const localResearch = asArray(cognition.local_research_assessments);
@@ -1697,6 +1699,46 @@ function buildReasoningModel(status = {}) {
         updated_at: goal.updated_at,
         boundary: dashboardText(goal.boundary, "Research Goal is pre-signal research state.")
     }));
+    const marketContextQueue = marketContextPackets.slice(0, 6).map((packet) => {
+        const quality = packet.source_quality || {};
+        const priceContext = packet.price_volume_context || {};
+        const technicalContext = packet.technical_context || {};
+        const paperContext = packet.paper_account_context || {};
+        return {
+            packet_id: dashboardText(packet.packet_id, "market_context_packet"),
+            research_goal_id: dashboardText(packet.research_goal_id, "research_goal"),
+            status: dashboardText(packet.market_context_status, "hold_for_context"),
+            market_channel: dashboardText(packet.market_channel, "macro_watchlist"),
+            hypothesis: dashboardText(packet.hypothesis, "No hypothesis exported."),
+            watched_instruments: asArray(packet.watched_instruments).slice(0, 8),
+            worldview_lens: dashboardText(packet.worldview_lens, "private_world_model_prior_only"),
+            akber_stage: dashboardText(packet.akber_stage, "stage_1_catalyst_identification"),
+            source_quality_score: modelNumber(quality.source_quality_score, 0),
+            trust_score_average: modelNumber(quality.trust_score_average, 0),
+            source_quorum_score: modelNumber(quality.source_quorum_score, 0),
+            latency_freshness_score: modelNumber(quality.latency_freshness_score, 0),
+            market_confirmation_score: modelNumber(quality.market_confirmation_score, 0),
+            technical_confirmation_score: modelNumber(quality.technical_confirmation_score, 0),
+            observed_source_count: modelNumber(quality.observed_source_count, 0),
+            required_source_count: modelNumber(quality.required_source_count, 0),
+            missing_or_degraded_source_count: modelNumber(quality.missing_or_degraded_source_count, 0),
+            yahoo_record_count: modelNumber(priceContext.record_count, 0),
+            tradingview_record_count: modelNumber(technicalContext.record_count, 0),
+            paper_account_status: dashboardText(paperContext.status, "not_exported"),
+            paper_balance_gbp: paperContext.current_balance_gbp,
+            source_taxonomy: asArray(packet.source_taxonomy).slice(0, 10),
+            price_records: asArray(priceContext.records).slice(0, 3),
+            technical_records: asArray(technicalContext.records).slice(0, 3),
+            missing_context: asArray(packet.missing_context).slice(0, 8),
+            contradictory_evidence: asArray(packet.contradictory_evidence).slice(0, 6),
+            execution_allowed: false,
+            paper_order_allowed: false,
+            trade_candidate_creation_allowed: false,
+            broker_write_allowed: false,
+            live_capital_enabled: false,
+            boundary: dashboardText(packet.boundary, "Market Context Packet is read-only context.")
+        };
+    });
     const evidenceIndex = evidencePackets.slice(0, 5).map((packet) => ({
         trail_id: dashboardText(packet.trail_id, "evidence_packet"),
         signal_id: dashboardText(packet.signal_id, "unlinked_signal"),
@@ -1718,6 +1760,7 @@ function buildReasoningModel(status = {}) {
     }));
     const missingCorroboration = compactUnique([
         ...researchGoals.flatMap((goal) => asArray(goal.missing_corroboration)),
+        ...marketContextPackets.flatMap((packet) => asArray(packet.missing_context)),
         ...hypotheses.flatMap((hypothesis) => asArray(hypothesis.missing_correlations)),
         ...evidencePackets.flatMap((packet) => asArray(packet.missing_correlations)),
         ...localResearch.flatMap((assessment) => asArray(assessment.missing_correlations)),
@@ -1866,8 +1909,8 @@ function buildReasoningModel(status = {}) {
         {
             id: "hypotheses_blockers",
             label: "Hypotheses and blockers",
-            summary: "Research goals, current hypotheses, why they stalled, and missing corroboration that holds them.",
-            record_count: researchGoalQueue.length + hypothesisQueue.length + missingCorroboration.length,
+            summary: "Research goals, market context packets, current hypotheses, why they stalled, and missing corroboration.",
+            record_count: researchGoalQueue.length + marketContextQueue.length + hypothesisQueue.length + missingCorroboration.length,
             tone: missingCorroboration.length ? "blocked" : "pending"
         },
         {
@@ -1883,9 +1926,10 @@ function buildReasoningModel(status = {}) {
         label: "Reasoning",
         question: "Why does Qadam care, and what is still missing?",
         tone: executableHypotheses.length ? "blocked" : (hypotheses.length ? "pending" : "neutral"),
-        summary: `${researchGoals.length} research goals, ${hypotheses.length} hypotheses, ${evidencePackets.length} evidence packets, ${shadowPackets.length} research packets, ${executableHypotheses.length} executable hypotheses.`,
+        summary: `${researchGoals.length} research goals, ${marketContextPackets.length} market context packets, ${hypotheses.length} hypotheses, ${evidencePackets.length} evidence packets, ${shadowPackets.length} research packets, ${executableHypotheses.length} executable hypotheses.`,
         counts: {
             research_goals: researchGoals.length,
+            market_context_packets: marketContextPackets.length,
             hypotheses: hypotheses.length,
             evidence_packets: evidencePackets.length,
             evidence_items: sumNestedItems(evidencePackets, "items"),
@@ -1922,6 +1966,23 @@ function buildReasoningModel(status = {}) {
             )
         },
         research_goal_queue: researchGoalQueue,
+        market_context: {
+            status: dashboardText(marketContextState.status, marketContextPackets.length ? "ok" : "not_exported"),
+            packet_version: dashboardText(marketContextState.packet_version, "rs3_2026_06_03"),
+            packet_count: modelNumber(marketContextState.packet_count, marketContextPackets.length),
+            context_ready_count: modelNumber(marketContextState.context_ready_count, 0),
+            hold_for_context_count: modelNumber(marketContextState.hold_for_context_count, marketContextPackets.length),
+            average_source_quality_score: modelNumber(marketContextState.average_source_quality_score, 0),
+            average_trust_score: modelNumber(marketContextState.average_trust_score, 0),
+            yahoo_finance_status: dashboardText(marketContextState.yahoo_finance_status, "not_exported"),
+            tradingview_mcp_status: dashboardText(marketContextState.tradingview_mcp_status, "not_exported"),
+            paper_account_context_status: dashboardText(marketContextState.paper_account_context_status, "not_exported"),
+            boundary: dashboardText(
+                marketContextState.boundary,
+                "Market Context Packets are read-only and cannot create candidates or orders."
+            )
+        },
+        market_context_packets: marketContextQueue,
         hypothesis_queue: hypothesisQueue,
         evidence_packets: evidenceIndex,
         missing_corroboration: missingCorroboration,
@@ -6856,6 +6917,93 @@ function renderReasoningResearchGoalSummary(goal) {
     `;
 }
 
+function renderReasoningMarketContextPacket(packet) {
+    const sourceRows = asArray(packet.source_taxonomy).slice(0, 8).map((source) => `
+        <li>
+            <span>${htmlText(source.source_key, "source")}</span>
+            <strong>${htmlText(source.status, "unknown")}</strong>
+            <em>${htmlText(source.role, "context")}</em>
+        </li>
+    `).join("");
+    const priceRows = asArray(packet.price_records).slice(0, 3).map((record) => `
+        <li>
+            <span>${htmlText(record.symbol, "symbol")}</span>
+            <strong>${htmlText(record.percent_move, "n/a")}%</strong>
+            <em>vol ${htmlText(record.volume_ratio, "n/a")}</em>
+        </li>
+    `).join("");
+    const technicalRows = asArray(packet.technical_records).slice(0, 3).map((record) => `
+        <li>
+            <span>${htmlText(record.symbol, "symbol")}</span>
+            <strong>${htmlText(record.setup_type, "technical context")}</strong>
+            <em>score ${htmlText(record.technical_score, "n/a")}</em>
+        </li>
+    `).join("");
+    return `
+        <article class="reasoning-evidence-card ${statusClass(packet.status)}">
+            <div class="source-workspace-topline">
+                ${renderStatusPill(packet.status || "hold_for_context")}
+                <p class="label">${htmlText(packet.market_channel, "market context")}</p>
+            </div>
+            <h3>Market context for ${htmlText(packet.research_goal_id, "research goal")}</h3>
+            <p>${htmlText(packet.hypothesis, "No context hypothesis exported.")}</p>
+            <div class="tag-row">
+                ${renderInlineBadge(`quality ${dashboardText(packet.source_quality_score, "0")}`, packet.source_quality_score >= 0.55 ? "online" : "pending")}
+                ${renderInlineBadge(`trust ${dashboardText(packet.trust_score_average, "0")}`, packet.trust_score_average >= 0.55 ? "online" : "pending")}
+                ${renderInlineBadge(`Yahoo ${dashboardText(packet.yahoo_record_count, 0)} records`, packet.yahoo_record_count ? "pending" : "blocked")}
+                ${renderInlineBadge(`TradingView ${dashboardText(packet.tradingview_record_count, 0)} records`, packet.tradingview_record_count ? "pending" : "blocked")}
+                ${renderInlineBadge("Context, not permission", "blocked")}
+            </div>
+            <dl class="cognition-facts">
+                <div>
+                    <dt>Quality</dt>
+                    <dd>
+                        quorum ${dashboardText(packet.source_quorum_score, "n/a")} ·
+                        market ${dashboardText(packet.market_confirmation_score, "n/a")} ·
+                        technical ${dashboardText(packet.technical_confirmation_score, "n/a")} ·
+                        fresh ${dashboardText(packet.latency_freshness_score, "n/a")}
+                    </dd>
+                </div>
+                <div>
+                    <dt>Watching</dt>
+                    <dd class="tag-row">${renderTagList(packet.watched_instruments, "No instruments exported")}</dd>
+                </div>
+                <div>
+                    <dt>Private lens</dt>
+                    <dd>${htmlText(packet.worldview_lens, "private prior only")} · ${htmlText(packet.akber_stage, "Akber stage")}</dd>
+                </div>
+                <div>
+                    <dt>Paper account</dt>
+                    <dd>${htmlText(packet.paper_account_status, "not exported")} · £${htmlText(packet.paper_balance_gbp, "n/a")}</dd>
+                </div>
+                <div>
+                    <dt>Missing/degraded</dt>
+                    <dd>${htmlText(packet.missing_or_degraded_source_count, 0)} sources · ${renderTagList(packet.missing_context, "No missing context exported")}</dd>
+                </div>
+                <div>
+                    <dt>Authority</dt>
+                    <dd>cannot create trade candidates, approve risk, stage orders, write brokers, or enable live capital</dd>
+                </div>
+            </dl>
+            <div class="reasoning-market-context-grid">
+                <section>
+                    <p class="label">Source taxonomy</p>
+                    <ul class="status-list">${sourceRows || "<li>No source taxonomy exported</li>"}</ul>
+                </section>
+                <section>
+                    <p class="label">Price/volume</p>
+                    <ul class="status-list">${priceRows || "<li>No Yahoo context exported</li>"}</ul>
+                </section>
+                <section>
+                    <p class="label">Technical</p>
+                    <ul class="status-list">${technicalRows || "<li>No TradingView context exported</li>"}</ul>
+                </section>
+            </div>
+            <small>${htmlText(packet.boundary, "Market Context Packet is read-only.")}</small>
+        </article>
+    `;
+}
+
 function renderReasoningEvidenceSummary(packet) {
     const itemHtml = asArray(packet.items).length
         ? asArray(packet.items).map((item) => `
@@ -6981,6 +7129,9 @@ function renderReasoningWorkspace(model) {
     const researchGoalHtml = asArray(model.research_goal_queue).length
         ? asArray(model.research_goal_queue).map(renderReasoningResearchGoalSummary).join("")
         : `<article class="reasoning-hypothesis-card"><h3>No research goals visible</h3><p>Research goals appear before hypotheses when source observations create a watch question.</p></article>`;
+    const marketContextHtml = asArray(model.market_context_packets).length
+        ? asArray(model.market_context_packets).map(renderReasoningMarketContextPacket).join("")
+        : `<article class="reasoning-evidence-card"><h3>No market context packets</h3><p>RS-3 packets appear after Research Goals are linked to source-quality, market, technical, and paper-account context.</p></article>`;
     const hypothesesHtml = asArray(model.hypothesis_queue).length
         ? asArray(model.hypothesis_queue).map(renderReasoningHypothesisSummary).join("")
         : `<article class="reasoning-hypothesis-card"><h3>No hypotheses visible</h3><p>Qadam has no hypotheses in this snapshot.</p></article>`;
@@ -7020,6 +7171,7 @@ function renderReasoningWorkspace(model) {
                 <div class="reasoning-consolidated-metrics">
                     ${renderMetric("Hypotheses", model.counts?.hypotheses || 0)}
                     ${renderMetric("Research goals", model.counts?.research_goals || 0)}
+                    ${renderMetric("Market context", model.counts?.market_context_packets || 0)}
                     ${renderMetric("Evidence packets", model.counts?.evidence_packets || 0)}
                     ${renderMetric("Evidence items", model.counts?.evidence_items || 0)}
                     ${renderMetric("Research packets", model.counts?.shadow_packets || 0)}
@@ -7058,6 +7210,26 @@ function renderReasoningWorkspace(model) {
                             ${renderInlineBadge("Pre-signal research", "pending")}
                         </div>
                         <div class="reasoning-hypothesis-stack">${researchGoalHtml}</div>
+                    </section>
+                    <section class="reasoning-section">
+                        <div class="reasoning-section-head">
+                            <div>
+                                <p class="label">Market context packets</p>
+                                <h3>Source quality, price/volume, technical, and paper-account context</h3>
+                            </div>
+                            ${renderInlineBadge("Context, not permission", "blocked")}
+                        </div>
+                        <div class="summary-strip compact">
+                            ${renderMetric("Packets", model.market_context?.packet_count || 0)}
+                            ${renderMetric("Ready", model.market_context?.context_ready_count || 0)}
+                            ${renderMetric("Held", model.market_context?.hold_for_context_count || 0)}
+                            ${renderMetric("Avg quality", model.market_context?.average_source_quality_score || 0)}
+                            ${renderMetric("Avg trust", model.market_context?.average_trust_score || 0)}
+                            ${renderMetric("Yahoo", model.market_context?.yahoo_finance_status || "not exported")}
+                            ${renderMetric("TradingView", model.market_context?.tradingview_mcp_status || "not exported")}
+                        </div>
+                        <p>${htmlText(model.market_context?.boundary, "Market context is read-only and cannot create candidates or orders.")}</p>
+                        <div class="reasoning-evidence-grid">${marketContextHtml}</div>
                     </section>
                     <section class="reasoning-section">
                         <div class="reasoning-section-head">
