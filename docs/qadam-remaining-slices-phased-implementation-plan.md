@@ -134,6 +134,19 @@ Acceptance:
 - The dashboard can explain why Qadam did or did not trade today.
 - PaperOps validation remains green with `live_capital_enabled=false`.
 
+Implementation status, 2026-06-03:
+
+- RS-0 is implemented through
+  `orchestrator/paper_authority_reconciliation.py` and
+  `scripts/check_paper_authority_reconciliation.py`.
+- The cockpit status contract now exposes `paper_authority_reconciliation` as a
+  public-safe summary of paper authority, current blockers, stale historical
+  blockers, next required action, and the 429/idempotent paper-retry policy.
+- Current runtime classification is `paper_authorized_blocked_operational`:
+  Qadam is authorized for guarded Alpaca paper trading, live capital remains
+  disabled, and the current blockers are operational or opportunity-gate
+  blockers rather than safety contradictions.
+
 ## 5. Phase RS-1 - Role Contracts And Execution Separation
 
 Objective: make each Qadam role's authority explicit and testable.
@@ -439,7 +452,7 @@ Exit state:
 
 Implement in this order:
 
-1. RS-0 Authority Reconciliation And Blocker Hygiene.
+1. RS-0 Authority Reconciliation And Blocker Hygiene. Implemented 2026-06-03.
 2. RS-2 Research Goal Lifecycle Hardening.
 3. RS-3 Market Context Packet And Source Quality.
 4. RS-5 Guarded Paper Autonomy.
@@ -450,5 +463,7 @@ Implement in this order:
 9. RS-9 Learning Loop once closed paper-trade postmortems are reliable.
 10. RS-10 Final Paper Autonomy Certification.
 
-The next implementation slice should be RS-0. It is the highest-leverage slice
-because it removes stale contradictions before adding more capability.
+The next implementation slice after RS-0 should be RS-2/RS-3 together: harden
+the Research Goal lifecycle and attach richer market context so the existing
+paper authority can act on better qualified setups without weakening safety
+gates.

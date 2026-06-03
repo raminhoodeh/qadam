@@ -801,7 +801,10 @@ def validate_paperops_active_paper_trading_automation(
     for key in ("live_endpoint_called_count", "unsafe_write_counter_total"):
         if _int(artifact.get(key)) != 0:
             errors.append(f"paperops_active_automation_unsafe_counter_nonzero:{key}")
-    if artifact.get("automation_active") is not True:
+    if (
+        artifact.get("automation_active") is not True
+        and artifact.get("status") in PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES
+    ):
         errors.append("paperops_active_automation_scheduler_inactive")
     if artifact.get("automation_hourly") is not True:
         errors.append("paperops_active_automation_scheduler_not_hourly")

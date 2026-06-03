@@ -24,6 +24,10 @@ from orchestrator.release_contract import PAPER_ACCOUNT_BALANCE_GBP, PAPER_ACCOU
 from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E402
     PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
 )
+from orchestrator.paper_authority_reconciliation import (  # noqa: E402
+    PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS,
+    validate_paper_authority_reconciliation,
+)
 from orchestrator.paperops_cockpit_notification_upgrade import (  # noqa: E402
     PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_REQUIRED_FIELDS,
 )
@@ -3179,6 +3183,7 @@ def main() -> int:
         "paperops_active_paper_trading_automation",
         {},
     )
+    paper_authority = payload.get("paper_authority_reconciliation", {})
     paperops_qualified_setup_production = payload.get(
         "paperops_qualified_setup_production",
         {},
@@ -3510,6 +3515,26 @@ def main() -> int:
     print(
         "cockpit_status_paperops_active_automation_idempotency_ledger_active="
         f"{paperops_active_automation.get('paperops2_idempotency_ledger_active')}"
+    )
+    print(
+        "cockpit_status_paper_authority_reconciliation_status="
+        f"{paper_authority.get('status')}"
+    )
+    print(
+        "cockpit_status_paper_authority_reconciliation_paper_authorized="
+        f"{paper_authority.get('paper_authorized')}"
+    )
+    print(
+        "cockpit_status_paper_authority_reconciliation_full_potential_state="
+        f"{paper_authority.get('full_potential_state')}"
+    )
+    print(
+        "cockpit_status_paper_authority_reconciliation_current_blockers="
+        f"{','.join(paper_authority.get('current_blockers', []) or [])}"
+    )
+    print(
+        "cockpit_status_paper_authority_reconciliation_safety_blockers="
+        f"{','.join(paper_authority.get('safety_blockers', []) or [])}"
     )
     print(
         "cockpit_status_paperops_first_week_mandate_status="
@@ -7779,8 +7804,21 @@ def main() -> int:
             + ",".join(missing_active_automation_fields)
         )
         return 1
-    if paperops_active_automation.get("status") not in (
-        PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES
+    paper_authority_allows_paused_active_runner = (
+        paper_authority.get("status") == "paper_authorized_blocked_operational"
+        and paper_authority.get("paper_authorized") is True
+        and paper_authority.get("live_capital_enabled") is False
+        and paper_authority.get("live_capital_blocked") is True
+        and "automation_not_active"
+        in (paper_authority.get("operational_blockers") or [])
+        and not (paper_authority.get("safety_blockers") or [])
+        and paperops_active_automation.get("status")
+        == "blocked_active_automation_safety_or_binding"
+    )
+    if (
+        paperops_active_automation.get("status")
+        not in PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES
+        and not paper_authority_allows_paused_active_runner
     ):
         print("cockpit_status_paperops_active_automation_not_ready=true")
         return 1
@@ -7802,16 +7840,21 @@ def main() -> int:
     if (
         paperops_active_automation.get("active_paper_trading_automation_enabled")
         is not True
+        and not paper_authority_allows_paused_active_runner
     ):
         print("cockpit_status_paperops_active_automation_enabled_false=true")
         return 1
     if (
         paperops_active_automation.get("active_paper_trading_automation_effective")
         is not True
+        and not paper_authority_allows_paused_active_runner
     ):
         print("cockpit_status_paperops_active_automation_effective_false=true")
         return 1
-    if paperops_active_automation.get("automation_active") is not True:
+    if (
+        paperops_active_automation.get("automation_active") is not True
+        and not paper_authority_allows_paused_active_runner
+    ):
         print("cockpit_status_paperops_active_automation_scheduler_inactive=true")
         return 1
     if paperops_active_automation.get("automation_prompt_active_trade_bound") is not True:
@@ -7825,6 +7868,7 @@ def main() -> int:
             "unattended_paper_execution_delegation_enabled"
         )
         is not True
+        and not paper_authority_allows_paused_active_runner
     ):
         print("cockpit_status_paperops_active_automation_unattended_not_enabled=true")
         return 1
@@ -7861,6 +7905,54 @@ def main() -> int:
         or "cannot enable live capital" not in active_automation_boundary
     ):
         print("cockpit_status_paperops_active_automation_boundary_weak=true")
+        return 1
+    missing_paper_authority_fields = sorted(
+        set(PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS) - set(paper_authority)
+    )
+    if missing_paper_authority_fields:
+        print(
+            "cockpit_status_paper_authority_reconciliation_fields_missing="
+            + ",".join(missing_paper_authority_fields)
+        )
+        return 1
+    if paper_authority.get("validation_error_count") != 0:
+        print("cockpit_status_paper_authority_reconciliation_validation_errors=true")
+        return 1
+    if validate_paper_authority_reconciliation(paper_authority):
+        print("cockpit_status_paper_authority_reconciliation_invalid=true")
+        return 1
+    if paper_authority.get("public_safe") is not True:
+        print("cockpit_status_paper_authority_reconciliation_not_public_safe=true")
+        return 1
+    if paper_authority.get("paper_submission_transport") != "paperops_guarded_alpaca_paper":
+        print("cockpit_status_paper_authority_reconciliation_transport_invalid=true")
+        return 1
+    if paper_authority.get("live_capital_enabled") is not False:
+        print("cockpit_status_paper_authority_reconciliation_live_capital_enabled=true")
+        return 1
+    if paper_authority.get("live_capital_blocked") is not True:
+        print("cockpit_status_paper_authority_reconciliation_live_capital_not_blocked=true")
+        return 1
+    if paper_authority.get("status") not in {
+        "blocked_by_safety",
+        "paper_authorized_blocked_operational",
+        "paper_authorized_waiting_for_setup",
+        "paper_authorized_ready_to_submit",
+        "paper_authorized_ready_to_poll",
+        "paper_authorized_ready_to_exit",
+        "paper_authorized_idle",
+    }:
+        print("cockpit_status_paper_authority_reconciliation_status_invalid=true")
+        return 1
+    if paper_authority.get("paper_submit_currently_allowed") is True and (
+        paperops_active_automation.get("paper_submit_step_allowed") is not True
+    ):
+        print("cockpit_status_paper_authority_reconciliation_submit_invented=true")
+        return 1
+    if paper_authority.get("status") == "paper_authorized_blocked_operational" and (
+        "automation_not_active" not in (paper_authority.get("operational_blockers") or [])
+    ):
+        print("cockpit_status_paper_authority_reconciliation_automation_hidden=true")
         return 1
     missing_qualified_setup_fields = sorted(
         PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS

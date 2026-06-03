@@ -2072,7 +2072,17 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
 17. Keep broker reconciliation read-only except for the explicit Alpaca paper-submit transport: it must define broker echo checks, idempotency, prewrite event logging, duplicate-order guards, post-submit reconciliation, and postmortem links while keeping live capital at zero.
 18. Keep the paper-submit receipt contract guarded: it can produce a simulated or real Alpaca paper receipt only after broker reconciliation prerequisites pass, with no live-capital route and no new order intent on retry.
 19. Keep `scripts/check_paperops_opportunity_scan_cadence.py` green before changing the paper-trading cadence. The opportunity scan target is every 20 minutes for candidate refresh only; the existing hourly PaperOps runner remains the guarded submission transport until a later explicit local scheduler is installed and audited.
-20. Start the remaining-slices rollout with RS-0 in `docs/qadam-remaining-slices-phased-implementation-plan.md`: authority reconciliation and blocker hygiene.
+20. RS-0 authority reconciliation and blocker hygiene is implemented through
+    `orchestrator/paper_authority_reconciliation.py`,
+    `scripts/check_paper_authority_reconciliation.py`, cockpit status, and the
+    public dashboard safety strip. The current runtime can now distinguish
+    paper authority from current actionability: Qadam is authorized for guarded
+    Alpaca paper trading with live capital disabled, while paused automation,
+    no fresh eligible setup, or paper lifecycle gates are surfaced as
+    operational/opportunity blockers instead of stale safety contradictions.
+21. Continue the remaining-slices rollout with RS-2/RS-3: harden Research Goal
+    lifecycle scoring and attach richer market context packets before deepening
+    guarded paper autonomy.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

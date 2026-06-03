@@ -56,6 +56,11 @@ from orchestrator.paperops_active_paper_trading_automation import (
     PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES,
     paperops_active_paper_trading_automation_public_status,
 )
+from orchestrator.paper_authority_reconciliation import (
+    PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS,
+    build_paper_authority_reconciliation,
+    validate_paper_authority_reconciliation,
+)
 from orchestrator.paperops_paper_exit_path import paperops_paper_exit_path_public_status
 from orchestrator.paperops_notification_review import (
     paperops_notification_review_public_status,
@@ -6674,6 +6679,11 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         ],
         "boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
     }
+    payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
+        payload,
+        settings=settings,
+        generated_at=generated_at,
+    )
     payload["phase5_system_map"] = phase5_system_map_public_status(
         payload,
         settings=settings,
@@ -6751,6 +6761,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_cockpit_notification_upgrade",
         "paper_live_certification",
         "paperops_active_paper_trading_automation",
+        "paper_authority_reconciliation",
         "paperops_qualified_setup_production",
         "paperops_auto_approval_staged_order",
         "yahoo_finance",
@@ -7608,6 +7619,47 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in active_boundary:
             raise ValueError("PaperOps active paper automation boundary is weak")
+    paper_authority = payload["paper_authority_reconciliation"]
+    missing_paper_authority = sorted(
+        set(PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS) - set(paper_authority)
+    )
+    if missing_paper_authority:
+        raise ValueError(
+            "Paper authority reconciliation missing public fields: "
+            f"{missing_paper_authority}"
+        )
+    if paper_authority.get("validation_error_count") != 0:
+        raise ValueError("Paper authority reconciliation validation errors present")
+    if validate_paper_authority_reconciliation(paper_authority):
+        raise ValueError("Paper authority reconciliation validation failed")
+    if paper_authority.get("public_safe") is not True:
+        raise ValueError("Paper authority reconciliation must be public-safe")
+    if paper_authority.get("paper_submission_transport") != "paperops_guarded_alpaca_paper":
+        raise ValueError("Paper authority reconciliation transport is invalid")
+    if paper_authority.get("live_capital_enabled") is not False:
+        raise ValueError("Paper authority reconciliation enabled live capital")
+    if paper_authority.get("live_capital_blocked") is not True:
+        raise ValueError("Paper authority reconciliation did not block live capital")
+    if paper_authority.get("status") not in {
+        "blocked_by_safety",
+        "paper_authorized_blocked_operational",
+        "paper_authorized_waiting_for_setup",
+        "paper_authorized_ready_to_submit",
+        "paper_authorized_ready_to_poll",
+        "paper_authorized_ready_to_exit",
+        "paper_authorized_idle",
+    }:
+        raise ValueError("Paper authority reconciliation status is invalid")
+    if (
+        paper_authority.get("status") == "paper_authorized_blocked_operational"
+        and "automation_not_active"
+        not in paper_authority.get("operational_blockers", [])
+    ):
+        raise ValueError("Paper authority reconciliation hid inactive automation")
+    if paper_authority.get("paper_submit_currently_allowed") is True and (
+        paperops_active_automation.get("paper_submit_step_allowed") is not True
+    ):
+        raise ValueError("Paper authority reconciliation invented paper submit authority")
     paperops_qualified_setup = payload["paperops_qualified_setup_production"]
     missing_qualified_setup = sorted(
         PAPEROPS_QUALIFIED_SETUP_PRODUCTION_PUBLIC_REQUIRED_FIELDS
