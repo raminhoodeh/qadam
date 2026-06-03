@@ -3362,7 +3362,7 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         headline: tone === "blocked"
             ? "Review safety before reading the dashboard"
             : authorityHeadline,
-        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off.`,
+        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off. Dashboard cannot place orders.`,
         authority_label: paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
         authority_tone: paperAuthorityTone,
         authority_status: paperAuthorityStatus,
