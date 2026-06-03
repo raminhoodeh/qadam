@@ -91,6 +91,9 @@ def main() -> int:
             if "no broker route exists" not in intent.boundary.lower():
                 print(f"trade_intent_record_boundary_weak={intent.intent_id}")
                 return 1
+            if not str(intent.research_goal_id or "").strip():
+                print(f"trade_intent_research_goal_id_missing={intent.intent_id}")
+                return 1
             if not REQUIRED_AKBER_FIELDS.issubset(intent.akber_filter):
                 print(f"trade_intent_akber_filter_incomplete={intent.intent_id}")
                 return 1

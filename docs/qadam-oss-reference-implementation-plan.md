@@ -171,6 +171,19 @@ Implementation status, 2026-06-02:
 - `landing-page-repo/dashboard.js` now renders Research Goals as the pre-hypothesis queue inside the Reasoning workspace.
 - Verified locally: `scripts/check_research_goal_lifecycle.py`, `scripts/check_phase2_durable_replay_cycle.py`, `scripts/export_cockpit_status.py`, and `scripts/check_cockpit_status.py` pass. PaperOps is exposed truthfully as safe-idle/no-current-qualified-setup; Qadam waits for a real qualified setup rather than forcing a trade to satisfy the later PT-4/PT-5/PT-6/PT-7/30-day chain.
 
+Implementation status, 2026-06-03:
+
+- RS-2 hardening is active. Research Goals now carry deterministic quorum,
+  market-confirmation, worldview, Akber-stage, contradiction, freshness,
+  risk-readiness, priority, aging, expiry, stale/expired, close-reason, and
+  candidate-ready blocker fields.
+- The Phase 2 shadow cycle re-hardens goals and exports RS-2 counts. The
+  dashboard shows the scoring and blocker state in the Reasoning workspace.
+- Candidate and blocked trade intents must carry Research Goal lineage, while
+  Research Goals remain pre-signal objects with no authority to create trade
+  candidates, approve risk, stage paper orders, call Alpaca, submit quantum
+  hardware jobs, or enable live capital.
+
 Build a new research-goal contract with these fields:
 
 - `goal_id`

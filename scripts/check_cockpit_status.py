@@ -120,10 +120,17 @@ RESEARCH_GOAL_REQUIRED_FIELDS = {
     "akber_stage",
     "boundary",
     "broker_write_allowed",
+    "candidate_ready_blockers",
+    "close_reason",
+    "contradiction_score",
     "execution_allowed",
+    "expired",
+    "expires_at",
     "goal_id",
     "hypothesis",
+    "latency_freshness_score",
     "live_capital_enabled",
+    "market_confirmation_score",
     "market_channel",
     "minimum_source_quorum",
     "missing_corroboration",
@@ -131,12 +138,20 @@ RESEARCH_GOAL_REQUIRED_FIELDS = {
     "origin",
     "owner_agent",
     "paper_order_allowed",
+    "priority_label",
+    "priority_score",
     "required_sources",
+    "research_goal_hardening_version",
     "risk_handoff_allowed",
+    "risk_readiness_score",
+    "source_quorum_score",
+    "stale",
     "status",
+    "stored_status",
     "trade_candidate_creation_allowed",
     "updated_at",
     "watched_instruments",
+    "worldview_relevance_score",
     "worldview_lens",
 }
 
@@ -1813,6 +1828,7 @@ TRADE_INTENT_REQUIRED_FIELDS = {
     "price_gap",
     "probability_estimate",
     "proposed_entry",
+    "research_goal_id",
     "risk_checks",
     "risk_size_gbp",
     "risk_size_pct",
@@ -9369,6 +9385,18 @@ def main() -> int:
     if "pre-signal research state" not in research_goals.get("boundary", ""):
         print("cockpit_status_research_goals_boundary_weak=true")
         return 1
+    if research_goals.get("hardening_version") != "rs2_2026_06_03":
+        print("cockpit_status_research_goal_hardening_version_missing=true")
+        return 1
+    for count_field in (
+        "candidate_ready_goal_count",
+        "closed_no_trade_goal_count",
+        "stale_goal_count",
+        "expired_goal_count",
+    ):
+        if int(research_goals.get(count_field, 0) or 0) < 0:
+            print(f"cockpit_status_research_goal_count_invalid={count_field}")
+            return 1
     if not isinstance(cognition.get("research_goal_records"), list):
         print("cockpit_status_research_goal_records_missing=true")
         return 1
@@ -9382,6 +9410,33 @@ def main() -> int:
             return 1
         if goal.get("minimum_source_quorum", 0) < 2:
             print("cockpit_status_research_goal_source_quorum_weak=true")
+            return 1
+        if goal.get("research_goal_hardening_version") != "rs2_2026_06_03":
+            print("cockpit_status_research_goal_record_hardening_version_missing=true")
+            return 1
+        for score_field in (
+            "source_quorum_score",
+            "market_confirmation_score",
+            "worldview_relevance_score",
+            "akber_stage_score",
+            "contradiction_score",
+            "latency_freshness_score",
+            "risk_readiness_score",
+            "priority_score",
+        ):
+            try:
+                score = float(goal.get(score_field))
+            except (TypeError, ValueError):
+                print(f"cockpit_status_research_goal_score_invalid={score_field}")
+                return 1
+            if not 0 <= score <= 1:
+                print(f"cockpit_status_research_goal_score_out_of_range={score_field}")
+                return 1
+        if goal.get("status") == "candidate_ready" and goal.get("candidate_ready_blockers"):
+            print("cockpit_status_research_goal_candidate_ready_has_blockers=true")
+            return 1
+        if goal.get("status") == "closed_no_trade" and not goal.get("close_reason"):
+            print("cockpit_status_research_goal_closed_no_trade_reason_missing=true")
             return 1
         for authority_field in (
             "execution_allowed",
@@ -10144,6 +10199,9 @@ def main() -> int:
             return 1
         if "no broker route exists" not in intent.get("boundary", "").lower():
             print("cockpit_status_trade_intent_boundary_weak=true")
+            return 1
+        if not str(intent.get("research_goal_id") or "").strip():
+            print("cockpit_status_trade_intent_research_goal_id_missing=true")
             return 1
         if not intent.get("akber_filter"):
             print("cockpit_status_trade_intent_akber_filter_missing=true")

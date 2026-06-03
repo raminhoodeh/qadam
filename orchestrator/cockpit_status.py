@@ -2171,9 +2171,16 @@ def _safe_phase2_shadow_cycle(settings: Settings) -> dict[str, Any]:
         "strategy_lead_risk_handoff_allowed": False,
         "strategy_lead_trade_candidate_allowed": False,
         "research_goal_status": "not_run",
+        "research_goal_hardening_version": "not_run",
         "research_goal_record_count": 0,
         "research_goal_active_count": 0,
         "research_goal_created_or_updated_count": 0,
+        "research_goal_candidate_ready_count": 0,
+        "research_goal_closed_no_trade_count": 0,
+        "research_goal_stale_goal_count": 0,
+        "research_goal_expired_goal_count": 0,
+        "research_goal_average_priority_score": 0.0,
+        "research_goal_by_priority_label": {},
         "research_goal_by_status": {},
         "research_goal_by_market_channel": {},
         "research_goal_recent_goals": [],
@@ -2224,11 +2231,24 @@ def _safe_phase2_shadow_cycle(settings: Settings) -> dict[str, Any]:
         "strategy_lead_risk_handoff_allowed": bool(report.get("strategy_lead_risk_handoff_allowed")),
         "strategy_lead_trade_candidate_allowed": bool(report.get("strategy_lead_trade_candidate_allowed")),
         "research_goal_status": report.get("research_goal_status", "unknown"),
+        "research_goal_hardening_version": report.get("research_goal_hardening_version", "unknown"),
         "research_goal_record_count": int(report.get("research_goal_record_count", 0) or 0),
         "research_goal_active_count": int(report.get("research_goal_active_count", 0) or 0),
         "research_goal_created_or_updated_count": int(
             report.get("research_goal_created_or_updated_count", 0) or 0
         ),
+        "research_goal_candidate_ready_count": int(
+            report.get("research_goal_candidate_ready_count", 0) or 0
+        ),
+        "research_goal_closed_no_trade_count": int(
+            report.get("research_goal_closed_no_trade_count", 0) or 0
+        ),
+        "research_goal_stale_goal_count": int(report.get("research_goal_stale_goal_count", 0) or 0),
+        "research_goal_expired_goal_count": int(report.get("research_goal_expired_goal_count", 0) or 0),
+        "research_goal_average_priority_score": float(
+            report.get("research_goal_average_priority_score", 0.0) or 0.0
+        ),
+        "research_goal_by_priority_label": report.get("research_goal_by_priority_label", {}),
         "research_goal_by_status": report.get("research_goal_by_status", {}),
         "research_goal_by_market_channel": report.get("research_goal_by_market_channel", {}),
         "research_goal_recent_goals": report.get("research_goal_recent_goals", []),
@@ -3289,6 +3309,7 @@ def _safe_trade_item(intent: Any) -> dict[str, Any]:
         "paper_order_allowed": intent.paper_order_allowed,
         "source_signal_id": intent.source_signal_id,
         "source_type": intent.source_type,
+        "research_goal_id": intent.research_goal_id,
         "akber_filter": intent.akber_filter,
         "risk_checks": intent.risk_checks,
         "tags": list(intent.tags),

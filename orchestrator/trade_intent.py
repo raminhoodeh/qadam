@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -74,6 +74,7 @@ class TradeIntent:
     created_at: str
     updated_at: str
     boundary: str
+    research_goal_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -191,6 +192,7 @@ class TradeIntentStore:
         paper_order_allowed: bool = False,
         source_signal_id: str | None = None,
         source_type: str = "manual_or_local",
+        research_goal_id: str | None = None,
         akber_filter: dict[str, str] | None = None,
         risk_checks: dict[str, str] | None = None,
         tags: tuple[str, ...] = (),
@@ -229,6 +231,7 @@ class TradeIntentStore:
             created_at=created_at,
             updated_at=created_at,
             boundary=boundary,
+            research_goal_id=research_goal_id,
         )
         return self.add_intent(intent, log_event=log_event)
 
@@ -245,6 +248,7 @@ class TradeIntentStore:
                 try:
                     payload = json.loads(stripped)
                     payload["tags"] = tuple(payload.get("tags", ()))
+                    payload.setdefault("research_goal_id", None)
                     intents.append(TradeIntent(**payload))
                 except (TypeError, json.JSONDecodeError) as exc:
                     raise ValueError(f"invalid trade intent line {line_number} in {self.path}") from exc
@@ -252,7 +256,10 @@ class TradeIntentStore:
             intents = intents[-limit:]
         for intent in intents:
             validate_trade_intent(intent)
-        return tuple(intents)
+        latest_by_id: dict[str, TradeIntent] = {}
+        for intent in intents:
+            latest_by_id[intent.intent_id] = intent
+        return tuple(latest_by_id.values())
 
     def health(self) -> dict[str, Any]:
         try:
@@ -277,8 +284,22 @@ class TradeIntentStore:
 
 def ensure_d5_sample_trade_intents(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
+    from orchestrator.research_goal import ensure_sample_research_goals, research_goal_summary
+
+    ensure_sample_research_goals(settings=settings)
+    research_goals = research_goal_summary(settings=settings, limit=12).get("recent_goals", [])
+
+    def _goal_for_channel(channel: str) -> str | None:
+        for goal in reversed(research_goals):
+            if goal.get("market_channel") == channel:
+                return str(goal.get("goal_id") or "") or None
+        return None
+
+    energy_research_goal_id = _goal_for_channel("energy_transport")
+    semiconductor_research_goal_id = _goal_for_channel("semiconductors")
     store = TradeIntentStore(settings=settings)
-    existing_ids = {intent.intent_id for intent in store.read_intents()}
+    existing_by_id = {intent.intent_id: intent for intent in store.read_intents()}
+    existing_ids = set(existing_by_id)
     created: list[str] = []
     boundary = "D5 local test record only. Not an order, not advice, and no broker route exists."
 
@@ -309,6 +330,7 @@ def ensure_d5_sample_trade_intents(settings: Settings | None = None) -> dict[str
             risk_state="not_reviewed_by_risk_agent",
             source_signal_id="d5-local-fixture",
             source_type="d5_contract_fixture",
+            research_goal_id=energy_research_goal_id,
             akber_filter={
                 "low_volatility": "pending_iv_check",
                 "options_distribution_gap": "pending_black_scholes_gap",
@@ -328,6 +350,15 @@ def ensure_d5_sample_trade_intents(settings: Settings | None = None) -> dict[str
             boundary=boundary,
         )
         created.append("d5-sample-candidate-crude-oil")
+    elif energy_research_goal_id and not existing_by_id["d5-sample-candidate-crude-oil"].research_goal_id:
+        store.add_intent(
+            replace(
+                existing_by_id["d5-sample-candidate-crude-oil"],
+                research_goal_id=energy_research_goal_id,
+                updated_at=_now(),
+            ),
+            log_event=False,
+        )
 
     if "d5-sample-blocked-semiconductor" not in existing_ids:
         store.add(
@@ -354,6 +385,7 @@ def ensure_d5_sample_trade_intents(settings: Settings | None = None) -> dict[str
             blocked_reason="insufficient_independent_corroboration",
             source_signal_id="d5-local-fixture",
             source_type="d5_contract_fixture",
+            research_goal_id=semiconductor_research_goal_id,
             akber_filter={
                 "low_volatility": "not_checked",
                 "options_distribution_gap": "missing",
@@ -373,6 +405,15 @@ def ensure_d5_sample_trade_intents(settings: Settings | None = None) -> dict[str
             boundary=boundary,
         )
         created.append("d5-sample-blocked-semiconductor")
+    elif semiconductor_research_goal_id and not existing_by_id["d5-sample-blocked-semiconductor"].research_goal_id:
+        store.add_intent(
+            replace(
+                existing_by_id["d5-sample-blocked-semiconductor"],
+                research_goal_id=semiconductor_research_goal_id,
+                updated_at=_now(),
+            ),
+            log_event=False,
+        )
 
     intents = store.read_intents()
     return {

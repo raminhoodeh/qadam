@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260603-rs0-paper-authority"
+        "20260603-rs2-research-goals"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

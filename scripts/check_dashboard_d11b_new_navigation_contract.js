@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260603-rs0-paper-authority",
-    "/dashboard.js?v=20260603-rs0-paper-authority",
+    "/auth.css?v=20260603-rs2-research-goals",
+    "/dashboard.js?v=20260603-rs2-research-goals",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"

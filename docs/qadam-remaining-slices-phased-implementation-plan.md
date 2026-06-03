@@ -204,6 +204,33 @@ Acceptance:
 - A goal can become `candidate_ready` only through evidence and scoring.
 - A goal can close as `no_trade` without being treated as failure.
 
+Implementation status, 2026-06-03:
+
+- Implemented in `orchestrator/research_goal.py` with
+  `rs2_2026_06_03` hardening fields for quorum, market confirmation,
+  worldview relevance, Akber-stage fit, contradiction pressure,
+  freshness, risk readiness, priority, stale/expired aging, expiry, and
+  candidate-ready blockers.
+- `ResearchGoalStore.harden_lifecycle()` appends public-safe hardened
+  snapshots without mutating old history and closes expired stale goals as
+  `closed_no_trade` with a close reason.
+- `orchestrator/phase2_shadow_cycle.py` now re-hardens goals during sample,
+  live-source, and durable-replay cycles and exposes RS-2 counters in the
+  standard report.
+- `orchestrator/trade_intent.py` now preserves Research Goal lineage for
+  candidate and blocked trade intents. `scripts/check_trade_intent.py` and
+  `scripts/check_cockpit_status.py` reject visible candidate/blocked intents
+  that lack a Research Goal reference.
+- `landing-page-repo/dashboard.js` renders RS-2 score, priority, blocker,
+  stale, expiry, and close-reason details in the Reasoning workspace.
+
+Current result:
+
+- RS-2 removes the previous ambiguity between watching, research, candidate,
+  and paper-order lifecycle state. It does not create unrestricted trading
+  authority. Guarded Alpaca paper trades remain allowed only through PaperOps
+  after the later paper-only gates pass.
+
 ## 7. Phase RS-3 - Market Context Packet And Source Quality
 
 Objective: give every trading decision a consistent market/evidence context.

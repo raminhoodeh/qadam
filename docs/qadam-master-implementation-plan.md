@@ -465,9 +465,10 @@ Current implementation start:
 - Local Research Analyst inference contract exists: `scripts/check_local_research_analyst.py` validates a dry shadow assessment by default, and `--live` calls LM Studio `/chat/completions` only when the local server is reachable.
 - Local Research Analyst outputs are stored in `data/runtime/local_research_assessments.jsonl` as shadow-only compression records with `execution_allowed=false` and `paper_order_allowed=false`.
 - The OR-2 Research Goal lifecycle is now implemented as the pre-hypothesis layer in `orchestrator/research_goal.py`: source observations create/update durable JSONL goals with hypothesis, market channel, watched instruments, required sources, minimum source quorum, worldview lens, Akber stage, missing corroboration, owner agent, next handoff, and explicit zero authority for trade candidates, risk, paper orders, broker writes, quantum hardware submission, and live capital.
-- `scripts/check_research_goal_lifecycle.py` validates the Research Goal lifecycle, sample seeding, source-quorum requirements, public-safe summaries, and zero authority counters.
+- RS-2 Research Goal hardening is implemented: each goal now carries source quorum, market confirmation, worldview relevance, Akber-stage, contradiction, latency/freshness, risk-readiness, priority, aging, expiry, stale/expired, close reason, and candidate-ready blocker fields. `candidate_ready` requires a clean evidence/scoring path; stale goals can close as `closed_no_trade`; and candidate/blocked trade intents must carry Research Goal lineage without giving Research Goals execution authority.
+- `scripts/check_research_goal_lifecycle.py` validates the Research Goal lifecycle, sample seeding, source-quorum requirements, public-safe summaries, RS-2 scoring/aging fields, candidate-ready/closed-no-trade rules, and zero authority counters.
 - `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` now runs the first deeper Phase 2 loop: live read-only observations from available sources are queued into Research Analyst shadow packets, deterministic shadow triage writes non-executable signals, local Gemma compresses the queue, the read-only Alpaca paper-account mirror is attached as account context, and a Strategy Lead shadow handoff packet is written with broker/risk execution blocked.
-- `scripts/run_phase2_shadow_cycle.py --durable-replay` now runs the durable Phase 2 bridge: recent read-only `source_observation` rows from local Postgres/Timescale are replayed into Research Goal records, Research Analyst packets, and the same shadow intelligence, Signal Integrity, Risk Agent, Execution Policy, disabled staged order, broker reconciliation, dry-run receipt, paper-account context, and Strategy Lead handoff chain with all authority counters locked at zero.
+- `scripts/run_phase2_shadow_cycle.py --durable-replay` now runs the durable Phase 2 bridge: recent read-only `source_observation` rows from local Postgres/Timescale are replayed into hardened Research Goal records, Research Analyst packets, and the same shadow intelligence, Signal Integrity, Risk Agent, Execution Policy, disabled staged order, broker reconciliation, dry-run receipt, paper-account context, and Strategy Lead handoff chain with all authority counters locked at zero.
 - `scripts/check_phase2_durable_replay_cycle.py` validates that the durable Phase 2 bridge is replayable, public-safe, source-complete for the default Phase 2 source set, and non-executable: durable observations can create/update Research Goals but cannot create trade candidates, paper orders, broker writes, or live-capital access.
 - Strategy Lead shadow packets now carry sanitized source/replay context, Research Goal lifecycle context, and a challenge-only strategy review: replay mode, source posture, evidence pressure, queued packet count, research-goal count, required challenge questions, paper context status, and explicit zero authority for risk handoff, trade-candidate creation, orders, broker writes, and live capital.
 - `scripts/check_strategy_lead_durable_context.py` validates that the Strategy Lead consumes durable replay context from Timescale and remains non-executable.
@@ -2080,9 +2081,15 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     Alpaca paper trading with live capital disabled, while paused automation,
     no fresh eligible setup, or paper lifecycle gates are surfaced as
     operational/opportunity blockers instead of stale safety contradictions.
-21. Continue the remaining-slices rollout with RS-2/RS-3: harden Research Goal
-    lifecycle scoring and attach richer market context packets before deepening
-    guarded paper autonomy.
+21. RS-2 Research Goal hardening is implemented. Keep
+    `scripts/check_research_goal_lifecycle.py`, `scripts/run_phase2_shadow_cycle.py
+    --durable-replay`, `scripts/check_phase2_durable_replay_cycle.py`, and
+    `scripts/check_cockpit_status.py` green so every trade candidate keeps
+    Research Goal lineage and no pre-signal object gains broker authority.
+22. Continue the remaining-slices rollout with RS-3: attach richer market
+    context packets, source-quality posture, Yahoo supplemental confirmation,
+    TradingView technical context when available, and Alpaca paper-account
+    context before deepening guarded paper autonomy.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

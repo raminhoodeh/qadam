@@ -139,8 +139,8 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260603-rs0-paper-authority",
-        "/dashboard.js?v=20260603-rs0-paper-authority"
+        "/auth.css?v=20260603-rs2-research-goals",
+        "/dashboard.js?v=20260603-rs2-research-goals"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");

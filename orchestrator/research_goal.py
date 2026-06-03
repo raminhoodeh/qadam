@@ -12,7 +12,7 @@ import json
 import re
 from collections import Counter
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +20,10 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 
 RESEARCH_GOAL_SCHEMA_VERSION = 1
+RESEARCH_GOAL_HARDENING_VERSION = "rs2_2026_06_03"
 RESEARCH_GOAL_RUNTIME_ARTIFACT = "research_goals.jsonl"
+RESEARCH_GOAL_STALE_AFTER_HOURS = 72
+RESEARCH_GOAL_EXPIRE_AFTER_HOURS = 168
 
 RESEARCH_GOAL_STATUSES = {
     "watching",
@@ -29,6 +32,7 @@ RESEARCH_GOAL_STATUSES = {
     "strategy_review",
     "blocked",
     "candidate_ready",
+    "closed_no_trade",
     "closed",
 }
 
@@ -80,6 +84,21 @@ class ResearchGoal:
     invalidation_conditions: tuple[str, ...]
     owner_agent: str
     next_handoff: str
+    research_goal_hardening_version: str
+    source_quorum_score: float
+    market_confirmation_score: float
+    worldview_relevance_score: float
+    akber_stage_score: float
+    contradiction_score: float
+    latency_freshness_score: float
+    risk_readiness_score: float
+    priority_score: float
+    priority_label: str
+    candidate_ready_blockers: tuple[str, ...]
+    expires_at: str
+    stale: bool
+    expired: bool
+    close_reason: str
     execution_allowed: bool
     paper_order_allowed: bool
     trade_candidate_creation_allowed: bool
@@ -100,6 +119,7 @@ class ResearchGoal:
             "contradictory_evidence",
             "missing_corroboration",
             "invalidation_conditions",
+            "candidate_ready_blockers",
         ):
             payload[key] = list(payload[key])
         return payload
@@ -107,6 +127,23 @@ class ResearchGoal:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _parse_datetime(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _clamp_score(value: float) -> float:
+    return round(max(0.0, min(1.0, float(value))), 3)
 
 
 def _clean_text(value: Any, *, limit: int = 600, fallback: str = "") -> str:
@@ -142,6 +179,15 @@ def _goal_id(*, source_event_refs: tuple[str, ...], hypothesis: str) -> str:
         sort_keys=True,
     )
     return "rg-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
+
+
+def _source_names(source_event_refs: tuple[str, ...]) -> tuple[str, ...]:
+    names = []
+    for ref in source_event_refs:
+        source = str(ref).split(":", 1)[0].replace("durable.", "").strip()
+        if source and source not in names:
+            names.append(source)
+    return tuple(names)
 
 
 def _market_channel(summary: str) -> str:
@@ -205,6 +251,139 @@ def _worldview_lens(channel: str, summary: str) -> str:
     return "private_world_model_prior_only"
 
 
+def _akber_stage_score(stage: str) -> float:
+    lowered = str(stage or "").lower()
+    if "stage_6" in lowered or "approval" in lowered:
+        return 0.9
+    if "stage_5" in lowered or "volume" in lowered:
+        return 0.75
+    if "stage_4" in lowered or "technical" in lowered:
+        return 0.65
+    if "stage_3" in lowered or "distribution" in lowered:
+        return 0.55
+    if "stage_2" in lowered or "volatility" in lowered:
+        return 0.45
+    if "stage_1" in lowered or "catalyst" in lowered:
+        return 0.35
+    return 0.25
+
+
+def _latency_freshness_score(updated_at: Any, *, now: datetime | None = None) -> tuple[float, bool, bool, str]:
+    now_dt = now or datetime.now(timezone.utc)
+    updated = _parse_datetime(updated_at) or now_dt
+    age_hours = max(0.0, (now_dt - updated).total_seconds() / 3600)
+    stale = age_hours >= RESEARCH_GOAL_STALE_AFTER_HOURS
+    expired = age_hours >= RESEARCH_GOAL_EXPIRE_AFTER_HOURS
+    if age_hours <= 6:
+        score = 1.0
+    elif age_hours <= 24:
+        score = 0.75
+    elif age_hours <= RESEARCH_GOAL_STALE_AFTER_HOURS:
+        score = 0.45
+    elif age_hours <= RESEARCH_GOAL_EXPIRE_AFTER_HOURS:
+        score = 0.15
+    else:
+        score = 0.0
+    expires_at = (updated + timedelta(hours=RESEARCH_GOAL_EXPIRE_AFTER_HOURS)).isoformat()
+    return _clamp_score(score), stale, expired, expires_at
+
+
+def research_goal_hardening_fields(payload: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+    """Derive RS-2 scoring, priority, and aging fields for a public-safe goal."""
+
+    refs = _clean_tuple(payload.get("source_event_refs"), limit=8, item_limit=180)
+    source_names = _source_names(refs)
+    minimum_source_quorum = max(2, int(payload.get("minimum_source_quorum", 2) or 2))
+    source_quorum_score = _clamp_score(len(source_names) / minimum_source_quorum)
+    market_confirmation_sources = {
+        "yahoo_finance",
+        "tradingview_mcp",
+        "alpaca",
+        "fred",
+    }
+    source_set = set(source_names)
+    market_confirmation_score = _clamp_score(
+        1.0
+        if source_set.intersection(market_confirmation_sources)
+        else (0.35 if "market_price_confirmation" not in payload.get("missing_corroboration", []) else 0.0)
+    )
+    worldview_lens = str(payload.get("worldview_lens") or "")
+    worldview_relevance_score = _clamp_score(
+        0.8 if worldview_lens and worldview_lens != "private_world_model_prior_only" else 0.45
+    )
+    akber_score = _clamp_score(_akber_stage_score(str(payload.get("akber_stage") or "")))
+    contradiction_count = len(_clean_tuple(payload.get("contradictory_evidence"), limit=12, item_limit=180))
+    contradiction_score = _clamp_score(1.0 - (0.25 * contradiction_count))
+    freshness_score, stale, expired, expires_at = _latency_freshness_score(
+        payload.get("updated_at") or payload.get("created_at"),
+        now=now,
+    )
+    missing = set(_clean_tuple(payload.get("missing_corroboration"), limit=16, item_limit=120))
+    risk_readiness_score = _clamp_score(
+        0.65
+        if "risk_agent_review" not in missing and source_quorum_score >= 1.0 and contradiction_score >= 0.75
+        else 0.0
+    )
+    candidate_ready_blockers = []
+    if source_quorum_score < 1.0:
+        candidate_ready_blockers.append("source_quorum_incomplete")
+    if market_confirmation_score < 0.6:
+        candidate_ready_blockers.append("market_confirmation_missing")
+    if contradiction_score < 0.75:
+        candidate_ready_blockers.append("contradictory_evidence_pressure")
+    if freshness_score <= 0.15:
+        candidate_ready_blockers.append("research_goal_stale_or_expired")
+    if risk_readiness_score < 0.6:
+        candidate_ready_blockers.append("risk_readiness_missing")
+    priority_score = _clamp_score(
+        (source_quorum_score * 0.25)
+        + (market_confirmation_score * 0.2)
+        + (worldview_relevance_score * 0.15)
+        + (akber_score * 0.1)
+        + (contradiction_score * 0.15)
+        + (freshness_score * 0.1)
+        + (risk_readiness_score * 0.05)
+    )
+    close_reason = ""
+    effective_status = str(payload.get("status") or "needs_evidence")
+    if expired:
+        close_reason = "expired_without_candidate_ready_evidence"
+        effective_status = "closed_no_trade"
+    elif contradiction_score <= 0.25:
+        close_reason = "closed_no_trade_due_to_contradictory_evidence"
+        effective_status = "closed_no_trade"
+    elif not candidate_ready_blockers:
+        effective_status = "candidate_ready"
+    if effective_status == "closed_no_trade":
+        priority_label = "closed_no_trade"
+    elif effective_status == "candidate_ready":
+        priority_label = "candidate_ready"
+    elif priority_score >= 0.7:
+        priority_label = "high"
+    elif priority_score >= 0.45:
+        priority_label = "medium"
+    else:
+        priority_label = "low"
+    return {
+        "research_goal_hardening_version": RESEARCH_GOAL_HARDENING_VERSION,
+        "source_quorum_score": source_quorum_score,
+        "market_confirmation_score": market_confirmation_score,
+        "worldview_relevance_score": worldview_relevance_score,
+        "akber_stage_score": akber_score,
+        "contradiction_score": contradiction_score,
+        "latency_freshness_score": freshness_score,
+        "risk_readiness_score": risk_readiness_score,
+        "priority_score": priority_score,
+        "priority_label": priority_label,
+        "candidate_ready_blockers": list(dict.fromkeys(candidate_ready_blockers)),
+        "expires_at": expires_at,
+        "stale": stale,
+        "expired": expired,
+        "close_reason": close_reason,
+        "effective_status": effective_status,
+    }
+
+
 def build_research_goal_from_observation(
     *,
     summary: str,
@@ -236,11 +415,29 @@ def build_research_goal_from_observation(
     )
     goal_id = _goal_id(source_event_refs=refs, hypothesis=hypothesis)
     created_at = str((existing_goal or {}).get("created_at") or observed_at or _now())
+    updated_at = _now()
     status = "needs_evidence" if refs else "watching"
+    hardening = research_goal_hardening_fields(
+        {
+            "status": status,
+            "minimum_source_quorum": 2,
+            "source_event_refs": refs,
+            "missing_corroboration": missing,
+            "contradictory_evidence": _clean_tuple(
+                (existing_goal or {}).get("contradictory_evidence"),
+                limit=8,
+                item_limit=180,
+            ),
+            "worldview_lens": _worldview_lens(channel, safe_summary),
+            "akber_stage": "stage_1_catalyst_identification",
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
+    )
     return ResearchGoal(
         schema_version=RESEARCH_GOAL_SCHEMA_VERSION,
         goal_id=goal_id,
-        status=status,
+        status=hardening["effective_status"],
         origin=origin if origin in RESEARCH_GOAL_ORIGINS else "sample_source",
         hypothesis=hypothesis,
         market_channel=channel,
@@ -265,6 +462,21 @@ def build_research_goal_from_observation(
         ),
         owner_agent="research_analyst",
         next_handoff="local_research_analyst_compression",
+        research_goal_hardening_version=hardening["research_goal_hardening_version"],
+        source_quorum_score=hardening["source_quorum_score"],
+        market_confirmation_score=hardening["market_confirmation_score"],
+        worldview_relevance_score=hardening["worldview_relevance_score"],
+        akber_stage_score=hardening["akber_stage_score"],
+        contradiction_score=hardening["contradiction_score"],
+        latency_freshness_score=hardening["latency_freshness_score"],
+        risk_readiness_score=hardening["risk_readiness_score"],
+        priority_score=hardening["priority_score"],
+        priority_label=hardening["priority_label"],
+        candidate_ready_blockers=hardening["candidate_ready_blockers"],
+        expires_at=hardening["expires_at"],
+        stale=hardening["stale"],
+        expired=hardening["expired"],
+        close_reason=hardening["close_reason"],
         execution_allowed=False,
         paper_order_allowed=False,
         trade_candidate_creation_allowed=False,
@@ -272,7 +484,7 @@ def build_research_goal_from_observation(
         broker_write_allowed=False,
         live_capital_enabled=False,
         created_at=created_at,
-        updated_at=_now(),
+        updated_at=updated_at,
         boundary=RESEARCH_GOAL_BOUNDARY,
     )
 
@@ -317,6 +529,29 @@ def validate_research_goal(goal: ResearchGoal | dict[str, Any]) -> None:
         raise ValueError("research goal requires missing corroboration")
     if "pre-signal research state" not in str(payload.get("boundary", "")):
         raise ValueError("research goal boundary is too weak")
+    for score_field in (
+        "source_quorum_score",
+        "market_confirmation_score",
+        "worldview_relevance_score",
+        "akber_stage_score",
+        "contradiction_score",
+        "latency_freshness_score",
+        "risk_readiness_score",
+        "priority_score",
+    ):
+        if score_field in payload and not 0 <= float(payload.get(score_field, 0) or 0) <= 1:
+            raise ValueError(f"research goal score out of range: {score_field}")
+    if payload.get("research_goal_hardening_version") and payload.get(
+        "research_goal_hardening_version"
+    ) != RESEARCH_GOAL_HARDENING_VERSION:
+        raise ValueError("research goal hardening version mismatch")
+    if payload.get("status") == "candidate_ready":
+        if payload.get("candidate_ready_blockers") not in ([], (), None):
+            raise ValueError("candidate_ready research goal cannot retain candidate blockers")
+        if payload.get("trade_candidate_creation_allowed") is not False:
+            raise ValueError("candidate_ready research goal still cannot create trade candidates")
+    if payload.get("status") == "closed_no_trade" and not str(payload.get("close_reason") or "").strip():
+        raise ValueError("closed_no_trade research goal requires close_reason")
     if _contains_secret_like_value(payload):
         raise ValueError("research goal contains secret-like value")
 
@@ -350,6 +585,86 @@ class ResearchGoalStore:
         for row in self.read():
             latest[str(row.get("goal_id"))] = row
         return latest
+
+    def add_record(self, payload: dict[str, Any], *, event_log: EventLog | None = None) -> dict[str, Any]:
+        validate_research_goal(payload)
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, sort_keys=True) + "\n")
+        (event_log or EventLog(echo=False)).write(
+            "research_goal_hardened",
+            "research_goal",
+            {
+                "goal_id": payload.get("goal_id"),
+                "status": payload.get("status"),
+                "priority_score": payload.get("priority_score"),
+                "priority_label": payload.get("priority_label"),
+                "stale": payload.get("stale"),
+                "expired": payload.get("expired"),
+                "close_reason": payload.get("close_reason"),
+                "execution_allowed": payload.get("execution_allowed"),
+                "paper_order_allowed": payload.get("paper_order_allowed"),
+            },
+        )
+        return payload
+
+    def harden_lifecycle(self, *, event_log: EventLog | None = None) -> dict[str, Any]:
+        latest = self.latest_by_goal_id()
+        appended_count = 0
+        closed_no_trade_count = 0
+        candidate_ready_count = 0
+        stale_count = 0
+        expired_count = 0
+        for row in latest.values():
+            hardening = research_goal_hardening_fields(row)
+            hardened = dict(row)
+            effective_status = str(hardening.pop("effective_status"))
+            hardened.update(hardening)
+            if effective_status in RESEARCH_GOAL_STATUSES:
+                hardened["status"] = effective_status
+            if hardened.get("status") == "closed_no_trade":
+                closed_no_trade_count += 1
+            if hardened.get("status") == "candidate_ready":
+                candidate_ready_count += 1
+            if hardened.get("stale") is True:
+                stale_count += 1
+            if hardened.get("expired") is True:
+                expired_count += 1
+            needs_append = any(
+                row.get(key) != hardened.get(key)
+                for key in (
+                    "research_goal_hardening_version",
+                    "status",
+                    "source_quorum_score",
+                    "market_confirmation_score",
+                    "worldview_relevance_score",
+                    "akber_stage_score",
+                    "contradiction_score",
+                    "latency_freshness_score",
+                    "risk_readiness_score",
+                    "priority_score",
+                    "priority_label",
+                    "candidate_ready_blockers",
+                    "expires_at",
+                    "stale",
+                    "expired",
+                    "close_reason",
+                )
+            )
+            if needs_append:
+                self.add_record(hardened, event_log=event_log)
+                appended_count += 1
+        return {
+            "status": "ok",
+            "schema_version": RESEARCH_GOAL_SCHEMA_VERSION,
+            "hardening_version": RESEARCH_GOAL_HARDENING_VERSION,
+            "inspected_goal_count": len(latest),
+            "appended_hardened_snapshot_count": appended_count,
+            "closed_no_trade_count": closed_no_trade_count,
+            "candidate_ready_count": candidate_ready_count,
+            "stale_goal_count": stale_count,
+            "expired_goal_count": expired_count,
+            "boundary": RESEARCH_GOAL_BOUNDARY,
+        }
 
     def add(self, goal: ResearchGoal, *, event_log: EventLog | None = None) -> ResearchGoal:
         validate_research_goal(goal)
@@ -415,13 +730,44 @@ class ResearchGoalStore:
         }
         by_status = Counter(str(row.get("status") or "unknown") for row in latest.values())
         by_channel = Counter(str(row.get("market_channel") or "unknown") for row in latest.values())
+        hardened_latest = []
+        for row in latest.values():
+            hardening = research_goal_hardening_fields(row)
+            hardened = dict(row)
+            effective_status = hardening.pop("effective_status")
+            hardened.update(hardening)
+            hardened["effective_status"] = effective_status
+            hardened_latest.append(hardened)
+        by_priority = Counter(str(row.get("priority_label") or "unknown") for row in hardened_latest)
+        by_effective_status = Counter(str(row.get("effective_status") or "unknown") for row in hardened_latest)
+        average_priority_score = (
+            round(
+                sum(float(row.get("priority_score", 0) or 0) for row in hardened_latest)
+                / len(hardened_latest),
+                3,
+            )
+            if hardened_latest
+            else 0.0
+        )
         return {
             "status": "ok",
             "schema_version": RESEARCH_GOAL_SCHEMA_VERSION,
+            "hardening_version": RESEARCH_GOAL_HARDENING_VERSION,
             "goal_record_count": len(rows),
             "active_goal_count": len(latest),
             "by_status": dict(sorted(by_status.items())),
+            "by_effective_status": dict(sorted(by_effective_status.items())),
             "by_market_channel": dict(sorted(by_channel.items())),
+            "by_priority_label": dict(sorted(by_priority.items())),
+            "average_priority_score": average_priority_score,
+            "candidate_ready_goal_count": sum(
+                1 for row in hardened_latest if row.get("effective_status") == "candidate_ready"
+            ),
+            "closed_no_trade_goal_count": sum(
+                1 for row in hardened_latest if row.get("effective_status") == "closed_no_trade"
+            ),
+            "stale_goal_count": sum(1 for row in hardened_latest if row.get("stale") is True),
+            "expired_goal_count": sum(1 for row in hardened_latest if row.get("expired") is True),
             "authority_counts": authority_counts,
             "last_goal_id": rows[-1].get("goal_id") if rows else None,
             "boundary": RESEARCH_GOAL_BOUNDARY,
@@ -446,10 +792,12 @@ def ensure_sample_research_goals(settings: Settings | None = None) -> dict[str, 
     before = store.health()
     for sample in samples:
         store.add_from_observation(**sample, event_log=EventLog(echo=False))
+    hardening = store.harden_lifecycle(event_log=EventLog(echo=False))
     after = store.health()
     return {
         "status": "ok" if after["status"] == "ok" else "degraded",
         "created_or_updated_count": len(samples),
+        "hardened_snapshot_count": hardening.get("appended_hardened_snapshot_count", 0),
         "before_active_goal_count": before.get("active_goal_count", 0),
         "after_active_goal_count": after.get("active_goal_count", 0),
         "health": after,
@@ -466,10 +814,13 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
     latest.sort(key=lambda row: str(row.get("updated_at") or row.get("created_at") or ""))
     recent = []
     for row in latest[-limit:]:
+        hardening = research_goal_hardening_fields(row)
+        effective_status = str(hardening.pop("effective_status"))
         recent.append(
             {
                 "goal_id": row.get("goal_id"),
-                "status": row.get("status"),
+                "status": effective_status,
+                "stored_status": row.get("status"),
                 "origin": row.get("origin"),
                 "hypothesis": row.get("hypothesis"),
                 "market_channel": row.get("market_channel"),
@@ -479,6 +830,21 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
                 "worldview_lens": row.get("worldview_lens"),
                 "akber_stage": row.get("akber_stage"),
                 "missing_corroboration": row.get("missing_corroboration", [])[:8],
+                "research_goal_hardening_version": hardening.get("research_goal_hardening_version"),
+                "source_quorum_score": hardening.get("source_quorum_score"),
+                "market_confirmation_score": hardening.get("market_confirmation_score"),
+                "worldview_relevance_score": hardening.get("worldview_relevance_score"),
+                "akber_stage_score": hardening.get("akber_stage_score"),
+                "contradiction_score": hardening.get("contradiction_score"),
+                "latency_freshness_score": hardening.get("latency_freshness_score"),
+                "risk_readiness_score": hardening.get("risk_readiness_score"),
+                "priority_score": hardening.get("priority_score"),
+                "priority_label": hardening.get("priority_label"),
+                "candidate_ready_blockers": list(hardening.get("candidate_ready_blockers", []))[:8],
+                "expires_at": hardening.get("expires_at"),
+                "stale": hardening.get("stale"),
+                "expired": hardening.get("expired"),
+                "close_reason": hardening.get("close_reason"),
                 "owner_agent": row.get("owner_agent"),
                 "next_handoff": row.get("next_handoff"),
                 "execution_allowed": False,
@@ -492,4 +858,3 @@ def research_goal_summary(settings: Settings | None = None, *, limit: int = 6) -
             }
         )
     return health | {"recent_goals": recent}
-

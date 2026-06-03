@@ -154,6 +154,15 @@ def _research_goal_packet_context(goal: ResearchGoal | dict[str, Any]) -> dict[s
         "worldview_lens": payload.get("worldview_lens"),
         "akber_stage": payload.get("akber_stage"),
         "missing_corroboration": list(payload.get("missing_corroboration", []))[:8],
+        "source_quorum_score": payload.get("source_quorum_score"),
+        "market_confirmation_score": payload.get("market_confirmation_score"),
+        "latency_freshness_score": payload.get("latency_freshness_score"),
+        "priority_score": payload.get("priority_score"),
+        "priority_label": payload.get("priority_label"),
+        "candidate_ready_blockers": list(payload.get("candidate_ready_blockers", []))[:8],
+        "expires_at": payload.get("expires_at"),
+        "stale": bool(payload.get("stale")),
+        "expired": bool(payload.get("expired")),
         "owner_agent": payload.get("owner_agent"),
         "next_handoff": payload.get("next_handoff"),
         "execution_allowed": False,
@@ -386,6 +395,7 @@ def run_phase2_shadow_cycle(
     )
     assessment = local_result.get("assessment") if isinstance(local_result.get("assessment"), dict) else None
     source_degraded_count = sum(1 for result in source_results if result.degraded)
+    research_goal_hardening = research_goal_store.harden_lifecycle(event_log=event_log)
     research_goal_status = research_goal_summary(settings=settings, limit=8)
     research_goal_authority_counts = research_goal_status.get("authority_counts", {})
     durable_replay_summary = durable_replay_result or {
@@ -455,6 +465,14 @@ def run_phase2_shadow_cycle(
         "strategy_research_paper_order_allowed": False,
         "strategy_research_broker_write_allowed": False,
         "research_goal_lifecycle": research_goal_status,
+        "research_goal_hardening": research_goal_hardening,
+        "research_goal_hardening_version": research_goal_status.get("hardening_version"),
+        "research_goal_candidate_ready_count": research_goal_status.get("candidate_ready_goal_count", 0),
+        "research_goal_closed_no_trade_count": research_goal_status.get("closed_no_trade_goal_count", 0),
+        "research_goal_stale_goal_count": research_goal_status.get("stale_goal_count", 0),
+        "research_goal_expired_goal_count": research_goal_status.get("expired_goal_count", 0),
+        "research_goal_average_priority_score": research_goal_status.get("average_priority_score", 0.0),
+        "research_goal_by_priority_label": research_goal_status.get("by_priority_label", {}),
         "research_goal_status": research_goal_status.get("status", "unknown"),
         "research_goal_schema_version": research_goal_status.get("schema_version"),
         "research_goal_record_count": research_goal_status.get("goal_record_count", 0),
@@ -631,6 +649,14 @@ def run_phase2_shadow_cycle(
             "research_goal_live_capital_enabled_count"
         ],
         "research_goal_lifecycle": research_goal_status,
+        "research_goal_hardening": research_goal_hardening,
+        "research_goal_hardening_version": strategy_source_context["research_goal_hardening_version"],
+        "research_goal_candidate_ready_count": strategy_source_context["research_goal_candidate_ready_count"],
+        "research_goal_closed_no_trade_count": strategy_source_context["research_goal_closed_no_trade_count"],
+        "research_goal_stale_goal_count": strategy_source_context["research_goal_stale_goal_count"],
+        "research_goal_expired_goal_count": strategy_source_context["research_goal_expired_goal_count"],
+        "research_goal_average_priority_score": strategy_source_context["research_goal_average_priority_score"],
+        "research_goal_by_priority_label": strategy_source_context["research_goal_by_priority_label"],
         "queued_packet_count": queued_packet_count,
         "durable_replay_requested": durable_replay,
         "durable_replay_status": durable_replay_summary.get("status"),

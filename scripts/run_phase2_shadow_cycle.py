@@ -98,6 +98,14 @@ def main() -> int:
     print(f"phase2_shadow_cycle_strategy_research_execution_allowed={report['strategy_research_execution_allowed']}")
     print(f"phase2_shadow_cycle_strategy_research_paper_order_allowed={report['strategy_research_paper_order_allowed']}")
     print(f"phase2_shadow_cycle_strategy_research_broker_write_allowed={report['strategy_research_broker_write_allowed']}")
+    print(f"phase2_shadow_cycle_research_goal_hardening={report['research_goal_hardening']}")
+    print(f"phase2_shadow_cycle_research_goal_hardening_version={report['research_goal_hardening_version']}")
+    print(f"phase2_shadow_cycle_research_goal_candidate_ready_count={report['research_goal_candidate_ready_count']}")
+    print(f"phase2_shadow_cycle_research_goal_closed_no_trade_count={report['research_goal_closed_no_trade_count']}")
+    print(f"phase2_shadow_cycle_research_goal_stale_goal_count={report['research_goal_stale_goal_count']}")
+    print(f"phase2_shadow_cycle_research_goal_expired_goal_count={report['research_goal_expired_goal_count']}")
+    print(f"phase2_shadow_cycle_research_goal_average_priority_score={report['research_goal_average_priority_score']}")
+    print(f"phase2_shadow_cycle_research_goal_by_priority_label={report['research_goal_by_priority_label']}")
     print(f"phase2_shadow_cycle_queued_packet_count={report['queued_packet_count']}")
     print(f"phase2_shadow_cycle_durable_replay_requested={report['durable_replay_requested']}")
     print(f"phase2_shadow_cycle_durable_replay_status={report['durable_replay_status']}")
@@ -362,6 +370,18 @@ def main() -> int:
     if report["strategy_research_paper_order_allowed"]:
         return 1
     if report["strategy_research_broker_write_allowed"]:
+        return 1
+    if report["research_goal_hardening"].get("status") != "ok":
+        return 1
+    if report["research_goal_hardening_version"] != "rs2_2026_06_03":
+        return 1
+    if report["research_goal_candidate_ready_count"] < 0:
+        return 1
+    if report["research_goal_closed_no_trade_count"] < 0:
+        return 1
+    if report["research_goal_stale_goal_count"] < 0:
+        return 1
+    if report["research_goal_expired_goal_count"] < 0:
         return 1
     if report["strategy_lead_strategy_research_context_status"] != "ready_for_strategy_review":
         return 1
