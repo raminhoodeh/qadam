@@ -27,6 +27,7 @@ from orchestrator.intelligence import (
     shadow_intelligence_summary,
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
+from orchestrator.market_context import MARKET_CONTEXT_PACKET_VERSION, market_context_summary
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
 from orchestrator.research_goal import research_goal_summary
@@ -2496,6 +2497,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     quantum_readiness = quantum_provider_readiness(settings)
     phase2_cycle = _safe_phase2_shadow_cycle(settings)
     research_goals = research_goal_summary(settings=settings, limit=8)
+    market_context = market_context_summary(settings=settings, limit=6)
     signal_reviews = _safe_signal_integrity_reviews(settings)
     try:
         signals = list(store.read())[-5:]
@@ -2571,6 +2573,12 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     if int(research_goals.get("active_goal_count", 0) or 0):
         current_focus.append(
             f"{research_goals.get('active_goal_count', 0)} active Research Goals before candidate state"
+        )
+    if int(market_context.get("packet_count", 0) or 0):
+        current_focus.append(
+            "RS-3 market context: "
+            f"{market_context.get('packet_count', 0)} packets, "
+            f"average source quality {market_context.get('average_source_quality_score', 0)}"
         )
     if phase2_cycle.get("mode") == "durable_replay":
         current_focus.append(
@@ -2648,6 +2656,8 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "phase2_shadow_cycle": phase2_cycle,
         "research_goals": research_goals,
         "research_goal_records": research_goals.get("recent_goals", []),
+        "market_context": market_context,
+        "market_context_packets": market_context.get("recent_packets", []),
         "paper_account_context": paper_context,
         "signal_integrity": {
             "status": signal_integrity.get("status", "ok"),
@@ -2745,6 +2755,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "analysis_timeline": [
             "source observation",
             "research goal intake",
+            "market context packet",
             "research analyst shadow packet",
             "local research assessment",
             "paper account mirror context",
@@ -2761,6 +2772,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "blocked_reasons": [
             "shadow_only_pending_signal_integrity_gate",
             "research_goal_requires_corroboration",
+            "market_context_cannot_create_trade_candidate",
             "signal_integrity_gate_hold_or_block",
             "no_risk_agent_approval",
             "no_trade_candidate_store",
@@ -2780,6 +2792,8 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "cannot submit paper orders. Paper-submit receipt checks cannot call brokers."
             " Research Goals are pre-signal research state only: they cannot create "
             "trade candidates, approve risk, stage orders, or call brokers."
+            " Market Context Packets are read-only source-quality context and cannot "
+            "create trade candidates, approve risk, or write orders."
         ),
     }
 
@@ -6975,6 +6989,43 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in tradingview_mcp_boundary:
             raise ValueError(f"TradingView MCP public boundary missing: {phrase}")
+    cognition_status = payload["cognition"]
+    market_context = cognition_status.get("market_context", {})
+    if not isinstance(market_context, dict):
+        raise ValueError("market context public status missing")
+    if market_context.get("packet_version") != MARKET_CONTEXT_PACKET_VERSION:
+        raise ValueError("market context packet version mismatch")
+    if market_context.get("status") not in {"ok", "degraded"}:
+        raise ValueError("market context public status invalid")
+    if int(market_context.get("packet_count", 0) or 0) < 1:
+        raise ValueError("market context must expose at least one packet")
+    for key in (
+        "execution_allowed",
+        "paper_order_allowed",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "broker_write_allowed",
+        "live_capital_enabled",
+        "source_quorum_credit_allowed",
+    ):
+        if int(market_context.get("authority_counts", {}).get(key, 0) or 0) != 0:
+            raise ValueError(f"market context authority enabled: {key}")
+    if "read-only context" not in str(market_context.get("boundary") or ""):
+        raise ValueError("market context boundary is weak")
+    market_context_packets = cognition_status.get("market_context_packets", [])
+    if not isinstance(market_context_packets, list) or not market_context_packets:
+        raise ValueError("market context packets missing from cognition")
+    for packet in market_context_packets:
+        if not isinstance(packet, dict):
+            raise ValueError("market context packet must be an object")
+        if packet.get("packet_version") != MARKET_CONTEXT_PACKET_VERSION:
+            raise ValueError("market context packet version mismatch")
+        if packet.get("trade_candidate_creation_allowed") is not False:
+            raise ValueError("market context packet must not create trade candidates")
+        if packet.get("paper_order_allowed") is not False:
+            raise ValueError("market context packet must not allow paper orders")
+        if packet.get("broker_write_allowed") is not False:
+            raise ValueError("market context packet must not allow broker writes")
     paper_live_activation = payload["paper_live_activation"]
     if paper_live_activation.get("status") not in {
         "not_run",
@@ -9998,6 +10049,7 @@ def export_cockpit_status(
         "module_count": len(payload["modules"]),
         "watching_count": len(payload["watching"]),
         "research_goal_count": len(payload["cognition"].get("research_goal_records", [])),
+        "market_context_packet_count": payload["cognition"].get("market_context", {}).get("packet_count", 0),
         "hypothesis_count": len(payload["cognition"]["hypotheses"]),
         "trade_candidate_count": len(payload["trade_layer"]["candidates"]),
         "forbidden_action_count": len(payload["forbidden_actions"]),

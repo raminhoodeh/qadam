@@ -55,6 +55,17 @@ def main() -> int:
         "phase2_durable_replay_cycle_research_goal_created_or_updated_count="
         f"{report['research_goal_created_or_updated_count']}"
     )
+    print(f"phase2_durable_replay_cycle_market_context_status={report['market_context_status']}")
+    print(f"phase2_durable_replay_cycle_market_context_packet_version={report['market_context_packet_version']}")
+    print(f"phase2_durable_replay_cycle_market_context_packet_count={report['market_context_packet_count']}")
+    print(
+        "phase2_durable_replay_cycle_market_context_average_source_quality_score="
+        f"{report['market_context_average_source_quality_score']}"
+    )
+    print(
+        "phase2_durable_replay_cycle_market_context_trade_candidate_creation_allowed_count="
+        f"{report['market_context_trade_candidate_creation_allowed_count']}"
+    )
     print(f"phase2_durable_replay_cycle_local_research_status={report['local_research_status']}")
     print(f"phase2_durable_replay_cycle_strategy_lead_status={report['strategy_lead_status']}")
     print(f"phase2_durable_replay_cycle_strategy_source_mode={report['strategy_lead_source_mode']}")
@@ -108,6 +119,28 @@ def main() -> int:
         return 1
     if report["research_goal_created_or_updated_count"] < len(DEFAULT_PHASE2_SOURCES):
         return 1
+    if report["market_context_status"] != "ok":
+        return 1
+    if report["market_context_packet_version"] != "rs3_2026_06_03":
+        return 1
+    if report["market_context_packet_count"] < 1:
+        return 1
+    if report["market_context_average_source_quality_score"] <= 0:
+        return 1
+    if report["market_context_execution_allowed_count"] != 0:
+        return 1
+    if report["market_context_paper_order_allowed_count"] != 0:
+        return 1
+    if report["market_context_trade_candidate_creation_allowed_count"] != 0:
+        return 1
+    if report["market_context_risk_handoff_allowed_count"] != 0:
+        return 1
+    if report["market_context_broker_write_allowed_count"] != 0:
+        return 1
+    if report["market_context_live_capital_enabled_count"] != 0:
+        return 1
+    if report["market_context_source_quorum_credit_allowed_count"] != 0:
+        return 1
     if report["strategy_lead_source_mode"] != "durable_replay":
         return 1
     if report["strategy_lead_source_posture"] != "durable_replay_complete":
@@ -137,6 +170,13 @@ def main() -> int:
         report["research_goal_risk_handoff_allowed_count"],
         report["research_goal_broker_write_allowed_count"],
         report["research_goal_live_capital_enabled_count"],
+        report["market_context_execution_allowed_count"],
+        report["market_context_paper_order_allowed_count"],
+        report["market_context_trade_candidate_creation_allowed_count"],
+        report["market_context_risk_handoff_allowed_count"],
+        report["market_context_broker_write_allowed_count"],
+        report["market_context_live_capital_enabled_count"],
+        report["market_context_source_quorum_credit_allowed_count"],
         report["risk_agent_execution_allowed_count"],
         report["risk_agent_paper_order_allowed_count"],
         report["execution_policy_execution_allowed_count"],

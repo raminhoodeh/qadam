@@ -261,14 +261,18 @@ Build:
   - market status;
   - instrument metadata.
 - Add a `market_context_packet` schema that Phase 2 and Phase 3 can consume.
+  Implemented as `orchestrator/market_context.py` and
+  `scripts/check_market_context_packet.py`.
 
 Likely files:
 
+- `orchestrator/market_context.py`
 - `orchestrator/source_registry.py`
 - `orchestrator/yahoo_finance_adapter.py`
 - `orchestrator/intelligence.py`
 - `scripts/check_phase1_live_source_hardening.py`
 - `scripts/check_yahoo_finance_market_confirmation.py`
+- `scripts/check_market_context_packet.py`
 - `docs/api-source-inventory.md`
 - `docs/api-specs.md`
 - `landing-page-repo/status/cockpit-status.json`

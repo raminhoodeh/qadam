@@ -97,8 +97,8 @@ async function main() {
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
         "legacy-operations-panel",
-        "/auth.css?v=20260603-rs2-research-goals",
-        "/dashboard.js?v=20260603-rs2-research-goals"
+        "/auth.css?v=20260603-rs3-market-context",
+        "/dashboard.js?v=20260603-rs3-market-context"
     ], "D11I Operations static shell");
 
     assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 4, "four legacy Operations panels should be hidden from visible Operations view");

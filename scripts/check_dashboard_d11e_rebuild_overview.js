@@ -104,7 +104,7 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
         "data-overview-next-links",
-        "20260603-rs2-research-goals"
+        "20260603-rs3-market-context"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

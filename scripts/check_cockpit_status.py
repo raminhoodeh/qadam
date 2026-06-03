@@ -2989,6 +2989,18 @@ def main() -> int:
         f"{payload['cognition'].get('research_goals', {}).get('active_goal_count', 0)}"
     )
     print(f"cockpit_status_research_goal_record_count={len(payload['cognition'].get('research_goal_records', []))}")
+    print(
+        "cockpit_status_market_context_status="
+        f"{payload['cognition'].get('market_context', {}).get('status')}"
+    )
+    print(
+        "cockpit_status_market_context_packet_count="
+        f"{payload['cognition'].get('market_context', {}).get('packet_count', 0)}"
+    )
+    print(
+        "cockpit_status_market_context_average_source_quality_score="
+        f"{payload['cognition'].get('market_context', {}).get('average_source_quality_score', 0)}"
+    )
     print(f"cockpit_status_hypothesis_count={len(payload['cognition'].get('hypotheses', []))}")
     print(f"cockpit_status_evidence_packet_count={len(payload['cognition'].get('evidence_packets', []))}")
     print(f"cockpit_status_paper_context_status={payload['cognition'].get('paper_account_context', {}).get('status')}")
@@ -9452,6 +9464,66 @@ def main() -> int:
         if "pre-signal research state" not in goal.get("boundary", ""):
             print("cockpit_status_research_goal_record_boundary_weak=true")
             return 1
+    market_context = cognition.get("market_context", {})
+    if not isinstance(market_context, dict):
+        print("cockpit_status_market_context_missing=true")
+        return 1
+    if market_context.get("status") not in {"ok", "degraded"}:
+        print("cockpit_status_market_context_status_invalid=true")
+        return 1
+    if market_context.get("packet_version") != "rs3_2026_06_03":
+        print("cockpit_status_market_context_packet_version_missing=true")
+        return 1
+    if int(market_context.get("packet_count", 0) or 0) < 1:
+        print("cockpit_status_market_context_packet_count_missing=true")
+        return 1
+    if float(market_context.get("average_source_quality_score", 0) or 0) <= 0:
+        print("cockpit_status_market_context_quality_missing=true")
+        return 1
+    for authority_field in (
+        "execution_allowed",
+        "paper_order_allowed",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "broker_write_allowed",
+        "live_capital_enabled",
+        "source_quorum_credit_allowed",
+    ):
+        if int(market_context.get("authority_counts", {}).get(authority_field, 0) or 0) != 0:
+            print(f"cockpit_status_market_context_authority_enabled={authority_field}")
+            return 1
+    if "read-only context" not in market_context.get("boundary", ""):
+        print("cockpit_status_market_context_boundary_weak=true")
+        return 1
+    packets = cognition.get("market_context_packets", [])
+    if not isinstance(packets, list) or not packets:
+        print("cockpit_status_market_context_packets_missing=true")
+        return 1
+    for packet in packets:
+        if packet.get("packet_version") != "rs3_2026_06_03":
+            print("cockpit_status_market_context_packet_version_invalid=true")
+            return 1
+        for authority_field in (
+            "execution_allowed",
+            "paper_order_allowed",
+            "trade_candidate_creation_allowed",
+            "risk_handoff_allowed",
+            "broker_write_allowed",
+            "live_capital_enabled",
+            "source_quorum_credit_allowed",
+        ):
+            if packet.get(authority_field) is not False:
+                print(f"cockpit_status_market_context_packet_authority_enabled={authority_field}")
+                return 1
+        if packet.get("price_volume_context", {}).get("role") != "supplemental_market_confirmation_only":
+            print("cockpit_status_market_context_yahoo_role_invalid=true")
+            return 1
+        if packet.get("technical_context", {}).get("role") != "supplemental_technical_confirmation_only":
+            print("cockpit_status_market_context_tradingview_role_invalid=true")
+            return 1
+        if packet.get("paper_account_context", {}).get("authority") != "read_only_paper_account_context_only":
+            print("cockpit_status_market_context_paper_context_role_invalid=true")
+            return 1
     if not isinstance(cognition.get("hypotheses"), list) or not cognition["hypotheses"]:
         print("cockpit_status_hypotheses_missing=true")
         return 1
@@ -9470,6 +9542,9 @@ def main() -> int:
     if "research goal intake" not in cognition.get("analysis_timeline", []):
         print("cockpit_status_analysis_timeline_research_goal_missing=true")
         return 1
+    if "market context packet" not in cognition.get("analysis_timeline", []):
+        print("cockpit_status_analysis_timeline_market_context_missing=true")
+        return 1
     if "signal integrity review" not in cognition.get("analysis_timeline", []):
         print("cockpit_status_analysis_timeline_signal_integrity_missing=true")
         return 1
@@ -9481,6 +9556,9 @@ def main() -> int:
         return 1
     if "research_goal_requires_corroboration" not in cognition.get("blocked_reasons", []):
         print("cockpit_status_research_goal_block_missing=true")
+        return 1
+    if "market_context_cannot_create_trade_candidate" not in cognition.get("blocked_reasons", []):
+        print("cockpit_status_market_context_block_missing=true")
         return 1
     if "signal_integrity_gate_hold_or_block" not in cognition.get("blocked_reasons", []):
         print("cockpit_status_signal_integrity_hold_block_missing=true")

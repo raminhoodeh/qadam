@@ -2086,10 +2086,20 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     --durable-replay`, `scripts/check_phase2_durable_replay_cycle.py`, and
     `scripts/check_cockpit_status.py` green so every trade candidate keeps
     Research Goal lineage and no pre-signal object gains broker authority.
-22. Continue the remaining-slices rollout with RS-3: attach richer market
-    context packets, source-quality posture, Yahoo supplemental confirmation,
-    TradingView technical context when available, and Alpaca paper-account
-    context before deepening guarded paper autonomy.
+22. RS-3 Market Context Packet and Source Quality is implemented through
+    `orchestrator/market_context.py`, `scripts/check_market_context_packet.py`,
+    Phase 2 source-context integration, cockpit status export, and the public
+    dashboard Reasoning workspace. The RS-3 packet attaches source taxonomy,
+    trust/freshness/source-quality posture, Yahoo Finance supplemental
+    price/volume confirmation, TradingView MCP supplemental technical context,
+    Alpaca paper-account context, missing/degraded source posture, contradictory
+    evidence, and source-quorum result to each Research Goal while keeping
+    candidate creation, risk approval, paper orders, broker writes, source
+    quorum credit, and live capital disabled.
+23. Continue the remaining-slices rollout with RS-4: run the Local Research
+    Analyst and Strategy Lead over Research Goals plus RS-3 market context
+    packets, preserving explicit non-authority flags and batching/rate-limit
+    awareness before deepening guarded paper autonomy.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

@@ -31,6 +31,7 @@ from orchestrator.intelligence import (
     run_local_research_analyst_inference,
     run_research_shadow_triage_queue,
 )
+from orchestrator.market_context import run_market_context_packet_cycle
 from orchestrator.paper_account import paper_account_shadow_context
 from orchestrator.paper_submit_receipt import run_paper_submit_receipt_contract
 from orchestrator.postgres_store import durable_source_observation_replay
@@ -394,10 +395,6 @@ def run_phase2_shadow_cycle(
         paper_account_context=paper_context,
     )
     assessment = local_result.get("assessment") if isinstance(local_result.get("assessment"), dict) else None
-    source_degraded_count = sum(1 for result in source_results if result.degraded)
-    research_goal_hardening = research_goal_store.harden_lifecycle(event_log=event_log)
-    research_goal_status = research_goal_summary(settings=settings, limit=8)
-    research_goal_authority_counts = research_goal_status.get("authority_counts", {})
     durable_replay_summary = durable_replay_result or {
         "status": "not_requested",
         "contract_status": "not_requested",
@@ -409,6 +406,18 @@ def run_phase2_shadow_cycle(
         "signal_authority": False,
         "order_authority": False,
     }
+    source_degraded_count = sum(1 for result in source_results if result.degraded)
+    research_goal_hardening = research_goal_store.harden_lifecycle(event_log=event_log)
+    research_goal_status = research_goal_summary(settings=settings, limit=8)
+    research_goal_authority_counts = research_goal_status.get("authority_counts", {})
+    market_context = run_market_context_packet_cycle(
+        settings=settings,
+        limit=research_limit,
+        source_results=[result.to_dict() for result in source_results],
+        durable_replay_summary=durable_replay_summary,
+        event_log=event_log,
+    )
+    market_context_authority_counts = market_context.get("authority_counts", {})
     strategy_source_context = {
         "status": "ok" if not source_degraded_count else "degraded",
         "mode": "durable_replay" if durable_replay else ("live_sources" if live_sources else "sample_sources"),
@@ -490,6 +499,30 @@ def run_phase2_shadow_cycle(
         "research_goal_risk_handoff_allowed_count": research_goal_authority_counts.get("risk_handoff_allowed", 0),
         "research_goal_broker_write_allowed_count": research_goal_authority_counts.get("broker_write_allowed", 0),
         "research_goal_live_capital_enabled_count": research_goal_authority_counts.get("live_capital_enabled", 0),
+        "market_context": market_context,
+        "market_context_status": market_context.get("status", "unknown"),
+        "market_context_packet_version": market_context.get("packet_version"),
+        "market_context_packet_count": market_context.get("packet_count", 0),
+        "market_context_ready_count": market_context.get("context_ready_count", 0),
+        "market_context_hold_count": market_context.get("hold_for_context_count", 0),
+        "market_context_average_source_quality_score": market_context.get("average_source_quality_score", 0.0),
+        "market_context_average_trust_score": market_context.get("average_trust_score", 0.0),
+        "market_context_yahoo_finance_status": market_context.get("yahoo_finance_status"),
+        "market_context_tradingview_mcp_status": market_context.get("tradingview_mcp_status"),
+        "market_context_paper_account_context_status": market_context.get("paper_account_context_status"),
+        "market_context_execution_allowed_count": market_context_authority_counts.get("execution_allowed", 0),
+        "market_context_paper_order_allowed_count": market_context_authority_counts.get("paper_order_allowed", 0),
+        "market_context_trade_candidate_creation_allowed_count": market_context_authority_counts.get(
+            "trade_candidate_creation_allowed",
+            0,
+        ),
+        "market_context_risk_handoff_allowed_count": market_context_authority_counts.get("risk_handoff_allowed", 0),
+        "market_context_broker_write_allowed_count": market_context_authority_counts.get("broker_write_allowed", 0),
+        "market_context_live_capital_enabled_count": market_context_authority_counts.get("live_capital_enabled", 0),
+        "market_context_source_quorum_credit_allowed_count": market_context_authority_counts.get(
+            "source_quorum_credit_allowed",
+            0,
+        ),
         "source_degraded_count": source_degraded_count,
         "queued_packet_count": queued_packet_count,
         "shadow_signal_count": triage_result.get("shadow_signal_count", 0),
@@ -657,6 +690,42 @@ def run_phase2_shadow_cycle(
         "research_goal_expired_goal_count": strategy_source_context["research_goal_expired_goal_count"],
         "research_goal_average_priority_score": strategy_source_context["research_goal_average_priority_score"],
         "research_goal_by_priority_label": strategy_source_context["research_goal_by_priority_label"],
+        "market_context_status": strategy_source_context["market_context_status"],
+        "market_context_packet_version": strategy_source_context["market_context_packet_version"],
+        "market_context_packet_count": strategy_source_context["market_context_packet_count"],
+        "market_context_ready_count": strategy_source_context["market_context_ready_count"],
+        "market_context_hold_count": strategy_source_context["market_context_hold_count"],
+        "market_context_average_source_quality_score": strategy_source_context[
+            "market_context_average_source_quality_score"
+        ],
+        "market_context_average_trust_score": strategy_source_context["market_context_average_trust_score"],
+        "market_context_yahoo_finance_status": strategy_source_context["market_context_yahoo_finance_status"],
+        "market_context_tradingview_mcp_status": strategy_source_context["market_context_tradingview_mcp_status"],
+        "market_context_paper_account_context_status": strategy_source_context[
+            "market_context_paper_account_context_status"
+        ],
+        "market_context_execution_allowed_count": strategy_source_context[
+            "market_context_execution_allowed_count"
+        ],
+        "market_context_paper_order_allowed_count": strategy_source_context[
+            "market_context_paper_order_allowed_count"
+        ],
+        "market_context_trade_candidate_creation_allowed_count": strategy_source_context[
+            "market_context_trade_candidate_creation_allowed_count"
+        ],
+        "market_context_risk_handoff_allowed_count": strategy_source_context[
+            "market_context_risk_handoff_allowed_count"
+        ],
+        "market_context_broker_write_allowed_count": strategy_source_context[
+            "market_context_broker_write_allowed_count"
+        ],
+        "market_context_live_capital_enabled_count": strategy_source_context[
+            "market_context_live_capital_enabled_count"
+        ],
+        "market_context_source_quorum_credit_allowed_count": strategy_source_context[
+            "market_context_source_quorum_credit_allowed_count"
+        ],
+        "market_context": market_context,
         "queued_packet_count": queued_packet_count,
         "durable_replay_requested": durable_replay,
         "durable_replay_status": durable_replay_summary.get("status"),
@@ -885,6 +954,13 @@ def run_phase2_shadow_cycle(
             "research_goal_created_or_updated_count": report["research_goal_created_or_updated_count"],
             "research_goal_trade_candidate_creation_allowed_count": report[
                 "research_goal_trade_candidate_creation_allowed_count"
+            ],
+            "market_context_packet_count": report["market_context_packet_count"],
+            "market_context_average_source_quality_score": report[
+                "market_context_average_source_quality_score"
+            ],
+            "market_context_trade_candidate_creation_allowed_count": report[
+                "market_context_trade_candidate_creation_allowed_count"
             ],
             "execution_allowed": False,
             "paper_order_allowed": False,

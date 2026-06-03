@@ -261,6 +261,26 @@ Acceptance:
 - Source 429s degrade the affected source without blocking the whole system
   unless source quorum fails.
 
+Implementation status:
+
+- Implemented in `orchestrator/market_context.py` with RS-3 packet schema,
+  source taxonomy, trust/freshness/source-quality scoring, Yahoo Finance
+  supplemental price/volume context, TradingView MCP supplemental technical
+  context, Alpaca paper-account context, contradictory/missing context, source
+  quorum result, runtime artifacts, secret-like value rejection, and explicit
+  zero authority for candidates, risk, paper orders, broker writes, source
+  quorum credit, and live capital.
+- `scripts/check_market_context_packet.py` validates the packet contract.
+- `orchestrator/phase2_shadow_cycle.py` now feeds the RS-3 summary into
+  Strategy Lead source context and reports packet count, source-quality score,
+  provider posture, and zero-authority counters.
+- `orchestrator/cockpit_status.py`, `scripts/check_cockpit_status.py`, and
+  `landing-page-repo/dashboard.js` expose RS-3 as a public-safe Reasoning
+  workspace section.
+- RS-3 does not create freer execution by itself. It makes later gated paper
+  autonomy better informed by giving every Research Goal a durable market and
+  source-quality packet.
+
 ## 8. Phase RS-4 - Intelligence Cycle Activation
 
 Objective: make the Local Research Analyst and Strategy Lead useful every cycle.

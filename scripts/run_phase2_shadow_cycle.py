@@ -106,6 +106,33 @@ def main() -> int:
     print(f"phase2_shadow_cycle_research_goal_expired_goal_count={report['research_goal_expired_goal_count']}")
     print(f"phase2_shadow_cycle_research_goal_average_priority_score={report['research_goal_average_priority_score']}")
     print(f"phase2_shadow_cycle_research_goal_by_priority_label={report['research_goal_by_priority_label']}")
+    print(f"phase2_shadow_cycle_market_context_status={report['market_context_status']}")
+    print(f"phase2_shadow_cycle_market_context_packet_version={report['market_context_packet_version']}")
+    print(f"phase2_shadow_cycle_market_context_packet_count={report['market_context_packet_count']}")
+    print(f"phase2_shadow_cycle_market_context_ready_count={report['market_context_ready_count']}")
+    print(f"phase2_shadow_cycle_market_context_hold_count={report['market_context_hold_count']}")
+    print(
+        "phase2_shadow_cycle_market_context_average_source_quality_score="
+        f"{report['market_context_average_source_quality_score']}"
+    )
+    print(f"phase2_shadow_cycle_market_context_average_trust_score={report['market_context_average_trust_score']}")
+    print(f"phase2_shadow_cycle_market_context_yahoo_finance_status={report['market_context_yahoo_finance_status']}")
+    print(
+        "phase2_shadow_cycle_market_context_tradingview_mcp_status="
+        f"{report['market_context_tradingview_mcp_status']}"
+    )
+    print(
+        "phase2_shadow_cycle_market_context_paper_account_context_status="
+        f"{report['market_context_paper_account_context_status']}"
+    )
+    print(
+        "phase2_shadow_cycle_market_context_trade_candidate_creation_allowed_count="
+        f"{report['market_context_trade_candidate_creation_allowed_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_market_context_source_quorum_credit_allowed_count="
+        f"{report['market_context_source_quorum_credit_allowed_count']}"
+    )
     print(f"phase2_shadow_cycle_queued_packet_count={report['queued_packet_count']}")
     print(f"phase2_shadow_cycle_durable_replay_requested={report['durable_replay_requested']}")
     print(f"phase2_shadow_cycle_durable_replay_status={report['durable_replay_status']}")
@@ -382,6 +409,30 @@ def main() -> int:
     if report["research_goal_stale_goal_count"] < 0:
         return 1
     if report["research_goal_expired_goal_count"] < 0:
+        return 1
+    if report["market_context_status"] != "ok":
+        return 1
+    if report["market_context_packet_version"] != "rs3_2026_06_03":
+        return 1
+    if report["market_context_packet_count"] < 1:
+        return 1
+    if report["market_context_average_source_quality_score"] <= 0:
+        return 1
+    if report["market_context_average_trust_score"] <= 0:
+        return 1
+    if report["market_context_execution_allowed_count"] != 0:
+        return 1
+    if report["market_context_paper_order_allowed_count"] != 0:
+        return 1
+    if report["market_context_trade_candidate_creation_allowed_count"] != 0:
+        return 1
+    if report["market_context_risk_handoff_allowed_count"] != 0:
+        return 1
+    if report["market_context_broker_write_allowed_count"] != 0:
+        return 1
+    if report["market_context_live_capital_enabled_count"] != 0:
+        return 1
+    if report["market_context_source_quorum_credit_allowed_count"] != 0:
         return 1
     if report["strategy_lead_strategy_research_context_status"] != "ready_for_strategy_review":
         return 1

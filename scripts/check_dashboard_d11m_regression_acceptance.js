@@ -232,8 +232,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260603-rs2-research-goals",
-        "/dashboard.js?v=20260603-rs2-research-goals"
+        "/auth.css?v=20260603-rs3-market-context",
+        "/dashboard.js?v=20260603-rs3-market-context"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();
