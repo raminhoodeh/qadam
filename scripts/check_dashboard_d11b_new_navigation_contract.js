@@ -147,8 +147,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260528-overview-drilldown",
-    "/dashboard.js?v=20260528-overview-drilldown",
+    "/auth.css?v=20260603-rs0-paper-authority",
+    "/dashboard.js?v=20260603-rs0-paper-authority",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links",
     "data-dashboard-debug-only"
