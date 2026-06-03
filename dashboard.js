@@ -6806,8 +6806,19 @@ function renderReasoningResearchGoalSummary(goal) {
                 ${renderInlineBadge("Not a trade candidate", "blocked")}
                 ${renderInlineBadge("No paper/order authority", "online")}
                 ${renderInlineBadge(`quorum ${dashboardText(goal.minimum_source_quorum, "2")} sources`, "pending")}
+                ${renderInlineBadge(`priority ${dashboardText(goal.priority_label, "unscored")}`, goal.status === "candidate_ready" ? "online" : "pending")}
+                ${goal.stale ? renderInlineBadge("stale", "blocked") : ""}
             </div>
             <dl class="cognition-facts">
+                <div>
+                    <dt>RS-2 score</dt>
+                    <dd>
+                        priority ${dashboardText(goal.priority_score, "n/a")} ·
+                        quorum ${dashboardText(goal.source_quorum_score, "n/a")} ·
+                        market ${dashboardText(goal.market_confirmation_score, "n/a")} ·
+                        fresh ${dashboardText(goal.latency_freshness_score, "n/a")}
+                    </dd>
+                </div>
                 <div>
                     <dt>Watching</dt>
                     <dd class="tag-row">${renderTagList(goal.watched_instruments, "No instruments exported")}</dd>
@@ -6823,6 +6834,14 @@ function renderReasoningResearchGoalSummary(goal) {
                 <div>
                     <dt>Missing</dt>
                     <dd class="tag-row">${renderTagList(goal.missing_corroboration, "No missing corroboration exported")}</dd>
+                </div>
+                <div>
+                    <dt>Candidate blockers</dt>
+                    <dd class="tag-row">${renderTagList(goal.candidate_ready_blockers, "Candidate-ready research state")}</dd>
+                </div>
+                <div>
+                    <dt>Expiry</dt>
+                    <dd>${htmlText(goal.expires_at, "No expiry exported")}${goal.close_reason ? ` · ${htmlText(goal.close_reason)}` : ""}</dd>
                 </div>
                 <div>
                     <dt>Next handoff</dt>
