@@ -6185,6 +6185,29 @@ html[data-dashboard-active-view="trades"] .capital-panel {
     justify-content: flex-start;
 }
 
+.dashboard-safety-strip-authority {
+    align-items: center;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    gap: 8px 12px;
+    grid-column: 1 / span 2;
+    line-height: 1.35;
+}
+
+.dashboard-safety-strip-authority strong {
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+}
+
+.dashboard-safety-strip-authority span,
+.dashboard-safety-strip-authority small {
+    min-width: 0;
+}
+
 .safety-strip-info {
     grid-column: 2;
     grid-row: 1 / span 2;

@@ -3314,22 +3314,63 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const operations = viewModels.operations_model || buildOperationsModel(status);
     const performance = viewModels.performance_model || buildPerformanceModel(status);
     const capital = status.capital || performance.paper_account || {};
+    const paperAuthority = status.paper_authority_reconciliation || {};
     const safety = operations.safety || {};
     const paperBalance = capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
     const liveCapitalEnabled = Boolean(capital.live_capital_enabled || safety.live_capital_enabled);
     const writeAuthority = Boolean(capital.write_authority);
     const authorityFlags = asArray(safety.authority_flags);
-    const tone = liveCapitalEnabled || writeAuthority || authorityFlags.length ? "blocked" : "online";
+    const paperSafetyBlockers = asArray(paperAuthority.safety_blockers);
+    const paperOperationalBlockers = asArray(paperAuthority.operational_blockers);
+    const paperOpportunityBlockers = asArray(paperAuthority.opportunity_or_risk_blockers);
+    const paperCurrentBlockers = asArray(paperAuthority.current_blockers);
+    const paperAuthorityStatus = paperAuthority.status || "not_exported";
+    const paperAuthorityTone = paperSafetyBlockers.length
+        ? "blocked"
+        : (paperOperationalBlockers.length || paperOpportunityBlockers.length ? "pending" : "online");
+    const tone = liveCapitalEnabled || writeAuthority || authorityFlags.length
+        ? "blocked"
+        : paperAuthorityTone;
     const modeLabel = status.mode === "paper"
         ? "OK - paper only"
         : canonicalStatusLabel(status.mode, { fallback: "Mode unknown" });
+    const authorityHeadline = paperSafetyBlockers.length
+        ? "Review safety before paper trading"
+        : (
+            paperAuthorityStatus === "paper_authorized_blocked_operational"
+                ? "Paper authorized; runner not armed"
+                : (
+                    paperAuthorityStatus === "paper_authorized_waiting_for_setup"
+                        ? "Paper authorized; waiting for setup"
+                        : (
+                            paperAuthorityStatus?.startsWith?.("paper_authorized_ready")
+                                ? "Paper action ready through guarded route"
+                                : "OK - paper only, read-only, live capital off"
+                        )
+                )
+        );
+    const authoritySummary = dashboardText(
+        paperAuthority.why_not_trading_now,
+        "Qadam can only act through guarded PaperOps paper routes when all gates pass."
+    );
+    const authorityBlockerLabel = paperCurrentBlockers.length
+        ? paperCurrentBlockers.slice(0, 3).join(", ")
+        : "no current blockers";
     return {
         id: "dashboard_safety_strip",
         tone,
         headline: tone === "blocked"
             ? "Review safety before reading the dashboard"
-            : "OK - paper only, read-only, live capital off",
-        summary: `${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off. Dashboard cannot place orders. AI cannot bypass risk checks.`,
+            : authorityHeadline,
+        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off.`,
+        authority_label: paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
+        authority_tone: paperAuthorityTone,
+        authority_status: paperAuthorityStatus,
+        authority_blocker_label: authorityBlockerLabel,
+        authority_next_action: dashboardText(
+            paperAuthority.next_required_action,
+            "Continue monitoring guarded PaperOps status."
+        ),
         mode_label: modeLabel,
         capital_label: `${formatCapitalMoney(paperBalance, capital)} paper account`,
         live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "OK - live capital off",
@@ -4746,7 +4787,13 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
             <span class="inline-badge ${statusClass(strip.mode_label)}" data-mode-label>${htmlText(strip.mode_label)}</span>
             <span class="inline-badge ${statusClass(strip.write_authority ? "blocked" : "online")}" data-capital-label>${htmlText(strip.capital_label)}</span>
             <span class="inline-badge ${statusClass(strip.live_capital_enabled ? "blocked" : "online")}" data-live-capital-label>${htmlText(strip.live_capital_label)}</span>
+            ${renderInlineBadge(strip.authority_label, strip.authority_tone)}
             ${renderInlineBadge(strip.read_only_label, strip.read_only_label === "OK - read-only" ? "online" : "blocked")}
+        </div>
+        <div class="dashboard-safety-strip-authority">
+            <strong>${htmlText(strip.authority_status)}</strong>
+            <span>${htmlText(strip.authority_blocker_label)}</span>
+            <small>${htmlText(strip.authority_next_action)}</small>
         </div>
         <div class="info-hover safety-strip-info">
             <button class="info-button" type="button" aria-label="About Safety Status">i</button>
@@ -4755,6 +4802,7 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
                 <p>One place for paper mode, capital, and order authority.</p>
                 <dl class="explainer-grid compact">
                     <div><dt>Shows</dt><dd>${htmlText(strip.mode_label)} · ${htmlText(strip.live_capital_label)}</dd></div>
+                    <div><dt>Paper authority</dt><dd>${htmlText(strip.authority_status)}</dd></div>
                     <div><dt>Watch</dt><dd>${htmlText(strip.authority_flag_count)} active authority flags.</dd></div>
                     <div><dt>Limits</dt><dd>Readout only; this page cannot place orders.</dd></div>
                 </dl>
