@@ -395,6 +395,26 @@ Acceptance:
 - Closed paper trades require postmortem records.
 - Paper proof ledger uses only verified paper lifecycle records.
 
+Implementation status on 2026-06-03:
+
+- Implemented `orchestrator/paper_lifecycle_portfolio_postmortem.py` and
+  `scripts/check_paper_lifecycle_portfolio_postmortem.py`.
+- Qadam now writes `data/runtime/paper_lifecycle_portfolio_postmortem.json`
+  as the RS-6 audit contract for portfolio-value provenance, paper lifecycle
+  counts, closed-trade postmortem coverage, and proof-ledger separation.
+- The cockpit status contract now exposes
+  `paper_lifecycle_portfolio_postmortem` and Mission Control mirrors the RS-6
+  state in both `system_stack` and `portfolio`.
+- Current validated state: portfolio value source is
+  `alpaca_paper_account_mirror`, the balance ticker is broker/account derived,
+  there are 7 open positions, 7 mirrored orders, 7 closed paper trades, 7
+  closed-trade postmortem markers, 0 missing postmortem markers, 7 postmortems
+  due, 0 completed postmortems, 0 Phase 7 verified proof records, and 0
+  mirror-only trades counted for proof.
+- RS-6 remains read-only: it cannot submit, modify, close, resize, cancel, or
+  approve trades; it cannot enable live capital; and it cannot grant proof
+  credit.
+
 ## 11. Phase RS-7 - Operator Inbox, Telegram, And Human Oversight
 
 Objective: make Qadam understandable and controllable without giving humans or

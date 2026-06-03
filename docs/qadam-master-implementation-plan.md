@@ -2109,6 +2109,17 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     immediate goal: RS-4 deepens Local Research Analyst and Strategy Lead runs
     over Research Goals plus RS-3 market context packets; RS-6 hardens lifecycle,
     portfolio, and postmortem handling after guarded paper submits occur.
+25. RS-6 Lifecycle, Portfolio, And Postmortem Hardening is now implemented.
+    Qadam writes `data/runtime/paper_lifecycle_portfolio_postmortem.json`,
+    validates it with `scripts/check_paper_lifecycle_portfolio_postmortem.py`,
+    and exports the sanitized status through `paper_lifecycle_portfolio_postmortem`
+    in the cockpit contract. Current validated state: portfolio value source is
+    `alpaca_paper_account_mirror`, the dashboard balance ticker is broker/account
+    derived, 7 open positions, 7 mirrored orders, 7 closed paper trades, 7
+    postmortem markers, 0 missing postmortem markers, 7 postmortems due, 0
+    completed postmortems, 0 Phase 7 verified proof records, and 0 mirror-only
+    trades counted for proof. This is audit hardening only: it adds no broker
+    write route, no live-capital authority, no forced trades, and no proof credit.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

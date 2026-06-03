@@ -29,6 +29,9 @@ from orchestrator.intelligence import (
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.market_context import MARKET_CONTEXT_PACKET_VERSION, market_context_summary
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
+from orchestrator.paper_lifecycle_portfolio_postmortem import (
+    paper_lifecycle_portfolio_postmortem_public_status,
+)
 from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
 from orchestrator.research_goal import research_goal_summary
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
@@ -3251,7 +3254,7 @@ def _capital(settings: Settings) -> dict[str, Any]:
         "account_scope": latest.account_scope,
         "broker": latest.broker,
         "portfolio_value_source": (
-            "alpaca_account_equity"
+            "alpaca_paper_account_mirror"
             if str(latest.broker).startswith("alpaca")
             else "local_paper_account_snapshot"
         ),
@@ -5092,6 +5095,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     paperops_qctrl = payload.get("paperops_qctrl_consultation", {})
+    paper_lifecycle_postmortem = payload.get(
+        "paper_lifecycle_portfolio_postmortem",
+        {},
+    )
     phase1_data_spine = payload.get("phase1_data_spine", {})
 
     hypotheses = cognition.get("hypotheses", [])
@@ -5578,6 +5585,44 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "phase6_learning_loop": phase6_learning_loop.get("status", "not_run"),
             "phase7_demo_proof": phase7_demo_proof.get("status", "not_run"),
             "paper_account": capital.get("mirror_status", "pending"),
+            "rs6_lifecycle_portfolio_postmortem": paper_lifecycle_postmortem.get(
+                "status",
+                "not_run",
+            ),
+            "rs6_portfolio_value_source": paper_lifecycle_postmortem.get(
+                "portfolio_value_source",
+                capital.get("portfolio_value_source", "unknown"),
+            ),
+            "rs6_balance_ticker_broker_account_derived": (
+                paper_lifecycle_postmortem.get(
+                    "balance_ticker_broker_account_derived",
+                    False,
+                )
+            ),
+            "rs6_closed_trade_postmortem_coverage_count": (
+                paper_lifecycle_postmortem.get(
+                    "closed_trade_postmortem_coverage_count",
+                    0,
+                )
+            ),
+            "rs6_closed_trade_missing_postmortem_count": (
+                paper_lifecycle_postmortem.get(
+                    "closed_trade_missing_postmortem_count",
+                    0,
+                )
+            ),
+            "rs6_paper_proof_ledger_verified_record_count": (
+                paper_lifecycle_postmortem.get(
+                    "paper_proof_ledger_verified_record_count",
+                    0,
+                )
+            ),
+            "rs6_mirror_trade_counted_for_proof_count": (
+                paper_lifecycle_postmortem.get(
+                    "mirror_trade_counted_for_proof_count",
+                    0,
+                )
+            ),
             "telegram": communications.get("status", "pending"),
             "boundary": "APIs, models, and quantum checks can inform the chain; only gates can advance state.",
         },
@@ -6395,9 +6440,47 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "unrealized_pnl_gbp": capital.get("unrealized_pnl_gbp", 0),
             "total_pnl_gbp": pnl_total,
             "drawdown_pct": capital.get("drawdown_pct", 0),
+            "portfolio_value_source": paper_lifecycle_postmortem.get(
+                "portfolio_value_source",
+                capital.get("portfolio_value_source", "unknown"),
+            ),
+            "balance_ticker_broker_account_derived": (
+                paper_lifecycle_postmortem.get(
+                    "balance_ticker_broker_account_derived",
+                    False,
+                )
+            ),
             "open_position_count": len(open_positions),
             "order_count": len(orders),
             "closed_trade_count": len(closed_trades),
+            "postmortem_due_count": paper_lifecycle_postmortem.get(
+                "postmortem_due_count",
+                capital.get("postmortem_due_count", 0),
+            ),
+            "closed_trade_postmortem_coverage_count": (
+                paper_lifecycle_postmortem.get(
+                    "closed_trade_postmortem_coverage_count",
+                    0,
+                )
+            ),
+            "closed_trade_missing_postmortem_count": (
+                paper_lifecycle_postmortem.get(
+                    "closed_trade_missing_postmortem_count",
+                    0,
+                )
+            ),
+            "paper_proof_ledger_verified_record_count": (
+                paper_lifecycle_postmortem.get(
+                    "paper_proof_ledger_verified_record_count",
+                    0,
+                )
+            ),
+            "mirror_trade_counted_for_proof_count": (
+                paper_lifecycle_postmortem.get(
+                    "mirror_trade_counted_for_proof_count",
+                    0,
+                )
+            ),
             "maturity_closed_trade_target": capital.get("maturity_closed_trade_target", 100),
             "live_capital_enabled": live_capital_enabled,
             "write_authority": bool(capital.get("write_authority")),
@@ -6642,6 +6725,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             "live_orchestrator_exposed": False,
         },
         "capital": _capital(settings),
+        "paper_lifecycle_portfolio_postmortem": (
+            paper_lifecycle_portfolio_postmortem_public_status(settings=settings)
+        ),
         "watching": watching,
         "phase1_data_spine": phase1_data_spine,
         "source_pipeline_summary": _build_source_pipeline_summary(watching),
@@ -6825,6 +6911,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paper_authority_reconciliation",
         "paperops_qualified_setup_production",
         "paperops_auto_approval_staged_order",
+        "paper_lifecycle_portfolio_postmortem",
         "yahoo_finance",
         "preference_mcp",
         "tradingview_mcp",

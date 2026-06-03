@@ -28,6 +28,9 @@ from orchestrator.paper_authority_reconciliation import (  # noqa: E402
     PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS,
     validate_paper_authority_reconciliation,
 )
+from orchestrator.paper_lifecycle_portfolio_postmortem import (  # noqa: E402
+    RS6_PUBLIC_STATUS_FIELDS,
+)
 from orchestrator.paperops_cockpit_notification_upgrade import (  # noqa: E402
     PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_REQUIRED_FIELDS,
 )
@@ -2042,6 +2045,13 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_auto_approval_staged_order",
     "paperops_auto_approval_staged_order_staged_count",
     "paperops_auto_approval_staged_order_ready_for_submit",
+    "rs6_lifecycle_portfolio_postmortem",
+    "rs6_portfolio_value_source",
+    "rs6_balance_ticker_broker_account_derived",
+    "rs6_closed_trade_postmortem_coverage_count",
+    "rs6_closed_trade_missing_postmortem_count",
+    "rs6_paper_proof_ledger_verified_record_count",
+    "rs6_mirror_trade_counted_for_proof_count",
     "phase5_layer_b",
     "phase5_alpaca_paper_dry_run",
     "phase5_execution_adapter",
@@ -2668,11 +2678,18 @@ MISSION_PORTFOLIO_REQUIRED_FIELDS = {
     "connection_status",
     "current_balance_gbp",
     "drawdown_pct",
+    "portfolio_value_source",
+    "balance_ticker_broker_account_derived",
     "live_capital_enabled",
     "open_position_count",
     "open_positions",
     "order_count",
     "orders",
+    "postmortem_due_count",
+    "closed_trade_postmortem_coverage_count",
+    "closed_trade_missing_postmortem_count",
+    "paper_proof_ledger_verified_record_count",
+    "mirror_trade_counted_for_proof_count",
     "total_pnl_gbp",
     "write_authority",
 }
@@ -3225,6 +3242,10 @@ def main() -> int:
         {},
     )
     paper_authority = payload.get("paper_authority_reconciliation", {})
+    paper_lifecycle_postmortem = payload.get(
+        "paper_lifecycle_portfolio_postmortem",
+        {},
+    )
     paperops_qualified_setup_production = payload.get(
         "paperops_qualified_setup_production",
         {},
@@ -3244,6 +3265,30 @@ def main() -> int:
     print(
         "cockpit_status_paper_live_activation_status="
         f"{paper_live_activation.get('status')}"
+    )
+    print(
+        "cockpit_status_rs6_lifecycle_portfolio_postmortem_status="
+        f"{paper_lifecycle_postmortem.get('status')}"
+    )
+    print(
+        "cockpit_status_rs6_portfolio_value_source="
+        f"{paper_lifecycle_postmortem.get('portfolio_value_source')}"
+    )
+    print(
+        "cockpit_status_rs6_balance_ticker_broker_account_derived="
+        f"{paper_lifecycle_postmortem.get('balance_ticker_broker_account_derived')}"
+    )
+    print(
+        "cockpit_status_rs6_closed_trade_postmortem_coverage_count="
+        f"{paper_lifecycle_postmortem.get('closed_trade_postmortem_coverage_count')}"
+    )
+    print(
+        "cockpit_status_rs6_closed_trade_missing_postmortem_count="
+        f"{paper_lifecycle_postmortem.get('closed_trade_missing_postmortem_count')}"
+    )
+    print(
+        "cockpit_status_rs6_proof_verified_record_count="
+        f"{paper_lifecycle_postmortem.get('paper_proof_ledger_verified_record_count')}"
     )
     print(
         "cockpit_status_paper_live_activation_approved="
@@ -7062,6 +7107,68 @@ def main() -> int:
         if order.get("execution_allowed") is not False or order.get("paper_order_allowed") is not False:
             print("cockpit_status_paper_order_authority_enabled=true")
             return 1
+    missing_rs6_fields = sorted(RS6_PUBLIC_STATUS_FIELDS - set(paper_lifecycle_postmortem))
+    if missing_rs6_fields:
+        print("cockpit_status_rs6_fields_missing=" + ",".join(missing_rs6_fields))
+        return 1
+    if paper_lifecycle_postmortem.get("status") != "ok":
+        print("cockpit_status_rs6_not_ok=true")
+        return 1
+    if paper_lifecycle_postmortem.get("public_safe") is not True:
+        print("cockpit_status_rs6_not_public_safe=true")
+        return 1
+    if int(paper_lifecycle_postmortem.get("validation_error_count") or 0) != 0:
+        print("cockpit_status_rs6_validation_errors=true")
+        return 1
+    for field in (
+        "live_capital_enabled",
+        "write_authority",
+        "broker_write_allowed",
+        "paper_order_allowed",
+    ):
+        if paper_lifecycle_postmortem.get(field) is not False:
+            print(f"cockpit_status_rs6_authority_enabled={field}")
+            return 1
+    if paper_lifecycle_postmortem.get("closed_trade_count") != capital.get("closed_trade_count"):
+        print("cockpit_status_rs6_closed_trade_count_mismatch=true")
+        return 1
+    if paper_lifecycle_postmortem.get("order_count") != capital.get("order_count"):
+        print("cockpit_status_rs6_order_count_mismatch=true")
+        return 1
+    if paper_lifecycle_postmortem.get("open_position_count") != capital.get("open_position_count"):
+        print("cockpit_status_rs6_position_count_mismatch=true")
+        return 1
+    if paper_lifecycle_postmortem.get("current_balance_gbp") != capital.get("current_balance_gbp"):
+        print("cockpit_status_rs6_balance_mismatch=true")
+        return 1
+    if capital.get("connection_status") == "alpaca_paper_readonly_connected":
+        if paper_lifecycle_postmortem.get("portfolio_value_source") != "alpaca_paper_account_mirror":
+            print("cockpit_status_rs6_portfolio_value_source_not_alpaca_mirror=true")
+            return 1
+        if paper_lifecycle_postmortem.get("balance_ticker_broker_account_derived") is not True:
+            print("cockpit_status_rs6_balance_ticker_not_broker_account_derived=true")
+            return 1
+    coverage_count = int(
+        paper_lifecycle_postmortem.get("closed_trade_postmortem_coverage_count") or 0
+    )
+    missing_count = int(
+        paper_lifecycle_postmortem.get("closed_trade_missing_postmortem_count") or 0
+    )
+    if coverage_count + missing_count != int(capital.get("closed_trade_count") or 0):
+        print("cockpit_status_rs6_postmortem_coverage_count_mismatch=true")
+        return 1
+    if missing_count != 0:
+        print("cockpit_status_rs6_missing_postmortem=true")
+        return 1
+    if paper_lifecycle_postmortem.get("paper_proof_ledger_uses_verified_lifecycle_only") is not True:
+        print("cockpit_status_rs6_proof_ledger_policy_invalid=true")
+        return 1
+    if int(paper_lifecycle_postmortem.get("mirror_trade_counted_for_proof_count") or 0) != 0:
+        print("cockpit_status_rs6_mirror_trade_counted_for_proof=true")
+        return 1
+    if "read-only" not in paper_lifecycle_postmortem.get("boundary", ""):
+        print("cockpit_status_rs6_boundary_weak=true")
+        return 1
     mission = payload.get("mission_control", {})
     missing_mission_fields = sorted(MISSION_CONTROL_REQUIRED_FIELDS - set(mission))
     if missing_mission_fields:
@@ -7216,6 +7323,41 @@ def main() -> int:
         paperops_alpaca_paper_post.get("alpaca_paper_post_called_count")
     ):
         print("cockpit_status_mission_stack_paperops_alpaca_post_count_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_lifecycle_portfolio_postmortem") != (
+        paper_lifecycle_postmortem.get("status")
+    ):
+        print("cockpit_status_mission_stack_rs6_status_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_portfolio_value_source") != (
+        paper_lifecycle_postmortem.get("portfolio_value_source")
+    ):
+        print("cockpit_status_mission_stack_rs6_source_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_balance_ticker_broker_account_derived") != (
+        paper_lifecycle_postmortem.get("balance_ticker_broker_account_derived")
+    ):
+        print("cockpit_status_mission_stack_rs6_balance_source_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_closed_trade_postmortem_coverage_count") != (
+        paper_lifecycle_postmortem.get("closed_trade_postmortem_coverage_count")
+    ):
+        print("cockpit_status_mission_stack_rs6_postmortem_coverage_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_closed_trade_missing_postmortem_count") != (
+        paper_lifecycle_postmortem.get("closed_trade_missing_postmortem_count")
+    ):
+        print("cockpit_status_mission_stack_rs6_missing_postmortem_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_paper_proof_ledger_verified_record_count") != (
+        paper_lifecycle_postmortem.get("paper_proof_ledger_verified_record_count")
+    ):
+        print("cockpit_status_mission_stack_rs6_proof_record_mismatch=true")
+        return 1
+    if mission_stack.get("rs6_mirror_trade_counted_for_proof_count") != (
+        paper_lifecycle_postmortem.get("mirror_trade_counted_for_proof_count")
+    ):
+        print("cockpit_status_mission_stack_rs6_mirror_proof_mismatch=true")
         return 1
     if mission_stack.get("paperops_paper_lifecycle_polling_enablement") != (
         paperops_lifecycle_polling_enablement.get("status")
@@ -9275,6 +9417,41 @@ def main() -> int:
         return 1
     if mission_portfolio.get("open_position_count") != len(capital.get("open_positions", [])):
         print("cockpit_status_mission_open_position_count_mismatch=true")
+        return 1
+    if mission_portfolio.get("portfolio_value_source") != (
+        paper_lifecycle_postmortem.get("portfolio_value_source")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_source_mismatch=true")
+        return 1
+    if mission_portfolio.get("balance_ticker_broker_account_derived") != (
+        paper_lifecycle_postmortem.get("balance_ticker_broker_account_derived")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_balance_source_mismatch=true")
+        return 1
+    if mission_portfolio.get("postmortem_due_count") != (
+        paper_lifecycle_postmortem.get("postmortem_due_count")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_postmortem_due_mismatch=true")
+        return 1
+    if mission_portfolio.get("closed_trade_postmortem_coverage_count") != (
+        paper_lifecycle_postmortem.get("closed_trade_postmortem_coverage_count")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_postmortem_coverage_mismatch=true")
+        return 1
+    if mission_portfolio.get("closed_trade_missing_postmortem_count") != (
+        paper_lifecycle_postmortem.get("closed_trade_missing_postmortem_count")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_missing_postmortem_mismatch=true")
+        return 1
+    if mission_portfolio.get("paper_proof_ledger_verified_record_count") != (
+        paper_lifecycle_postmortem.get("paper_proof_ledger_verified_record_count")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_proof_record_mismatch=true")
+        return 1
+    if mission_portfolio.get("mirror_trade_counted_for_proof_count") != (
+        paper_lifecycle_postmortem.get("mirror_trade_counted_for_proof_count")
+    ):
+        print("cockpit_status_mission_portfolio_rs6_mirror_proof_mismatch=true")
         return 1
     if mission_portfolio.get("live_capital_enabled") is not False or mission_portfolio.get("write_authority") is not False:
         print("cockpit_status_mission_portfolio_authority_enabled=true")
