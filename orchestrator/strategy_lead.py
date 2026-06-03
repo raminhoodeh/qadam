@@ -290,6 +290,97 @@ def _safe_strategy_research_context(value: Any) -> dict[str, Any]:
     }
 
 
+def _safe_string_list(value: Any, *, limit: int = 8, item_limit: int = 120) -> list[str]:
+    if isinstance(value, list | tuple):
+        rows = value
+    elif isinstance(value, str) and value.strip():
+        rows = (value,)
+    else:
+        rows = ()
+    return [str(row)[:item_limit] for row in rows if str(row).strip()][:limit]
+
+
+def _safe_research_goal_context(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "status": "not_available",
+            "schema_version": 1,
+            "goal_record_count": 0,
+            "active_goal_count": 0,
+            "by_status": {},
+            "by_market_channel": {},
+            "recent_goals": [],
+            "execution_allowed_count": 0,
+            "paper_order_allowed_count": 0,
+            "trade_candidate_creation_allowed_count": 0,
+            "risk_handoff_allowed_count": 0,
+            "broker_write_allowed_count": 0,
+            "live_capital_enabled_count": 0,
+            "boundary": "No Research Goal lifecycle context was supplied.",
+        }
+    recent_goals = value.get("recent_goals", [])
+    if not isinstance(recent_goals, list):
+        recent_goals = []
+    authority_counts = value.get("authority_counts", {})
+    if not isinstance(authority_counts, dict):
+        authority_counts = {}
+    return {
+        "status": str(value.get("status") or "unknown")[:80],
+        "schema_version": int(value.get("schema_version", 1) or 1),
+        "goal_record_count": int(value.get("goal_record_count", 0) or 0),
+        "active_goal_count": int(value.get("active_goal_count", 0) or 0),
+        "by_status": value.get("by_status", {}) if isinstance(value.get("by_status"), dict) else {},
+        "by_market_channel": value.get("by_market_channel", {})
+        if isinstance(value.get("by_market_channel"), dict)
+        else {},
+        "recent_goals": [
+            {
+                "goal_id": str(item.get("goal_id") or "research_goal")[:80],
+                "status": str(item.get("status") or "unknown")[:60],
+                "market_channel": str(item.get("market_channel") or "macro_watchlist")[:80],
+                "hypothesis": str(item.get("hypothesis") or "No hypothesis exported.")[:300],
+                "watched_instruments": _safe_string_list(
+                    item.get("watched_instruments"),
+                    limit=6,
+                    item_limit=40,
+                ),
+                "required_sources": _safe_string_list(
+                    item.get("required_sources"),
+                    limit=8,
+                    item_limit=80,
+                ),
+                "minimum_source_quorum": int(item.get("minimum_source_quorum", 2) or 2),
+                "worldview_lens": str(item.get("worldview_lens") or "private_world_model_prior_only")[:120],
+                "akber_stage": str(item.get("akber_stage") or "stage_1_catalyst_identification")[:120],
+                "missing_corroboration": _safe_string_list(item.get("missing_corroboration")),
+                "owner_agent": str(item.get("owner_agent") or "research_analyst")[:80],
+                "next_handoff": str(item.get("next_handoff") or "local_research_analyst_compression")[:120],
+                "execution_allowed": False,
+                "paper_order_allowed": False,
+                "trade_candidate_creation_allowed": False,
+                "risk_handoff_allowed": False,
+                "broker_write_allowed": False,
+                "live_capital_enabled": False,
+                "boundary": str(item.get("boundary") or "Research Goal is pre-signal.")[:500],
+            }
+            for item in recent_goals[:8]
+            if isinstance(item, dict)
+        ],
+        "execution_allowed_count": int(authority_counts.get("execution_allowed", 0) or 0),
+        "paper_order_allowed_count": int(authority_counts.get("paper_order_allowed", 0) or 0),
+        "trade_candidate_creation_allowed_count": int(
+            authority_counts.get("trade_candidate_creation_allowed", 0) or 0
+        ),
+        "risk_handoff_allowed_count": int(authority_counts.get("risk_handoff_allowed", 0) or 0),
+        "broker_write_allowed_count": int(authority_counts.get("broker_write_allowed", 0) or 0),
+        "live_capital_enabled_count": int(authority_counts.get("live_capital_enabled", 0) or 0),
+        "boundary": str(
+            value.get("boundary")
+            or "Research Goals are pre-signal research state and cannot create candidates or orders."
+        )[:700],
+    }
+
+
 def _safe_source_context(value: dict[str, Any] | None) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {
@@ -330,6 +421,9 @@ def _safe_source_context(value: dict[str, Any] | None) -> dict[str, Any]:
         ),
         "strategy_research_intake": _safe_strategy_research_context(
             value.get("strategy_research_intake")
+        ),
+        "research_goal_lifecycle": _safe_research_goal_context(
+            value.get("research_goal_lifecycle")
         ),
         "write_authority": False,
         "signal_authority": False,
@@ -397,6 +491,22 @@ def _strategy_review(
                 if isinstance(item, dict) and str(item.get("challenge") or "").strip()
             )
     questions.extend(strategy_research_challenges[:3])
+    research_goal_context = source_context.get("research_goal_lifecycle", {})
+    research_goal_challenges: tuple[str, ...] = ()
+    if isinstance(research_goal_context, dict):
+        research_goal_rows = research_goal_context.get("recent_goals", [])
+        if isinstance(research_goal_rows, list):
+            research_goal_challenges = tuple(
+                (
+                    "Research Goal "
+                    f"{str(item.get('market_channel') or 'macro_watchlist')[:80]}: "
+                    "what second source, market confirmation, and invalidation check "
+                    "would close or kill this goal?"
+                )
+                for item in research_goal_rows[:3]
+                if isinstance(item, dict)
+            )
+    questions.extend(research_goal_challenges)
     if replay_complete:
         questions.extend(
             [
@@ -435,6 +545,18 @@ def _strategy_review(
         if isinstance(strategy_research_context, dict)
         else 0,
         "strategy_research_challenge_count": len(strategy_research_challenges),
+        "research_goal_lifecycle_status": research_goal_context.get("status", "not_available")
+        if isinstance(research_goal_context, dict)
+        else "not_available",
+        "research_goal_active_count": research_goal_context.get("active_goal_count", 0)
+        if isinstance(research_goal_context, dict)
+        else 0,
+        "research_goal_challenge_count": len(research_goal_challenges),
+        "research_goal_trade_candidate_creation_allowed": False,
+        "research_goal_risk_handoff_allowed": False,
+        "research_goal_execution_allowed": False,
+        "research_goal_paper_order_allowed": False,
+        "research_goal_broker_write_allowed": False,
         "risk_handoff_allowed": False,
         "trade_candidate_allowed": False,
         "execution_allowed": False,

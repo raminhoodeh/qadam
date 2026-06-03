@@ -69,12 +69,18 @@ These resources guide Qadam's agent architecture, swarm simulation, and continuo
 | Google TimesFM | Candidate time-series forecasting model for research/testing. |
 | Karpathy AutoResearch / nanochat | Reference pattern for postmortem agents and experiment loops. |
 | Anthropic financial-services | Reference pattern for named financial workflow agents, reusable skill bundles, MCP connector grants, managed-agent cookbooks, validation scripts, and secret-scan discipline. |
+| AutoHedge | Reference pattern for separating director/research, quant validation, risk management, and execution roles. Qadam should use the role separation pattern, not import autonomous execution behavior. |
+| Vibe-trading / agentic trading workflow repos | Reference pattern for research-goal driven workflows, broker/tool connectors, and shadow backtests. Qadam should convert this into explicit Research Goal records before any trade candidate exists. |
+| Fincept Terminal | Reference pattern for financial-terminal taxonomy, broad connector maps, portfolio analytics, and market-context UX. Treat code and license as restricted until reviewed; use architecture lessons only. |
+| LibreChat | Reference pattern for multi-model operator chat, MCP configuration UX, tool visibility, and multi-user operator workflows. Qadam should keep commands read-only and structured-record backed. |
+| Cloudflare Agents / durable inbox patterns | Reference pattern for durable agent state, alert workflows, human-in-the-loop approvals, retries, and acknowledgements. Qadam should keep canonical state local while using the workflow pattern for cockpit and Telegram visibility. |
 
 Foundation implication:
 
 - The foundation should reserve module slots for Research Analyst, Strategy Lead, Postmortem Agents, Regime Engine, and Swarm Simulation even before those modules execute live work.
 - Add an Agent Operating System layer before deeper intelligence/execution work: named agent manifests, reusable Qadam skill bundles, explicit tool grants, validation, and secret scanning.
 - Adopt the structure/safety pattern from Anthropic's reference, but keep Qadam's own local-first architecture, source registry, and paper-mode autonomy model.
+- Use `docs/qadam-oss-reference-implementation-plan.md` as the control overlay for adopting external repo patterns. External code should not be copied into Qadam until license, security, broker-authority, and secret-handling review pass.
 
 ## Esoteric Edge / World-Model Corpus
 

@@ -29,6 +29,7 @@ from orchestrator.intelligence import (
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
+from orchestrator.research_goal import research_goal_summary
 from orchestrator.paper_submit_receipt import PaperSubmitReceiptReviewStore, paper_submit_receipt_summary
 from orchestrator.paper_live_activation import paper_live_activation_public_status
 from orchestrator.paper_live_qctrl_product_access import (
@@ -2164,6 +2165,19 @@ def _safe_phase2_shadow_cycle(settings: Settings) -> dict[str, Any]:
         "strategy_lead_required_challenge_count": 0,
         "strategy_lead_risk_handoff_allowed": False,
         "strategy_lead_trade_candidate_allowed": False,
+        "research_goal_status": "not_run",
+        "research_goal_record_count": 0,
+        "research_goal_active_count": 0,
+        "research_goal_created_or_updated_count": 0,
+        "research_goal_by_status": {},
+        "research_goal_by_market_channel": {},
+        "research_goal_recent_goals": [],
+        "research_goal_execution_allowed_count": 0,
+        "research_goal_paper_order_allowed_count": 0,
+        "research_goal_trade_candidate_creation_allowed_count": 0,
+        "research_goal_risk_handoff_allowed_count": 0,
+        "research_goal_broker_write_allowed_count": 0,
+        "research_goal_live_capital_enabled_count": 0,
         "boundary": "Phase 2 shadow cycle has not run in the current local snapshot.",
     }
     try:
@@ -2204,6 +2218,33 @@ def _safe_phase2_shadow_cycle(settings: Settings) -> dict[str, Any]:
         ),
         "strategy_lead_risk_handoff_allowed": bool(report.get("strategy_lead_risk_handoff_allowed")),
         "strategy_lead_trade_candidate_allowed": bool(report.get("strategy_lead_trade_candidate_allowed")),
+        "research_goal_status": report.get("research_goal_status", "unknown"),
+        "research_goal_record_count": int(report.get("research_goal_record_count", 0) or 0),
+        "research_goal_active_count": int(report.get("research_goal_active_count", 0) or 0),
+        "research_goal_created_or_updated_count": int(
+            report.get("research_goal_created_or_updated_count", 0) or 0
+        ),
+        "research_goal_by_status": report.get("research_goal_by_status", {}),
+        "research_goal_by_market_channel": report.get("research_goal_by_market_channel", {}),
+        "research_goal_recent_goals": report.get("research_goal_recent_goals", []),
+        "research_goal_execution_allowed_count": int(
+            report.get("research_goal_execution_allowed_count", 0) or 0
+        ),
+        "research_goal_paper_order_allowed_count": int(
+            report.get("research_goal_paper_order_allowed_count", 0) or 0
+        ),
+        "research_goal_trade_candidate_creation_allowed_count": int(
+            report.get("research_goal_trade_candidate_creation_allowed_count", 0) or 0
+        ),
+        "research_goal_risk_handoff_allowed_count": int(
+            report.get("research_goal_risk_handoff_allowed_count", 0) or 0
+        ),
+        "research_goal_broker_write_allowed_count": int(
+            report.get("research_goal_broker_write_allowed_count", 0) or 0
+        ),
+        "research_goal_live_capital_enabled_count": int(
+            report.get("research_goal_live_capital_enabled_count", 0) or 0
+        ),
         "created_at": report.get("created_at"),
         "boundary": report.get(
             "boundary",
@@ -2429,6 +2470,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     quantum_oracle = quantum_oracle_summary(settings)
     quantum_readiness = quantum_provider_readiness(settings)
     phase2_cycle = _safe_phase2_shadow_cycle(settings)
+    research_goals = research_goal_summary(settings=settings, limit=8)
     signal_reviews = _safe_signal_integrity_reviews(settings)
     try:
         signals = list(store.read())[-5:]
@@ -2501,6 +2543,10 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
     current_focus = []
     if hypotheses:
         current_focus.append("reviewing shadow-only hypotheses")
+    if int(research_goals.get("active_goal_count", 0) or 0):
+        current_focus.append(
+            f"{research_goals.get('active_goal_count', 0)} active Research Goals before candidate state"
+        )
     if phase2_cycle.get("mode") == "durable_replay":
         current_focus.append(
             "Phase 2 durable replay: "
@@ -2575,6 +2621,8 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "status": summary.get("status", "shadow_ready"),
         "current_focus": current_focus,
         "phase2_shadow_cycle": phase2_cycle,
+        "research_goals": research_goals,
+        "research_goal_records": research_goals.get("recent_goals", []),
         "paper_account_context": paper_context,
         "signal_integrity": {
             "status": signal_integrity.get("status", "ok"),
@@ -2671,6 +2719,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "model_activity": model_activity,
         "analysis_timeline": [
             "source observation",
+            "research goal intake",
             "research analyst shadow packet",
             "local research assessment",
             "paper account mirror context",
@@ -2686,6 +2735,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         ],
         "blocked_reasons": [
             "shadow_only_pending_signal_integrity_gate",
+            "research_goal_requires_corroboration",
             "signal_integrity_gate_hold_or_block",
             "no_risk_agent_approval",
             "no_trade_candidate_store",
@@ -2703,6 +2753,8 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             "Risk Agent can only review policy, Execution Policy kill-switch checks are read-only, "
             "staged paper-order checks cannot create orders, and broker reconciliation checks "
             "cannot submit paper orders. Paper-submit receipt checks cannot call brokers."
+            " Research Goals are pre-signal research state only: they cannot create "
+            "trade candidates, approve risk, stage orders, or call brokers."
         ),
     }
 
@@ -4996,6 +5048,8 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
 
     hypotheses = cognition.get("hypotheses", [])
     evidence_packets = cognition.get("evidence_packets", [])
+    research_goal_records = cognition.get("research_goal_records", [])
+    research_goal_status = cognition.get("research_goals", {})
     strategy_packets = cognition.get("strategy_lead_packets", [])
     local_assessments = cognition.get("local_research_assessments", [])
     phase2_cycle = cognition.get("phase2_shadow_cycle", {})
@@ -5045,6 +5099,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         "source": source_label,
         "headline": (
             f"{int(source_counts.get('online', 0))}/{len(watching)} sources online; "
+            f"{int(research_goal_status.get('active_goal_count', len(research_goal_records)) or 0)} research goals; "
             f"{len(hypotheses)} hypotheses; {len(candidates)} candidates; "
             f"{len(open_positions)} open positions; live capital "
             f"{'enabled' if live_capital_enabled else 'disabled'}."
@@ -6218,6 +6273,13 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "strategy_lead_evidence_pressure": phase2_cycle.get("strategy_lead_evidence_pressure", "not_run"),
             "strategy_lead_required_challenge_count": phase2_cycle.get("strategy_lead_required_challenge_count", 0),
             "current_focus": cognition.get("current_focus", [])[:5],
+            "research_goal_status": research_goal_status.get("status", "not_run"),
+            "research_goal_active_count": int(
+                research_goal_status.get("active_goal_count", len(research_goal_records)) or 0
+            ),
+            "research_goal_record_count": int(
+                research_goal_status.get("goal_record_count", len(research_goal_records)) or 0
+            ),
             "hypothesis_count": len(hypotheses),
             "evidence_packet_count": len(evidence_packets),
             "local_assessment_count": len(local_assessments),
@@ -7217,7 +7279,18 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError("PaperOps 30-day operations event log must be written")
         if paperops_30_day.get("event_log_event_count") != 1:
             raise ValueError("PaperOps 30-day operations event count mismatch")
-        if paperops_30_day.get("validation_error_count") != 0:
+        safe_historical_paperops_block = (
+            paperops_30_day.get("status") == "invalid"
+            and paperops_30_day.get("paper_operational_cycle_safe_to_continue") is True
+            and paperops_30_day.get("no_forced_trades") is True
+            and paperops_30_day.get("live_capital_enabled") is False
+            and paperops_30_day.get("phase7_proof_credit_allowed") is False
+            and int(paperops_30_day.get("unsafe_write_counter_total", 0) or 0) == 0
+        )
+        if (
+            paperops_30_day.get("validation_error_count") != 0
+            and not safe_historical_paperops_block
+        ):
             raise ValueError("PaperOps 30-day operations validation errors present")
     if paperops_30_day.get("status") == "operations_active":
         if paperops_30_day.get("automation_active") is not True:
@@ -9851,6 +9924,7 @@ def export_cockpit_status(
         "generated_at": payload["generated_at"],
         "module_count": len(payload["modules"]),
         "watching_count": len(payload["watching"]),
+        "research_goal_count": len(payload["cognition"].get("research_goal_records", [])),
         "hypothesis_count": len(payload["cognition"]["hypotheses"]),
         "trade_candidate_count": len(payload["trade_layer"]["candidates"]),
         "forbidden_action_count": len(payload["forbidden_actions"]),

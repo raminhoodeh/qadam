@@ -39,6 +39,7 @@ from orchestrator.preference_mcp_shadow_context import (
     preference_shadow_packet_context,
     write_preference_shadow_context,
 )
+from orchestrator.research_goal import ResearchGoal, ResearchGoalStore, research_goal_summary
 from orchestrator.risk_agent import run_risk_policy_router
 from orchestrator.signal_integrity import run_signal_integrity_gate
 from orchestrator.staged_paper_order import run_staged_paper_order_contract
@@ -81,6 +82,7 @@ class SourceCycleResult:
     degraded_reason: str | None
     event_count: int
     queued_packet_count: int
+    research_goal_count: int = 0
     context_role: str = "canonical_phase2_source"
     signal_authority: bool = False
     order_authority: bool = False
@@ -136,6 +138,32 @@ def _event_summary(event: dict[str, Any]) -> str:
             if isinstance(value, str) and value.strip():
                 return value.strip()[:600]
     return "Read-only source observation requires shadow review."
+
+
+def _research_goal_packet_context(goal: ResearchGoal | dict[str, Any]) -> dict[str, Any]:
+    payload = goal.to_dict() if isinstance(goal, ResearchGoal) else goal
+    return {
+        "goal_id": payload.get("goal_id"),
+        "status": payload.get("status"),
+        "origin": payload.get("origin"),
+        "hypothesis": payload.get("hypothesis"),
+        "market_channel": payload.get("market_channel"),
+        "watched_instruments": list(payload.get("watched_instruments", []))[:6],
+        "required_sources": list(payload.get("required_sources", []))[:8],
+        "minimum_source_quorum": int(payload.get("minimum_source_quorum", 2) or 2),
+        "worldview_lens": payload.get("worldview_lens"),
+        "akber_stage": payload.get("akber_stage"),
+        "missing_corroboration": list(payload.get("missing_corroboration", []))[:8],
+        "owner_agent": payload.get("owner_agent"),
+        "next_handoff": payload.get("next_handoff"),
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "trade_candidate_creation_allowed": False,
+        "risk_handoff_allowed": False,
+        "broker_write_allowed": False,
+        "live_capital_enabled": False,
+        "boundary": payload.get("boundary"),
+    }
 
 
 def _durable_observation_to_event(observation: dict[str, Any]) -> dict[str, Any]:
@@ -224,8 +252,10 @@ def run_phase2_shadow_cycle(
     event_log = event_log or EventLog(echo=False)
     source_results: list[SourceCycleResult] = []
     queued_packet_count = 0
+    research_goal_recorded_count = 0
     durable_replay_result: dict[str, Any] | None = None
     durable_events_by_source: dict[str, list[dict[str, Any]]] = {}
+    research_goal_store = ResearchGoalStore(settings=settings)
     preference_shadow_context = build_preference_shadow_context(
         settings=settings,
         event_log=event_log,
@@ -267,6 +297,7 @@ def run_phase2_shadow_cycle(
                         degraded_reason=f"fetch_error:{exc.__class__.__name__}",
                         event_count=0,
                         queued_packet_count=0,
+                        research_goal_count=0,
                         context_role=SUPPLEMENTAL_PHASE2_SOURCES.get(source_key, "canonical_phase2_source"),
                         signal_authority=False,
                         order_authority=False,
@@ -280,14 +311,32 @@ def run_phase2_shadow_cycle(
             degraded_reason = envelope.get("degraded_reason")
 
         source_packet_count = 0
+        source_research_goal_count = 0
         if not degraded:
             for event in event_records[: max(0, events_per_source)]:
+                event_ref = _event_ref(event)
+                event_summary = _event_summary(event)
+                research_goal = research_goal_store.add_from_observation(
+                    summary=event_summary,
+                    source_event_refs=(event_ref,),
+                    origin=(
+                        "durable_replay"
+                        if durable_replay
+                        else ("live_source" if live_sources else "sample_source")
+                    ),
+                    observed_at=event.get("ingested_at"),
+                    event_log=event_log,
+                )
+                research_goal_context = _research_goal_packet_context(research_goal)
+                source_research_goal_count += 1
+                research_goal_recorded_count += 1
                 packet_context = dict(preference_packet_context)
+                packet_context["research_goal"] = research_goal_context
                 if source_key == "tradingview_mcp":
                     packet_context["tradingview_mcp"] = tradingview_mcp_context
                 packet = create_shadow_triage_packet(
-                    source_event_refs=(_event_ref(event),),
-                    summary=_event_summary(event),
+                    source_event_refs=(event_ref,),
+                    summary=event_summary,
                     uncertainty=_uncertainty(event, degraded=degraded),
                     read_only_context=packet_context,
                     settings=settings,
@@ -305,6 +354,7 @@ def run_phase2_shadow_cycle(
                 degraded_reason=degraded_reason,
                 event_count=len(event_records),
                 queued_packet_count=source_packet_count,
+                research_goal_count=source_research_goal_count,
                 context_role=SUPPLEMENTAL_PHASE2_SOURCES.get(source_key, "canonical_phase2_source"),
                 signal_authority=False,
                 order_authority=False,
@@ -336,6 +386,8 @@ def run_phase2_shadow_cycle(
     )
     assessment = local_result.get("assessment") if isinstance(local_result.get("assessment"), dict) else None
     source_degraded_count = sum(1 for result in source_results if result.degraded)
+    research_goal_status = research_goal_summary(settings=settings, limit=8)
+    research_goal_authority_counts = research_goal_status.get("authority_counts", {})
     durable_replay_summary = durable_replay_result or {
         "status": "not_requested",
         "contract_status": "not_requested",
@@ -402,6 +454,24 @@ def run_phase2_shadow_cycle(
         "strategy_research_execution_allowed": False,
         "strategy_research_paper_order_allowed": False,
         "strategy_research_broker_write_allowed": False,
+        "research_goal_lifecycle": research_goal_status,
+        "research_goal_status": research_goal_status.get("status", "unknown"),
+        "research_goal_schema_version": research_goal_status.get("schema_version"),
+        "research_goal_record_count": research_goal_status.get("goal_record_count", 0),
+        "research_goal_active_count": research_goal_status.get("active_goal_count", 0),
+        "research_goal_created_or_updated_count": research_goal_recorded_count,
+        "research_goal_by_status": research_goal_status.get("by_status", {}),
+        "research_goal_by_market_channel": research_goal_status.get("by_market_channel", {}),
+        "research_goal_recent_goals": research_goal_status.get("recent_goals", []),
+        "research_goal_execution_allowed_count": research_goal_authority_counts.get("execution_allowed", 0),
+        "research_goal_paper_order_allowed_count": research_goal_authority_counts.get("paper_order_allowed", 0),
+        "research_goal_trade_candidate_creation_allowed_count": research_goal_authority_counts.get(
+            "trade_candidate_creation_allowed",
+            0,
+        ),
+        "research_goal_risk_handoff_allowed_count": research_goal_authority_counts.get("risk_handoff_allowed", 0),
+        "research_goal_broker_write_allowed_count": research_goal_authority_counts.get("broker_write_allowed", 0),
+        "research_goal_live_capital_enabled_count": research_goal_authority_counts.get("live_capital_enabled", 0),
         "source_degraded_count": source_degraded_count,
         "queued_packet_count": queued_packet_count,
         "shadow_signal_count": triage_result.get("shadow_signal_count", 0),
@@ -532,6 +602,35 @@ def run_phase2_shadow_cycle(
             "strategy_research_broker_write_allowed"
         ],
         "strategy_research_intake": strategy_research_context,
+        "research_goal_status": strategy_source_context["research_goal_status"],
+        "research_goal_schema_version": strategy_source_context["research_goal_schema_version"],
+        "research_goal_record_count": strategy_source_context["research_goal_record_count"],
+        "research_goal_active_count": strategy_source_context["research_goal_active_count"],
+        "research_goal_created_or_updated_count": strategy_source_context[
+            "research_goal_created_or_updated_count"
+        ],
+        "research_goal_by_status": strategy_source_context["research_goal_by_status"],
+        "research_goal_by_market_channel": strategy_source_context["research_goal_by_market_channel"],
+        "research_goal_recent_goals": strategy_source_context["research_goal_recent_goals"],
+        "research_goal_execution_allowed_count": strategy_source_context[
+            "research_goal_execution_allowed_count"
+        ],
+        "research_goal_paper_order_allowed_count": strategy_source_context[
+            "research_goal_paper_order_allowed_count"
+        ],
+        "research_goal_trade_candidate_creation_allowed_count": strategy_source_context[
+            "research_goal_trade_candidate_creation_allowed_count"
+        ],
+        "research_goal_risk_handoff_allowed_count": strategy_source_context[
+            "research_goal_risk_handoff_allowed_count"
+        ],
+        "research_goal_broker_write_allowed_count": strategy_source_context[
+            "research_goal_broker_write_allowed_count"
+        ],
+        "research_goal_live_capital_enabled_count": strategy_source_context[
+            "research_goal_live_capital_enabled_count"
+        ],
+        "research_goal_lifecycle": research_goal_status,
         "queued_packet_count": queued_packet_count,
         "durable_replay_requested": durable_replay,
         "durable_replay_status": durable_replay_summary.get("status"),
@@ -718,6 +817,10 @@ def run_phase2_shadow_cycle(
             "can only describe read-only submit prerequisites. Paper-submit receipt "
             "checks are dry-run only and cannot call brokers. Durable replay is "
             "read-only context and cannot create signals, trade candidates, or orders. "
+            "Research Goals are pre-signal organization records only; they can carry "
+            "hypotheses, missing corroboration, and handoff context, but cannot create "
+            "trade candidates, risk approvals, paper orders, broker writes, quantum "
+            "hardware submissions, or live capital. "
             "Preference/PREF MCP context is read-only challenge material only; it cannot "
             "satisfy source quorum or move anything to risk, execution, paper order, "
             "broker write, or live capital."
@@ -752,6 +855,11 @@ def run_phase2_shadow_cycle(
             "strategy_research_intake_status": report["strategy_research_intake_status"],
             "strategy_research_candidate_count": report["strategy_research_candidate_count"],
             "strategy_research_trade_candidate_creation_allowed": False,
+            "research_goal_active_count": report["research_goal_active_count"],
+            "research_goal_created_or_updated_count": report["research_goal_created_or_updated_count"],
+            "research_goal_trade_candidate_creation_allowed_count": report[
+                "research_goal_trade_candidate_creation_allowed_count"
+            ],
             "execution_allowed": False,
             "paper_order_allowed": False,
             "report_path": str(report_path),

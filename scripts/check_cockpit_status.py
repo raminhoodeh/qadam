@@ -112,6 +112,30 @@ HYPOTHESIS_REQUIRED_FIELDS = {
     "title",
 }
 
+RESEARCH_GOAL_REQUIRED_FIELDS = {
+    "akber_stage",
+    "boundary",
+    "broker_write_allowed",
+    "execution_allowed",
+    "goal_id",
+    "hypothesis",
+    "live_capital_enabled",
+    "market_channel",
+    "minimum_source_quorum",
+    "missing_corroboration",
+    "next_handoff",
+    "origin",
+    "owner_agent",
+    "paper_order_allowed",
+    "required_sources",
+    "risk_handoff_allowed",
+    "status",
+    "trade_candidate_creation_allowed",
+    "updated_at",
+    "watched_instruments",
+    "worldview_lens",
+}
+
 EVIDENCE_PACKET_REQUIRED_FIELDS = {
     "average_trust_score",
     "created_at",
@@ -2936,6 +2960,15 @@ def main() -> int:
     print(f"cockpit_status_pipeline_count={len(payload.get('source_pipeline_summary', []))}")
     print(f"cockpit_status_heartbeat_history_count={len(payload.get('source_heartbeat_history', []))}")
     print(f"cockpit_status_shadow_packet_count={len(payload['cognition'].get('shadow_packets', []))}")
+    print(
+        "cockpit_status_research_goal_status="
+        f"{payload['cognition'].get('research_goals', {}).get('status')}"
+    )
+    print(
+        "cockpit_status_research_goal_active_count="
+        f"{payload['cognition'].get('research_goals', {}).get('active_goal_count', 0)}"
+    )
+    print(f"cockpit_status_research_goal_record_count={len(payload['cognition'].get('research_goal_records', []))}")
     print(f"cockpit_status_hypothesis_count={len(payload['cognition'].get('hypotheses', []))}")
     print(f"cockpit_status_evidence_packet_count={len(payload['cognition'].get('evidence_packets', []))}")
     print(f"cockpit_status_paper_context_status={payload['cognition'].get('paper_account_context', {}).get('status')}")
@@ -7468,6 +7501,54 @@ def main() -> int:
         if int(paper_operational_mode.get(key, 0) or 0) != 0:
             print(f"cockpit_status_paper_operational_mode_unsafe_counter={key}")
             return 1
+    no_current_paperops_setup = (
+        paperops_qualified_setup_production.get("status")
+        == "production_path_ready_no_current_qualified_setup"
+        and int(
+            paperops_qualified_setup_production.get("qualified_setup_count", 0) or 0
+        )
+        == 0
+        and paperops_auto_approval_staged_order.get("status")
+        == "ready_no_current_auto_approved_setup"
+        and int(paperops_auto_approval_staged_order.get("staged_order_count", 0) or 0)
+        == 0
+        and paperops_alpaca_submit_enablement.get("status")
+        == "blocked_pending_prerequisites"
+        and paperops_lifecycle_polling_enablement.get("status")
+        == "blocked_pending_prerequisites"
+        and paperops_guarded_exit_enablement.get("status")
+        == "blocked_lifecycle_polling_enablement_not_ready"
+        and paper_live_certification.get("status") == "blocked_paper_live_control_plane"
+        and paperops_30_day_operations.get("paper_operational_cycle_safe_to_continue")
+        is True
+        and paperops_30_day_operations.get("no_forced_trades") is True
+        and paperops_30_day_operations.get("live_capital_enabled") is False
+        and paperops_30_day_operations.get("phase7_proof_credit_allowed") is False
+        and int(paperops_30_day_operations.get("unsafe_write_counter_total", 0) or 0)
+        == 0
+        and int(paper_live_certification.get("unsafe_write_counter_total", 0) or 0)
+        == 0
+        and int(
+            paperops_alpaca_submit_enablement.get(
+                "unsafe_write_counter_total",
+                0,
+            )
+            or 0
+        )
+        == 0
+        and int(
+            paperops_lifecycle_polling_enablement.get(
+                "unsafe_write_counter_total",
+                0,
+            )
+            or 0
+        )
+        == 0
+        and int(
+            paperops_guarded_exit_enablement.get("unsafe_write_counter_total", 0) or 0
+        )
+        == 0
+    )
     missing_paperops_30_day_fields = sorted(
         PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS - set(paperops_30_day_operations)
     )
@@ -7477,7 +7558,10 @@ def main() -> int:
             + ",".join(missing_paperops_30_day_fields)
         )
         return 1
-    if paperops_30_day_operations.get("status") != "operations_active":
+    if (
+        paperops_30_day_operations.get("status") != "operations_active"
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_30_day_operations_not_active=true")
         return 1
     if paperops_30_day_operations.get("public_safe") is not True:
@@ -7492,7 +7576,10 @@ def main() -> int:
     if paperops_30_day_operations.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_30_day_operations_event_count_mismatch=true")
         return 1
-    if paperops_30_day_operations.get("validation_error_count") != 0:
+    if (
+        paperops_30_day_operations.get("validation_error_count") != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_30_day_operations_validation_errors=true")
         return 1
     if paperops_30_day_operations.get("automation_active") is not True:
@@ -7619,13 +7706,22 @@ def main() -> int:
     if paper_live_certification.get("validation_error_count") != 0:
         print("cockpit_status_paper_live_certification_validation_errors=true")
         return 1
-    if paper_live_certification.get("paper_live_control_plane_certified") is not True:
+    if (
+        paper_live_certification.get("paper_live_control_plane_certified") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paper_live_control_plane_not_certified=true")
         return 1
-    if paper_live_certification.get("paper_live_certified") is not True:
+    if (
+        paper_live_certification.get("paper_live_certified") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paper_live_not_certified=true")
         return 1
-    if paper_live_certification.get("paper_live_operation_allowed") is not True:
+    if (
+        paper_live_certification.get("paper_live_operation_allowed") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paper_live_operation_not_allowed=true")
         return 1
     if (
@@ -7633,10 +7729,14 @@ def main() -> int:
             "paper_live_unattended_execution_delegation_enabled"
         )
         is not True
+        and not no_current_paperops_setup
     ):
         print("cockpit_status_paper_live_unattended_delegation_not_enabled=true")
         return 1
-    if int(paper_live_certification.get("certification_blocker_count", 0) or 0) != 0:
+    if (
+        int(paper_live_certification.get("certification_blocker_count", 0) or 0) != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paper_live_certification_blockers_present=true")
         return 1
     if (
@@ -7876,12 +7976,17 @@ def main() -> int:
     if paperops_auto_approval_staged_order.get("source_pt3_path_ready") is not True:
         print("cockpit_status_paperops_auto_approval_staged_order_source_not_ready=true")
         return 1
-    if int(paperops_auto_approval_staged_order.get("staged_order_count", 0) or 0) < 1:
+    if (
+        int(paperops_auto_approval_staged_order.get("staged_order_count", 0) or 0)
+        < 1
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_auto_approval_staged_order_staged_missing=true")
         return 1
     if (
         paperops_auto_approval_staged_order.get("ready_for_paperops2_submit")
         is not True
+        and not no_current_paperops_setup
     ):
         print("cockpit_status_paperops_auto_approval_staged_order_not_ready_for_paperops2=true")
         return 1
@@ -7924,7 +8029,11 @@ def main() -> int:
             + ",".join(missing_submit_enablement_fields)
         )
         return 1
-    if paperops_alpaca_submit_enablement.get("status") != "enabled_pending_explicit_submit":
+    if (
+        paperops_alpaca_submit_enablement.get("status")
+        != "enabled_pending_explicit_submit"
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_alpaca_submit_enablement_not_enabled=true")
         return 1
     if paperops_alpaca_submit_enablement.get("public_safe") is not True:
@@ -7939,16 +8048,30 @@ def main() -> int:
     if paperops_alpaca_submit_enablement.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_alpaca_submit_enablement_event_count_mismatch=true")
         return 1
-    if paperops_alpaca_submit_enablement.get("validation_error_count") != 0:
+    if (
+        paperops_alpaca_submit_enablement.get("validation_error_count") != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_alpaca_submit_enablement_validation_errors=true")
         return 1
-    if paperops_alpaca_submit_enablement.get("alpaca_paper_submit_effective") is not True:
+    if (
+        paperops_alpaca_submit_enablement.get("alpaca_paper_submit_effective")
+        is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_alpaca_submit_enablement_effective_false=true")
         return 1
-    if paperops_alpaca_submit_enablement.get("paper_post_path_available") is not True:
+    if (
+        paperops_alpaca_submit_enablement.get("paper_post_path_available") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_alpaca_submit_enablement_path_unavailable=true")
         return 1
-    if int(paperops_alpaca_submit_enablement.get("pt4_staged_order_count", 0) or 0) < 1:
+    if (
+        int(paperops_alpaca_submit_enablement.get("pt4_staged_order_count", 0) or 0)
+        < 1
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_alpaca_submit_enablement_pt4_order_missing=true")
         return 1
     for key in (
@@ -7989,10 +8112,14 @@ def main() -> int:
             + ",".join(missing_lifecycle_polling_enablement_fields)
         )
         return 1
-    if paperops_lifecycle_polling_enablement.get("status") not in {
-        "enabled_pending_submitted_paper_orders",
-        "enabled_pending_explicit_poll",
-    }:
+    if (
+        paperops_lifecycle_polling_enablement.get("status")
+        not in {
+            "enabled_pending_submitted_paper_orders",
+            "enabled_pending_explicit_poll",
+        }
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_lifecycle_polling_enablement_not_enabled=true")
         return 1
     if paperops_lifecycle_polling_enablement.get("public_safe") is not True:
@@ -8007,22 +8134,31 @@ def main() -> int:
     if paperops_lifecycle_polling_enablement.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_lifecycle_polling_enablement_event_count_mismatch=true")
         return 1
-    if paperops_lifecycle_polling_enablement.get("validation_error_count") != 0:
+    if (
+        paperops_lifecycle_polling_enablement.get("validation_error_count") != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_lifecycle_polling_enablement_validation_errors=true")
         return 1
     if (
         paperops_lifecycle_polling_enablement.get("active_lifecycle_polling_enabled")
         is not True
+        and not no_current_paperops_setup
     ):
         print("cockpit_status_paperops_lifecycle_polling_enablement_active_false=true")
         return 1
     if (
         paperops_lifecycle_polling_enablement.get("paper_lifecycle_polling_effective")
         is not True
+        and not no_current_paperops_setup
     ):
         print("cockpit_status_paperops_lifecycle_polling_enablement_effective_false=true")
         return 1
-    if paperops_lifecycle_polling_enablement.get("paper_broker_get_allowed") is not True:
+    if (
+        paperops_lifecycle_polling_enablement.get("paper_broker_get_allowed")
+        is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_lifecycle_polling_enablement_get_not_allowed=true")
         return 1
     if (
@@ -8080,10 +8216,14 @@ def main() -> int:
             + ",".join(missing_guarded_exit_enablement_fields)
         )
         return 1
-    if paperops_guarded_exit_enablement.get("status") not in {
-        "enabled_pending_open_position_readback",
-        "enabled_pending_explicit_exit",
-    }:
+    if (
+        paperops_guarded_exit_enablement.get("status")
+        not in {
+            "enabled_pending_open_position_readback",
+            "enabled_pending_explicit_exit",
+        }
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_guarded_exit_enablement_not_enabled=true")
         return 1
     if paperops_guarded_exit_enablement.get("public_safe") is not True:
@@ -8098,13 +8238,23 @@ def main() -> int:
     if paperops_guarded_exit_enablement.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_guarded_exit_enablement_event_count_mismatch=true")
         return 1
-    if paperops_guarded_exit_enablement.get("validation_error_count") != 0:
+    if (
+        paperops_guarded_exit_enablement.get("validation_error_count") != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_guarded_exit_enablement_validation_errors=true")
         return 1
-    if paperops_guarded_exit_enablement.get("guarded_paper_exit_enabled") is not True:
+    if (
+        paperops_guarded_exit_enablement.get("guarded_paper_exit_enabled") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_guarded_exit_enablement_flag_false=true")
         return 1
-    if paperops_guarded_exit_enablement.get("alpaca_paper_exit_effective") is not True:
+    if (
+        paperops_guarded_exit_enablement.get("alpaca_paper_exit_effective")
+        is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_guarded_exit_enablement_effective_false=true")
         return 1
     if (
@@ -9106,6 +9256,55 @@ def main() -> int:
         if assessment.get("paper_order_allowed") is not False:
             print("cockpit_status_local_research_paper_order_allowed=true")
             return 1
+    research_goals = cognition.get("research_goals", {})
+    if not isinstance(research_goals, dict):
+        print("cockpit_status_research_goals_missing=true")
+        return 1
+    if research_goals.get("status") not in {"ok", "not_run", "degraded"}:
+        print("cockpit_status_research_goals_status_invalid=true")
+        return 1
+    for authority_field in (
+        "execution_allowed",
+        "paper_order_allowed",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "broker_write_allowed",
+        "live_capital_enabled",
+    ):
+        if int(research_goals.get("authority_counts", {}).get(authority_field, 0) or 0) != 0:
+            print(f"cockpit_status_research_goal_authority_enabled={authority_field}")
+            return 1
+    if "pre-signal research state" not in research_goals.get("boundary", ""):
+        print("cockpit_status_research_goals_boundary_weak=true")
+        return 1
+    if not isinstance(cognition.get("research_goal_records"), list):
+        print("cockpit_status_research_goal_records_missing=true")
+        return 1
+    for goal in cognition.get("research_goal_records", []):
+        missing_fields = sorted(RESEARCH_GOAL_REQUIRED_FIELDS - set(goal))
+        if missing_fields:
+            print(
+                "cockpit_status_research_goal_fields_missing="
+                f"{goal.get('goal_id', 'unknown')}:{','.join(missing_fields)}"
+            )
+            return 1
+        if goal.get("minimum_source_quorum", 0) < 2:
+            print("cockpit_status_research_goal_source_quorum_weak=true")
+            return 1
+        for authority_field in (
+            "execution_allowed",
+            "paper_order_allowed",
+            "trade_candidate_creation_allowed",
+            "risk_handoff_allowed",
+            "broker_write_allowed",
+            "live_capital_enabled",
+        ):
+            if goal.get(authority_field) is not False:
+                print(f"cockpit_status_research_goal_record_authority_enabled={authority_field}")
+                return 1
+        if "pre-signal research state" not in goal.get("boundary", ""):
+            print("cockpit_status_research_goal_record_boundary_weak=true")
+            return 1
     if not isinstance(cognition.get("hypotheses"), list) or not cognition["hypotheses"]:
         print("cockpit_status_hypotheses_missing=true")
         return 1
@@ -9121,6 +9320,9 @@ def main() -> int:
     if "paper account mirror context" not in cognition.get("analysis_timeline", []):
         print("cockpit_status_analysis_timeline_paper_context_missing=true")
         return 1
+    if "research goal intake" not in cognition.get("analysis_timeline", []):
+        print("cockpit_status_analysis_timeline_research_goal_missing=true")
+        return 1
     if "signal integrity review" not in cognition.get("analysis_timeline", []):
         print("cockpit_status_analysis_timeline_signal_integrity_missing=true")
         return 1
@@ -9129,6 +9331,9 @@ def main() -> int:
         return 1
     if "shadow_only_pending_signal_integrity_gate" not in cognition.get("blocked_reasons", []):
         print("cockpit_status_signal_integrity_pending_block_missing=true")
+        return 1
+    if "research_goal_requires_corroboration" not in cognition.get("blocked_reasons", []):
+        print("cockpit_status_research_goal_block_missing=true")
         return 1
     if "signal_integrity_gate_hold_or_block" not in cognition.get("blocked_reasons", []):
         print("cockpit_status_signal_integrity_hold_block_missing=true")
