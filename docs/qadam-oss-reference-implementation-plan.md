@@ -23,7 +23,9 @@ The implementation must preserve Qadam's current safety model:
 - LLMs cannot approve risk.
 - Quantum output remains a shadow annotation.
 - Live capital remains off.
-- Broker write routes stay behind explicit policy gates.
+- Broker write routes stay behind explicit policy gates. The only first-release
+  write path is guarded Alpaca paper submission through PaperOps after all
+  paper-only gates pass.
 - External repos can inform architecture, but their code is not copied into Qadam unless license, security, and safety review explicitly pass.
 
 ## 2. The Five Reference Recommendations
@@ -467,7 +469,9 @@ This plan is complete when:
 - Dashboard exposes active research goals, blocked reasons, source posture, and inbox items.
 - Telegram can report inbox items without execution authority.
 - All new checks prove:
-  - no broker writes;
+  - no unmanaged broker writes;
+  - no live-capital writes;
+  - no dashboard, Telegram, LLM, or quantum order authority;
   - no live capital;
   - no LLM risk approval;
   - no quantum trade origination;
@@ -486,9 +490,13 @@ This plan is complete when:
 
 ## 11. Immediate Next Step
 
-Start with OR-2 Research Goal Lifecycle.
+Start with RS-0 in `docs/qadam-remaining-slices-phased-implementation-plan.md`,
+then continue with OR-2/RS-2 Research Goal Lifecycle hardening.
 
-Reason: it improves Qadam's intelligence quality without changing trading authority. It also gives the dashboard a clear answer to the user's core questions:
+Reason: RS-0 removes stale blocker and authority contradictions before more
+capability is added. OR-2/RS-2 then improves Qadam's intelligence quality
+without weakening the paper-only safety model. Together, they give the dashboard
+a clear answer to the user's core questions:
 
 - What is Qadam watching?
 - What is Qadam thinking about?
