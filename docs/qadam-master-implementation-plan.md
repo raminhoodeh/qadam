@@ -2157,6 +2157,21 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     risk, market interpretation, worldview lens strength, policy, knowledge
     graph, model weights, trust scores, dashboard commands, Telegram commands,
     broker writes, live capital, or Phase 7 proof credit.
+29. RS-10 Final Paper Autonomy Certification is now implemented. Qadam writes
+    `data/runtime/rs10_final_paper_autonomy_certification.json`, validates it
+    with `scripts/check_rs10_final_paper_autonomy_certification.py`, exports the
+    sanitized `rs10_final_paper_autonomy_certification` cockpit block, and
+    renders the state in Mission Control and the Trades view. Current contract:
+    `final_paper_autonomy_certified=True`,
+    `guarded_paper_autonomy_allowed=True`, and
+    `multiple_paper_trades_per_day_allowed_when_gates_pass=True`. This means
+    Qadam is authorized for guarded Alpaca paper trading and multiple paper
+    trades per day when the PaperOps gates pass. It does not force a trade:
+    `autonomy_currently_actionable=False` is valid when the current runner
+    reports `paperops2_submit_gate_not_ready` or `paper_poll_gate_not_ready`.
+    Live capital, dashboard execution, Telegram execution, LLM execution,
+    quantum execution, unmanaged broker writes, stale blocker promotion, fake
+    submit authority, and Phase 7 proof credit remain blocked.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

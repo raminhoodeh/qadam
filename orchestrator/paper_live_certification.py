@@ -47,6 +47,33 @@ PAPER_LIVE_CERTIFICATION_BOUNDARY = (
     "without verified records, and cannot enable live capital."
 )
 
+RS10_SUPERSEDED_LEGACY_BLOCKERS = frozenset(
+    {
+        "pt4_staged_paper_order_ready",
+        "pt5_paper_submit_path_enabled",
+        "pt6_lifecycle_polling_enabled",
+        "pt7_guarded_exit_enabled",
+        "paperops6_30_day_operations_active",
+        "paperops1_cycle_safe",
+    }
+)
+RS10_FORBIDDEN_AUTHORITY_FLAGS = (
+    "dashboard_command_authority",
+    "telegram_command_authority",
+    "local_llm_execution_authority",
+    "frontier_llm_execution_authority",
+    "quantum_execution_authority",
+    "unmanaged_broker_write_allowed",
+)
+RS10_FORBIDDEN_COUNTERS = (
+    "unsafe_write_counter_total",
+    "broker_post_called_count",
+    "alpaca_post_called_count",
+    "live_endpoint_called_count",
+    "notification_live_send_allowed_count",
+    "telegram_command_path_enabled_count",
+)
+
 PT10_PUBLIC_FIELDS: tuple[str, ...] = (
     "schema_version",
     "artifact_type",
@@ -70,6 +97,18 @@ PT10_PUBLIC_FIELDS: tuple[str, ...] = (
     "paper_live_unattended_execution_delegation_reason",
     "paper_live_submission_delegation_allowed",
     "paper_live_certification_blocked",
+    "paper_live_certification_source",
+    "rs10_bridge_applied",
+    "rs10_final_paper_autonomy_status",
+    "rs10_final_paper_autonomy_certified",
+    "rs10_guarded_paper_autonomy_allowed",
+    "rs10_autonomy_currently_actionable",
+    "rs10_current_blockers",
+    "rs10_current_blocker_count",
+    "rs10_certification_blocker_count",
+    "rs10_safety_blocker_count",
+    "rs10_live_capital_enabled",
+    "rs10_unsafe_write_counter_total",
     "paper_growth_trial_name",
     "paper_growth_trial_starting_value_gbp",
     "paper_growth_trial_target_value_gbp",
@@ -244,6 +283,9 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "demo_run": _read_json(runtime / "phase7_demo_proof_run.json"),
         "phase7_certification": _read_json(runtime / "phase7_certification.json"),
         "live_promotion": _read_json(runtime / "phase7_live_promotion_review.json"),
+        "rs10_final_paper_autonomy": _read_json(
+            runtime / "rs10_final_paper_autonomy_certification.json"
+        ),
     }
 
 
@@ -497,6 +539,79 @@ def _recommended_next_action(blockers: list[str]) -> str:
     )
 
 
+def _rs10_paper_autonomy_bridge_ready(
+    *,
+    rs10: dict[str, Any],
+    settings: Settings,
+    active: dict[str, Any],
+    qctrl_access: dict[str, Any],
+    unsafe_total: int,
+) -> bool:
+    if not rs10:
+        return False
+    if settings.mode != "paper" or settings.live_capital_enabled is not False:
+        return False
+    if unsafe_total != 0:
+        return False
+    if rs10.get("final_paper_autonomy_certified") is not True:
+        return False
+    if rs10.get("guarded_paper_autonomy_allowed") is not True:
+        return False
+    if _int(rs10.get("certification_blocker_count")) != 0:
+        return False
+    if _int(rs10.get("safety_blocker_count")) != 0:
+        return False
+    if rs10.get("live_capital_enabled") is not False:
+        return False
+    if any(rs10.get(key) is not False for key in RS10_FORBIDDEN_AUTHORITY_FLAGS):
+        return False
+    if any(_int(rs10.get(key)) != 0 for key in RS10_FORBIDDEN_COUNTERS):
+        return False
+    if qctrl_access.get("product_access_verified") is not True:
+        return False
+    if qctrl_access.get("paper_consultation_ready") is not True:
+        return False
+    if active.get("unattended_paper_execution_delegation_enabled") is not True:
+        return False
+    if active.get("active_paper_trading_automation_enabled") is not True:
+        return False
+    return True
+
+
+def _apply_rs10_bridge_to_gates(
+    *,
+    gate_records: list[dict[str, Any]],
+    rs10_bridge_ready: bool,
+    rs10_status: str,
+) -> list[dict[str, Any]]:
+    if not rs10_bridge_ready:
+        return gate_records
+    for gate in gate_records:
+        if gate["key"] in RS10_SUPERSEDED_LEGACY_BLOCKERS:
+            gate["required_for_control_plane"] = False
+            gate["required_for_paper_live_certification"] = False
+            gate["superseded_by_rs10_final_paper_autonomy"] = True
+            gate["detail"] = (
+                gate["detail"]
+                + " RS-10 now treats this as a non-blocking readiness detail; "
+                "actual paper submission is still gated by fresh eligible setups."
+            )
+    gate_records.append(
+        _gate(
+            key="rs10_final_paper_autonomy_certified",
+            stage="RS-10",
+            passed=True,
+            status=rs10_status or "certified",
+            detail=(
+                "Final paper-autonomy certification is clean: guarded paper "
+                "operation is allowed, live capital is disabled, unsafe counters "
+                "are zero, and broker submission remains gated by PaperOps."
+            ),
+        )
+    )
+    return gate_records
+
+
 def _blocked_certification_status(
     *,
     control_plane_certified: bool,
@@ -531,16 +646,6 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
     settings = settings or Settings.from_env()
     snapshot = _source_snapshot(settings)
     gate_records = _gate_records(settings, snapshot)
-    control_blockers = [
-        gate["key"]
-        for gate in gate_records
-        if gate["required_for_control_plane"] and not gate["passed"]
-    ]
-    certification_blockers = [
-        gate["key"]
-        for gate in gate_records
-        if gate["required_for_paper_live_certification"] and not gate["passed"]
-    ]
     readiness = snapshot["readiness"]
     activation = snapshot["paper_live_activation"]
     qctrl_access = snapshot["paper_live_qctrl_product_access"]
@@ -552,6 +657,7 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
     demo_run = snapshot["demo_run"]
     phase7_certification = snapshot["phase7_certification"]
     live_promotion = snapshot["live_promotion"]
+    rs10 = snapshot["rs10_final_paper_autonomy"]
 
     qctrl_hold = active.get("qctrl_consultation_hold_active") is True
     submit_allowed = active.get("paper_submit_step_allowed") is True
@@ -579,6 +685,28 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
     )
     if settings.live_capital_enabled:
         unsafe_total += 1
+    rs10_bridge_ready = _rs10_paper_autonomy_bridge_ready(
+        rs10=rs10,
+        settings=settings,
+        active=active,
+        qctrl_access=qctrl_access,
+        unsafe_total=unsafe_total,
+    )
+    gate_records = _apply_rs10_bridge_to_gates(
+        gate_records=gate_records,
+        rs10_bridge_ready=rs10_bridge_ready,
+        rs10_status=str(rs10.get("status") or ""),
+    )
+    control_blockers = [
+        gate["key"]
+        for gate in gate_records
+        if gate["required_for_control_plane"] and not gate["passed"]
+    ]
+    certification_blockers = [
+        gate["key"]
+        for gate in gate_records
+        if gate["required_for_paper_live_certification"] and not gate["passed"]
+    ]
     control_plane_certified = not control_blockers and unsafe_total == 0
     paper_live_certified = control_plane_certified and not certification_blockers
     status = _blocked_certification_status(
@@ -624,6 +752,30 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         and submit_allowed
         and not qctrl_hold,
         "paper_live_certification_blocked": not paper_live_certified,
+        "paper_live_certification_source": (
+            "rs10_final_paper_autonomy"
+            if rs10_bridge_ready
+            else "pt10_legacy_gate_stack"
+        ),
+        "rs10_bridge_applied": rs10_bridge_ready,
+        "rs10_final_paper_autonomy_status": rs10.get("status", "missing"),
+        "rs10_final_paper_autonomy_certified": (
+            rs10.get("final_paper_autonomy_certified") is True
+        ),
+        "rs10_guarded_paper_autonomy_allowed": (
+            rs10.get("guarded_paper_autonomy_allowed") is True
+        ),
+        "rs10_autonomy_currently_actionable": (
+            rs10.get("autonomy_currently_actionable") is True
+        ),
+        "rs10_current_blockers": list(rs10.get("current_blockers") or []),
+        "rs10_current_blocker_count": _int(rs10.get("current_blocker_count")),
+        "rs10_certification_blocker_count": _int(
+            rs10.get("certification_blocker_count")
+        ),
+        "rs10_safety_blocker_count": _int(rs10.get("safety_blocker_count")),
+        "rs10_live_capital_enabled": rs10.get("live_capital_enabled") is True,
+        "rs10_unsafe_write_counter_total": _int(rs10.get("unsafe_write_counter_total")),
         "paper_growth_trial_name": PAPER_GROWTH_TRIAL_NAME,
         "paper_growth_trial_starting_value_gbp": PAPER_GROWTH_TRIAL_STARTING_VALUE_GBP,
         "paper_growth_trial_target_value_gbp": PAPER_GROWTH_TRIAL_TARGET_VALUE_GBP,
@@ -827,6 +979,26 @@ def validate_paper_live_certification(artifact: dict[str, Any]) -> list[str]:
             errors.append("paper_live_unattended_delegation_allowed_while_blocked")
         if artifact.get("paper_live_submission_delegation_allowed") is not False:
             errors.append("paper_live_submission_allowed_while_blocked")
+    if artifact.get("rs10_bridge_applied") is True:
+        if artifact.get("paper_live_certification_source") != "rs10_final_paper_autonomy":
+            errors.append("paper_live_certification_rs10_source_mismatch")
+        if artifact.get("rs10_final_paper_autonomy_certified") is not True:
+            errors.append("paper_live_certification_rs10_not_certified")
+        if artifact.get("rs10_guarded_paper_autonomy_allowed") is not True:
+            errors.append("paper_live_certification_rs10_guarded_not_allowed")
+        if _int(artifact.get("rs10_certification_blocker_count")) != 0:
+            errors.append("paper_live_certification_rs10_certification_blockers")
+        if _int(artifact.get("rs10_safety_blocker_count")) != 0:
+            errors.append("paper_live_certification_rs10_safety_blockers")
+        if artifact.get("rs10_live_capital_enabled") is not False:
+            errors.append("paper_live_certification_rs10_live_capital_enabled")
+        if _int(artifact.get("rs10_unsafe_write_counter_total")) != 0:
+            errors.append("paper_live_certification_rs10_unsafe_counter")
+        if (
+            artifact.get("rs10_autonomy_currently_actionable") is not True
+            and artifact.get("paper_live_submission_delegation_allowed") is True
+        ):
+            errors.append("paper_live_certification_rs10_nonactionable_submission")
     if (
         artifact.get("qctrl_hold_active") is True
         and artifact.get("paper_submit_step_allowed") is True

@@ -101,6 +101,38 @@ const TELEGRAM_DAILY_DIGEST_FIELDS = [
     "timezone"
 ];
 
+const TELEGRAM_CODEBASE_UPGRADE_FIELDS = [
+    "aliases",
+    "already_sent",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_write_allowed",
+    "dashboard_changed_file_count",
+    "dashboard_commit_short",
+    "dashboard_dirty",
+    "deploy_allowed",
+    "deployment_url",
+    "dry_run",
+    "enabled",
+    "last_delivery_failure_category",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "paper_order_allowed",
+    "repository_write_allowed",
+    "root_changed_file_count",
+    "root_commit_short",
+    "root_dirty",
+    "schema_version",
+    "source",
+    "status",
+    "summary",
+    "target",
+    "telegram_command_path_enabled",
+    "telegram_message_id_present"
+];
+
 const MESSAGE_FIELDS = [
     "created_at",
     "message_class",
@@ -125,13 +157,16 @@ async function main() {
     const telegram = communications.telegram || {};
     const telegramIntake = communications.telegram_intake || {};
     const telegramDailyDigest = communications.telegram_daily_portfolio_digest || {};
+    const telegramCodebaseUpgrade = communications.telegram_codebase_upgrade || {};
     const messages = Array.isArray(telegram.recent_messages) ? telegram.recent_messages : [];
     const missing = missingFields(telegram, TELEGRAM_FIELDS);
     const missingIntake = missingFields(telegramIntake, TELEGRAM_INTAKE_FIELDS);
     const missingDailyDigest = missingFields(telegramDailyDigest, TELEGRAM_DAILY_DIGEST_FIELDS);
+    const missingCodebaseUpgrade = missingFields(telegramCodebaseUpgrade, TELEGRAM_CODEBASE_UPGRADE_FIELDS);
     assert(!missing.length, `communications.telegram missing fields: ${missing.join(", ")}`);
     assert(!missingIntake.length, `communications.telegram_intake missing fields: ${missingIntake.join(", ")}`);
     assert(!missingDailyDigest.length, `communications.telegram_daily_portfolio_digest missing fields: ${missingDailyDigest.join(", ")}`);
+    assert(!missingCodebaseUpgrade.length, `communications.telegram_codebase_upgrade missing fields: ${missingCodebaseUpgrade.join(", ")}`);
 
     assert(telegram.status === "dry_run", "Telegram status is not dry_run");
     assert(telegram.mode === "dry_run", "Telegram mode is not dry_run");
@@ -171,6 +206,17 @@ async function main() {
     assert(telegramDailyDigest.paper_order_allowed === false, "Daily portfolio digest paper order allowed");
     assert(telegramDailyDigest.live_capital_enabled === false, "Daily portfolio digest live capital enabled");
     assert(/Daily Telegram portfolio digests/i.test(telegramDailyDigest.boundary || ""), "Daily portfolio digest boundary is weak");
+    assert(telegram.codebase_upgrade_notifications_enabled === true, "Codebase upgrade notification is not enabled");
+    assert(["already_sent", "blocked_pending_enablement", "dry_run_ready", "failed", "not_run", "ready_to_send", "sent", "suppressed_not_safe"].includes(telegram.codebase_upgrade_notifications_status), "Codebase upgrade notification status is invalid");
+    assert(telegramCodebaseUpgrade.enabled === true, "Codebase upgrade public status is not enabled");
+    assert(telegramCodebaseUpgrade.target === "group", "Codebase upgrade target is not group");
+    assert(telegramCodebaseUpgrade.telegram_command_path_enabled === false, "Codebase upgrade command authority enabled");
+    assert(telegramCodebaseUpgrade.broker_write_allowed === false, "Codebase upgrade broker write allowed");
+    assert(telegramCodebaseUpgrade.paper_order_allowed === false, "Codebase upgrade paper order allowed");
+    assert(telegramCodebaseUpgrade.repository_write_allowed === false, "Codebase upgrade repo write allowed");
+    assert(telegramCodebaseUpgrade.deploy_allowed === false, "Codebase upgrade deploy authority allowed");
+    assert(telegramCodebaseUpgrade.live_capital_enabled === false, "Codebase upgrade live capital enabled");
+    assert(/codebase upgrade notifications/i.test(telegramCodebaseUpgrade.boundary || ""), "Codebase upgrade boundary is weak");
     assert(telegramIntake.world_event_datapoint_count >= 1, "Telegram intake world-event datapoints missing");
     assert(telegramIntake.strategy_consideration_count >= 1, "Telegram intake strategy considerations missing");
     assert(telegramIntake.research_triage_packet_count >= 1, "Telegram intake research packet missing");
@@ -207,6 +253,9 @@ async function main() {
     assertIncludes(rendered, "[data-communications]", "Strategy notes");
     assertIncludes(rendered, "[data-communications]", "Research packets");
     assertIncludes(rendered, "[data-communications]", "Daily portfolio digest");
+    assertIncludes(rendered, "[data-communications]", "Codebase upgrade notifications");
+    assertIncludes(rendered, "[data-communications]", "Core commit");
+    assertIncludes(rendered, "[data-communications]", "Dashboard commit");
     assertIncludes(rendered, "[data-communications]", "Portfolio balance");
     assertIncludes(rendered, "[data-communications]", "Trades today");
     assertIncludes(rendered, "[data-communications]", "read-only member research intake");
@@ -223,10 +272,12 @@ async function main() {
         "function renderCommunications",
         "status.communications?.telegram",
         "status.communications?.telegram_daily_portfolio_digest",
+        "status.communications?.telegram_codebase_upgrade",
         "status.communications?.telegram_intake",
         "Telegram Bot",
         "notify_only",
         "Daily portfolio digest",
+        "Codebase upgrade notifications",
         "Inbound member research",
         "renderCommunications(status)"
     ].forEach((needle) => assert(renderer.includes(needle), `dashboard renderer missing ${needle}`));

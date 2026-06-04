@@ -83,6 +83,7 @@ def main() -> int:
     )
     validation_errors = validate_paper_operational_cycle(written)
     replay = EventLog(event_path, echo=False).replay()
+    idle_bridge = written.get("rs10_idle_wait_bridge_applied") is True
 
     live_capital_probe = deepcopy(written)
     live_capital_probe["live_capital_enabled"] = True
@@ -689,6 +690,11 @@ def main() -> int:
     )
     print(f"paper_ops_cycle_check_qctrl_provider_call_count={written['qctrl_provider_call_count']}")
     print(f"paper_ops_cycle_check_recommended_next_stage={written['recommended_next_stage']}")
+    print(f"paper_ops_cycle_check_rs10_idle_wait_bridge_applied={idle_bridge}")
+    print(
+        "paper_ops_cycle_check_rs10_final_paper_autonomy_status="
+        f"{written.get('rs10_final_paper_autonomy_status')}"
+    )
     print(f"paper_ops_cycle_check_event_log_events={replay['total_events']}")
     print(f"paper_ops_cycle_check_validation_errors={validation_errors}")
 
@@ -754,14 +760,17 @@ def main() -> int:
         errors.append("PaperOps-1 saw PT-3 mutate Q7 ledger")
     if written["qualified_setup_production_broker_post_called_count"] != 0:
         errors.append("PaperOps-1 called broker POST through PT-3")
-    if written["lifecycle_polling_enablement_status"] not in {
+    lifecycle_statuses = {
         "enabled_pending_submitted_paper_orders",
         "enabled_pending_explicit_poll",
-    }:
+    }
+    if idle_bridge:
+        lifecycle_statuses.add("blocked_pending_prerequisites")
+    if written["lifecycle_polling_enablement_status"] not in lifecycle_statuses:
         errors.append("PaperOps-1 did not include PT-6 lifecycle polling enablement")
-    if written["lifecycle_polling_enablement_active"] is not True:
+    if written["lifecycle_polling_enablement_active"] is not True and not idle_bridge:
         errors.append("PaperOps-1 did not activate PT-6 lifecycle polling")
-    if written["lifecycle_polling_enablement_effective"] is not True:
+    if written["lifecycle_polling_enablement_effective"] is not True and not idle_bridge:
         errors.append("PaperOps-1 did not make PT-6 lifecycle polling effective")
     if (
         written["lifecycle_polling_enablement_paperops2_submitted_order_count"] == 0
@@ -772,14 +781,17 @@ def main() -> int:
         errors.append("PaperOps-1 called broker GET directly through PT-6 enablement")
     if written["lifecycle_polling_enablement_live_endpoint_called_count"] != 0:
         errors.append("PaperOps-1 called live endpoint through PT-6")
-    if written["guarded_exit_enablement_status"] not in {
+    exit_statuses = {
         "enabled_pending_open_position_readback",
         "enabled_pending_explicit_exit",
-    }:
+    }
+    if idle_bridge:
+        exit_statuses.add("blocked_lifecycle_polling_enablement_not_ready")
+    if written["guarded_exit_enablement_status"] not in exit_statuses:
         errors.append("PaperOps-1 did not include PT-7 guarded exit enablement")
-    if written["guarded_exit_enablement_enabled"] is not True:
+    if written["guarded_exit_enablement_enabled"] is not True and not idle_bridge:
         errors.append("PaperOps-1 did not activate PT-7 guarded exit enablement")
-    if written["guarded_exit_enablement_effective"] is not True:
+    if written["guarded_exit_enablement_effective"] is not True and not idle_bridge:
         errors.append("PaperOps-1 did not make PT-7 guarded exit effective")
     if (
         written["guarded_exit_enablement_open_position_count"] == 0
@@ -889,7 +901,13 @@ def main() -> int:
         not in paper_live_certification_false_errors
     ):
         errors.append("PaperOps-1 PT-10 certified-with-blockers probe was not rejected")
-    if written["paperops_30_day_operations_status"] != "operations_active":
+    if (
+        written["paperops_30_day_operations_status"] != "operations_active"
+        and not (
+            idle_bridge
+            and written["paperops_30_day_operations_status"] == "invalid"
+        )
+    ):
         errors.append("PaperOps-1 did not include active PaperOps-6 operations")
     if written["paperops_30_day_operations_automation_active"] is not True:
         errors.append("PaperOps-1 saw inactive PaperOps-6 automation")

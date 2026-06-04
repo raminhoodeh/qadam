@@ -192,6 +192,11 @@ from orchestrator.rs9_learning_loop import (
     PUBLIC_STATUS_FIELDS as RS9_LEARNING_LOOP_PUBLIC_FIELDS,
     rs9_learning_loop_public_status,
 )
+from orchestrator.rs10_final_paper_autonomy_certification import (
+    PUBLIC_STATUS_FIELDS as RS10_FINAL_PAPER_AUTONOMY_PUBLIC_FIELDS,
+    rs10_final_paper_autonomy_public_status,
+    validate_rs10_final_paper_autonomy_certification,
+)
 from orchestrator.postgres_store import durable_ingestion_status
 from orchestrator.preference_mcp_catalog import build_preference_tool_catalog, preference_tool_catalog_paths
 from orchestrator.preference_mcp_domain_packs import (
@@ -229,6 +234,11 @@ from orchestrator.staged_paper_order import StagedPaperOrderReviewStore, staged_
 from orchestrator.strategy_lead import StrategyLeadShadowStore
 from orchestrator.system_state import build_system_health
 from orchestrator.telegram_comms import telegram_status
+from orchestrator.telegram_codebase_upgrade_notifications import (
+    TELEGRAM_CODEBASE_UPGRADE_BOUNDARY,
+    TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION,
+    telegram_codebase_upgrade_public_status,
+)
 from orchestrator.telegram_daily_portfolio_digest import (
     TELEGRAM_DAILY_PORTFOLIO_DIGEST_BOUNDARY,
     TELEGRAM_DAILY_PORTFOLIO_DIGEST_SCHEMA_VERSION,
@@ -3164,10 +3174,45 @@ def _communications(settings: Settings) -> dict[str, Any]:
             "live_capital_enabled": False,
             "boundary": TELEGRAM_DAILY_PORTFOLIO_DIGEST_BOUNDARY,
         }
+    try:
+        telegram_codebase_upgrade = telegram_codebase_upgrade_public_status(settings)
+    except Exception:  # noqa: BLE001 - public status should degrade safely
+        telegram_codebase_upgrade = {
+            "schema_version": TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION,
+            "status": "degraded",
+            "enabled": False,
+            "dry_run": True,
+            "target": "group",
+            "source": None,
+            "summary": None,
+            "root_commit_short": None,
+            "root_dirty": False,
+            "root_changed_file_count": 0,
+            "dashboard_commit_short": None,
+            "dashboard_dirty": False,
+            "dashboard_changed_file_count": 0,
+            "deployment_url": None,
+            "aliases": ["qadam.trade", "www.qadam.trade"],
+            "already_sent": False,
+            "live_send_attempted": False,
+            "live_send_succeeded": False,
+            "telegram_message_id_present": False,
+            "last_delivery_failure_category": "codebase upgrade notification status unavailable",
+            "blocker_count": 1,
+            "blockers": ["codebase_upgrade_notification_status_unavailable"],
+            "telegram_command_path_enabled": False,
+            "broker_write_allowed": False,
+            "paper_order_allowed": False,
+            "repository_write_allowed": False,
+            "deploy_allowed": False,
+            "live_capital_enabled": False,
+            "boundary": TELEGRAM_CODEBASE_UPGRADE_BOUNDARY,
+        }
     return {
         "telegram": telegram,
         "telegram_intake": telegram_intake,
         "telegram_daily_portfolio_digest": telegram_daily_digest,
+        "telegram_codebase_upgrade": telegram_codebase_upgrade,
         "boundary": (
             "Communications are notify-only and intake-only. The browser and Telegram "
             "rail cannot create broker actions, commands, or hidden approvals."
@@ -5017,6 +5062,16 @@ def _rs9_learning_loop_public_status(settings: Settings) -> dict[str, Any]:
     return rs9_learning_loop_public_status(settings=settings)
 
 
+def _rs10_final_paper_autonomy_public_status(
+    payload: dict[str, Any],
+    settings: Settings,
+) -> dict[str, Any]:
+    return rs10_final_paper_autonomy_public_status(
+        settings=settings,
+        payload=payload,
+    )
+
+
 def _mission_control(payload: dict[str, Any], source_label: str = "status_contract") -> dict[str, Any]:
     watching = payload.get("watching", [])
     source_counts = Counter(source.get("status", "unknown") for source in watching)
@@ -5065,6 +5120,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     phase7_demo_proof = payload.get("phase7_demo_proof", {})
     rs9_learning_loop = payload.get("rs9_learning_loop", {})
+    rs10_final_paper_autonomy = payload.get(
+        "rs10_final_paper_autonomy_certification",
+        {},
+    )
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
     paper_operational_mode = payload.get("paper_operational_mode", {})
@@ -5849,6 +5908,40 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "rs9_paperops_guarded_paper_trading_not_blocked": (
                 rs9_learning_loop.get("paperops_guarded_paper_trading_not_blocked") is True
             ),
+            "rs10_final_paper_autonomy_certification": rs10_final_paper_autonomy.get(
+                "status",
+                "not_run",
+            ),
+            "rs10_final_paper_autonomy_certified": (
+                rs10_final_paper_autonomy.get("final_paper_autonomy_certified")
+                is True
+            ),
+            "rs10_guarded_paper_autonomy_allowed": (
+                rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed")
+                is True
+            ),
+            "rs10_autonomy_currently_actionable": (
+                rs10_final_paper_autonomy.get("autonomy_currently_actionable")
+                is True
+            ),
+            "rs10_current_blocker_count": rs10_final_paper_autonomy.get(
+                "current_blocker_count",
+                0,
+            ),
+            "rs10_certification_blocker_count": rs10_final_paper_autonomy.get(
+                "certification_blocker_count",
+                0,
+            ),
+            "rs10_paper_submit_currently_allowed": (
+                rs10_final_paper_autonomy.get("paper_submit_currently_allowed")
+                is True
+            ),
+            "rs10_multiple_paper_trades_per_day_allowed_when_gates_pass": (
+                rs10_final_paper_autonomy.get(
+                    "multiple_paper_trades_per_day_allowed_when_gates_pass"
+                )
+                is True
+            ),
             "phase7_demo_proof": phase7_demo_proof.get("status", "not_run"),
             "paper_account": capital.get("mirror_status", "pending"),
             "rs6_lifecycle_portfolio_postmortem": paper_lifecycle_postmortem.get(
@@ -6615,6 +6708,101 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "Review RS-9 learning proposals before allowing any mutation.",
             ),
         },
+        "rs10_final_paper_autonomy_certification": {
+            "phase": rs10_final_paper_autonomy.get("phase", "RS"),
+            "stage": rs10_final_paper_autonomy.get("stage", "RS-10"),
+            "status": rs10_final_paper_autonomy.get("status", "not_run"),
+            "certification_state": rs10_final_paper_autonomy.get(
+                "certification_state",
+                "not_run",
+            ),
+            "final_paper_autonomy_certified": (
+                rs10_final_paper_autonomy.get("final_paper_autonomy_certified")
+                is True
+            ),
+            "guarded_paper_autonomy_allowed": (
+                rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed")
+                is True
+            ),
+            "autonomy_currently_actionable": (
+                rs10_final_paper_autonomy.get("autonomy_currently_actionable")
+                is True
+            ),
+            "multiple_paper_trades_per_day_allowed_when_gates_pass": (
+                rs10_final_paper_autonomy.get(
+                    "multiple_paper_trades_per_day_allowed_when_gates_pass"
+                )
+                is True
+            ),
+            "paper_submit_currently_allowed": (
+                rs10_final_paper_autonomy.get("paper_submit_currently_allowed")
+                is True
+            ),
+            "paper_poll_currently_allowed": (
+                rs10_final_paper_autonomy.get("paper_poll_currently_allowed")
+                is True
+            ),
+            "paper_exit_currently_allowed": (
+                rs10_final_paper_autonomy.get("paper_exit_currently_allowed")
+                is True
+            ),
+            "daily_target_policy": rs10_final_paper_autonomy.get(
+                "daily_target_policy",
+                "minimum_not_ceiling",
+            ),
+            "opportunity_scan_interval_minutes": rs10_final_paper_autonomy.get(
+                "opportunity_scan_interval_minutes",
+                20,
+            ),
+            "max_guarded_submit_attempts_per_run": rs10_final_paper_autonomy.get(
+                "max_guarded_submit_attempts_per_run",
+                3,
+            ),
+            "available_distinct_setup_count": rs10_final_paper_autonomy.get(
+                "available_distinct_setup_count",
+                0,
+            ),
+            "current_blocker_count": rs10_final_paper_autonomy.get(
+                "current_blocker_count",
+                0,
+            ),
+            "current_blockers": rs10_final_paper_autonomy.get(
+                "current_blockers",
+                [],
+            ),
+            "certification_blocker_count": rs10_final_paper_autonomy.get(
+                "certification_blocker_count",
+                0,
+            ),
+            "safety_blocker_count": rs10_final_paper_autonomy.get(
+                "safety_blocker_count",
+                0,
+            ),
+            "safety_blockers": rs10_final_paper_autonomy.get(
+                "safety_blockers",
+                [],
+            ),
+            "paper_live_certification_status": rs10_final_paper_autonomy.get(
+                "paper_live_certification_status",
+                "unknown",
+            ),
+            "paper_live_certification_blocker_count": rs10_final_paper_autonomy.get(
+                "paper_live_certification_blocker_count",
+                0,
+            ),
+            "why_not_trading_now": rs10_final_paper_autonomy.get(
+                "why_not_trading_now",
+                "No current why-not-trading reason exported.",
+            ),
+            "next_action": rs10_final_paper_autonomy.get(
+                "next_action",
+                "Continue 20-minute opportunity scans.",
+            ),
+            "boundary": rs10_final_paper_autonomy.get(
+                "boundary",
+                "RS-10 certifies guarded paper autonomy only.",
+            ),
+        },
         "phase7_demo_proof": {
             "phase": phase7_demo_proof.get("phase", "Q7"),
             "stage": phase7_demo_proof.get("stage", "Q7-15"),
@@ -7217,6 +7405,9 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         settings=settings,
         generated_at=generated_at,
     )
+    payload["rs10_final_paper_autonomy_certification"] = (
+        _rs10_final_paper_autonomy_public_status(payload, settings)
+    )
     payload["phase5_system_map"] = phase5_system_map_public_status(
         payload,
         settings=settings,
@@ -7280,6 +7471,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "phase6_certification",
         "phase7_demo_proof",
         "rs9_learning_loop",
+        "rs10_final_paper_autonomy_certification",
         "phase5_system_map",
         "paper_live_activation",
         "paper_live_qctrl_product_access",
@@ -10205,6 +10397,94 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("Mission Control RS-9 direction mismatch")
     if mission_rs9.get("proposal_count") != rs9_learning_loop.get("proposal_count"):
         raise ValueError("Mission Control RS-9 proposal count mismatch")
+    rs10_final_paper_autonomy = payload["rs10_final_paper_autonomy_certification"]
+    missing_rs10_final_paper_autonomy = sorted(
+        set(RS10_FINAL_PAPER_AUTONOMY_PUBLIC_FIELDS)
+        - set(rs10_final_paper_autonomy)
+    )
+    if missing_rs10_final_paper_autonomy:
+        raise ValueError(
+            "RS-10 Final Paper Autonomy public status missing fields: "
+            f"{missing_rs10_final_paper_autonomy}"
+        )
+    if (
+        rs10_final_paper_autonomy.get("phase") != "RS"
+        or rs10_final_paper_autonomy.get("stage") != "RS-10"
+    ):
+        raise ValueError("RS-10 Final Paper Autonomy phase/stage mismatch")
+    if rs10_final_paper_autonomy.get("public_safe") is not True:
+        raise ValueError("RS-10 Final Paper Autonomy must be public-safe")
+    if rs10_final_paper_autonomy.get("recorded") is not True:
+        raise ValueError("RS-10 Final Paper Autonomy must be recorded")
+    if rs10_final_paper_autonomy.get("event_log_written") is not True:
+        raise ValueError("RS-10 Final Paper Autonomy Event Log missing")
+    if rs10_final_paper_autonomy.get("event_log_event_count") != 1:
+        raise ValueError("RS-10 Final Paper Autonomy Event Log count mismatch")
+    if validate_rs10_final_paper_autonomy_certification(
+        rs10_final_paper_autonomy
+    ):
+        raise ValueError("RS-10 Final Paper Autonomy validation failed")
+    if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
+        raise ValueError("RS-10 Final Paper Autonomy is not certified")
+    if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
+        raise ValueError("RS-10 guarded paper autonomy is not allowed")
+    if (
+        rs10_final_paper_autonomy.get(
+            "multiple_paper_trades_per_day_allowed_when_gates_pass"
+        )
+        is not True
+    ):
+        raise ValueError("RS-10 multiple paper trades policy is not enabled")
+    if rs10_final_paper_autonomy.get("certification_blocker_count") != 0:
+        raise ValueError("RS-10 certification blockers present")
+    if rs10_final_paper_autonomy.get("safety_blocker_count") != 0:
+        raise ValueError("RS-10 safety blockers present")
+    if rs10_final_paper_autonomy.get("stale_blocker_in_current_count") != 0:
+        raise ValueError("RS-10 stale blocker is shown as current")
+    for key in (
+        "dashboard_command_authority",
+        "telegram_command_authority",
+        "local_llm_execution_authority",
+        "frontier_llm_execution_authority",
+        "quantum_execution_authority",
+        "unmanaged_broker_write_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+    ):
+        if rs10_final_paper_autonomy.get(key) is not False:
+            raise ValueError(f"RS-10 authority enabled: {key}")
+    for key in (
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "broker_write_allowed_count",
+        "telegram_command_path_enabled_count",
+        "unsafe_write_counter_total",
+        "raw_payload_exposed_count",
+        "private_payload_exposed_count",
+        "local_path_exposed_count",
+        "secret_ref_exposed_count",
+        "broker_identifier_exposed_count",
+    ):
+        if rs10_final_paper_autonomy.get(key) != 0:
+            raise ValueError(f"RS-10 unsafe or exposure count nonzero: {key}")
+    if (
+        rs10_final_paper_autonomy.get("paper_submit_currently_allowed") is True
+        and paper_authority.get("paper_submit_currently_allowed") is not True
+    ):
+        raise ValueError("RS-10 invented paper submit authority")
+    mission_rs10 = payload["mission_control"].get(
+        "rs10_final_paper_autonomy_certification",
+        {},
+    )
+    if mission_rs10.get("status") != rs10_final_paper_autonomy.get("status"):
+        raise ValueError("Mission Control RS-10 status mismatch")
+    if mission_rs10.get("final_paper_autonomy_certified") != (
+        rs10_final_paper_autonomy.get("final_paper_autonomy_certified")
+    ):
+        raise ValueError("Mission Control RS-10 certification mismatch")
     phase6_certification = payload["phase6_certification"]
     missing_phase6_certification = sorted(
         PHASE6_CERTIFICATION_PUBLIC_REQUIRED_FIELDS - set(phase6_certification)

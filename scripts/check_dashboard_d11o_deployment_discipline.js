@@ -86,6 +86,8 @@ includesAll(deployScript, [
     "dashboard-deployment-receipt.json",
     "preflight: process.env.QADAM_SKIP_DEPLOY_PREFLIGHT === \"1\" ? \"skipped\" : \"passed\"",
     "Contains no Vercel token, session cookie, broker credential, or dashboard secret.",
+    "send_codebase_upgrade_telegram_notification.py",
+    "Codebase upgrade Telegram notification",
     "Production deployment:",
     "Aliased domains:"
 ], "D11O deploy script");
@@ -102,6 +104,7 @@ assert(receiptIndex < successPrintIndex, "success message must be printed after 
 
 includesAll(preflight, [
     "node scripts/check_dashboard_deployment_readiness.js",
+    "scripts/check_codebase_upgrade_telegram_notification.py",
     "node scripts/check_dashboard_d11n_documentation_guide_alignment.js",
     "node scripts/check_dashboard_d11o_deployment_discipline.js",
     "node scripts/check_protected_user_guide.js",
@@ -114,6 +117,7 @@ includesAll(preflight, [
 includesAll(readiness, [
     "landing-page-repo/scripts/deploy-vercel-production.sh",
     "scripts/preflight_dashboard_deployment.sh",
+    "scripts/check_codebase_upgrade_telegram_notification.py",
     "scripts/check_dashboard_d11o_deployment_discipline.js",
     "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
     "Phase D10I - Deployment Discipline",

@@ -46,6 +46,7 @@ TELEGRAM_MESSAGE_CLASSES = {
     "model_degraded",
     "kill_switch",
     "dashboard_snapshot_stale",
+    "codebase_upgrade",
 }
 
 TELEGRAM_OUTBOX_STATUSES = {"queued", "sent", "failed", "retried", "suppressed"}
@@ -363,6 +364,18 @@ class TelegramCommunicationsStore:
                     daily_digest = payload
             except json.JSONDecodeError:
                 daily_digest = {"status": "invalid_json"}
+        codebase_upgrade_path = _runtime_path(
+            self.settings,
+            "telegram_codebase_upgrade_notification.json",
+        )
+        codebase_upgrade: dict[str, Any] = {}
+        if codebase_upgrade_path.exists():
+            try:
+                payload = json.loads(codebase_upgrade_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    codebase_upgrade = payload
+            except json.JSONDecodeError:
+                codebase_upgrade = {"status": "invalid_json"}
         bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
         bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
         default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
@@ -458,6 +471,26 @@ class TelegramCommunicationsStore:
             ),
             "daily_portfolio_digest_live_send_succeeded": (
                 daily_digest.get("live_send_succeeded") is True
+            ),
+            "codebase_upgrade_notifications_enabled": (
+                self.settings.telegram_codebase_upgrade_notifications_enabled
+            ),
+            "codebase_upgrade_notifications_dry_run": (
+                self.settings.telegram_codebase_upgrade_notifications_dry_run
+            ),
+            "codebase_upgrade_notifications_status": codebase_upgrade.get("status", "not_run"),
+            "codebase_upgrade_notifications_source": codebase_upgrade.get("source"),
+            "codebase_upgrade_notifications_root_commit_short": codebase_upgrade.get(
+                "root_commit_short"
+            ),
+            "codebase_upgrade_notifications_dashboard_commit_short": codebase_upgrade.get(
+                "dashboard_commit_short"
+            ),
+            "codebase_upgrade_notifications_live_send_attempted": (
+                codebase_upgrade.get("live_send_attempted") is True
+            ),
+            "codebase_upgrade_notifications_live_send_succeeded": (
+                codebase_upgrade.get("live_send_succeeded") is True
             ),
             "recent_messages": [
                 {

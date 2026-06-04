@@ -65,6 +65,7 @@ function assertNoUnsafePublicText(text, label) {
     "landing-page-repo/.vercelignore",
     "landing-page-repo/scripts/deploy-vercel-production.sh",
     "scripts/preflight_dashboard_deployment.sh",
+    "scripts/check_codebase_upgrade_telegram_notification.py",
     "scripts/check_dashboard_acceptance.js",
     "scripts/check_dashboard_deployment_readiness.js",
     "scripts/check_dashboard_d11o_deployment_discipline.js",
@@ -103,6 +104,8 @@ const deployScript = readText(deployScriptPath);
     "www.qadam.trade",
     "deployment_url",
     "dashboard-deployment-receipt.json",
+    "send_codebase_upgrade_telegram_notification.py",
+    "Codebase upgrade Telegram notification",
     "No production aliases were changed",
     "Production deployment:"
 ].forEach((needle) => assertIncludes(deployScript, needle, "production deploy script"));

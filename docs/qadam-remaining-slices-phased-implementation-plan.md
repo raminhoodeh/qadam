@@ -574,6 +574,40 @@ Implemented 2026-06-03:
 Objective: certify that Qadam is free to trade paper at full first-release
 capacity.
 
+Implemented 2026-06-04.
+
+What now exists:
+
+- `orchestrator/rs10_final_paper_autonomy_certification.py` writes the
+  public-safe RS-10 certification artifact at
+  `data/runtime/rs10_final_paper_autonomy_certification.json`.
+- `scripts/check_rs10_final_paper_autonomy_certification.py` validates the
+  full artifact, the public cockpit projection, the Event Log record, and
+  mutation probes against live capital, dashboard execution, Telegram
+  execution, LLM/quantum execution, unmanaged broker writes, stale blockers,
+  fake paper-submit authority, and Phase 7 proof credit.
+- `orchestrator/cockpit_status.py` exports
+  `rs10_final_paper_autonomy_certification` plus Mission Control stack parity
+  fields for certification, guarded autonomy, current actionability, blockers,
+  and multi-trade-per-day policy.
+- `landing-page-repo/dashboard.js` renders RS-10 in Mission Control and the
+  Trades view, so Fund Managers can see whether Qadam is certified, whether it
+  can act now, why it is waiting, and which actions remain forbidden.
+- `scripts/check_dashboard_rs10_final_paper_autonomy.js` and
+  `scripts/preflight_dashboard_deployment.sh` enforce that the dashboard
+  renders RS-10 from backend status and escapes public text safely.
+
+Current certified state:
+
+- `final_paper_autonomy_certified=True`.
+- `guarded_paper_autonomy_allowed=True`.
+- `multiple_paper_trades_per_day_allowed_when_gates_pass=True`.
+- `autonomy_currently_actionable=False` while the current PaperOps gates report
+  `paperops2_submit_gate_not_ready` and `paper_poll_gate_not_ready`.
+- `certification_blocker_count=0` and `safety_blocker_count=0`.
+- Live capital, dashboard execution, Telegram execution, LLM execution, quantum
+  execution, unmanaged broker writes, and Phase 7 proof credit remain blocked.
+
 Certification requires:
 
 - no stale blocker shown as current;
@@ -611,9 +645,9 @@ Implement in this order:
 7. RS-8 Dashboard Mission Control Completion.
 8. RS-1 Role Contracts if any role boundary drift appears during the above.
 9. RS-9 Learning Loop. Implemented 2026-06-03.
-10. RS-10 Final Paper Autonomy Certification.
+10. RS-10 Final Paper Autonomy Certification. Implemented 2026-06-04.
 
-The next implementation slice after RS-0 should be RS-2/RS-3 together: harden
-the Research Goal lifecycle and attach richer market context so the existing
-paper authority can act on better qualified setups without weakening safety
-gates.
+The remaining work after RS-10 is quality and proof maturation: improve the
+source/trade setup quality that feeds PaperOps, continue 20-minute opportunity
+scans, mature the Phase 7 paper proof ledger from real guarded paper cycles, and
+keep the certification contract green without weakening safety gates.

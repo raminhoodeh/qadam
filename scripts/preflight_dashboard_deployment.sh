@@ -23,6 +23,7 @@ node --check scripts/check_dashboard_acceptance.js
 node scripts/check_dashboard_acceptance.js
 
 say "Checking deployment readiness gate"
+"$PYTHON_BIN" scripts/check_codebase_upgrade_telegram_notification.py
 node --check scripts/check_dashboard_deployment_readiness.js
 node scripts/check_dashboard_deployment_readiness.js
 
@@ -66,6 +67,7 @@ node scripts/check_dashboard_d13_health_language.js
 node scripts/check_dashboard_rs8_mission_control.js
 node scripts/check_dashboard_phase6_learning_loop.js
 node scripts/check_dashboard_rs9_learning_loop.js
+node scripts/check_dashboard_rs10_final_paper_autonomy.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js
@@ -92,6 +94,9 @@ git diff --check -- \
   landing-page-repo/dashboard.js \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
+  orchestrator/telegram_codebase_upgrade_notifications.py \
+  scripts/check_codebase_upgrade_telegram_notification.py \
+  scripts/send_codebase_upgrade_telegram_notification.py \
   docs/qadam-dashboard-implementation-plan.md \
   docs/qadam-dashboard-navigation-ux-plan.md \
   docs/qadam-dashboard-overhaul-dx-1-ia-contract.json \
@@ -128,6 +133,7 @@ git diff --check -- \
   scripts/check_dashboard_d13_health_language.js \
   scripts/check_dashboard_phase6_learning_loop.js \
   scripts/check_dashboard_rs9_learning_loop.js \
+  scripts/check_dashboard_rs10_final_paper_autonomy.js \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   docs/qadam-user-guide.md \
   scripts/check_dashboard_acceptance.js \

@@ -49,6 +49,12 @@ from orchestrator.phase6_certification import (
 from orchestrator.rs9_learning_loop import (  # noqa: E402
     PUBLIC_STATUS_FIELDS as RS9_LEARNING_LOOP_REQUIRED_FIELDS,
 )
+from orchestrator.rs10_final_paper_autonomy_certification import (  # noqa: E402
+    AUTHORITY_FIELDS as RS10_FINAL_PAPER_AUTONOMY_AUTHORITY_FIELDS,
+    PUBLIC_STATUS_FIELDS as RS10_FINAL_PAPER_AUTONOMY_REQUIRED_FIELDS,
+    UNSAFE_COUNT_FIELDS as RS10_FINAL_PAPER_AUTONOMY_UNSAFE_COUNT_FIELDS,
+    validate_rs10_final_paper_autonomy_certification,
+)
 from orchestrator.telegram_comms import ensure_d8a_telegram_dry_run  # noqa: E402
 from orchestrator.telegram_inbound_intake import ensure_sample_telegram_inbound_intake  # noqa: E402
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
@@ -1941,6 +1947,7 @@ MISSION_CONTROL_REQUIRED_FIELDS = {
     "phase5_layer_b",
     "phase6_learning_loop",
     "rs9_learning_loop",
+    "rs10_final_paper_autonomy_certification",
     "portfolio",
     "safety",
     "schema_version",
@@ -2126,6 +2133,14 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "rs9_learning_proposal_count",
     "rs9_learning_blocked_proposal_count",
     "rs9_paperops_guarded_paper_trading_not_blocked",
+    "rs10_final_paper_autonomy_certification",
+    "rs10_final_paper_autonomy_certified",
+    "rs10_guarded_paper_autonomy_allowed",
+    "rs10_autonomy_currently_actionable",
+    "rs10_current_blocker_count",
+    "rs10_certification_blocker_count",
+    "rs10_paper_submit_currently_allowed",
+    "rs10_multiple_paper_trades_per_day_allowed_when_gates_pass",
     "phase5_telegram_notifier",
     "preference_mcp",
     "quant_oracle",
@@ -2663,6 +2678,24 @@ MISSION_RS9_LEARNING_LOOP_REQUIRED_FIELDS = {
     "worldview_lens_strength_mutation_allowed",
 }
 
+MISSION_RS10_FINAL_PAPER_AUTONOMY_REQUIRED_FIELDS = {
+    "autonomy_currently_actionable",
+    "boundary",
+    "certification_blocker_count",
+    "current_blocker_count",
+    "current_blockers",
+    "final_paper_autonomy_certified",
+    "guarded_paper_autonomy_allowed",
+    "multiple_paper_trades_per_day_allowed_when_gates_pass",
+    "next_action",
+    "paper_submit_currently_allowed",
+    "phase",
+    "safety_blocker_count",
+    "stage",
+    "status",
+    "why_not_trading_now",
+}
+
 MISSION_PHASE3_READINESS_REQUIRED_FIELDS = {
     "autonomous_scheduler_enabled",
     "aws_braket_status",
@@ -2908,6 +2941,7 @@ FUND_MANAGER_COMMENT_REQUIRED_FIELDS = {
 COMMUNICATIONS_REQUIRED_FIELDS = {
     "boundary",
     "telegram",
+    "telegram_codebase_upgrade",
     "telegram_daily_portfolio_digest",
     "telegram_intake",
 }
@@ -2968,6 +3002,38 @@ TELEGRAM_DAILY_PORTFOLIO_DIGEST_REQUIRED_FIELDS = {
     "telegram_command_path_enabled",
     "telegram_message_id_present",
     "timezone",
+}
+
+TELEGRAM_CODEBASE_UPGRADE_REQUIRED_FIELDS = {
+    "aliases",
+    "already_sent",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_write_allowed",
+    "dashboard_changed_file_count",
+    "dashboard_commit_short",
+    "dashboard_dirty",
+    "deploy_allowed",
+    "deployment_url",
+    "dry_run",
+    "enabled",
+    "last_delivery_failure_category",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "paper_order_allowed",
+    "repository_write_allowed",
+    "root_changed_file_count",
+    "root_commit_short",
+    "root_dirty",
+    "schema_version",
+    "source",
+    "status",
+    "summary",
+    "target",
+    "telegram_command_path_enabled",
+    "telegram_message_id_present",
 }
 
 TELEGRAM_MESSAGE_REQUIRED_FIELDS = {
@@ -3306,6 +3372,10 @@ def main() -> int:
     phase5_system_map = payload.get("phase5_system_map", {})
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     rs9_learning_loop = payload.get("rs9_learning_loop", {})
+    rs10_final_paper_autonomy = payload.get(
+        "rs10_final_paper_autonomy_certification",
+        {},
+    )
     phase6_certification = payload.get("phase6_certification", {})
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
@@ -4374,6 +4444,38 @@ def main() -> int:
     print(
         "cockpit_status_rs9_blocked_authority_count="
         f"{rs9_learning_loop.get('blocked_authority_count')}"
+    )
+    print(
+        "cockpit_status_rs10_final_paper_autonomy_status="
+        f"{rs10_final_paper_autonomy.get('status')}"
+    )
+    print(
+        "cockpit_status_rs10_final_paper_autonomy_certified="
+        f"{rs10_final_paper_autonomy.get('final_paper_autonomy_certified')}"
+    )
+    print(
+        "cockpit_status_rs10_guarded_paper_autonomy_allowed="
+        f"{rs10_final_paper_autonomy.get('guarded_paper_autonomy_allowed')}"
+    )
+    print(
+        "cockpit_status_rs10_autonomy_currently_actionable="
+        f"{rs10_final_paper_autonomy.get('autonomy_currently_actionable')}"
+    )
+    print(
+        "cockpit_status_rs10_current_blocker_count="
+        f"{rs10_final_paper_autonomy.get('current_blocker_count')}"
+    )
+    print(
+        "cockpit_status_rs10_current_blockers="
+        f"{','.join(rs10_final_paper_autonomy.get('current_blockers', []) or [])}"
+    )
+    print(
+        "cockpit_status_rs10_certification_blocker_count="
+        f"{rs10_final_paper_autonomy.get('certification_blocker_count')}"
+    )
+    print(
+        "cockpit_status_rs10_multiple_paper_trades_per_day_allowed_when_gates_pass="
+        f"{rs10_final_paper_autonomy.get('multiple_paper_trades_per_day_allowed_when_gates_pass')}"
     )
     print(
         "cockpit_status_phase6_certification_status="
@@ -6358,6 +6460,94 @@ def main() -> int:
     ):
         print("cockpit_status_rs9_learning_loop_boundary_weak=true")
         return 1
+    missing_rs10_final_paper_autonomy_fields = sorted(
+        set(RS10_FINAL_PAPER_AUTONOMY_REQUIRED_FIELDS)
+        - set(rs10_final_paper_autonomy)
+    )
+    if missing_rs10_final_paper_autonomy_fields:
+        print(
+            "cockpit_status_rs10_final_paper_autonomy_fields_missing="
+            + ",".join(missing_rs10_final_paper_autonomy_fields)
+        )
+        return 1
+    if (
+        rs10_final_paper_autonomy.get("phase") != "RS"
+        or rs10_final_paper_autonomy.get("stage") != "RS-10"
+    ):
+        print("cockpit_status_rs10_final_paper_autonomy_phase_or_stage_mismatch=true")
+        return 1
+    if rs10_final_paper_autonomy.get("public_safe") is not True:
+        print("cockpit_status_rs10_final_paper_autonomy_not_public_safe=true")
+        return 1
+    if rs10_final_paper_autonomy.get("recorded") is not True:
+        print("cockpit_status_rs10_final_paper_autonomy_not_recorded=true")
+        return 1
+    if rs10_final_paper_autonomy.get("event_log_written") is not True:
+        print("cockpit_status_rs10_final_paper_autonomy_event_log_missing=true")
+        return 1
+    if rs10_final_paper_autonomy.get("event_log_event_count") != 1:
+        print("cockpit_status_rs10_final_paper_autonomy_event_log_count_mismatch=true")
+        return 1
+    if validate_rs10_final_paper_autonomy_certification(rs10_final_paper_autonomy):
+        print("cockpit_status_rs10_final_paper_autonomy_validation_errors=true")
+        return 1
+    if rs10_final_paper_autonomy.get("status") not in {
+        "certified_actionable",
+        "certified_waiting_for_qualified_setup",
+        "certified_idle",
+    }:
+        print("cockpit_status_rs10_final_paper_autonomy_status_invalid=true")
+        return 1
+    if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
+        print("cockpit_status_rs10_final_paper_autonomy_not_certified=true")
+        return 1
+    if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
+        print("cockpit_status_rs10_guarded_paper_autonomy_not_allowed=true")
+        return 1
+    if (
+        rs10_final_paper_autonomy.get(
+            "multiple_paper_trades_per_day_allowed_when_gates_pass"
+        )
+        is not True
+    ):
+        print("cockpit_status_rs10_multiple_paper_trades_policy_disabled=true")
+        return 1
+    if rs10_final_paper_autonomy.get("certification_blocker_count") != 0:
+        print("cockpit_status_rs10_final_paper_autonomy_certification_blockers=true")
+        return 1
+    if rs10_final_paper_autonomy.get("safety_blocker_count") != 0:
+        print("cockpit_status_rs10_final_paper_autonomy_safety_blockers=true")
+        return 1
+    if rs10_final_paper_autonomy.get("stale_blocker_in_current_count") != 0:
+        print("cockpit_status_rs10_stale_blocker_in_current=true")
+        return 1
+    for key in RS10_FINAL_PAPER_AUTONOMY_AUTHORITY_FIELDS:
+        if rs10_final_paper_autonomy.get(key) is not False:
+            print(f"cockpit_status_rs10_authority_enabled={key}")
+            return 1
+    for key in RS10_FINAL_PAPER_AUTONOMY_UNSAFE_COUNT_FIELDS:
+        if rs10_final_paper_autonomy.get(key) != 0:
+            print(f"cockpit_status_rs10_unsafe_or_exposure_nonzero={key}")
+            return 1
+    if (
+        rs10_final_paper_autonomy.get("paper_submit_currently_allowed") is True
+        and paper_authority.get("paper_submit_currently_allowed") is not True
+    ):
+        print("cockpit_status_rs10_invented_paper_submit_authority=true")
+        return 1
+    if (
+        rs10_final_paper_autonomy.get("autonomy_currently_actionable") is True
+        and not any(
+            rs10_final_paper_autonomy.get(key) is True
+            for key in (
+                "paper_submit_currently_allowed",
+                "paper_poll_currently_allowed",
+                "paper_exit_currently_allowed",
+            )
+        )
+    ):
+        print("cockpit_status_rs10_actionable_without_action=true")
+        return 1
     missing_phase6_certification_fields = sorted(
         set(PHASE6_CERTIFICATION_REQUIRED_FIELDS) - set(phase6_certification)
     )
@@ -7248,6 +7438,60 @@ def main() -> int:
         or re.search(r"\d{6,}:[A-Za-z0-9_-]{20,}", telegram_daily_digest_encoded)
     ):
         print("cockpit_status_telegram_daily_digest_secret_or_identifier_leaked=true")
+        return 1
+    telegram_codebase_upgrade = communications["telegram_codebase_upgrade"]
+    missing_telegram_codebase_upgrade_fields = sorted(
+        TELEGRAM_CODEBASE_UPGRADE_REQUIRED_FIELDS - set(telegram_codebase_upgrade)
+    )
+    if missing_telegram_codebase_upgrade_fields:
+        print(
+            "cockpit_status_telegram_codebase_upgrade_fields_missing="
+            + ",".join(missing_telegram_codebase_upgrade_fields)
+        )
+        return 1
+    if telegram_codebase_upgrade.get("status") not in {
+        "already_sent",
+        "blocked_pending_enablement",
+        "degraded",
+        "dry_run_ready",
+        "failed",
+        "not_run",
+        "ready_to_send",
+        "sent",
+        "suppressed_not_safe",
+    }:
+        print("cockpit_status_telegram_codebase_upgrade_status_invalid=true")
+        return 1
+    if telegram_codebase_upgrade.get("target") != "group":
+        print("cockpit_status_telegram_codebase_upgrade_target_not_group=true")
+        return 1
+    if "codebase upgrade notifications" not in telegram_codebase_upgrade.get("boundary", ""):
+        print("cockpit_status_telegram_codebase_upgrade_boundary_weak=true")
+        return 1
+    for phrase in ("cannot", "create commits", "push code", "deploy assets", "enable live capital"):
+        if phrase not in telegram_codebase_upgrade.get("boundary", ""):
+            print(f"cockpit_status_telegram_codebase_upgrade_boundary_missing={phrase}")
+            return 1
+    for field in (
+        "telegram_command_path_enabled",
+        "broker_write_allowed",
+        "paper_order_allowed",
+        "repository_write_allowed",
+        "deploy_allowed",
+        "live_capital_enabled",
+    ):
+        if telegram_codebase_upgrade.get(field) is not False:
+            print(f"cockpit_status_telegram_codebase_upgrade_authority_enabled={field}")
+            return 1
+    telegram_codebase_upgrade_encoded = json.dumps(telegram_codebase_upgrade, sort_keys=True)
+    if (
+        "chat_id" in telegram_codebase_upgrade_encoded
+        or "bot_token" in telegram_codebase_upgrade_encoded
+        or "/Users/" in telegram_codebase_upgrade_encoded
+        or "@" in telegram_codebase_upgrade_encoded
+        or re.search(r"\d{6,}:[A-Za-z0-9_-]{20,}", telegram_codebase_upgrade_encoded)
+    ):
+        print("cockpit_status_telegram_codebase_upgrade_secret_or_identifier_leaked=true")
         return 1
     fund_manager_notes = payload["fund_manager_notes"]
     missing_fund_manager_fields = sorted(FUND_MANAGER_NOTES_REQUIRED_FIELDS - set(fund_manager_notes))
@@ -8224,6 +8468,15 @@ def main() -> int:
         if int(paper_operational_mode.get(key, 0) or 0) != 0:
             print(f"cockpit_status_paper_operational_mode_unsafe_counter={key}")
             return 1
+    rs10_waiting_for_qualified_setup = (
+        rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is True
+        and rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is True
+        and rs10_final_paper_autonomy.get("autonomy_currently_actionable") is False
+        and "no_fresh_eligible_candidate"
+        in (rs10_final_paper_autonomy.get("current_blockers") or [])
+        and rs10_final_paper_autonomy.get("certification_blocker_count") == 0
+        and rs10_final_paper_autonomy.get("safety_blocker_count") == 0
+    )
     no_current_paperops_setup = (
         paperops_qualified_setup_production.get("status")
         == "production_path_ready_no_current_qualified_setup"
@@ -8241,7 +8494,24 @@ def main() -> int:
         == "blocked_pending_prerequisites"
         and paperops_guarded_exit_enablement.get("status")
         == "blocked_lifecycle_polling_enablement_not_ready"
-        and paper_live_certification.get("status") == "blocked_paper_live_control_plane"
+        and (
+            paper_live_certification.get("status") == "blocked_paper_live_control_plane"
+            or (
+                paper_live_certification.get("status") == "paper_live_certified"
+                and paper_live_certification.get("paper_live_certified") is True
+                and paper_live_certification.get("paper_live_operation_allowed") is True
+                and paper_live_certification.get(
+                    "paper_live_unattended_execution_delegation_enabled"
+                )
+                is True
+                and int(
+                    paper_live_certification.get("certification_blocker_count", 0)
+                    or 0
+                )
+                == 0
+                and rs10_waiting_for_qualified_setup
+            )
+        )
         and paperops_30_day_operations.get("paper_operational_cycle_safe_to_continue")
         is True
         and paperops_30_day_operations.get("no_forced_trades") is True
@@ -9186,6 +9456,56 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_rs9_guarded_paperops_mismatch=true")
         return 1
+    if (
+        mission_stack.get("rs10_final_paper_autonomy_certification")
+        != rs10_final_paper_autonomy.get("status")
+    ):
+        print("cockpit_status_mission_stack_rs10_status_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_final_paper_autonomy_certified")
+        != rs10_final_paper_autonomy.get("final_paper_autonomy_certified")
+    ):
+        print("cockpit_status_mission_stack_rs10_certification_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_guarded_paper_autonomy_allowed")
+        != rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed")
+    ):
+        print("cockpit_status_mission_stack_rs10_guarded_autonomy_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_autonomy_currently_actionable")
+        != rs10_final_paper_autonomy.get("autonomy_currently_actionable")
+    ):
+        print("cockpit_status_mission_stack_rs10_actionable_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_current_blocker_count")
+        != rs10_final_paper_autonomy.get("current_blocker_count")
+    ):
+        print("cockpit_status_mission_stack_rs10_current_blocker_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_certification_blocker_count")
+        != rs10_final_paper_autonomy.get("certification_blocker_count")
+    ):
+        print("cockpit_status_mission_stack_rs10_certification_blocker_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_paper_submit_currently_allowed")
+        != rs10_final_paper_autonomy.get("paper_submit_currently_allowed")
+    ):
+        print("cockpit_status_mission_stack_rs10_submit_allowed_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs10_multiple_paper_trades_per_day_allowed_when_gates_pass")
+        != rs10_final_paper_autonomy.get(
+            "multiple_paper_trades_per_day_allowed_when_gates_pass"
+        )
+    ):
+        print("cockpit_status_mission_stack_rs10_multiple_trade_policy_mismatch=true")
+        return 1
     mission_phase6 = mission.get("phase6_learning_loop", {})
     missing_mission_phase6_fields = sorted(
         MISSION_PHASE6_LEARNING_LOOP_REQUIRED_FIELDS - set(mission_phase6)
@@ -9318,6 +9638,45 @@ def main() -> int:
         or "cannot give dashboard or Telegram command authority" not in mission_rs9_boundary
     ):
         print("cockpit_status_mission_rs9_boundary_weak=true")
+        return 1
+    mission_rs10 = mission.get("rs10_final_paper_autonomy_certification", {})
+    missing_mission_rs10_fields = sorted(
+        MISSION_RS10_FINAL_PAPER_AUTONOMY_REQUIRED_FIELDS - set(mission_rs10)
+    )
+    if missing_mission_rs10_fields:
+        print("cockpit_status_mission_rs10_fields_missing=" + ",".join(missing_mission_rs10_fields))
+        return 1
+    if mission_rs10.get("phase") != "RS" or mission_rs10.get("stage") != "RS-10":
+        print("cockpit_status_mission_rs10_phase_or_stage_mismatch=true")
+        return 1
+    for key in (
+        "status",
+        "final_paper_autonomy_certified",
+        "guarded_paper_autonomy_allowed",
+        "autonomy_currently_actionable",
+        "multiple_paper_trades_per_day_allowed_when_gates_pass",
+        "paper_submit_currently_allowed",
+        "current_blocker_count",
+        "certification_blocker_count",
+        "safety_blocker_count",
+        "why_not_trading_now",
+        "next_action",
+    ):
+        if mission_rs10.get(key) != rs10_final_paper_autonomy.get(key):
+            print(f"cockpit_status_mission_rs10_mismatch={key}")
+            return 1
+    if mission_rs10.get("current_blockers") != rs10_final_paper_autonomy.get(
+        "current_blockers"
+    ):
+        print("cockpit_status_mission_rs10_current_blockers_mismatch=true")
+        return 1
+    mission_rs10_boundary = mission_rs10.get("boundary", "")
+    if (
+        "guarded paper autonomy only" not in mission_rs10_boundary
+        or "cannot submit without PaperOps gates" not in mission_rs10_boundary
+        or "cannot enable live capital" not in mission_rs10_boundary
+    ):
+        print("cockpit_status_mission_rs10_boundary_weak=true")
         return 1
     mission_phase5 = mission.get("phase5_layer_b", {})
     missing_mission_phase5_fields = sorted(

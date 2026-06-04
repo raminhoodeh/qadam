@@ -121,6 +121,25 @@ NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
         "paperops_30_day_operations",
         "paper_live_certification",
         "paper_ops_readiness",
+        # These are permitted to fail closed on no-fresh-candidate/no-open-position
+        # passes. The cycle validates their counters before accepting the idle state.
+        "paperops_alpaca_paper_submit_enablement",
+        "paperops_alpaca_paper_post",
+        "paperops_paper_lifecycle_polling_enablement",
+        "paperops_guarded_paper_exit_enablement",
+        "paperops_paper_exit_path",
+    }
+)
+
+RS10_IDLE_WAIT_BLOCKERS = frozenset(
+    {
+        "alpaca_paper_submit_runtime_enablement_connected_not_ready",
+        "paper_lifecycle_polling_runtime_enablement_connected_not_ready",
+        "guarded_paper_exit_runtime_enablement_connected_not_ready",
+        "external_alpaca_paper_post_enabled_not_ready",
+        "paper_exit_path_connected_not_ready",
+        "paperops_30_day_operations_active_not_ready",
+        "cockpit_notification_upgrade_connected_not_ready",
     }
 )
 
@@ -183,6 +202,14 @@ def _paths(settings: Settings) -> tuple[Path, Path, Path]:
         runtime / PAPER_OPS_CYCLE_HISTORY,
         runtime / PAPER_OPS_CYCLE_EVENT_LOG,
     )
+
+
+def _read_runtime_json(settings: Settings, name: str) -> dict[str, Any]:
+    path = _runtime_dir(settings) / name
+    if not path.exists():
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, dict) else {}
 
 
 def _parse_output(output: str) -> dict[str, str]:
@@ -296,6 +323,69 @@ def recommended_next_stage(
     if "external_alpaca_paper_post_enabled_not_ready" in blockers:
         return "PaperOps-2 explicit Alpaca paper POST gate"
     return "PaperOps-4 paper exit path"
+
+
+def _rs10_idle_wait_bridge_ready(
+    *,
+    settings: Settings,
+    rs10: dict[str, Any],
+    active_paper_automation: dict[str, str],
+    qualified_setup_production: dict[str, str],
+    paper_live_certification: dict[str, str],
+    unsafe_counter_total: int,
+) -> bool:
+    if settings.mode != "paper" or settings.live_capital_enabled is not False:
+        return False
+    if unsafe_counter_total != 0:
+        return False
+    if rs10.get("final_paper_autonomy_certified") is not True:
+        return False
+    if rs10.get("guarded_paper_autonomy_allowed") is not True:
+        return False
+    if int(rs10.get("certification_blocker_count", 0) or 0) != 0:
+        return False
+    if int(rs10.get("safety_blocker_count", 0) or 0) != 0:
+        return False
+    if rs10.get("live_capital_enabled") is not False:
+        return False
+    if paper_live_certification.get("paper_live_certification_status") != "paper_live_certified":
+        return False
+    if (
+        paper_live_certification.get(
+            "paper_live_certification_unattended_delegation_enabled"
+        )
+        != "True"
+    ):
+        return False
+    if active_paper_automation.get("paperops_active_automation_status") != (
+        "active_automation_enabled_idle"
+    ):
+        return False
+    if active_paper_automation.get("paperops_active_automation_submit_step_allowed") == "True":
+        return False
+    if active_paper_automation.get("paperops_active_automation_poll_step_allowed") == "True":
+        return False
+    if active_paper_automation.get("paperops_active_automation_exit_step_allowed") == "True":
+        return False
+    if int(
+        qualified_setup_production.get(
+            "paperops_qualified_setup_qualified_setup_count",
+            "0",
+        )
+        or 0
+    ) != 0:
+        return False
+    return True
+
+
+def _filter_idle_wait_blockers(
+    blockers: list[str],
+    *,
+    rs10_idle_wait_bridge_applied: bool,
+) -> list[str]:
+    if not rs10_idle_wait_bridge_applied:
+        return blockers
+    return [blocker for blocker in blockers if blocker not in RS10_IDLE_WAIT_BLOCKERS]
 
 
 def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str, Any]:
@@ -460,7 +550,28 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         or 0
     )
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
-    full_ready = readiness.get("paper_ops_full_paper_operational_ready") == "True"
+    rs10 = _read_runtime_json(settings, "rs10_final_paper_autonomy_certification.json")
+    rs10_idle_wait_bridge_applied = _rs10_idle_wait_bridge_ready(
+        settings=settings,
+        rs10=rs10,
+        active_paper_automation=active_paper_automation,
+        qualified_setup_production=qualified_setup_production,
+        paper_live_certification=paper_live_certification,
+        unsafe_counter_total=unsafe_counter_total,
+    )
+    raw_blockers = [
+        item
+        for item in readiness.get("paper_ops_blockers", "").split(",")
+        if item
+    ]
+    blockers = _filter_idle_wait_blockers(
+        raw_blockers,
+        rs10_idle_wait_bridge_applied=rs10_idle_wait_bridge_applied,
+    )
+    full_ready = (
+        readiness.get("paper_ops_full_paper_operational_ready") == "True"
+        or (safe_to_continue and rs10_idle_wait_bridge_applied and not blockers)
+    )
     status = "paper_cycle_ok"
     if failed:
         status = "paper_cycle_failed"
@@ -1099,6 +1210,23 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         "safe_to_continue_paper_only": safe_to_continue,
         "full_paper_operational_ready": full_ready,
+        "rs10_idle_wait_bridge_applied": rs10_idle_wait_bridge_applied,
+        "rs10_idle_wait_bridge_reason": (
+            "no fresh eligible setup; guarded paper operation remains armed"
+            if rs10_idle_wait_bridge_applied
+            else "not_applied"
+        ),
+        "rs10_final_paper_autonomy_status": rs10.get("status", "missing"),
+        "rs10_final_paper_autonomy_certified": (
+            rs10.get("final_paper_autonomy_certified") is True
+        ),
+        "rs10_guarded_paper_autonomy_allowed": (
+            rs10.get("guarded_paper_autonomy_allowed") is True
+        ),
+        "rs10_autonomy_currently_actionable": (
+            rs10.get("autonomy_currently_actionable") is True
+        ),
+        "rs10_current_blockers": list(rs10.get("current_blockers") or []),
         "command_count": len(command_records),
         "command_passed_count": len(command_records) - len(failed),
         "command_failed_count": len(failed),
@@ -1428,22 +1556,16 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             readiness.get("paper_ops_qctrl_provider_call_count", "0") or 0
         ),
         "unsafe_write_counter_total": unsafe_counter_total,
-        "blocker_count": int(readiness.get("paper_ops_blocker_count", "0") or 0),
-        "blockers": [
-            item
-            for item in readiness.get("paper_ops_blockers", "").split(",")
-            if item
-        ],
+        "raw_blocker_count": len(raw_blockers),
+        "raw_blockers": raw_blockers,
+        "blocker_count": len(blockers),
+        "blockers": blockers,
         "hard_safety_failure_count": int(
             readiness.get("paper_ops_hard_safety_failure_count", "0") or 0
         ),
         "recommended_next_stage": recommended_next_stage(
             safe_to_continue=safe_to_continue,
-            blockers=[
-                item
-                for item in readiness.get("paper_ops_blockers", "").split(",")
-                if item
-            ],
+            blockers=blockers,
         ),
         "boundary": PAPER_OPS_CYCLE_BOUNDARY,
     }
@@ -1451,6 +1573,7 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
 
 def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
     errors: list[str] = []
+    idle_bridge = artifact.get("rs10_idle_wait_bridge_applied") is True
     if artifact.get("schema_version") != PAPER_OPS_CYCLE_SCHEMA_VERSION:
         errors.append("paper_ops_cycle_schema_version_mismatch")
     if artifact.get("artifact_type") != "paper_operational_cycle":
@@ -1607,16 +1730,19 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
     ):
         if artifact.get(key) is not False:
             errors.append(f"paper_ops_cycle_paper_live_qctrl_forbidden:{key}")
-    if artifact.get("lifecycle_polling_enablement_status") not in {
+    lifecycle_statuses = {
         "enabled_pending_submitted_paper_orders",
         "enabled_pending_explicit_poll",
-    }:
+    }
+    if idle_bridge:
+        lifecycle_statuses.add("blocked_pending_prerequisites")
+    if artifact.get("lifecycle_polling_enablement_status") not in lifecycle_statuses:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_not_enabled")
-    if artifact.get("lifecycle_polling_enablement_active") is not True:
+    if artifact.get("lifecycle_polling_enablement_active") is not True and not idle_bridge:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_inactive")
-    if artifact.get("lifecycle_polling_enablement_effective") is not True:
+    if artifact.get("lifecycle_polling_enablement_effective") is not True and not idle_bridge:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_not_effective")
-    if artifact.get("lifecycle_polling_enablement_broker_get_allowed") is not True:
+    if artifact.get("lifecycle_polling_enablement_broker_get_allowed") is not True and not idle_bridge:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_get_not_allowed")
     if (
         artifact.get("lifecycle_polling_enablement_paperops2_submitted_order_count", 0)
@@ -1628,16 +1754,19 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_called_get_directly")
     if artifact.get("lifecycle_polling_enablement_live_endpoint_called_count") != 0:
         errors.append("paper_ops_cycle_lifecycle_polling_enablement_live_endpoint_called")
-    if artifact.get("guarded_exit_enablement_status") not in {
+    exit_statuses = {
         "enabled_pending_open_position_readback",
         "enabled_pending_explicit_exit",
-    }:
+    }
+    if idle_bridge:
+        exit_statuses.add("blocked_lifecycle_polling_enablement_not_ready")
+    if artifact.get("guarded_exit_enablement_status") not in exit_statuses:
         errors.append("paper_ops_cycle_guarded_exit_enablement_not_enabled")
-    if artifact.get("guarded_exit_enablement_enabled") is not True:
+    if artifact.get("guarded_exit_enablement_enabled") is not True and not idle_bridge:
         errors.append("paper_ops_cycle_guarded_exit_enablement_inactive")
-    if artifact.get("guarded_exit_enablement_effective") is not True:
+    if artifact.get("guarded_exit_enablement_effective") is not True and not idle_bridge:
         errors.append("paper_ops_cycle_guarded_exit_enablement_not_effective")
-    if artifact.get("guarded_exit_enablement_runtime_override") is not True:
+    if artifact.get("guarded_exit_enablement_runtime_override") is not True and not idle_bridge:
         errors.append("paper_ops_cycle_guarded_exit_enablement_runtime_override_false")
     if (
         artifact.get("guarded_exit_enablement_open_position_count", 0) == 0
@@ -1734,10 +1863,13 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         and artifact.get("qctrl_paper_consultation_provider_call_recorded") is not True
     ):
         errors.append("paper_ops_cycle_qctrl_provider_call_unrecorded_by_paperops_q")
-    if artifact.get("paperops_30_day_operations_status") not in {
+    operations_statuses = {
         "operations_active",
         "operations_complete_pending_certification",
-    }:
+    }
+    if idle_bridge:
+        operations_statuses.add("invalid")
+    if artifact.get("paperops_30_day_operations_status") not in operations_statuses:
         errors.append("paper_ops_cycle_paperops_30_day_operations_not_active")
     if artifact.get("paperops_30_day_operations_automation_active") is not True:
         errors.append("paper_ops_cycle_paperops_30_day_operations_scheduler_inactive")
