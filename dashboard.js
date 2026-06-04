@@ -5156,6 +5156,7 @@ function fallbackMissionControl(status, source) {
     const systemMap = status.phase5_system_map || {};
     const phase6LearningLoop = status.phase6_learning_loop || {};
     const rs9LearningLoop = status.rs9_learning_loop || {};
+    const rs10FinalPaperAutonomy = status.rs10_final_paper_autonomy_certification || {};
     const phase6Certification = status.phase6_certification || {};
     const phase7DemoProof = status.phase7_demo_proof || {};
     const candidates = asArray(tradeLayer.candidates);
@@ -5252,6 +5253,14 @@ function fallbackMissionControl(status, source) {
             rs9_learning_proposal_count: rs9LearningLoop.proposal_count || 0,
             rs9_learning_blocked_proposal_count: rs9LearningLoop.blocked_proposal_count || 0,
             rs9_paperops_guarded_paper_trading_not_blocked: Boolean(rs9LearningLoop.paperops_guarded_paper_trading_not_blocked),
+            rs10_final_paper_autonomy_certification: rs10FinalPaperAutonomy.status || "not_run",
+            rs10_final_paper_autonomy_certified: Boolean(rs10FinalPaperAutonomy.final_paper_autonomy_certified),
+            rs10_guarded_paper_autonomy_allowed: Boolean(rs10FinalPaperAutonomy.guarded_paper_autonomy_allowed),
+            rs10_autonomy_currently_actionable: Boolean(rs10FinalPaperAutonomy.autonomy_currently_actionable),
+            rs10_current_blocker_count: rs10FinalPaperAutonomy.current_blocker_count || 0,
+            rs10_certification_blocker_count: rs10FinalPaperAutonomy.certification_blocker_count || 0,
+            rs10_paper_submit_currently_allowed: Boolean(rs10FinalPaperAutonomy.paper_submit_currently_allowed),
+            rs10_multiple_paper_trades_per_day_allowed_when_gates_pass: Boolean(rs10FinalPaperAutonomy.multiple_paper_trades_per_day_allowed_when_gates_pass),
             phase7_demo_proof: phase7DemoProof.status || "not_run",
             paper_account: capital.mirror_status || "pending",
             telegram: status.communications?.telegram?.status || "pending",
@@ -5549,6 +5558,23 @@ function fallbackMissionControl(status, source) {
             next_action: rs9LearningLoop.next_action || "Review learning proposals before any mutation is allowed.",
             boundary: rs9LearningLoop.boundary || "RS-9 is review-only and cannot mutate strategy, trust, risk, worldview, or execution routes."
         },
+        rs10_final_paper_autonomy_certification: {
+            phase: rs10FinalPaperAutonomy.phase || "RS",
+            stage: rs10FinalPaperAutonomy.stage || "RS-10",
+            status: rs10FinalPaperAutonomy.status || "not_run",
+            final_paper_autonomy_certified: Boolean(rs10FinalPaperAutonomy.final_paper_autonomy_certified),
+            guarded_paper_autonomy_allowed: Boolean(rs10FinalPaperAutonomy.guarded_paper_autonomy_allowed),
+            autonomy_currently_actionable: Boolean(rs10FinalPaperAutonomy.autonomy_currently_actionable),
+            multiple_paper_trades_per_day_allowed_when_gates_pass: Boolean(rs10FinalPaperAutonomy.multiple_paper_trades_per_day_allowed_when_gates_pass),
+            paper_submit_currently_allowed: Boolean(rs10FinalPaperAutonomy.paper_submit_currently_allowed),
+            current_blocker_count: rs10FinalPaperAutonomy.current_blocker_count || 0,
+            certification_blocker_count: rs10FinalPaperAutonomy.certification_blocker_count || 0,
+            safety_blocker_count: rs10FinalPaperAutonomy.safety_blocker_count || 0,
+            current_blockers: asArray(rs10FinalPaperAutonomy.current_blockers),
+            why_not_trading_now: rs10FinalPaperAutonomy.why_not_trading_now || "No current why-not-trading reason exported.",
+            next_action: rs10FinalPaperAutonomy.next_action || "Continue 20-minute opportunity scans until a qualified setup passes.",
+            boundary: rs10FinalPaperAutonomy.boundary || "RS-10 certifies guarded paper autonomy only; current submits still require PaperOps gates."
+        },
         phase6_certification: {
             phase: phase6Certification.phase || "Q6",
             stage: phase6Certification.stage || "Q6-17",
@@ -5709,6 +5735,7 @@ function renderMissionControl(status, source) {
     const phase5 = mission.phase5_layer_b || status.phase5_layer_b_readiness || {};
     const phase6 = mission.phase6_learning_loop || status.phase6_learning_loop || {};
     const rs9 = mission.rs9_learning_loop || status.rs9_learning_loop || {};
+    const rs10 = mission.rs10_final_paper_autonomy_certification || status.rs10_final_paper_autonomy_certification || {};
     const phase6Certification = mission.phase6_certification || status.phase6_certification || {};
     const phase7DemoProof = mission.phase7_demo_proof || status.phase7_demo_proof || {};
     const thinking = mission.thinking || {};
@@ -5767,6 +5794,7 @@ function renderMissionControl(status, source) {
             <p>Phase 5 ${htmlText(phase5.layer, "Layer B")} · plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"} · implementation ${phase5.implementation_allowed ? "allowed" : "blocked"} · Phase 6 plan ${phase5.phase6_learning_loop_plan_allowed ? "allowed" : "blocked"} · learning implementation ${phase5.phase6_learning_loop_implementation_allowed ? "allowed" : "blocked"} · ${htmlText(phase5.nonapproval_blocker_count || 0)} non-approval blockers</p>
             <p>Phase 6 ${htmlText(phase6.stage || "Q6-16")} · ${htmlText(phase6.learning_state || phase6.visibility_state || "not visible")} · approval ${htmlText(phase6.approval_state || "not requested")} · postmortems ${htmlText(phase6.postmortem_due_count || 0)} due / ${htmlText(phase6.postmortem_resolved_count || 0)} resolved · proposals ${(phase6.model_weight_proposal_count || 0) + (phase6.trust_score_proposal_count || 0)}</p>
             <p>RS-9 ${htmlText(rs9.status || "not_run")} · learning ${htmlText(rs9.learning_direction || "uncertain")} · proposals ${htmlText(rs9.proposal_count || 0)} blocked ${htmlText(rs9.blocked_proposal_count || 0)} · full potential ${htmlText(rs9.full_potential_state || "not exported")} · PaperOps ${rs9.paperops_guarded_paper_trading_not_blocked ? "not blocked" : "blocked"}</p>
+            <p>RS-10 ${htmlText(rs10.status || "not_run")} · guarded paper autonomy ${rs10.guarded_paper_autonomy_allowed ? "allowed" : "blocked"} · currently ${rs10.autonomy_currently_actionable ? "actionable" : "waiting"} · blockers ${htmlText(rs10.current_blocker_count || 0)} · certification blockers ${htmlText(rs10.certification_blocker_count || 0)}</p>
             <p>Q6-17 ${htmlText(phase6Certification.status || "not_run")} · ${phase6Certification.phase6_certified ? "certified" : "not certified"} · paper growth plan ${phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked"} · blockers ${htmlText(phase6Certification.certification_blocker_count || 0)}</p>
             <p>Paper growth ${htmlText(phase7DemoProof.status || "not_run")} · day ${htmlText(phase7DemoProof.completed_calendar_day_count || 0)}/${htmlText(phase7DemoProof.phase7_harness_day_count || 30)} · week ${htmlText(phase7DemoProof.current_proof_week_number || 0)}/${htmlText(phase7DemoProof.proof_week_count || 0)} · verified paper trades ${htmlText(phase7DemoProof.closed_proof_trade_count || 0)}/${htmlText(phase7DemoProof.mature_benchmark || 100)} · weekly review ${phase7DemoProof.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "blocked"}</p>
             <div class="mission-tag-row">
@@ -5807,6 +5835,10 @@ function renderMissionControl(status, source) {
                 ${renderInlineBadge(`learning ${dashboardText(rs9.learning_direction || "uncertain")}`, rs9.learning_direction === "degrading" ? "degraded" : "pending")}
                 ${renderInlineBadge(`RS-9 proposals ${htmlText(rs9.proposal_count || 0)}`, (rs9.proposal_count || 0) ? "pending" : "blocked")}
                 ${renderInlineBadge(rs9.paperops_guarded_paper_trading_not_blocked ? "guarded PaperOps not blocked" : "guarded PaperOps blocked", rs9.paperops_guarded_paper_trading_not_blocked ? "online" : "blocked")}
+                ${renderInlineBadge(`RS-10 ${dashboardText(stack.rs10_final_paper_autonomy_certification || rs10.status || "not_run")}`, rs10.final_paper_autonomy_certified ? "online" : "blocked")}
+                ${renderInlineBadge(rs10.guarded_paper_autonomy_allowed ? "guarded paper autonomy allowed" : "guarded paper autonomy blocked", rs10.guarded_paper_autonomy_allowed ? "online" : "blocked")}
+                ${renderInlineBadge(rs10.multiple_paper_trades_per_day_allowed_when_gates_pass ? "multiple paper trades/day when gates pass" : "single-trade ceiling active", rs10.multiple_paper_trades_per_day_allowed_when_gates_pass ? "online" : "blocked")}
+                ${renderInlineBadge(rs10.autonomy_currently_actionable ? "current paper action available" : "waiting for qualified setup", rs10.autonomy_currently_actionable ? "online" : "pending")}
                 ${renderInlineBadge(`Layer B plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"}`, phase5.implementation_plan_allowed ? "pending" : "blocked")}
                 ${renderInlineBadge(`paper ${dashboardText(stack.paper_account)}`, stack.paper_account)}
                 ${renderInlineBadge(`telegram ${dashboardText(stack.telegram)}`, stack.telegram)}
@@ -8343,6 +8375,7 @@ function renderCommunications(status) {
     if (!target) return;
     const telegram = status.communications?.telegram || {};
     const telegramDailyDigest = status.communications?.telegram_daily_portfolio_digest || {};
+    const telegramCodebaseUpgrade = status.communications?.telegram_codebase_upgrade || {};
     const telegramIntake = status.communications?.telegram_intake || {};
     const messages = asArray(telegram.recent_messages);
     const classes = asArray(telegram.active_message_classes);
@@ -8401,6 +8434,7 @@ function renderCommunications(status) {
             ${renderMetric("Status", telegram.status || "disabled")}
             ${renderMetric("Mode", telegram.mode || "dry_run")}
             ${renderMetric("Daily digest", telegramDailyDigest.status || telegram.daily_portfolio_digest_status || "not run")}
+            ${renderMetric("Code upgrades", telegramCodebaseUpgrade.status || telegram.codebase_upgrade_notifications_status || "not run")}
             ${renderMetric("Portfolio balance", formatMoney(telegramDailyDigest.portfolio_balance_gbp || telegram.daily_portfolio_digest_portfolio_balance_gbp))}
             ${renderMetric("P&L", `${formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0)} · ${formatPercent(telegramDailyDigest.portfolio_performance_pct || telegram.daily_portfolio_digest_portfolio_performance_pct || 0)}`)}
             ${renderMetric("Trades today", telegramDailyDigest.daily_trade_count || telegram.daily_portfolio_digest_daily_trade_count || 0)}
@@ -8422,12 +8456,35 @@ function renderCommunications(status) {
             ${renderInlineBadge(`${telegram.dry_run_message_count || 0} dry-run messages`, telegram.dry_run_message_count ? "online" : "pending")}
             ${renderInlineBadge(telegramDailyDigest.enabled ? "daily portfolio digest enabled" : "daily portfolio digest disabled", telegramDailyDigest.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramDailyDigest.dry_run ? "daily digest dry-run" : "daily digest live-send gate", telegramDailyDigest.dry_run ? "pending" : "online")}
+            ${renderInlineBadge(telegramCodebaseUpgrade.enabled ? "codebase upgrade notifications enabled" : "codebase upgrade notifications disabled", telegramCodebaseUpgrade.enabled ? "online" : "pending")}
+            ${renderInlineBadge(telegramCodebaseUpgrade.dry_run ? "upgrade notifications dry-run" : "upgrade notifications live-send gate", telegramCodebaseUpgrade.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramIntake.enabled ? "inbound intake enabled" : "inbound intake disabled", telegramIntake.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramIntake.telegram_command_authority ? "command authority" : "no Telegram command authority", telegramIntake.telegram_command_authority ? "blocked" : "online")}
         </div>
         <section class="trade-intent-section">
             <p class="label">Message classes</p>
             <div class="tag-row">${renderTagList(classes, "No message classes queued")}</div>
+        </section>
+        <section class="trade-intent-section">
+            <p class="label">Codebase upgrade notifications</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Source", telegramCodebaseUpgrade.source || "not run")}
+                ${renderMetric("Core commit", telegramCodebaseUpgrade.root_commit_short || "pending")}
+                ${renderMetric("Dashboard commit", telegramCodebaseUpgrade.dashboard_commit_short || "pending")}
+                ${renderMetric("Deployment", telegramCodebaseUpgrade.deployment_url || asArray(telegramCodebaseUpgrade.aliases).join(", ") || "not recorded")}
+            </div>
+            <ul class="status-list communications-list">
+                <li>
+                    <strong>${htmlText(telegramCodebaseUpgrade.summary || "No codebase upgrade notification recorded yet.")}</strong>
+                    <span>${htmlText(telegramCodebaseUpgrade.root_dirty || telegramCodebaseUpgrade.dashboard_dirty ? "There are local working-tree changes in the recorded upgrade fingerprint." : "Recorded upgrade fingerprint is tied to exported commits.")}</span>
+                    <div class="comment-meta">
+                        ${renderInlineBadge(telegramCodebaseUpgrade.status || "not_run", telegramCodebaseUpgrade.live_send_succeeded ? "online" : "pending")}
+                        ${renderInlineBadge(telegramCodebaseUpgrade.live_send_succeeded || telegramCodebaseUpgrade.already_sent ? "sent" : "not sent", telegramCodebaseUpgrade.live_send_succeeded || telegramCodebaseUpgrade.already_sent ? "online" : "pending")}
+                        ${renderInlineBadge(telegramCodebaseUpgrade.telegram_command_path_enabled ? "command authority" : "notify only", telegramCodebaseUpgrade.telegram_command_path_enabled ? "blocked" : "online")}
+                    </div>
+                </li>
+            </ul>
+            <p class="mini">${htmlText(telegramCodebaseUpgrade.boundary || "Telegram codebase upgrade notifications are outbound status reports only.")}</p>
         </section>
         <section class="trade-intent-section">
             <p class="label">Daily portfolio digest</p>
@@ -8515,6 +8572,7 @@ function renderTrades(status, viewModels = {}) {
     const phase5Phase6Handoff = status.phase5_phase6_handoff || {};
     const phase6LearningLoop = status.phase6_learning_loop || {};
     const rs9LearningLoop = status.rs9_learning_loop || {};
+    const rs10FinalPaperAutonomy = status.rs10_final_paper_autonomy_certification || {};
     const phase6Certification = status.phase6_certification || {};
     const phase7DemoProof = status.phase7_demo_proof || {};
     const summary = tradeLayer.summary || {};
@@ -9135,6 +9193,10 @@ function renderTrades(status, viewModels = {}) {
             </li>
         `).join("")
         : `<li><strong>No RS-9 learning proposals</strong><span>The Learning Loop review has not exported proposal records yet.</span></li>`;
+    const rs10CurrentBlockers = asArray(rs10FinalPaperAutonomy.current_blockers);
+    const rs10ContextBlockers = asArray(rs10FinalPaperAutonomy.paper_live_context_blockers);
+    const rs10AllowedActions = asArray(rs10FinalPaperAutonomy.allowed_paper_actions);
+    const rs10ForbiddenActions = asArray(rs10FinalPaperAutonomy.forbidden_actions);
 
     const phase7SourceStatusHtml = asArray(phase7DemoProof.source_status_records).length
         ? asArray(phase7DemoProof.source_status_records).map((record) => `
@@ -9373,6 +9435,68 @@ function renderTrades(status, viewModels = {}) {
             <p class="mini">${htmlText(rs9LearningLoop.learning_direction_reason, "Learning direction is not exported yet.")}</p>
             <p class="mini">${htmlText(rs9LearningLoop.boundary, "RS-9 is review-only and cannot mutate strategy, trust, risk, worldview, or execution routes.")}</p>
             <p class="mini">Next: ${htmlText(rs9LearningLoop.next_action, "Review learning proposals before any mutation is allowed.")}</p>
+        </section>
+        <section class="trade-intent-section" data-rs10-final-paper-autonomy>
+            <p class="label">RS-10 Final Paper Autonomy Certification</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", rs10FinalPaperAutonomy.status || "not_run")}
+                ${renderMetric("Certified", rs10FinalPaperAutonomy.final_paper_autonomy_certified ? "yes" : "no")}
+                ${renderMetric("Guarded autonomy", rs10FinalPaperAutonomy.guarded_paper_autonomy_allowed ? "allowed" : "blocked")}
+                ${renderMetric("Currently actionable", rs10FinalPaperAutonomy.autonomy_currently_actionable ? "yes" : "no")}
+                ${renderMetric("Current blockers", rs10FinalPaperAutonomy.current_blocker_count || 0)}
+                ${renderMetric("Certification blockers", rs10FinalPaperAutonomy.certification_blocker_count || 0)}
+                ${renderMetric("Safety blockers", rs10FinalPaperAutonomy.safety_blocker_count || 0)}
+                ${renderMetric("Event Log", rs10FinalPaperAutonomy.event_log_written ? "written" : "missing")}
+            </div>
+            <div class="summary-strip compact">
+                ${renderMetric("Scan cadence", `${rs10FinalPaperAutonomy.opportunity_scan_interval_minutes || 20} min`)}
+                ${renderMetric("Attempts/run", rs10FinalPaperAutonomy.max_guarded_submit_attempts_per_run || 0)}
+                ${renderMetric("Daily policy", rs10FinalPaperAutonomy.daily_target_policy || "not_exported")}
+                ${renderMetric("Distinct setups", rs10FinalPaperAutonomy.available_distinct_setup_count || 0)}
+                ${renderMetric("Submit now", rs10FinalPaperAutonomy.paper_submit_currently_allowed ? "allowed" : "waiting")}
+                ${renderMetric("Poll now", rs10FinalPaperAutonomy.paper_poll_currently_allowed ? "allowed" : "waiting")}
+                ${renderMetric("Exit now", rs10FinalPaperAutonomy.paper_exit_currently_allowed ? "allowed" : "waiting")}
+                ${renderMetric("PT-10 blockers", rs10FinalPaperAutonomy.paper_live_certification_blocker_count || 0)}
+            </div>
+            <div class="summary-strip compact">
+                ${renderMetric("Balance", formatMoney(rs10FinalPaperAutonomy.paper_current_balance_gbp || 0))}
+                ${renderMetric("Open", rs10FinalPaperAutonomy.paper_open_position_count || 0)}
+                ${renderMetric("Closed", rs10FinalPaperAutonomy.paper_closed_trade_count || 0)}
+                ${renderMetric("Orders", rs10FinalPaperAutonomy.paper_order_count || 0)}
+                ${renderMetric("Sources", `${rs10FinalPaperAutonomy.source_online_count || 0}/${rs10FinalPaperAutonomy.source_total_count || 0}`)}
+                ${renderMetric("Replay", rs10FinalPaperAutonomy.durable_replay_status || "unknown")}
+                ${renderMetric("Local LLM", rs10FinalPaperAutonomy.local_research_status || "unknown")}
+                ${renderMetric("Frontier LLM", rs10FinalPaperAutonomy.strategy_lead_status || "unknown")}
+            </div>
+            <div class="tag-row">
+                ${renderInlineBadge(rs10FinalPaperAutonomy.final_paper_autonomy_certified ? "final paper autonomy certified" : "final certification blocked", rs10FinalPaperAutonomy.final_paper_autonomy_certified ? "online" : "blocked")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.guarded_paper_autonomy_allowed ? "guarded paper autonomy allowed" : "guarded paper autonomy blocked", rs10FinalPaperAutonomy.guarded_paper_autonomy_allowed ? "online" : "blocked")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.multiple_paper_trades_per_day_allowed_when_gates_pass ? "multiple paper trades/day when gates pass" : "multiple paper trades/day blocked", rs10FinalPaperAutonomy.multiple_paper_trades_per_day_allowed_when_gates_pass ? "online" : "blocked")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.autonomy_currently_actionable ? "current paper action available" : "waiting for qualified setup", rs10FinalPaperAutonomy.autonomy_currently_actionable ? "online" : "pending")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.live_capital_enabled ? "live capital enabled" : "live capital off", rs10FinalPaperAutonomy.live_capital_enabled ? "blocked" : "online")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.dashboard_command_authority ? "dashboard commands on" : "dashboard commands off", rs10FinalPaperAutonomy.dashboard_command_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.telegram_command_authority ? "Telegram commands on" : "Telegram commands off", rs10FinalPaperAutonomy.telegram_command_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.local_llm_execution_authority ? "Local LLM can execute" : "Local LLM cannot execute", rs10FinalPaperAutonomy.local_llm_execution_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.frontier_llm_execution_authority ? "Frontier LLM can execute" : "Frontier LLM cannot execute", rs10FinalPaperAutonomy.frontier_llm_execution_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.quantum_execution_authority ? "Quantum can execute" : "Quantum cannot execute", rs10FinalPaperAutonomy.quantum_execution_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs10FinalPaperAutonomy.unmanaged_broker_write_allowed ? "unmanaged broker writes open" : "unmanaged broker writes blocked", rs10FinalPaperAutonomy.unmanaged_broker_write_allowed ? "blocked" : "online")}
+            </div>
+            <section class="trade-check-section">
+                <p class="label">Current blockers</p>
+                <div class="tag-row">${renderTagList(rs10CurrentBlockers, "No current RS-10 blockers exported")}</div>
+            </section>
+            <section class="trade-check-section">
+                <p class="label">Paper-live context blockers</p>
+                <div class="tag-row">${renderTagList(rs10ContextBlockers, "No paper-live context blockers exported")}</div>
+            </section>
+            <section class="trade-check-section">
+                <p class="label">Allowed and forbidden paper actions</p>
+                <div class="tag-row">${renderTagList(rs10AllowedActions, "No allowed paper actions currently exported")}</div>
+                <div class="tag-row">${renderTagList(rs10ForbiddenActions, "No forbidden-action ledger exported")}</div>
+            </section>
+            <p class="mini">Why not trading now: ${htmlText(rs10FinalPaperAutonomy.why_not_trading_now, "No current why-not-trading reason exported.")}</p>
+            <p class="mini">${htmlText(rs10FinalPaperAutonomy.boundary, "RS-10 certifies guarded paper autonomy only; current submits still require PaperOps gates.")}</p>
+            <p class="mini">Next: ${htmlText(rs10FinalPaperAutonomy.next_action, "Continue 20-minute opportunity scans until a qualified setup passes.")}</p>
         </section>
         <section class="trade-intent-section" data-phase6-certification>
             <p class="label">Q6-17 Phase 6 Certification</p>

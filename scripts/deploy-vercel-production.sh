@@ -22,6 +22,10 @@ say() {
 }
 
 say "Preparing dashboard production deploy from ${SITE_DIR}"
+QADAM_PYTHON_BIN="${QADAM_PYTHON:-python3}"
+if [[ -x "${ROOT_DIR}/.venv/bin/python" ]]; then
+  QADAM_PYTHON_BIN="${QADAM_PYTHON:-${ROOT_DIR}/.venv/bin/python}"
+fi
 
 if [[ -f "${LOCAL_VERCEL_ENV}" ]]; then
   # shellcheck disable=SC1090
@@ -129,3 +133,23 @@ NODE
 say "Production deployment: ${deployment_url}"
 say "Aliased domains: ${PRODUCTION_DOMAINS[*]}"
 say "Deployment receipt: ${receipt_path}"
+
+say "Sending codebase upgrade Telegram notification"
+if ! (
+  cd "${ROOT_DIR}"
+  env \
+    HOME="${QADAM_ORIGINAL_HOME}" \
+    XDG_CACHE_HOME="${QADAM_ORIGINAL_XDG_CACHE_HOME}" \
+    XDG_CONFIG_HOME="${QADAM_ORIGINAL_XDG_CONFIG_HOME}" \
+    "${QADAM_PYTHON_BIN}" "${ROOT_DIR}/scripts/send_codebase_upgrade_telegram_notification.py" \
+      --live \
+      --source "production_deploy" \
+      --summary "Production dashboard deploy completed and Qadam codebase upgrade notification support is active." \
+      --deployment-url "${deployment_url}" \
+      --alias "qadam.trade" \
+      --alias "www.qadam.trade"
+); then
+  say "Codebase upgrade Telegram notification failed; deployment and aliases completed, but the team notification did not."
+  exit 1
+fi
+say "Codebase upgrade Telegram notification completed"
