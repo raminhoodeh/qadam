@@ -452,6 +452,26 @@ Acceptance:
 - Fund Managers can acknowledge, comment, and request review.
 - Comments cannot approve trades.
 
+Implementation status:
+
+- RS-7 is implemented in `orchestrator/operator_inbox.py` and validated by
+  `scripts/check_operator_inbox.py`.
+- The local durable inbox store writes `operator_inbox.json`,
+  `operator_inbox_history.jsonl`, `operator_inbox_acknowledgements.jsonl`,
+  `operator_inbox_comments.jsonl`, and `operator_inbox_events.jsonl` under
+  `data/runtime/`.
+- Cockpit status exports a sanitized `operator_inbox` block and Mission Control
+  mirrors the RS-7 counts and authority flags.
+- The dashboard Governance/Operations surface now shows inbox counts, recent
+  operator items, allowed read-only Telegram commands, and explicit badges that
+  Telegram commands, comments, and acknowledgements cannot approve trades.
+- Current validated state: 48 inbox items, 48 open items, 2 high-or-critical
+  items, 1 postmortem-due item, 23 paper-trade-related items, 48 Telegram-linked
+  items, 8 read-only commands, and 0 validation/probe/public-leak errors.
+- RS-7 remains non-executable: it cannot create signals, create trade
+  candidates, approve risk, approve execution, place paper orders, write to
+  Alpaca, call Q-CTRL, or enable live capital.
+
 ## 12. Phase RS-8 - Dashboard Mission Control Completion
 
 Objective: make the dashboard answer the Fund Manager questions without

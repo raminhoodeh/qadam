@@ -2120,6 +2120,17 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     completed postmortems, 0 Phase 7 verified proof records, and 0 mirror-only
     trades counted for proof. This is audit hardening only: it adds no broker
     write route, no live-capital authority, no forced trades, and no proof credit.
+26. RS-7 Operator Inbox, Telegram, And Human Oversight is now implemented.
+    Qadam writes `data/runtime/operator_inbox.json`, durable history/comment/
+    acknowledgement/event JSONL records, validates the contract with
+    `scripts/check_operator_inbox.py`, exports a public-safe `operator_inbox`
+    block through cockpit status, and renders the inbox in the dashboard
+    Operations/Governance view. Current validated state: `status=ok`, 48 inbox
+    items, 48 open items, 2 high-or-critical items, 1 postmortem-due item, 23
+    paper-trade-related items, 48 Telegram-linked items, 8 read-only Telegram
+    commands, 0 validation errors, and no public leak. Telegram can summarize
+    and notify only: it cannot create signals, approve risk, approve execution,
+    place paper orders, write to Alpaca, call Q-CTRL, or enable live capital.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

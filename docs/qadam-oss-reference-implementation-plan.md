@@ -371,10 +371,15 @@ Build:
 
 - Add `orchestrator/operator_inbox.py`.
 - Add JSONL/local durable store first.
-- Later mirror public-safe summaries into cockpit status.
+- Mirror public-safe summaries into cockpit status.
 - Add Telegram outbound hooks only for allowed message classes.
 - Add dashboard inbox/notification rail.
 - Keep all approval/action state local.
+
+Implementation note: OR-5 is now covered by RS-7. The operator inbox is local and
+durable, cockpit status exposes only sanitized counts/recent items, and the
+dashboard shows the inbox without adding command, approval, order, broker-write,
+Q-CTRL, or live-capital authority.
 
 Likely files:
 

@@ -31,6 +31,9 @@ from orchestrator.paper_authority_reconciliation import (  # noqa: E402
 from orchestrator.paper_lifecycle_portfolio_postmortem import (  # noqa: E402
     RS6_PUBLIC_STATUS_FIELDS,
 )
+from orchestrator.operator_inbox import (  # noqa: E402
+    PUBLIC_STATUS_FIELDS as RS7_OPERATOR_INBOX_PUBLIC_FIELDS,
+)
 from orchestrator.paperops_cockpit_notification_upgrade import (  # noqa: E402
     PT9_PUBLIC_FIELDS as PAPEROPS_COCKPIT_NOTIFICATION_REQUIRED_FIELDS,
 )
@@ -2052,6 +2055,12 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "rs6_closed_trade_missing_postmortem_count",
     "rs6_paper_proof_ledger_verified_record_count",
     "rs6_mirror_trade_counted_for_proof_count",
+    "operator_inbox",
+    "operator_inbox_item_count",
+    "operator_inbox_open_item_count",
+    "operator_inbox_high_or_critical_item_count",
+    "operator_inbox_postmortem_due_item_count",
+    "operator_inbox_telegram_command_authority",
     "phase5_layer_b",
     "phase5_alpaca_paper_dry_run",
     "phase5_execution_adapter",
@@ -3246,6 +3255,7 @@ def main() -> int:
         "paper_lifecycle_portfolio_postmortem",
         {},
     )
+    operator_inbox = payload.get("operator_inbox", {})
     paperops_qualified_setup_production = payload.get(
         "paperops_qualified_setup_production",
         {},
@@ -3289,6 +3299,22 @@ def main() -> int:
     print(
         "cockpit_status_rs6_proof_verified_record_count="
         f"{paper_lifecycle_postmortem.get('paper_proof_ledger_verified_record_count')}"
+    )
+    print(
+        "cockpit_status_rs7_operator_inbox_status="
+        f"{operator_inbox.get('status')}"
+    )
+    print(
+        "cockpit_status_rs7_operator_inbox_item_count="
+        f"{operator_inbox.get('item_count')}"
+    )
+    print(
+        "cockpit_status_rs7_operator_inbox_open_item_count="
+        f"{operator_inbox.get('open_item_count')}"
+    )
+    print(
+        "cockpit_status_rs7_operator_inbox_postmortem_due_item_count="
+        f"{operator_inbox.get('postmortem_due_item_count')}"
     )
     print(
         "cockpit_status_paper_live_activation_approved="
@@ -7169,6 +7195,56 @@ def main() -> int:
     if "read-only" not in paper_lifecycle_postmortem.get("boundary", ""):
         print("cockpit_status_rs6_boundary_weak=true")
         return 1
+    missing_rs7_fields = sorted(RS7_OPERATOR_INBOX_PUBLIC_FIELDS - set(operator_inbox))
+    if missing_rs7_fields:
+        print("cockpit_status_rs7_fields_missing=" + ",".join(missing_rs7_fields))
+        return 1
+    if operator_inbox.get("status") != "ok":
+        print("cockpit_status_rs7_not_ok=true")
+        return 1
+    if operator_inbox.get("public_safe") is not True:
+        print("cockpit_status_rs7_not_public_safe=true")
+        return 1
+    if int(operator_inbox.get("validation_error_count") or 0) != 0:
+        print("cockpit_status_rs7_validation_errors=true")
+        return 1
+    if int(operator_inbox.get("item_count") or 0) < 5:
+        print("cockpit_status_rs7_item_count_too_low=true")
+        return 1
+    for command in (
+        "/status",
+        "/sources",
+        "/research-goals",
+        "/trades",
+        "/blocked",
+        "/portfolio",
+        "/worldview",
+        "/postmortems",
+    ):
+        if command not in operator_inbox.get("allowed_read_commands", []):
+            print(f"cockpit_status_rs7_read_command_missing={command}")
+            return 1
+    for field in (
+        "telegram_command_authority",
+        "comment_can_approve_trades",
+        "ack_can_approve_trades",
+        "signal_authority",
+        "trade_candidate_creation_allowed",
+        "risk_handoff_allowed",
+        "risk_approval_allowed",
+        "execution_allowed",
+        "execution_approval_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "qctrl_provider_call_allowed",
+        "live_capital_enabled",
+    ):
+        if operator_inbox.get(field) is not False:
+            print(f"cockpit_status_rs7_authority_enabled={field}")
+            return 1
+    if "cannot create signals" not in operator_inbox.get("boundary", ""):
+        print("cockpit_status_rs7_boundary_weak=true")
+        return 1
     mission = payload.get("mission_control", {})
     missing_mission_fields = sorted(MISSION_CONTROL_REQUIRED_FIELDS - set(mission))
     if missing_mission_fields:
@@ -7358,6 +7434,28 @@ def main() -> int:
         paper_lifecycle_postmortem.get("mirror_trade_counted_for_proof_count")
     ):
         print("cockpit_status_mission_stack_rs6_mirror_proof_mismatch=true")
+        return 1
+    if mission_stack.get("operator_inbox") != operator_inbox.get("status"):
+        print("cockpit_status_mission_stack_rs7_status_mismatch=true")
+        return 1
+    if mission_stack.get("operator_inbox_item_count") != operator_inbox.get("item_count"):
+        print("cockpit_status_mission_stack_rs7_item_count_mismatch=true")
+        return 1
+    if mission_stack.get("operator_inbox_open_item_count") != operator_inbox.get("open_item_count"):
+        print("cockpit_status_mission_stack_rs7_open_count_mismatch=true")
+        return 1
+    if mission_stack.get("operator_inbox_high_or_critical_item_count") != (
+        operator_inbox.get("high_or_critical_item_count")
+    ):
+        print("cockpit_status_mission_stack_rs7_high_count_mismatch=true")
+        return 1
+    if mission_stack.get("operator_inbox_postmortem_due_item_count") != (
+        operator_inbox.get("postmortem_due_item_count")
+    ):
+        print("cockpit_status_mission_stack_rs7_postmortem_count_mismatch=true")
+        return 1
+    if mission_stack.get("operator_inbox_telegram_command_authority") is not False:
+        print("cockpit_status_mission_stack_rs7_telegram_command_authority_enabled=true")
         return 1
     if mission_stack.get("paperops_paper_lifecycle_polling_enablement") != (
         paperops_lifecycle_polling_enablement.get("status")

@@ -81,7 +81,7 @@ function loadRendererWindow() {
 async function main() {
     includesAll(dashboardHtml, [
         "Governance workspace",
-        "Comments, approvals, reviews, and outbound communications",
+        "Comments, approvals, inbox, reviews, and outbound communications",
         "Comment shortcuts",
         "Comment on a clear dashboard area",
         "data-comment-target-button",
@@ -158,7 +158,7 @@ async function main() {
     const governanceHtml = html(rendered, "[data-governance-workspace]");
     [
         "Governance workspace",
-        "Comments, approvals, reviews, and outbound communications",
+        "Comments, approvals, inbox, reviews, and outbound communications",
         "comments governance-only",
         "approvals audit-only",
         "Telegram outbound-only",

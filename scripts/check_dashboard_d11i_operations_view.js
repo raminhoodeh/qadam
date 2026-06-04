@@ -153,7 +153,7 @@ async function main() {
         "Runtime, bridge, and safety",
         "Operating team and data plumbing",
         "Full system map and event trail",
-        "Governance and communications audit",
+        "Governance, inbox, and communications audit",
         "Hard safety stops",
         "First-class operating roles",
         "Live data feed clusters",

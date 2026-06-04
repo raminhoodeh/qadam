@@ -28,6 +28,10 @@ from orchestrator.intelligence import (
 )
 from orchestrator.live_bridge import live_bridge_contract, write_status_signature
 from orchestrator.market_context import MARKET_CONTEXT_PACKET_VERSION, market_context_summary
+from orchestrator.operator_inbox import (
+    public_operator_inbox_status,
+    write_operator_inbox,
+)
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
 from orchestrator.paper_lifecycle_portfolio_postmortem import (
     paper_lifecycle_portfolio_postmortem_public_status,
@@ -5100,6 +5104,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     phase1_data_spine = payload.get("phase1_data_spine", {})
+    operator_inbox = payload.get("operator_inbox", {})
 
     hypotheses = cognition.get("hypotheses", [])
     evidence_packets = cognition.get("evidence_packets", [])
@@ -5624,6 +5629,21 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 )
             ),
             "telegram": communications.get("status", "pending"),
+            "operator_inbox": operator_inbox.get("status", "not_run"),
+            "operator_inbox_item_count": operator_inbox.get("item_count", 0),
+            "operator_inbox_open_item_count": operator_inbox.get("open_item_count", 0),
+            "operator_inbox_high_or_critical_item_count": operator_inbox.get(
+                "high_or_critical_item_count",
+                0,
+            ),
+            "operator_inbox_postmortem_due_item_count": operator_inbox.get(
+                "postmortem_due_item_count",
+                0,
+            ),
+            "operator_inbox_telegram_command_authority": operator_inbox.get(
+                "telegram_command_authority",
+                False,
+            ),
             "boundary": "APIs, models, and quantum checks can inform the chain; only gates can advance state.",
         },
         "phase3_readiness": _phase3_readiness(quantum_oracle),
@@ -6836,6 +6856,8 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         settings=settings,
         generated_at=generated_at,
     )
+    operator_inbox_artifact = write_operator_inbox(payload, settings=settings)
+    payload["operator_inbox"] = public_operator_inbox_status(operator_inbox_artifact)
     payload["mission_control"] = _mission_control(payload)
     validate_cockpit_status(payload)
     return payload
@@ -6912,6 +6934,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_qualified_setup_production",
         "paperops_auto_approval_staged_order",
         "paper_lifecycle_portfolio_postmortem",
+        "operator_inbox",
         "yahoo_finance",
         "preference_mcp",
         "tradingview_mcp",
