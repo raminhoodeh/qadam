@@ -6335,6 +6335,108 @@ function renderOverviewCapacityChart(capacity = {}) {
     `;
 }
 
+function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
+    const sourceModel = viewModels.sources_model || {};
+    const tradesModel = viewModels.trades_model || {};
+    const reasoningModel = viewModels.reasoning_model || {};
+    const strategyList = asArray(overview.trading_strategies);
+    const approvedStrategies = strategyList.filter((strategy) => strategy.approval_state === "approved" || strategy.tone === "online");
+    const akberStrategy = strategyList.find((strategy) => /akber|six|6 stage|6-stage/i.test(`${strategy.key || ""} ${strategy.label || ""} ${strategy.summary || ""}`));
+    const preferredStrategies = (approvedStrategies.length ? approvedStrategies : strategyList).slice(0, 3);
+    const activeStrategyLabel = akberStrategy?.label
+        || preferredStrategies[0]?.label
+        || "evidence-gated paper strategy";
+    const sourceCounts = sourceModel.counts || {};
+    const tradeCounts = tradesModel.counts || {};
+    const reasoningCounts = reasoningModel.counts || {};
+    const opportunityScan = overview.opportunity_scan_cadence || {};
+    const reviewFocus = overview.review_focus || {};
+    const candidateCount = modelNumber(tradeCounts.candidate, 0);
+    const observedCount = modelNumber(tradeCounts.observed_signal, 0);
+    const openCount = modelNumber(tradeCounts.open_position, 0);
+    const submittedCount = modelNumber(tradeCounts.submitted_paper_order, 0);
+    const eligibleSetups = modelNumber(overview.demo_proof?.eligible_setup_count, 0);
+    const cadenceMinutes = modelNumber(opportunityScan.interval_minutes, 20);
+    const sourceTone = sourceModel.tone || (sourceCounts.degraded ? "degraded" : "online");
+    const tradeTone = candidateCount ? "pending" : (submittedCount || openCount ? "online" : "pending");
+    const postureTone = sourceTone === "degraded" ? "degraded" : tradeTone;
+    const posture = candidateCount
+        ? "candidate review"
+        : (eligibleSetups || observedCount ? "setup discovery" : "patient scanning");
+    const strategyNames = preferredStrategies.map((strategy) => strategy.label || strategy.key).filter(Boolean);
+    const strategySentence = strategyNames.length
+        ? `Current approved-shadow families: ${strategyNames.join(", ")}.`
+        : "No explicit strategy family list is exported in this snapshot, so Qadam is using the default evidence-gated paper strategy.";
+    const reasonSentence = candidateCount
+        ? `${candidateCount} trade idea${candidateCount === 1 ? "" : "s"} exist, so Qadam is comparing evidence, risk, and paper-account constraints before anything can become a paper order.`
+        : `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online and ${reasoningCounts.hypotheses || 0} hypotheses are under review, but no fresh qualified trade idea is currently clear enough to advance.`;
+    const evolutionSentence = [
+        `${reasoningCounts.evidence_packets || 0} evidence packets`,
+        `${reasoningCounts.hypotheses || 0} hypotheses`,
+        `${candidateCount} trade ideas`,
+        `${submittedCount} submitted paper orders`,
+        `${openCount} open paper positions`
+    ].join("; ");
+    const sourceInfluenceRows = asArray(sourceModel.pipelines)
+        .slice()
+        .sort((a, b) => {
+            const aScore = modelNumber(a.signal_influencing_count, 0) + modelNumber(a.online_count, 0);
+            const bScore = modelNumber(b.signal_influencing_count, 0) + modelNumber(b.online_count, 0);
+            return bScore - aScore;
+        })
+        .slice(0, 4);
+    const sourceInfluenceHtml = sourceInfluenceRows.length
+        ? sourceInfluenceRows.map((pipeline) => {
+            const label = OPERATIONS_PIPELINE_LABELS[pipeline.pipeline] || pipeline.label || pipeline.pipeline || "Source group";
+            const signalCount = modelNumber(pipeline.signal_influencing_count, 0);
+            const detail = [
+                `${modelNumber(pipeline.online_count, 0)}/${modelNumber(pipeline.source_count, 0)} online`,
+                signalCount ? `${signalCount} signal-influencing` : "observation input",
+                modelNumber(pipeline.degraded_count, 0) ? `${modelNumber(pipeline.degraded_count, 0)} degraded` : null
+            ].filter(Boolean).join("; ");
+            return `<li><strong>${htmlText(label)}</strong><span>${htmlText(detail)}</span></li>`;
+        }).join("")
+        : `<li><strong>Source influence</strong><span>No source-pipeline detail is exported yet.</span></li>`;
+    const topTrade = asArray(overview.trade_considerations)[0] || {};
+    const tradeSentence = topTrade.label
+        ? `${dashboardText(topTrade.label)} is visible as ${dashboardText(topTrade.value || topTrade.status, "a trade idea")}: ${dashboardText(topTrade.summary, "evidence review pending")}`
+        : "No active trade idea is exported in this snapshot; Qadam is still scanning and preserving paper-account state.";
+
+    return `
+        <div class="overview-section-head">
+            <span>Trading strategy narrative</span>
+            <strong>${htmlText(activeStrategyLabel)} · ${htmlText(posture)}</strong>
+        </div>
+        <div class="strategy-narrative-shell ${statusClass(postureTone)}">
+            <article class="strategy-narrative-lead">
+                <span>What Qadam is choosing now</span>
+                <h3>${htmlText(posture === "candidate review" ? "Review trade ideas before paper action" : posture === "setup discovery" ? "Search for a qualified setup" : "Keep scanning until evidence improves")}</h3>
+                <p>${htmlText(reasonSentence)}</p>
+                <p>${htmlText(strategySentence)} Qadam is still using Akber's 6-stage trading method as the practical filter: context, catalyst, confirmation, risk, execution, and postmortem learning.</p>
+            </article>
+            <div class="strategy-narrative-grid">
+                <article>
+                    <span>Why this strategy</span>
+                    <p>${htmlText(`${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are connected, ${sourceCounts.signal_influencing || 0} can influence signal review, and the ${cadenceMinutes}-minute opportunity scan keeps refreshing candidates without bypassing gates.`)}</p>
+                </article>
+                <article>
+                    <span>How it is evolving</span>
+                    <p>${htmlText(evolutionSentence)}. Next review: ${htmlText(reviewFocus.state || "Continue monitoring")}.</p>
+                </article>
+                <article>
+                    <span>Trade implication</span>
+                    <p>${htmlText(tradeSentence)} Candidate does not mean order; PaperOps still needs fresh setup, duplicate-submit, risk, and paper-account checks.</p>
+                </article>
+            </div>
+            <div class="strategy-narrative-sources">
+                <span>Data sources currently shaping the posture</span>
+                <ul>${sourceInfluenceHtml}</ul>
+            </div>
+            <p class="mini">${htmlText(overview.boundary || "Overview is read-only and cannot approve, place, modify, close, fund, or verify performance credit for trades.")}</p>
+        </div>
+    `;
+}
+
 function renderOverviewFirstScreen(viewModels) {
     const overview = viewModels?.overview_model;
     const connectivity = viewModels?.system_connectivity_model;
@@ -6379,6 +6481,11 @@ function renderOverviewFirstScreen(viewModels) {
             </div>
             <p class="mini">${htmlText(missionBrief.boundary, "Mission Control is read-only.")}</p>
         `;
+    }
+
+    const strategyNarrativeTarget = dashboardQuery("[data-overview-strategy-narrative]");
+    if (strategyNarrativeTarget) {
+        strategyNarrativeTarget.innerHTML = renderOverviewStrategyNarrative(viewModels, overview);
     }
 
     const hero = dashboardQuery("[data-overview-hero]");

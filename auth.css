@@ -762,6 +762,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-command-surface,
 .overview-mission-brief,
+.overview-strategy-narrative,
 .overview-mission-question-grid,
 .overview-mission-nav,
 .overview-status-rail,
@@ -946,10 +947,12 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-hero,
 .overview-review-card,
 .overview-mission-brief,
+.overview-strategy-narrative,
 .overview-mission-question,
 .overview-mission-next,
 .overview-proof-flow,
 .overview-system-summary,
+.strategy-narrative-shell,
 .overview-system-status-panel,
 .overview-paper-capacity-panel,
 .overview-data-sources-panel,
@@ -967,6 +970,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-review-card,
 .overview-mission-brief,
+.overview-strategy-narrative,
 .overview-mission-next,
 .overview-proof-flow,
 .overview-system-summary,
@@ -991,6 +995,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card.online,
 .overview-mission-question.online,
 .overview-mission-next.online,
+.strategy-narrative-shell.online,
 .overview-readout.online,
 .overview-status-chip.online,
 .overview-plain-card.online,
@@ -1006,6 +1011,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-mission-question.degraded,
 .overview-mission-next.pending,
 .overview-mission-next.degraded,
+.strategy-narrative-shell.pending,
+.strategy-narrative-shell.degraded,
 .overview-readout.pending,
 .overview-readout.degraded,
 .overview-status-chip.pending,
@@ -1023,6 +1030,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card.blocked,
 .overview-mission-question.blocked,
 .overview-mission-next.blocked,
+.strategy-narrative-shell.blocked,
 .overview-readout.blocked,
 .overview-status-chip.blocked,
 .overview-plain-card.blocked,
@@ -1035,6 +1043,9 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card > span,
 .overview-review-card p,
 .overview-mission-brief p,
+.overview-strategy-narrative p,
+.strategy-narrative-shell p,
+.strategy-narrative-shell li span,
 .overview-mission-question p,
 .overview-mission-question summary em,
 .overview-mission-question-body a,
@@ -1064,6 +1075,9 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card > span,
 .overview-mission-question summary em,
 .overview-mission-next > span,
+.strategy-narrative-lead > span,
+.strategy-narrative-grid article > span,
+.strategy-narrative-sources > span,
 .overview-readout span,
 .overview-section-head span,
 .overview-mini-node span,
@@ -1085,6 +1099,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-plain-card strong,
 .overview-thought-list strong,
 .overview-oversight strong,
+.strategy-narrative-shell strong,
+.strategy-narrative-shell h3,
 .overview-next-links strong {
     color: var(--text);
 }
@@ -1113,6 +1129,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-readout,
 .overview-status-chip,
 .overview-plain-card,
+.overview-strategy-narrative,
+.strategy-narrative-shell,
 .overview-system-status-panel,
 .overview-paper-capacity-panel,
 .overview-data-sources-panel,
@@ -1364,9 +1382,70 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-proof-flow,
-.overview-system-summary {
+.overview-system-summary,
+.overview-strategy-narrative,
+.strategy-narrative-shell {
     display: grid;
     gap: 10px;
+}
+
+.strategy-narrative-shell {
+    border-color: rgba(var(--cyan-rgb), 0.22);
+    background: linear-gradient(135deg, rgba(var(--cyan-rgb), 0.075), rgba(var(--green-rgb), 0.035));
+}
+
+.strategy-narrative-lead,
+.strategy-narrative-grid article,
+.strategy-narrative-sources {
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+}
+
+.strategy-narrative-lead {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.strategy-narrative-lead h3 {
+    font-size: 22px;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.strategy-narrative-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.strategy-narrative-lead > span,
+.strategy-narrative-grid article > span,
+.strategy-narrative-sources > span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.strategy-narrative-sources ul {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.strategy-narrative-sources li {
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 5px;
+    min-height: 76px;
+    padding: 10px;
 }
 
 .overview-system-grid {
@@ -5459,6 +5538,8 @@ summary {
     .overview-status-rail,
     .overview-readout-list,
     .overview-system-grid,
+    .strategy-narrative-grid,
+    .strategy-narrative-sources ul,
     .overview-cockpit-grid,
     .overview-plain-grid,
     .overview-plain-card-grid,
