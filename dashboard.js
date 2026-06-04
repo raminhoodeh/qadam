@@ -8488,6 +8488,8 @@ function renderCommunications(status) {
     const classes = asArray(telegram.active_message_classes);
     const intakeRecords = asArray(telegramIntake.recent_records);
     const dailyDigestTrades = asArray(telegramDailyDigest.daily_trade_summaries);
+    const codebaseUpgradeDetails = asArray(telegramCodebaseUpgrade.details);
+    const codebaseUpgradeBenefits = asArray(telegramCodebaseUpgrade.benefits);
     const messageRows = messages.length
         ? messages.map((message) => `
             <li>
@@ -8589,6 +8591,14 @@ function renderCommunications(status) {
                         ${renderInlineBadge(telegramCodebaseUpgrade.live_send_succeeded || telegramCodebaseUpgrade.already_sent ? "sent" : "not sent", telegramCodebaseUpgrade.live_send_succeeded || telegramCodebaseUpgrade.already_sent ? "online" : "pending")}
                         ${renderInlineBadge(telegramCodebaseUpgrade.telegram_command_path_enabled ? "command authority" : "notify only", telegramCodebaseUpgrade.telegram_command_path_enabled ? "blocked" : "online")}
                     </div>
+                </li>
+                <li>
+                    <strong>What changed</strong>
+                    <span>${codebaseUpgradeDetails.length ? codebaseUpgradeDetails.map((item) => htmlText(item)).join("; ") : "Specific implementation details will appear with the next codebase upgrade notification."}</span>
+                </li>
+                <li>
+                    <strong>Why it matters</strong>
+                    <span>${codebaseUpgradeBenefits.length ? codebaseUpgradeBenefits.map((item) => htmlText(item)).join("; ") : "Operator benefits will appear with the next codebase upgrade notification."}</span>
                 </li>
             </ul>
             <p class="mini">${htmlText(telegramCodebaseUpgrade.boundary || "Telegram codebase upgrade notifications are outbound status reports only.")}</p>
