@@ -5155,6 +5155,7 @@ function fallbackMissionControl(status, source) {
     const phase5Phase6Handoff = status.phase5_phase6_handoff || {};
     const systemMap = status.phase5_system_map || {};
     const phase6LearningLoop = status.phase6_learning_loop || {};
+    const rs9LearningLoop = status.rs9_learning_loop || {};
     const phase6Certification = status.phase6_certification || {};
     const phase7DemoProof = status.phase7_demo_proof || {};
     const candidates = asArray(tradeLayer.candidates);
@@ -5246,6 +5247,11 @@ function fallbackMissionControl(status, source) {
             phase5_phase6_handoff: phase5Phase6Handoff.status || "not_run",
             phase5_system_map: systemMap.status || "not_run",
             phase6_learning_loop: phase6LearningLoop.status || "not_run",
+            rs9_learning_loop: rs9LearningLoop.status || "not_run",
+            rs9_learning_direction: rs9LearningLoop.learning_direction || "uncertain",
+            rs9_learning_proposal_count: rs9LearningLoop.proposal_count || 0,
+            rs9_learning_blocked_proposal_count: rs9LearningLoop.blocked_proposal_count || 0,
+            rs9_paperops_guarded_paper_trading_not_blocked: Boolean(rs9LearningLoop.paperops_guarded_paper_trading_not_blocked),
             phase7_demo_proof: phase7DemoProof.status || "not_run",
             paper_account: capital.mirror_status || "pending",
             telegram: status.communications?.telegram?.status || "pending",
@@ -5503,6 +5509,46 @@ function fallbackMissionControl(status, source) {
             broker_identifier_exposed_count: phase6LearningLoop.broker_identifier_exposed_count || 0,
             boundary: phase6LearningLoop.boundary || "Phase 6 Learning Loop visibility is backend-derived and non-executable."
         },
+        rs9_learning_loop: {
+            phase: rs9LearningLoop.phase || "RS",
+            stage: rs9LearningLoop.stage || "RS-9",
+            status: rs9LearningLoop.status || "not_run",
+            learning_direction: rs9LearningLoop.learning_direction || "uncertain",
+            learning_direction_reason: rs9LearningLoop.learning_direction_reason || "Learning direction has not been exported.",
+            full_potential_state: rs9LearningLoop.full_potential_state || "not_exported",
+            paperops_guarded_paper_trading_not_blocked: Boolean(rs9LearningLoop.paperops_guarded_paper_trading_not_blocked),
+            postmortem_due_count: rs9LearningLoop.postmortem_due_count || 0,
+            postmortem_resolved_count: rs9LearningLoop.postmortem_resolved_count || 0,
+            proposal_count: rs9LearningLoop.proposal_count || 0,
+            active_proposal_count: rs9LearningLoop.active_proposal_count || 0,
+            blocked_proposal_count: rs9LearningLoop.blocked_proposal_count || 0,
+            strategy_weight_proposal_count: rs9LearningLoop.strategy_weight_proposal_count || 0,
+            source_trust_proposal_count: rs9LearningLoop.source_trust_proposal_count || 0,
+            risk_sizing_proposal_count: rs9LearningLoop.risk_sizing_proposal_count || 0,
+            market_context_proposal_count: rs9LearningLoop.market_context_proposal_count || 0,
+            worldview_lens_proposal_count: rs9LearningLoop.worldview_lens_proposal_count || 0,
+            learning_proposals: asArray(rs9LearningLoop.learning_proposals),
+            source_status_records: asArray(rs9LearningLoop.source_status_records),
+            blocked_authorities: asArray(rs9LearningLoop.blocked_authorities),
+            blocked_authority_count: rs9LearningLoop.blocked_authority_count || 0,
+            strategy_weight_mutation_allowed: Boolean(rs9LearningLoop.strategy_weight_mutation_allowed),
+            source_trust_mutation_allowed: Boolean(rs9LearningLoop.source_trust_mutation_allowed),
+            risk_sizing_mutation_allowed: Boolean(rs9LearningLoop.risk_sizing_mutation_allowed),
+            market_context_interpretation_mutation_allowed: Boolean(rs9LearningLoop.market_context_interpretation_mutation_allowed),
+            worldview_lens_strength_mutation_allowed: Boolean(rs9LearningLoop.worldview_lens_strength_mutation_allowed),
+            dashboard_command_authority: Boolean(rs9LearningLoop.dashboard_command_authority),
+            telegram_command_authority: Boolean(rs9LearningLoop.telegram_command_authority),
+            broker_write_allowed: Boolean(rs9LearningLoop.broker_write_allowed),
+            live_capital_enabled: Boolean(rs9LearningLoop.live_capital_enabled),
+            phase7_proof_credit_allowed: Boolean(rs9LearningLoop.phase7_proof_credit_allowed),
+            unsafe_write_counter_total: rs9LearningLoop.unsafe_write_counter_total || 0,
+            raw_payload_exposed_count: rs9LearningLoop.raw_payload_exposed_count || 0,
+            local_path_exposed_count: rs9LearningLoop.local_path_exposed_count || 0,
+            secret_ref_exposed_count: rs9LearningLoop.secret_ref_exposed_count || 0,
+            broker_identifier_exposed_count: rs9LearningLoop.broker_identifier_exposed_count || 0,
+            next_action: rs9LearningLoop.next_action || "Review learning proposals before any mutation is allowed.",
+            boundary: rs9LearningLoop.boundary || "RS-9 is review-only and cannot mutate strategy, trust, risk, worldview, or execution routes."
+        },
         phase6_certification: {
             phase: phase6Certification.phase || "Q6",
             stage: phase6Certification.stage || "Q6-17",
@@ -5662,6 +5708,7 @@ function renderMissionControl(status, source) {
     const phase4 = phase4StrategyStatus(status, mission);
     const phase5 = mission.phase5_layer_b || status.phase5_layer_b_readiness || {};
     const phase6 = mission.phase6_learning_loop || status.phase6_learning_loop || {};
+    const rs9 = mission.rs9_learning_loop || status.rs9_learning_loop || {};
     const phase6Certification = mission.phase6_certification || status.phase6_certification || {};
     const phase7DemoProof = mission.phase7_demo_proof || status.phase7_demo_proof || {};
     const thinking = mission.thinking || {};
@@ -5719,6 +5766,7 @@ function renderMissionControl(status, source) {
             <p>Phase 3 ${htmlText(phase3.readiness_scope, "provider/scheduler readiness")} · Q-CTRL ${phase3.qctrl_configured ? "configured" : "missing"} · Qiskit ${phase3.qiskit_available ? "yes" : "no"} / Aer ${phase3.qiskit_aer_available ? "yes" : "no"} · IBM ${htmlText(phase3.ibm_quantum_status, "unknown")} · AWS ${htmlText(phase3.aws_braket_status, "unknown")}</p>
             <p>Phase 5 ${htmlText(phase5.layer, "Layer B")} · plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"} · implementation ${phase5.implementation_allowed ? "allowed" : "blocked"} · Phase 6 plan ${phase5.phase6_learning_loop_plan_allowed ? "allowed" : "blocked"} · learning implementation ${phase5.phase6_learning_loop_implementation_allowed ? "allowed" : "blocked"} · ${htmlText(phase5.nonapproval_blocker_count || 0)} non-approval blockers</p>
             <p>Phase 6 ${htmlText(phase6.stage || "Q6-16")} · ${htmlText(phase6.learning_state || phase6.visibility_state || "not visible")} · approval ${htmlText(phase6.approval_state || "not requested")} · postmortems ${htmlText(phase6.postmortem_due_count || 0)} due / ${htmlText(phase6.postmortem_resolved_count || 0)} resolved · proposals ${(phase6.model_weight_proposal_count || 0) + (phase6.trust_score_proposal_count || 0)}</p>
+            <p>RS-9 ${htmlText(rs9.status || "not_run")} · learning ${htmlText(rs9.learning_direction || "uncertain")} · proposals ${htmlText(rs9.proposal_count || 0)} blocked ${htmlText(rs9.blocked_proposal_count || 0)} · full potential ${htmlText(rs9.full_potential_state || "not exported")} · PaperOps ${rs9.paperops_guarded_paper_trading_not_blocked ? "not blocked" : "blocked"}</p>
             <p>Q6-17 ${htmlText(phase6Certification.status || "not_run")} · ${phase6Certification.phase6_certified ? "certified" : "not certified"} · paper growth plan ${phase6Certification.phase7_demo_proof_planning_allowed ? "allowed" : "blocked"} · blockers ${htmlText(phase6Certification.certification_blocker_count || 0)}</p>
             <p>Paper growth ${htmlText(phase7DemoProof.status || "not_run")} · day ${htmlText(phase7DemoProof.completed_calendar_day_count || 0)}/${htmlText(phase7DemoProof.phase7_harness_day_count || 30)} · week ${htmlText(phase7DemoProof.current_proof_week_number || 0)}/${htmlText(phase7DemoProof.proof_week_count || 0)} · verified paper trades ${htmlText(phase7DemoProof.closed_proof_trade_count || 0)}/${htmlText(phase7DemoProof.mature_benchmark || 100)} · weekly review ${phase7DemoProof.q7_16_weekly_review_pack_stage_allowed ? "allowed" : "blocked"}</p>
             <div class="mission-tag-row">
@@ -5755,6 +5803,10 @@ function renderMissionControl(status, source) {
                 ${renderInlineBadge(`learning ${dashboardText(phase6.learning_state || "not_run")}`, phase6.learning_state === "blocked_pending_learning_approval" ? "blocked" : "online")}
                 ${renderInlineBadge(`UI inferred ${phase6.ui_inferred_readiness_count || 0}`, phase6.ui_inferred_readiness_count ? "blocked" : "online")}
                 ${renderInlineBadge(`blocked authorities ${phase6.blocked_authority_count || 0}`, phase6.blocked_authority_count ? "online" : "blocked")}
+                ${renderInlineBadge(`RS-9 ${dashboardText(stack.rs9_learning_loop || rs9.status || "not_run")}`, rs9.paperops_guarded_paper_trading_not_blocked ? "online" : "blocked")}
+                ${renderInlineBadge(`learning ${dashboardText(rs9.learning_direction || "uncertain")}`, rs9.learning_direction === "degrading" ? "degraded" : "pending")}
+                ${renderInlineBadge(`RS-9 proposals ${htmlText(rs9.proposal_count || 0)}`, (rs9.proposal_count || 0) ? "pending" : "blocked")}
+                ${renderInlineBadge(rs9.paperops_guarded_paper_trading_not_blocked ? "guarded PaperOps not blocked" : "guarded PaperOps blocked", rs9.paperops_guarded_paper_trading_not_blocked ? "online" : "blocked")}
                 ${renderInlineBadge(`Layer B plan ${phase5.implementation_plan_allowed ? "allowed" : "blocked"}`, phase5.implementation_plan_allowed ? "pending" : "blocked")}
                 ${renderInlineBadge(`paper ${dashboardText(stack.paper_account)}`, stack.paper_account)}
                 ${renderInlineBadge(`telegram ${dashboardText(stack.telegram)}`, stack.telegram)}
@@ -8462,6 +8514,7 @@ function renderTrades(status, viewModels = {}) {
     const phase5CertificationGates = asArray(phase5Certification.gate_records);
     const phase5Phase6Handoff = status.phase5_phase6_handoff || {};
     const phase6LearningLoop = status.phase6_learning_loop || {};
+    const rs9LearningLoop = status.rs9_learning_loop || {};
     const phase6Certification = status.phase6_certification || {};
     const phase7DemoProof = status.phase7_demo_proof || {};
     const summary = tradeLayer.summary || {};
@@ -9062,6 +9115,27 @@ function renderTrades(status, viewModels = {}) {
         `).join("")
         : `<li><strong>No Q6-16 source records</strong><span>The Learning Loop visibility artifact has not exported source records yet.</span></li>`;
 
+    const rs9SourceStatusHtml = asArray(rs9LearningLoop.source_status_records).length
+        ? asArray(rs9LearningLoop.source_status_records).map((record) => `
+            <li>
+                <strong>${htmlText(record.source_stage || record.source_key, "RS-9 source")}</strong>
+                <span>${htmlText(record.source_status || "not_run")} · validation errors ${htmlText(record.validation_error_count || 0)}</span>
+                <small>${record.public_safe ? "public-safe" : "not public-safe"} · ${record.recorded ? "recorded" : "not recorded"} · ${htmlText(record.source_ref, "source ref withheld")}</small>
+            </li>
+        `).join("")
+        : `<li><strong>No RS-9 source records</strong><span>The Learning Loop review artifact has not exported source records yet.</span></li>`;
+
+    const rs9ProposalHtml = asArray(rs9LearningLoop.learning_proposals).length
+        ? asArray(rs9LearningLoop.learning_proposals).map((proposal) => `
+            <li>
+                <strong>${htmlText(proposal.proposal_surface || proposal.proposal_key, "learning proposal")}</strong>
+                <span>${htmlText(proposal.recommendation, "No recommendation exported.")}</span>
+                <small>${htmlText(proposal.status || "blocked_pending_fund_manager_review")} · approval ${proposal.approval_required ? "required" : "not required"} · apply ${proposal.apply_allowed ? "allowed" : "blocked"} · mutation ${proposal.mutation_allowed ? "allowed" : "blocked"}</small>
+                <small>${htmlText(proposal.rationale, "No rationale exported.")}</small>
+            </li>
+        `).join("")
+        : `<li><strong>No RS-9 learning proposals</strong><span>The Learning Loop review has not exported proposal records yet.</span></li>`;
+
     const phase7SourceStatusHtml = asArray(phase7DemoProof.source_status_records).length
         ? asArray(phase7DemoProof.source_status_records).map((record) => `
             <li>
@@ -9252,6 +9326,53 @@ function renderTrades(status, viewModels = {}) {
             <div class="tag-row">${renderTagList(phase6LearningLoop.blocked_authorities, "No blocked-authority ledger exported")}</div>
             <p class="mini">${htmlText(phase6LearningLoop.boundary, "Q6-16 is backend-derived visibility only and cannot infer readiness or mutate learning state.")}</p>
             <p class="mini">Next: ${htmlText(phase6LearningLoop.recommended_next_stage, "Q6-17 Phase 6 Certification")}</p>
+        </section>
+        <section class="trade-intent-section" data-rs9-learning-loop>
+            <p class="label">RS-9 Learning Loop Full-Potential Review</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Status", rs9LearningLoop.status || "not_run")}
+                ${renderMetric("Direction", rs9LearningLoop.learning_direction || "uncertain")}
+                ${renderMetric("Full potential", rs9LearningLoop.full_potential_state || "not_exported")}
+                ${renderMetric("Proposals", rs9LearningLoop.proposal_count || 0)}
+                ${renderMetric("Blocked", rs9LearningLoop.blocked_proposal_count || 0)}
+                ${renderMetric("Active", rs9LearningLoop.active_proposal_count || 0)}
+                ${renderMetric("Postmortem due", rs9LearningLoop.postmortem_due_count || 0)}
+                ${renderMetric("Resolved", rs9LearningLoop.postmortem_resolved_count || 0)}
+            </div>
+            <div class="summary-strip compact">
+                ${renderMetric("Strategy weights", rs9LearningLoop.strategy_weight_proposal_count || 0)}
+                ${renderMetric("Source trust", rs9LearningLoop.source_trust_proposal_count || 0)}
+                ${renderMetric("Risk sizing", rs9LearningLoop.risk_sizing_proposal_count || 0)}
+                ${renderMetric("Market context", rs9LearningLoop.market_context_proposal_count || 0)}
+                ${renderMetric("Worldview lens", rs9LearningLoop.worldview_lens_proposal_count || 0)}
+                ${renderMetric("Blocked auth", rs9LearningLoop.blocked_authority_count || 0)}
+                ${renderMetric("Unsafe writes", rs9LearningLoop.unsafe_write_counter_total || 0)}
+                ${renderMetric("Event Log", rs9LearningLoop.event_log_written ? "written" : "missing")}
+            </div>
+            <div class="tag-row">
+                ${renderInlineBadge(rs9LearningLoop.paperops_guarded_paper_trading_not_blocked ? "guarded PaperOps not blocked" : "guarded PaperOps blocked", rs9LearningLoop.paperops_guarded_paper_trading_not_blocked ? "online" : "blocked")}
+                ${renderInlineBadge(rs9LearningLoop.strategy_weight_mutation_allowed ? "strategy mutation open" : "strategy mutation locked", rs9LearningLoop.strategy_weight_mutation_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.source_trust_mutation_allowed ? "source trust open" : "source trust locked", rs9LearningLoop.source_trust_mutation_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.risk_sizing_mutation_allowed ? "risk sizing open" : "risk sizing locked", rs9LearningLoop.risk_sizing_mutation_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.worldview_lens_strength_mutation_allowed ? "worldview lens open" : "worldview lens locked", rs9LearningLoop.worldview_lens_strength_mutation_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.dashboard_command_authority ? "dashboard commands on" : "dashboard commands off", rs9LearningLoop.dashboard_command_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.telegram_command_authority ? "Telegram commands on" : "Telegram commands off", rs9LearningLoop.telegram_command_authority ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.broker_write_allowed ? "broker writes open" : "broker writes off", rs9LearningLoop.broker_write_allowed ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.live_capital_enabled ? "live capital enabled" : "live capital disabled", rs9LearningLoop.live_capital_enabled ? "blocked" : "online")}
+                ${renderInlineBadge(rs9LearningLoop.phase7_proof_credit_allowed ? "Phase 7 proof credit open" : "no Phase 7 proof credit", rs9LearningLoop.phase7_proof_credit_allowed ? "blocked" : "online")}
+            </div>
+            <section class="trade-check-section">
+                <p class="label">Learning proposals</p>
+                <ul class="status-list">${rs9ProposalHtml}</ul>
+            </section>
+            <section class="trade-check-section">
+                <p class="label">Source status</p>
+                <ul class="status-list">${rs9SourceStatusHtml}</ul>
+            </section>
+            <div class="tag-row">${renderTagList(rs9LearningLoop.blocked_authorities, "No RS-9 blocked authority ledger exported")}</div>
+            <p class="mini">${htmlText(rs9LearningLoop.learning_direction_reason, "Learning direction is not exported yet.")}</p>
+            <p class="mini">${htmlText(rs9LearningLoop.boundary, "RS-9 is review-only and cannot mutate strategy, trust, risk, worldview, or execution routes.")}</p>
+            <p class="mini">Next: ${htmlText(rs9LearningLoop.next_action, "Review learning proposals before any mutation is allowed.")}</p>
         </section>
         <section class="trade-intent-section" data-phase6-certification>
             <p class="label">Q6-17 Phase 6 Certification</p>
