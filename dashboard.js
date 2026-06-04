@@ -2479,6 +2479,7 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
     const roleSpine = buildOperationsRoleSpine(connectivity);
     const governance = sharedModels.governance_model || buildGovernanceModel(status);
     const communicationsAudit = governance.communications || {};
+    const operatorInbox = governance.operator_inbox || {};
     const authorityFlags = collectAuthorityFlags(status);
     const readinessWarnings = collectReadinessWarnings(status);
     const moduleCounts = countBy(asArray(status.modules), "status");
@@ -2521,10 +2522,10 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
         },
         {
             id: "governance_comms_audit",
-            title: "Governance and communications audit",
-            summary: "Fund Manager comments, approval records, weekly review state, and outbound-only Telegram notifications.",
-            status: communicationsAudit.command_path_enabled || communicationsAudit.live_send_allowed_count ? "blocked" : "pending",
-            count: modelNumber(governance.comments?.count, 0) + modelNumber(communicationsAudit.pending_queue_count, 0) + asArray(governance.open_actions).length
+            title: "Governance, inbox, and communications audit",
+            summary: "Fund Manager comments, operator inbox items, approval records, weekly review state, and outbound-only Telegram notifications.",
+            status: communicationsAudit.command_path_enabled || communicationsAudit.live_send_allowed_count || operatorInbox.telegram_command_authority ? "blocked" : "pending",
+            count: modelNumber(governance.comments?.count, 0) + modelNumber(communicationsAudit.pending_queue_count, 0) + modelNumber(operatorInbox.open_item_count, 0) + asArray(governance.open_actions).length
         }
     ];
     return {
@@ -2594,6 +2595,8 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
             approval: governance.approvals?.strategy_approval_state || "missing",
             weekly_review: governance.review_packs?.weekly_review_pack_state || "not ready",
             open_actions: asArray(governance.open_actions).slice(0, 4),
+            operator_inbox_open_items: modelNumber(operatorInbox.open_item_count, 0),
+            operator_inbox_high_or_critical_items: modelNumber(operatorInbox.high_or_critical_item_count, 0),
             live_promotion: governance.live_promotion?.status || "not eligible",
             boundary: governance.boundary || "Governance notes only. No trade approval, order placement, or local secret access."
         },
@@ -2800,7 +2803,19 @@ function buildGovernanceOpenActions(status = {}) {
     const phase6 = status.phase6_learning_loop || {};
     const phase7 = status.phase7_demo_proof || {};
     const telegram = status.phase5_telegram_notifier || {};
+    const operatorInbox = status.operator_inbox || {};
     const actions = [];
+    asArray(operatorInbox.recent_items)
+        .filter((item) => item.status === "open")
+        .slice(0, 3)
+        .forEach((item) => {
+            actions.push({
+                label: dashboardText(item.summary, "Operator inbox item"),
+                detail: dashboardText(item.required_action, "Review this operator inbox item."),
+                tone: item.severity === "critical" || item.severity === "high" ? "blocked" : "pending",
+                href: item.dashboard_section === "Portfolio" ? "#trades" : item.dashboard_section === "Sources" ? "#evidence" : item.dashboard_section === "Reasoning" ? "#reasoning" : "#operations"
+            });
+        });
     if (modelNumber(notes.suggestion_count, 0)) {
         actions.push({
             label: "Review Fund Manager suggestions",
@@ -2854,6 +2869,7 @@ function buildGovernanceModel(status = {}) {
     const comments = asArray(notes.recent_comments);
     const telegram = status.communications?.telegram || {};
     const telegramNotifier = status.phase5_telegram_notifier || {};
+    const operatorInbox = status.operator_inbox || {};
     const phase4 = phase4StrategyStatus(status);
     const phase6 = status.phase6_learning_loop || {};
     const phase6Certification = status.phase6_certification || {};
@@ -2909,6 +2925,23 @@ function buildGovernanceModel(status = {}) {
             recent_messages: asArray(telegram.recent_messages),
             active_message_classes: asArray(telegram.active_message_classes),
             boundary: telegram.boundary || telegramNotifier.boundary || status.communications?.boundary || "Telegram is outbound notify-only."
+        },
+        operator_inbox: {
+            status: operatorInbox.status || "not exported",
+            item_count: modelNumber(operatorInbox.item_count, 0),
+            open_item_count: modelNumber(operatorInbox.open_item_count, 0),
+            high_or_critical_item_count: modelNumber(operatorInbox.high_or_critical_item_count, 0),
+            postmortem_due_item_count: modelNumber(operatorInbox.postmortem_due_item_count, 0),
+            paper_trade_related_item_count: modelNumber(operatorInbox.paper_trade_related_item_count, 0),
+            telegram_related_item_count: modelNumber(operatorInbox.telegram_related_item_count, 0),
+            acknowledgement_count: modelNumber(operatorInbox.acknowledgement_count, 0),
+            comment_count: modelNumber(operatorInbox.comment_count, 0),
+            allowed_read_commands: asArray(operatorInbox.allowed_read_commands),
+            recent_items: asArray(operatorInbox.recent_items),
+            telegram_command_authority: Boolean(operatorInbox.telegram_command_authority),
+            comment_can_approve_trades: Boolean(operatorInbox.comment_can_approve_trades),
+            ack_can_approve_trades: Boolean(operatorInbox.ack_can_approve_trades),
+            boundary: operatorInbox.boundary || "Operator inbox is read-only oversight."
         },
         comment_targets: buildGovernanceCommentTargets(status),
         open_actions: openActions,
@@ -7818,28 +7851,50 @@ function renderGovernanceMessage(message) {
     `;
 }
 
+function renderOperatorInboxItem(item) {
+    return `
+        <li>
+            <strong>${htmlText(item.summary, "Operator inbox item")}</strong>
+            <span>${htmlText(item.item_class, "review")} · ${htmlText(item.dashboard_section, "Operations")}</span>
+            <div class="comment-meta">
+                ${renderInlineBadge(item.status || "open", item.status || "pending")}
+                ${renderInlineBadge(item.severity || "medium", item.severity === "critical" || item.severity === "high" ? "blocked" : "pending")}
+                ${renderInlineBadge(item.telegram_notification_allowed ? "Telegram summary allowed" : "dashboard only", item.telegram_notification_allowed ? "online" : "pending")}
+                ${renderInlineBadge(item.acknowledged ? "acknowledged" : "needs review", item.acknowledged ? "online" : "pending")}
+            </div>
+            <small>${htmlText(item.required_action, "Review this item.")}</small>
+        </li>
+    `;
+}
+
 function renderGovernanceWorkspace(model) {
     const comments = model.comments || {};
     const approvals = model.approvals || {};
     const reviewPacks = model.review_packs || {};
     const communications = model.communications || {};
+    const operatorInbox = model.operator_inbox || {};
     const livePromotion = model.live_promotion || {};
     const messages = asArray(communications.recent_messages);
     const messageRows = messages.length
         ? messages.slice(0, 5).map(renderGovernanceMessage).join("")
         : `<li><strong>No outbound messages</strong><span>No Telegram outbox messages are exported in this snapshot.</span></li>`;
+    const inboxItems = asArray(operatorInbox.recent_items);
+    const inboxRows = inboxItems.length
+        ? inboxItems.slice(0, 8).map(renderOperatorInboxItem).join("")
+        : `<li><strong>No operator inbox items</strong><span>No RS-7 review items are exported in this snapshot.</span></li>`;
     return `
         <section class="governance-workspace" data-governance-workspace-rendered>
             <div class="governance-workspace-head">
                 <div>
                     <p class="label">Governance workspace</p>
-                    <h3>Comments, approvals, reviews, and outbound communications</h3>
+                    <h3>Comments, approvals, inbox, reviews, and outbound communications</h3>
                     <p>${htmlText(model.summary)} Governance is where Fund Manager review happens, but it remains audit/comment state only.</p>
                 </div>
                 <article class="governance-boundary-card">
                     ${renderInlineBadge("comments governance-only", "online")}
                     ${renderInlineBadge("approvals audit-only", "pending")}
                     ${renderInlineBadge(communications.command_path_enabled ? "Telegram command path enabled" : "Telegram outbound-only", communications.command_path_enabled ? "blocked" : "online")}
+                    ${renderInlineBadge(operatorInbox.telegram_command_authority ? "inbox command authority" : "inbox read-only", operatorInbox.telegram_command_authority ? "blocked" : "online")}
                     ${renderInlineBadge(livePromotion.live_capital_enabled ? "live capital enabled" : "live capital disabled", livePromotion.live_capital_enabled ? "blocked" : "online")}
                     <p>${htmlText(model.boundary)}</p>
                 </article>
@@ -7853,6 +7908,7 @@ function renderGovernanceWorkspace(model) {
                 ${renderMetric("Approval", approvals.strategy_approval_state || "missing")}
                 ${renderMetric("Weekly review", reviewPacks.weekly_review_pack_state || "not ready")}
                 ${renderMetric("Telegram queue", communications.pending_queue_count || 0)}
+                ${renderMetric("Inbox open", operatorInbox.open_item_count || 0)}
                 ${renderMetric("Live promotion", livePromotion.status || "not eligible")}
             </div>
 
@@ -7885,6 +7941,30 @@ function renderGovernanceWorkspace(model) {
                         ${asArray(model.open_actions).map(renderGovernanceAction).join("")}
                     </div>
                 </div>
+            </section>
+
+            <section class="governance-communications-card">
+                <div class="overview-section-head">
+                    <span>Operator inbox</span>
+                    <strong>Human review queue, not an execution surface.</strong>
+                </div>
+                <div class="summary-strip compact">
+                    ${renderMetric("Status", operatorInbox.status || "not exported")}
+                    ${renderMetric("Items", operatorInbox.item_count || 0)}
+                    ${renderMetric("Open", operatorInbox.open_item_count || 0)}
+                    ${renderMetric("High/Critical", operatorInbox.high_or_critical_item_count || 0)}
+                    ${renderMetric("Postmortems", operatorInbox.postmortem_due_item_count || 0)}
+                    ${renderMetric("Paper trade", operatorInbox.paper_trade_related_item_count || 0)}
+                    ${renderMetric("Telegram-linked", operatorInbox.telegram_related_item_count || 0)}
+                    ${renderMetric("Commands", asArray(operatorInbox.allowed_read_commands).length)}
+                </div>
+                <div class="tag-row">
+                    ${renderInlineBadge(operatorInbox.telegram_command_authority ? "Telegram commands enabled" : "no Telegram command authority", operatorInbox.telegram_command_authority ? "blocked" : "online")}
+                    ${renderInlineBadge(operatorInbox.comment_can_approve_trades ? "comments approve trades" : "comments cannot approve trades", operatorInbox.comment_can_approve_trades ? "blocked" : "online")}
+                    ${renderInlineBadge(operatorInbox.ack_can_approve_trades ? "acks approve trades" : "acks cannot approve trades", operatorInbox.ack_can_approve_trades ? "blocked" : "online")}
+                </div>
+                <ul class="status-list communications-list">${inboxRows}</ul>
+                <p class="mini">${htmlText(operatorInbox.boundary)}</p>
             </section>
 
             <section class="governance-communications-card">
