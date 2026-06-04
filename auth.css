@@ -761,6 +761,9 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-command-surface,
+.overview-mission-brief,
+.overview-mission-question-grid,
+.overview-mission-nav,
 .overview-status-rail,
 .overview-readout-list,
 .overview-feed-strip,
@@ -797,8 +800,154 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
 }
 
+.overview-mission-brief {
+    gap: 12px;
+}
+
+.overview-mission-nav {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.overview-mission-nav a,
+.overview-mission-question-body a {
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--cyan);
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 800;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 10px;
+    text-decoration: none;
+}
+
+.overview-mission-question-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
+.overview-mission-question {
+    display: grid;
+    gap: 10px;
+    min-height: 132px;
+    padding: 12px;
+}
+
+.overview-mission-question > summary {
+    align-items: start;
+    cursor: pointer;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    list-style: none;
+    min-width: 0;
+}
+
+.overview-mission-question > summary::-webkit-details-marker {
+    display: none;
+}
+
+.overview-mission-question > summary::after {
+    align-items: center;
+    border: 1px solid rgba(var(--cyan-rgb), 0.42);
+    border-radius: 999px;
+    color: var(--cyan);
+    content: "+";
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 800;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    width: 28px;
+}
+
+.overview-mission-question[open] > summary::after {
+    content: "-";
+}
+
+.overview-mission-question > summary:focus-visible {
+    outline: 2px solid rgba(var(--cyan-rgb), 0.72);
+    outline-offset: 3px;
+}
+
+.overview-mission-step {
+    align-items: center;
+    background: rgba(var(--cyan-rgb), 0.1);
+    border: 1px solid rgba(var(--cyan-rgb), 0.36);
+    border-radius: 999px;
+    color: var(--cyan);
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    height: 26px;
+    justify-content: center;
+    width: 26px;
+}
+
+.overview-mission-question summary div {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.overview-mission-question-body {
+    border-top: 1px solid var(--line-quiet);
+    display: grid;
+    gap: 10px;
+    padding-top: 10px;
+}
+
+.overview-mission-metrics {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.overview-mission-metrics span {
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 4px;
+    min-height: 54px;
+    padding: 8px;
+}
+
+.overview-mission-metrics em {
+    color: var(--muted-soft);
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1.15;
+    text-transform: uppercase;
+}
+
+.overview-mission-metrics strong {
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.overview-mission-next {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+}
+
 .overview-hero,
 .overview-review-card,
+.overview-mission-brief,
+.overview-mission-question,
+.overview-mission-next,
 .overview-proof-flow,
 .overview-system-summary,
 .overview-system-status-panel,
@@ -817,6 +966,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-review-card,
+.overview-mission-brief,
+.overview-mission-next,
 .overview-proof-flow,
 .overview-system-summary,
 .overview-system-status-panel,
@@ -838,6 +989,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-review-card.online,
+.overview-mission-question.online,
+.overview-mission-next.online,
 .overview-readout.online,
 .overview-status-chip.online,
 .overview-plain-card.online,
@@ -849,6 +1002,10 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-review-card.pending,
 .overview-review-card.degraded,
+.overview-mission-question.pending,
+.overview-mission-question.degraded,
+.overview-mission-next.pending,
+.overview-mission-next.degraded,
 .overview-readout.pending,
 .overview-readout.degraded,
 .overview-status-chip.pending,
@@ -864,6 +1021,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-review-card.blocked,
+.overview-mission-question.blocked,
+.overview-mission-next.blocked,
 .overview-readout.blocked,
 .overview-status-chip.blocked,
 .overview-plain-card.blocked,
@@ -875,6 +1034,12 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-review-card > span,
 .overview-review-card p,
+.overview-mission-brief p,
+.overview-mission-question p,
+.overview-mission-question summary em,
+.overview-mission-question-body a,
+.overview-mission-next > span,
+.overview-mission-next p,
 .overview-readout span,
 .overview-readout p,
 .overview-section-head span,
@@ -897,6 +1062,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-review-card > span,
+.overview-mission-question summary em,
+.overview-mission-next > span,
 .overview-readout span,
 .overview-section-head span,
 .overview-mini-node span,
@@ -910,6 +1077,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-review-card strong,
+.overview-mission-question strong,
+.overview-mission-next strong,
 .overview-readout strong,
 .overview-status-chip strong,
 .overview-section-head strong,
@@ -5285,6 +5454,8 @@ summary {
     .fund-model-grid,
     .mission-control-grid,
     .overview-command-surface,
+    .overview-mission-question-grid,
+    .overview-mission-metrics,
     .overview-status-rail,
     .overview-readout-list,
     .overview-system-grid,
@@ -5294,6 +5465,7 @@ summary {
     .overview-capacity-summary,
     .overview-feed-strip,
     .overview-next-links,
+    .overview-mission-nav,
     .trades-workspace-head,
     .trade-consolidated-snapshot,
     .trade-consolidated-metrics,

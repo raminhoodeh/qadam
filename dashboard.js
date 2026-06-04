@@ -2954,12 +2954,183 @@ function buildGovernanceModel(status = {}) {
     };
 }
 
+function normalizeMissionBrief(status = {}, models = {}) {
+    const exported = status.mission_control?.mission_brief;
+    if (exported && Array.isArray(exported.questions) && exported.questions.length) {
+        return exported;
+    }
+    const sources = models.sources_model || {};
+    const trades = models.trades_model || {};
+    const reasoning = models.reasoning_model || {};
+    const performance = models.performance_model || {};
+    const safety = models.safety_model || {};
+    const paper = performance.paper_account || {};
+    const sourceCounts = sources.counts || {};
+    const tradeCounts = trades.counts || {};
+    const reasoningCounts = reasoning.counts || {};
+    const currentBalance = modelNumber(paper.current_balance_gbp, modelNumber(status.capital?.current_balance_gbp, 0));
+    const totalPnl = modelNumber(paper.total_pnl_gbp, modelNumber(status.capital?.realized_pnl_gbp, 0) + modelNumber(status.capital?.unrealized_pnl_gbp, 0));
+    const authorityFlags = asArray(safety.authority_flags);
+    const nextAction = tradeCounts.postmortem_due
+        ? {
+            label: "Review paper postmortems",
+            href: "#trades",
+            tone: "blocked",
+            summary: `${tradeCounts.postmortem_due} postmortems are due before learning can update.`
+        }
+        : {
+            label: tradeCounts.candidate ? "Review trade candidates" : "Continue monitoring",
+            href: tradeCounts.candidate ? "#trades" : "#mission-control",
+            tone: tradeCounts.candidate ? "pending" : "online",
+            summary: tradeCounts.candidate
+                ? `${tradeCounts.candidate} trade ideas are visible but still gated.`
+                : "No urgent Fund Manager intervention is visible."
+        };
+    const question = (key, text, answer, tone, href, summary, metrics) => ({
+        key,
+        question: text,
+        answer,
+        tone,
+        href,
+        summary,
+        metrics
+    });
+    return {
+        schema_version: 1,
+        status: "fallback",
+        question_count: 7,
+        summary: "Fallback seven-question Fund Manager brief.",
+        questions: [
+            question(
+                "watching",
+                "What is Qadam watching?",
+                `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online.`,
+                sources.tone || "pending",
+                "#evidence",
+                sources.summary || "Source health is loading.",
+                [
+                    { label: "Online sources", value: sourceCounts.online || 0 },
+                    { label: "Total sources", value: sourceCounts.total || 0 },
+                    { label: "Missing credentials", value: sourceCounts.missing_credentials || 0 }
+                ]
+            ),
+            question(
+                "thinking",
+                "What is Qadam thinking about next?",
+                `${reasoningCounts.hypotheses || 0} hypotheses and ${reasoningCounts.evidence_packets || 0} evidence packets.`,
+                reasoning.tone || "pending",
+                "#reasoning",
+                "Reasoning packets are shadow-only until gates pass.",
+                [
+                    { label: "Hypotheses", value: reasoningCounts.hypotheses || 0 },
+                    { label: "Evidence", value: reasoningCounts.evidence_packets || 0 },
+                    { label: "Reviews", value: asArray(reasoning.review_chain).length }
+                ]
+            ),
+            question(
+                "forbidden",
+                "What is Qadam forbidden from doing?",
+                `${authorityFlags.length} authority flags; live capital and broker writes are off.`,
+                authorityFlags.length ? "blocked" : "online",
+                "#operations",
+                "The dashboard, models, Telegram intake, data sources, and quantum oracle cannot approve or place trades.",
+                [
+                    { label: "Live capital", value: "off" },
+                    { label: "Broker write", value: "off" },
+                    { label: "Dashboard write", value: "off" }
+                ]
+            ),
+            question(
+                "considering",
+                "Which trades are candidates or blocked?",
+                `${tradeCounts.candidate || 0} candidates and ${tradeCounts.blocked || 0} blocked ideas.`,
+                tradeCounts.candidate || tradeCounts.blocked ? "pending" : "online",
+                "#trades",
+                "A candidate is still only something Qadam is considering.",
+                [
+                    { label: "Observed", value: tradeCounts.observed_signal || 0 },
+                    { label: "Candidates", value: tradeCounts.candidate || 0 },
+                    { label: "Blocked", value: tradeCounts.blocked || 0 }
+                ]
+            ),
+            question(
+                "traded",
+                "What has Qadam traded on paper?",
+                `${tradeCounts.submitted_paper_order || 0} submitted paper orders and ${tradeCounts.open_position || 0} open positions.`,
+                tradeCounts.submitted_paper_order || tradeCounts.open_position ? "online" : "pending",
+                "#trades",
+                "Paper activity is mirrored from local account state and does not imply live-capital authority.",
+                [
+                    { label: "Orders", value: tradeCounts.submitted_paper_order || 0 },
+                    { label: "Open", value: tradeCounts.open_position || 0 },
+                    { label: "Closed", value: tradeCounts.closed_paper_trade || 0 }
+                ]
+            ),
+            question(
+                "portfolio",
+                "What is the portfolio worth?",
+                `${formatMoney(currentBalance)} with ${formatMoney(totalPnl)} paper P&L.`,
+                performance.tone || "online",
+                "#trades",
+                "Portfolio value is a read-only mirror of the paper account and local snapshots.",
+                [
+                    { label: "Balance", value: formatMoney(currentBalance) },
+                    { label: "P&L", value: formatMoney(totalPnl) },
+                    { label: "Postmortems due", value: tradeCounts.postmortem_due || 0 }
+                ]
+            ),
+            question(
+                "blocked",
+                "Why is Qadam blocked or waiting?",
+                nextAction.label,
+                nextAction.tone,
+                nextAction.href,
+                nextAction.summary,
+                [
+                    { label: "Postmortems", value: tradeCounts.postmortem_due || 0 },
+                    { label: "Authority flags", value: authorityFlags.length },
+                    { label: "Candidates", value: tradeCounts.candidate || 0 }
+                ]
+            )
+        ],
+        navigation: [
+            { key: "mission", label: "Mission", href: "#mission-control" },
+            { key: "map", label: "Map", href: "#system-map" },
+            { key: "sources", label: "Sources", href: "#evidence" },
+            { key: "reasoning", label: "Reasoning", href: "#reasoning" },
+            { key: "trades", label: "Trades", href: "#trades" },
+            { key: "portfolio", label: "Portfolio", href: "#trades" },
+            { key: "safety", label: "Safety", href: "#operations" },
+            { key: "inbox", label: "Inbox", href: "#operations" },
+            { key: "runtime", label: "Runtime", href: "#operations" }
+        ],
+        next_action: nextAction,
+        authority: {
+            live_capital_enabled: false,
+            broker_write_allowed: false,
+            dashboard_write_authority: false,
+            telegram_command_authority: false,
+            llm_execution_authority: false,
+            quantum_execution_authority: false
+        },
+        boundary: "RS-8 Mission Brief is read-only. It cannot approve, place, modify, resize, close, fund, or verify performance credit for trades."
+    };
+}
+
 function buildOverviewModel(status = {}, source = {}, sharedOperations = null, sharedModels = {}) {
     const sources = sharedModels.sources_model || buildSourcesModel(status);
     const trades = sharedModels.trades_model || buildTradesModel(status, { sources_model: sources });
     const reasoning = sharedModels.reasoning_model || buildReasoningModel(status);
     const performance = sharedModels.performance_model || buildPerformanceModel(status);
     const operations = sharedModels.operations_model || sharedOperations || buildOperationsModel(status, source, sharedModels);
+    const missionBrief = normalizeMissionBrief(status, {
+        sources_model: sources,
+        trades_model: trades,
+        reasoning_model: reasoning,
+        performance_model: performance,
+        operations_model: operations,
+        safety_model: sharedModels.safety_model || operations.safety || {}
+    });
     const phase7 = status.phase7_demo_proof || {};
     const paperLive = status.paper_live_certification || {};
     const activeAutomation = status.paperops_active_paper_trading_automation || {};
@@ -3351,6 +3522,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         summary: `${sources.counts.online}/${sources.counts.total} sources current; ${demoProof.eligible_setup_count} potential setups; ${trades.counts.candidate} trade ideas; ${opportunityScanInterval}-minute opportunity scan; ${formatMoney(paperEquity)} toward ${formatMoney(growthTarget)} in ${modelNumber(growthTrial.horizon_days, 60)} days; next review: ${actionNeeded[0]}.`,
         cards: readouts,
         readouts,
+        mission_brief: missionBrief,
         status_chips: statusChips,
         review_focus: {
             state: actionNeeded[0],
@@ -5912,6 +6084,37 @@ function renderOverviewPlainCard(item) {
     `;
 }
 
+function renderOverviewMissionMetric(metric = {}) {
+    return `
+        <span>
+            <em>${htmlText(metric.label, "Metric")}</em>
+            <strong>${htmlText(metric.value, "0")}</strong>
+        </span>
+    `;
+}
+
+function renderOverviewMissionQuestion(card = {}, index = 0) {
+    const cardId = `overview-mission-question-${String(card.key || index).replace(/[^a-z0-9_-]/gi, "-")}`;
+    return `
+        <details class="overview-mission-question ${statusClass(card.tone || card.status)}" data-overview-mission-question="${htmlText(card.key, `question_${index + 1}`)}">
+            <summary aria-controls="${cardId}">
+                <span class="overview-mission-step">${index + 1}</span>
+                <div>
+                    <em>${htmlText(card.question, "What changed?")}</em>
+                    <strong>${htmlText(card.answer, "No answer exported.")}</strong>
+                </div>
+            </summary>
+            <div class="overview-mission-question-body" id="${cardId}">
+                <p>${htmlText(card.summary, "No detail exported.")}</p>
+                <div class="overview-mission-metrics">
+                    ${asArray(card.metrics).map(renderOverviewMissionMetric).join("")}
+                </div>
+                <a href="${htmlText(card.href, "#mission-control")}">${htmlText(card.link_label, "Open relevant view")}</a>
+            </div>
+        </details>
+    `;
+}
+
 function renderOverviewSourceRow(source = {}) {
     const status = source.status || source.raw_status || "pending";
     return `
@@ -6064,6 +6267,34 @@ function renderOverviewFirstScreen(viewModels) {
         statusRail.innerHTML = asArray(overview.status_chips)
             .map(renderOverviewChip)
             .join("");
+    }
+
+    const missionBriefTarget = dashboardQuery("[data-overview-mission-brief]");
+    if (missionBriefTarget) {
+        const missionBrief = overview.mission_brief || {};
+        const questions = asArray(missionBrief.questions);
+        const nextAction = missionBrief.next_action || {};
+        missionBriefTarget.innerHTML = `
+            <div class="overview-section-head">
+                <span>Mission Control brief</span>
+                <strong>${htmlText(nextAction.label, "Continue monitoring")}</strong>
+            </div>
+            <p>${htmlText(missionBrief.summary, "Seven-question Fund Manager brief.")}</p>
+            <nav class="overview-mission-nav" aria-label="Mission Control quick links">
+                ${asArray(missionBrief.navigation).map((item) => `
+                    <a href="${htmlText(item.href, "#mission-control")}">${htmlText(item.label, "View")}</a>
+                `).join("")}
+            </nav>
+            <div class="overview-mission-question-grid">
+                ${questions.map(renderOverviewMissionQuestion).join("")}
+            </div>
+            <div class="overview-mission-next ${statusClass(nextAction.tone || "online")}">
+                <span>Next operator action</span>
+                <strong>${htmlText(nextAction.label, "Continue monitoring")}</strong>
+                <p>${htmlText(nextAction.summary, "No immediate action visible.")}</p>
+            </div>
+            <p class="mini">${htmlText(missionBrief.boundary, "Mission Control is read-only.")}</p>
+        `;
     }
 
     const hero = dashboardQuery("[data-overview-hero]");
