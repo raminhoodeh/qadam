@@ -2053,12 +2053,17 @@ def _decision_philosophy() -> dict[str, Any]:
         "trading_philosophy": (
             "Qadam starts from a power-map worldview: energy, security, money, institutional "
             "incentives, narrative control, and hidden coordination shape what markets price late. "
+            "Inside the AI infrastructure buildout, it now treats obvious AI leaders as reference "
+            "assets and looks for second-order picks-and-shovels beneficiaries in power generation, "
+            "grid hardware, data-centre electrical systems, fabrication capacity, memory, connectivity, "
+            "and networking. "
             "The worldview powers questions and scenario generation, but live evidence, the Akber "
             "filter, Signal Integrity Gate, and Risk Agent decide whether anything can move toward a trade."
         ),
         "decision_chain": [
             "private worldview prior",
             "observable signatures",
+            "second-order beneficiary check",
             "live-source corroboration",
             "Akber 6-stage filter",
             "Signal Integrity Gate",
@@ -2072,6 +2077,7 @@ def _decision_philosophy() -> dict[str, Any]:
             "institutional incentive",
             "US-China grand-bargain scenario",
             "hidden coordination risk",
+            "AI infrastructure picks-and-shovels constraints",
         ],
         "boundary": summary.get(
             "evidence_boundary",
