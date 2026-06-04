@@ -107,11 +107,13 @@ const TELEGRAM_CODEBASE_UPGRADE_FIELDS = [
     "blocker_count",
     "blockers",
     "boundary",
+    "benefits",
     "broker_write_allowed",
     "dashboard_changed_file_count",
     "dashboard_commit_short",
     "dashboard_dirty",
     "deploy_allowed",
+    "details",
     "deployment_url",
     "dry_run",
     "enabled",
@@ -217,6 +219,8 @@ async function main() {
     assert(telegramCodebaseUpgrade.deploy_allowed === false, "Codebase upgrade deploy authority allowed");
     assert(telegramCodebaseUpgrade.live_capital_enabled === false, "Codebase upgrade live capital enabled");
     assert(/codebase upgrade notifications/i.test(telegramCodebaseUpgrade.boundary || ""), "Codebase upgrade boundary is weak");
+    assert(Array.isArray(telegramCodebaseUpgrade.details) && telegramCodebaseUpgrade.details.length >= 2, "Codebase upgrade details are missing");
+    assert(Array.isArray(telegramCodebaseUpgrade.benefits) && telegramCodebaseUpgrade.benefits.length >= 2, "Codebase upgrade benefits are missing");
     assert(telegramIntake.world_event_datapoint_count >= 1, "Telegram intake world-event datapoints missing");
     assert(telegramIntake.strategy_consideration_count >= 1, "Telegram intake strategy considerations missing");
     assert(telegramIntake.research_triage_packet_count >= 1, "Telegram intake research packet missing");
@@ -256,6 +260,7 @@ async function main() {
     assertIncludes(rendered, "[data-communications]", "Codebase upgrade notifications");
     assertIncludes(rendered, "[data-communications]", "Core commit");
     assertIncludes(rendered, "[data-communications]", "Dashboard commit");
+    assertIncludes(rendered, "[data-communications]", "Why it matters");
     assertIncludes(rendered, "[data-communications]", "Portfolio balance");
     assertIncludes(rendered, "[data-communications]", "Trades today");
     assertIncludes(rendered, "[data-communications]", "read-only member research intake");

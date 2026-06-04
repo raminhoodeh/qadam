@@ -106,6 +106,8 @@ const deployScript = readText(deployScriptPath);
     "dashboard-deployment-receipt.json",
     "send_codebase_upgrade_telegram_notification.py",
     "Codebase upgrade Telegram notification",
+    "--detail",
+    "--benefit",
     "No production aliases were changed",
     "Production deployment:"
 ].forEach((needle) => assertIncludes(deployScript, needle, "production deploy script"));

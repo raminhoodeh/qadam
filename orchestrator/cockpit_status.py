@@ -3185,6 +3185,8 @@ def _communications(settings: Settings) -> dict[str, Any]:
             "target": "group",
             "source": None,
             "summary": None,
+            "details": [],
+            "benefits": [],
             "root_commit_short": None,
             "root_dirty": False,
             "root_changed_file_count": 0,

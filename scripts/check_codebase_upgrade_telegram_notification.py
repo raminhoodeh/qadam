@@ -38,6 +38,14 @@ def main() -> int:
         source="contract_check",
         deployment_url="https://qadam-contract-check.vercel.app",
         aliases=["qadam.trade", "www.qadam.trade"],
+        details=[
+            "The notifier records upgrade fingerprints without exposing local paths.",
+            "The dashboard Communications panel can show the latest send state.",
+        ],
+        benefits=[
+            "Fund Managers get the context and benefit of an update in the chat.",
+            "The message separates communication changes from trading authority.",
+        ],
     )
     output_path, history_path, event_path, written = write_telegram_codebase_upgrade_notification(
         artifact,
@@ -57,6 +65,14 @@ def main() -> int:
         source="contract_check",
         deployment_url="https://qadam-contract-check.vercel.app",
         aliases=["qadam.trade", "www.qadam.trade"],
+        details=[
+            "The notifier records upgrade fingerprints without exposing local paths.",
+            "The dashboard Communications panel can show the latest send state.",
+        ],
+        benefits=[
+            "Fund Managers get the context and benefit of an update in the chat.",
+            "The message separates communication changes from trading authority.",
+        ],
     )
     forced_validation_errors = validate_telegram_codebase_upgrade_notification(forced_preview)
 
@@ -116,6 +132,8 @@ def main() -> int:
     print(f"telegram_codebase_upgrade_already_sent={written['already_sent']}")
     print(f"telegram_codebase_upgrade_live_send_attempted={written['live_send_attempted']}")
     print(f"telegram_codebase_upgrade_live_send_succeeded={written['live_send_succeeded']}")
+    print(f"telegram_codebase_upgrade_detail_count={len(written['details'])}")
+    print(f"telegram_codebase_upgrade_benefit_count={len(written['benefits'])}")
     print(f"telegram_codebase_upgrade_event_log_events={replay['total_events']}")
     print(f"telegram_codebase_upgrade_public_status={public_status['status']}")
     print(f"telegram_codebase_upgrade_public_enabled={public_status['enabled']}")
@@ -144,6 +162,10 @@ def main() -> int:
         errors.append("telegram_codebase_upgrade_message_class_mismatch")
     if not written["delivery_key"]:
         errors.append("telegram_codebase_upgrade_delivery_key_missing")
+    if len(written.get("details", [])) < 2:
+        errors.append("telegram_codebase_upgrade_details_missing")
+    if len(written.get("benefits", [])) < 2:
+        errors.append("telegram_codebase_upgrade_benefits_missing")
     if not written["root_commit_short"] or not written["dashboard_commit_short"]:
         errors.append("telegram_codebase_upgrade_git_fingerprint_missing")
     if written["deployment_url"] != "https://qadam-contract-check.vercel.app":
@@ -179,6 +201,8 @@ def main() -> int:
         "Qadam: codebase upgrade",
         "Upgrade:",
         "What changed:",
+        "Why it matters:",
+        "What to check:",
         "Deployment:",
         "Status: notification only.",
         "Dashboard: qadam.trade/dashboard/",

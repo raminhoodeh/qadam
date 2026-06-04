@@ -53,6 +53,18 @@ def _parse_args() -> argparse.Namespace:
         default=[],
         help="Production alias that was updated. May be repeated.",
     )
+    parser.add_argument(
+        "--detail",
+        action="append",
+        default=[],
+        help="Public-safe specific implementation detail to include. May be repeated.",
+    )
+    parser.add_argument(
+        "--benefit",
+        action="append",
+        default=[],
+        help="Public-safe operator or Fund Manager benefit to include. May be repeated.",
+    )
     return parser.parse_args()
 
 
@@ -70,6 +82,8 @@ def main() -> int:
         source=args.source,
         deployment_url=args.deployment_url,
         aliases=args.alias,
+        details=args.detail,
+        benefits=args.benefit,
     )
     output_path, history_path, event_path, written = write_telegram_codebase_upgrade_notification(
         artifact,
@@ -117,6 +131,8 @@ def main() -> int:
         f"{written['delivery_failure_category']}"
     )
     print(f"telegram_codebase_upgrade_blockers={written['blockers']}")
+    print(f"telegram_codebase_upgrade_detail_count={len(written['details'])}")
+    print(f"telegram_codebase_upgrade_benefit_count={len(written['benefits'])}")
     print(f"telegram_codebase_upgrade_validation_errors={validation_errors}")
 
     if validation_errors:

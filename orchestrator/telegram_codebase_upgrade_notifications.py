@@ -111,6 +111,19 @@ def _clean_text(value: Any, fallback: str = "not provided", limit: int = 220) ->
     return (text[:limit] or fallback).strip()
 
 
+def _clean_list(values: Any, fallback: list[str], *, limit: int = 160, count: int = 4) -> list[str]:
+    if not isinstance(values, list | tuple):
+        values = []
+    cleaned: list[str] = []
+    for value in values:
+        text = _clean_text(value, "", limit=limit)
+        if text and text not in cleaned:
+            cleaned.append(text)
+        if len(cleaned) >= count:
+            break
+    return cleaned or fallback[:count]
+
+
 def telegram_codebase_upgrade_paths(
     settings: Settings | None = None,
 ) -> tuple[Path, Path, Path]:
@@ -291,12 +304,21 @@ def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
     aliases = ", ".join(deployment.get("aliases", []) or ["qadam.trade", "www.qadam.trade"])
     deployment_text = deployment.get("deployment_url") or aliases
     action = "deployed" if source.get("source") == "production_deploy" else "recorded"
+    details = source.get("details", [])
+    benefits = source.get("benefits", [])
     title = "Qadam Codebase Upgrade"
     body = "\n".join(
         [
             f"Qadam: codebase upgrade {action}",
             f"Upgrade: core {_short(root.get('head_short'))} / dashboard {_short(dashboard.get('head_short'))}",
-            f"What changed: {_clean_text(source.get('summary'), 'Qadam codebase and dashboard were upgraded.')}",
+            "What changed:",
+            f"- {_clean_text(source.get('summary'), 'Qadam codebase and dashboard were upgraded.')}",
+            *[f"- {detail}" for detail in details],
+            "Why it matters:",
+            *[f"- {benefit}" for benefit in benefits],
+            "What to check:",
+            "- Dashboard Communications now shows the latest codebase-upgrade send state.",
+            "- Future production deploys notify the group after qadam.trade and www.qadam.trade are aliased.",
             f"Deployment: {deployment_text}",
             f"Aliases: {aliases}",
             "Status: notification only. Trading logic, broker writes, paper orders, and live capital are unchanged by Telegram.",
@@ -336,6 +358,8 @@ def build_telegram_codebase_upgrade_notification(
     source: str = "manual",
     deployment_url: str | None = None,
     aliases: list[str] | None = None,
+    details: list[str] | None = None,
+    benefits: list[str] | None = None,
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     generated_at = _now()
@@ -343,6 +367,22 @@ def build_telegram_codebase_upgrade_notification(
     source_context = {
         "source": _clean_text(source, "manual", limit=80),
         "summary": _clean_text(summary, "Qadam codebase and dashboard were upgraded."),
+        "details": _clean_list(
+            details,
+            [
+                "Qadam records the core and dashboard fingerprints behind each upgrade.",
+                "The deployment hook posts to the Fund Manager group after production aliases update.",
+                "The dashboard Communications panel mirrors whether the upgrade update was sent.",
+            ],
+        ),
+        "benefits": _clean_list(
+            benefits,
+            [
+                "The group can understand the point of the update without checking Git, Vercel, or logs.",
+                "Missed Telegram sends become visible in runtime status instead of disappearing silently.",
+                "Each message says whether trading authority changed; for this rail it remains notification-only.",
+            ],
+        ),
         "root_repo": _git_repo_state(root, "qadam-core"),
         "dashboard_repo": _git_repo_state(root / "landing-page-repo", "qadam-dashboard"),
         "deployment": _deployment_context(settings, deployment_url=deployment_url, aliases=aliases),
@@ -448,6 +488,8 @@ def build_telegram_codebase_upgrade_notification(
         "delivery_key": delivery_key,
         "source": source_context["source"],
         "summary": source_context["summary"],
+        "details": source_context["details"],
+        "benefits": source_context["benefits"],
         "root_commit": source_context["root_repo"]["head"],
         "root_commit_short": source_context["root_repo"]["head_short"],
         "root_branch": source_context["root_repo"]["branch"],
@@ -518,6 +560,8 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
         "send_requested",
         "status",
         "summary",
+        "details",
+        "benefits",
         "target",
     }
     missing = sorted(required - set(artifact))
@@ -558,6 +602,8 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
             "Qadam: codebase upgrade",
             "Upgrade:",
             "What changed:",
+            "Why it matters:",
+            "What to check:",
             "Deployment:",
             "Status: notification only.",
             "Dashboard: qadam.trade/dashboard/",
@@ -592,6 +638,8 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
             "deployment_url": artifact.get("deployment_url"),
             "message_preview": artifact.get("message_preview"),
             "summary": artifact.get("summary"),
+            "details": artifact.get("details"),
+            "benefits": artifact.get("benefits"),
         },
         sort_keys=True,
     )
@@ -692,6 +740,8 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
             "target": "group",
             "source": None,
             "summary": None,
+            "details": [],
+            "benefits": [],
             "root_commit_short": None,
             "root_dirty": False,
             "root_changed_file_count": 0,
@@ -723,6 +773,8 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
         "target": "group",
         "source": artifact.get("source"),
         "summary": artifact.get("summary"),
+        "details": [str(item) for item in artifact.get("details", [])],
+        "benefits": [str(item) for item in artifact.get("benefits", [])],
         "root_commit_short": artifact.get("root_commit_short"),
         "root_dirty": artifact.get("root_dirty") is True,
         "root_changed_file_count": _int(artifact.get("root_changed_file_count")),

@@ -88,6 +88,8 @@ includesAll(deployScript, [
     "Contains no Vercel token, session cookie, broker credential, or dashboard secret.",
     "send_codebase_upgrade_telegram_notification.py",
     "Codebase upgrade Telegram notification",
+    "--detail",
+    "--benefit",
     "Production deployment:",
     "Aliased domains:"
 ], "D11O deploy script");
