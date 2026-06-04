@@ -79,6 +79,7 @@ function buildModels(snapshot = status) {
 async function main() {
     includesAll(dashboardHtml, [
         "data-overview-first-screen",
+        "data-overview-mission-brief",
         "data-overview-command-surface",
         "data-overview-review-card",
         "data-overview-cockpit-grid",
@@ -103,6 +104,10 @@ async function main() {
 
     includesAll(css, [
         ".overview-first-screen",
+        ".overview-mission-brief",
+        ".overview-mission-question",
+        ".overview-mission-question-grid",
+        ".overview-mission-nav",
         ".overview-command-surface",
         ".overview-review-card",
         ".overview-cockpit-grid",
@@ -124,6 +129,8 @@ async function main() {
 
     includesAll(renderer, [
         "function renderOverviewFirstScreen",
+        "function renderOverviewMissionQuestion",
+        "overview.mission_brief",
         "overview.demo_proof",
         "overview.status_chips",
         "overview.review_focus",
@@ -144,6 +151,16 @@ async function main() {
     assert(overview.id === "overview", "Overview model id mismatch");
     assert(overview.readouts.length === 4, "Overview should expose four primary readouts after D11E");
     assert(overview.status_chips.length === 6, "Overview should expose six compact status chips after D11E");
+    assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
+    assert(overview.mission_brief.questions.length === 7, "Overview Mission Brief must expose seven questions");
+    assert(overview.mission_brief.questions.some((item) => item.question === "What is Qadam watching?"), "Overview Mission Brief missing watching question");
+    assert(overview.mission_brief.questions.some((item) => item.question === "What is Qadam thinking about next?"), "Overview Mission Brief missing thinking question");
+    assert(overview.mission_brief.questions.some((item) => item.question === "What is Qadam forbidden from doing?"), "Overview Mission Brief missing forbidden question");
+    assert(overview.mission_brief.questions.some((item) => item.question === "Which trades are candidates or blocked?"), "Overview Mission Brief missing trade candidate question");
+    assert(overview.mission_brief.questions.some((item) => item.question === "What is the portfolio worth?"), "Overview Mission Brief missing portfolio question");
+    assert(overview.mission_brief.navigation.length >= 9, "Overview Mission Brief must expose navigation links");
+    assert(overview.mission_brief.authority.live_capital_enabled === false, "Overview Mission Brief must keep live capital disabled");
+    assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
     assert(overview.demo_proof.required_calendar_day_count === 30, "Overview must expose 30-day demo window");
     assert(overview.demo_proof.weekly_proof_trade_target === 3, "Overview must expose 3 proof trades per week target");
     assert(typeof overview.demo_proof.eligible_setup_count === "number", "Overview must expose eligible setup count");
@@ -168,6 +185,12 @@ async function main() {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "OK - live capital off");
     assertIncludes(rendered, "[data-overview-status-rail]", "Paper growth trial");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam watching?");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam forbidden from doing?");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "What is the portfolio worth?");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Next operator action");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Open relevant view");
     assertIncludes(rendered, "[data-overview-status-rail]", "Autonomous runner");
     assertIncludes(rendered, "[data-overview-status-rail]", "Potential setups");
     assertIncludes(rendered, "[data-overview-hero]", "Current summary");

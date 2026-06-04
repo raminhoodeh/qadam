@@ -93,8 +93,8 @@ async function main() {
         "data-evidence-review-group=\"supplemental_context\"",
         "data-evidence-review-group=\"factual_packets\"",
         "data-evidence-source-ledger",
-        "/auth.css?v=20260603-rs3-market-context",
-        "/dashboard.js?v=20260603-rs3-market-context"
+        "/auth.css?v=20260603-rs8-mission-control",
+        "/dashboard.js?v=20260603-rs8-mission-control"
     ], "D11G Evidence static shell");
 
     excludesAll(dashboardHtml, [

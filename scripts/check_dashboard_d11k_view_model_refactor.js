@@ -139,8 +139,8 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260603-rs3-market-context",
-        "/dashboard.js?v=20260603-rs3-market-context"
+        "/auth.css?v=20260603-rs8-mission-control",
+        "/dashboard.js?v=20260603-rs8-mission-control"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");

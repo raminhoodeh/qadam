@@ -21,6 +21,7 @@ const selectors = [
     "[data-mission-portfolio]",
     "[data-operating-summary]",
     "[data-overview-status-rail]",
+    "[data-overview-mission-brief]",
     "[data-overview-command-surface]",
     "[data-overview-hero]",
     "[data-overview-metrics]",

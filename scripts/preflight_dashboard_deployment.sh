@@ -63,6 +63,7 @@ node scripts/check_dashboard_d11n_documentation_guide_alignment.js
 node scripts/check_dashboard_d11o_deployment_discipline.js
 node scripts/check_dashboard_d12_language_cleanup.js
 node scripts/check_dashboard_d13_health_language.js
+node scripts/check_dashboard_rs8_mission_control.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_renderer.js

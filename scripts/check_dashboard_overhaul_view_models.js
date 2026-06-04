@@ -90,6 +90,17 @@ function assertModelShape(models) {
     assert(models.overview_model.cards.length <= 4, "Overview model should expose a compact first-screen readout set");
     assert(models.overview_model.readouts.length === 4, "Overview model should expose exactly four readouts");
     assert(models.overview_model.status_chips.length === 6, "Overview model should expose six compact status chips");
+    assert(models.overview_model.mission_brief.question_count === 7, "Overview model should expose RS-8 Mission Brief question count");
+    assert(models.overview_model.mission_brief.questions.length === 7, "Overview model should expose seven Mission Brief questions");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "watching"), "Mission Brief missing watching card");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "thinking"), "Mission Brief missing thinking card");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "forbidden"), "Mission Brief missing forbidden card");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "considering"), "Mission Brief missing considering card");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "traded"), "Mission Brief missing traded card");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "portfolio"), "Mission Brief missing portfolio card");
+    assert(models.overview_model.mission_brief.questions.some((item) => item.key === "blocked"), "Mission Brief missing blocked card");
+    assert(models.overview_model.mission_brief.authority.dashboard_write_authority === false, "Mission Brief must be read-only");
+    assert(models.overview_model.mission_brief.authority.telegram_command_authority === false, "Mission Brief must keep Telegram command authority off");
     assert(models.overview_model.review_focus.state, "Overview model should expose review focus");
     assert(models.overview_model.system_status.length >= 6, "Overview model should expose paper system status and runner cards");
     assert(models.overview_model.data_sources_connected.length >= 3, "Overview model should expose connected source groups");

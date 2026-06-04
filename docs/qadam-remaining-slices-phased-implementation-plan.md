@@ -512,6 +512,23 @@ Acceptance:
   - What is the portfolio worth?
   - Why is it blocked?
 
+Implementation status:
+
+- RS-8 is implemented through a public-safe `mission_control.mission_brief`
+  contract in cockpit status and rendered as the first Overview surface.
+- The Mission Brief exposes seven exact Fund Manager question cards, visible
+  click/tap expand controls, quick navigation to Mission, Map, Sources,
+  Reasoning, Trades, Portfolio, Safety, Inbox, and Runtime, plus a single
+  next-operator-action readout.
+- The dashboard renderer keeps the detailed system map, source ledger,
+  strategy ledger, reasoning feed, trade intent, paper portfolio state, and
+  safety readouts below the Mission Brief so the first screen answers the
+  operator questions before deeper diagnostics.
+- `scripts/check_cockpit_status.py` and
+  `scripts/check_dashboard_rs8_mission_control.js` validate that the Mission
+  Brief remains read-only and cannot approve, place, modify, close, fund, or
+  grant performance credit for trades.
+
 ## 13. Phase RS-9 - Learning Loop And Full-Potential Review
 
 Objective: let Qadam improve from paper outcomes without mutating strategy or

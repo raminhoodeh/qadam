@@ -2131,6 +2131,19 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     commands, 0 validation errors, and no public leak. Telegram can summarize
     and notify only: it cannot create signals, approve risk, approve execution,
     place paper orders, write to Alpaca, call Q-CTRL, or enable live capital.
+27. RS-8 Dashboard Mission Control Completion is now implemented. Cockpit
+    status exports a public-safe `mission_control.mission_brief` contract with
+    seven Fund Manager question cards: what Qadam is watching, thinking about,
+    forbidden from doing, considering, traded on paper, worth as a portfolio,
+    and blocked or waiting on. The static dashboard renders the Mission Brief
+    as the top Overview surface with visible click/tap expansion controls,
+    quick links to Mission, Map, Sources, Reasoning, Trades, Portfolio, Safety,
+    Inbox, and Runtime, and a single next-operator-action readout. Validation is
+    enforced by `scripts/check_cockpit_status.py` and
+    `scripts/check_dashboard_rs8_mission_control.js`. This is visibility and
+    operator triage only: the dashboard, Telegram intake, LLMs, data sources,
+    and quantum oracle still cannot approve, place, modify, close, fund, or
+    grant performance credit for trades.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

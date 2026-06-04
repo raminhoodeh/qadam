@@ -1933,6 +1933,7 @@ MISSION_CONTROL_REQUIRED_FIELDS = {
     "data_sources",
     "durable_spine",
     "headline",
+    "mission_brief",
     "phase3_readiness",
     "phase5_layer_b",
     "phase6_learning_loop",
@@ -1945,6 +1946,47 @@ MISSION_CONTROL_REQUIRED_FIELDS = {
     "thinking",
     "trade_intent",
     "trading_philosophy",
+}
+
+MISSION_BRIEF_REQUIRED_FIELDS = {
+    "authority",
+    "boundary",
+    "navigation",
+    "next_action",
+    "question_count",
+    "questions",
+    "schema_version",
+    "status",
+    "summary",
+}
+
+MISSION_BRIEF_QUESTION_REQUIRED_FIELDS = {
+    "answer",
+    "href",
+    "key",
+    "metrics",
+    "question",
+    "summary",
+    "tone",
+}
+
+MISSION_BRIEF_EXPECTED_QUESTION_KEYS = {
+    "blocked",
+    "considering",
+    "forbidden",
+    "portfolio",
+    "thinking",
+    "traded",
+    "watching",
+}
+
+MISSION_BRIEF_AUTHORITY_REQUIRED_FIELDS = {
+    "broker_write_allowed",
+    "dashboard_write_authority",
+    "live_capital_enabled",
+    "llm_execution_authority",
+    "quantum_execution_authority",
+    "telegram_command_authority",
 }
 
 MISSION_DATA_SOURCES_REQUIRED_FIELDS = {
@@ -7252,6 +7294,82 @@ def main() -> int:
         return 1
     if mission.get("status") != "read_only_mission_control":
         print("cockpit_status_mission_control_status_mismatch=true")
+        return 1
+    mission_brief = mission.get("mission_brief", {})
+    missing_mission_brief_fields = sorted(MISSION_BRIEF_REQUIRED_FIELDS - set(mission_brief))
+    if missing_mission_brief_fields:
+        print("cockpit_status_mission_brief_fields_missing=" + ",".join(missing_mission_brief_fields))
+        return 1
+    if mission_brief.get("status") != "ok":
+        print("cockpit_status_mission_brief_status_mismatch=true")
+        return 1
+    mission_brief_questions = mission_brief.get("questions", [])
+    if mission_brief.get("question_count") != 7 or len(mission_brief_questions) != 7:
+        print("cockpit_status_mission_brief_question_count_mismatch=true")
+        return 1
+    mission_brief_question_keys = {question.get("key") for question in mission_brief_questions}
+    if mission_brief_question_keys != MISSION_BRIEF_EXPECTED_QUESTION_KEYS:
+        print("cockpit_status_mission_brief_question_keys_mismatch=true")
+        return 1
+    for question in mission_brief_questions:
+        missing_question_fields = sorted(
+            MISSION_BRIEF_QUESTION_REQUIRED_FIELDS - set(question)
+        )
+        if missing_question_fields:
+            print(
+                "cockpit_status_mission_brief_question_fields_missing="
+                + f"{question.get('key')}:{','.join(missing_question_fields)}"
+            )
+            return 1
+        if not isinstance(question.get("metrics"), list) or len(question.get("metrics", [])) < 2:
+            print("cockpit_status_mission_brief_question_metrics_invalid=true")
+            return 1
+        if not str(question.get("href", "")).startswith("#"):
+            print("cockpit_status_mission_brief_question_href_invalid=true")
+            return 1
+    if not any(question.get("question") == "What is Qadam watching?" for question in mission_brief_questions):
+        print("cockpit_status_mission_brief_watching_question_missing=true")
+        return 1
+    if not any(question.get("question") == "What is Qadam thinking about next?" for question in mission_brief_questions):
+        print("cockpit_status_mission_brief_thinking_question_missing=true")
+        return 1
+    if not any(question.get("question") == "What is Qadam forbidden from doing?" for question in mission_brief_questions):
+        print("cockpit_status_mission_brief_forbidden_question_missing=true")
+        return 1
+    if not any(question.get("question") == "Which trades are candidates or blocked?" for question in mission_brief_questions):
+        print("cockpit_status_mission_brief_trade_question_missing=true")
+        return 1
+    if not any(question.get("question") == "What is the portfolio worth?" for question in mission_brief_questions):
+        print("cockpit_status_mission_brief_portfolio_question_missing=true")
+        return 1
+    mission_brief_nav = mission_brief.get("navigation", [])
+    if len(mission_brief_nav) < 9:
+        print("cockpit_status_mission_brief_navigation_short=true")
+        return 1
+    mission_brief_nav_labels = {item.get("label") for item in mission_brief_nav}
+    for label in {"Mission", "Map", "Sources", "Reasoning", "Trades", "Portfolio", "Safety", "Inbox", "Runtime"}:
+        if label not in mission_brief_nav_labels:
+            print(f"cockpit_status_mission_brief_navigation_missing={label}")
+            return 1
+    mission_brief_authority = mission_brief.get("authority", {})
+    missing_mission_brief_authority_fields = sorted(
+        MISSION_BRIEF_AUTHORITY_REQUIRED_FIELDS - set(mission_brief_authority)
+    )
+    if missing_mission_brief_authority_fields:
+        print("cockpit_status_mission_brief_authority_fields_missing=" + ",".join(missing_mission_brief_authority_fields))
+        return 1
+    for field in MISSION_BRIEF_AUTHORITY_REQUIRED_FIELDS:
+        if mission_brief_authority.get(field) is not False:
+            print(f"cockpit_status_mission_brief_authority_enabled={field}")
+            return 1
+    if "read-only" not in mission_brief.get("boundary", ""):
+        print("cockpit_status_mission_brief_boundary_weak=true")
+        return 1
+    if "cannot approve" not in mission_brief.get("boundary", ""):
+        print("cockpit_status_mission_brief_boundary_missing_authority=true")
+        return 1
+    if not mission_brief.get("next_action", {}).get("label"):
+        print("cockpit_status_mission_brief_next_action_missing=true")
         return 1
     mission_data = mission.get("data_sources", {})
     missing_mission_data_fields = sorted(MISSION_DATA_SOURCES_REQUIRED_FIELDS - set(mission_data))

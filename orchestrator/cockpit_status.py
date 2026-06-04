@@ -5153,6 +5153,248 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         next_trade_state = "no_trade_candidate"
         next_trade_summary = "No executable trade candidate exists in the current public-safe snapshot."
 
+    paper_order_submitted_count = int(
+        paper_submit_receipt.get("paper_order_submitted_count")
+        or len(
+            [
+                order
+                for order in orders
+                if str(order.get("status", "")).lower()
+                in {"submitted", "accepted", "filled", "open", "partially_filled"}
+            ]
+        )
+        or 0
+    )
+    postmortem_due_count = int(
+        paper_lifecycle_postmortem.get(
+            "postmortem_due_count",
+            capital.get("postmortem_due_count", 0),
+        )
+        or 0
+    )
+    operator_high_count = int(operator_inbox.get("high_or_critical_item_count", 0) or 0)
+    operator_open_count = int(operator_inbox.get("open_item_count", 0) or 0)
+    telegram_command_authority = bool(operator_inbox.get("telegram_command_authority"))
+    source_tone = (
+        "degraded"
+        if missing_credentials or source_counts.get("degraded", 0)
+        else "online"
+    )
+    thinking_tone = (
+        "online"
+        if local_assessments or strategy_packets or phase2_cycle.get("status") == "ok"
+        else "pending"
+    )
+    trade_tone = "pending" if candidates or observed_signals else "online"
+    blocked_tone = (
+        "blocked"
+        if operator_high_count or postmortem_due_count
+        else ("pending" if blocked_trades or missing_credentials else "online")
+    )
+    paperops_blocker = (
+        paperops_active_automation.get("why_not_trading_now")
+        or paper_live_certification.get(
+            "paper_live_unattended_execution_delegation_reason"
+        )
+        or paperops_active_automation.get("idle_reason")
+        or next_trade_summary
+    )
+    if operator_high_count:
+        next_action = {
+            "label": "Review operator inbox",
+            "href": "#operations",
+            "tone": "blocked",
+            "summary": f"{operator_high_count} high-priority operator items need review before Qadam advances.",
+        }
+    elif postmortem_due_count:
+        next_action = {
+            "label": "Review paper postmortems",
+            "href": "#trades",
+            "tone": "blocked",
+            "summary": f"{postmortem_due_count} closed paper trade postmortems are due before learning can update.",
+        }
+    elif candidates:
+        next_action = {
+            "label": "Review trade candidates",
+            "href": "#trades",
+            "tone": "pending",
+            "summary": f"{len(candidates)} candidates are visible, but risk and execution gates still decide.",
+        }
+    elif blocked_trades:
+        next_action = {
+            "label": "Review blocked ideas",
+            "href": "#trades",
+            "tone": "pending",
+            "summary": f"{len(blocked_trades)} trade ideas are blocked before execution.",
+        }
+    elif missing_credentials or source_counts.get("degraded", 0):
+        next_action = {
+            "label": "Review source health",
+            "href": "#evidence",
+            "tone": "degraded",
+            "summary": f"{missing_credentials} missing credentials and {int(source_counts.get('degraded', 0))} degraded sources are visible.",
+        }
+    else:
+        next_action = {
+            "label": "Continue monitoring",
+            "href": "#mission-control",
+            "tone": "online",
+            "summary": "No urgent Fund Manager intervention is visible in the public-safe snapshot.",
+        }
+
+    mission_brief = {
+        "schema_version": 1,
+        "status": "ok",
+        "question_count": 7,
+        "summary": (
+            "Seven-question Fund Manager brief for sources, reasoning, authority, "
+            "trade intent, paper activity, portfolio value, and blockers."
+        ),
+        "questions": [
+            {
+                "key": "watching",
+                "question": "What is Qadam watching?",
+                "answer": f"{int(source_counts.get('online', 0))}/{len(watching)} sources online across {len(pipeline_summary)} pipelines.",
+                "tone": source_tone,
+                "href": "#evidence",
+                "summary": (
+                    f"{len(connected_sources)} configured or connected sources are visible; "
+                    f"{missing_credentials} credentials are missing; durable replay is "
+                    f"{durable_ingestion.get('replay_status', 'unknown')}."
+                ),
+                "metrics": [
+                    {"label": "Online sources", "value": int(source_counts.get("online", 0))},
+                    {"label": "Total sources", "value": len(watching)},
+                    {"label": "Missing credentials", "value": missing_credentials},
+                ],
+            },
+            {
+                "key": "thinking",
+                "question": "What is Qadam thinking about next?",
+                "answer": (
+                    f"{int(research_goal_status.get('active_goal_count', len(research_goal_records)) or 0)} "
+                    f"research goals, {len(hypotheses)} hypotheses, {len(evidence_packets)} evidence packets."
+                ),
+                "tone": thinking_tone,
+                "href": "#reasoning",
+                "summary": (
+                    f"Local Research Analyst assessments: {len(local_assessments)}; "
+                    f"Strategy Lead packets: {len(strategy_packets)}; "
+                    f"Signal Integrity: {cognition.get('signal_integrity', {}).get('status', 'pending')}."
+                ),
+                "metrics": [
+                    {"label": "Research goals", "value": int(research_goal_status.get("active_goal_count", len(research_goal_records)) or 0)},
+                    {"label": "Hypotheses", "value": len(hypotheses)},
+                    {"label": "Strategy packets", "value": len(strategy_packets)},
+                ],
+            },
+            {
+                "key": "forbidden",
+                "question": "What is Qadam forbidden from doing?",
+                "answer": f"{len(forbidden_actions)} hard safety stops; live capital and broker-write authority are off.",
+                "tone": "online" if not live_capital_enabled and not broker_write_allowed and not telegram_command_authority else "blocked",
+                "href": "#operations",
+                "summary": (
+                    "The dashboard, Telegram intake, LLMs, data sources, and quantum oracle cannot approve, "
+                    "place, modify, close, fund, or bypass risk checks for trades."
+                ),
+                "metrics": [
+                    {"label": "Live capital", "value": "off" if not live_capital_enabled else "enabled"},
+                    {"label": "Broker write", "value": "off" if not broker_write_allowed else "enabled"},
+                    {"label": "Telegram commands", "value": "off" if not telegram_command_authority else "enabled"},
+                ],
+            },
+            {
+                "key": "considering",
+                "question": "Which trades are candidates or blocked?",
+                "answer": (
+                    f"{len(candidates)} candidates, {len(blocked_trades)} blocked ideas, "
+                    f"{len(observed_signals)} observed signals."
+                ),
+                "tone": trade_tone if not blocked_trades else "pending",
+                "href": "#trades",
+                "summary": next_trade_summary,
+                "metrics": [
+                    {"label": "Observed", "value": len(observed_signals)},
+                    {"label": "Candidates", "value": len(candidates)},
+                    {"label": "Blocked", "value": len(blocked_trades)},
+                ],
+            },
+            {
+                "key": "traded",
+                "question": "What has Qadam traded on paper?",
+                "answer": (
+                    f"{paper_order_submitted_count} submitted paper orders, "
+                    f"{len(open_positions)} open positions, {len(closed_trades)} closed trades."
+                ),
+                "tone": "online" if paper_order_submitted_count or open_positions or closed_trades else "pending",
+                "href": "#trades",
+                "summary": (
+                    "Paper activity is mirrored from the local account and ledgers. "
+                    "It is evidence for review, not live-capital authority."
+                ),
+                "metrics": [
+                    {"label": "Paper orders", "value": paper_order_submitted_count},
+                    {"label": "Open positions", "value": len(open_positions)},
+                    {"label": "Closed trades", "value": len(closed_trades)},
+                ],
+            },
+            {
+                "key": "portfolio",
+                "question": "What is the portfolio worth?",
+                "answer": f"GBP {current_balance:,.2f}; total paper P&L GBP {pnl_total:,.2f}.",
+                "tone": "online" if capital.get("connection_status") in {"ok", "live", "mirrored"} else "pending",
+                "href": "#trades",
+                "summary": (
+                    f"Portfolio value source is {paper_lifecycle_postmortem.get('portfolio_value_source', capital.get('portfolio_value_source', 'unknown'))}; "
+                    f"{postmortem_due_count} postmortems due."
+                ),
+                "metrics": [
+                    {"label": "Balance GBP", "value": round(current_balance, 2)},
+                    {"label": "Total P&L GBP", "value": round(pnl_total, 2)},
+                    {"label": "Postmortems due", "value": postmortem_due_count},
+                ],
+            },
+            {
+                "key": "blocked",
+                "question": "Why is Qadam blocked or waiting?",
+                "answer": next_action["label"],
+                "tone": blocked_tone,
+                "href": next_action["href"],
+                "summary": paperops_blocker,
+                "metrics": [
+                    {"label": "Operator open", "value": operator_open_count},
+                    {"label": "High priority", "value": operator_high_count},
+                    {"label": "Postmortems due", "value": postmortem_due_count},
+                ],
+            },
+        ],
+        "navigation": [
+            {"key": "mission", "label": "Mission", "href": "#mission-control"},
+            {"key": "map", "label": "Map", "href": "#system-map"},
+            {"key": "sources", "label": "Sources", "href": "#evidence"},
+            {"key": "reasoning", "label": "Reasoning", "href": "#reasoning"},
+            {"key": "trades", "label": "Trades", "href": "#trades"},
+            {"key": "portfolio", "label": "Portfolio", "href": "#trades"},
+            {"key": "safety", "label": "Safety", "href": "#operations"},
+            {"key": "inbox", "label": "Inbox", "href": "#operations"},
+            {"key": "runtime", "label": "Runtime", "href": "#operations"},
+        ],
+        "next_action": next_action,
+        "authority": {
+            "live_capital_enabled": live_capital_enabled,
+            "broker_write_allowed": broker_write_allowed,
+            "dashboard_write_authority": False,
+            "telegram_command_authority": telegram_command_authority,
+            "llm_execution_authority": False,
+            "quantum_execution_authority": False,
+        },
+        "boundary": (
+            "RS-8 Mission Brief is read-only. It cannot approve, place, modify, "
+            "resize, close, fund, or verify performance credit for trades."
+        ),
+    }
+
     return {
         "schema_version": 1,
         "status": "read_only_mission_control",
@@ -6518,6 +6760,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             ],
             "boundary": "Mission control is read-only. It cannot approve, place, modify, resize, close, or fund trades.",
         },
+        "mission_brief": mission_brief,
     }
 
 
