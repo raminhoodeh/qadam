@@ -228,7 +228,7 @@ const CANONICAL_STATUS_LANGUAGE = {
     fault: {
         label: "Fault",
         tone: "blocked",
-        description: "An unexpected failure or unsafe condition needs operator review.",
+        description: "An unexpected failure or unsafe condition needs Chief Operating Officer review.",
         tokens: ["failed", "failure", "error", "fault", "unsafe", "write enabled", "live capital enabled", "display inferred", "ui inferred"]
     }
 };
@@ -2523,7 +2523,7 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
         {
             id: "governance_comms_audit",
             title: "Governance, inbox, and communications audit",
-            summary: "Fund Manager comments, operator inbox items, approval records, weekly review state, and outbound-only Telegram notifications.",
+            summary: "Fund Manager comments, Chief Operating Officer inbox items, approval records, weekly review state, and outbound-only Telegram notifications.",
             status: communicationsAudit.command_path_enabled || communicationsAudit.live_send_allowed_count || operatorInbox.telegram_command_authority ? "blocked" : "pending",
             count: modelNumber(governance.comments?.count, 0) + modelNumber(communicationsAudit.pending_queue_count, 0) + modelNumber(operatorInbox.open_item_count, 0) + asArray(governance.open_actions).length
         }
@@ -2810,8 +2810,8 @@ function buildGovernanceOpenActions(status = {}) {
         .slice(0, 3)
         .forEach((item) => {
             actions.push({
-                label: dashboardText(item.summary, "Operator inbox item"),
-                detail: dashboardText(item.required_action, "Review this operator inbox item."),
+                label: dashboardText(item.summary, "Chief Operating Officer inbox item"),
+                detail: dashboardText(item.required_action, "Review this Chief Operating Officer inbox item."),
                 tone: item.severity === "critical" || item.severity === "high" ? "blocked" : "pending",
                 href: item.dashboard_section === "Portfolio" ? "#trades" : item.dashboard_section === "Sources" ? "#evidence" : item.dashboard_section === "Reasoning" ? "#reasoning" : "#operations"
             });
@@ -2941,7 +2941,7 @@ function buildGovernanceModel(status = {}) {
             telegram_command_authority: Boolean(operatorInbox.telegram_command_authority),
             comment_can_approve_trades: Boolean(operatorInbox.comment_can_approve_trades),
             ack_can_approve_trades: Boolean(operatorInbox.ack_can_approve_trades),
-            boundary: operatorInbox.boundary || "Operator inbox is read-only oversight."
+            boundary: operatorInbox.boundary || "Chief Operating Officer inbox is read-only oversight."
         },
         comment_targets: buildGovernanceCommentTargets(status),
         open_actions: openActions,
@@ -6475,7 +6475,7 @@ function renderOverviewFirstScreen(viewModels) {
                 ${questions.map(renderOverviewMissionQuestion).join("")}
             </div>
             <div class="overview-mission-next ${statusClass(nextAction.tone || "online")}">
-                <span>Next operator action</span>
+                <span>Next Chief Operating Officer action</span>
                 <strong>${htmlText(nextAction.label, "Continue monitoring")}</strong>
                 <p>${htmlText(nextAction.summary, "No immediate action visible.")}</p>
             </div>
@@ -8276,7 +8276,7 @@ function renderGovernanceMessage(message) {
 function renderOperatorInboxItem(item) {
     return `
         <li>
-            <strong>${htmlText(item.summary, "Operator inbox item")}</strong>
+            <strong>${htmlText(item.summary, "Chief Operating Officer inbox item")}</strong>
             <span>${htmlText(item.item_class, "review")} · ${htmlText(item.dashboard_section, "Operations")}</span>
             <div class="comment-meta">
                 ${renderInlineBadge(item.status || "open", item.status || "pending")}
@@ -8303,7 +8303,7 @@ function renderGovernanceWorkspace(model) {
     const inboxItems = asArray(operatorInbox.recent_items);
     const inboxRows = inboxItems.length
         ? inboxItems.slice(0, 8).map(renderOperatorInboxItem).join("")
-        : `<li><strong>No operator inbox items</strong><span>No RS-7 review items are exported in this snapshot.</span></li>`;
+        : `<li><strong>No Chief Operating Officer inbox items</strong><span>No RS-7 review items are exported in this snapshot.</span></li>`;
     return `
         <section class="governance-workspace" data-governance-workspace-rendered>
             <div class="governance-workspace-head">
@@ -8367,7 +8367,7 @@ function renderGovernanceWorkspace(model) {
 
             <section class="governance-communications-card">
                 <div class="overview-section-head">
-                    <span>Operator inbox</span>
+                    <span>Chief Operating Officer inbox</span>
                     <strong>Human review queue, not an execution surface.</strong>
                 </div>
                 <div class="summary-strip compact">
