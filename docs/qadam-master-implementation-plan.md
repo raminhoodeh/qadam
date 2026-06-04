@@ -2144,6 +2144,19 @@ Phase 1E/1F are implemented at the manifest and runtime-enforcement level. Phase
     operator triage only: the dashboard, Telegram intake, LLMs, data sources,
     and quantum oracle still cannot approve, place, modify, close, fund, or
     grant performance credit for trades.
+28. RS-9 Learning Loop And Full-Potential Review is now implemented. Qadam
+    writes `data/runtime/rs9_learning_loop_review.json`, validates it with
+    `scripts/check_rs9_learning_loop.py`, exports the sanitized
+    `rs9_learning_loop` block through cockpit status, and renders it in the
+    dashboard paper lifecycle learning area. Current contract: five learning
+    proposal surfaces are visible and blocked pending Fund Manager review:
+    strategy weights, source trust, risk sizing, market-context
+    interpretation, and worldview lens strength. RS-9 can explain whether
+    Qadam is improving, degrading, or uncertain, and can state whether guarded
+    PaperOps remains unblocked. It cannot silently mutate strategy, trust,
+    risk, market interpretation, worldview lens strength, policy, knowledge
+    graph, model weights, trust scores, dashboard commands, Telegram commands,
+    broker writes, live capital, or Phase 7 proof credit.
 
 Note: the following implementation snapshots are retained as historical context.
 The latest `Update after Q6-17` note below is authoritative for the current Phase 6

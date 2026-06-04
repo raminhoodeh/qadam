@@ -188,6 +188,10 @@ from orchestrator.phase7_cockpit_visibility import (
     PUBLIC_STATUS_FIELDS as PHASE7_DEMO_PROOF_PUBLIC_FIELDS,
     phase7_cockpit_visibility_public_status,
 )
+from orchestrator.rs9_learning_loop import (
+    PUBLIC_STATUS_FIELDS as RS9_LEARNING_LOOP_PUBLIC_FIELDS,
+    rs9_learning_loop_public_status,
+)
 from orchestrator.postgres_store import durable_ingestion_status
 from orchestrator.preference_mcp_catalog import build_preference_tool_catalog, preference_tool_catalog_paths
 from orchestrator.preference_mcp_domain_packs import (
@@ -5009,6 +5013,10 @@ def _phase7_demo_proof_public_status(settings: Settings) -> dict[str, Any]:
     return phase7_cockpit_visibility_public_status(settings=settings)
 
 
+def _rs9_learning_loop_public_status(settings: Settings) -> dict[str, Any]:
+    return rs9_learning_loop_public_status(settings=settings)
+
+
 def _mission_control(payload: dict[str, Any], source_label: str = "status_contract") -> dict[str, Any]:
     watching = payload.get("watching", [])
     source_counts = Counter(source.get("status", "unknown") for source in watching)
@@ -5056,6 +5064,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     phase5_system_map = payload.get("phase5_system_map", {})
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
     phase7_demo_proof = payload.get("phase7_demo_proof", {})
+    rs9_learning_loop = payload.get("rs9_learning_loop", {})
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
     paper_operational_mode = payload.get("paper_operational_mode", {})
@@ -5830,6 +5839,16 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "phase5_phase6_handoff": phase5_phase6_handoff.get("status", "not_run"),
             "phase5_system_map": phase5_system_map.get("status", "not_run"),
             "phase6_learning_loop": phase6_learning_loop.get("status", "not_run"),
+            "rs9_learning_loop": rs9_learning_loop.get("status", "not_run"),
+            "rs9_learning_direction": rs9_learning_loop.get("learning_direction", "uncertain"),
+            "rs9_learning_proposal_count": rs9_learning_loop.get("proposal_count", 0),
+            "rs9_learning_blocked_proposal_count": rs9_learning_loop.get(
+                "blocked_proposal_count",
+                0,
+            ),
+            "rs9_paperops_guarded_paper_trading_not_blocked": (
+                rs9_learning_loop.get("paperops_guarded_paper_trading_not_blocked") is True
+            ),
             "phase7_demo_proof": phase7_demo_proof.get("status", "not_run"),
             "paper_account": capital.get("mirror_status", "pending"),
             "rs6_lifecycle_portfolio_postmortem": paper_lifecycle_postmortem.get(
@@ -6493,6 +6512,109 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "Phase 6 Learning Loop visibility is backend-derived and non-executable.",
             ),
         },
+        "rs9_learning_loop": {
+            "phase": rs9_learning_loop.get("phase", "RS"),
+            "stage": rs9_learning_loop.get("stage", "RS-9"),
+            "status": rs9_learning_loop.get("status", "not_run"),
+            "learning_direction": rs9_learning_loop.get("learning_direction", "uncertain"),
+            "learning_direction_reason": rs9_learning_loop.get(
+                "learning_direction_reason",
+                "RS-9 has not exported a learning direction yet.",
+            ),
+            "full_potential_state": rs9_learning_loop.get(
+                "full_potential_state",
+                "not_run",
+            ),
+            "paperops_guarded_paper_trading_not_blocked": (
+                rs9_learning_loop.get("paperops_guarded_paper_trading_not_blocked")
+                is True
+            ),
+            "proposal_count": rs9_learning_loop.get("proposal_count", 0),
+            "active_proposal_count": rs9_learning_loop.get("active_proposal_count", 0),
+            "blocked_proposal_count": rs9_learning_loop.get("blocked_proposal_count", 0),
+            "strategy_weight_proposal_count": rs9_learning_loop.get(
+                "strategy_weight_proposal_count",
+                0,
+            ),
+            "source_trust_proposal_count": rs9_learning_loop.get(
+                "source_trust_proposal_count",
+                0,
+            ),
+            "risk_sizing_proposal_count": rs9_learning_loop.get(
+                "risk_sizing_proposal_count",
+                0,
+            ),
+            "market_context_proposal_count": rs9_learning_loop.get(
+                "market_context_proposal_count",
+                0,
+            ),
+            "worldview_lens_proposal_count": rs9_learning_loop.get(
+                "worldview_lens_proposal_count",
+                0,
+            ),
+            "postmortem_due_count": rs9_learning_loop.get("postmortem_due_count", 0),
+            "postmortem_resolved_count": rs9_learning_loop.get(
+                "postmortem_resolved_count",
+                0,
+            ),
+            "blocked_authority_count": rs9_learning_loop.get("blocked_authority_count", 0),
+            "strategy_weight_mutation_allowed": (
+                rs9_learning_loop.get("strategy_weight_mutation_allowed") is True
+            ),
+            "source_trust_mutation_allowed": (
+                rs9_learning_loop.get("source_trust_mutation_allowed") is True
+            ),
+            "risk_sizing_mutation_allowed": (
+                rs9_learning_loop.get("risk_sizing_mutation_allowed") is True
+            ),
+            "market_context_interpretation_mutation_allowed": (
+                rs9_learning_loop.get("market_context_interpretation_mutation_allowed")
+                is True
+            ),
+            "worldview_lens_strength_mutation_allowed": (
+                rs9_learning_loop.get("worldview_lens_strength_mutation_allowed")
+                is True
+            ),
+            "dashboard_command_authority": (
+                rs9_learning_loop.get("dashboard_command_authority") is True
+            ),
+            "telegram_command_authority": (
+                rs9_learning_loop.get("telegram_command_authority") is True
+            ),
+            "broker_write_allowed": rs9_learning_loop.get("broker_write_allowed") is True,
+            "live_capital_enabled": rs9_learning_loop.get("live_capital_enabled") is True,
+            "phase7_proof_credit_allowed": (
+                rs9_learning_loop.get("phase7_proof_credit_allowed") is True
+            ),
+            "unsafe_write_counter_total": rs9_learning_loop.get(
+                "unsafe_write_counter_total",
+                0,
+            ),
+            "raw_payload_exposed_count": rs9_learning_loop.get(
+                "raw_payload_exposed_count",
+                0,
+            ),
+            "local_path_exposed_count": rs9_learning_loop.get(
+                "local_path_exposed_count",
+                0,
+            ),
+            "secret_ref_exposed_count": rs9_learning_loop.get(
+                "secret_ref_exposed_count",
+                0,
+            ),
+            "broker_identifier_exposed_count": rs9_learning_loop.get(
+                "broker_identifier_exposed_count",
+                0,
+            ),
+            "boundary": rs9_learning_loop.get(
+                "boundary",
+                "RS-9 is learning review only and cannot apply mutations or create orders.",
+            ),
+            "next_action": rs9_learning_loop.get(
+                "next_action",
+                "Review RS-9 learning proposals before allowing any mutation.",
+            ),
+        },
         "phase7_demo_proof": {
             "phase": phase7_demo_proof.get("phase", "Q7"),
             "stage": phase7_demo_proof.get("stage", "Q7-15"),
@@ -7072,6 +7194,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "phase6_learning_loop": _phase6_learning_loop_public_status(settings),
         "phase6_certification": _phase6_certification_public_status(settings),
         "phase7_demo_proof": _phase7_demo_proof_public_status(settings),
+        "rs9_learning_loop": _rs9_learning_loop_public_status(settings),
         "forbidden_actions": _forbidden_actions(),
         "fund_manager_notes": _fund_manager_notes(settings),
         "execution_venues": [
@@ -7156,6 +7279,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "phase6_learning_loop",
         "phase6_certification",
         "phase7_demo_proof",
+        "rs9_learning_loop",
         "phase5_system_map",
         "paper_live_activation",
         "paper_live_qctrl_product_access",
@@ -9919,6 +10043,168 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         or "cannot grant Phase 7 proof credit" not in phase6_boundary
     ):
         raise ValueError("Phase 6 Learning Loop boundary is weak")
+    rs9_learning_loop = payload["rs9_learning_loop"]
+    missing_rs9_learning_loop = sorted(
+        set(RS9_LEARNING_LOOP_PUBLIC_FIELDS) - set(rs9_learning_loop)
+    )
+    if missing_rs9_learning_loop:
+        raise ValueError(
+            "RS-9 Learning Loop public status missing fields: "
+            f"{missing_rs9_learning_loop}"
+        )
+    if (
+        rs9_learning_loop.get("phase") != "RS"
+        or rs9_learning_loop.get("stage") != "RS-9"
+    ):
+        raise ValueError("RS-9 Learning Loop phase/stage mismatch")
+    if rs9_learning_loop.get("public_safe") is not True:
+        raise ValueError("RS-9 Learning Loop must be public-safe")
+    if rs9_learning_loop.get("recorded") is not True:
+        raise ValueError("RS-9 Learning Loop must be recorded")
+    if rs9_learning_loop.get("status") not in {"review_ready", "blocked"}:
+        raise ValueError("RS-9 Learning Loop status is invalid")
+    if rs9_learning_loop.get("validation_error_count") != 0:
+        raise ValueError("RS-9 Learning Loop validation errors present")
+    if rs9_learning_loop.get("event_log_written") is not True:
+        raise ValueError("RS-9 Learning Loop Event Log missing")
+    if rs9_learning_loop.get("event_log_event_count") != 1:
+        raise ValueError("RS-9 Learning Loop Event Log count mismatch")
+    if rs9_learning_loop.get("learning_direction") not in {
+        "improving",
+        "degrading",
+        "uncertain",
+    }:
+        raise ValueError("RS-9 Learning Loop direction invalid")
+    if (
+        rs9_learning_loop.get("full_potential_state")
+        != "learning_visible_but_mutation_locked"
+    ):
+        raise ValueError("RS-9 Learning Loop full-potential state invalid")
+    if rs9_learning_loop.get("paperops_guarded_paper_trading_not_blocked") is not True:
+        raise ValueError("RS-9 Learning Loop must not block guarded PaperOps trading")
+    if rs9_learning_loop.get("source_missing_count") != 0:
+        raise ValueError("RS-9 Learning Loop source artifacts missing")
+    if rs9_learning_loop.get("source_validation_error_count") != 0:
+        raise ValueError("RS-9 Learning Loop source validation errors present")
+    if rs9_learning_loop.get("source_artifact_count") != len(
+        rs9_learning_loop.get("source_status_records", [])
+    ):
+        raise ValueError("RS-9 Learning Loop source count mismatch")
+    for record in rs9_learning_loop.get("source_status_records", []):
+        source_ref = str(record.get("source_ref", ""))
+        if not source_ref.startswith("data/runtime/"):
+            raise ValueError("RS-9 Learning Loop source ref must be relative")
+        if (
+            source_ref.startswith("/")
+            or source_ref.startswith("~")
+            or (len(source_ref) > 2 and source_ref[1:3] == ":\\")
+        ):
+            raise ValueError("RS-9 Learning Loop source ref exposes local path")
+    if rs9_learning_loop.get("proposal_count") != len(
+        rs9_learning_loop.get("learning_proposals", [])
+    ):
+        raise ValueError("RS-9 Learning Loop proposal count mismatch")
+    if rs9_learning_loop.get("proposal_count") < 5:
+        raise ValueError("RS-9 Learning Loop must expose five proposal surfaces")
+    if rs9_learning_loop.get("active_proposal_count") != 0:
+        raise ValueError("RS-9 Learning Loop must not expose active proposals")
+    if rs9_learning_loop.get("blocked_proposal_count") != rs9_learning_loop.get(
+        "proposal_count"
+    ):
+        raise ValueError("RS-9 Learning Loop proposals must remain blocked pending review")
+    rs9_surfaces = {
+        str(proposal.get("proposal_surface"))
+        for proposal in rs9_learning_loop.get("learning_proposals", [])
+    }
+    if rs9_surfaces != {
+        "strategy_weights",
+        "source_trust",
+        "risk_sizing",
+        "market_context_interpretation",
+        "worldview_lens_strength",
+    }:
+        raise ValueError("RS-9 Learning Loop proposal surfaces mismatch")
+    for proposal in rs9_learning_loop.get("learning_proposals", []):
+        if proposal.get("approval_required") is not True:
+            raise ValueError("RS-9 Learning Loop proposal missing approval gate")
+        if proposal.get("apply_allowed") is not False:
+            raise ValueError("RS-9 Learning Loop proposal can apply")
+        if proposal.get("mutation_allowed") is not False:
+            raise ValueError("RS-9 Learning Loop proposal can mutate")
+        for ref in proposal.get("source_refs", []):
+            if not isinstance(ref, str) or not ref.startswith("data/runtime/"):
+                raise ValueError("RS-9 Learning Loop proposal source ref invalid")
+            if (
+                ref.startswith("/")
+                or ref.startswith("~")
+                or (len(ref) > 2 and ref[1:3] == ":\\")
+            ):
+                raise ValueError("RS-9 Learning Loop proposal source ref exposes local path")
+    for key in (
+        "strategy_weight_proposal_count",
+        "source_trust_proposal_count",
+        "risk_sizing_proposal_count",
+        "market_context_proposal_count",
+        "worldview_lens_proposal_count",
+    ):
+        if rs9_learning_loop.get(key) != 1:
+            raise ValueError(f"RS-9 Learning Loop surface count invalid: {key}")
+    for key in (
+        "strategy_weight_mutation_allowed",
+        "source_trust_mutation_allowed",
+        "risk_sizing_mutation_allowed",
+        "market_context_interpretation_mutation_allowed",
+        "worldview_lens_strength_mutation_allowed",
+        "knowledge_graph_write_allowed",
+        "model_weight_update_allowed",
+        "trust_score_update_allowed",
+        "policy_mutation_allowed",
+        "strategy_mutation_allowed",
+        "learning_write_allowed",
+        "dashboard_command_authority",
+        "telegram_command_authority",
+        "broker_write_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+    ):
+        if rs9_learning_loop.get(key) is not False:
+            raise ValueError(f"RS-9 Learning Loop authority enabled: {key}")
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "broker_write_allowed_count",
+        "live_endpoint_called_count",
+        "live_capital_enabled_count",
+        "phase7_proof_credit_allowed_count",
+        "unsafe_write_counter_total",
+        "raw_payload_exposed_count",
+        "private_payload_exposed_count",
+        "local_path_exposed_count",
+        "secret_ref_exposed_count",
+        "broker_identifier_exposed_count",
+    ):
+        if rs9_learning_loop.get(key) != 0:
+            raise ValueError(f"RS-9 Learning Loop unsafe or exposure count nonzero: {key}")
+    rs9_boundary = rs9_learning_loop.get("boundary", "")
+    if (
+        "cannot silently rewrite strategy" not in rs9_boundary
+        or "cannot apply source trust" not in rs9_boundary
+        or "cannot change risk sizing" not in rs9_boundary
+        or "cannot mutate worldview lens strength" not in rs9_boundary
+        or "cannot create orders" not in rs9_boundary
+        or "cannot enable live capital" not in rs9_boundary
+        or "cannot give dashboard or Telegram command authority" not in rs9_boundary
+    ):
+        raise ValueError("RS-9 Learning Loop boundary is weak")
+    mission_rs9 = payload["mission_control"].get("rs9_learning_loop", {})
+    if mission_rs9.get("status") != rs9_learning_loop.get("status"):
+        raise ValueError("Mission Control RS-9 status mismatch")
+    if mission_rs9.get("learning_direction") != rs9_learning_loop.get("learning_direction"):
+        raise ValueError("Mission Control RS-9 direction mismatch")
+    if mission_rs9.get("proposal_count") != rs9_learning_loop.get("proposal_count"):
+        raise ValueError("Mission Control RS-9 proposal count mismatch")
     phase6_certification = payload["phase6_certification"]
     missing_phase6_certification = sorted(
         PHASE6_CERTIFICATION_PUBLIC_REQUIRED_FIELDS - set(phase6_certification)
@@ -10474,4 +10760,6 @@ def export_cockpit_status(
         "forbidden_action_count": len(payload["forbidden_actions"]),
         "yahoo_finance_status": payload["yahoo_finance"]["status"],
         "phase7_demo_proof_status": payload["phase7_demo_proof"]["status"],
+        "rs9_learning_loop_status": payload["rs9_learning_loop"]["status"],
+        "rs9_learning_direction": payload["rs9_learning_loop"]["learning_direction"],
     }

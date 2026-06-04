@@ -552,6 +552,23 @@ Acceptance:
 - Qadam cannot silently rewrite its strategy, source trust, or risk rules.
 - The system can explain whether it is improving, degrading, or uncertain.
 
+Implemented 2026-06-03:
+
+- `orchestrator/rs9_learning_loop.py` now writes a public-safe RS-9 Learning
+  Loop review artifact and event log from Phase 6 learning/postmortem sources.
+- `scripts/check_rs9_learning_loop.py` validates that RS-9 emits five blocked
+  learning-proposal surfaces: strategy weights, source trust, risk sizing,
+  market-context interpretation, and worldview lens strength.
+- Cockpit status now exports `rs9_learning_loop` and Mission Control stack
+  fields showing learning direction, full-potential state, proposal counts,
+  blocked authority counts, and whether guarded PaperOps remains unblocked.
+- The dashboard renders RS-9 in the paper lifecycle learning area and the
+  deployment preflight enforces `scripts/check_dashboard_rs9_learning_loop.js`.
+- RS-9 explicitly keeps strategy mutation, source-trust mutation, risk sizing,
+  worldview-lens mutation, dashboard commands, Telegram commands, broker
+  writes, live capital, and Phase 7 proof credit disabled. It does not block
+  guarded paper trading through the existing PaperOps path.
+
 ## 14. Phase RS-10 - Final Paper Autonomy Certification
 
 Objective: certify that Qadam is free to trade paper at full first-release
@@ -593,7 +610,7 @@ Implement in this order:
 6. RS-7 Operator Inbox, Telegram, And Human Oversight.
 7. RS-8 Dashboard Mission Control Completion.
 8. RS-1 Role Contracts if any role boundary drift appears during the above.
-9. RS-9 Learning Loop once closed paper-trade postmortems are reliable.
+9. RS-9 Learning Loop. Implemented 2026-06-03.
 10. RS-10 Final Paper Autonomy Certification.
 
 The next implementation slice after RS-0 should be RS-2/RS-3 together: harden

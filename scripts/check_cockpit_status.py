@@ -46,6 +46,9 @@ from orchestrator.phase6_cockpit_visibility import (
 from orchestrator.phase6_certification import (
     PUBLIC_STATUS_FIELDS as PHASE6_CERTIFICATION_REQUIRED_FIELDS,
 )  # noqa: E402
+from orchestrator.rs9_learning_loop import (  # noqa: E402
+    PUBLIC_STATUS_FIELDS as RS9_LEARNING_LOOP_REQUIRED_FIELDS,
+)
 from orchestrator.telegram_comms import ensure_d8a_telegram_dry_run  # noqa: E402
 from orchestrator.telegram_inbound_intake import ensure_sample_telegram_inbound_intake  # noqa: E402
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
@@ -1937,6 +1940,7 @@ MISSION_CONTROL_REQUIRED_FIELDS = {
     "phase3_readiness",
     "phase5_layer_b",
     "phase6_learning_loop",
+    "rs9_learning_loop",
     "portfolio",
     "safety",
     "schema_version",
@@ -2117,6 +2121,11 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "phase5_signal_review",
     "phase5_system_map",
     "phase6_learning_loop",
+    "rs9_learning_loop",
+    "rs9_learning_direction",
+    "rs9_learning_proposal_count",
+    "rs9_learning_blocked_proposal_count",
+    "rs9_paperops_guarded_paper_trading_not_blocked",
     "phase5_telegram_notifier",
     "preference_mcp",
     "quant_oracle",
@@ -2614,6 +2623,44 @@ MISSION_PHASE6_LEARNING_LOOP_REQUIRED_FIELDS = {
     "ui_inferred_readiness_count",
     "unsafe_write_counter_total",
     "visibility_state",
+}
+
+MISSION_RS9_LEARNING_LOOP_REQUIRED_FIELDS = {
+    "active_proposal_count",
+    "blocked_authority_count",
+    "blocked_proposal_count",
+    "boundary",
+    "broker_identifier_exposed_count",
+    "broker_write_allowed",
+    "dashboard_command_authority",
+    "full_potential_state",
+    "learning_direction",
+    "learning_direction_reason",
+    "live_capital_enabled",
+    "local_path_exposed_count",
+    "market_context_interpretation_mutation_allowed",
+    "market_context_proposal_count",
+    "next_action",
+    "paperops_guarded_paper_trading_not_blocked",
+    "phase",
+    "phase7_proof_credit_allowed",
+    "postmortem_due_count",
+    "postmortem_resolved_count",
+    "proposal_count",
+    "raw_payload_exposed_count",
+    "risk_sizing_mutation_allowed",
+    "risk_sizing_proposal_count",
+    "secret_ref_exposed_count",
+    "source_trust_mutation_allowed",
+    "source_trust_proposal_count",
+    "stage",
+    "status",
+    "strategy_weight_mutation_allowed",
+    "strategy_weight_proposal_count",
+    "telegram_command_authority",
+    "unsafe_write_counter_total",
+    "worldview_lens_proposal_count",
+    "worldview_lens_strength_mutation_allowed",
 }
 
 MISSION_PHASE3_READINESS_REQUIRED_FIELDS = {
@@ -3258,6 +3305,7 @@ def main() -> int:
     phase5_phase6_handoff = payload.get("phase5_phase6_handoff", {})
     phase5_system_map = payload.get("phase5_system_map", {})
     phase6_learning_loop = payload.get("phase6_learning_loop", {})
+    rs9_learning_loop = payload.get("rs9_learning_loop", {})
     phase6_certification = payload.get("phase6_certification", {})
     paper_live_activation = payload.get("paper_live_activation", {})
     paper_live_qctrl_product_access = payload.get("paper_live_qctrl_product_access", {})
@@ -4294,6 +4342,38 @@ def main() -> int:
     print(
         "cockpit_status_phase6_learning_loop_blocked_authority_count="
         f"{phase6_learning_loop.get('blocked_authority_count')}"
+    )
+    print(
+        "cockpit_status_rs9_learning_loop_status="
+        f"{rs9_learning_loop.get('status')}"
+    )
+    print(
+        "cockpit_status_rs9_learning_direction="
+        f"{rs9_learning_loop.get('learning_direction')}"
+    )
+    print(
+        "cockpit_status_rs9_full_potential_state="
+        f"{rs9_learning_loop.get('full_potential_state')}"
+    )
+    print(
+        "cockpit_status_rs9_proposal_count="
+        f"{rs9_learning_loop.get('proposal_count')}"
+    )
+    print(
+        "cockpit_status_rs9_blocked_proposal_count="
+        f"{rs9_learning_loop.get('blocked_proposal_count')}"
+    )
+    print(
+        "cockpit_status_rs9_postmortem_due_count="
+        f"{rs9_learning_loop.get('postmortem_due_count')}"
+    )
+    print(
+        "cockpit_status_rs9_paperops_guarded_paper_trading_not_blocked="
+        f"{rs9_learning_loop.get('paperops_guarded_paper_trading_not_blocked')}"
+    )
+    print(
+        "cockpit_status_rs9_blocked_authority_count="
+        f"{rs9_learning_loop.get('blocked_authority_count')}"
     )
     print(
         "cockpit_status_phase6_certification_status="
@@ -6104,6 +6184,180 @@ def main() -> int:
         if phase6_learning_loop.get(key) != 0:
             print(f"cockpit_status_phase6_learning_loop_exposure_nonzero={key}")
             return 1
+    missing_rs9_learning_loop_fields = sorted(
+        set(RS9_LEARNING_LOOP_REQUIRED_FIELDS) - set(rs9_learning_loop)
+    )
+    if missing_rs9_learning_loop_fields:
+        print(
+            "cockpit_status_rs9_learning_loop_fields_missing="
+            + ",".join(missing_rs9_learning_loop_fields)
+        )
+        return 1
+    if rs9_learning_loop.get("phase") != "RS" or rs9_learning_loop.get("stage") != "RS-9":
+        print("cockpit_status_rs9_learning_loop_phase_or_stage_mismatch=true")
+        return 1
+    if rs9_learning_loop.get("public_safe") is not True:
+        print("cockpit_status_rs9_learning_loop_not_public_safe=true")
+        return 1
+    if rs9_learning_loop.get("recorded") is not True:
+        print("cockpit_status_rs9_learning_loop_not_recorded=true")
+        return 1
+    if rs9_learning_loop.get("status") not in {"review_ready", "blocked"}:
+        print("cockpit_status_rs9_learning_loop_status_invalid=true")
+        return 1
+    if rs9_learning_loop.get("validation_error_count") != 0:
+        print("cockpit_status_rs9_learning_loop_validation_errors=true")
+        return 1
+    if rs9_learning_loop.get("event_log_written") is not True:
+        print("cockpit_status_rs9_learning_loop_event_log_missing=true")
+        return 1
+    if rs9_learning_loop.get("event_log_event_count") != 1:
+        print("cockpit_status_rs9_learning_loop_event_log_count_mismatch=true")
+        return 1
+    if rs9_learning_loop.get("learning_direction") not in {"improving", "degrading", "uncertain"}:
+        print("cockpit_status_rs9_learning_loop_direction_invalid=true")
+        return 1
+    if rs9_learning_loop.get("full_potential_state") != "learning_visible_but_mutation_locked":
+        print("cockpit_status_rs9_learning_loop_full_potential_state_mismatch=true")
+        return 1
+    if rs9_learning_loop.get("paperops_guarded_paper_trading_not_blocked") is not True:
+        print("cockpit_status_rs9_learning_loop_blocks_guarded_paperops=true")
+        return 1
+    if rs9_learning_loop.get("source_missing_count") != 0:
+        print("cockpit_status_rs9_learning_loop_source_missing=true")
+        return 1
+    if rs9_learning_loop.get("source_validation_error_count") != 0:
+        print("cockpit_status_rs9_learning_loop_source_validation_errors=true")
+        return 1
+    if rs9_learning_loop.get("source_artifact_count") != len(
+        rs9_learning_loop.get("source_status_records", [])
+    ):
+        print("cockpit_status_rs9_learning_loop_source_count_mismatch=true")
+        return 1
+    for record in rs9_learning_loop.get("source_status_records", []):
+        source_ref = str(record.get("source_ref", ""))
+        if not source_ref.startswith("data/runtime/"):
+            print("cockpit_status_rs9_learning_loop_source_ref_invalid=true")
+            return 1
+        if (
+            source_ref.startswith("/")
+            or source_ref.startswith("~")
+            or (len(source_ref) > 2 and source_ref[1:3] == ":\\")
+        ):
+            print("cockpit_status_rs9_learning_loop_source_ref_local=true")
+            return 1
+    if rs9_learning_loop.get("proposal_count") != len(
+        rs9_learning_loop.get("learning_proposals", [])
+    ):
+        print("cockpit_status_rs9_learning_loop_proposal_count_mismatch=true")
+        return 1
+    if rs9_learning_loop.get("proposal_count") < 5:
+        print("cockpit_status_rs9_learning_loop_proposal_count_low=true")
+        return 1
+    if rs9_learning_loop.get("active_proposal_count") != 0:
+        print("cockpit_status_rs9_learning_loop_active_proposals=true")
+        return 1
+    if rs9_learning_loop.get("blocked_proposal_count") != rs9_learning_loop.get(
+        "proposal_count"
+    ):
+        print("cockpit_status_rs9_learning_loop_blocked_proposal_count_mismatch=true")
+        return 1
+    rs9_surfaces = {
+        str(proposal.get("proposal_surface"))
+        for proposal in rs9_learning_loop.get("learning_proposals", [])
+    }
+    if rs9_surfaces != {
+        "strategy_weights",
+        "source_trust",
+        "risk_sizing",
+        "market_context_interpretation",
+        "worldview_lens_strength",
+    }:
+        print("cockpit_status_rs9_learning_loop_proposal_surfaces_mismatch=true")
+        return 1
+    for proposal in rs9_learning_loop.get("learning_proposals", []):
+        if proposal.get("approval_required") is not True:
+            print("cockpit_status_rs9_learning_loop_proposal_approval_missing=true")
+            return 1
+        if proposal.get("apply_allowed") is not False:
+            print("cockpit_status_rs9_learning_loop_proposal_apply_allowed=true")
+            return 1
+        if proposal.get("mutation_allowed") is not False:
+            print("cockpit_status_rs9_learning_loop_proposal_mutation_allowed=true")
+            return 1
+        for ref in proposal.get("source_refs", []):
+            if not isinstance(ref, str) or not ref.startswith("data/runtime/"):
+                print("cockpit_status_rs9_learning_loop_proposal_source_ref_invalid=true")
+                return 1
+            if (
+                ref.startswith("/")
+                or ref.startswith("~")
+                or (len(ref) > 2 and ref[1:3] == ":\\")
+            ):
+                print("cockpit_status_rs9_learning_loop_proposal_source_ref_local=true")
+                return 1
+    for key in (
+        "strategy_weight_proposal_count",
+        "source_trust_proposal_count",
+        "risk_sizing_proposal_count",
+        "market_context_proposal_count",
+        "worldview_lens_proposal_count",
+    ):
+        if rs9_learning_loop.get(key) != 1:
+            print(f"cockpit_status_rs9_learning_loop_surface_count_invalid={key}")
+            return 1
+    for key in (
+        "strategy_weight_mutation_allowed",
+        "source_trust_mutation_allowed",
+        "risk_sizing_mutation_allowed",
+        "market_context_interpretation_mutation_allowed",
+        "worldview_lens_strength_mutation_allowed",
+        "knowledge_graph_write_allowed",
+        "model_weight_update_allowed",
+        "trust_score_update_allowed",
+        "policy_mutation_allowed",
+        "strategy_mutation_allowed",
+        "learning_write_allowed",
+        "dashboard_command_authority",
+        "telegram_command_authority",
+        "broker_write_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+    ):
+        if rs9_learning_loop.get(key) is not False:
+            print(f"cockpit_status_rs9_learning_loop_authority_enabled={key}")
+            return 1
+    for key in (
+        "broker_post_called_count",
+        "alpaca_post_called_count",
+        "broker_write_allowed_count",
+        "live_endpoint_called_count",
+        "live_capital_enabled_count",
+        "phase7_proof_credit_allowed_count",
+        "unsafe_write_counter_total",
+        "raw_payload_exposed_count",
+        "private_payload_exposed_count",
+        "local_path_exposed_count",
+        "secret_ref_exposed_count",
+        "broker_identifier_exposed_count",
+    ):
+        if rs9_learning_loop.get(key) != 0:
+            print(f"cockpit_status_rs9_learning_loop_exposure_nonzero={key}")
+            return 1
+    rs9_boundary = rs9_learning_loop.get("boundary", "")
+    if (
+        "cannot silently rewrite strategy" not in rs9_boundary
+        or "cannot apply source trust" not in rs9_boundary
+        or "cannot change risk sizing" not in rs9_boundary
+        or "cannot mutate worldview lens strength" not in rs9_boundary
+        or "cannot create orders" not in rs9_boundary
+        or "cannot enable live capital" not in rs9_boundary
+        or "cannot give dashboard or Telegram command authority" not in rs9_boundary
+    ):
+        print("cockpit_status_rs9_learning_loop_boundary_weak=true")
+        return 1
     missing_phase6_certification_fields = sorted(
         set(PHASE6_CERTIFICATION_REQUIRED_FIELDS) - set(phase6_certification)
     )
@@ -8912,6 +9166,26 @@ def main() -> int:
     if mission_stack.get("phase6_learning_loop") != phase6_learning_loop.get("status"):
         print("cockpit_status_mission_stack_phase6_learning_loop_mismatch=true")
         return 1
+    if mission_stack.get("rs9_learning_loop") != rs9_learning_loop.get("status"):
+        print("cockpit_status_mission_stack_rs9_learning_loop_mismatch=true")
+        return 1
+    if mission_stack.get("rs9_learning_direction") != rs9_learning_loop.get("learning_direction"):
+        print("cockpit_status_mission_stack_rs9_direction_mismatch=true")
+        return 1
+    if mission_stack.get("rs9_learning_proposal_count") != rs9_learning_loop.get("proposal_count"):
+        print("cockpit_status_mission_stack_rs9_proposal_count_mismatch=true")
+        return 1
+    if mission_stack.get("rs9_learning_blocked_proposal_count") != rs9_learning_loop.get(
+        "blocked_proposal_count"
+    ):
+        print("cockpit_status_mission_stack_rs9_blocked_proposal_count_mismatch=true")
+        return 1
+    if (
+        mission_stack.get("rs9_paperops_guarded_paper_trading_not_blocked")
+        != rs9_learning_loop.get("paperops_guarded_paper_trading_not_blocked")
+    ):
+        print("cockpit_status_mission_stack_rs9_guarded_paperops_mismatch=true")
+        return 1
     mission_phase6 = mission.get("phase6_learning_loop", {})
     missing_mission_phase6_fields = sorted(
         MISSION_PHASE6_LEARNING_LOOP_REQUIRED_FIELDS - set(mission_phase6)
@@ -8966,6 +9240,84 @@ def main() -> int:
             return 1
     if mission_phase6.get("unsafe_write_counter_total") != 0:
         print("cockpit_status_mission_phase6_unsafe_writes=true")
+        return 1
+    mission_rs9 = mission.get("rs9_learning_loop", {})
+    missing_mission_rs9_fields = sorted(
+        MISSION_RS9_LEARNING_LOOP_REQUIRED_FIELDS - set(mission_rs9)
+    )
+    if missing_mission_rs9_fields:
+        print("cockpit_status_mission_rs9_fields_missing=" + ",".join(missing_mission_rs9_fields))
+        return 1
+    if mission_rs9.get("phase") != "RS" or mission_rs9.get("stage") != "RS-9":
+        print("cockpit_status_mission_rs9_phase_or_stage_mismatch=true")
+        return 1
+    if mission_rs9.get("status") != rs9_learning_loop.get("status"):
+        print("cockpit_status_mission_rs9_status_mismatch=true")
+        return 1
+    if mission_rs9.get("learning_direction") != rs9_learning_loop.get("learning_direction"):
+        print("cockpit_status_mission_rs9_direction_mismatch=true")
+        return 1
+    if mission_rs9.get("full_potential_state") != rs9_learning_loop.get("full_potential_state"):
+        print("cockpit_status_mission_rs9_full_potential_mismatch=true")
+        return 1
+    if mission_rs9.get("proposal_count") != rs9_learning_loop.get("proposal_count"):
+        print("cockpit_status_mission_rs9_proposal_count_mismatch=true")
+        return 1
+    if mission_rs9.get("blocked_proposal_count") != rs9_learning_loop.get("blocked_proposal_count"):
+        print("cockpit_status_mission_rs9_blocked_proposal_count_mismatch=true")
+        return 1
+    if (
+        mission_rs9.get("paperops_guarded_paper_trading_not_blocked")
+        is not True
+    ):
+        print("cockpit_status_mission_rs9_blocks_guarded_paperops=true")
+        return 1
+    for key in (
+        "strategy_weight_proposal_count",
+        "source_trust_proposal_count",
+        "risk_sizing_proposal_count",
+        "market_context_proposal_count",
+        "worldview_lens_proposal_count",
+    ):
+        if mission_rs9.get(key) != rs9_learning_loop.get(key):
+            print(f"cockpit_status_mission_rs9_surface_count_mismatch={key}")
+            return 1
+    for key in (
+        "strategy_weight_mutation_allowed",
+        "source_trust_mutation_allowed",
+        "risk_sizing_mutation_allowed",
+        "market_context_interpretation_mutation_allowed",
+        "worldview_lens_strength_mutation_allowed",
+        "dashboard_command_authority",
+        "telegram_command_authority",
+        "broker_write_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+    ):
+        if mission_rs9.get(key) is not False:
+            print(f"cockpit_status_mission_rs9_authority_enabled={key}")
+            return 1
+    for key in (
+        "unsafe_write_counter_total",
+        "raw_payload_exposed_count",
+        "local_path_exposed_count",
+        "secret_ref_exposed_count",
+        "broker_identifier_exposed_count",
+    ):
+        if mission_rs9.get(key) != 0:
+            print(f"cockpit_status_mission_rs9_exposure_nonzero={key}")
+            return 1
+    mission_rs9_boundary = mission_rs9.get("boundary", "")
+    if (
+        "cannot silently rewrite strategy" not in mission_rs9_boundary
+        or "cannot apply source trust" not in mission_rs9_boundary
+        or "cannot change risk sizing" not in mission_rs9_boundary
+        or "cannot mutate worldview lens strength" not in mission_rs9_boundary
+        or "cannot create orders" not in mission_rs9_boundary
+        or "cannot enable live capital" not in mission_rs9_boundary
+        or "cannot give dashboard or Telegram command authority" not in mission_rs9_boundary
+    ):
+        print("cockpit_status_mission_rs9_boundary_weak=true")
         return 1
     mission_phase5 = mission.get("phase5_layer_b", {})
     missing_mission_phase5_fields = sorted(
