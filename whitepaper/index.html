@@ -28,8 +28,8 @@
             <p class="eyebrow">Private founding whitepaper</p>
             <h1>Qadam For The Founding Fund Managers</h1>
             <p class="lede">
-                A trader-readable view of how Qadam watches the world, turns catalysts into testable signals, runs
-                through Akber's 6-stage process, and proves itself against a &pound;100,000 paper account before live capital.
+                A trader-readable view of how Qadam watches the world, turns catalysts into research goals, runs them
+                through Akber's 6-stage process, and proves itself through guarded paper trading before live capital.
             </p>
         </section>
 
@@ -38,15 +38,18 @@
                 <h2>The Short Version</h2>
                 <p>Qadam is a trading intelligence system built around Akber's core philosophy: high-conviction,
                     catalyst-driven opportunities, not random signals, hype, or overtrading.</p>
-                <p>It watches the world, detects possible catalysts, checks whether markets have mispriced them, runs
-                    the idea through risk rules, routes qualified paper trades through guarded approval, and logs every
-                    decision so the system can be judged honestly.</p>
+                <p>It watches the world, converts possible catalysts into research goals, challenges those goals through
+                    models and source-quality checks, routes qualified ideas through risk and execution policy, and logs
+                    every decision so the system can be judged honestly.</p>
                 <p>The first trading universe is deliberately narrow: <strong>prediction markets, crude oil, defence,
-                        silver, and semiconductors</strong>.</p>
+                        silver, and semiconductors</strong>. Inside the semiconductor lane, Qadam now pays special
+                    attention to the second-order beneficiaries of the AI infrastructure buildout: power generation,
+                    grid equipment, data-centre electrical systems, semiconductor fabrication capacity, memory,
+                    connectivity, and networking.</p>
                 <p>The founding Fund Managers are <strong>Ramin, Troy, Akber, Anas, and Ion</strong>. In the first
                     release, these are the only people with login access to oversee Qadam.</p>
-                <p>Qadam is not trying to be a magic bot. It is trying to prove whether a repeatable process can find
-                    real edge.</p>
+                <p>Qadam is not trying to be a magic bot. It is trying to prove whether a repeatable, inspectable
+                    process can find real edge while refusing low-quality trades.</p>
             </section>
 
             <section>
@@ -54,20 +57,24 @@
                 <p>Qadam is a small macro intelligence fund that runs locally on Ramin's MacBook.</p>
                 <p>The system is built like a tiny fund team:</p>
                 <ul>
-                    <li><strong>Python COO:</strong> coordinates the whole system, keeps records, checks health, and
-                        routes work.</li>
+                    <li><strong>Chief Operating Officer [Python]:</strong> coordinates the whole system, keeps records,
+                        checks health, routes work, and maintains the operating boundaries.</li>
                     <li><strong>Local Research Analyst:</strong> a local AI model that filters noisy information
-                        quickly.</li>
+                        quickly and compresses raw observations into research packets.</li>
                     <li><strong>Strategy Lead:</strong> a frontier AI model that does deeper research, builds the
-                        thesis, and challenges assumptions.</li>
-                    <li><strong>Head of Quant:</strong> a quantum/classical modelling layer that runs weekly pattern
-                        and ambiguity checks.</li>
+                        thesis, compares competing explanations, and challenges assumptions.</li>
+                    <li><strong>Head of Quant:</strong> a quantum/classical modelling layer that runs bounded pattern
+                        recognition and strategy-collapse checks.</li>
                     <li><strong>Founding Fund Managers:</strong> Ramin, Troy, Akber, Anas, and Ion, who oversee the
                         system, review outcomes, hold strategic influence, and help improve Qadam over time.</li>
                 </ul>
                 <p>The first release is local-first. All saved Qadam data lives on Ramin's MacBook by default. Qadam
                     connects to outside APIs to observe the world, but its memory, logs, evidence, comments, and
                     postmortems stay local unless a later cloud-sync decision is made.</p>
+                <p>The qadam.trade dashboard is the live mission-control surface. It shows source health, model status,
+                    research goals, current strategy reasoning, trade candidates, blocked trades, paper positions,
+                    portfolio value, learning records, the Chief Operating Officer inbox, and Telegram notification
+                    state. It is an oversight surface, not an order-entry terminal.</p>
             </section>
 
             <section>
@@ -88,15 +95,16 @@
                         <div class="flow-card">
                             <span class="flow-kicker">Dashboard</span>
                             <span class="flow-name">qadam.trade Cockpit</span>
-                            <span class="flow-detail">System map, module health, data sources, signals, postmortems,
-                                and the private comments forum.</span>
+                            <span class="flow-detail">System map, source health, strategy reasoning, trade state,
+                                paper balance, postmortems, and the Chief Operating Officer inbox.</span>
                         </div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
                         <div class="side-input">
-                            <p class="side-label">World inputs feed the operating system: live feeds, source registry,
-                                market APIs, and the private world-model lens.</p>
+                            <p class="side-label">World inputs feed the operating system: live feeds, durable replay,
+                                source quality, market APIs, AI infrastructure exposure, and the private world-model
+                                lens.</p>
                             <div class="flow-card primary">
-                                <span class="flow-kicker">COO [Python]</span>
+                                <span class="flow-kicker">Chief Operating Officer [Python]</span>
                                 <span class="flow-name">Python Orchestrator</span>
                                 <span class="flow-detail">Routes work, checks health, writes logs, and decides what
                                     should be researched next.</span>
@@ -106,22 +114,22 @@
                         <div class="flow-card">
                             <span class="flow-kicker">Research Analyst [Local LLM]</span>
                             <span class="flow-name">Fast Local Filtering</span>
-                            <span class="flow-detail">Filters noise locally and turns raw feeds into candidate
-                                questions.</span>
+                            <span class="flow-detail">Filters noise locally and turns raw feeds into evidence packets
+                                and research goals.</span>
                         </div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
                         <div class="flow-card primary">
                             <span class="flow-kicker">Strategy Lead [Frontier LLM]</span>
                             <span class="flow-name">Thesis And Challenge</span>
-                            <span class="flow-detail">Builds the deeper case, checks assumptions, and looks for what
-                                the market may not have priced.</span>
+                            <span class="flow-detail">Builds the deeper case, checks assumptions, and compares obvious
+                                winners with second-order beneficiaries.</span>
                         </div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
                         <div class="flow-card quant">
                             <span class="flow-kicker">Head Of Quant [Quantum Compute]</span>
-                            <span class="flow-name">Weekly Oracle Check</span>
-                            <span class="flow-detail">Runs quantum/classical ambiguity checks that inform, but do not
-                                override, the trading decision.</span>
+                            <span class="flow-name">Oracle Check</span>
+                            <span class="flow-detail">Runs quantum/classical pattern and ambiguity checks that can
+                                annotate a setup, but cannot originate or approve a trade.</span>
                         </div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
                         <div class="flow-card primary">
@@ -133,15 +141,16 @@
                         <div class="arrow" aria-hidden="true">&#8595;</div>
                         <div class="flow-card risk">
                             <span class="flow-kicker">Risk And Execution</span>
-                            <span class="flow-name">Sizing, Caps, Kill-switches</span>
-                            <span class="flow-detail">If risk is undefined, the trade is blocked or downgraded.</span>
+                            <span class="flow-name">Signal Integrity, Sizing, Kill-switches</span>
+                            <span class="flow-detail">If evidence, risk, broker reconciliation, or source quality is
+                                weak, the trade is blocked or downgraded.</span>
                         </div>
                         <div class="arrow" aria-hidden="true">&#8595;</div>
                         <div class="flow-card primary">
                             <span class="flow-kicker">Proof Account</span>
                             <span class="flow-name">&pound;100,000 Paper Trading</span>
-                            <span class="flow-detail">Guarded paper trades prove whether the system can follow its own
-                                rules without forcing trades.</span>
+                            <span class="flow-detail">Guarded PaperOps can act only when a fresh qualified setup exists
+                                and all paper-only gates pass.</span>
                         </div>
                         <div class="return-loop">Every outcome returns to the Event Log, Knowledge Graph, cockpit, and
                             Python COO so Qadam can learn without hiding its mistakes.</div>
@@ -182,6 +191,13 @@
                 </ol>
                 <p>Qadam does not replace that thinking. It operationalises it. It turns the filter into a repeatable
                     process that can be tested, logged, and improved.</p>
+                <p>The AI infrastructure thesis is implemented inside this same discipline. Qadam does not have to buy
+                    the obvious AI leader just because the story is obvious. It can ask whether the more asymmetric
+                    trade is in the suppliers, bottlenecks, and constraints behind the buildout: electricity, grid
+                    hardware, cooling, substations, transformers, fabrication capacity, HBM and other memory,
+                    networking, optical links, and data-centre connectivity. Those ideas still have to pass Akber's
+                    filter: quiet setup, mispriced distribution, real catalyst, technical structure, flow confirmation,
+                    and final trader judgment.</p>
                 <p>The Fund Managers help judge whether Qadam is applying this framework correctly.</p>
             </section>
 
@@ -199,9 +215,15 @@
                         contractor exposure, and geopolitical repricing.</li>
                     <li><strong>Silver:</strong> precious-metal stress, liquidity, inflation, industrial demand,
                         monetary fear, and macro regime shifts.</li>
-                    <li><strong>Semiconductors:</strong> export controls, Taiwan risk, AI infrastructure, supply-chain
-                        bottlenecks, chip demand, and US-China bargaining.</li>
+                    <li><strong>Semiconductors and AI infrastructure:</strong> export controls, Taiwan risk,
+                        supply-chain bottlenecks, chip demand, US-China bargaining, and the second-order beneficiaries
+                        of AI capex: power, fabrication, memory, networking, connectivity, and data-centre electrical
+                        infrastructure.</li>
                 </ul>
+                <p>The second-order AI infrastructure lens is a strategy emphasis, not a replacement for Qadam's current
+                    process. Nvidia and the obvious AI winners remain reference assets and market thermometers. Qadam's
+                    job is to ask whether the better risk/reward sits in the less obvious providers of the picks and
+                    shovels needed to make the AI buildout physically possible.</p>
                 <p>Other macro stories can matter, but they are context until they map cleanly into one of these
                     first-release trading lanes or a future approved strategy expansion.</p>
             </section>
@@ -220,6 +242,9 @@
                     <li><strong>Narrative:</strong> news, Telegram, X, Reddit, filings, patents, politician
                         disclosures, GitHub.</li>
                 </ul>
+                <p>Each source is tracked by status and quality. The dashboard shows which sources are online, degraded,
+                    missing, blocked, or local-only, and the durable data spine keeps replayable observations so Qadam
+                    can explain why a thesis existed later.</p>
                 <p>The point is not to collect data for its own sake. The point is to catch a catalyst while it is still
                     underpriced.</p>
             </section>
@@ -249,6 +274,7 @@
                 <ul>
                     <li>Who benefits if this story is true?</li>
                     <li>Who benefits if this story is false?</li>
+                    <li>Who benefits second, after the obvious winner has already been priced?</li>
                     <li>What would the market price if it believed the official version?</li>
                     <li>What would the market price if the hidden-incentive version is closer to reality?</li>
                     <li>What observable signs would confirm or kill the thesis?</li>
@@ -261,11 +287,13 @@
                 <p>A Qadam signal is not just "buy this."</p>
                 <p>A proper signal must include:</p>
                 <ul>
+                    <li>The research goal or hypothesis.</li>
                     <li>The catalyst.</li>
                     <li>The affected instrument.</li>
                     <li>The expected time window.</li>
                     <li>The evidence trail.</li>
                     <li>Source quality.</li>
+                    <li>The relevant Akber-stage score.</li>
                     <li>The market's current implied probability.</li>
                     <li>Qadam's estimated probability.</li>
                     <li>The pricing gap.</li>
@@ -274,6 +302,7 @@
                     <li>Position size.</li>
                     <li>Risk cap.</li>
                     <li>Exit logic.</li>
+                    <li>The Signal Integrity, Risk Agent, Execution Policy, and Head of Quant annotations.</li>
                     <li>What would prove Qadam wrong.</li>
                 </ul>
                 <p>If any of these are missing, the signal is blocked, downgraded, or left as a watchlist idea.</p>
@@ -282,11 +311,14 @@
             <section>
                 <h2>What Happens In The Test Account</h2>
                 <p>The first release runs on a <strong>&pound;100,000 paper/test account</strong>.</p>
-                <p>In test mode, Qadam may submit paper trades only after the proper gates are built and passed. The
-                    paper-live control plane is visible and guarded; full paper submission remains governed by Q-CTRL
-                    consultation, paper-account controls, and the active paper growth trial. The point is to test whether
-                    the system can follow its own rules without the Fund Managers emotionally interfering trade by
-                    trade.</p>
+                <p>In test mode, Qadam may submit guarded paper trades only when a fresh qualified setup exists and the
+                    paper-only gates pass. The paper-live control plane is certified for guarded paper autonomy, but
+                    actionability still depends on source quality, Signal Integrity, Risk Agent, Execution Policy,
+                    broker reconciliation, idempotency, and lifecycle polling. The point is to test whether the system
+                    can follow its own rules without the Fund Managers emotionally interfering trade by trade.</p>
+                <p>The dashboard mirrors the paper account through Alpaca in read-only mode: balance, open positions,
+                    closed trades, order history, postmortems, and portfolio value can be inspected, but the dashboard,
+                    comments, Telegram, LLMs, and quantum layer cannot place or force orders.</p>
                 <p>The Fund Managers can still:</p>
                 <ul>
                     <li>Review system health.</li>
@@ -317,13 +349,15 @@
                         <span>Sources</span>
                         <h3>Watching</h3>
                         <p>Check which conflict, physical, macro, market, and narrative sources are online, degraded,
-                            missing, blocked, or local-only. Weak sources weaken trade confidence.</p>
+                            missing, blocked, or local-only. Expand the source tracker to see the full list. Weak
+                            sources weaken trade confidence.</p>
                     </div>
                     <div class="guide-card">
                         <span>Reasoning</span>
                         <h3>Cognition</h3>
                         <p>Read what Qadam is focused on, which hypotheses exist, what evidence packets support them,
-                            and what corroboration is still missing.</p>
+                            which strategy lens is active, how Akber's filter is being applied, and what corroboration
+                            is still missing.</p>
                     </div>
                     <div class="guide-card">
                         <span>Private lens</span>
@@ -353,8 +387,9 @@
                     <div class="guide-card">
                         <span>Members</span>
                         <h3>Comments And Telegram</h3>
-                        <p>Use comments to challenge assumptions and improve the system. Use Telegram as a notification
-                            rail only. Neither path can approve, place, resize, close, or fund trades.</p>
+                        <p>Use comments and the Chief Operating Officer inbox to challenge assumptions and improve the
+                            system. Use Telegram as a notification rail only. Neither path can approve, place, resize,
+                            close, or fund trades.</p>
                     </div>
                 </div>
                 <div class="guide-table manual-states">
@@ -381,7 +416,7 @@
                 <p>The Fund Managers do not need to operate the code. They use Qadam through the cockpit:</p>
                 <ol>
                     <li><strong>Review the System Map:</strong> see whether the data feeds, models, broker rail, Event
-                        Log, risk system, and world-model layer are healthy.</li>
+                        Log, risk system, Chief Operating Officer inbox, and world-model layer are healthy.</li>
                     <li><strong>Review Watchlist Themes:</strong> see what Qadam is monitoring: prediction markets,
                         crude oil, defence, silver, semiconductors, geopolitical shocks, and major macro narratives.
                     </li>
@@ -421,7 +456,8 @@
                 <p>These comments should become part of Qadam's learning record. They should be saved locally, linked
                     to the relevant signal, module, postmortem, or strategy, and visible in future reviews.</p>
                 <p>The forum should not become a place to manually override every trade. It is for improving the system,
-                    not emotionally managing the paper account.</p>
+                    not emotionally managing the paper account. Comments can request review, but they cannot approve
+                    risk, stage orders, send broker writes, or enable live capital.</p>
             </section>
 
             <section>
@@ -450,6 +486,9 @@
                     <li><strong>Catalyst-first thinking:</strong> real-world event before chart pattern.</li>
                     <li><strong>Akber's 6-stage filter:</strong> the trading philosophy remains disciplined and
                         explicit.</li>
+                    <li><strong>Second-order AI infrastructure lens:</strong> Qadam can look past obvious AI leaders
+                        toward the power, grid, fabrication, memory, networking, and connectivity constraints that may
+                        carry better asymmetric setups.</li>
                     <li><strong>Physical-to-paper logic:</strong> fires, ships, aircraft, sanctions, supply chains,
                         conflict, energy, and infrastructure become market hypotheses.</li>
                     <li><strong>Prediction-market awareness:</strong> markets like Polymarket and Kalshi become
@@ -459,6 +498,12 @@
                     <li><strong>Private world-model lens:</strong> it treats official narratives as incomplete and looks
                         for hidden incentives.</li>
                     <li><strong>Evidence trail:</strong> every signal must show why it exists.</li>
+                    <li><strong>Source-quality and replay discipline:</strong> observations are tracked by source
+                        status, quality, and durable replayability.</li>
+                    <li><strong>Mission Control dashboard:</strong> Fund Managers can inspect what Qadam is watching,
+                        thinking, considering, holding, and blocked from doing.</li>
+                    <li><strong>Quantum as a gate, not a trigger:</strong> the Head of Quant can annotate pattern and
+                        ambiguity, but cannot originate trades or approve risk.</li>
                     <li><strong>Guarded paper proof:</strong> the system must prove itself on a &pound;100,000 paper
                         account before live capital.</li>
                     <li><strong>Founding Fund Manager oversight:</strong> five trusted humans can inspect, challenge,
@@ -483,8 +528,10 @@
                     <li>Build the local system.</li>
                     <li>Give the five founding Fund Managers login access.</li>
                     <li>Connect the data spine.</li>
-                    <li>Let Qadam paper trade through the guarded &pound;100,000 paper account when qualified setups
-                        exist and all gates pass.</li>
+                    <li>Let Qadam paper trade through the guarded &pound;100,000 paper account when fresh qualified
+                        setups exist and all gates pass.</li>
+                    <li>Show source health, strategy reasoning, paper balance, positions, blocked trades, and learning
+                        state clearly in the dashboard.</li>
                     <li>Log every decision.</li>
                     <li>Save comments and suggestions locally.</li>
                     <li>Review every outcome.</li>
@@ -506,6 +553,7 @@
                     <li>Was the market actually mispricing the event?</li>
                     <li>Was risk defined before entry?</li>
                     <li>Did Qadam follow Akber's 6-stage filter?</li>
+                    <li>Did Qadam distinguish obvious AI winners from better second-order infrastructure beneficiaries?</li>
                     <li>Did it avoid bad trades?</li>
                     <li>Did it learn correctly after losses?</li>
                     <li>Did Fund Manager comments identify useful improvements?</li>

@@ -6370,6 +6370,7 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
     const reasonSentence = candidateCount
         ? `${candidateCount} trade idea${candidateCount === 1 ? "" : "s"} exist, so Qadam is comparing evidence, risk, and paper-account constraints before anything can become a paper order.`
         : `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online and ${reasoningCounts.hypotheses || 0} hypotheses are under review, but no fresh qualified trade idea is currently clear enough to advance.`;
+    const aiInfrastructureSentence = "AI infrastructure is treated as a second-order picks-and-shovels lens: Qadam can compare obvious AI leaders with power, grid hardware, data-centre electrical systems, fabrication capacity, memory, connectivity, and networking before Akber's filter decides whether the setup is tradable.";
     const evolutionSentence = [
         `${reasoningCounts.evidence_packets || 0} evidence packets`,
         `${reasoningCounts.hypotheses || 0} hypotheses`,
@@ -6413,6 +6414,7 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
                 <h3>${htmlText(posture === "candidate review" ? "Review trade ideas before paper action" : posture === "setup discovery" ? "Search for a qualified setup" : "Keep scanning until evidence improves")}</h3>
                 <p>${htmlText(reasonSentence)}</p>
                 <p>${htmlText(strategySentence)} Qadam is still using Akber's 6-stage trading method as the practical filter: context, catalyst, confirmation, risk, execution, and postmortem learning.</p>
+                <p>${htmlText(aiInfrastructureSentence)}</p>
             </article>
             <div class="strategy-narrative-grid">
                 <article>
