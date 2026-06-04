@@ -189,7 +189,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam watching?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam forbidden from doing?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is the portfolio worth?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Next operator action");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Next Chief Operating Officer action");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Open relevant view");
     assertIncludes(rendered, "[data-overview-status-rail]", "Autonomous runner");
     assertIncludes(rendered, "[data-overview-status-rail]", "Potential setups");

@@ -5269,10 +5269,10 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     )
     if operator_high_count:
         next_action = {
-            "label": "Review operator inbox",
+            "label": "Review Chief Operating Officer inbox",
             "href": "#operations",
             "tone": "blocked",
-            "summary": f"{operator_high_count} high-priority operator items need review before Qadam advances.",
+            "summary": f"{operator_high_count} high-priority Chief Operating Officer items need review before Qadam advances.",
         }
     elif postmortem_due_count:
         next_action = {
@@ -5431,7 +5431,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "href": next_action["href"],
                 "summary": paperops_blocker,
                 "metrics": [
-                    {"label": "Operator open", "value": operator_open_count},
+                    {"label": "COO open", "value": operator_open_count},
                     {"label": "High priority", "value": operator_high_count},
                     {"label": "Postmortems due", "value": postmortem_due_count},
                 ],

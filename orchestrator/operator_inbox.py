@@ -31,7 +31,7 @@ OPERATOR_INBOX_EVENT_TYPE = "operator_inbox_recorded"
 OPERATOR_INBOX_COMPONENT = "operator_inbox"
 
 OPERATOR_INBOX_BOUNDARY = (
-    "RS-7 operator inbox is a local human-oversight and Telegram summary rail. "
+    "RS-7 Chief Operating Officer inbox is a local human-oversight and Telegram summary rail. "
     "Fund Managers can read, acknowledge, comment, and request review, but "
     "inbox items, comments, acknowledgements, dashboard actions, and Telegram "
     "messages cannot create signals, trade candidates, risk approvals, "

@@ -140,7 +140,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mission-brief]", "What has Qadam traded on paper?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is the portfolio worth?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Why is Qadam blocked or waiting?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Next operator action");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Next Chief Operating Officer action");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Open relevant view");
     assert(
         html(rendered, "[data-overview-mission-brief]").includes("<details"),
