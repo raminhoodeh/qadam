@@ -146,6 +146,14 @@ def main() -> int:
             "telegram_trade_notifications_portfolio_performance_pct="
             f"{record.get('portfolio_performance_pct')}"
         )
+        print(
+            "telegram_trade_notifications_specificity_status="
+            f"{record.get('message_specificity_status')}"
+        )
+        print(
+            "telegram_trade_notifications_specificity_score="
+            f"{record.get('message_specificity_score')}"
+        )
     print(f"telegram_trade_notifications_event_log_events={replay['total_events']}")
     print(f"telegram_trade_notifications_validation_errors={validation_errors}")
     print(
@@ -224,8 +232,11 @@ def main() -> int:
         body = str(preview.get("body") or "") if isinstance(preview, dict) else ""
         for marker in (
             "Trade:",
+            "Why this trade was sent:",
+            "Evidence:",
             "Portfolio:",
             "Performance:",
+            "Current impact:",
             "Mode: paper only; live capital remains blocked.",
             "Dashboard: qadam.trade/dashboard/",
         ):
@@ -237,6 +248,10 @@ def main() -> int:
             errors.append("telegram_trade_notifications_portfolio_value_missing")
         if record.get("portfolio_performance_pct") is None:
             errors.append("telegram_trade_notifications_portfolio_performance_missing")
+        if record.get("message_specificity_status") != "specific":
+            errors.append("telegram_trade_notifications_not_specific")
+        if int(record.get("message_specificity_score", 0) or 0) < 70:
+            errors.append("telegram_trade_notifications_specificity_score_low")
 
     if errors:
         for error in errors:

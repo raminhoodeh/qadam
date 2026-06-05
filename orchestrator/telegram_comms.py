@@ -19,6 +19,7 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.intelligence import shadow_intelligence_summary
 from orchestrator.secrets import secret_status
+from orchestrator.telegram_message_quality import assert_specific_telegram_message
 from orchestrator.trade_intent import TradeIntentStore, ensure_d5_sample_trade_intents
 
 TELEGRAM_COMMUNICATIONS_SCHEMA_VERSION = 1
@@ -139,6 +140,7 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
                 _display_ref(context.get("instrument"), "instrument watch"),
                 f"Why it matters: {_display_ref(context.get('catalyst'), 'structured candidate created')}",
                 f"Evidence: {_display_ref(context.get('evidence_summary'), 'evidence summary pending')}",
+                f"Current impact: {_display_ref(context.get('current_impact'), 'candidate is visible for review but cannot place an order')}",
                 "Block/risk: candidate only; Risk Agent and broker route are not reached.",
                 "Status: candidate, not an order.",
                 f"Dashboard: {dashboard}",
@@ -152,6 +154,7 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
                 _display_ref(context.get("instrument"), "instrument watch"),
                 f"Why it matters: {_display_ref(context.get('catalyst'), 'candidate failed a gate')}",
                 f"Evidence: {_display_ref(context.get('evidence_summary'), 'insufficient corroboration')}",
+                f"Current impact: {_display_ref(context.get('current_impact'), 'the idea remains out of the paper-order path')}",
                 f"Block/risk: {_display_ref(context.get('blocked_reason'), 'blocked before risk approval')}",
                 "Status: blocked. No paper order and no broker action.",
                 f"Dashboard: {dashboard}",
@@ -164,7 +167,8 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
                 f"Qadam: {message_class.replace('_', ' ')}",
                 _display_ref(context.get("instrument"), "paper instrument"),
                 f"Why it matters: {_display_ref(context.get('catalyst'), 'backend state reached a paper-order state')}",
-                "Evidence: backend state allows this wording.",
+                f"Evidence: {_display_ref(context.get('evidence_summary'), 'backend state allows this wording')}",
+                f"Current impact: {_display_ref(context.get('current_impact'), 'members can see the paper lifecycle state without Telegram authority')}",
                 "Block/risk: paper mode only; live capital remains blocked.",
                 f"Status: {message_class}.",
                 f"Dashboard: {dashboard}",
@@ -178,6 +182,7 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
                 _display_ref(context.get("theme"), "current research focus"),
                 f"Why it matters: {_display_ref(context.get('why_it_matters'), 'focus updated from structured status')}",
                 f"Evidence: {_display_ref(context.get('evidence'), 'evidence packet count available in dashboard')}",
+                f"Current impact: {_display_ref(context.get('current_impact'), 'research context changed but no trade signal is created')}",
                 f"Block/risk: {_display_ref(context.get('block'), 'hypothesis remains non-executable')}",
                 "Status: research update, not a trade signal.",
                 f"Dashboard: {dashboard}",
@@ -191,6 +196,7 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
                 _display_ref(context.get("subject"), "system status"),
                 f"Why it matters: {_display_ref(context.get('why_it_matters'), 'member attention may be needed')}",
                 f"Evidence: {_display_ref(context.get('evidence'), 'structured health status changed')}",
+                f"Current impact: {_display_ref(context.get('current_impact'), 'Qadam fails closed for affected workflow until recovery')}",
                 f"Block/risk: {_display_ref(context.get('block'), 'fail closed until recovered')}",
                 "Status: system warning only. No trade command is available.",
                 f"Dashboard: {dashboard}",
@@ -198,13 +204,16 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
         )
     else:
         title = _display_ref(context.get("title"), message_class.replace("_", " ").title())
+        why_it_matters = context.get("why_it_matters") or context.get("catalyst")
+        evidence = context.get("evidence") or context.get("evidence_summary")
         body = "\n".join(
             [
                 f"Qadam: {message_class.replace('_', ' ')}",
                 _display_ref(context.get("subject"), "paper lifecycle update"),
-                "Why it matters: backend state changed.",
-                "Evidence: structured runtime state.",
-                "Block/risk: no live-capital authority from Telegram.",
+                f"Why it matters: {_display_ref(why_it_matters, 'paper lifecycle evidence changed in the runtime ledger')}",
+                f"Evidence: {_display_ref(evidence, 'runtime ledger records this lifecycle state')}",
+                f"Current impact: {_display_ref(context.get('current_impact'), 'members can review the lifecycle state but cannot act from Telegram')}",
+                f"Block/risk: {_display_ref(context.get('block'), 'no live-capital authority from Telegram')}",
                 "Status: notification only.",
                 f"Dashboard: {dashboard}",
             ]
@@ -212,6 +221,7 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
 
     _assert_safe_message(title)
     _assert_safe_message(body)
+    assert_specific_telegram_message(title, body)
     return title, body
 
 

@@ -22,6 +22,7 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.telegram_comms import FORBIDDEN_TELEGRAM_TEXT
+from orchestrator.telegram_message_quality import telegram_message_specificity
 
 
 TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION = 1
@@ -124,6 +125,113 @@ def _clean_list(values: Any, fallback: list[str], *, limit: int = 160, count: in
     return cleaned or fallback[:count]
 
 
+def _status_paths(status_lines: list[str]) -> list[str]:
+    paths: list[str] = []
+    for line in status_lines:
+        text = line[2:].strip() if len(line) > 2 else line.strip()
+        if " -> " in text:
+            text = text.rsplit(" -> ", 1)[-1].strip()
+        if text:
+            paths.append(text)
+    return paths
+
+
+def _git_file_list(repo: Path, *args: str) -> list[str]:
+    return [
+        line.strip()
+        for line in _git_output(repo, *args).splitlines()
+        if line.strip()
+    ]
+
+
+def _change_area_for_path(path: str) -> str:
+    if path.startswith("orchestrator/telegram") or path.startswith("scripts/send_telegram"):
+        return "Telegram communication runtime"
+    if path.startswith("scripts/check_telegram") or "telegram" in path and path.startswith("scripts/"):
+        return "Telegram regression checks"
+    if path.startswith("orchestrator/paperops") or path.startswith("orchestrator/paper_"):
+        return "PaperOps trading control plane"
+    if path.startswith("orchestrator/"):
+        return "Python orchestration logic"
+    if path.startswith("scripts/"):
+        return "operator scripts and readiness checks"
+    if path in {"dashboard.js", "landing-page-repo/dashboard.js"}:
+        return "dashboard Communications experience"
+    if path.startswith("scripts/") and "deploy" in path:
+        return "dashboard deployment automation"
+    if path.startswith("landing-page-repo/scripts/"):
+        return "dashboard deployment automation"
+    if path.startswith("status/") or path.startswith("landing-page-repo/status/"):
+        return "public cockpit status snapshot"
+    if path.startswith("landing-page-repo/"):
+        return "dashboard web app"
+    if path.startswith("docs/"):
+        return "operator documentation"
+    if path.startswith("data/runtime/"):
+        return "runtime evidence artifact"
+    if path.startswith(".") or "env" in path:
+        return "configuration surface"
+    return "project source"
+
+
+def _change_areas(paths: list[str]) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {}
+    for path in paths:
+        area = _change_area_for_path(path)
+        counts[area] = counts.get(area, 0) + 1
+    return [
+        {"area": area, "file_count": counts[area]}
+        for area in sorted(counts)
+    ]
+
+
+def _area_lines(repo_state: dict[str, Any]) -> list[str]:
+    repo = _clean_text(repo_state.get("repo"), "repo", limit=40)
+    lines = []
+    for item in repo_state.get("change_areas", []):
+        if not isinstance(item, dict):
+            continue
+        area = _clean_text(item.get("area"), "source", limit=80)
+        count = _int(item.get("file_count"))
+        unit = "file" if count == 1 else "files"
+        lines.append(f"{repo}: {area} ({count} {unit})")
+    return lines
+
+
+def _derived_details(root_repo: dict[str, Any], dashboard_repo: dict[str, Any]) -> list[str]:
+    details = _area_lines(root_repo) + _area_lines(dashboard_repo)
+    if root_repo.get("last_commit_subject"):
+        details.append(f"Core latest commit: {_clean_text(root_repo.get('last_commit_subject'), limit=120)}")
+    if dashboard_repo.get("last_commit_subject"):
+        details.append(
+            f"Dashboard latest commit: {_clean_text(dashboard_repo.get('last_commit_subject'), limit=120)}"
+        )
+    return details[:5]
+
+
+def _derived_benefits(root_repo: dict[str, Any], dashboard_repo: dict[str, Any]) -> list[str]:
+    areas = {
+        str(item.get("area") or "")
+        for repo_state in (root_repo, dashboard_repo)
+        for item in repo_state.get("change_areas", [])
+        if isinstance(item, dict)
+    }
+    benefits: list[str] = []
+    if "Telegram communication runtime" in areas:
+        benefits.append("Telegram updates now carry event-specific context instead of repeating a fixed template.")
+    if "Telegram regression checks" in areas:
+        benefits.append("Low-information Telegram notices are caught by checks before they reach the team.")
+    if "dashboard Communications experience" in areas:
+        benefits.append("The dashboard can show the communication state and why the latest update matters.")
+    if "dashboard deployment automation" in areas:
+        benefits.append("Production deploys can carry richer context automatically after aliases are updated.")
+    if "PaperOps trading control plane" in areas:
+        benefits.append("Paper-trading status messages can explain the actual lifecycle event and portfolio impact.")
+    if not benefits:
+        benefits.append("Fund Managers get a human-readable explanation of the update without checking local logs.")
+    return benefits[:5]
+
+
 def telegram_codebase_upgrade_paths(
     settings: Settings | None = None,
 ) -> tuple[Path, Path, Path]:
@@ -223,11 +331,19 @@ def _git_repo_state(repo: Path, label: str) -> dict[str, Any]:
     head = _git_output(repo, "rev-parse", "HEAD") or "unknown"
     short_head = _git_output(repo, "rev-parse", "--short=12", "HEAD") or _short(head)
     branch = _git_output(repo, "rev-parse", "--abbrev-ref", "HEAD") or "unknown"
+    last_commit_subject = _clean_text(
+        _git_output(repo, "log", "-1", "--pretty=%s"),
+        "latest commit unavailable",
+        limit=140,
+    )
     status_lines = [
         line
         for line in _git_output(repo, "status", "--porcelain=v1").splitlines()
         if line.strip()
     ]
+    status_paths = _status_paths(status_lines)
+    last_commit_paths = _git_file_list(repo, "show", "--name-only", "--pretty=format:", "--no-renames", "HEAD")
+    change_paths = status_paths or last_commit_paths
     staged = 0
     unstaged = 0
     untracked = 0
@@ -247,10 +363,14 @@ def _git_repo_state(repo: Path, label: str) -> dict[str, Any]:
         "head": head,
         "head_short": short_head,
         "branch": branch,
+        "last_commit_subject": last_commit_subject,
         "dirty": bool(status_lines),
         "status_digest": status_digest,
         "fingerprint": fingerprint,
         "changed_file_count": len(status_lines),
+        "change_areas": _change_areas(change_paths),
+        "change_area_count": len(_change_areas(change_paths)),
+        "last_commit_file_count": len(last_commit_paths),
         "staged_file_count": staged,
         "unstaged_file_count": unstaged,
         "untracked_file_count": untracked,
@@ -306,6 +426,7 @@ def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
     action = "deployed" if source.get("source") == "production_deploy" else "recorded"
     details = source.get("details", [])
     benefits = source.get("benefits", [])
+    change_lines = source.get("change_area_lines", [])
     title = "Qadam Codebase Upgrade"
     body = "\n".join(
         [
@@ -314,10 +435,13 @@ def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
             "What changed:",
             f"- {_clean_text(source.get('summary'), 'Qadam codebase and dashboard were upgraded.')}",
             *[f"- {detail}" for detail in details],
+            "Detected update areas:",
+            *[f"- {line}" for line in change_lines],
             "Why it matters:",
             *[f"- {benefit}" for benefit in benefits],
             "What to check:",
             "- Dashboard Communications now shows the latest codebase-upgrade send state.",
+            "- Telegram quality checks now reject safe-but-generic upgrade messages.",
             "- Future production deploys notify the group after qadam.trade and www.qadam.trade are aliased.",
             f"Deployment: {deployment_text}",
             f"Aliases: {aliases}",
@@ -364,12 +488,23 @@ def build_telegram_codebase_upgrade_notification(
     settings = settings or Settings.from_env()
     generated_at = _now()
     root = _repo_root()
+    root_repo = _git_repo_state(root, "qadam-core")
+    dashboard_repo = _git_repo_state(root / "landing-page-repo", "qadam-dashboard")
+    derived_details = _derived_details(root_repo, dashboard_repo)
+    derived_benefits = _derived_benefits(root_repo, dashboard_repo)
+    change_area_lines = _area_lines(root_repo) + _area_lines(dashboard_repo)
+    if not change_area_lines:
+        change_area_lines = [
+            "qadam-core: latest commit fingerprint recorded (1 commit)",
+            "qadam-dashboard: latest dashboard fingerprint recorded (1 commit)",
+        ]
     source_context = {
         "source": _clean_text(source, "manual", limit=80),
         "summary": _clean_text(summary, "Qadam codebase and dashboard were upgraded."),
         "details": _clean_list(
             details,
-            [
+            derived_details
+            or [
                 "Qadam records the core and dashboard fingerprints behind each upgrade.",
                 "The deployment hook posts to the Fund Manager group after production aliases update.",
                 "The dashboard Communications panel mirrors whether the upgrade update was sent.",
@@ -377,19 +512,22 @@ def build_telegram_codebase_upgrade_notification(
         ),
         "benefits": _clean_list(
             benefits,
-            [
+            derived_benefits
+            or [
                 "The group can understand the point of the update without checking Git, Vercel, or logs.",
                 "Missed Telegram sends become visible in runtime status instead of disappearing silently.",
                 "Each message says whether trading authority changed; for this rail it remains notification-only.",
             ],
         ),
-        "root_repo": _git_repo_state(root, "qadam-core"),
-        "dashboard_repo": _git_repo_state(root / "landing-page-repo", "qadam-dashboard"),
+        "change_area_lines": _clean_list(change_area_lines, change_area_lines, limit=140, count=6),
+        "root_repo": root_repo,
+        "dashboard_repo": dashboard_repo,
         "deployment": _deployment_context(settings, deployment_url=deployment_url, aliases=aliases),
     }
     title, body = _render_upgrade_message(source_context)
     text = f"{title}\n\n{body}"
     message_safe = _safe_text(title, body)
+    message_specificity = telegram_message_specificity(title, body)
     token = secret_value("TELEGRAM_BOT_TOKEN", settings)
     chat_id = secret_value("TELEGRAM_GROUP_CHAT_ID", settings)
     bot_configured = secret_status("TELEGRAM_BOT_TOKEN", settings).configured
@@ -402,6 +540,8 @@ def build_telegram_codebase_upgrade_notification(
     blockers: list[str] = []
     if not message_safe:
         blockers.append("unsafe_message_text")
+    if message_specificity["status"] != "specific":
+        blockers.append("telegram_message_not_specific")
     if not enabled:
         blockers.append("codebase_upgrade_notifications_disabled")
     if dry_run:
@@ -413,10 +553,11 @@ def build_telegram_codebase_upgrade_notification(
     if already_sent and not force_send:
         blockers.append("telegram_codebase_upgrade_already_sent")
 
-    status = "dry_run_ready" if message_safe else "suppressed_not_safe"
-    if message_safe and not enabled:
+    message_sendable = message_safe and message_specificity["status"] == "specific"
+    status = "dry_run_ready" if message_sendable else "suppressed_not_safe"
+    if message_sendable and not enabled:
         status = "blocked_pending_enablement"
-    elif message_safe and enabled and not dry_run:
+    elif message_sendable and enabled and not dry_run:
         status = "ready_to_send"
     if already_sent and not force_send:
         status = "already_sent"
@@ -427,7 +568,7 @@ def build_telegram_codebase_upgrade_notification(
     failure_category: str | None = None
     if (
         send_requested
-        and message_safe
+        and message_sendable
         and enabled
         and not dry_run
         and bot_configured
@@ -490,9 +631,14 @@ def build_telegram_codebase_upgrade_notification(
         "summary": source_context["summary"],
         "details": source_context["details"],
         "benefits": source_context["benefits"],
+        "change_area_lines": source_context["change_area_lines"],
         "root_commit": source_context["root_repo"]["head"],
         "root_commit_short": source_context["root_repo"]["head_short"],
         "root_branch": source_context["root_repo"]["branch"],
+        "root_last_commit_subject": source_context["root_repo"]["last_commit_subject"],
+        "root_change_areas": source_context["root_repo"]["change_areas"],
+        "root_change_area_count": source_context["root_repo"]["change_area_count"],
+        "root_last_commit_file_count": source_context["root_repo"]["last_commit_file_count"],
         "root_dirty": source_context["root_repo"]["dirty"],
         "root_changed_file_count": source_context["root_repo"]["changed_file_count"],
         "root_staged_file_count": source_context["root_repo"]["staged_file_count"],
@@ -501,6 +647,10 @@ def build_telegram_codebase_upgrade_notification(
         "dashboard_commit": source_context["dashboard_repo"]["head"],
         "dashboard_commit_short": source_context["dashboard_repo"]["head_short"],
         "dashboard_branch": source_context["dashboard_repo"]["branch"],
+        "dashboard_last_commit_subject": source_context["dashboard_repo"]["last_commit_subject"],
+        "dashboard_change_areas": source_context["dashboard_repo"]["change_areas"],
+        "dashboard_change_area_count": source_context["dashboard_repo"]["change_area_count"],
+        "dashboard_last_commit_file_count": source_context["dashboard_repo"]["last_commit_file_count"],
         "dashboard_dirty": source_context["dashboard_repo"]["dirty"],
         "dashboard_changed_file_count": source_context["dashboard_repo"]["changed_file_count"],
         "dashboard_staged_file_count": source_context["dashboard_repo"]["staged_file_count"],
@@ -519,6 +669,10 @@ def build_telegram_codebase_upgrade_notification(
         "group_chat_configured": group_chat_configured,
         "message_preview": {"title": title, "body": body, "dashboard_link": "qadam.trade/dashboard/"},
         "message_preview_redacted": message_safe,
+        "message_specificity": message_specificity,
+        "message_specificity_status": message_specificity["status"],
+        "message_specificity_score": message_specificity["score"],
+        "message_fingerprint": message_specificity["fingerprint"],
         "live_send_attempted": live_send_attempted,
         "live_send_succeeded": live_send_succeeded,
         "telegram_message_id_present": telegram_message_id is not None,
@@ -562,7 +716,12 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
         "summary",
         "details",
         "benefits",
+        "change_area_lines",
         "target",
+        "message_specificity",
+        "message_specificity_score",
+        "message_specificity_status",
+        "message_fingerprint",
     }
     missing = sorted(required - set(artifact))
     if missing:
@@ -602,6 +761,7 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
             "Qadam: codebase upgrade",
             "Upgrade:",
             "What changed:",
+            "Detected update areas:",
             "Why it matters:",
             "What to check:",
             "Deployment:",
@@ -612,6 +772,22 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
                 errors.append("telegram_codebase_upgrade_message_missing:" + phrase)
         if not _safe_text(title, body):
             errors.append("telegram_codebase_upgrade_forbidden_text")
+    specificity = artifact.get("message_specificity", {})
+    if not isinstance(specificity, dict):
+        errors.append("telegram_codebase_upgrade_specificity_missing")
+    else:
+        if specificity.get("status") != "specific":
+            errors.append("telegram_codebase_upgrade_message_not_specific")
+        if _int(specificity.get("score")) < _int(specificity.get("minimum_score", 70)):
+            errors.append("telegram_codebase_upgrade_specificity_score_low")
+    if artifact.get("message_specificity_status") != "specific":
+        errors.append("telegram_codebase_upgrade_specificity_status_not_specific")
+    if _int(artifact.get("message_specificity_score")) < 70:
+        errors.append("telegram_codebase_upgrade_specificity_score_low")
+    if not str(artifact.get("message_fingerprint") or "").strip():
+        errors.append("telegram_codebase_upgrade_message_fingerprint_missing")
+    if not isinstance(artifact.get("change_area_lines"), list) or not artifact.get("change_area_lines"):
+        errors.append("telegram_codebase_upgrade_change_areas_missing")
     if artifact.get("message_preview_redacted") is not True:
         errors.append("telegram_codebase_upgrade_preview_not_redacted")
     if artifact.get("live_send_attempted") is True:
@@ -640,6 +816,9 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
             "summary": artifact.get("summary"),
             "details": artifact.get("details"),
             "benefits": artifact.get("benefits"),
+            "change_area_lines": artifact.get("change_area_lines"),
+            "root_change_areas": artifact.get("root_change_areas"),
+            "dashboard_change_areas": artifact.get("dashboard_change_areas"),
         },
         sort_keys=True,
     )
@@ -742,12 +921,20 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
             "summary": None,
             "details": [],
             "benefits": [],
+            "change_area_lines": [],
             "root_commit_short": None,
+            "root_last_commit_subject": None,
+            "root_change_areas": [],
             "root_dirty": False,
             "root_changed_file_count": 0,
             "dashboard_commit_short": None,
+            "dashboard_last_commit_subject": None,
+            "dashboard_change_areas": [],
             "dashboard_dirty": False,
             "dashboard_changed_file_count": 0,
+            "message_specificity_status": "not_run",
+            "message_specificity_score": 0,
+            "message_fingerprint": None,
             "deployment_url": None,
             "aliases": ["qadam.trade", "www.qadam.trade"],
             "already_sent": False,
@@ -765,6 +952,23 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
             "live_capital_enabled": False,
             "boundary": TELEGRAM_CODEBASE_UPGRADE_BOUNDARY,
         }
+    preview = artifact.get("message_preview", {}) if isinstance(artifact.get("message_preview"), dict) else {}
+    specificity = artifact.get("message_specificity", {})
+    if not isinstance(specificity, dict) or not specificity:
+        specificity = telegram_message_specificity(
+            str(preview.get("title") or ""),
+            str(preview.get("body") or ""),
+        )
+    root_change_areas = artifact.get("root_change_areas", [])
+    dashboard_change_areas = artifact.get("dashboard_change_areas", [])
+    change_area_lines = [str(item) for item in artifact.get("change_area_lines", []) if str(item).strip()]
+    if not change_area_lines:
+        root = _repo_root()
+        root_repo = _git_repo_state(root, "qadam-core")
+        dashboard_repo = _git_repo_state(root / "landing-page-repo", "qadam-dashboard")
+        root_change_areas = root_change_areas or root_repo.get("change_areas", [])
+        dashboard_change_areas = dashboard_change_areas or dashboard_repo.get("change_areas", [])
+        change_area_lines = _area_lines(root_repo) + _area_lines(dashboard_repo)
     return {
         "schema_version": TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION,
         "status": artifact.get("status", "unknown"),
@@ -775,12 +979,20 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
         "summary": artifact.get("summary"),
         "details": [str(item) for item in artifact.get("details", [])],
         "benefits": [str(item) for item in artifact.get("benefits", [])],
+        "change_area_lines": change_area_lines,
         "root_commit_short": artifact.get("root_commit_short"),
+        "root_last_commit_subject": artifact.get("root_last_commit_subject"),
+        "root_change_areas": root_change_areas,
         "root_dirty": artifact.get("root_dirty") is True,
         "root_changed_file_count": _int(artifact.get("root_changed_file_count")),
         "dashboard_commit_short": artifact.get("dashboard_commit_short"),
+        "dashboard_last_commit_subject": artifact.get("dashboard_last_commit_subject"),
+        "dashboard_change_areas": dashboard_change_areas,
         "dashboard_dirty": artifact.get("dashboard_dirty") is True,
         "dashboard_changed_file_count": _int(artifact.get("dashboard_changed_file_count")),
+        "message_specificity_status": artifact.get("message_specificity_status") or specificity.get("status"),
+        "message_specificity_score": _int(artifact.get("message_specificity_score") or specificity.get("score")),
+        "message_fingerprint": artifact.get("message_fingerprint") or specificity.get("fingerprint"),
         "deployment_url": artifact.get("deployment_url"),
         "aliases": [str(item) for item in artifact.get("aliases", [])],
         "already_sent": artifact.get("already_sent") is True,

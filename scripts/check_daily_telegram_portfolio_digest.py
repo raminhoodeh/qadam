@@ -97,6 +97,18 @@ def main() -> int:
     )
     print(f"telegram_daily_portfolio_digest_daily_trade_count={written['daily_trade_count']}")
     print(
+        "telegram_daily_portfolio_digest_paperops_idle_reason="
+        f"{written['paperops_idle_reason']}"
+    )
+    print(
+        "telegram_daily_portfolio_digest_specificity_status="
+        f"{written['message_specificity_status']}"
+    )
+    print(
+        "telegram_daily_portfolio_digest_specificity_score="
+        f"{written['message_specificity_score']}"
+    )
+    print(
         "telegram_daily_portfolio_digest_forced_preview_status="
         f"{forced_preview['status']}"
     )
@@ -143,8 +155,21 @@ def main() -> int:
         errors.extend(forced_validation_errors)
     if forced_preview["due_for_delivery"] is not True:
         errors.append("telegram_daily_portfolio_digest_force_not_due")
+    if written.get("message_specificity_status") != "specific":
+        errors.append("telegram_daily_portfolio_digest_not_specific")
+    if int(written.get("message_specificity_score", 0) or 0) < 70:
+        errors.append("telegram_daily_portfolio_digest_specificity_score_low")
+    if not str(written.get("paperops_idle_reason") or "").strip():
+        errors.append("telegram_daily_portfolio_digest_idle_reason_missing")
     preview_body = forced_preview.get("message_preview", {}).get("body", "")
-    for phrase in ("Portfolio balance:", "Performance:", "Trades made today:"):
+    for phrase in (
+        "Portfolio balance:",
+        "Performance:",
+        "Trades made today:",
+        "Why no/next trade:",
+        "PaperOps context:",
+        "Current impact:",
+    ):
         if phrase not in preview_body:
             errors.append(f"telegram_daily_portfolio_digest_preview_missing:{phrase}")
     expected_probe_errors = (

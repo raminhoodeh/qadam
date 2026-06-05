@@ -133,6 +133,15 @@ def main() -> int:
     print(f"telegram_codebase_upgrade_blockers={written['blockers']}")
     print(f"telegram_codebase_upgrade_detail_count={len(written['details'])}")
     print(f"telegram_codebase_upgrade_benefit_count={len(written['benefits'])}")
+    print(f"telegram_codebase_upgrade_change_area_count={len(written['change_area_lines'])}")
+    print(
+        "telegram_codebase_upgrade_specificity_status="
+        f"{written['message_specificity_status']}"
+    )
+    print(
+        "telegram_codebase_upgrade_specificity_score="
+        f"{written['message_specificity_score']}"
+    )
     print(f"telegram_codebase_upgrade_validation_errors={validation_errors}")
 
     if validation_errors:

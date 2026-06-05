@@ -134,6 +134,15 @@ def main() -> int:
     print(f"telegram_codebase_upgrade_live_send_succeeded={written['live_send_succeeded']}")
     print(f"telegram_codebase_upgrade_detail_count={len(written['details'])}")
     print(f"telegram_codebase_upgrade_benefit_count={len(written['benefits'])}")
+    print(f"telegram_codebase_upgrade_change_area_count={len(written['change_area_lines'])}")
+    print(
+        "telegram_codebase_upgrade_specificity_status="
+        f"{written['message_specificity_status']}"
+    )
+    print(
+        "telegram_codebase_upgrade_specificity_score="
+        f"{written['message_specificity_score']}"
+    )
     print(f"telegram_codebase_upgrade_event_log_events={replay['total_events']}")
     print(f"telegram_codebase_upgrade_public_status={public_status['status']}")
     print(f"telegram_codebase_upgrade_public_enabled={public_status['enabled']}")
@@ -166,6 +175,12 @@ def main() -> int:
         errors.append("telegram_codebase_upgrade_details_missing")
     if len(written.get("benefits", [])) < 2:
         errors.append("telegram_codebase_upgrade_benefits_missing")
+    if len(written.get("change_area_lines", [])) < 1:
+        errors.append("telegram_codebase_upgrade_change_areas_missing")
+    if written.get("message_specificity_status") != "specific":
+        errors.append("telegram_codebase_upgrade_not_specific")
+    if int(written.get("message_specificity_score", 0) or 0) < 70:
+        errors.append("telegram_codebase_upgrade_specificity_score_low")
     if not written["root_commit_short"] or not written["dashboard_commit_short"]:
         errors.append("telegram_codebase_upgrade_git_fingerprint_missing")
     if written["deployment_url"] != "https://qadam-contract-check.vercel.app":
@@ -201,6 +216,7 @@ def main() -> int:
         "Qadam: codebase upgrade",
         "Upgrade:",
         "What changed:",
+        "Detected update areas:",
         "Why it matters:",
         "What to check:",
         "Deployment:",

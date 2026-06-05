@@ -22,6 +22,7 @@ from orchestrator.event_log import EventLog
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.telegram_comms import FORBIDDEN_TELEGRAM_TEXT
+from orchestrator.telegram_message_quality import telegram_message_specificity
 
 
 TELEGRAM_DAILY_PORTFOLIO_DIGEST_SCHEMA_VERSION = 1
@@ -357,6 +358,54 @@ def _daily_trade_events(settings: Settings, local_date: str, tz: ZoneInfo) -> li
     return sorted(events, key=lambda event: str(event.get("event_at") or ""))
 
 
+def _paperops_daily_context(settings: Settings) -> dict[str, Any]:
+    summary = _read_json(_runtime_dir(settings) / "paperops_autonomous_pass_summary.json")
+    active = _read_json(_runtime_dir(settings) / "paperops_active_paper_trading_automation.json")
+    states = summary.get("states", {}) if isinstance(summary.get("states"), dict) else {}
+    paper_growth = (
+        summary.get("paper_growth_trial", {})
+        if isinstance(summary.get("paper_growth_trial"), dict)
+        else {}
+    )
+    paper_runtime = (
+        summary.get("paper_runtime", {})
+        if isinstance(summary.get("paper_runtime"), dict)
+        else {}
+    )
+    qualified_count = _int(
+        states.get("qualified_setup_count")
+        or paper_growth.get("qualified_setup_count")
+        or active.get("qualified_setup_count")
+    )
+    submitted_count = _int(
+        states.get("submitted_paper_order_count")
+        or paper_runtime.get("submitted_paper_order_count")
+        or active.get("submitted_paper_order_count")
+    )
+    idle_reason = str(
+        states.get("idle_reason")
+        or summary.get("idle_reason")
+        or active.get("idle_reason")
+        or ""
+    ).strip()
+    if not idle_reason:
+        if qualified_count <= 0:
+            idle_reason = "no qualified setup cleared the paper sizing and evidence gates"
+        elif submitted_count <= 0:
+            idle_reason = "qualified setup review did not reach the guarded submit path"
+        else:
+            idle_reason = "submitted paper-order state is already recorded"
+    return {
+        "autonomous_pass_status": summary.get("status", "not_run"),
+        "active_automation_status": active.get("status", "not_run"),
+        "run_day": summary.get("run_day") or states.get("run_day"),
+        "actual_calendar_run": summary.get("actual_calendar_run") is True,
+        "qualified_setup_count": qualified_count,
+        "submitted_paper_order_count": submitted_count,
+        "idle_reason": idle_reason,
+    }
+
+
 def _delivery_key(local_date: str) -> str:
     raw = f"qadam:telegram_daily_portfolio_digest:{local_date}:group"
     return sha256(raw.encode("utf-8")).hexdigest()
@@ -368,6 +417,7 @@ def _render_digest_message(
     timezone_name: str,
     portfolio: dict[str, Any],
     daily_trades: list[dict[str, Any]],
+    paperops_context: dict[str, Any],
 ) -> tuple[str, str]:
     trade_lines = [str(trade.get("summary") or "").strip() for trade in daily_trades[:8]]
     if not trade_lines:
@@ -390,10 +440,23 @@ def _render_digest_message(
                 f"{_format_money(portfolio['trial_allocation_gbp'])} paper allocation"
             ),
             f"Trades made today: {trade_summary}",
+            f"Why no/next trade: {paperops_context['idle_reason']}",
+            (
+                "PaperOps context: "
+                f"autonomous_pass={paperops_context['autonomous_pass_status']}; "
+                f"qualified_setups={paperops_context['qualified_setup_count']}; "
+                f"submitted_orders={paperops_context['submitted_paper_order_count']}; "
+                f"run_day={paperops_context.get('run_day') or 'unknown'}"
+            ),
             (
                 "Open positions: "
                 f"{portfolio['open_position_count']} | Orders: {portfolio['order_count']} | "
                 f"Closed trades: {portfolio['closed_trade_count']}"
+            ),
+            (
+                "Current impact: "
+                f"paper equity is {_format_pct(portfolio['performance_pct'])} versus the "
+                f"{_format_money(portfolio['trial_allocation_gbp'])} allocation."
             ),
             "Evidence: mirrored paper account, paper orders, open positions, and closed trade ledger.",
             "Mode: paper only; live capital remains blocked.",
@@ -423,13 +486,16 @@ def build_daily_portfolio_digest(
     delivery_key = _delivery_key(local_date)
     portfolio = _portfolio_snapshot(settings)
     daily_trades = _daily_trade_events(settings, local_date, tz)
+    paperops_context = _paperops_daily_context(settings)
     title, body = _render_digest_message(
         local_date=local_date,
         timezone_name=str(local["timezone"]),
         portfolio=portfolio,
         daily_trades=daily_trades,
+        paperops_context=paperops_context,
     )
     message_preview_redacted = _safe_text(title, body)
+    message_specificity = telegram_message_specificity(title, body)
     bot_configured = secret_status("TELEGRAM_BOT_TOKEN", settings).configured
     group_chat_configured = secret_status("TELEGRAM_GROUP_CHAT_ID", settings).configured
     token = secret_value("TELEGRAM_BOT_TOKEN", settings)
@@ -442,11 +508,14 @@ def build_daily_portfolio_digest(
         settings.mode == "paper"
         and settings.live_capital_enabled is False
         and message_preview_redacted
+        and message_specificity["status"] == "specific"
     )
 
     blockers: list[str] = []
     if not eligible:
         blockers.append("daily_digest_not_eligible")
+    if message_specificity["status"] != "specific":
+        blockers.append("telegram_message_not_specific")
     if not due_for_delivery:
         blockers.append("daily_digest_not_due_until_end_of_day")
     if not enabled:
@@ -550,6 +619,10 @@ def build_daily_portfolio_digest(
         "message_class": "daily_portfolio_digest",
         "message_preview": {"title": title, "body": body, "dashboard_link": "qadam.trade/dashboard/"},
         "message_preview_redacted": message_preview_redacted,
+        "message_specificity": message_specificity,
+        "message_specificity_status": message_specificity["status"],
+        "message_specificity_score": message_specificity["score"],
+        "message_fingerprint": message_specificity["fingerprint"],
         "portfolio_snapshot": portfolio,
         "portfolio_balance_gbp": portfolio["portfolio_value_gbp"],
         "portfolio_total_pnl_gbp": portfolio["total_pnl_gbp"],
@@ -558,6 +631,10 @@ def build_daily_portfolio_digest(
         "daily_trade_count": len(daily_trades),
         "daily_trade_summaries": [str(trade.get("summary") or "") for trade in daily_trades],
         "daily_trades": daily_trades,
+        "paperops_context": paperops_context,
+        "paperops_idle_reason": paperops_context["idle_reason"],
+        "paperops_qualified_setup_count": paperops_context["qualified_setup_count"],
+        "paperops_submitted_paper_order_count": paperops_context["submitted_paper_order_count"],
         "live_send_attempted": live_send_attempted,
         "live_send_succeeded": live_send_succeeded,
         "telegram_message_id_present": telegram_message_id is not None,
@@ -628,7 +705,13 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
         "message_class",
         "message_preview",
         "message_preview_redacted",
+        "message_specificity",
+        "message_specificity_score",
+        "message_specificity_status",
+        "message_fingerprint",
         "mode",
+        "paperops_context",
+        "paperops_idle_reason",
         "portfolio_balance_gbp",
         "portfolio_performance_pct",
         "portfolio_snapshot",
@@ -678,6 +761,9 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
             "Portfolio balance:",
             "Performance:",
             "Trades made today:",
+            "Why no/next trade:",
+            "PaperOps context:",
+            "Current impact:",
             "Dashboard: qadam.trade/dashboard/",
             "Mode: paper only; live capital remains blocked.",
         ):
@@ -685,6 +771,24 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
                 errors.append("telegram_daily_portfolio_digest_message_missing:" + phrase)
         if not _safe_text(title, body):
             errors.append("telegram_daily_portfolio_digest_forbidden_text")
+    specificity = artifact.get("message_specificity", {})
+    if not isinstance(specificity, dict):
+        errors.append("telegram_daily_portfolio_digest_specificity_missing")
+    else:
+        if specificity.get("status") != "specific":
+            errors.append("telegram_daily_portfolio_digest_message_not_specific")
+        if _int(specificity.get("score")) < _int(specificity.get("minimum_score", 70)):
+            errors.append("telegram_daily_portfolio_digest_specificity_score_low")
+    if artifact.get("message_specificity_status") != "specific":
+        errors.append("telegram_daily_portfolio_digest_specificity_status_not_specific")
+    if _int(artifact.get("message_specificity_score")) < 70:
+        errors.append("telegram_daily_portfolio_digest_specificity_score_low")
+    if not str(artifact.get("message_fingerprint") or "").strip():
+        errors.append("telegram_daily_portfolio_digest_message_fingerprint_missing")
+    if not isinstance(artifact.get("paperops_context"), dict):
+        errors.append("telegram_daily_portfolio_digest_paperops_context_missing")
+    if not str(artifact.get("paperops_idle_reason") or "").strip():
+        errors.append("telegram_daily_portfolio_digest_idle_reason_missing")
     if artifact.get("message_preview_redacted") is not True:
         errors.append("telegram_daily_portfolio_digest_preview_not_redacted")
     portfolio = artifact.get("portfolio_snapshot", {})
@@ -834,6 +938,12 @@ def telegram_daily_portfolio_digest_public_status(settings: Settings | None = No
             "portfolio_performance_pct": None,
             "daily_trade_count": 0,
             "daily_trade_summaries": [],
+            "paperops_idle_reason": None,
+            "paperops_qualified_setup_count": 0,
+            "paperops_submitted_paper_order_count": 0,
+            "message_specificity_status": "not_run",
+            "message_specificity_score": 0,
+            "message_fingerprint": None,
             "live_send_attempted": False,
             "live_send_succeeded": False,
             "telegram_message_id_present": False,
@@ -864,6 +974,14 @@ def telegram_daily_portfolio_digest_public_status(settings: Settings | None = No
         "daily_trade_summaries": [
             str(item) for item in artifact.get("daily_trade_summaries", []) if str(item).strip()
         ][:8],
+        "paperops_idle_reason": artifact.get("paperops_idle_reason"),
+        "paperops_qualified_setup_count": _int(artifact.get("paperops_qualified_setup_count")),
+        "paperops_submitted_paper_order_count": _int(
+            artifact.get("paperops_submitted_paper_order_count")
+        ),
+        "message_specificity_status": artifact.get("message_specificity_status"),
+        "message_specificity_score": _int(artifact.get("message_specificity_score")),
+        "message_fingerprint": artifact.get("message_fingerprint"),
         "live_send_attempted": artifact.get("live_send_attempted") is True,
         "live_send_succeeded": artifact.get("live_send_succeeded") is True,
         "telegram_message_id_present": artifact.get("telegram_message_id_present") is True,

@@ -89,7 +89,13 @@ const TELEGRAM_DAILY_DIGEST_FIELDS = [
     "live_send_attempted",
     "live_send_succeeded",
     "local_date",
+    "message_fingerprint",
+    "message_specificity_score",
+    "message_specificity_status",
     "paper_order_allowed",
+    "paperops_idle_reason",
+    "paperops_qualified_setup_count",
+    "paperops_submitted_paper_order_count",
     "portfolio_balance_gbp",
     "portfolio_performance_pct",
     "portfolio_total_pnl_gbp",
@@ -109,8 +115,11 @@ const TELEGRAM_CODEBASE_UPGRADE_FIELDS = [
     "boundary",
     "benefits",
     "broker_write_allowed",
+    "change_area_lines",
     "dashboard_changed_file_count",
+    "dashboard_change_areas",
     "dashboard_commit_short",
+    "dashboard_last_commit_subject",
     "dashboard_dirty",
     "deploy_allowed",
     "details",
@@ -121,10 +130,15 @@ const TELEGRAM_CODEBASE_UPGRADE_FIELDS = [
     "live_capital_enabled",
     "live_send_attempted",
     "live_send_succeeded",
+    "message_fingerprint",
+    "message_specificity_score",
+    "message_specificity_status",
     "paper_order_allowed",
     "repository_write_allowed",
     "root_changed_file_count",
+    "root_change_areas",
     "root_commit_short",
+    "root_last_commit_subject",
     "root_dirty",
     "schema_version",
     "source",
@@ -207,6 +221,9 @@ async function main() {
     assert(telegramDailyDigest.broker_write_allowed === false, "Daily portfolio digest broker write allowed");
     assert(telegramDailyDigest.paper_order_allowed === false, "Daily portfolio digest paper order allowed");
     assert(telegramDailyDigest.live_capital_enabled === false, "Daily portfolio digest live capital enabled");
+    assert(telegramDailyDigest.message_specificity_status === "specific" || telegramDailyDigest.status === "not_run" || telegramDailyDigest.status === "degraded", "Daily portfolio digest message is not specific");
+    assert(Number(telegramDailyDigest.message_specificity_score || 0) >= 70 || telegramDailyDigest.status === "not_run" || telegramDailyDigest.status === "degraded", "Daily portfolio digest specificity score is too low");
+    assert(typeof telegramDailyDigest.paperops_idle_reason === "string" || telegramDailyDigest.paperops_idle_reason === null, "Daily portfolio digest idle reason missing");
     assert(/Daily Telegram portfolio digests/i.test(telegramDailyDigest.boundary || ""), "Daily portfolio digest boundary is weak");
     assert(telegram.codebase_upgrade_notifications_enabled === true, "Codebase upgrade notification is not enabled");
     assert(["already_sent", "blocked_pending_enablement", "dry_run_ready", "failed", "not_run", "ready_to_send", "sent", "suppressed_not_safe"].includes(telegram.codebase_upgrade_notifications_status), "Codebase upgrade notification status is invalid");
@@ -221,6 +238,9 @@ async function main() {
     assert(/codebase upgrade notifications/i.test(telegramCodebaseUpgrade.boundary || ""), "Codebase upgrade boundary is weak");
     assert(Array.isArray(telegramCodebaseUpgrade.details) && telegramCodebaseUpgrade.details.length >= 2, "Codebase upgrade details are missing");
     assert(Array.isArray(telegramCodebaseUpgrade.benefits) && telegramCodebaseUpgrade.benefits.length >= 2, "Codebase upgrade benefits are missing");
+    assert(Array.isArray(telegramCodebaseUpgrade.change_area_lines) && telegramCodebaseUpgrade.change_area_lines.length >= 1, "Codebase upgrade change areas are missing");
+    assert(telegramCodebaseUpgrade.message_specificity_status === "specific" || telegramCodebaseUpgrade.status === "not_run" || telegramCodebaseUpgrade.status === "degraded", "Codebase upgrade message is not specific");
+    assert(Number(telegramCodebaseUpgrade.message_specificity_score || 0) >= 70 || telegramCodebaseUpgrade.status === "not_run" || telegramCodebaseUpgrade.status === "degraded", "Codebase upgrade specificity score is too low");
     assert(telegramIntake.world_event_datapoint_count >= 1, "Telegram intake world-event datapoints missing");
     assert(telegramIntake.strategy_consideration_count >= 1, "Telegram intake strategy considerations missing");
     assert(telegramIntake.research_triage_packet_count >= 1, "Telegram intake research packet missing");

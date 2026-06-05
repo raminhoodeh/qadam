@@ -24,6 +24,7 @@ node scripts/check_dashboard_acceptance.js
 
 say "Checking deployment readiness gate"
 "$PYTHON_BIN" scripts/check_codebase_upgrade_telegram_notification.py
+"$PYTHON_BIN" scripts/check_telegram_message_specificity.py
 node --check scripts/check_dashboard_deployment_readiness.js
 node scripts/check_dashboard_deployment_readiness.js
 
@@ -95,7 +96,15 @@ git diff --check -- \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
   orchestrator/telegram_codebase_upgrade_notifications.py \
+  orchestrator/telegram_comms.py \
+  orchestrator/telegram_daily_portfolio_digest.py \
+  orchestrator/telegram_message_quality.py \
+  orchestrator/telegram_trade_notifications.py \
   scripts/check_codebase_upgrade_telegram_notification.py \
+  scripts/check_daily_telegram_portfolio_digest.py \
+  scripts/check_dashboard_communications.js \
+  scripts/check_telegram_message_specificity.py \
+  scripts/check_telegram_trade_notifications.py \
   scripts/send_codebase_upgrade_telegram_notification.py \
   docs/qadam-dashboard-implementation-plan.md \
   docs/qadam-dashboard-navigation-ux-plan.md \

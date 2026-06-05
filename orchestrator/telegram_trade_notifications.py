@@ -21,6 +21,7 @@ from orchestrator.event_log import EventLog
 from orchestrator.paper_account import paper_account_shadow_context
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.telegram_comms import FORBIDDEN_TELEGRAM_TEXT
+from orchestrator.telegram_message_quality import telegram_message_specificity
 
 
 TELEGRAM_TRADE_NOTIFICATIONS_SCHEMA_VERSION = 1
@@ -257,6 +258,28 @@ def _trade_details(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _trade_decision_context(record: dict[str, Any]) -> dict[str, Any]:
+    preview = record.get("request_preview", {})
+    if not isinstance(preview, dict):
+        preview = {}
+    receipt = record.get("broker_receipt", {})
+    if not isinstance(receipt, dict):
+        receipt = {}
+    symbol_source = str(record.get("alpaca_symbol_source") or preview.get("symbol_source") or "request_preview")
+    source_status = str(record.get("status") or "unknown")
+    receipt_status = str(receipt.get("broker_order_status") or "submitted")
+    return {
+        "why_submitted": (
+            f"PaperOps recorded {source_status} after the guarded paper-post path selected "
+            f"the {symbol_source} symbol route."
+        ),
+        "evidence": (
+            f"source_status={source_status}; broker_status={receipt_status}; "
+            f"idempotency_key_present={bool(record.get('idempotency_key'))}"
+        ),
+    }
+
+
 def _portfolio_snapshot(settings: Settings) -> dict[str, Any]:
     context = paper_account_shadow_context(settings=settings)
     starting_balance = _float(context.get("trial_allocation_gbp"), _float(settings.trial_balance_gbp))
@@ -287,6 +310,7 @@ def _portfolio_snapshot(settings: Settings) -> dict[str, Any]:
 def _render_trade_message(
     trade: dict[str, Any],
     portfolio: dict[str, Any],
+    decision_context: dict[str, Any],
 ) -> tuple[str, str]:
     title = f"Paper Trade: {trade['summary']}"
     body = "\n".join(
@@ -298,6 +322,8 @@ def _render_trade_message(
                 f"({trade['order_type']}, {trade['time_in_force']})"
             ),
             f"Instrument: {trade['instrument']}",
+            f"Why this trade was sent: {decision_context['why_submitted']}",
+            f"Evidence: {decision_context['evidence']}",
             f"Broker status: {trade['broker_status']}",
             f"Portfolio: {_format_money(portfolio['portfolio_value_gbp'])}",
             (
@@ -311,7 +337,12 @@ def _render_trade_message(
                 f"{portfolio['open_position_count']} | Orders: {portfolio['order_count']} | "
                 f"Closed trades: {portfolio['closed_trade_count']}"
             ),
-            "Evidence: PaperOps-2 submitted_to_alpaca_paper; broker identifiers are hashed.",
+            (
+                "Current impact: "
+                f"paper equity is {_format_pct(portfolio['performance_pct'])} versus the "
+                f"{_format_money(portfolio['trial_allocation_gbp'])} allocation."
+            ),
+            "Safety: broker identifiers are hashed and Telegram cannot approve or modify orders.",
             "Mode: paper only; live capital remains blocked.",
             "Dashboard: qadam.trade/dashboard/",
         ]
@@ -335,15 +366,18 @@ def _notification_record(
 ) -> dict[str, Any]:
     trade = _trade_details(record)
     portfolio = _portfolio_snapshot(settings)
-    title, body = _render_trade_message(trade, portfolio)
+    decision_context = _trade_decision_context(record)
+    title, body = _render_trade_message(trade, portfolio, decision_context)
     text = f"{title}\n\n{body}"
     delivery_key = _record_key(record)
+    message_specificity = telegram_message_specificity(title, body)
     eligible = (
         settings.mode == "paper"
         and settings.live_capital_enabled is False
         and source_status == "submitted_to_alpaca_paper"
         and record.get("status") == "submitted_to_alpaca_paper"
         and _safe_text(title, body)
+        and message_specificity["status"] == "specific"
     )
     token = secret_value("TELEGRAM_BOT_TOKEN", settings)
     chat_id = secret_value("TELEGRAM_GROUP_CHAT_ID", settings)
@@ -356,6 +390,8 @@ def _notification_record(
     blockers: list[str] = []
     if not eligible:
         blockers.append("no_submitted_paper_order_state")
+    if message_specificity["status"] != "specific":
+        blockers.append("telegram_message_not_specific")
     if not enabled:
         blockers.append("trade_group_notifications_disabled")
     if dry_run:
@@ -441,6 +477,11 @@ def _notification_record(
         "group_chat_configured": group_chat_configured,
         "message_preview": {"title": title, "body": body, "dashboard_link": "qadam.trade/dashboard/"},
         "message_preview_redacted": _safe_text(title, body),
+        "message_specificity": message_specificity,
+        "message_specificity_status": message_specificity["status"],
+        "message_specificity_score": message_specificity["score"],
+        "message_fingerprint": message_specificity["fingerprint"],
+        "trade_decision_context": decision_context,
         "trade_summary": trade["summary"],
         "trade_symbol": trade["symbol"],
         "trade_side": trade["side"],
@@ -619,8 +660,12 @@ def validate_telegram_trade_notification_record(record: dict[str, Any]) -> list[
         "live_send_attempted",
         "live_send_succeeded",
         "message_class",
+        "message_fingerprint",
         "message_preview",
         "message_preview_redacted",
+        "message_specificity",
+        "message_specificity_score",
+        "message_specificity_status",
         "portfolio_cash_gbp",
         "portfolio_performance_pct",
         "portfolio_snapshot",
@@ -630,6 +675,7 @@ def validate_telegram_trade_notification_record(record: dict[str, Any]) -> list[
         "send_requested",
         "status",
         "target",
+        "trade_decision_context",
         "trade_broker_status",
         "trade_order_type",
         "trade_quantity",
@@ -670,14 +716,36 @@ def validate_telegram_trade_notification_record(record: dict[str, Any]) -> list[
             errors.append("telegram_trade_notification_dashboard_missing")
         if "Trade:" not in body:
             errors.append("telegram_trade_notification_trade_line_missing")
+        if "Why this trade was sent:" not in body:
+            errors.append("telegram_trade_notification_why_line_missing")
+        if "Evidence:" not in body:
+            errors.append("telegram_trade_notification_evidence_line_missing")
         if "Portfolio:" not in body:
             errors.append("telegram_trade_notification_portfolio_line_missing")
         if "Performance:" not in body or "%" not in body:
             errors.append("telegram_trade_notification_performance_line_missing")
+        if "Current impact:" not in body:
+            errors.append("telegram_trade_notification_current_impact_missing")
         if "Mode: paper only; live capital remains blocked." not in body:
             errors.append("telegram_trade_notification_paper_mode_line_missing")
         if not _safe_text(title, body):
             errors.append("telegram_trade_notification_forbidden_text")
+    specificity = record.get("message_specificity", {})
+    if not isinstance(specificity, dict):
+        errors.append("telegram_trade_notification_specificity_missing")
+    else:
+        if specificity.get("status") != "specific":
+            errors.append("telegram_trade_notification_message_not_specific")
+        if _int(specificity.get("score")) < _int(specificity.get("minimum_score", 70)):
+            errors.append("telegram_trade_notification_specificity_score_low")
+    if record.get("message_specificity_status") != "specific":
+        errors.append("telegram_trade_notification_specificity_status_not_specific")
+    if _int(record.get("message_specificity_score")) < 70:
+        errors.append("telegram_trade_notification_specificity_score_low")
+    if not str(record.get("message_fingerprint") or "").strip():
+        errors.append("telegram_trade_notification_message_fingerprint_missing")
+    if not isinstance(record.get("trade_decision_context"), dict):
+        errors.append("telegram_trade_notification_decision_context_missing")
     portfolio = record.get("portfolio_snapshot", {})
     if not isinstance(portfolio, dict):
         errors.append("telegram_trade_notification_portfolio_snapshot_missing")
