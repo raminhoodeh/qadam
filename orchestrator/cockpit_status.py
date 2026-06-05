@@ -1627,6 +1627,52 @@ def _readiness_label(source: dict[str, Any], runtime_status: str) -> str:
     return runtime_status.replace("_", " ")
 
 
+def _float_or_none(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> dict[str, Any]:
+    status = _dashboard_status(runtime_status)
+    credential_status = _credential_status(source)
+    promoted_adapter = bool(source.get("promoted_adapter"))
+    trust_score = _float_or_none(source.get("trust_score"))
+    credential_ready = credential_status != "missing"
+    usable_for_research = (
+        promoted_adapter
+        and credential_ready
+        and status in {"online", "local_only"}
+    )
+    eligible_for_signal_review = (
+        usable_for_research
+        and status == "online"
+        and trust_score is not None
+        and trust_score >= 0.5
+    )
+    if eligible_for_signal_review:
+        influence_boundary = "research_context_and_signal_review_only_no_order_authority"
+    elif usable_for_research:
+        influence_boundary = "research_context_only_until_signal_integrity_quality_threshold"
+    elif not credential_ready:
+        influence_boundary = "blocked_missing_credentials"
+    elif not promoted_adapter:
+        influence_boundary = "observation_only_until_adapter_promotion"
+    else:
+        influence_boundary = "observation_only_until_freshness_or_quality_threshold"
+    return {
+        "usable_for_research_context": usable_for_research,
+        "eligible_for_signal_review": eligible_for_signal_review,
+        "can_influence_signals": eligible_for_signal_review,
+        "can_authorize_orders": False,
+        "order_authority_boundary": "no_source_can_authorize_orders_or_broker_writes",
+        "influence_boundary": influence_boundary,
+    }
+
+
 def _tradingview_watching_row(settings: Settings) -> dict[str, Any]:
     summary = tradingview_alert_summary(settings)
     alert_count = int(summary.get("alert_count", 0) or 0)
@@ -1650,7 +1696,11 @@ def _tradingview_watching_row(settings: Settings) -> dict[str, Any]:
         "last_payload_time": summary.get("latest_observed_at"),
         "credential_status": "receiver_pending",
         "latency_ms": None,
+        "usable_for_research_context": bool(alert_count),
+        "eligible_for_signal_review": False,
         "can_influence_signals": False,
+        "can_authorize_orders": False,
+        "order_authority_boundary": "no_source_can_authorize_orders_or_broker_writes",
         "influence_boundary": "observed_signal_only_no_execution_path",
     }
 
@@ -1680,7 +1730,11 @@ def _tradingview_mcp_watching_row(settings: Settings) -> dict[str, Any]:
         "last_payload_time": None,
         "credential_status": "not_required",
         "latency_ms": None,
+        "usable_for_research_context": connected,
+        "eligible_for_signal_review": False,
         "can_influence_signals": False,
+        "can_authorize_orders": False,
+        "order_authority_boundary": "no_source_can_authorize_orders_or_broker_writes",
         "influence_boundary": (
             "supplemental_technical_confirmation_no_source_quorum_or_order_authority"
         ),
@@ -1692,6 +1746,7 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
     watching: list[dict[str, Any]] = []
     for source in data_map.get("sources", []):
         runtime_status = str(source.get("runtime_status", "registered"))
+        influence_profile = _source_influence_profile(source, runtime_status)
         watching.append(
             {
                 "source_key": source.get("source_key"),
@@ -1712,8 +1767,7 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                 "last_payload_time": None,
                 "credential_status": _credential_status(source),
                 "latency_ms": None,
-                "can_influence_signals": False,
-                "influence_boundary": "blocked_until_signal_integrity_gate",
+                **influence_profile,
             }
         )
     watching.append(_tradingview_mcp_watching_row(settings))

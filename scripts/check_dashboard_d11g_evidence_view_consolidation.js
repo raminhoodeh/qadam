@@ -137,7 +137,8 @@ async function main() {
     assert(model.source_setup_links.length >= 3, "Setup evidence links missing from Evidence view");
     assert(supplementalByKey.get("yahoo_finance")?.proof_boundary.includes("not source quorum"), "Yahoo Finance boundary must stay supplemental");
     assert(supplementalByKey.get("preference_mcp")?.proof_boundary.includes("not source quorum"), "Preference boundary must stay supplemental");
-    assert(/no source can create trade ideas, orders, broker writes, or live-capital authority/i.test(model.boundary), "Evidence model authority boundary is weak");
+    assert(/sources can inform research context and signal review/i.test(model.boundary), "Evidence model influence boundary is weak");
+    assert(/no source can create trade ideas, approve risk, authorize orders, broker writes, or live-capital authority/i.test(model.boundary), "Evidence model authority boundary is weak");
     assert(model.source_setup_links.every((link) => !/order authority|broker write|live capital/i.test(link.proof_boundary)), "Setup evidence link implies execution authority");
     assert(model.evidence_packets.every((packet) => /cannot create trade ideas, orders, broker writes, or performance credit/i.test(packet.boundary)), "Evidence packet boundary is weak");
 
@@ -164,7 +165,9 @@ async function main() {
     includesAll(summaryHtml, [
         "Sources",
         "Required not configured",
-        "Signal influence",
+        "Research usable",
+        "Signal review eligible",
+        "Order authority",
         "Yahoo Finance",
         "Preference MCP"
     ], "rendered D11G Evidence summary");

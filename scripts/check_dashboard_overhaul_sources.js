@@ -128,9 +128,12 @@ async function main() {
 
     assert(model.id === "sources", "sources model id mismatch");
     assert(model.pipelines.length === 5, "sources model must expose five intelligence pipelines");
-    assert(reliability.length === 7, "sources model must expose seven reliability states");
+    assert(reliability.length >= 10, "sources model must expose research, signal-review, order-authority, and reliability states");
     [
         "core_ok",
+        "research_usable",
+        "signal_review_eligible",
+        "order_authority",
         "needs_attention",
         "missing_credential",
         "stale_heartbeat",
@@ -138,6 +141,9 @@ async function main() {
         "optional_credentials",
         "pending_adapter"
     ].forEach((key) => assert(reliabilityByKey.has(key), `missing reliability state ${key}`));
+    assert(reliabilityByKey.get("research_usable").count >= 1, "research-usable sources must be visible");
+    assert(reliabilityByKey.get("signal_review_eligible").count >= 1, "signal-review eligible sources must be visible");
+    assert(reliabilityByKey.get("order_authority").count === 0, "source order authority must remain zero");
     assert(reliabilityByKey.get("missing_credential").count === 0, "required missing credentials should be zero for the core paper sources");
     assert(reliabilityByKey.get("optional_credentials").count >= 1, "optional missing credentials must be visible");
     assert(reliabilityByKey.get("pending_adapter").count >= 1, "pending adapters must be visible");

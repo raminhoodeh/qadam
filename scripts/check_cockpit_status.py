@@ -63,14 +63,17 @@ from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
 WATCHING_REQUIRED_FIELDS = {
     "auth_class",
     "cadence",
+    "can_authorize_orders",
     "can_influence_signals",
     "credential_status",
     "degraded_reason",
     "endpoint_count",
+    "eligible_for_signal_review",
     "influence_boundary",
     "last_heartbeat",
     "last_payload_time",
     "latency_ms",
+    "order_authority_boundary",
     "pipeline",
     "promoted_adapter",
     "raw_status",
@@ -78,6 +81,7 @@ WATCHING_REQUIRED_FIELDS = {
     "registry_status",
     "source_key",
     "source_name",
+    "usable_for_research_context",
     "status",
     "tier",
     "trust_score",
@@ -10413,8 +10417,21 @@ def main() -> int:
     if not any(source.get("source_key") == "tradingview_mcp" for source in payload["watching"]):
         print("cockpit_status_watching_tradingview_mcp_missing=true")
         return 1
-    if not all(source.get("can_influence_signals") is False for source in payload["watching"]):
-        print("cockpit_status_source_signal_influence_unblocked=true")
+    signal_review_eligible_count = sum(1 for source in payload["watching"] if source.get("eligible_for_signal_review") is True)
+    if signal_review_eligible_count < 1:
+        print("cockpit_status_no_signal_review_eligible_sources=true")
+        return 1
+    if not any(source.get("usable_for_research_context") is True for source in payload["watching"]):
+        print("cockpit_status_no_research_context_sources=true")
+        return 1
+    if any(source.get("can_authorize_orders") is not False for source in payload["watching"]):
+        print("cockpit_status_source_order_authority_unblocked=true")
+        return 1
+    if any(source.get("can_influence_signals") != source.get("eligible_for_signal_review") for source in payload["watching"]):
+        print("cockpit_status_source_signal_review_alias_mismatch=true")
+        return 1
+    if any("no_source_can_authorize_orders" not in source.get("order_authority_boundary", "") for source in payload["watching"]):
+        print("cockpit_status_source_order_boundary_weak=true")
         return 1
     if len(payload.get("source_pipeline_summary", [])) < 1:
         print("cockpit_status_no_pipeline_summary=true")

@@ -16,14 +16,17 @@ const EXPECTED_PIPELINE_COUNT = 5;
 const REQUIRED_SOURCE_FIELDS = [
     "auth_class",
     "cadence",
+    "can_authorize_orders",
     "can_influence_signals",
     "credential_status",
     "degraded_reason",
     "endpoint_count",
+    "eligible_for_signal_review",
     "influence_boundary",
     "last_heartbeat",
     "last_payload_time",
     "latency_ms",
+    "order_authority_boundary",
     "pipeline",
     "promoted_adapter",
     "raw_status",
@@ -33,7 +36,8 @@ const REQUIRED_SOURCE_FIELDS = [
     "source_name",
     "status",
     "tier",
-    "trust_score"
+    "trust_score",
+    "usable_for_research_context"
 ];
 
 const ALLOWED_RENDERED_STATUSES = new Set([
@@ -81,13 +85,18 @@ async function main() {
             ALLOWED_RENDERED_STATUSES.has(source.status),
             `${source.source_key} has unsupported rendered status: ${source.status}`
         );
+        assert(source.can_authorize_orders === false, `${source.source_key} can authorize orders`);
         assert(
-            source.can_influence_signals === false,
-            `${source.source_key} can influence signals before the Signal Integrity Gate`
+            source.can_influence_signals === source.eligible_for_signal_review,
+            `${source.source_key} signal-review alias mismatch`
         );
         assert(
             typeof source.influence_boundary === "string" && source.influence_boundary.length > 0,
             `${source.source_key} missing influence boundary`
+        );
+        assert(
+            typeof source.order_authority_boundary === "string" && source.order_authority_boundary.includes("no_source_can_authorize_orders"),
+            `${source.source_key} missing order-authority boundary`
         );
     }
 
@@ -95,10 +104,15 @@ async function main() {
     assert(watching.some((source) => source.credential_status === "missing"), "missing-credential state is not represented");
     assert(watching.some((source) => source.promoted_adapter), "promoted-adapter state is not represented");
     assert(watching.some((source) => source.auth_class === "credential_required"), "credential-required auth state is not represented");
+    assert(watching.some((source) => source.usable_for_research_context), "research-usable source state is not represented");
+    assert(watching.some((source) => source.eligible_for_signal_review), "signal-review eligible source state is not represented");
+    assert(watching.every((source) => source.can_authorize_orders === false), "source order authority must remain blocked");
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-source-summary]", "Required not configured");
-    assertIncludes(rendered, "[data-source-summary]", "Signal influence");
+    assertIncludes(rendered, "[data-source-summary]", "Research usable");
+    assertIncludes(rendered, "[data-source-summary]", "Signal review eligible");
+    assertIncludes(rendered, "[data-source-summary]", "Order authority");
     assertIncludes(rendered, "[data-source-summary]", "Yahoo Finance");
     assertIncludes(rendered, "[data-source-summary]", "Preference MCP");
     assertIncludes(rendered, "[data-watching-list]", "ACLED API");
@@ -106,7 +120,9 @@ async function main() {
     assertIncludes(rendered, "[data-watching-list]", "ready to port");
     assertIncludes(rendered, "[data-watching-list]", "1 endpoints");
     assertIncludes(rendered, "[data-watching-list]", "evidence only");
-    assertIncludes(rendered, "[data-watching-list]", "blocked until signal integrity gate");
+    assertIncludes(rendered, "[data-watching-list]", "research usable");
+    assertIncludes(rendered, "[data-watching-list]", "signal review eligible");
+    assertIncludes(rendered, "[data-watching-list]", "no order authority");
     assertIncludes(rendered, "[data-watching-list]", "payload Not connected");
     assertIncludes(rendered, "[data-watching-list]", "TradingView Paid Alerts");
     assertIncludes(rendered, "[data-watching-list]", "Supplemental market confirmation");
@@ -119,7 +135,6 @@ async function main() {
     assertIncludes(rendered, "[data-watching-list]", "no trade authority");
     assertIncludes(rendered, "[data-watching-list]", "d7 local contract");
     assertIncludes(rendered, "[data-watching-list]", "observed signal only no execution path");
-    assertIncludes(rendered, "[data-watching-list]", "signal-influencing");
 
     const emptyStatus = {
         ...status,
