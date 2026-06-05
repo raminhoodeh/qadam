@@ -5211,6 +5211,7 @@ function fallbackMissionControl(status, source) {
             status: philosophy.status || "pending",
             summary: philosophy.trading_philosophy || "Qadam generates hypotheses from private priors, but live evidence and gates decide what can advance.",
             decision_chain: philosophy.decision_chain || [],
+            ai_infrastructure_lens: philosophy.ai_infrastructure_lens || {},
             private_prior_count: philosophy.foundational_prior_count || 0,
             current_self_directive: [
                 "Use worldview as private prior.",
@@ -6370,7 +6371,35 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
     const reasonSentence = candidateCount
         ? `${candidateCount} trade idea${candidateCount === 1 ? "" : "s"} exist, so Qadam is comparing evidence, risk, and paper-account constraints before anything can become a paper order.`
         : `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online and ${reasoningCounts.hypotheses || 0} hypotheses are under review, but no fresh qualified trade idea is currently clear enough to advance.`;
-    const aiInfrastructureSentence = "AI infrastructure is treated as a second-order picks-and-shovels lens: Qadam can compare obvious AI leaders with power, grid hardware, data-centre electrical systems, fabrication capacity, memory, connectivity, and networking before Akber's filter decides whether the setup is tradable.";
+    const aiLens = overview.trading_philosophy?.ai_infrastructure_lens || {};
+    const aiInfrastructureSentence = aiLens.thesis || "AI infrastructure is treated as a second-order picks-and-shovels lens: Qadam can compare obvious AI leaders with power, grid hardware, data-centre electrical systems, fabrication capacity, memory, connectivity, and networking before Akber's filter decides whether the setup is tradable.";
+    const aiLensTargets = asArray(aiLens.target_bottlenecks);
+    const aiLensQuestions = asArray(aiLens.decision_questions).slice(0, 3);
+    const aiLensControls = asArray(aiLens.risk_controls).slice(0, 3);
+    const aiLensHtml = `
+        <section class="ai-infrastructure-lens ${statusClass(aiLens.status || "online")}">
+            <div>
+                <span>Strategy lens</span>
+                <h4>${htmlText(aiLens.name || "Second-order AI infrastructure beneficiary lens")}</h4>
+                <p>${htmlText(aiInfrastructureSentence)}</p>
+            </div>
+            <div class="ai-lens-columns">
+                <article>
+                    <strong>What Qadam watches</strong>
+                    <ul>${(aiLensTargets.length ? aiLensTargets : ["power generation", "data-centre electrical systems", "fabrication capacity", "memory", "connectivity", "networking"]).map((target) => `<li>${htmlText(target)}</li>`).join("")}</ul>
+                </article>
+                <article>
+                    <strong>What it must prove</strong>
+                    <ul>${(aiLensQuestions.length ? aiLensQuestions : ["Is the supplier bottleneck less efficiently priced than the obvious AI leader?", "Is there live evidence of orders, scarcity, capex, or pricing power?", "Does Akber's filter still confirm timing and risk?"]).map((question) => `<li>${htmlText(question)}</li>`).join("")}</ul>
+                </article>
+                <article>
+                    <strong>What it cannot do</strong>
+                    <ul>${(aiLensControls.length ? aiLensControls : ["reject narrative-only AI exposure", "require Signal Integrity and Risk Agent checks", "never override paper-account gates"]).map((control) => `<li>${htmlText(control)}</li>`).join("")}</ul>
+                </article>
+            </div>
+            <p class="mini">${htmlText(aiLens.boundary || "This is a strategy lens only. It cannot create trades, approve risk, stage orders, submit to Alpaca, or enable live capital.")}</p>
+        </section>
+    `;
     const evolutionSentence = [
         `${reasoningCounts.evidence_packets || 0} evidence packets`,
         `${reasoningCounts.hypotheses || 0} hypotheses`,
@@ -6430,6 +6459,7 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
                     <p>${htmlText(tradeSentence)} Candidate does not mean order; PaperOps still needs fresh setup, duplicate-submit, risk, and paper-account checks.</p>
                 </article>
             </div>
+            ${aiLensHtml}
             <div class="strategy-narrative-sources">
                 <span>Data sources currently shaping the posture</span>
                 <ul>${sourceInfluenceHtml}</ul>
