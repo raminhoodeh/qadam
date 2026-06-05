@@ -2028,6 +2028,50 @@ def _build_source_heartbeat_history(settings: Settings) -> list[dict[str, Any]]:
 def _decision_philosophy() -> dict[str, Any]:
     summary = world_model_summary()
     claims = world_model_claims()
+    ai_infrastructure_lens = {
+        "status": "active_strategy_lens",
+        "name": "Second-order AI infrastructure beneficiary lens",
+        "thesis": (
+            "Qadam treats obvious AI leaders as reference assets and asks where the AI buildout "
+            "creates harder-to-price physical bottlenecks: electricity, grid equipment, data-centre "
+            "electrical systems, fabrication capacity, memory, connectivity, and networking."
+        ),
+        "reference_assets": [
+            "Nvidia and other obvious AI leaders",
+            "mega-cap AI platform winners",
+            "AI-linked benchmark baskets",
+        ],
+        "target_bottlenecks": [
+            "power generation",
+            "grid hardware",
+            "data-centre electrical infrastructure",
+            "semiconductor fabrication capacity",
+            "memory bandwidth and storage",
+            "connectivity and networking",
+        ],
+        "decision_questions": [
+            "Is the visible AI winner already priced more efficiently than the supplier constraint?",
+            "Which bottleneck is binding first: power, fab capacity, memory, networking, or policy?",
+            "Is the beneficiary directly exposed to the constraint or only narratively adjacent?",
+            "Does live evidence show orders, capex, pricing power, policy support, or supply scarcity?",
+            "Does Akber's 6-stage filter still confirm timing, risk, and execution quality?",
+        ],
+        "strategy_role": "worldview_prior_and_strategy_emphasis",
+        "gating_role": (
+            "This lens can shape research goals, evidence packets, Strategy Lead challenges, and candidate "
+            "comparison. It cannot create a trade, approve risk, stage an order, submit to Alpaca, or enable live capital."
+        ),
+        "risk_controls": [
+            "reject narrative-only AI exposure",
+            "compare against obvious AI leader reference performance",
+            "require source-quality and durable replay support",
+            "require Signal Integrity, Risk Agent, Execution Policy, and paper-account checks",
+        ],
+        "boundary": (
+            "The AI infrastructure lens is a private strategy prior and comparison tool. It is not a standalone "
+            "buy signal and does not override Qadam's existing strategy, Akber filter, or safety gates."
+        ),
+    }
     active_lenses = [
         {
             "key": claim.get("key"),
@@ -2070,6 +2114,7 @@ def _decision_philosophy() -> dict[str, Any]:
             "Risk Agent",
             "paper trade or postmortem",
         ],
+        "ai_infrastructure_lens": ai_infrastructure_lens,
         "active_lenses": active_lenses,
         "default_decision_context": [
             "power hierarchy",
@@ -5567,6 +5612,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "Qadam generates hypotheses from private priors, but live evidence and gates decide what can advance.",
             ),
             "decision_chain": decision_philosophy.get("decision_chain", []),
+            "ai_infrastructure_lens": decision_philosophy.get("ai_infrastructure_lens", {}),
             "private_prior_count": decision_philosophy.get("foundational_prior_count", 0),
             "current_self_directive": [
                 "Use the worldview to ask sharper questions, not as evidence.",
