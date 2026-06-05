@@ -638,6 +638,18 @@ function sourceIsCore(source = {}) {
     return DASHBOARD_CORE_SOURCE_KEYS.has(String(source.source_key || ""));
 }
 
+function sourceUsableForResearch(source = {}) {
+    return Boolean(source.usable_for_research_context);
+}
+
+function sourceEligibleForSignalReview(source = {}) {
+    return Boolean(source.eligible_for_signal_review ?? source.can_influence_signals);
+}
+
+function sourceCanAuthorizeOrders(source = {}) {
+    return Boolean(source.can_authorize_orders);
+}
+
 function sourceDisplayStatus(source = {}) {
     const rawStatus = normalizeCanonicalStatusToken(source.status || "");
     const readiness = normalizeCanonicalStatusToken(source.readiness || "");
@@ -1080,7 +1092,9 @@ function buildSourcesModel(status = {}) {
         .map(([pipeline, sources]) => {
             const counts = countBy(sources, "display_status");
             const pipelineCounts = summaryByPipeline.get(pipeline) || {};
-            const signalInfluencing = sources.filter((source) => source.can_influence_signals).length;
+            const researchUsable = sources.filter(sourceUsableForResearch).length;
+            const signalInfluencing = sources.filter(sourceEligibleForSignalReview).length;
+            const orderAuthority = sources.filter(sourceCanAuthorizeOrders).length;
             const requiresAction = sources.some((source) => source.requires_action);
             const hasOk = sources.some((source) => source.display_status === "ok");
             const hasWaiting = sources.some((source) => source.display_status === "waiting");
@@ -1095,7 +1109,10 @@ function buildSourcesModel(status = {}) {
                 local_only_count: modelNumber(pipelineCounts.local_only_count || counts.local_only || counts["local-only"], 0),
                 missing_credential_count: sources.filter((source) => source.core && source.credential_status === "missing").length,
                 pending_adapter_count: sources.filter((source) => !source.promoted_adapter).length,
+                research_usable_count: researchUsable,
                 signal_influencing_count: signalInfluencing,
+                signal_review_eligible_count: signalInfluencing,
+                order_authority_count: orderAuthority,
                 status: requiresAction
                     ? "degraded"
                     : (hasOk ? "ok" : (hasWaiting ? "waiting" : "optional")),
@@ -1110,7 +1127,10 @@ function buildSourcesModel(status = {}) {
                         readiness: source.readiness,
                         credential_status: source.credential_status,
                         promoted_adapter: Boolean(source.promoted_adapter),
-                        can_influence_signals: Boolean(source.can_influence_signals),
+                        usable_for_research_context: sourceUsableForResearch(source),
+                        eligible_for_signal_review: sourceEligibleForSignalReview(source),
+                        can_influence_signals: sourceEligibleForSignalReview(source),
+                        can_authorize_orders: sourceCanAuthorizeOrders(source),
                         heartbeat: source.last_heartbeat
                     })),
                 sources: sources
@@ -1129,11 +1149,15 @@ function buildSourcesModel(status = {}) {
                         tier: source.tier || "n/a",
                         trust_score: source.trust_score,
                         promoted_adapter: Boolean(source.promoted_adapter),
-                        can_influence_signals: Boolean(source.can_influence_signals),
+                        usable_for_research_context: sourceUsableForResearch(source),
+                        eligible_for_signal_review: sourceEligibleForSignalReview(source),
+                        can_influence_signals: sourceEligibleForSignalReview(source),
+                        can_authorize_orders: sourceCanAuthorizeOrders(source),
                         heartbeat: source.last_heartbeat,
                         payload_time: source.last_payload_time,
                         degraded_reason: source.degraded_reason || null,
-                        influence_boundary: source.influence_boundary || "blocked until signal integrity gate"
+                        influence_boundary: source.influence_boundary || "observation only until source-quality gate",
+                        order_authority_boundary: source.order_authority_boundary || "no source can authorize orders"
                     }))
             };
         });
@@ -1268,7 +1292,10 @@ function buildSourcesModel(status = {}) {
             local_only: localOnly,
             missing_credentials: missingCredentialCount,
             optional_credentials: optionalCredentialSources.length,
-            signal_influencing: watching.filter((source) => source.can_influence_signals).length,
+            research_context_usable: watching.filter(sourceUsableForResearch).length,
+            signal_influencing: watching.filter(sourceEligibleForSignalReview).length,
+            signal_review_eligible: watching.filter(sourceEligibleForSignalReview).length,
+            order_authority: watching.filter(sourceCanAuthorizeOrders).length,
             pipelines: pipelineSummary.length,
             supplemental: supplemental.length,
             source_setup_links: sourceSetupLinks.length,
@@ -1276,6 +1303,9 @@ function buildSourcesModel(status = {}) {
         },
         reliability: [
             { key: "core_ok", label: "Core OK", count: `${coreOkCount}/${coreSourceCount}`, tone: coreOkCount === coreSourceCount ? "online" : "pending", detail: "Required paper-trading source feeds reporting healthy status." },
+            { key: "research_usable", label: "Research usable", count: watching.filter(sourceUsableForResearch).length, tone: watching.some(sourceUsableForResearch) ? "online" : "pending", detail: "Sources Qadam can use as research context for hypotheses and market packets." },
+            { key: "signal_review_eligible", label: "Signal review eligible", count: watching.filter(sourceEligibleForSignalReview).length, tone: watching.some(sourceEligibleForSignalReview) ? "online" : "pending", detail: "Trusted source observations allowed to inform signal review without approving orders." },
+            { key: "order_authority", label: "Order authority", count: watching.filter(sourceCanAuthorizeOrders).length, tone: watching.some(sourceCanAuthorizeOrders) ? "degraded" : "online", detail: "Must stay zero. Sources can inform review but cannot authorize broker writes." },
             { key: "needs_attention", label: "Needs attention", count: degraded, tone: degraded ? "degraded" : "online", detail: "Required sources with degraded runtime state." },
             { key: "missing_credential", label: "Required not configured", count: missingCredentialSources.length, tone: missingCredentialSources.length ? "degraded" : "online", detail: "Required source credentials not configured." },
             { key: "stale_heartbeat", label: "Stale heartbeat", count: staleHeartbeatSources.length, tone: staleHeartbeatSources.length ? "degraded" : "online", detail: "Sources missing heartbeat freshness in this snapshot." },
@@ -1306,11 +1336,15 @@ function buildSourcesModel(status = {}) {
                 tier: source.tier || "n/a",
                 trust_score: source.trust_score,
                 promoted_adapter: Boolean(source.promoted_adapter),
-                can_influence_signals: Boolean(source.can_influence_signals),
+                usable_for_research_context: sourceUsableForResearch(source),
+                eligible_for_signal_review: sourceEligibleForSignalReview(source),
+                can_influence_signals: sourceEligibleForSignalReview(source),
+                can_authorize_orders: sourceCanAuthorizeOrders(source),
                 heartbeat: source.last_heartbeat,
                 payload_time: source.last_payload_time,
                 degraded_reason: source.degraded_reason || null,
-                influence_boundary: source.influence_boundary || "blocked until signal integrity gate"
+                influence_boundary: source.influence_boundary || "observation only until source-quality gate",
+                order_authority_boundary: source.order_authority_boundary || "no source can authorize orders"
             })),
         supplemental,
         evidence_packets: evidencePacketCards,
@@ -1320,7 +1354,7 @@ function buildSourcesModel(status = {}) {
             ? `${sourceSetupLinks.length} source-linked observed/trade-idea/setup records need corroboration review.`
             : "No active source-linked setup or trade-idea records are exported.",
         empty_state: watching.length ? null : dashboardModelEmptyState("missing"),
-        boundary: "Sources create observations only. Supplemental sources cannot be sole proof and no source can create trade ideas, orders, broker writes, or live-capital authority."
+        boundary: "Sources can inform research context and signal review when trusted, but no source can create trade ideas, approve risk, authorize orders, broker writes, or live-capital authority."
     };
 }
 
@@ -3372,7 +3406,9 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         summary: [
             pipeline.degraded_count ? `${pipeline.degraded_count} degraded` : null,
             pipeline.missing_credential_count ? `${pipeline.missing_credential_count} missing credentials` : null,
-            pipeline.signal_influencing_count ? `${pipeline.signal_influencing_count} can influence signals` : "observation only"
+            pipeline.research_usable_count ? `${pipeline.research_usable_count} research usable` : "observation only",
+            pipeline.signal_review_eligible_count ? `${pipeline.signal_review_eligible_count} signal-review eligible` : "not signal-review eligible",
+            pipeline.order_authority_count ? `${pipeline.order_authority_count} order authority` : "0 order authority"
         ].filter(Boolean).join("; ")
     }));
     const strategyToggles = asArray(phase4.strategy_toggles?.toggles);
@@ -3782,7 +3818,9 @@ function sourceSummary(status) {
         renderMetric("Optional", counts.optional || 0),
         renderMetric("Local-only", counts["local only"] || 0),
         renderMetric("Required not configured", missingCredentialCount),
-        renderMetric("Signal influence", watching.filter((source) => source.can_influence_signals).length)
+        renderMetric("Research usable", watching.filter(sourceUsableForResearch).length),
+        renderMetric("Signal review eligible", watching.filter(sourceEligibleForSignalReview).length),
+        renderMetric("Order authority", watching.filter(sourceCanAuthorizeOrders).length)
     ].join("");
 }
 
@@ -3885,7 +3923,7 @@ function renderSourcePipelineCard(pipeline) {
     const sourceRows = asArray(pipeline.top_sources).map((source) => `
         <li>
             <strong>${htmlText(source.label)}</strong>
-            <span>${htmlText(canonicalStatusLabel(source.status))} · ${htmlText(source.readiness)} · ${source.promoted_adapter ? "adapter" : "pending adapter"} · ${source.can_influence_signals ? "signal-influencing" : "evidence only"}</span>
+            <span>${htmlText(canonicalStatusLabel(source.status))} · ${htmlText(source.readiness)} · ${source.promoted_adapter ? "adapter" : "pending adapter"} · ${source.eligible_for_signal_review ? "signal-review eligible" : source.usable_for_research_context ? "research usable" : "evidence only"}</span>
         </li>
     `).join("");
     return `
@@ -3902,7 +3940,9 @@ function renderSourcePipelineCard(pipeline) {
                 ${renderMetric("Optional", pipeline.optional_count)}
                 ${renderMetric("Not configured", pipeline.missing_credential_count)}
                 ${renderMetric("Adapter backlog", pipeline.pending_adapter_count)}
-                ${renderMetric("Signal influence", pipeline.signal_influencing_count)}
+                ${renderMetric("Research usable", pipeline.research_usable_count)}
+                ${renderMetric("Signal review", pipeline.signal_review_eligible_count)}
+                ${renderMetric("Order authority", pipeline.order_authority_count)}
             </div>
             <ul>${sourceRows}</ul>
         </article>
@@ -3972,7 +4012,9 @@ function renderSourcesWorkspace(model) {
                     ${renderMetric("Required not configured", model.counts.missing_credentials)}
                     ${renderMetric("Optional", model.counts.optional)}
                     ${renderMetric("Optional not configured", model.counts.optional_credentials)}
-                    ${renderMetric("Signal influence", model.counts.signal_influencing)}
+                    ${renderMetric("Research usable", model.counts.research_context_usable)}
+                    ${renderMetric("Signal review eligible", model.counts.signal_review_eligible)}
+                    ${renderMetric("Order authority", model.counts.order_authority)}
                     ${renderMetric("Yahoo Finance", asArray(model.supplemental).find((source) => source.key === "yahoo_finance")?.status || "not exported")}
                     ${renderMetric("Preference MCP", asArray(model.supplemental).find((source) => source.key === "preference_mcp")?.status || "not exported")}
                 </div>
@@ -6214,12 +6256,14 @@ function renderOverviewSourceRow(source = {}) {
             <div class="source-meta">
                 ${renderInlineBadge(source.credential_status, source.credential_status === "missing" ? "degraded" : "online")}
                 ${renderInlineBadge(source.promoted_adapter ? "adapter live" : "registry/pending", source.promoted_adapter ? "online" : "pending")}
-                ${renderInlineBadge(source.can_influence_signals ? "signal input" : "evidence only", source.can_influence_signals ? "online" : "optional")}
+                ${renderInlineBadge(source.usable_for_research_context ? "research usable" : "evidence only", source.usable_for_research_context ? "online" : "optional")}
+                ${renderInlineBadge(source.eligible_for_signal_review ? "signal review eligible" : "not signal-review eligible", source.eligible_for_signal_review ? "online" : "pending")}
+                ${renderInlineBadge(source.can_authorize_orders ? "order authority" : "no order authority", source.can_authorize_orders ? "degraded" : "online")}
                 ${renderInlineBadge(`tier ${dashboardText(source.tier, "n/a")}`, source.tier ? "online" : "pending")}
                 ${renderInlineBadge(`trust ${dashboardText(source.trust_score, "n/a")}`, source.trust_score ? "online" : "pending")}
                 ${renderInlineBadge(formatTime(source.heartbeat), status)}
             </div>
-            <p>${htmlText(source.degraded_reason || source.raw_status || status)} · ${htmlText(source.influence_boundary)}</p>
+            <p>${htmlText(source.degraded_reason || source.raw_status || status)} · ${htmlText(source.influence_boundary)} · ${htmlText(source.order_authority_boundary)}</p>
         </li>
     `;
 }
@@ -6230,7 +6274,7 @@ function renderOverviewSourcePipeline(pipeline = {}) {
         <details class="overview-ledger-group">
             <summary>
                 <strong>${htmlText(OPERATIONS_PIPELINE_LABELS[pipeline.pipeline] || pipeline.label || pipeline.pipeline, "Source pipeline")}</strong>
-                <span>${htmlText(pipeline.online_count, "0")}/${htmlText(pipeline.source_count, sources.length)} connected · ${htmlText(pipeline.degraded_count, "0")} degraded · ${htmlText(pipeline.pending_count, "0")} pending</span>
+                <span>${htmlText(pipeline.online_count, "0")}/${htmlText(pipeline.source_count, sources.length)} connected · ${htmlText(pipeline.research_usable_count, "0")} research usable · ${htmlText(pipeline.signal_review_eligible_count, "0")} signal-review eligible · ${htmlText(pipeline.order_authority_count, "0")} order authority</span>
             </summary>
             <ul class="source-table">
                 ${sources.map(renderOverviewSourceRow).join("")}
@@ -6410,18 +6454,20 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
     const sourceInfluenceRows = asArray(sourceModel.pipelines)
         .slice()
         .sort((a, b) => {
-            const aScore = modelNumber(a.signal_influencing_count, 0) + modelNumber(a.online_count, 0);
-            const bScore = modelNumber(b.signal_influencing_count, 0) + modelNumber(b.online_count, 0);
+            const aScore = modelNumber(a.signal_review_eligible_count, 0) + modelNumber(a.research_usable_count, 0) + modelNumber(a.online_count, 0);
+            const bScore = modelNumber(b.signal_review_eligible_count, 0) + modelNumber(b.research_usable_count, 0) + modelNumber(b.online_count, 0);
             return bScore - aScore;
         })
         .slice(0, 4);
     const sourceInfluenceHtml = sourceInfluenceRows.length
         ? sourceInfluenceRows.map((pipeline) => {
             const label = OPERATIONS_PIPELINE_LABELS[pipeline.pipeline] || pipeline.label || pipeline.pipeline || "Source group";
-            const signalCount = modelNumber(pipeline.signal_influencing_count, 0);
+            const researchCount = modelNumber(pipeline.research_usable_count, 0);
+            const signalCount = modelNumber(pipeline.signal_review_eligible_count, pipeline.signal_influencing_count || 0);
             const detail = [
                 `${modelNumber(pipeline.online_count, 0)}/${modelNumber(pipeline.source_count, 0)} online`,
-                signalCount ? `${signalCount} signal-influencing` : "observation input",
+                researchCount ? `${researchCount} research usable` : "observation input",
+                signalCount ? `${signalCount} signal-review eligible` : "not yet signal-review eligible",
                 modelNumber(pipeline.degraded_count, 0) ? `${modelNumber(pipeline.degraded_count, 0)} degraded` : null
             ].filter(Boolean).join("; ");
             return `<li><strong>${htmlText(label)}</strong><span>${htmlText(detail)}</span></li>`;
@@ -6448,7 +6494,7 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
             <div class="strategy-narrative-grid">
                 <article>
                     <span>Why this strategy</span>
-                    <p>${htmlText(`${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are connected, ${sourceCounts.signal_influencing || 0} can influence signal review, and the ${cadenceMinutes}-minute opportunity scan keeps refreshing candidates without bypassing gates.`)}</p>
+                    <p>${htmlText(`${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are connected, ${sourceCounts.research_context_usable || 0} are research usable, ${sourceCounts.signal_review_eligible || sourceCounts.signal_influencing || 0} are signal-review eligible, and ${sourceCounts.order_authority || 0} can authorize orders. The ${cadenceMinutes}-minute opportunity scan keeps refreshing candidates without bypassing gates.`)}</p>
                 </article>
                 <article>
                     <span>How it is evolving</span>
@@ -7055,8 +7101,8 @@ function renderWatching(status, viewModels = {}) {
         state: `${sourcesModel.counts?.core_ok || 0}/${sourcesModel.counts?.core || 0} core OK`,
         tone: degraded || missingCredentialCount ? "degraded" : "online",
         primary: `${watching.length} watched sources across ${pipelineSummary.length} pipelines. Required issues: ${degraded} need attention, ${missingCredentialCount} not configured. Optional feeds not configured: ${optionalCredentialCount}.`,
-        secondary: "Stale heartbeats, missing credentials, degraded feeds, local-only sources, and whether a source can influence signals.",
-        boundary: "Sources create observations only. Optional source gaps do not block the paper-trading core."
+        secondary: "Stale heartbeats, missing credentials, degraded feeds, research usability, signal-review eligibility, and zero order authority.",
+        boundary: "Sources can inform research and signal review, but cannot authorize orders or broker writes. Optional source gaps do not block the paper-trading core."
     });
     const workspace = dashboardQuery("[data-sources-workspace-slot]");
     if (workspace) {
@@ -7186,7 +7232,9 @@ function renderWatching(status, viewModels = {}) {
             const pipelineCounts = summaryByPipeline.get(pipeline) || {};
             const missingCredentials = sources.filter((source) => source.credential_status === "missing").length;
             const adapterReady = sources.filter((source) => source.promoted_adapter).length;
-            const signalReady = sources.filter((source) => source.can_influence_signals).length;
+            const researchUsable = sources.filter(sourceUsableForResearch).length;
+            const signalReady = sources.filter(sourceEligibleForSignalReview).length;
+            const orderAuthority = sources.filter(sourceCanAuthorizeOrders).length;
             const localOnly = pipelineCounts.local_only_count || counts.local_only || counts["local-only"] || 0;
             const rows = sources
                 .sort((a, b) => String(a.source_name).localeCompare(String(b.source_name)))
@@ -7206,12 +7254,14 @@ function renderWatching(status, viewModels = {}) {
                             ${renderInlineBadge(source.registry_status, "pending")}
                             ${renderInlineBadge(`${dashboardText(source.endpoint_count, "0")} endpoints`, source.endpoint_count ? "online" : "pending")}
                             ${renderInlineBadge(`trust ${dashboardText(source.trust_score, "n/a")}`, source.trust_score ? "online" : "pending")}
-                            ${renderInlineBadge(source.can_influence_signals ? "can influence signals" : "evidence only", source.can_influence_signals ? "online" : "optional")}
+                            ${renderInlineBadge(sourceUsableForResearch(source) ? "research usable" : "evidence only", sourceUsableForResearch(source) ? "online" : "optional")}
+                            ${renderInlineBadge(sourceEligibleForSignalReview(source) ? "signal review eligible" : "not signal-review eligible", sourceEligibleForSignalReview(source) ? "online" : "pending")}
+                            ${renderInlineBadge(sourceCanAuthorizeOrders(source) ? "order authority" : "no order authority", sourceCanAuthorizeOrders(source) ? "degraded" : "online")}
                             ${renderInlineBadge(`payload ${formatTime(source.last_payload_time)}`, source.last_payload_time ? "online" : "pending")}
                             ${renderInlineBadge(`latency ${formatLatency(source.latency_ms)}`, source.latency_ms ? "online" : "pending")}
                             ${renderInlineBadge(formatTime(source.last_heartbeat), sourceDisplayStatus(source))}
                         </div>
-                        <p>${htmlText(source.degraded_reason || source.raw_status)} · ${htmlText(source.influence_boundary, "blocked until signal integrity gate")}</p>
+                        <p>${htmlText(source.degraded_reason || source.raw_status)} · ${htmlText(source.influence_boundary, "observation only until source-quality gate")} · ${htmlText(source.order_authority_boundary, "no source can authorize orders")}</p>
                     </li>
                 `)
                 .join("");
@@ -7219,7 +7269,7 @@ function renderWatching(status, viewModels = {}) {
                 <details class="pipeline-row" ${index === 0 ? "open" : ""}>
                     <summary>
                         <h3>${htmlText(pipeline)}</h3>
-                        <p>${sources.length} sources · ${counts.online || 0} online · ${counts.degraded || 0} degraded · ${counts.pending || 0} pending · ${localOnly} local-only · ${missingCredentials} credentials missing · ${adapterReady} adapters · ${signalReady} signal-influencing</p>
+                        <p>${sources.length} sources · ${counts.online || 0} online · ${counts.degraded || 0} degraded · ${counts.pending || 0} pending · ${localOnly} local-only · ${missingCredentials} credentials missing · ${adapterReady} adapters · ${researchUsable} research usable · ${signalReady} signal-review eligible · ${orderAuthority} order authority</p>
                     </summary>
                     <ul class="source-table">${rows}</ul>
                 </details>
