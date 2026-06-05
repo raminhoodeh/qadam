@@ -152,6 +152,11 @@ PUBLIC_STATUS_FIELDS: tuple[str, ...] = (
     "safety_blocker_count",
     "operational_blockers",
     "opportunity_or_risk_blockers",
+    "idle_reasons",
+    "idle_reason_count",
+    "downstream_waiting_reasons",
+    "downstream_waiting_reason_count",
+    "trade_path_unblocked",
     "certification_blockers",
     "certification_blocker_count",
     "stale_historical_blocker_count",
@@ -324,6 +329,10 @@ def build_rs10_final_paper_autonomy_certification(
     opportunity_or_risk_blockers = [
         str(item)
         for item in _list(paper_authority.get("opportunity_or_risk_blockers"))
+    ]
+    idle_reasons = [str(item) for item in _list(paper_authority.get("idle_reasons"))]
+    downstream_waiting_reasons = [
+        str(item) for item in _list(paper_authority.get("downstream_waiting_reasons"))
     ]
     stale_keys = {
         str(item.get("key"))
@@ -526,6 +535,11 @@ def build_rs10_final_paper_autonomy_certification(
         "safety_blocker_count": len(safety_blockers),
         "operational_blockers": operational_blockers,
         "opportunity_or_risk_blockers": opportunity_or_risk_blockers,
+        "idle_reasons": idle_reasons,
+        "idle_reason_count": len(idle_reasons),
+        "downstream_waiting_reasons": downstream_waiting_reasons,
+        "downstream_waiting_reason_count": len(downstream_waiting_reasons),
+        "trade_path_unblocked": paper_authority.get("trade_path_unblocked") is True,
         "certification_blockers": sorted(set(certification_blockers)),
         "certification_blocker_count": len(set(certification_blockers)),
         "stale_historical_blocker_count": _int(
@@ -588,6 +602,22 @@ def validate_rs10_final_paper_autonomy_certification(
         errors.append("rs10_current_blocker_count_mismatch")
     if artifact.get("safety_blocker_count") != len(artifact.get("safety_blockers", []) or []):
         errors.append("rs10_safety_blocker_count_mismatch")
+    if artifact.get("idle_reason_count") != len(artifact.get("idle_reasons", []) or []):
+        errors.append("rs10_idle_reason_count_mismatch")
+    if artifact.get("downstream_waiting_reason_count") != len(
+        artifact.get("downstream_waiting_reasons", []) or []
+    ):
+        errors.append("rs10_downstream_waiting_reason_count_mismatch")
+    if (
+        artifact.get("trade_path_unblocked") is True
+        and (
+            artifact.get("safety_blockers")
+            or artifact.get("operational_blockers")
+        )
+    ):
+        errors.append("rs10_unblocked_with_blockers")
+    if "no_fresh_eligible_candidate" in (artifact.get("current_blockers", []) or []):
+        errors.append("rs10_idle_reason_shown_as_blocker")
     if artifact.get("stale_blocker_in_current_count") != len(
         set(artifact.get("current_blockers", []) or [])
         & set(artifact.get("stale_historical_blockers", []) or [])

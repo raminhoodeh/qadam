@@ -1,9 +1,9 @@
 """RS-0 paper authority reconciliation contract.
 
 This contract separates paper-trading authority from current operational
-readiness. A paused scheduler, no fresh setup, or a Q-CTRL consultation hold
-must be visible as blockers, but they are not the same thing as unsafe live
-capital authority.
+readiness. Safety and operational failures are blockers. No fresh setup is an
+idle reason, and downstream submit/poll/exit gates may be waiting for their
+prerequisite records without blocking the paper-authorized loop.
 """
 
 from __future__ import annotations
@@ -34,12 +34,17 @@ PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "live_capital_enabled",
     "live_capital_blocked",
     "full_potential_state",
+    "trade_path_unblocked",
     "current_blockers",
     "current_blocker_count",
     "safety_blockers",
     "operational_blockers",
     "opportunity_or_risk_blockers",
     "external_blockers",
+    "idle_reasons",
+    "idle_reason_count",
+    "downstream_waiting_reasons",
+    "downstream_waiting_reason_count",
     "stale_historical_blockers",
     "stale_historical_blocker_count",
     "allowed_paper_actions",
@@ -177,22 +182,64 @@ def _build_opportunity_or_risk_blockers(active: dict[str, Any]) -> list[str]:
     blockers: list[str] = []
     if active.get("qctrl_consultation_hold_active") is True:
         blockers.append("qctrl_paper_consultation_hold")
-    if _int(active.get("paperops2_fresh_eligible_submit_record_count")) < 1:
-        blockers.append("no_fresh_eligible_candidate")
+    fresh_eligible_count = _int(active.get("paperops2_fresh_eligible_submit_record_count"))
     if active.get("paperops2_status") not in {
         "ready_pending_explicit_execute",
         "submitted_paper_order_recorded",
-    }:
+    } and fresh_eligible_count > 0:
         blockers.append("paperops2_submit_gate_not_ready")
-    if active.get("paper_poll_step_allowed") is not True and _int(
-        active.get("paperops3_source_submitted_order_count")
-    ) > 0:
+    if (
+        active.get("paper_poll_step_allowed") is not True
+        and _int(active.get("paperops3_source_submitted_order_count")) > 0
+        and active.get("paperops3_status") != "paper_lifecycle_poll_recorded"
+    ):
         blockers.append("paper_poll_gate_not_ready")
     if active.get("paper_exit_step_allowed") is not True and _int(
         active.get("paperops4_eligible_exit_record_count")
     ) > 0:
         blockers.append("paper_exit_gate_not_ready")
     return blockers
+
+
+def _build_idle_reasons(active: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    active_reason = str(active.get("why_not_trading_now") or "").strip()
+    if _int(active.get("paperops2_fresh_eligible_submit_record_count")) < 1 and not any(
+        active.get(key) is True
+        for key in (
+            "paper_submit_step_allowed",
+            "paper_poll_step_allowed",
+            "paper_exit_step_allowed",
+        )
+    ):
+        _append_unique(reasons, "no_fresh_eligible_candidate")
+    if active_reason and active_reason not in {"no_fresh_eligible_candidate"}:
+        _append_unique(reasons, active_reason)
+    return reasons
+
+
+def _build_downstream_waiting_reasons(active: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    fresh_eligible_count = _int(active.get("paperops2_fresh_eligible_submit_record_count"))
+    if (
+        active.get("paper_submit_step_allowed") is not True
+        and fresh_eligible_count < 1
+        and active.get("paperops2_status")
+        not in {"ready_pending_explicit_execute", "submitted_paper_order_recorded"}
+    ):
+        _append_unique(reasons, "submit_gate_waiting_for_fresh_eligible_candidate")
+    if (
+        active.get("paper_poll_step_allowed") is not True
+        and _int(active.get("paperops3_source_submitted_order_count")) > 0
+        and active.get("paperops3_status") == "paper_lifecycle_poll_recorded"
+    ):
+        _append_unique(reasons, "poll_gate_already_recorded_no_action_due")
+    if (
+        active.get("paper_exit_step_allowed") is not True
+        and _int(active.get("paperops4_eligible_exit_record_count")) < 1
+    ):
+        _append_unique(reasons, "exit_gate_waiting_for_eligible_exit_candidate")
+    return reasons
 
 
 def _status(
@@ -239,6 +286,7 @@ def _why_not_trading_now(
     safety_blockers: list[str],
     operational_blockers: list[str],
     opportunity_or_risk_blockers: list[str],
+    idle_reasons: list[str],
     active: dict[str, Any],
 ) -> str:
     if status == "blocked_by_safety":
@@ -264,6 +312,10 @@ def _why_not_trading_now(
         return "A guarded paper exit step is eligible through PaperOps."
     if active_reason:
         return "Paper trading is authorized and idle; current runner state: " + active_reason
+    if idle_reasons:
+        return "Paper trading is authorized and idle; current reason: " + ", ".join(
+            idle_reasons
+        )
     return "Paper trading is authorized and idle; Qadam is waiting for the next qualified setup."
 
 
@@ -295,6 +347,8 @@ def build_paper_authority_reconciliation(
     safety_blockers = _build_safety_blockers(settings, active)
     operational_blockers = _build_operational_blockers(active)
     opportunity_or_risk_blockers = _build_opportunity_or_risk_blockers(active)
+    idle_reasons = _build_idle_reasons(active)
+    downstream_waiting_reasons = _build_downstream_waiting_reasons(active)
     external_blockers: list[str] = []
     status = _status(
         safety_blockers=safety_blockers,
@@ -305,6 +359,7 @@ def build_paper_authority_reconciliation(
     current_blockers = (
         safety_blockers + operational_blockers + opportunity_or_risk_blockers + external_blockers
     )
+    trade_path_unblocked = not safety_blockers and not operational_blockers
     contract = {
         "schema_version": PAPER_AUTHORITY_RECONCILIATION_SCHEMA_VERSION,
         "artifact_type": "paper_authority_reconciliation",
@@ -329,12 +384,17 @@ def build_paper_authority_reconciliation(
         "live_capital_enabled": settings.live_capital_enabled,
         "live_capital_blocked": settings.live_capital_enabled is False,
         "full_potential_state": _full_potential_state(status),
+        "trade_path_unblocked": trade_path_unblocked,
         "current_blockers": current_blockers,
         "current_blocker_count": len(current_blockers),
         "safety_blockers": safety_blockers,
         "operational_blockers": operational_blockers,
         "opportunity_or_risk_blockers": opportunity_or_risk_blockers,
         "external_blockers": external_blockers,
+        "idle_reasons": idle_reasons,
+        "idle_reason_count": len(idle_reasons),
+        "downstream_waiting_reasons": downstream_waiting_reasons,
+        "downstream_waiting_reason_count": len(downstream_waiting_reasons),
         "stale_historical_blockers": list(_STALE_HISTORICAL_BLOCKERS),
         "stale_historical_blocker_count": len(_STALE_HISTORICAL_BLOCKERS),
         "allowed_paper_actions": list(_ALLOWED_PAPER_ACTIONS),
@@ -344,6 +404,7 @@ def build_paper_authority_reconciliation(
             safety_blockers=safety_blockers,
             operational_blockers=operational_blockers,
             opportunity_or_risk_blockers=opportunity_or_risk_blockers,
+            idle_reasons=idle_reasons,
             active=active,
         ),
         "next_required_action": _next_required_action(status),
@@ -394,6 +455,30 @@ def validate_paper_authority_reconciliation(contract: dict[str, Any]) -> list[st
     current_keys = set(_as_list(contract.get("current_blockers")))
     if stale_keys & current_keys:
         errors.append("paper_authority_reconciliation_stale_blocker_current")
+    if contract.get("current_blocker_count") != len(current_keys):
+        errors.append("paper_authority_reconciliation_current_blocker_count_mismatch")
+    if contract.get("idle_reason_count") != len(_as_list(contract.get("idle_reasons"))):
+        errors.append("paper_authority_reconciliation_idle_reason_count_mismatch")
+    if contract.get("downstream_waiting_reason_count") != len(
+        _as_list(contract.get("downstream_waiting_reasons"))
+    ):
+        errors.append(
+            "paper_authority_reconciliation_downstream_waiting_reason_count_mismatch"
+        )
+    if (
+        contract.get("trade_path_unblocked") is True
+        and (
+            contract.get("safety_blockers")
+            or contract.get("operational_blockers")
+        )
+    ):
+        errors.append("paper_authority_reconciliation_unblocked_with_blockers")
+    if "no_fresh_eligible_candidate" in current_keys:
+        errors.append("paper_authority_reconciliation_idle_reason_shown_as_blocker")
+    if "no_fresh_eligible_candidate" in _as_list(
+        contract.get("opportunity_or_risk_blockers")
+    ):
+        errors.append("paper_authority_reconciliation_idle_reason_shown_as_risk_blocker")
     if contract.get("status", "").startswith("paper_authorized") and contract.get(
         "safety_blockers"
     ):

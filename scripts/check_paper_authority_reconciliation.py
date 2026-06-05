@@ -79,6 +79,18 @@ def main() -> int:
         f"{','.join(contract['current_blockers'])}"
     )
     print(
+        "paper_authority_reconciliation_idle_reasons="
+        f"{','.join(contract['idle_reasons'])}"
+    )
+    print(
+        "paper_authority_reconciliation_downstream_waiting_reasons="
+        f"{','.join(contract['downstream_waiting_reasons'])}"
+    )
+    print(
+        "paper_authority_reconciliation_trade_path_unblocked="
+        f"{contract['trade_path_unblocked']}"
+    )
+    print(
         "paper_authority_reconciliation_safety_blockers="
         f"{','.join(contract['safety_blockers'])}"
     )
@@ -135,6 +147,14 @@ def main() -> int:
         errors.append("RS-0 invented paper submit authority")
     if contract["safety_blockers"]:
         errors.append("RS-0 has safety blockers: " + ",".join(contract["safety_blockers"]))
+    if "no_fresh_eligible_candidate" in contract["current_blockers"]:
+        errors.append("RS-0 misclassified idle no-fresh-candidate as a current blocker")
+    if "no_fresh_eligible_candidate" in contract["opportunity_or_risk_blockers"]:
+        errors.append("RS-0 misclassified idle no-fresh-candidate as a risk blocker")
+    if contract["trade_path_unblocked"] is not (
+        not contract["safety_blockers"] and not contract["operational_blockers"]
+    ):
+        errors.append("RS-0 trade_path_unblocked does not match safety/ops state")
 
     if errors:
         print("paper_authority_reconciliation_check=failed")

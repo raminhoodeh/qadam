@@ -8478,8 +8478,12 @@ def main() -> int:
         rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is True
         and rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is True
         and rs10_final_paper_autonomy.get("autonomy_currently_actionable") is False
-        and "no_fresh_eligible_candidate"
-        in (rs10_final_paper_autonomy.get("current_blockers") or [])
+        and (
+            "no_fresh_eligible_candidate"
+            in (rs10_final_paper_autonomy.get("idle_reasons") or [])
+            or "no_fresh_eligible_candidate"
+            in (rs10_final_paper_autonomy.get("current_blockers") or [])
+        )
         and rs10_final_paper_autonomy.get("certification_blocker_count") == 0
         and rs10_final_paper_autonomy.get("safety_blocker_count") == 0
     )
