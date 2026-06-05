@@ -8572,6 +8572,7 @@ function renderCommunications(status) {
     const dailyDigestTrades = asArray(telegramDailyDigest.daily_trade_summaries);
     const codebaseUpgradeDetails = asArray(telegramCodebaseUpgrade.details);
     const codebaseUpgradeBenefits = asArray(telegramCodebaseUpgrade.benefits);
+    const codebaseUpgradeAreas = asArray(telegramCodebaseUpgrade.change_area_lines);
     const messageRows = messages.length
         ? messages.map((message) => `
             <li>
@@ -8626,6 +8627,7 @@ function renderCommunications(status) {
             ${renderMetric("Mode", telegram.mode || "dry_run")}
             ${renderMetric("Daily digest", telegramDailyDigest.status || telegram.daily_portfolio_digest_status || "not run")}
             ${renderMetric("Code upgrades", telegramCodebaseUpgrade.status || telegram.codebase_upgrade_notifications_status || "not run")}
+            ${renderMetric("Message quality", `${telegramCodebaseUpgrade.message_specificity_status || telegramDailyDigest.message_specificity_status || "not run"} · ${telegramCodebaseUpgrade.message_specificity_score || telegramDailyDigest.message_specificity_score || 0}/100`)}
             ${renderMetric("Portfolio balance", formatMoney(telegramDailyDigest.portfolio_balance_gbp || telegram.daily_portfolio_digest_portfolio_balance_gbp))}
             ${renderMetric("P&L", `${formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0)} · ${formatPercent(telegramDailyDigest.portfolio_performance_pct || telegram.daily_portfolio_digest_portfolio_performance_pct || 0)}`)}
             ${renderMetric("Trades today", telegramDailyDigest.daily_trade_count || telegram.daily_portfolio_digest_daily_trade_count || 0)}
@@ -8662,6 +8664,7 @@ function renderCommunications(status) {
                 ${renderMetric("Source", telegramCodebaseUpgrade.source || "not run")}
                 ${renderMetric("Core commit", telegramCodebaseUpgrade.root_commit_short || "pending")}
                 ${renderMetric("Dashboard commit", telegramCodebaseUpgrade.dashboard_commit_short || "pending")}
+                ${renderMetric("Specificity", `${telegramCodebaseUpgrade.message_specificity_status || "not run"} · ${telegramCodebaseUpgrade.message_specificity_score || 0}/100`)}
                 ${renderMetric("Deployment", telegramCodebaseUpgrade.deployment_url || asArray(telegramCodebaseUpgrade.aliases).join(", ") || "not recorded")}
             </div>
             <ul class="status-list communications-list">
@@ -8670,6 +8673,7 @@ function renderCommunications(status) {
                     <span>${htmlText(telegramCodebaseUpgrade.root_dirty || telegramCodebaseUpgrade.dashboard_dirty ? "There are local working-tree changes in the recorded upgrade fingerprint." : "Recorded upgrade fingerprint is tied to exported commits.")}</span>
                     <div class="comment-meta">
                         ${renderInlineBadge(telegramCodebaseUpgrade.status || "not_run", telegramCodebaseUpgrade.live_send_succeeded ? "online" : "pending")}
+                        ${renderInlineBadge(`${telegramCodebaseUpgrade.message_specificity_status || "not scored"} ${telegramCodebaseUpgrade.message_specificity_score || 0}/100`, telegramCodebaseUpgrade.message_specificity_status === "specific" ? "online" : "pending")}
                         ${renderInlineBadge(telegramCodebaseUpgrade.live_send_succeeded || telegramCodebaseUpgrade.already_sent ? "sent" : "not sent", telegramCodebaseUpgrade.live_send_succeeded || telegramCodebaseUpgrade.already_sent ? "online" : "pending")}
                         ${renderInlineBadge(telegramCodebaseUpgrade.telegram_command_path_enabled ? "command authority" : "notify only", telegramCodebaseUpgrade.telegram_command_path_enabled ? "blocked" : "online")}
                     </div>
@@ -8677,6 +8681,10 @@ function renderCommunications(status) {
                 <li>
                     <strong>What changed</strong>
                     <span>${codebaseUpgradeDetails.length ? codebaseUpgradeDetails.map((item) => htmlText(item)).join("; ") : "Specific implementation details will appear with the next codebase upgrade notification."}</span>
+                </li>
+                <li>
+                    <strong>Detected update areas</strong>
+                    <span>${codebaseUpgradeAreas.length ? codebaseUpgradeAreas.map((item) => htmlText(item)).join("; ") : "Update areas will appear with the next codebase upgrade notification."}</span>
                 </li>
                 <li>
                     <strong>Why it matters</strong>
@@ -8692,6 +8700,7 @@ function renderCommunications(status) {
                 ${renderMetric("Send after", `${telegramDailyDigest.delivery_after_local_time || "17:00"} ${telegramDailyDigest.timezone || ""}`)}
                 ${renderMetric("Due", telegramDailyDigest.due_for_delivery ? "yes" : "not yet")}
                 ${renderMetric("Sent today", telegramDailyDigest.live_send_succeeded || telegramDailyDigest.already_sent ? "yes" : "not yet")}
+                ${renderMetric("Specificity", `${telegramDailyDigest.message_specificity_status || "not run"} · ${telegramDailyDigest.message_specificity_score || 0}/100`)}
             </div>
             <ul class="status-list communications-list">
                 <li>
@@ -8699,6 +8708,7 @@ function renderCommunications(status) {
                     <span>${htmlText(formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0))} total P&amp;L · ${htmlText(formatPercent(telegramDailyDigest.portfolio_performance_pct || 0))} since paper allocation.</span>
                     <div class="comment-meta">
                         ${renderInlineBadge(telegramDailyDigest.status || "not_run", telegramDailyDigest.live_send_succeeded ? "online" : "pending")}
+                        ${renderInlineBadge(`${telegramDailyDigest.message_specificity_status || "not scored"} ${telegramDailyDigest.message_specificity_score || 0}/100`, telegramDailyDigest.message_specificity_status === "specific" ? "online" : "pending")}
                         ${renderInlineBadge(telegramDailyDigest.target === "group" ? "group chat" : "target pending", telegramDailyDigest.target === "group" ? "online" : "pending")}
                         ${renderInlineBadge(telegramDailyDigest.telegram_command_path_enabled ? "command authority" : "notify only", telegramDailyDigest.telegram_command_path_enabled ? "blocked" : "online")}
                     </div>
@@ -8706,6 +8716,14 @@ function renderCommunications(status) {
                 <li>
                     <strong>Trades today</strong>
                     <span>${dailyDigestTrades.length ? dailyDigestTrades.map((item) => htmlText(item)).join("; ") : "No paper trades recorded for this local day."}</span>
+                </li>
+                <li>
+                    <strong>Why no/next trade</strong>
+                    <span>${htmlText(telegramDailyDigest.paperops_idle_reason || "PaperOps idle reason appears after the daily digest runs.")}</span>
+                    <div class="comment-meta">
+                        ${renderInlineBadge(`${telegramDailyDigest.paperops_qualified_setup_count || 0} qualified setups`, telegramDailyDigest.paperops_qualified_setup_count ? "online" : "pending")}
+                        ${renderInlineBadge(`${telegramDailyDigest.paperops_submitted_paper_order_count || 0} submitted orders`, telegramDailyDigest.paperops_submitted_paper_order_count ? "online" : "pending")}
+                    </div>
                 </li>
             </ul>
             <p class="mini">${htmlText(telegramDailyDigest.boundary || "Daily Telegram portfolio digests are outbound status reports only.")}</p>
