@@ -2147,10 +2147,6 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     margin-top: 4px;
 }
 
-html[data-dashboard-active-view="operations"] .legacy-operations-panel {
-    display: none;
-}
-
 .operations-workspace-head {
     align-items: stretch;
     display: grid;
