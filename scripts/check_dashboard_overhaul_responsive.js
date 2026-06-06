@@ -33,7 +33,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260603-rs8-mission-control",
+        "/auth.css?v=20260605-cc2-cut",
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "aria-label=\"Dashboard views\"",
@@ -85,7 +85,6 @@ async function main() {
 
     [
         ".overview-mini-map",
-        ".overview-command-surface",
         ".overview-readout-list",
         ".overview-system-grid",
         ".overview-lifecycle-strip",
@@ -109,14 +108,13 @@ async function main() {
     const overviewMapHtml = html(rendered, "[data-overview-mini-map]");
     const operationsHtml = html(rendered, "[data-flow-map]");
     const tradesHtml = html(rendered, "[data-trade-layer]");
-    const governanceHtml = html(rendered, "[data-governance-workspace]");
 
     assert(countOccurrences(overviewMapHtml, "overview-mini-node") >= 6, "overview mini-map rendered too few nodes");
     assert(operationsHtml.includes("Full system map"), "operations full map missing");
     assert(operationsHtml.includes("operations-flow-diagram"), "operations flow diagram missing");
     assert(tradesHtml.includes("trade-lifecycle-filters"), "trade lifecycle filters missing");
     assert(tradesHtml.includes("aria-pressed=\"true\""), "selected trade filter state missing");
-    assert(governanceHtml.includes("Comment shortcuts"), "governance contextual comment targets missing");
+    assert(operationsHtml.includes("Governance and outbound communications"), "consolidated governance audit missing from Operations");
 
     [
         "/Users/",
@@ -133,7 +131,6 @@ async function main() {
         assert(!overviewMapHtml.includes(needle), `overview mini-map leaked non-public-safe marker ${needle}`);
         assert(!operationsHtml.includes(needle), `operations map leaked non-public-safe marker ${needle}`);
         assert(!tradesHtml.includes(needle), `trades workspace leaked non-public-safe marker ${needle}`);
-        assert(!governanceHtml.includes(needle), `governance workspace leaked non-public-safe marker ${needle}`);
     });
 
     includesAll(plan, [

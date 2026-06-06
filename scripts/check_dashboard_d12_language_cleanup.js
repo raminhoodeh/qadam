@@ -89,8 +89,8 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260603-rs8-mission-control",
-        "/dashboard.js?v=20260603-rs8-mission-control",
+        "/auth.css?v=20260605-cc2-cut",
+        "/dashboard.js?v=20260605-cc2-cut",
         "Qadam paper trading dashboard",
         "Paper Trading Overview",
         "Safety status",
@@ -130,8 +130,8 @@ async function main() {
     const rendered = await renderWithStatus(status);
     const overviewText = [
         html(rendered, "[data-dashboard-safety-strip]"),
-        html(rendered, "[data-overview-status-rail]"),
-        html(rendered, "[data-overview-hero]"),
+        html(rendered, "[data-overview-mission-brief]"),
+        html(rendered, "[data-overview-strategy-narrative]"),
         html(rendered, "[data-overview-system-status]"),
         html(rendered, "[data-overview-paper-capacity]"),
         html(rendered, "[data-overview-data-sources]"),
@@ -145,9 +145,9 @@ async function main() {
         "Dashboard cannot place orders",
         "AI cannot bypass risk checks",
         "toward £200,000",
-        "Potential setups",
-        "Current summary",
-        "Trade ideas",
+        "What is Qadam watching?",
+        "Mission Control brief",
+        "Trades being considered",
         "A trade idea is not an order"
     ], "D12 rendered overview");
     assertNoSlop(overviewText, "D12 rendered overview");
@@ -158,7 +158,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260603-rs8-mission-control");
+    console.log("dashboard_d12_cache_key=20260605-cc2-cut");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

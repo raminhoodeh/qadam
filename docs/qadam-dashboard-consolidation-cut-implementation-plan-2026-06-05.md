@@ -178,6 +178,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 - Remove from `index.html`: the `worldview` panel (it self-declares "Merged into Reasoning"), the standalone **Safety Stops** (`#forbidden`), **Communications** (`#communications`), **Process Console** (`#process-console`) panels (all `legacy-operations-panel`), the debug-only Overview duplicates (`overview-command-surface`, `overview-proof-flow`, `review-sequence`), and every static placeholder row / hardcoded metric (`35`, `Static`, `£100,000`, `0/100`, "Source registry placeholder").
 - Relocate Governance + Telegram + Process Console content into the Diagnostics drawer markup.
 - **Done when:** no `legacy-operations-panel` remains; zero hardcoded data values in markup; page still renders (empty states until CC5 wiring).
+- **Status:** completed. The static dashboard shell now removes the legacy Safety Stops, Communications, Process Console, Governance, worldview, and debug-only Overview duplicate panels; old deep links redirect into consolidated Mission Control, Reasoning, and Operations readouts; hardcoded source/account placeholder metrics now defer to status-snapshot loading states.
 
 ### CC3 — Single safety statement *(HTML/CSS)*
 - Keep one safety strip. Delete all 14 `<dt>Limits</dt>` and 7 `<dt>Boundary</dt>` rows; collapse 4 safety badges → 1; remove per-node `node-authority` badges (10).

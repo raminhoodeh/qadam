@@ -36,20 +36,18 @@ function assertIncludes(text, needle, label) {
     "data-dashboard-view-target=\"operations\"",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links hidden",
-    "/auth.css?v=20260603-rs8-mission-control",
-    "/dashboard.js?v=20260603-rs8-mission-control"
+    "/auth.css?v=20260605-cc2-cut",
+    "/dashboard.js?v=20260605-cc2-cut"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
 
 [
     "mission-control",
     "system-map",
+    "operations-readout",
     "watching",
     "cognition",
     "trade-layer",
-    "money",
-    "forbidden",
-    "process-console",
-    "governance"
+    "money"
 ].forEach((id) => {
     assertIncludes(html, `id="${id}"`, "dashboard section anchor");
 });

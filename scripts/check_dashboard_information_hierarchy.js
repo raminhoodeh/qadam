@@ -26,54 +26,51 @@ const hero = indexOf("dashboard-hero");
 const safety = indexOf("dashboard-safety-strip");
 const review = indexOf("operating-review-panel");
 const map = indexOf("system-map-panel");
-const detailIntro = indexOf("dashboard-section-intro");
 const detailFlow = indexOf("dashboard-detail-flow");
 
 assert(hero < review, "mission control must appear after the hero");
 assert(hero < safety, "safety strip must appear after the hero");
 assert(safety < review, "safety strip must appear before mission control");
 assert(review < map, "mission control must appear before the system map");
-assert(map < detailIntro, "section intro must appear after the system map");
-assert(detailIntro < detailFlow, "detail panels must appear after the section intro");
+assert(map < detailFlow, "detail panels must appear after the system map");
 
 [
     "data-overview-first-screen",
     "data-dashboard-safety-strip",
-    "data-overview-command-surface",
-    "data-overview-review-card",
-    "data-overview-proof-flow",
+    "data-overview-mission-brief",
+    "data-overview-strategy-narrative",
     "data-overview-system-summary",
-    "data-overview-status-rail",
-    "data-overview-hero",
-    "data-overview-lifecycle",
     "data-overview-mini-map",
     "data-overview-boundary-rail",
+    "data-overview-cockpit-grid",
+    "data-overview-data-sources",
+    "data-overview-trading-strategies",
+    "data-overview-thought-feed",
+    "data-overview-trade-considerations",
     "Paper Trading Overview",
-    "data-mission-primary",
-    "Current summary",
-    "Needs review",
-    "Paper trade lifecycle",
+    "Mission Control brief",
+    "Trading strategy narrative",
+    "Data sources connected",
+    "Trading strategies",
+    "Trades being considered",
     "Human oversight",
-    "Use the view switcher when a first-screen item needs detail"
+    "How Qadam turns data into controlled paper trades"
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
 [
     ".operating-review-panel",
     ".dashboard-safety-strip",
     ".overview-first-screen",
-    ".overview-command-surface",
-    ".overview-review-card",
-    ".overview-proof-flow",
+    ".overview-mission-brief",
+    ".overview-strategy-narrative",
     ".overview-system-summary",
-    ".overview-status-rail",
-    ".overview-readout-list",
-    ".overview-lifecycle-strip",
     ".overview-mini-map",
     ".overview-boundary-rail",
-    ".overview-next-links",
-    ".dashboard-detail-flow",
-    "grid-template-columns: repeat(12, minmax(0, 1fr))",
-    "order: 9"
+    ".overview-cockpit-grid",
+    ".overview-plain-grid",
+    ".overview-expandable-ledger",
+    ".overview-mini-node",
+    ".dashboard-detail-flow"
 ].forEach((needle) => assert(css.includes(needle), `dashboard hierarchy CSS missing ${needle}`));
 
 const missionFunction = renderer.indexOf("function renderMissionControl");
@@ -108,7 +105,8 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
     "Local LLM",
     "Frontier LLM",
     "Quantum computer",
-    "Use Safety Status for order authority",
+    "overview-source-ledger",
+    "overview-strategy-ledger",
     "A trade idea is not an order"
 ].forEach((needle) => assert(renderer.includes(needle), `Overview renderer missing ${needle}`));
 

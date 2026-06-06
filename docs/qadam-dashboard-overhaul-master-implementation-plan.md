@@ -372,8 +372,8 @@ Objective: replace the long-page mental model with a stable segmented IA.
 
 Work:
 
-- Define the seven primary views: Overview, Trades, Sources, Reasoning,
-  Performance, Operations, Governance.
+- Define the primary views. After the CC2 consolidation cut, the active shell
+  uses five primary views: Overview, Trades, Evidence, Reasoning, Operations.
 - Define view order, labels, short descriptions, and entry questions.
 - Decide URL behavior for the static dashboard:
   - first release: hash or query-state tabs within `/dashboard/`
@@ -403,8 +403,8 @@ Status update, 2026-05-25:
   `docs/qadam-dashboard-overhaul-dx-1-ia-contract.json`.
 - The audit record is captured in
   `docs/qadam-dashboard-overhaul-dx-1-ia-contract-audit-2026-05-25.md`.
-- `scripts/check_dashboard_overhaul_ia_contract.js` verifies the seven primary
-  views, current-section mapping coverage, legacy-anchor compatibility, compact
+- `scripts/check_dashboard_overhaul_ia_contract.js` verifies the CC2 five-view
+  shell, current-section mapping coverage, legacy-anchor compatibility, compact
   and expanded system-map destinations, and read-only authority boundary.
 - Full dashboard preflight includes the IA contract check.
 - DX-2 - Copy And Terminology System may proceed next.

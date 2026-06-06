@@ -80,7 +80,7 @@ async function main() {
     includesAll(dashboardHtml, [
         "Performance workspace",
         "60-day paper growth trial and account performance",
-        "2x target over 60 days",
+        "Paper growth target",
         "No forced trades",
         "Phase 5 trades excluded",
         "Verified records only"

@@ -1,6 +1,6 @@
 {
   "contract_id": "qadam_dashboard_overhaul_dx_1_ia_contract",
-  "contract_version": "2026-05-25.dx1",
+  "contract_version": "2026-06-05.cc2",
   "route": "/dashboard/",
   "status": "active",
   "authority_boundary": "Read-only presentation contract only. This IA cannot approve trades, create candidates, stage orders, submit paper orders, write brokers, send Telegram commands, call live capital, mutate data sources, or change runtime status.",
@@ -31,13 +31,13 @@
       "url_hash": "#trades"
     },
     {
-      "id": "sources",
+      "id": "evidence",
       "order": 3,
-      "label": "Sources",
-      "short_description": "Live feeds, supplemental feeds, source freshness, quorum, and provenance.",
+      "label": "Evidence",
+      "short_description": "Live feeds, supplemental feeds, source freshness, quorum, provenance, and factual packets.",
       "entry_question": "Are Qadam's inputs fresh, trustworthy, and sufficient?",
       "default": false,
-      "url_hash": "#sources"
+      "url_hash": "#evidence"
     },
     {
       "id": "reasoning",
@@ -49,31 +49,13 @@
       "url_hash": "#reasoning"
     },
     {
-      "id": "performance",
-      "order": 5,
-      "label": "Performance",
-      "short_description": "Paper account state, demo-proof evidence, drawdown, closed trades, and postmortem obligations.",
-      "entry_question": "Is the paper/demo-proof account proving anything?",
-      "default": false,
-      "url_hash": "#performance"
-    },
-    {
       "id": "operations",
-      "order": 6,
+      "order": 5,
       "label": "Operations",
-      "short_description": "Runtime health, bridge status, exporter state, safety plumbing, diagnostics, and the full system map.",
-      "entry_question": "Is the runtime, bridge, exporter, system map, and safety plumbing healthy?",
+      "short_description": "Runtime health, bridge status, exporter state, safety plumbing, diagnostics, governance, communications, and the full system map.",
+      "entry_question": "Is the runtime, bridge, exporter, system map, governance, communications, and safety plumbing healthy?",
       "default": false,
       "url_hash": "#operations"
-    },
-    {
-      "id": "governance",
-      "order": 7,
-      "label": "Governance",
-      "short_description": "Fund Manager comments, approvals, communications, reviews, and audit handoffs.",
-      "entry_question": "What comments, approvals, reviews, and communications need attention?",
-      "default": false,
-      "url_hash": "#governance"
     }
   ],
   "system_map_placements": [
@@ -120,18 +102,10 @@
       "notes": "The full expandable map moves to Operations. A simplified shared-model mini-map appears in Overview."
     },
     {
-      "section_id": "review-sequence",
-      "current_label": "Review Sequence",
-      "destination_view": "overview",
-      "destination_role": "first_time_tour_prompt",
-      "visibility": "demoted",
-      "notes": "Replace the long-page review sequence with segmented tour links."
-    },
-    {
       "section_id": "watching",
-      "current_label": "Sources",
-      "destination_view": "sources",
-      "destination_role": "source_health_workspace",
+      "current_label": "Evidence",
+      "destination_view": "evidence",
+      "destination_role": "source_health_and_evidence_workspace",
       "visibility": "primary",
       "notes": "Owns source freshness, configured/live feed state, supplemental sources, provenance, and quorum posture."
     },
@@ -144,22 +118,6 @@
       "notes": "Owns local research analyst, Strategy Lead context, hypothesis state, challenge-only review, and unresolved evidence gaps."
     },
     {
-      "section_id": "forbidden",
-      "current_label": "Safety",
-      "destination_view": "operations",
-      "destination_role": "safety_boundary_diagnostics",
-      "visibility": "primary",
-      "notes": "Keep live-capital disabled and broker-write blocks visible in Overview; place full guardrail detail in Operations."
-    },
-    {
-      "section_id": "communications",
-      "current_label": "Communications",
-      "destination_view": "governance",
-      "destination_role": "notification_and_forum_boundary",
-      "visibility": "secondary",
-      "notes": "Telegram and forum posture belong with human review, approvals, and comments."
-    },
-    {
       "section_id": "trade-layer",
       "current_label": "Trade Layer",
       "destination_view": "trades",
@@ -170,34 +128,10 @@
     {
       "section_id": "money",
       "current_label": "Money",
-      "destination_view": "performance",
+      "destination_view": "trades",
       "destination_role": "paper_account_and_demo_proof_workspace",
       "visibility": "primary",
-      "notes": "Owns paper balance, P&L, drawdown, closed paper trades, Phase 7 proof trades, and maturity progress."
-    },
-    {
-      "section_id": "process-console",
-      "current_label": "Process Console",
-      "destination_view": "operations",
-      "destination_role": "runtime_diagnostics",
-      "visibility": "demoted",
-      "notes": "Runtime and bridge diagnostics are operator detail, not first-screen onboarding."
-    },
-    {
-      "section_id": "worldview",
-      "current_label": "Private Edge",
-      "destination_view": "reasoning",
-      "destination_role": "worldview_prior_context",
-      "visibility": "secondary",
-      "notes": "Worldview and private edge belong with why Qadam cares, not with system plumbing."
-    },
-    {
-      "section_id": "governance",
-      "current_label": "Governance",
-      "destination_view": "governance",
-      "destination_role": "fund_manager_review_workspace",
-      "visibility": "primary",
-      "notes": "Owns comments, approval records, review queues, and governance-only notes."
+      "notes": "Owns paper balance, P&L, drawdown, closed paper trades, Phase 7 proof trades, and maturity progress inside Trades rather than a separate top-level view."
     }
   ],
   "demoted_from_first_level": [
@@ -210,20 +144,8 @@
       "reason": "Full map is too detailed for Overview; use a compact mini-map first."
     },
     {
-      "section_id": "review-sequence",
-      "reason": "Long-page instructions become segmented first-time tour links."
-    },
-    {
-      "section_id": "communications",
-      "reason": "Human review channel state belongs inside Governance."
-    },
-    {
-      "section_id": "process-console",
-      "reason": "Runtime diagnostics belong inside Operations."
-    },
-    {
-      "section_id": "worldview",
-      "reason": "Worldview prior context belongs inside Reasoning."
+      "section_id": "money",
+      "reason": "Performance is part of the Trades lifecycle rather than a separate top-level view."
     }
   ],
   "legacy_anchor_compatibility": [
@@ -245,11 +167,11 @@
     {
       "legacy_hash": "#review-sequence",
       "view": "overview",
-      "target_section": "review-sequence"
+      "target_section": "mission-control"
     },
     {
       "legacy_hash": "#watching",
-      "view": "sources",
+      "view": "evidence",
       "target_section": "watching"
     },
     {
@@ -260,12 +182,12 @@
     {
       "legacy_hash": "#forbidden",
       "view": "operations",
-      "target_section": "forbidden"
+      "target_section": "operations-readout"
     },
     {
       "legacy_hash": "#communications",
-      "view": "governance",
-      "target_section": "communications"
+      "view": "operations",
+      "target_section": "operations-readout"
     },
     {
       "legacy_hash": "#trade-layer",
@@ -274,23 +196,23 @@
     },
     {
       "legacy_hash": "#money",
-      "view": "performance",
+      "view": "trades",
       "target_section": "money"
     },
     {
       "legacy_hash": "#process-console",
       "view": "operations",
-      "target_section": "process-console"
+      "target_section": "operations-readout"
     },
     {
       "legacy_hash": "#worldview",
       "view": "reasoning",
-      "target_section": "worldview"
+      "target_section": "cognition"
     },
     {
       "legacy_hash": "#governance",
-      "view": "governance",
-      "target_section": "governance"
+      "view": "operations",
+      "target_section": "operations-readout"
     }
   ],
   "first_time_tour": [
@@ -306,7 +228,7 @@
     },
     {
       "step": 3,
-      "view": "sources",
+      "view": "evidence",
       "question": "Are the live data feeds fresh enough to trust the readout?"
     },
     {
@@ -316,22 +238,12 @@
     },
     {
       "step": 5,
-      "view": "performance",
-      "question": "Is the paper/demo-proof run proving anything?"
-    },
-    {
-      "step": 6,
       "view": "operations",
       "question": "Is the runtime and system connectivity healthy?"
-    },
-    {
-      "step": 7,
-      "view": "governance",
-      "question": "What does the Fund Manager need to review or approve?"
     }
   ],
   "acceptance": {
-    "primary_view_count": 7,
+    "primary_view_count": 5,
     "all_current_sections_must_have_destination": true,
     "important_panels_must_not_be_orphaned": true,
     "overview_system_map_scope": "compact",

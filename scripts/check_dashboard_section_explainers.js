@@ -55,16 +55,10 @@ const requiredExplainers = [
     "mission_control",
     "phase4_strategy",
     "system_operating_map",
-    "operating_detail",
     "watching",
     "cognition",
-    "forbidden_actions",
-    "telegram_communications",
     "trade_layer",
-    "money",
-    "process_console",
-    "private_edge_layer",
-    "fund_manager_comments"
+    "money"
 ];
 
 requiredExplainers.forEach((id) => {
@@ -95,15 +89,15 @@ requiredExplainers.forEach((id) => {
 
 [
     "One place for paper mode, capital, and order authority.",
+    "The current status of Qadam's paper trading system.",
+    "Strategy visibility and approval state.",
     "Summary only; Diagnostics has technical detail.",
+    "Governance only; no provider or broker action.",
     "Map only; nodes are not controls.",
     "Observation only; no order creation.",
     "Hypothesis only; risk still decides.",
-    "Notify-only; no command path.",
     "A trade idea is not an order.",
-    "Event stream only; not shell access.",
-    "Context only; requires live corroboration.",
-    "Governance only; no runtime or trade authority."
+    "Paper mirror; no funding authority."
 ].forEach((needle) => assertIncludes(html, needle, "dashboard explainer boundary"));
 
 [
@@ -117,7 +111,7 @@ requiredExplainers.forEach((id) => {
 
 assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
 assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
-assertIncludes(html, "/auth.css?v=20260603-rs8-mission-control", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260605-cc2-cut", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

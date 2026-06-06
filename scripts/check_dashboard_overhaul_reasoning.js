@@ -85,8 +85,7 @@ async function main() {
         "Hypothesis, not trade idea",
         "No paper/order authority",
         "data-reasoning-consolidated-readout",
-        "data-reasoning-review-groups",
-        "Merged into Reasoning workspace"
+        "data-reasoning-review-groups"
     ], "Reasoning static shell");
 
     includesAll(css, [
@@ -167,7 +166,6 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     const cognitionHtml = html(rendered, "[data-cognition]");
-    const worldviewHtml = html(rendered, "[data-worldview]");
 
     [
         "Reasoning workspace",
@@ -189,8 +187,9 @@ async function main() {
         "Signal Integrity review"
     ].forEach((needle) => assert(cognitionHtml.includes(needle), `rendered reasoning workspace missing ${needle}`));
 
-    assert(worldviewHtml.includes("Merged into Reasoning workspace"), "worldview panel does not point back to Reasoning");
-    assert(worldviewHtml.includes("Decision chain"), "worldview prior index lost the decision chain");
+    assert(cognitionHtml.includes("Worldview prior"), "reasoning worldview prior index is missing");
+    assert(cognitionHtml.includes("Prior is not evidence"), "reasoning worldview prior evidence boundary is missing");
+    assert(!dashboardHtml.includes("data-worldview"), "standalone worldview panel should remain removed after CC2");
 
     [
         "/Users/",

@@ -265,46 +265,45 @@ async function main() {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-flow-map]", "Telegram Bot");
     assertIncludes(rendered, "[data-flow-map]", "Notify only");
-    assertIncludes(rendered, "[data-communications]", "Status");
-    assertIncludes(rendered, "[data-communications]", "dry run");
-    assertIncludes(rendered, "[data-communications]", "send gate disabled");
-    assertIncludes(rendered, "[data-communications]", "trade candidate");
-    assertIncludes(rendered, "[data-communications]", "blocked trade");
-    assertIncludes(rendered, "[data-communications]", "insight digest");
-    assertIncludes(rendered, "[data-communications]", "outbound-only");
-    assertIncludes(rendered, "[data-communications]", "Inbound member research");
-    assertIncludes(rendered, "[data-communications]", "World datapoints");
-    assertIncludes(rendered, "[data-communications]", "Strategy notes");
-    assertIncludes(rendered, "[data-communications]", "Research packets");
-    assertIncludes(rendered, "[data-communications]", "Daily portfolio digest");
-    assertIncludes(rendered, "[data-communications]", "Codebase upgrade notifications");
-    assertIncludes(rendered, "[data-communications]", "Core commit");
-    assertIncludes(rendered, "[data-communications]", "Dashboard commit");
-    assertIncludes(rendered, "[data-communications]", "Why it matters");
-    assertIncludes(rendered, "[data-communications]", "Portfolio balance");
-    assertIncludes(rendered, "[data-communications]", "Trades today");
-    assertIncludes(rendered, "[data-communications]", "read-only member research intake");
+    assertIncludes(rendered, "[data-flow-map]", "Governance, inbox, and communications audit");
+    assertIncludes(rendered, "[data-flow-map]", "Governance and outbound communications");
+    assertIncludes(rendered, "[data-flow-map]", "Fund Manager review and Telegram state without separate duplicate cards");
+    assertIncludes(rendered, "[data-flow-map]", "Telegram");
+    assertIncludes(rendered, "[data-flow-map]", "dry run");
+    assertIncludes(rendered, "[data-flow-map]", "Dry-run");
+    assertIncludes(rendered, "[data-flow-map]", "Queued");
+    assertIncludes(rendered, "[data-flow-map]", "Failed");
+    assertIncludes(rendered, "[data-flow-map]", "Suppressed");
+    assertIncludes(rendered, "[data-flow-map]", "Live sends");
+    assertIncludes(rendered, "[data-flow-map]", "send gate disabled");
+    assertIncludes(rendered, "[data-flow-map]", "outbound notify-only");
+    assertIncludes(rendered, "[data-flow-map]", "live send disabled");
 
     const html = fs.readFileSync(htmlPath, "utf8");
     const renderer = fs.readFileSync(rendererPath, "utf8");
     [
-        "communications-panel",
-        "data-communications",
-        "Telegram notifications",
-        "Telegram cannot place, approve, reject, modify, close, or resize trades"
+        "data-operations-review-group=\"governance_comms_audit\"",
+        "Governance, inbox, and communications audit",
+        "outbound-only Telegram notifications",
+        "operations-review-group"
     ].forEach((needle) => assert(html.includes(needle), `dashboard communications HTML missing ${needle}`));
     [
-        "function renderCommunications",
+        "function renderOperationsWorkspace",
+        "renderOperationsReviewGroup",
+        "communications_audit",
+        "governance_comms_audit",
+        "Governance and outbound communications",
+        "Visible communications, no command authority",
         "status.communications?.telegram",
         "status.communications?.telegram_daily_portfolio_digest",
         "status.communications?.telegram_codebase_upgrade",
         "status.communications?.telegram_intake",
         "Telegram Bot",
         "notify_only",
-        "Daily portfolio digest",
-        "Codebase upgrade notifications",
-        "Inbound member research",
-        "renderCommunications(status)"
+        "outbound notify-only",
+        "no Telegram command path",
+        "live send disabled",
+        "send gate"
     ].forEach((needle) => assert(renderer.includes(needle), `dashboard renderer missing ${needle}`));
 
     console.log("Dashboard Telegram communications contract OK");

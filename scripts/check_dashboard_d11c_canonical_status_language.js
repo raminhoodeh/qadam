@@ -148,9 +148,8 @@ assert(typeof window.canonicalQadamDashboardStatus === "function", "canonical st
     const flowHtml = html(rendered, "[data-flow-map]");
     const safetyStripHtml = html(rendered, "[data-dashboard-safety-strip]");
     const reasoningHtml = html(rendered, "[data-cognition]");
-    const safetyHtml = html(rendered, "[data-forbidden-actions]");
 
-    includesAll(`${flowHtml} ${safetyStripHtml} ${reasoningHtml} ${safetyHtml}`, [
+    includesAll(`${flowHtml} ${safetyStripHtml} ${reasoningHtml}`, [
         "OK",
         "OK - read-only",
         "OK - live capital off",

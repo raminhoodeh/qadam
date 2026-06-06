@@ -96,12 +96,11 @@ async function main() {
         "data-operations-review-group=\"team_data_plumbing\"",
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
-        "legacy-operations-panel",
-        "/auth.css?v=20260603-rs8-mission-control",
-        "/dashboard.js?v=20260603-rs8-mission-control"
+        "/auth.css?v=20260605-cc2-cut",
+        "/dashboard.js?v=20260605-cc2-cut"
     ], "D11I Operations static shell");
 
-    assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 4, "four legacy Operations panels should be hidden from visible Operations view");
+    assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 0, "legacy Operations panels should be removed after CC2");
 
     includesAll(css, [
         ".operations-consolidated-readout",
@@ -110,8 +109,7 @@ async function main() {
         ".operations-review-group",
         ".operations-review-group-body",
         ".operations-event-trail",
-        ".operations-governance-audit",
-        "html[data-dashboard-active-view=\"operations\"] .legacy-operations-panel"
+        ".operations-governance-audit"
     ], "D11I Operations CSS");
 
     includesAll(renderer, [
@@ -193,7 +191,7 @@ async function main() {
 
     console.log("dashboard_d11i_operations_view=ok");
     console.log("dashboard_d11i_review_group_count=" + model.operations_review_groups.length);
-    console.log("dashboard_d11i_legacy_operations_panel_count=4");
+    console.log("dashboard_d11i_legacy_operations_panel_count=0");
     console.log("dashboard_d11i_telegram_command_path_enabled=False");
     console.log("dashboard_authority_unchanged=True");
 }

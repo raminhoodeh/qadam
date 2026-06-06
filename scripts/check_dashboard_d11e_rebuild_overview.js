@@ -89,22 +89,18 @@ function loadRendererWindow() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "data-overview-command-surface",
-        "data-overview-review-card",
+        "data-overview-mission-brief",
+        "data-overview-strategy-narrative",
         "data-overview-cockpit-grid",
         "data-overview-system-status",
         "data-overview-paper-capacity",
-        "data-overview-proof-flow",
         "data-overview-system-summary",
-        "data-overview-status-rail",
-        "data-overview-metrics",
         "data-overview-mini-map",
         "data-overview-data-sources",
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "data-overview-next-links",
-        "20260603-rs8-mission-control"
+        "20260605-cc2-cut"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -115,18 +111,16 @@ async function main() {
     ], "D11E overview HTML");
 
     includesAll(css, [
-        ".overview-command-surface",
-        ".overview-review-card",
+        ".overview-mission-brief",
+        ".overview-strategy-narrative",
         ".overview-cockpit-grid",
         ".overview-system-status-panel",
         ".overview-paper-capacity-panel",
-        ".overview-proof-flow",
         ".overview-system-summary",
         ".overview-plain-grid",
         ".overview-plain-card",
         ".overview-capacity-line",
-        ".overview-status-chip",
-        ".overview-readout-list",
+        ".overview-expandable-ledger",
         ".overview-system-grid"
     ], "D11E overview CSS");
 
@@ -137,31 +131,26 @@ async function main() {
     ], "D11E overview CSS");
 
     includesAll(renderer, [
-        "status_chips",
-        "review_focus",
-        "readouts",
+        "mission_brief",
+        "renderOverviewStrategyNarrative",
         "system_status",
         "data_sources_connected",
         "trading_strategies",
         "thought_feed",
         "trade_considerations",
         "paper_capacity",
-        "function renderOverviewChip",
-        "function renderOverviewReadout",
         "function renderOverviewCapacityChart",
-        "Use Safety Status for order authority",
-        "Overview only answers what changed and where to review next"
+        "overview-source-ledger",
+        "overview-strategy-ledger"
     ], "D11E overview renderer");
 
     const window = loadRendererWindow();
     assert(typeof window.buildQadamDashboardViewModels === "function", "view-model builder missing");
     const models = window.buildQadamDashboardViewModels(status, { key: "live_bridge" });
     const overview = models.overview_model;
-    assert(overview.cards.length <= 4, "Overview should expose no more than four first-screen readouts");
-    assert(overview.readouts.length === 4, "Overview readouts should be exactly four");
-    assert(overview.status_chips.length === 6, "Overview proof strip should be six compact chips");
-    assert(overview.review_focus.state, "Overview review focus missing state");
-    assert(overview.scope_note.includes("Safety Status"), "Overview scope note must reference Safety Status");
+    assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
+    assert(overview.mission_brief.authority.live_capital_enabled === false, "Overview Mission Brief must keep live capital disabled");
+    assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
     assert(!overview.summary.toLowerCase().includes("live capital"), "Overview summary must not duplicate live-capital safety copy");
     assert(overview.system_status.length >= 6, "Overview should expose paper system status and runner cards");
     assert(overview.data_sources_connected.length >= 3, "Overview should expose connected source groups");
@@ -171,10 +160,8 @@ async function main() {
     assert(overview.paper_capacity.total_gbp === 100000, "Overview should expose GBP 100,000 paper capacity");
 
     const rendered = await renderWithStatus(status);
-    const statusRail = html(rendered, "[data-overview-status-rail]");
-    const hero = html(rendered, "[data-overview-hero]");
-    const metrics = html(rendered, "[data-overview-metrics]");
-    const review = html(rendered, "[data-overview-review-card]");
+    const missionBrief = html(rendered, "[data-overview-mission-brief]");
+    const strategyNarrative = html(rendered, "[data-overview-strategy-narrative]");
     const systemStatus = html(rendered, "[data-overview-system-status]");
     const paperCapacity = html(rendered, "[data-overview-paper-capacity]");
     const dataSources = html(rendered, "[data-overview-data-sources]");
@@ -188,44 +175,19 @@ async function main() {
         html(rendered, "[data-overview-boundary-rail]")
     ].join(" ");
 
-    includesAll(statusRail, [
-        "Paper growth trial",
-        "Autonomous runner",
-        "Potential setups",
-        "Submitted paper orders",
-        "Postmortems due"
-    ], "rendered D11E proof strip");
+    includesAll(missionBrief, [
+        "Mission Control brief",
+        "What is Qadam watching?",
+        "What is Qadam forbidden from doing?",
+        "What is the portfolio worth?",
+        "Next Chief Operating Officer action"
+    ], "rendered D11E Mission Control brief");
 
-    excludesAll(statusRail, [
-        "Paper/demo only",
-        "Paper account",
-        "Live capital"
-    ], "rendered D11E proof strip");
-
-    includesAll(hero, [
-        "Current summary",
-        "sources current",
-        "next review",
-        "Use Safety Status"
-    ], "rendered D11E hero");
-
-    includesAll(metrics, [
-        "Source health",
-        "Trade path",
-        "Paper growth trial",
-        "Needs review"
-    ], "rendered D11E readouts");
-
-    assert(countOccurrences(metrics, "overview-readout") === 4, "Overview should render exactly four readouts");
-    assert(!metrics.includes("overview-metric"), "Overview still renders old metric cards");
-
-    includesAll(review, [
-        "Needs review",
-        "#trades",
-        "#evidence",
-        "#reasoning",
-        "#operations"
-    ], "rendered D11E review card");
+    includesAll(strategyNarrative, [
+        "Trading strategy narrative",
+        "Akber",
+        "Data sources currently shaping the posture"
+    ], "rendered D11E strategy narrative");
 
     includesAll(systemStatus, [
         "System status",
@@ -284,8 +246,8 @@ async function main() {
     ], "D11E master plan");
 
     console.log("dashboard_d11e_rebuild_overview=ok");
-    console.log("dashboard_overview_readout_count=4");
-    console.log("dashboard_overview_status_chip_count=6");
+    console.log("dashboard_overview_cc2_consolidated=True");
+    console.log("dashboard_overview_mission_question_count=7");
     console.log("dashboard_overview_duplicate_safety_copy_removed=True");
     console.log("dashboard_authority_unchanged=True");
 }

@@ -12,7 +12,7 @@ const rendererCode = fs.readFileSync(rendererPath, "utf8");
 const status = JSON.parse(fs.readFileSync(statusPath, "utf8"));
 
 const selectors = [
-    "[data-mission-primary]",
+    "[data-mission-control]",
     "[data-mission-sources]",
     "[data-mission-philosophy]",
     "[data-mission-stack]",
@@ -20,20 +20,11 @@ const selectors = [
     "[data-mission-trades]",
     "[data-mission-portfolio]",
     "[data-operating-summary]",
-    "[data-overview-status-rail]",
     "[data-overview-mission-brief]",
-    "[data-overview-command-surface]",
-    "[data-overview-hero]",
-    "[data-overview-metrics]",
-    "[data-overview-review-card]",
-    "[data-overview-action-label]",
-    "[data-overview-action-summary]",
+    "[data-overview-strategy-narrative]",
     "[data-overview-cockpit-grid]",
     "[data-overview-system-status]",
     "[data-overview-paper-capacity]",
-    "[data-overview-proof-flow]",
-    "[data-overview-lifecycle-summary]",
-    "[data-overview-lifecycle]",
     "[data-overview-system-summary]",
     "[data-overview-feed-strip]",
     "[data-overview-oversight]",
@@ -45,7 +36,6 @@ const selectors = [
     "[data-overview-thinking-grid]",
     "[data-overview-thought-feed]",
     "[data-overview-trade-considerations]",
-    "[data-overview-next-links]",
     "[data-phase4-summary]",
     "[data-phase4-strategy]",
     "[data-flow-map]",
@@ -54,16 +44,9 @@ const selectors = [
     "[data-source-summary]",
     "[data-watching-list]",
     "[data-cognition]",
-    "[data-worldview]",
-    "[data-forbidden-actions]",
-    "[data-communications]",
     "[data-trade-layer]",
     "[data-capital]",
-    "[data-comments-summary]",
-    "[data-comments-boundary]",
-    "[data-comments-list]",
-    "[data-governance-workspace]",
-    "[data-process-console]",
+    "[data-operations-consolidated-readout]",
     "[data-status-banner]",
     "[data-balance-ticker]",
     "[data-trade-toast-rail]",
@@ -236,8 +219,7 @@ async function main() {
     );
     assertIncludes(rendered, "[data-status-banner]", "Dashboard status loaded");
     assertIncludes(rendered, "[data-status-banner]", "Live status connected");
-    assertIncludes(rendered, "[data-mission-primary]", "Operating thesis");
-    assertIncludes(rendered, "[data-mission-primary]", "hypotheses");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
     assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
     assertIncludes(rendered, "[data-mission-sources]", "Preference MCP");
     assertIncludes(rendered, "[data-mission-philosophy]", "Trading philosophy");
@@ -297,9 +279,6 @@ async function main() {
     assertIncludes(rendered, "[data-watching-list]", "no source-quorum");
     assertIncludes(rendered, "[data-cognition]", "Current focus");
     assertIncludes(rendered, "[data-cognition]", "Hypotheses and evidence");
-    assertIncludes(rendered, "[data-worldview]", "Decision chain");
-    assertIncludes(rendered, "[data-forbidden-actions]", "live capital");
-    assertIncludes(rendered, "[data-communications]", "Telegram");
     assertIncludes(rendered, "[data-trade-layer]", "Observed signals");
     assertIncludes(rendered, "[data-trade-layer]", "Candidates");
     assertIncludes(rendered, "[data-trade-layer]", "Q5-14 End-To-End Paper Trade Drill");
@@ -339,10 +318,6 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "live capital disabled");
     assertIncludes(rendered, "[data-capital]", "Starting");
     assertIncludes(rendered, "[data-capital]", "Closed trades");
-    assertIncludes(rendered, "[data-comments-summary]", "Local notes");
-    assertIncludes(rendered, "[data-comments-list]", "<li>");
-    assertIncludes(rendered, "[data-process-console]", "<li>");
-
     const changedStatus = clone(status);
     changedStatus.watching = [
         {

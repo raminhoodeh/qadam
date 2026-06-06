@@ -80,46 +80,34 @@ function loadRendererWindow() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "Governance workspace",
-        "Comments, approvals, inbox, reviews, and outbound communications",
-        "Comment shortcuts",
-        "Comment on a clear dashboard area",
-        "data-comment-target-button",
-        "data-comment-target-select",
-        "comments governance-only",
-        "approvals audit-only",
-        "Telegram outbound-only",
-        "OK - live capital off"
-    ], "Governance workspace static shell");
-    assert(!dashboardHtml.includes("placeholder=\"trade_layer\""), "raw reference-key text placeholder still present");
-    assert(dashboardHtml.includes("<select name=\"target_key\" data-comment-target-select required>"), "comment target assisted selector missing");
+        "Operations workspace",
+        "Governance, inbox, and communications audit",
+        "Fund Manager comments, Chief Operating Officer inbox items, approval records, weekly review state, and outbound-only Telegram notifications.",
+        "data-operations-review-group=\"governance_comms_audit\""
+    ], "Consolidated governance static shell");
+    assert(!dashboardHtml.includes("id=\"governance\""), "standalone governance panel should remain removed after CC2");
+    assert(!dashboardHtml.includes("data-governance-workspace"), "standalone governance workspace should remain removed after CC2");
 
     includesAll(css, [
-        ".governance-workspace",
-        ".governance-workspace-head",
-        ".governance-boundary-card",
-        ".governance-status-grid",
-        ".governance-target-grid",
-        ".governance-record-grid",
-        ".governance-action-list",
-        ".governance-communications-card",
-        ".governance-weekly-card",
-        "html[data-dashboard-active-view=\"operations\"] .comments-panel"
-    ], "Governance workspace CSS");
+        ".operations-governance-audit",
+        ".operations-action-list",
+        ".operations-review-group",
+        ".operations-review-group-body",
+        "html[data-dashboard-active-view=\"operations\"] .system-map-panel"
+    ], "Consolidated governance CSS");
 
     includesAll(renderer, [
         "function buildGovernanceCommentTargets",
         "function buildGovernanceApprovalRecords",
         "function buildGovernanceOpenActions",
-        "function renderGovernanceWorkspace",
-        "function renderGovernanceTargetButton",
-        "function syncGovernanceCommentTargetOptions",
-        "function initGovernanceCommentTargetButtons",
-        "Telegram outbound-only",
-        "no Telegram command path",
-        "Live-promotion review workflow",
-        "Weekly review pack"
-    ], "Governance workspace renderer");
+        "function renderOperationsWorkspace",
+        "governance_comms_audit",
+        "Governance and outbound communications",
+        "outbound notify-only",
+        "live send disabled",
+        "weekly review",
+        "live promotion"
+    ], "Consolidated governance renderer");
 
     includesAll(auth, [
         "\"resource\"",
@@ -155,34 +143,26 @@ async function main() {
     assert(governance.live_promotion.live_capital_enabled === false, "governance reports live capital enabled");
 
     const rendered = await renderWithStatus(status);
-    const governanceHtml = html(rendered, "[data-governance-workspace]");
+    const governanceHtml = html(rendered, "[data-flow-map]");
     [
-        "Governance workspace",
-        "Comments, approvals, inbox, reviews, and outbound communications",
-        "comments governance-only",
-        "approvals audit-only",
-        "Telegram outbound-only",
-        "OK - live capital off",
-        "Comment shortcuts",
-        "Trade candidate:",
-        "Observed signal:",
-        "Strategy Lead / reasoning chain",
-        "60-day paper growth trial",
-        "Operations health",
-        "Approval and review records",
-        "Phase 4 strategy approval",
-        "Phase 5 certification",
-        "Phase 6 learning approval",
-        "Weekly review pack",
-        "Live-promotion review workflow",
-        "Telegram send-test approval",
-        "Open action items",
-        "Telegram outbound state",
-        "no Telegram command path",
-        "live send disabled",
+        "Operations workspace",
+        "Governance, inbox, and communications audit",
+        "Governance and outbound communications",
+        "Fund Manager review and Telegram state without separate duplicate cards.",
+        "Telegram",
+        "Dry-run",
+        "Queued",
+        "Failed",
+        "Suppressed",
+        "Live sends",
+        "Comments",
+        "Approval",
         "outbound notify-only",
-        "Weekly review and live-promotion workflow"
-    ].forEach((needle) => assert(governanceHtml.includes(needle), `rendered governance workspace missing ${needle}`));
+        "live send disabled",
+        "send gate disabled",
+        "weekly review allowed",
+        "live promotion not eligible"
+    ].forEach((needle) => assert(governanceHtml.includes(needle), `rendered consolidated governance audit missing ${needle}`));
 
     [
         "/Users/",
@@ -210,6 +190,7 @@ async function main() {
     assert(fs.existsSync(auditPath), "DX-11 audit document missing");
 
     console.log("dashboard_overhaul_governance=ok");
+    console.log("dashboard_governance_consolidated_into_operations=True");
     console.log("dashboard_governance_comment_target_count=" + commentTargets.length);
     console.log("dashboard_governance_approval_record_count=" + approvals.length);
     console.log("dashboard_governance_open_action_count=" + governance.open_actions.length);

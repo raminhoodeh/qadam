@@ -130,28 +130,32 @@ links.forEach((link) => {
 
 [
     ["mission-control", "overview"],
-    ["review-sequence", "overview"],
     ["trade-layer", "trades"],
     ["money", "trades"],
     ["watching", "evidence"],
     ["cognition", "reasoning"],
     ["strategy-manifestation", "reasoning"],
-    ["worldview", "reasoning"],
-    ["system-map", "operations"],
-    ["forbidden", "operations"],
-    ["process-console", "operations"],
-    ["communications", "operations"],
-    ["governance", "operations"]
+    ["system-map", "operations"]
 ].forEach(([sectionId, viewId]) => {
     assert(sectionById.get(sectionId) === viewId, `${sectionId} should belong to ${viewId}`);
 });
 
+[
+    "review-sequence",
+    "worldview",
+    "forbidden",
+    "process-console",
+    "communications",
+    "governance"
+].forEach((sectionId) => {
+    assert(!sectionById.has(sectionId), `${sectionId} should be a legacy redirect, not a visible section`);
+});
+
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260603-rs8-mission-control",
-    "/dashboard.js?v=20260603-rs8-mission-control",
+    "/auth.css?v=20260605-cc2-cut",
+    "/dashboard.js?v=20260605-cc2-cut",
     "data-dashboard-debug-toggle",
-    "data-dashboard-advanced-links",
-    "data-dashboard-debug-only"
+    "data-dashboard-advanced-links"
 ], "dashboard cache keys");
 
 excludesAll(`${dashboardHtml}\n${css}\n${renderer}`, [
@@ -185,7 +189,8 @@ const window = loadRendererContext();
     ["#system-map", "operations", "system-map"],
     ["#process-console", "operations", "operations-readout"],
     ["#forbidden", "operations", "operations-readout"],
-    ["#worldview", "reasoning", "worldview"],
+    ["#worldview", "reasoning", "cognition"],
+    ["#review-sequence", "overview", "mission-control"],
     ["#strategy-manifestation", "reasoning", "strategy-manifestation"]
 ].forEach(([hash, viewId, targetId]) => {
     const resolved = window.resolveQadamDashboardHash(hash);
@@ -216,9 +221,9 @@ includesAll(plan, [
     const rendered = await renderWithStatus(status);
     assert(rendered.document.documentElement.dataset.dashboardDensity === undefined, "rendered dashboard must not set density state");
     includesAll(dashboardHtml, ["data-dashboard-debug-toggle", "data-dashboard-advanced-links hidden"], "D11B advanced debug shell");
-    const nextLinks = renderedHtml(rendered, "[data-overview-next-links]");
-    includesAll(nextLinks, ["#trades", "#evidence", "#reasoning", "#operations"], "rendered overview next links");
-    excludesAll(nextLinks, ["#sources", "#performance", "#governance"], "rendered overview next links");
+    const missionBrief = renderedHtml(rendered, "[data-overview-mission-brief]");
+    includesAll(missionBrief, ["What is Qadam watching?", "What is Qadam thinking about next?", "What is Qadam forbidden from doing?"], "rendered overview mission brief");
+    excludesAll(missionBrief, ["#sources", "#performance", "#governance"], "rendered overview mission brief");
     console.log("dashboard_d11b_new_navigation_contract=ok");
     console.log("dashboard_d11b_registered_view_count=5");
     console.log("dashboard_d11b_primary_views_visible=overview,trades,evidence,reasoning,operations");

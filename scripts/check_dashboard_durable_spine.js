@@ -51,9 +51,9 @@ async function main() {
     );
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-mission-primary]", "Replay");
-    assertIncludes(rendered, "[data-mission-sources]", "replay");
-    assertIncludes(rendered, "[data-mission-stack]", "replay");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "replay");
+    assertIncludes(rendered, "[data-overview-system-status]", "replayed");
+    assertIncludes(rendered, "[data-overview-data-sources]", "connected");
 
     console.log("dashboard_durable_spine=ok");
 }

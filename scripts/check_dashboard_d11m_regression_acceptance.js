@@ -95,7 +95,7 @@ function assertCanonicalViewNav() {
         "data-dashboard-debug-toggle",
         "data-dashboard-advanced-links hidden",
         "Diagnostics",
-        "data-dashboard-debug-only"
+        "data-dashboard-view-target=\"operations\""
     ], "advanced debug navigation shell");
     includesAll(renderer, [
         "function setDashboardDebugMode",
@@ -183,8 +183,8 @@ async function assertRenderedDashboardContract() {
         ["[data-dashboard-safety-strip]", "AI cannot bypass risk checks"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
-        ["[data-overview-hero]", "Current summary"],
-        ["[data-overview-review-card]", "Needs review"],
+        ["[data-overview-mission-brief]", "Mission Control brief"],
+        ["[data-overview-strategy-narrative]", "Trading strategy narrative"],
         ["[data-overview-boundary-rail]", "Safety Status"],
         ["[data-trade-layer]", "Trade lifecycle board"],
         ["[data-trade-layer]", "Consolidated trade readout"],
@@ -199,21 +199,21 @@ async function assertRenderedDashboardContract() {
         ["[data-watching-list]", "pipeline-row"],
         ["[data-cognition]", "Reasoning readout"],
         ["[data-cognition]", "Hypotheses and evidence"],
-        ["[data-worldview]", "Prior only"],
-        ["[data-worldview]", "private priors"],
+        ["[data-cognition]", "Prior is not evidence"],
+        ["[data-cognition]", "private priors"],
         ["[data-flow-map]", "Operations readout and full system map"],
         ["[data-flow-map]", "Full system map"],
         ["[data-flow-map]", "Closed-loop rule"],
-        ["[data-communications]", "Recent outbox"],
-        ["[data-process-console]", "<li>"]
+        ["[data-flow-map]", "Governance, inbox, and communications audit"],
+        ["[data-flow-map]", "Process console"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     const publicRendered = [
         "[data-dashboard-safety-strip]",
         "[data-balance-ticker]",
         "[data-trade-toast-rail]",
-        "[data-overview-hero]",
-        "[data-overview-review-card]",
+        "[data-overview-mission-brief]",
+        "[data-overview-strategy-narrative]",
         "[data-overview-boundary-rail]",
         "[data-trade-layer]",
         "[data-capital]",
@@ -221,10 +221,7 @@ async function assertRenderedDashboardContract() {
         "[data-source-summary]",
         "[data-watching-list]",
         "[data-cognition]",
-        "[data-worldview]",
-        "[data-flow-map]",
-        "[data-communications]",
-        "[data-process-console]"
+        "[data-flow-map]"
     ].map((selector) => renderedHtml(rendered, selector)).join("\n");
 
     assertNoUnsafePublicText(publicRendered, "D11M rendered dashboard output");
@@ -232,8 +229,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260603-rs8-mission-control",
-        "/dashboard.js?v=20260603-rs8-mission-control"
+        "/auth.css?v=20260605-cc2-cut",
+        "/dashboard.js?v=20260605-cc2-cut"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

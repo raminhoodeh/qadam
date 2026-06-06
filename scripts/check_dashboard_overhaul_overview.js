@@ -80,17 +80,11 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-overview-first-screen",
         "data-overview-mission-brief",
-        "data-overview-command-surface",
-        "data-overview-review-card",
+        "data-overview-strategy-narrative",
         "data-overview-cockpit-grid",
         "data-overview-system-status",
         "data-overview-paper-capacity",
-        "data-overview-proof-flow",
         "data-overview-system-summary",
-        "data-overview-status-rail",
-        "data-overview-hero",
-        "data-overview-metrics",
-        "data-overview-lifecycle",
         "data-overview-oversight",
         "data-overview-feed-strip",
         "data-overview-mini-map",
@@ -98,32 +92,26 @@ async function main() {
         "data-overview-data-sources",
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
-        "data-overview-trade-considerations",
-        "data-overview-next-links"
+        "data-overview-trade-considerations"
     ], "Overview first-screen HTML");
 
     includesAll(css, [
         ".overview-first-screen",
         ".overview-mission-brief",
+        ".overview-strategy-narrative",
         ".overview-mission-question",
         ".overview-mission-question-grid",
         ".overview-mission-nav",
-        ".overview-command-surface",
-        ".overview-review-card",
         ".overview-cockpit-grid",
         ".overview-system-status-panel",
         ".overview-paper-capacity-panel",
-        ".overview-proof-flow",
         ".overview-system-summary",
         ".overview-plain-grid",
         ".overview-plain-card-grid",
         ".overview-capacity-line",
-        ".overview-status-rail",
-        ".overview-readout-list",
-        ".overview-lifecycle-strip",
         ".overview-mini-map",
         ".overview-boundary-rail",
-        ".overview-next-links",
+        ".overview-expandable-ledger",
         "@media (max-width: 900px)"
     ], "Overview first-screen CSS");
 
@@ -131,10 +119,8 @@ async function main() {
         "function renderOverviewFirstScreen",
         "function renderOverviewMissionQuestion",
         "overview.mission_brief",
-        "overview.demo_proof",
-        "overview.status_chips",
-        "overview.review_focus",
-        "overview.next_review_links",
+        "function renderOverviewStrategyNarrative",
+        "overview.trading_strategies",
         "overview.system_status",
         "overview.data_sources_connected",
         "overview.trading_strategies",
@@ -143,14 +129,13 @@ async function main() {
         "overview.paper_capacity",
         "OVERVIEW_NODE_LABELS",
         "Fund Manager oversight",
-        "Use Safety Status for order authority"
+        "overview-source-ledger",
+        "overview-strategy-ledger"
     ], "Overview renderer");
 
     const models = buildModels();
     const overview = models.overview_model;
     assert(overview.id === "overview", "Overview model id mismatch");
-    assert(overview.readouts.length === 4, "Overview should expose four primary readouts after D11E");
-    assert(overview.status_chips.length === 6, "Overview should expose six compact status chips after D11E");
     assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
     assert(overview.mission_brief.questions.length === 7, "Overview Mission Brief must expose seven questions");
     assert(overview.mission_brief.questions.some((item) => item.question === "What is Qadam watching?"), "Overview Mission Brief missing watching question");
@@ -161,11 +146,7 @@ async function main() {
     assert(overview.mission_brief.navigation.length >= 9, "Overview Mission Brief must expose navigation links");
     assert(overview.mission_brief.authority.live_capital_enabled === false, "Overview Mission Brief must keep live capital disabled");
     assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
-    assert(overview.demo_proof.required_calendar_day_count === 30, "Overview must expose 30-day demo window");
-    assert(overview.demo_proof.weekly_proof_trade_target === 3, "Overview must expose 3 proof trades per week target");
-    assert(typeof overview.demo_proof.eligible_setup_count === "number", "Overview must expose eligible setup count");
-    assert(overview.lifecycle.length >= 8, "Overview lifecycle strip must expose trade lifecycle states");
-    assert(overview.next_review_links.length === 4, "Overview must expose four next-review links after D11B");
+    assert(overview.trading_strategies.length >= 5, "Overview must expose the current strategy families");
     assert(overview.mini_map.source_model === "system_connectivity_model", "Overview mini-map must use shared connectivity model");
     assert(overview.system_status.length >= 6, "Overview must expose paper system status and runner cards");
     assert(overview.data_sources_connected.length >= 3, "Overview must expose source groups on the main page");
@@ -176,36 +157,20 @@ async function main() {
     assert(models.system_connectivity_model.overview_scope.placement === "overview-mini-map", "Mini-map placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
-    const nextViews = overview.next_review_links.map((link) => link.view_id);
-    assert(
-        JSON.stringify(nextViews) === JSON.stringify(["trades", "evidence", "reasoning", "operations"]),
-        "Overview next-review link order mismatch"
-    );
-
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "OK - live capital off");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Paper growth trial");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam watching?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam forbidden from doing?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is the portfolio worth?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Next Chief Operating Officer action");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Open relevant view");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Autonomous runner");
-    assertIncludes(rendered, "[data-overview-status-rail]", "Potential setups");
-    assertIncludes(rendered, "[data-overview-hero]", "Current summary");
-    assertIncludes(rendered, "[data-overview-hero]", "Use Safety Status");
-    assertIncludes(rendered, "[data-overview-review-card]", "Needs review");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Trading strategy narrative");
     assertIncludes(rendered, "[data-overview-system-status]", "System status");
     assertIncludes(rendered, "[data-overview-system-status]", "Paper trading");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper capacity");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "toward £200,000");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper capacity");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
-    assertIncludes(rendered, "[data-overview-metrics]", "Source health");
-    assertIncludes(rendered, "[data-overview-metrics]", "Trade path");
-    assertIncludes(rendered, "[data-overview-metrics]", "Paper growth trial");
-    assertIncludes(rendered, "[data-overview-lifecycle]", "Observed signals");
-    assertIncludes(rendered, "[data-overview-lifecycle]", "Postmortems due");
     assertIncludes(rendered, "[data-overview-oversight]", "You supervise Qadam");
     assertIncludes(rendered, "[data-overview-oversight]", "Qadam Orchestrator");
     assertIncludes(rendered, "[data-overview-mini-map]", "Python script");
@@ -222,25 +187,19 @@ async function main() {
     assertIncludes(rendered, "[data-overview-thought-feed]", "Head of Quant");
     assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
     assertIncludes(rendered, "[data-overview-trade-considerations]", "Candidate, not order");
-    assertIncludes(rendered, "[data-overview-next-links]", "#trades");
-    assertIncludes(rendered, "[data-overview-next-links]", "#operations");
 
     const overviewText = [
-        html(rendered, "[data-overview-status-rail]"),
-        html(rendered, "[data-overview-hero]"),
-        html(rendered, "[data-overview-metrics]"),
-        html(rendered, "[data-overview-review-card]"),
+        html(rendered, "[data-overview-mission-brief]"),
+        html(rendered, "[data-overview-strategy-narrative]"),
         html(rendered, "[data-overview-system-status]"),
         html(rendered, "[data-overview-paper-capacity]"),
-        html(rendered, "[data-overview-lifecycle]"),
         html(rendered, "[data-overview-oversight]"),
         html(rendered, "[data-overview-mini-map]"),
         html(rendered, "[data-overview-boundary-rail]"),
         html(rendered, "[data-overview-data-sources]"),
         html(rendered, "[data-overview-trading-strategies]"),
         html(rendered, "[data-overview-thought-feed]"),
-        html(rendered, "[data-overview-trade-considerations]"),
-        html(rendered, "[data-overview-next-links]")
+        html(rendered, "[data-overview-trade-considerations]")
     ].join(" ");
     [
         "D0",
@@ -276,9 +235,7 @@ async function main() {
     console.log("dashboard_overhaul_overview=ok");
     console.log("dashboard_overview_first_screen_enabled=True");
     console.log("dashboard_overview_uses_view_model=True");
-    console.log("dashboard_overview_demo_day_count=30");
-    console.log("dashboard_overview_weekly_proof_trade_target=3");
-    console.log("dashboard_overview_next_review_links=4");
+    console.log("dashboard_overview_cc2_consolidated=True");
     console.log("dashboard_overview_mini_map_shared_model=True");
     console.log("dashboard_authority_unchanged=True");
 }

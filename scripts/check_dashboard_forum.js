@@ -91,26 +91,24 @@ async function main() {
     assert(!/\/Users\//.test(JSON.stringify(notes)), "fund_manager_notes leaked local path");
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-comments-summary]", "Local notes");
-    assertIncludes(rendered, "[data-comments-summary]", "Suggestions");
-    assertIncludes(rendered, "[data-comments-boundary]", "governance notes only");
-    assertIncludes(rendered, "[data-comments-list]", "D8 sample");
-    assertIncludes(rendered, "[data-comments-list]", "module");
-    assertIncludes(rendered, "[data-comments-list]", "trade layer");
-    assertIncludes(rendered, "[data-comments-list]", "suggestion");
+    assertIncludes(rendered, "[data-flow-map]", "Governance, inbox, and communications audit");
+    assertIncludes(rendered, "[data-flow-map]", "Governance and outbound communications");
+    assertIncludes(rendered, "[data-flow-map]", "Comments");
+    assertIncludes(rendered, "[data-flow-map]", "Approval");
+    assertIncludes(rendered, "[data-flow-map]", "Review Fund Manager suggestions");
+    assertIncludes(rendered, "[data-flow-map]", "suggestions mirrored");
+    assertIncludes(rendered, "[data-flow-map]", "governance notes only");
+    assertIncludes(rendered, "[data-flow-map]", "cannot approve trades");
 
     const html = fs.readFileSync(htmlPath, "utf8");
     const auth = fs.readFileSync(authPath, "utf8");
     const migration = fs.readFileSync(migrationPath, "utf8");
 
     [
-        "data-comment-form",
-        "name=\"target_type\"",
-        "value=\"trade_candidate\"",
-        "name=\"target_key\"",
-        "name=\"status\"",
-        "name=\"body\"",
-        "data-comments-list"
+        "data-operations-review-group=\"governance_comms_audit\"",
+        "Governance, inbox, and communications audit",
+        "Fund Manager comments, Chief Operating Officer inbox items, approval records, weekly review state, and outbound-only Telegram notifications.",
+        "operations-review-group"
     ].forEach((needle) => assert(html.includes(needle), `dashboard forum HTML missing ${needle}`));
 
     [

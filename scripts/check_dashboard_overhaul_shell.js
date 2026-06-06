@@ -114,18 +114,12 @@ function loadShellHarness() {
     const viewIds = ["overview", "trades", "evidence", "reasoning", "operations"];
     const sectionMappings = {
         "mission-control": "overview",
-        "review-sequence": "overview",
         watching: "evidence",
         cognition: "reasoning",
         "strategy-manifestation": "reasoning",
-        worldview: "reasoning",
         "trade-layer": "trades",
         money: "trades",
-        "system-map": "operations",
-        forbidden: "operations",
-        "process-console": "operations",
-        communications: "operations",
-        governance: "operations"
+        "system-map": "operations"
     };
     const links = viewIds.map((viewId) => new FakeElement({
         text: viewId.replace(/^\w/, (char) => char.toUpperCase()),
@@ -149,6 +143,7 @@ function loadShellHarness() {
         new FakeElement({ id: "overview-proof-flow", dataset: { dashboardDebugOnly: "true" }, hidden: true })
     ];
     const byId = new Map(sections.map((section) => [section.id, section]));
+    byId.set("operations-readout", new FakeElement({ id: "operations-readout" }));
     const documentElement = { dataset: {} };
     const document = {
         documentElement,
@@ -245,27 +240,21 @@ links.forEach((link) => {
     assert(link.section === link.target, `${link.target} target section mismatch`);
 });
 
-assert(sections.length === 13, `expected 13 segmented dashboard sections, got ${sections.length}`);
+assert(sections.length === 7, `expected 7 segmented dashboard sections, got ${sections.length}`);
 [
     ["mission-control", "overview"],
-    ["review-sequence", "overview"],
     ["trade-layer", "trades"],
     ["watching", "evidence"],
     ["cognition", "reasoning"],
     ["strategy-manifestation", "reasoning"],
-    ["worldview", "reasoning"],
     ["money", "trades"],
-    ["system-map", "operations"],
-    ["forbidden", "operations"],
-    ["process-console", "operations"],
-    ["communications", "operations"],
-    ["governance", "operations"]
+    ["system-map", "operations"]
 ].forEach(([id, view]) => {
     assert(sectionById.get(id)?.view === view, `${id} should map to ${view}`);
 });
 sections.forEach((section) => {
     assert(expectedViews.includes(section.view), `${section.id} has invalid view ${section.view}`);
-    if (section.view === "overview" && section.id !== "review-sequence") {
+    if (section.view === "overview") {
         assert(section.hidden === false, `${section.id} should be visible by default`);
     } else {
         assert(section.hidden === true, `${section.id} should be hidden by default`);
@@ -299,6 +288,12 @@ const harness = loadShellHarness();
 assert(harness.window.resolveQadamDashboardHash("#sources").viewId === "evidence", "legacy #sources should resolve to Evidence");
 assert(harness.window.resolveQadamDashboardHash("#performance").viewId === "trades", "legacy #performance should resolve to Trades");
 assert(harness.window.resolveQadamDashboardHash("#governance").viewId === "operations", "legacy #governance should resolve to Operations");
+assert(harness.window.resolveQadamDashboardHash("#governance").targetId === "operations-readout", "legacy #governance should target Operations readout");
+assert(harness.window.resolveQadamDashboardHash("#forbidden").targetId === "operations-readout", "legacy #forbidden should target Operations readout");
+assert(harness.window.resolveQadamDashboardHash("#process-console").targetId === "operations-readout", "legacy #process-console should target Operations readout");
+assert(harness.window.resolveQadamDashboardHash("#communications").targetId === "operations-readout", "legacy #communications should target Operations readout");
+assert(harness.window.resolveQadamDashboardHash("#review-sequence").targetId === "mission-control", "legacy #review-sequence should target Mission Control");
+assert(harness.window.resolveQadamDashboardHash("#worldview").targetId === "cognition", "legacy #worldview should target Reasoning");
 assert(harness.window.resolveQadamDashboardHash("#money").viewId === "trades", "legacy #money should resolve to Trades");
 assert(harness.window.resolveQadamDashboardHash("#system-map").viewId === "operations", "legacy #system-map should resolve to Operations");
 assert(harness.window.resolveQadamDashboardHash("#cognition").viewId === "reasoning", "legacy #cognition should resolve to Reasoning");
@@ -306,7 +301,6 @@ assert(harness.window.resolveQadamDashboardHash("#trades").viewId === "trades", 
 assert(harness.window.document.documentElement.dataset.dashboardActiveView === "overview", "/dashboard/ should start on Overview");
 assert(harness.window.document.documentElement.dataset.dashboardDebug === "off", "/dashboard/ should start with debug mode off");
 assert(harness.byId.get("mission-control").hidden === false, "Overview mission control should be visible at startup");
-assert(harness.byId.get("review-sequence").hidden === true, "review sequence should be debug-only at startup");
 assert(harness.byId.get("trade-layer").hidden === true, "Trades panel should be hidden at startup");
 assert(harness.current.textContent === "Overview", "current view label should start at Overview");
 
@@ -325,10 +319,10 @@ assert(harness.byId.get("money").scrolled === true, "legacy #money should scroll
 harness.window.activateQadamDashboardViewFromHash("#system-map", { scroll: false });
 assert(harness.window.document.documentElement.dataset.dashboardActiveView === "operations", "legacy #system-map should activate Operations");
 assert(harness.byId.get("system-map").hidden === false, "system map should show for Operations");
-assert(harness.byId.get("forbidden").hidden === false, "safety should show for Operations");
-assert(harness.byId.get("process-console").hidden === false, "process console should show for Operations");
-assert(harness.byId.get("communications").hidden === false, "communications should show for Operations");
-assert(harness.byId.get("governance").hidden === false, "governance should show for Operations");
+
+harness.window.activateQadamDashboardViewFromHash("#forbidden", { scroll: true });
+assert(harness.window.document.documentElement.dataset.dashboardActiveView === "operations", "legacy #forbidden should activate Operations");
+assert(harness.byId.get("operations-readout").scrolled === true, "legacy #forbidden should scroll to Operations readout");
 
 [
     "DX-4 - Segmented Shell",

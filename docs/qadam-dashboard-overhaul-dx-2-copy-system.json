@@ -1,6 +1,6 @@
 {
   "contract_id": "qadam_dashboard_overhaul_dx_2_copy_system",
-  "contract_version": "2026-05-25.dx2",
+  "contract_version": "2026-06-05.cc2",
   "status": "active",
   "route": "/dashboard/",
   "authority_boundary": "Read-only copy and terminology contract only. This copy system cannot approve trades, create candidates, stage orders, submit paper orders, write brokers, send Telegram commands, call live capital, mutate data sources, or change runtime status.",
@@ -11,11 +11,9 @@
     "view_order": [
       "overview",
       "trades",
-      "sources",
+      "evidence",
       "reasoning",
-      "performance",
-      "operations",
-      "governance"
+      "operations"
     ],
     "default_rule": "Use plain operating labels in primary copy. Internal stage codes and implementation labels are diagnostic metadata, not onboarding language.",
     "overview_rule": "Overview must answer what is happening now without unexplained D-codes, Q-codes, phase-first labels, static-snapshot jargon, secure-bridge jargon, or shadow-toggle jargon.",
@@ -70,15 +68,16 @@
       ],
       "diagnostic_codes_allowed": false
     },
-    "sources": {
-      "plain_label": "Sources",
-      "primary_copy_style": "feed freshness and provenance language",
+    "evidence": {
+      "plain_label": "Evidence",
+      "primary_copy_style": "feed freshness, provenance, and corroboration language",
       "primary_terms": [
         "live feed",
         "supplemental feed",
         "source quorum",
         "freshness",
-        "provenance"
+        "provenance",
+        "evidence packet"
       ],
       "diagnostic_codes_allowed": false
     },
@@ -95,19 +94,6 @@
       ],
       "diagnostic_codes_allowed": false
     },
-    "performance": {
-      "plain_label": "Performance",
-      "primary_copy_style": "paper/demo proof language",
-      "primary_terms": [
-        "paper account",
-        "demo-proof run",
-        "closed paper trade",
-        "closed proof trade",
-        "drawdown",
-        "postmortem"
-      ],
-      "diagnostic_codes_allowed": false
-    },
     "operations": {
       "plain_label": "Operations",
       "primary_copy_style": "runtime and diagnostics language",
@@ -119,20 +105,13 @@
         "saved status snapshot",
         "exporter state",
         "system map",
-        "safety plumbing"
-      ]
-    },
-    "governance": {
-      "plain_label": "Governance",
-      "primary_copy_style": "human review and approval language",
-      "primary_terms": [
+        "safety plumbing",
         "Fund Manager review",
         "approval record",
         "comment",
         "notification",
         "audit handoff"
-      ],
-      "diagnostic_codes_allowed": false
+      ]
     }
   },
   "terminology": [

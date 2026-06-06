@@ -24,6 +24,10 @@ function unique(values) {
     return Array.from(new Set(values));
 }
 
+function hasHtmlId(id) {
+    return new RegExp(`\\bid="${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`).test(html);
+}
+
 function parseCockpitSections(source) {
     const sections = [];
     const pattern = /<(section|article)\b([^>]*)\bdata-cockpit-section="([^"]+)"([^>]*)>/g;
@@ -45,11 +49,9 @@ function parseCockpitSections(source) {
 const expectedViews = [
     "overview",
     "trades",
-    "sources",
+    "evidence",
     "reasoning",
-    "performance",
-    "operations",
-    "governance"
+    "operations"
 ];
 
 assert(contract.contract_id === "qadam_dashboard_overhaul_dx_1_ia_contract", "wrong contract id");
@@ -100,13 +102,10 @@ assert(unique(destinationIds).length === destinationIds.length, "section destina
 const requiredMappings = {
     "mission-control": "overview",
     "trade-layer": "trades",
-    watching: "sources",
+    watching: "evidence",
     cognition: "reasoning",
-    money: "performance",
-    "system-map": "operations",
-    "process-console": "operations",
-    governance: "governance",
-    communications: "governance"
+    money: "trades",
+    "system-map": "operations"
 };
 
 Object.entries(requiredMappings).forEach(([sectionId, expectedView]) => {
@@ -128,7 +127,6 @@ assert(operationsMap.source_model === "system_connectivity_model", "Operations f
 
 const demotedIds = (contract.demoted_from_first_level || []).map((section) => section.section_id);
 assert(demotedIds.includes("system-map"), "full system map must be demoted from first-level visibility");
-assert(demotedIds.includes("process-console"), "process console must be demoted from first-level visibility");
 assert(demotedIds.every((id) => currentIds.includes(id)), "demoted section list includes unknown section");
 
 const compatibilityTargets = (contract.legacy_anchor_compatibility || []).map((entry) => entry.target_section);
@@ -136,7 +134,8 @@ const missingCompatibility = currentIds.filter((id) => !compatibilityTargets.inc
 assert(missingCompatibility.length === 0, `legacy anchor compatibility missing: ${missingCompatibility.join(",")}`);
 (contract.legacy_anchor_compatibility || []).forEach((entry) => {
     assert(expectedViews.includes(entry.view), `${entry.target_section} has invalid compatibility view`);
-    assert(entry.legacy_hash === `#${entry.target_section}`, `${entry.target_section} legacy hash mismatch`);
+    assert(/^#[a-z0-9-]+$/.test(entry.legacy_hash), `${entry.target_section} legacy hash malformed`);
+    assert(hasHtmlId(entry.target_section), `${entry.legacy_hash} points at missing target ${entry.target_section}`);
 });
 
 const tourViews = (contract.first_time_tour || []).map((step) => step.view);
@@ -145,7 +144,7 @@ assert((contract.first_time_tour || []).every((step, index) => step.step === ind
 
 [
     "DX-1 - Information Architecture Contract",
-    "Define the seven primary views",
+    "Define the primary views",
     "Map every existing section to a new destination",
     "Define the two system map placements"
 ].forEach((needle) => {

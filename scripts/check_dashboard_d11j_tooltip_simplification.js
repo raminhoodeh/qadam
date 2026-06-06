@@ -27,16 +27,10 @@ const tooltipIds = [
     "mission_control",
     "phase4_strategy",
     "system_operating_map",
-    "operating_detail",
     "watching",
     "cognition",
-    "forbidden_actions",
-    "telegram_communications",
     "trade_layer",
-    "money",
-    "process_console",
-    "private_edge_layer",
-    "fund_manager_comments"
+    "money"
 ];
 
 function includesAll(text, needles, label) {
