@@ -152,8 +152,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260605-cc2-cut",
-    "/dashboard.js?v=20260605-cc2-cut",
+    "/auth.css?v=20260606-cc3-safety",
+    "/dashboard.js?v=20260606-cc3-safety",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links"
 ], "dashboard cache keys");

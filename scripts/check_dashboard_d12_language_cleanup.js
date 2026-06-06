@@ -89,23 +89,21 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260605-cc2-cut",
-        "/dashboard.js?v=20260605-cc2-cut",
+        "/auth.css?v=20260606-cc3-safety",
+        "/dashboard.js?v=20260606-cc3-safety",
         "Qadam paper trading dashboard",
         "Paper Trading Overview",
         "Safety status",
-        "Dashboard cannot place orders",
-        "AI cannot bypass risk checks",
+        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "60-day paper growth trial",
         "How data becomes paper trade decisions",
         "Loading trade ideas"
     ], "D12 dashboard shell");
 
     includesAll(renderer, [
-        "Dashboard cannot place orders",
-        "AI cannot bypass risk checks",
+        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "Paper growth maturity requires verified records",
-        "Use Safety Status for order authority",
+        "Safety Status is the authority summary",
         "Current summary",
         "Potential setups",
         "Trade ideas",
@@ -142,8 +140,7 @@ async function main() {
     ].map(textOnly).join(" ");
 
     includesAll(overviewText, [
-        "Dashboard cannot place orders",
-        "AI cannot bypass risk checks",
+        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "toward £200,000",
         "What is Qadam watching?",
         "Mission Control brief",
@@ -158,7 +155,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260605-cc2-cut");
+    console.log("dashboard_d12_cache_key=20260606-cc3-safety");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

@@ -184,6 +184,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 - Keep one safety strip. Delete all 14 `<dt>Limits</dt>` and 7 `<dt>Boundary</dt>` rows; collapse 4 safety badges → 1; remove per-node `node-authority` badges (10).
 - Keep one short authority sentence in the drawer for auditors.
 - **Done when:** "read-only/live-capital/paper-only" string counts drop from ~50 to ≤5; safety strip still announced to screen readers.
+- **Status:** completed. The founder-facing dashboard now has one screen-reader-announced safety strip, one visible safety badge, `Scope` rows instead of repeated `Limits`/`Boundary` rows, and no visible per-node `node-authority` badges. Detailed authority evidence remains in Operations diagnostics.
 
 ### CC4 — One system map (de-duplicate, keep on main) *(HTML/JS/CSS)*
 - The pipeline is currently rendered **three times**: `fund-model-grid` (5 cards), `system-flow-diagram` (6 lanes / 10 nodes), and the operations role spine. Collapse to **one** canonical node-by-node system map that stays on the main view (per the 2026-06-05 decision — founders want the node detail). Lead it with a compact team-health row (COO · Research Analyst · Strategy Lead · Head of Quant · Risk Agent · PaperOps, each a status dot from `modules`), then the expandable map below it.

@@ -78,15 +78,15 @@ assert(count(dashboardHtml, "data-dashboard-safety-strip") === 1, "static shell 
 
 includesAll(dashboardHtml, [
     "Safety status",
-    "OK - paper only",
-    "OK - live capital off",
-    "OK - read-only",
-    "Dashboard cannot place orders",
-    "AI cannot bypass risk checks",
+    "Safety locked: paper-only readout",
+    "Paper-only readout · live capital off",
+    "Dashboard cannot place orders; model outputs cannot bypass risk checks",
     "One place for paper mode, capital, and order authority",
-    "Use Safety Status for order authority",
     "data-operations-safety-reference"
 ], "static single safety strip shell");
+assert(count(dashboardHtml, "<dt>Limits</dt>") === 0, "static founder shell still contains Limits rows");
+assert(count(dashboardHtml, "<dt>Boundary</dt>") === 0, "static founder shell still contains Boundary rows");
+assert(count(dashboardHtml, "node-authority") === 0, "static founder shell still contains node-authority badges");
 
 includesAll(css, [
     ".dashboard-safety-strip",
@@ -100,6 +100,7 @@ includesAll(renderer, [
     "function renderDashboardSafetyStrip",
     "safety_strip_model",
     "data-dashboard-safety-strip",
+    "data-safety-label",
     "Paper growth maturity requires verified records",
     "renderDashboardSafetyStrip(status, viewModels)",
     "window.buildQadamDashboardSafetyStripModel"
@@ -133,6 +134,7 @@ const model = window.buildQadamDashboardSafetyStripModel(status);
 assert(model.id === "dashboard_safety_strip", "safety strip model id mismatch");
 assert(model.mode_label === "OK - paper only", "safety strip mode label mismatch");
 assert(model.live_capital_label === "OK - live capital off", "safety strip live-capital label mismatch");
+assert(model.safety_label === "Paper-only readout · live capital off", "safety strip single label mismatch");
 assert(model.write_authority === false, "safety strip reports write authority");
 assert(model.live_capital_enabled === false, "safety strip reports live capital enabled");
 assert(model.authority_flag_count === 0, "safety strip reports authority flags");
@@ -145,16 +147,16 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
 
     includesAll(stripHtml, [
         "Safety status",
-        "OK - paper only",
-        "OK - live capital off",
-        "OK - read-only",
-        "Dashboard cannot place orders",
-        "AI cannot bypass risk checks",
+        "Safety locked: paper-only readout",
+        "Paper-only readout · live capital off",
+        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "One place for paper mode, capital, and order authority"
     ], "rendered safety strip");
+    assert(count(stripHtml, "inline-badge") === 1, "rendered safety strip should collapse to one badge");
+    assert(!stripHtml.includes("<dt>Limits</dt>"), "rendered safety strip still contains Limits row");
 
     includesAll(overviewBoundaryHtml, [
-        "Use Safety Status for order authority",
+        "Safety Status is the authority summary",
         "A trade idea is not an order"
     ], "overview safety reference");
     assert(!overviewBoundaryHtml.includes("Broker writes blocked"), "overview still duplicates broker-write safety copy");
@@ -165,6 +167,7 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
         "Operations below show the evidence behind that state"
     ], "operations safety reference");
     assert(!operationsHtml.includes("Persistent safety rail"), "operations still renders duplicate safety rail");
+    assert(!operationsHtml.includes("node-authority"), "operations still renders per-node authority badges");
 
     console.log("dashboard_d11d_single_safety_strip=ok");
     console.log("dashboard_d11d_static_safety_strip_count=1");

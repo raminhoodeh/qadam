@@ -43,7 +43,8 @@ function staticBriefBlock(id) {
     assertText(block, "Panel readout", id);
     assertText(block, "<dt>State</dt>", id);
     assertText(block, "<dt>Watch</dt>", id);
-    assertText(block, "<dt>Boundary</dt>", id);
+    assertText(block, "<dt>Scope</dt>", id);
+    assert(!block.includes("<dt>Boundary</dt>"), `${id} still repeats Boundary label`);
 });
 
 [
@@ -63,8 +64,8 @@ function staticBriefBlock(id) {
     ".panel-brief.blocked"
 ].forEach((needle) => assertText(css, needle, "panel redesign CSS"));
 
-assertText(html, "/auth.css?v=20260605-cc2-cut", "stylesheet cache key");
-assertText(html, "/dashboard.js?v=20260605-cc2-cut", "dashboard script cache key");
+assertText(html, "/auth.css?v=20260606-cc3-safety", "stylesheet cache key");
+assertText(html, "/dashboard.js?v=20260606-cc3-safety", "dashboard script cache key");
 assertText(plan, "Phase D10F - Panel-Level Redesign", "implementation plan");
 
 (async () => {

@@ -33,7 +33,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260605-cc2-cut",
+        "/auth.css?v=20260606-cc3-safety",
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "aria-label=\"Dashboard views\"",
@@ -66,7 +66,7 @@ async function main() {
         "repeat(auto-fit, minmax(min(100%, 190px), 1fr))",
         "@media (max-width: 680px)",
         "@media (max-width: 420px)",
-        ".flow-node > .node-authority",
+        ".flow-node > span",
         "position: static",
         ".mode-stack > span",
         ".dashboard-hero .copy",
@@ -82,6 +82,7 @@ async function main() {
         ".inline-badge.pending",
         ".inline-badge.blocked"
     ], "Responsive/accessibility CSS");
+    assert(!css.includes("node-authority"), "responsive CSS still references removed node-authority badges");
 
     [
         ".overview-mini-map",

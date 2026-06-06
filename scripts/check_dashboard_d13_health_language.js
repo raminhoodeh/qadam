@@ -50,9 +50,8 @@ const {
     });
 
     [
-        "OK - paper only",
-        "OK - live capital off",
-        "OK - read-only"
+        "Safety locked: paper-only readout",
+        "Paper-only readout · live capital off"
     ].forEach((label) => {
         assert(safetyStripHtml.includes(label), `safety strip OK label missing: ${label}`);
     });

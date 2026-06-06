@@ -127,20 +127,20 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260605-cc2-cut",
-    "/dashboard.js?v=20260605-cc2-cut"
+    "/auth.css?v=20260606-cc3-safety",
+    "/dashboard.js?v=20260606-cc3-safety"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
-    "Readout only; this page cannot place orders.",
-    "Map only; nodes are not controls.",
-    "No command route",
-    "A trade idea is not an order",
-    "Paper-only, read-only, live capital off",
+    "Safety locked: paper-only readout",
+    "Paper-only readout · live capital off",
+    "Safety Status is the authority summary.",
+    "Status display, evidence, paper account, safety blocks.",
+    "trade ideas are not orders",
     "outbound-only Telegram notifications",
     "Read-only runtime diagnostics",
-    "Summary only; Diagnostics has technical detail.",
-    "Paper mirror; no funding authority.",
+    "Summary first; Diagnostics keeps technical detail.",
+    "Paper-account mirror, P&amp;L, drawdown, and maturity evidence.",
     "cannot originate trades or bypass risk"
 ].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
 
@@ -216,9 +216,9 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
     [
         ["[data-status-banner]", "Dashboard status loaded"],
         ["[data-status-banner]", "Live status connected"],
-        ["[data-dashboard-safety-strip]", "OK - paper only"],
-        ["[data-dashboard-safety-strip]", "OK - live capital off"],
-        ["[data-dashboard-safety-strip]", "Dashboard cannot place orders"],
+        ["[data-dashboard-safety-strip]", "Safety locked: paper-only readout"],
+        ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
+        ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
         ["[data-overview-mission-brief]", "Mission Control brief"],
         ["[data-overview-strategy-narrative]", "Trading strategy narrative"],
         ["[data-overview-mini-map]", "Python script"],
@@ -233,7 +233,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-trading-strategies]", "Click to expand every strategy family"],
         ["[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption"],
         ["[data-overview-trading-strategies]", "no broker write"],
-        ["[data-overview-boundary-rail]", "Safety Status"],
+        ["[data-overview-boundary-rail]", "Safety Status is the authority summary"],
         ["[data-mission-sources]", "logged-in/configured"],
         ["[data-mission-sources]", "replay"],
         ["[data-mission-philosophy]", "Trading philosophy"],

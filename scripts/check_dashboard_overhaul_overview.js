@@ -158,7 +158,7 @@ async function main() {
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-dashboard-safety-strip]", "OK - live capital off");
+    assertIncludes(rendered, "[data-dashboard-safety-strip]", "Paper-only readout · live capital off");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam watching?");
     assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam forbidden from doing?");
@@ -177,7 +177,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Quantum computer");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Use Safety Status for order authority");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "Safety Status is the authority summary");
     assertIncludes(rendered, "[data-overview-boundary-rail]", "A trade idea is not an order");
     assertIncludes(rendered, "[data-overview-data-sources]", "Data sources connected");
     assertIncludes(rendered, "[data-overview-data-sources]", "Markets, broker, and prediction markets");

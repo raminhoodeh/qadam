@@ -68,12 +68,13 @@ function assertCompactBlock(block, id) {
         "explainer-grid compact",
         "<dt>Shows</dt>",
         "<dt>Watch</dt>",
-        "<dt>Limits</dt>"
+        "<dt>Scope</dt>"
     ], `tooltip ${id}`);
 
     [
         "<dt>Use it to</dt>",
         "<dt>Watch for</dt>",
+        "<dt>Limits</dt>",
         "<dt>Boundary</dt>",
         "cannot approve, place, modify",
         "cannot place, approve, reject",
@@ -108,7 +109,7 @@ async function main() {
         "explainer-grid compact",
         "<dt>Shows</dt>",
         "<dt>Watch</dt>",
-        "<dt>Limits</dt>"
+        "<dt>Scope</dt>"
     ], "D11J renderer tooltip");
     assert(!renderer.includes("<p>${htmlText(strip.boundary)}</p>"), "renderer still injects long safety boundary into tooltip");
 
@@ -119,7 +120,7 @@ async function main() {
         "data-tooltip-contract=\"compact\"",
         "<dt>Shows</dt>",
         "<dt>Watch</dt>",
-        "<dt>Limits</dt>"
+        "<dt>Scope</dt>"
     ], "rendered D11J safety tooltip");
     assert(!renderedSafetyTooltip.includes("Use it to"), "rendered safety tooltip still uses Use it to");
     assert(!renderedSafetyTooltip.includes("Watch for"), "rendered safety tooltip still uses Watch for");

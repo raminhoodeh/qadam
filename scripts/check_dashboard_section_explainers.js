@@ -69,10 +69,11 @@ requiredExplainers.forEach((id) => {
     assertIncludes(block, "explainer-grid compact", id);
     assertIncludes(block, "<dt>Shows</dt>", id);
     assertIncludes(block, "<dt>Watch</dt>", id);
-    assertIncludes(block, "<dt>Limits</dt>", id);
+    assertIncludes(block, "<dt>Scope</dt>", id);
     assertIncludes(block, "<dd>", id);
     assert(!block.includes("<dt>Use it to</dt>"), `${id} still uses verbose Use it to label`);
     assert(!block.includes("<dt>Watch for</dt>"), `${id} still uses verbose Watch for label`);
+    assert(!block.includes("<dt>Limits</dt>"), `${id} still uses repeated Limits label`);
     assert(!block.includes("<dt>Boundary</dt>"), `${id} still uses verbose Boundary label`);
 
     const plainBlocks = [...block.matchAll(/<(p|dd)>(.*?)<\/\1>/g)].map((match) => (
@@ -91,13 +92,13 @@ requiredExplainers.forEach((id) => {
     "One place for paper mode, capital, and order authority.",
     "The current status of Qadam's paper trading system.",
     "Strategy visibility and approval state.",
-    "Summary only; Diagnostics has technical detail.",
-    "Governance only; no provider or broker action.",
-    "Map only; nodes are not controls.",
-    "Observation only; no order creation.",
-    "Hypothesis only; risk still decides.",
-    "A trade idea is not an order.",
-    "Paper mirror; no funding authority."
+    "Summary first; Diagnostics keeps technical detail.",
+    "Governance status and review evidence.",
+    "Operating map and current handoffs.",
+    "Source quality, corroboration, and linked context.",
+    "Priors, evidence, hypotheses, and review chain.",
+    "Signals, trade ideas, risk checks, and paper lifecycle.",
+    "P&amp;L, drawdown, paper growth, and maturity."
 ].forEach((needle) => assertIncludes(html, needle, "dashboard explainer boundary"));
 
 [
@@ -111,7 +112,7 @@ requiredExplainers.forEach((id) => {
 
 assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
 assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
-assertIncludes(html, "/auth.css?v=20260605-cc2-cut", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260606-cc3-safety", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

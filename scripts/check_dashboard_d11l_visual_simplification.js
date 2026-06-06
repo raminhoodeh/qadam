@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260605-cc2-cut",
-        "/dashboard.js?v=20260605-cc2-cut"
+        "/auth.css?v=20260606-cc3-safety",
+        "/dashboard.js?v=20260606-cc3-safety"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -125,8 +125,8 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        ["[data-dashboard-safety-strip]", "OK - paper only"],
-        ["[data-dashboard-safety-strip]", "OK - live capital off"],
+        ["[data-dashboard-safety-strip]", "Safety locked: paper-only readout"],
+        ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-overview-mission-brief]", "Mission Control brief"],
         ["[data-overview-strategy-narrative]", "Trading strategy narrative"],
         ["[data-trade-layer]", "Consolidated trade readout"],
@@ -142,7 +142,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260605-cc2-cut");
+    console.log("dashboard_d11l_cache_key=20260606-cc3-safety");
     console.log("dashboard_authority_unchanged=True");
 }
 
