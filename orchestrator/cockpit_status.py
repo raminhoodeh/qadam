@@ -5193,6 +5193,317 @@ def _rs10_final_paper_autonomy_public_status(
     )
 
 
+def _team_lookup(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        str(module.get("key", "")): module
+        for module in payload.get("modules", [])
+        if module.get("key")
+    }
+
+
+def _mission_team(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    modules = _team_lookup(payload)
+    data_sources = payload.get("source_pipeline_summary", [])
+    watching = payload.get("watching", [])
+    online_sources = sum(1 for source in watching if source.get("status") == "online")
+    paper_authority = payload.get("paper_authority_reconciliation", {})
+    rs10 = payload.get("rs10_final_paper_autonomy_certification", {})
+    learning = payload.get("rs9_learning_loop", {})
+
+    def module_node(
+        key: str,
+        label: str,
+        owner: str,
+        one_line: str,
+        source_key: str | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        module = modules.get(source_key or key, {})
+        node_status = status or str(module.get("status") or "pending")
+        return {
+            "key": key,
+            "label": label,
+            "owner": owner,
+            "status": node_status,
+            "one_line": one_line,
+            "current_process": str(module.get("current_process") or one_line),
+            "authority": str(module.get("authority") or "read_only"),
+        }
+
+    return [
+        {
+            "key": "intelligence_pipelines",
+            "label": "Intelligence Pipelines",
+            "owner": "Live data feeds",
+            "status": "online" if online_sources else "pending",
+            "one_line": f"{online_sources}/{len(watching)} sources online across {len(data_sources)} pipelines.",
+            "current_process": "Collecting source observations for research context.",
+            "authority": "observation_only",
+        },
+        module_node(
+            "coo",
+            "Chief Operating Officer",
+            "Python Orchestrator",
+            "Coordinates local modules, health checks, logs, and paper-mode boundaries.",
+            source_key="coo",
+        ),
+        module_node(
+            "research_analyst",
+            "Research Analyst",
+            "Local LLM",
+            "Compresses noisy source observations into shadow research packets.",
+            source_key="research_analyst",
+        ),
+        module_node(
+            "strategy_lead",
+            "Strategy Lead",
+            "Frontier LLM",
+            "Challenges research packets and prepares higher-level strategy reviews.",
+            source_key="strategy_lead",
+        ),
+        module_node(
+            "head_of_quant",
+            "Head of Quant",
+            "Quantum Compute",
+            "Runs bounded oracle checks and classical fallback comparisons.",
+            source_key="head_of_quant",
+        ),
+        module_node(
+            "safety_policy",
+            "Safety Policy",
+            "Risk and execution gates",
+            "Keeps paper autonomy gated by signal integrity, risk, policy, reconciliation, and receipts.",
+            source_key="risk_agent",
+            status="online" if paper_authority.get("current_blocker_count", 0) == 0 else "blocked",
+        ),
+        {
+            "key": "paper_demo_state",
+            "label": "Paper/Demo State",
+            "owner": "PaperOps",
+            "status": (
+                "online"
+                if rs10.get("final_paper_autonomy_certified") is True
+                else str(rs10.get("status") or "pending")
+            ),
+            "one_line": "Tracks paper account lifecycle, positions, receipts, and postmortems.",
+            "current_process": str(rs10.get("why_not_trading_now") or "Waiting for fresh eligible setups."),
+            "authority": "guarded_paper_only",
+        },
+        {
+            "key": "learning_review",
+            "label": "Learning Review",
+            "owner": "RS-9",
+            "status": str(learning.get("status") or "waiting"),
+            "one_line": "Turns postmortems into proposed learning updates without silent mutation.",
+            "current_process": str(learning.get("learning_direction_reason") or "Waiting for closed-trade evidence."),
+            "authority": "review_only",
+        },
+    ]
+
+
+def _mission_source_ledger(watching: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "source_key": source.get("source_key"),
+            "source_name": source.get("source_name"),
+            "pipeline": source.get("pipeline"),
+            "status": source.get("status"),
+            "readiness": source.get("readiness"),
+            "credential_status": source.get("credential_status"),
+            "trust_score": source.get("trust_score"),
+            "latency_ms": source.get("latency_ms"),
+            "usable_for_research_context": source.get("usable_for_research_context"),
+            "eligible_for_signal_review": source.get("eligible_for_signal_review"),
+        }
+        for source in watching
+    ]
+
+
+def _mission_strategy(decision_philosophy: dict[str, Any]) -> dict[str, Any]:
+    ai_lens = decision_philosophy.get("ai_infrastructure_lens", {})
+    return {
+        "posture": "shadow_paper_strategy_with_second_order_ai_infrastructure_lens",
+        "why": decision_philosophy.get(
+            "trading_philosophy",
+            "Qadam uses private priors to ask sharper questions, then waits for live evidence and gates.",
+        ),
+        "akber_lens": {
+            "status": "active_filter",
+            "summary": (
+                "Akber's 6-stage method remains the practical filter: context, catalyst, "
+                "confirmation, risk, execution, and postmortem learning."
+            ),
+            "stages": [
+                "context",
+                "catalyst",
+                "confirmation",
+                "risk",
+                "execution",
+                "postmortem learning",
+            ],
+        },
+        "universe": ai_lens.get("target_bottlenecks", []),
+        "reference_assets": ai_lens.get("reference_assets", []),
+        "active_lens": {
+            "name": ai_lens.get("name", "Second-order AI infrastructure beneficiary lens"),
+            "status": ai_lens.get("status", "active_strategy_lens"),
+            "thesis": ai_lens.get("thesis"),
+            "decision_questions": ai_lens.get("decision_questions", []),
+            "gating_role": ai_lens.get("gating_role"),
+        },
+        "decision_chain": decision_philosophy.get("decision_chain", []),
+        "boundary": decision_philosophy.get(
+            "boundary",
+            "Worldview is a private prior only, not a trade trigger.",
+        ),
+    }
+
+
+def _mission_trade_board(
+    observed_signals: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],
+    blocked_trades: list[dict[str, Any]],
+    open_positions: list[dict[str, Any]],
+    closed_trades: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    board: list[dict[str, Any]] = []
+    for item in observed_signals[:4]:
+        board.append(
+            {
+                "state": "observed",
+                "instrument": item.get("instrument") or item.get("symbol"),
+                "summary": item.get("summary") or item.get("catalyst") or "Observed signal under review.",
+                "status": item.get("status", "watching"),
+            }
+        )
+    for item in candidates[:4]:
+        board.append(
+            {
+                "state": "candidate",
+                "instrument": item.get("instrument"),
+                "summary": item.get("catalyst") or item.get("thesis") or "Candidate under gated review.",
+                "status": item.get("status", "candidate"),
+            }
+        )
+    for item in blocked_trades[:4]:
+        board.append(
+            {
+                "state": "blocked",
+                "instrument": item.get("instrument"),
+                "summary": item.get("blocked_reason") or "Blocked before execution.",
+                "status": item.get("status", "blocked"),
+            }
+        )
+    for item in open_positions[:4]:
+        board.append(
+            {
+                "state": "open",
+                "instrument": item.get("symbol") or item.get("instrument"),
+                "summary": item.get("side") or "Open paper position.",
+                "status": item.get("status", "open"),
+            }
+        )
+    for item in closed_trades[:4]:
+        board.append(
+            {
+                "state": "closed",
+                "instrument": item.get("symbol") or item.get("instrument"),
+                "summary": item.get("postmortem_status") or "Closed paper trade.",
+                "status": item.get("status", "closed"),
+            }
+        )
+    return board[:12]
+
+
+def _mission_hypotheses(hypotheses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "signal_id": item.get("signal_id"),
+            "title": item.get("title"),
+            "thesis": item.get("thesis"),
+            "status": item.get("status"),
+            "confidence": item.get("confidence"),
+            "instrument_focus": item.get("instrument_focus"),
+            "missing_corroboration": item.get("missing_correlations", []),
+            "invalidation": item.get("invalidation"),
+        }
+        for item in hypotheses[:6]
+    ]
+
+
+def _diagnostics(payload: dict[str, Any]) -> dict[str, Any]:
+    diagnostic_keys = [
+        "phase3_readiness",
+        "phase4_strategy",
+        "phase5_layer_b_readiness",
+        "phase5_kill_switch_ledger",
+        "phase5_execution_adapter_status",
+        "phase5_paper_order_staging_gate",
+        "phase5_alpaca_paper_dry_run",
+        "phase5_paper_submit_enablement_gate",
+        "phase5_prediction_market_adapter",
+        "phase5_telegram_notifier",
+        "phase5_position_monitor",
+        "phase5_signal_review",
+        "phase5_paper_trade_drill",
+        "phase5_certification",
+        "phase5_phase6_handoff",
+        "phase5_system_map",
+        "phase6_learning_loop",
+        "phase6_certification",
+        "phase7_demo_proof",
+        "rs9_learning_loop",
+        "rs10_final_paper_autonomy_certification",
+        "paper_live_activation",
+        "paper_live_qctrl_product_access",
+        "paper_operational_mode",
+        "paperops_alpaca_paper_submit_enablement",
+        "paperops_alpaca_paper_post",
+        "paperops_first_week_paper_trade_mandate",
+        "paperops_paper_lifecycle_polling_enablement",
+        "paperops_paper_lifecycle_poller",
+        "paperops_guarded_paper_exit_enablement",
+        "paperops_paper_exit_path",
+        "paperops_notification_review",
+        "paperops_30_day_operations",
+        "paperops_opportunity_scan_cadence",
+        "paperops_cockpit_notification_upgrade",
+        "paper_live_certification",
+        "paperops_active_paper_trading_automation",
+        "paper_authority_reconciliation",
+        "paperops_qualified_setup_production",
+        "paperops_auto_approval_staged_order",
+        "paperops_qctrl_consultation",
+        "paper_lifecycle_portfolio_postmortem",
+    ]
+    process_console = payload.get("process_console", [])
+    event_trail = (
+        process_console
+        if isinstance(process_console, list)
+        else process_console.get("events", [])
+    )
+    return {
+        "schema_version": 1,
+        "status": "diagnostics_available",
+        "system_map": payload.get("phase5_system_map", {}),
+        "event_trail": event_trail,
+        "process_console": process_console,
+        "source_heartbeat_history": payload.get("source_heartbeat_history", []),
+        "governance_forum": payload.get("fund_manager_notes", {}),
+        "telegram": payload.get("communications", {}),
+        "kill_switch_ledger": payload.get("phase5_kill_switch_ledger", {}),
+        "audit_sections": {
+            key: payload.get(key, {})
+            for key in diagnostic_keys
+        },
+        "prune_candidates": diagnostic_keys,
+        "boundary": (
+            "Diagnostics are read-only audit surfaces for the drawer. They preserve "
+            "current checker dependencies and cannot change trading authority."
+        ),
+    }
+
+
 def _mission_control(payload: dict[str, Any], source_label: str = "status_contract") -> dict[str, Any]:
     watching = payload.get("watching", [])
     source_counts = Counter(source.get("status", "unknown") for source in watching)
@@ -5585,7 +5896,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     }
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "read_only_mission_control",
         "source": source_label,
         "headline": (
@@ -5595,7 +5906,23 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             f"{len(open_positions)} open positions; live capital "
             f"{'enabled' if live_capital_enabled else 'disabled'}."
         ),
+        "team": _mission_team(payload),
         "data_sources": {
+            "ok": int(source_counts.get("online", 0)),
+            "degraded": int(source_counts.get("degraded", 0)),
+            "missing_credentials": missing_credentials,
+            "quorum": {
+                "status": phase1_operational_status,
+                "online_count": int(source_counts.get("online", 0)),
+                "total_count": len(watching),
+                "pipeline_count": len(pipeline_summary),
+                "canonical_source_count": phase1_data_spine.get(
+                    "canonical_source_count",
+                    EXPECTED_SOURCE_COUNT,
+                ),
+                "expected_canonical_source_count": EXPECTED_SOURCE_COUNT,
+            },
+            "ledger": _mission_source_ledger(watching),
             "total_count": len(watching),
             "online_count": int(source_counts.get("online", 0)),
             "degraded_count": int(source_counts.get("degraded", 0)),
@@ -5695,6 +6022,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "Worldview is a private prior only, not a trade trigger.",
             ),
         },
+        "strategy": _mission_strategy(decision_philosophy),
         "system_stack": {
             "coo": _module_status(payload, "event_log"),
             "data_spine": phase1_data_spine.get("status", _module_status(payload, "watching")),
@@ -7091,6 +7419,39 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "strategy_packet_count": len(strategy_packets),
             "signal_integrity_status": cognition.get("signal_integrity", {}).get("status", "pending"),
             "blocked_reasons": cognition.get("blocked_reasons", [])[:8],
+            "hypotheses": _mission_hypotheses(hypotheses),
+            "research_goals": [
+                {
+                    "goal_id": goal.get("goal_id"),
+                    "status": goal.get("status"),
+                    "hypothesis": goal.get("hypothesis"),
+                    "market_channel": goal.get("market_channel"),
+                    "priority_label": goal.get("priority_label"),
+                    "missing_corroboration": goal.get("missing_corroboration", []),
+                    "worldview_lens": goal.get("worldview_lens"),
+                    "akber_stage": goal.get("akber_stage"),
+                }
+                for goal in research_goal_records[:6]
+            ],
+            "missing_corroboration": list(
+                dict.fromkeys(
+                    str(item)
+                    for hypothesis in hypotheses[:6]
+                    for item in hypothesis.get("missing_correlations", [])
+                    if item
+                )
+            )[:8],
+            "worldview_prior": {
+                "status": decision_philosophy.get("status", "pending"),
+                "role": decision_philosophy.get("role", "private_worldview_prior"),
+                "corpus": decision_philosophy.get("corpus", "how-the-world-works"),
+                "claim_count": decision_philosophy.get("claim_count", 0),
+                "summary": decision_philosophy.get("trading_philosophy"),
+                "boundary": decision_philosophy.get(
+                    "boundary",
+                    "World-model claims are private priors, not factual evidence or trade triggers.",
+                ),
+            },
             "boundary": cognition.get("boundary", "Cognition is shadow-only and cannot execute trades."),
         },
         "trade_intent": {
@@ -7125,15 +7486,44 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "broker_post_called_count": paper_submit_receipt.get("broker_post_called_count", 0),
             "boundary": trade_layer.get("boundary", "Candidate is not order; no broker route exists."),
         },
+        "trades": {
+            "lifecycle_counts": {
+                "observed": len(observed_signals),
+                "candidate": len(candidates),
+                "blocked": len(blocked_trades),
+                "paper_order_submitted": paper_order_submitted_count,
+                "open": len(open_positions),
+                "closed": len(closed_trades),
+                "postmortem_due": postmortem_due_count,
+            },
+            "board": _mission_trade_board(
+                observed_signals,
+                candidates,
+                blocked_trades,
+                open_positions,
+                closed_trades,
+            ),
+            "open": open_positions[:8],
+            "postmortems_due": capital.get("postmortems_due", [])[:8],
+            "boundary": trade_layer.get("boundary", "Candidate is not order; no broker route exists."),
+        },
         "portfolio": {
             "account_scope": capital.get("account_scope", PAPER_ACCOUNT_SCOPE),
             "broker": capital.get("broker", "paper_broker"),
             "connection_status": capital.get("connection_status", "pending"),
+            "balance_gbp": current_balance,
+            "delta_pct": (
+                round(((current_balance - float(capital.get("starting_balance_gbp") or current_balance)) / float(capital.get("starting_balance_gbp") or current_balance)) * 100, 4)
+                if float(capital.get("starting_balance_gbp") or current_balance)
+                else 0
+            ),
+            "equity_curve": capital.get("equity_curve", []),
             "current_balance_gbp": current_balance,
             "realized_pnl_gbp": capital.get("realized_pnl_gbp", 0),
             "unrealized_pnl_gbp": capital.get("unrealized_pnl_gbp", 0),
             "total_pnl_gbp": pnl_total,
             "drawdown_pct": capital.get("drawdown_pct", 0),
+            "mirror_freshness": capital.get("mirror_freshness_status", "unknown"),
             "portfolio_value_source": paper_lifecycle_postmortem.get(
                 "portfolio_value_source",
                 capital.get("portfolio_value_source", "unknown"),
@@ -7183,6 +7573,9 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
             "boundary": capital.get("boundary", "Read-only paper account mirror."),
         },
         "safety": {
+            "mode": payload.get("mode", "paper"),
+            "read_only": True,
+            "broker_write_route": "closed" if not broker_write_allowed else "enabled",
             "live_capital_enabled": live_capital_enabled,
             "broker_write_allowed": broker_write_allowed,
             "forbidden_action_count": len(forbidden_actions),
@@ -7538,6 +7931,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     operator_inbox_artifact = write_operator_inbox(payload, settings=settings)
     payload["operator_inbox"] = public_operator_inbox_status(operator_inbox_artifact)
     payload["mission_control"] = _mission_control(payload)
+    payload["diagnostics"] = _diagnostics(payload)
     validate_cockpit_status(payload)
     return payload
 
@@ -7575,6 +7969,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "d1_snapshot",
         "d0_shell",
         "durable_ingestion",
+        "diagnostics",
         "phase4_strategy",
         "phase5_layer_b_readiness",
         "phase5_kill_switch_ledger",
@@ -7658,6 +8053,29 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("local orchestrator must not be exposed in D1")
     if payload["capital"].get("live_capital_enabled") is not False:
         raise ValueError("cockpit status must keep live capital disabled")
+    mission_control = payload["mission_control"]
+    for key in (
+        "team",
+        "data_sources",
+        "strategy",
+        "portfolio",
+        "trades",
+        "thinking",
+        "safety",
+    ):
+        if key not in mission_control:
+            raise ValueError(f"Mission Control CC1 projection missing: {key}")
+    if not isinstance(mission_control.get("team"), list) or not mission_control["team"]:
+        raise ValueError("Mission Control team projection must be a non-empty list")
+    if mission_control["safety"].get("read_only") is not True:
+        raise ValueError("Mission Control safety projection must remain read-only")
+    if mission_control["safety"].get("live_capital_enabled") is not False:
+        raise ValueError("Mission Control safety projection must keep live capital disabled")
+    diagnostics = payload["diagnostics"]
+    if diagnostics.get("status") != "diagnostics_available":
+        raise ValueError("cockpit diagnostics status mismatch")
+    if not isinstance(diagnostics.get("audit_sections"), dict):
+        raise ValueError("cockpit diagnostics audit sections missing")
     durable_ingestion = payload["durable_ingestion"]
     if durable_ingestion.get("write_authority") is not False:
         raise ValueError("durable ingestion must not have write authority in the cockpit")

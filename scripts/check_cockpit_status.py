@@ -1957,10 +1957,102 @@ MISSION_CONTROL_REQUIRED_FIELDS = {
     "schema_version",
     "source",
     "status",
+    "strategy",
     "system_stack",
+    "team",
     "thinking",
+    "trades",
     "trade_intent",
     "trading_philosophy",
+}
+
+MISSION_CONTROL_TEAM_REQUIRED_FIELDS = {
+    "authority",
+    "current_process",
+    "key",
+    "label",
+    "one_line",
+    "owner",
+    "status",
+}
+
+MISSION_CONTROL_SOURCE_REQUIRED_FIELDS = {
+    "degraded",
+    "ledger",
+    "missing_credentials",
+    "ok",
+    "quorum",
+}
+
+MISSION_CONTROL_SOURCE_LEDGER_REQUIRED_FIELDS = {
+    "credential_status",
+    "eligible_for_signal_review",
+    "pipeline",
+    "readiness",
+    "source_key",
+    "source_name",
+    "status",
+    "trust_score",
+    "usable_for_research_context",
+}
+
+MISSION_CONTROL_STRATEGY_REQUIRED_FIELDS = {
+    "active_lens",
+    "akber_lens",
+    "boundary",
+    "decision_chain",
+    "posture",
+    "universe",
+    "why",
+}
+
+MISSION_CONTROL_PORTFOLIO_REQUIRED_FIELDS = {
+    "balance_gbp",
+    "delta_pct",
+    "drawdown_pct",
+    "equity_curve",
+    "mirror_freshness",
+    "realized_pnl_gbp",
+    "total_pnl_gbp",
+    "unrealized_pnl_gbp",
+}
+
+MISSION_CONTROL_TRADES_REQUIRED_FIELDS = {
+    "board",
+    "boundary",
+    "lifecycle_counts",
+    "open",
+    "postmortems_due",
+}
+
+MISSION_CONTROL_THINKING_REQUIRED_FIELDS = {
+    "hypotheses",
+    "missing_corroboration",
+    "research_goals",
+    "worldview_prior",
+}
+
+MISSION_CONTROL_SAFETY_REQUIRED_FIELDS = {
+    "broker_write_allowed",
+    "broker_write_route",
+    "live_capital_enabled",
+    "mode",
+    "read_only",
+}
+
+DIAGNOSTICS_REQUIRED_FIELDS = {
+    "audit_sections",
+    "boundary",
+    "event_trail",
+    "governance_forum",
+    "kill_switch_ledger",
+    "process_console",
+    "prune_candidates",
+    "schema_version",
+    "source_heartbeat_history",
+    "status",
+    "system_map",
+    "telegram",
 }
 
 MISSION_BRIEF_REQUIRED_FIELDS = {
@@ -7799,6 +7891,134 @@ def main() -> int:
     if mission.get("status") != "read_only_mission_control":
         print("cockpit_status_mission_control_status_mismatch=true")
         return 1
+    if int(mission.get("schema_version", 0) or 0) < 2:
+        print("cockpit_status_mission_control_schema_too_old=true")
+        return 1
+    mission_team = mission.get("team", [])
+    if not isinstance(mission_team, list) or len(mission_team) < 6:
+        print("cockpit_status_mission_team_invalid=true")
+        return 1
+    mission_team_keys = {str(node.get("key")) for node in mission_team if isinstance(node, dict)}
+    for expected_key in {
+        "intelligence_pipelines",
+        "coo",
+        "research_analyst",
+        "strategy_lead",
+        "head_of_quant",
+        "safety_policy",
+        "paper_demo_state",
+    }:
+        if expected_key not in mission_team_keys:
+            print(f"cockpit_status_mission_team_node_missing={expected_key}")
+            return 1
+    for node in mission_team:
+        missing_node_fields = sorted(MISSION_CONTROL_TEAM_REQUIRED_FIELDS - set(node))
+        if missing_node_fields:
+            print(
+                "cockpit_status_mission_team_fields_missing="
+                + f"{node.get('key', 'unknown')}:{','.join(missing_node_fields)}"
+            )
+            return 1
+    mission_sources = mission.get("data_sources", {})
+    missing_source_fields = sorted(MISSION_CONTROL_SOURCE_REQUIRED_FIELDS - set(mission_sources))
+    if missing_source_fields:
+        print("cockpit_status_mission_sources_fields_missing=" + ",".join(missing_source_fields))
+        return 1
+    if mission_sources.get("ok") != mission_sources.get("online_count"):
+        print("cockpit_status_mission_sources_ok_mismatch=true")
+        return 1
+    if mission_sources.get("missing_credentials") != mission_sources.get("missing_credential_count"):
+        print("cockpit_status_mission_sources_missing_credential_mismatch=true")
+        return 1
+    source_ledger = mission_sources.get("ledger", [])
+    if not isinstance(source_ledger, list) or len(source_ledger) != len(payload.get("watching", [])):
+        print("cockpit_status_mission_source_ledger_invalid=true")
+        return 1
+    for row in source_ledger[:5]:
+        missing_row_fields = sorted(MISSION_CONTROL_SOURCE_LEDGER_REQUIRED_FIELDS - set(row))
+        if missing_row_fields:
+            print(
+                "cockpit_status_mission_source_ledger_fields_missing="
+                + f"{row.get('source_key', 'unknown')}:{','.join(missing_row_fields)}"
+            )
+            return 1
+    mission_strategy = mission.get("strategy", {})
+    missing_strategy_fields = sorted(MISSION_CONTROL_STRATEGY_REQUIRED_FIELDS - set(mission_strategy))
+    if missing_strategy_fields:
+        print("cockpit_status_mission_strategy_fields_missing=" + ",".join(missing_strategy_fields))
+        return 1
+    if "Akber" not in mission_strategy.get("akber_lens", {}).get("summary", ""):
+        print("cockpit_status_mission_strategy_akber_lens_missing=true")
+        return 1
+    if not isinstance(mission_strategy.get("universe"), list):
+        print("cockpit_status_mission_strategy_universe_invalid=true")
+        return 1
+    mission_portfolio = mission.get("portfolio", {})
+    missing_portfolio_fields = sorted(MISSION_CONTROL_PORTFOLIO_REQUIRED_FIELDS - set(mission_portfolio))
+    if missing_portfolio_fields:
+        print("cockpit_status_mission_portfolio_fields_missing=" + ",".join(missing_portfolio_fields))
+        return 1
+    if mission_portfolio.get("balance_gbp") != mission_portfolio.get("current_balance_gbp"):
+        print("cockpit_status_mission_portfolio_balance_mismatch=true")
+        return 1
+    if not isinstance(mission_portfolio.get("equity_curve"), list):
+        print("cockpit_status_mission_portfolio_equity_curve_invalid=true")
+        return 1
+    mission_trades = mission.get("trades", {})
+    missing_trades_fields = sorted(MISSION_CONTROL_TRADES_REQUIRED_FIELDS - set(mission_trades))
+    if missing_trades_fields:
+        print("cockpit_status_mission_trades_fields_missing=" + ",".join(missing_trades_fields))
+        return 1
+    lifecycle_counts = mission_trades.get("lifecycle_counts", {})
+    for count_key in ("observed", "candidate", "blocked", "open", "closed", "postmortem_due"):
+        if count_key not in lifecycle_counts:
+            print(f"cockpit_status_mission_trades_lifecycle_missing={count_key}")
+            return 1
+    if not isinstance(mission_trades.get("board"), list):
+        print("cockpit_status_mission_trades_board_invalid=true")
+        return 1
+    mission_thinking = mission.get("thinking", {})
+    missing_thinking_fields = sorted(MISSION_CONTROL_THINKING_REQUIRED_FIELDS - set(mission_thinking))
+    if missing_thinking_fields:
+        print("cockpit_status_mission_thinking_fields_missing=" + ",".join(missing_thinking_fields))
+        return 1
+    if mission_thinking.get("worldview_prior", {}).get("role") != "private_worldview_prior":
+        print("cockpit_status_mission_worldview_prior_role_mismatch=true")
+        return 1
+    mission_safety = mission.get("safety", {})
+    missing_safety_fields = sorted(MISSION_CONTROL_SAFETY_REQUIRED_FIELDS - set(mission_safety))
+    if missing_safety_fields:
+        print("cockpit_status_mission_safety_fields_missing=" + ",".join(missing_safety_fields))
+        return 1
+    if mission_safety.get("read_only") is not True:
+        print("cockpit_status_mission_safety_not_read_only=true")
+        return 1
+    if mission_safety.get("live_capital_enabled") is not False:
+        print("cockpit_status_mission_safety_live_capital_enabled=true")
+        return 1
+    if mission_safety.get("broker_write_allowed") is not False:
+        print("cockpit_status_mission_safety_broker_write_allowed=true")
+        return 1
+    diagnostics = payload.get("diagnostics", {})
+    missing_diagnostics_fields = sorted(DIAGNOSTICS_REQUIRED_FIELDS - set(diagnostics))
+    if missing_diagnostics_fields:
+        print("cockpit_status_diagnostics_fields_missing=" + ",".join(missing_diagnostics_fields))
+        return 1
+    if diagnostics.get("status") != "diagnostics_available":
+        print("cockpit_status_diagnostics_status_mismatch=true")
+        return 1
+    if not isinstance(diagnostics.get("audit_sections"), dict) or not diagnostics.get("audit_sections"):
+        print("cockpit_status_diagnostics_audit_sections_invalid=true")
+        return 1
+    for expected_diagnostic in (
+        "phase5_kill_switch_ledger",
+        "paper_authority_reconciliation",
+        "rs10_final_paper_autonomy_certification",
+        "paperops_active_paper_trading_automation",
+    ):
+        if expected_diagnostic not in diagnostics.get("audit_sections", {}):
+            print(f"cockpit_status_diagnostics_section_missing={expected_diagnostic}")
+            return 1
     mission_brief = mission.get("mission_brief", {})
     missing_mission_brief_fields = sorted(MISSION_BRIEF_REQUIRED_FIELDS - set(mission_brief))
     if missing_mission_brief_fields:

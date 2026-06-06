@@ -170,6 +170,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 ### CC1 — Founder projection in the assembler *(backend, additive)*
 - In `orchestrator/cockpit_status.py`, build the cleaned `mission_control` (team/data_sources/strategy/portfolio/trades/thinking/safety) and a `diagnostics` sibling. Leave raw keys in place.
 - Extend `scripts/check_cockpit_status.py` to assert the new contract (presence, types, public-safe).
+- **Status:** completed. The exported snapshot now has `mission_control.schema_version = 2`, `mission_control.team`, `mission_control.strategy`, `mission_control.trades`, expanded source/portfolio/thinking slices, and a top-level read-only `diagnostics` namespace while preserving legacy raw keys for checker and dashboard migration.
 - **Done when:** exported snapshot contains the new objects; `check_cockpit_status.py` green; `validatePublicStatus` still passes.
 
 ### CC2 — Delete legacy & duplicate panels *(HTML — the big subtraction)*
