@@ -1143,7 +1143,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .operations-role-node,
 .operations-diagnostic-card,
 .operations-feed-cluster,
-.operations-full-map,
+.operations-map-diagnostics,
 .governance-target-button,
 .governance-record-card,
 .governance-action,
@@ -1533,12 +1533,71 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     display: block;
 }
 
+.team-health-row {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.team-health-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    display: grid;
+    gap: 7px;
+    min-height: 126px;
+    padding: 11px;
+}
+
+.team-health-card > div {
+    align-items: center;
+    display: flex;
+    gap: 7px;
+    min-width: 0;
+}
+
+.team-health-card > div span:last-child,
+.team-health-card small {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+}
+
+.team-health-card strong {
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.team-health-card p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.team-health-card small {
+    border-top: 1px solid var(--line);
+    margin-top: auto;
+    padding-top: 7px;
+}
+
 .overview-mini-map {
     align-items: stretch;
     counter-reset: overview-node;
     display: grid;
     gap: 8px;
     grid-template-columns: repeat(8, minmax(94px, 1fr));
+}
+
+.overview-system-flow-diagram {
+    grid-column: 1 / -1;
+}
+
+.overview-canonical-lane-track {
+    gap: 9px;
 }
 
 .overview-mini-node {
@@ -2155,14 +2214,14 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .operations-workspace-head h3,
-.operations-full-map-head h3 {
+.operations-map-diagnostics-head h3 {
     font-size: 24px;
     line-height: 1.15;
     margin: 0;
 }
 
 .operations-workspace-head p,
-.operations-full-map-head p {
+.operations-map-diagnostics-head p {
     color: var(--muted);
     line-height: 1.45;
     margin-top: 8px;
@@ -2171,7 +2230,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .operations-broken-card,
 .operations-diagnostic-card,
 .operations-feed-cluster,
-.operations-full-map,
+.operations-map-diagnostics,
 .operations-role-node {
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -2225,6 +2284,15 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     padding-top: 6px;
 }
 
+.operations-map-reference {
+    border: 1px solid rgba(var(--cyan-rgb), 0.2);
+    border-radius: 8px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 0;
+    padding: 10px 12px;
+}
+
 .operations-safety-reference {
     border: 1px solid rgba(var(--green-rgb), 0.24);
     border-radius: 8px;
@@ -2235,9 +2303,16 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .operations-role-spine,
-.operations-feed-clusters {
+.operations-feed-clusters,
+.operations-team-health-diagnostics {
     display: grid;
     gap: 10px;
+}
+
+.operations-team-diagnostic-row {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .operations-role-grid {
@@ -2371,13 +2446,13 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     margin-top: 2px;
 }
 
-.operations-full-map {
+.operations-map-diagnostics {
     display: grid;
     gap: 12px;
     padding: 14px;
 }
 
-.operations-full-map-head {
+.operations-map-diagnostics-head {
     align-items: start;
     display: grid;
     gap: 12px;
@@ -4843,7 +4918,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .dashboard-view-switcher,
 .overview-lifecycle-strip,
 .trade-lifecycle-strip,
-.operations-full-map,
+.operations-map-diagnostics,
 .operations-flow-diagram {
     max-width: 100%;
 }
@@ -4852,11 +4927,13 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-hero-metrics,
 .overview-readout-list,
 .overview-feed-strip,
+.team-health-row,
 .overview-system-grid,
 .overview-next-links,
 .priority-grid,
 .performance-status-grid,
 .operations-consolidated-metrics,
+.operations-team-diagnostic-row,
 .operations-role-grid,
 .operations-diagnostics-grid,
 .operations-feed-grid,
@@ -5612,7 +5689,7 @@ summary {
     .operations-consolidated-metrics,
     .operations-review-group summary,
     .operations-workspace-head,
-    .operations-full-map-head,
+    .operations-map-diagnostics-head,
     .operations-role-grid,
     .operations-diagnostics-grid,
     .operations-feed-grid,
@@ -5665,10 +5742,11 @@ summary {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .overview-hero-metrics,
-    .overview-lifecycle-strip,
-    .overview-mini-map,
-    .source-reliability-grid,
+	    .overview-hero-metrics,
+	    .overview-lifecycle-strip,
+	    .team-health-row,
+	    .overview-mini-map,
+	    .source-reliability-grid,
     .trade-lifecycle-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -5993,10 +6071,11 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 
 @media (max-width: 680px) {
     .overview-mini-map,
-    .overview-lifecycle-strip,
-    .trade-lifecycle-strip,
-    .operations-consolidated-metrics,
-    .operations-review-group summary,
+	    .overview-lifecycle-strip,
+	    .trade-lifecycle-strip,
+	    .operations-consolidated-metrics,
+	    .operations-team-diagnostic-row,
+	    .operations-review-group summary,
     .operations-role-grid,
     .operations-diagnostics-grid,
     .operations-feed-grid,
@@ -6218,7 +6297,7 @@ button:hover,
 .paper-account-balance-card,
 .paper-source-of-truth,
 .paper-equity-chart-card,
-.operations-full-map,
+.operations-map-diagnostics,
 .operations-role-node,
 .operations-diagnostic-card,
 .operations-feed-cluster,

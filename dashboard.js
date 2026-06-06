@@ -133,6 +133,50 @@ const OPERATIONS_ROLE_SPINE = [
         href: "#trades"
     }
 ];
+const TEAM_HEALTH_ROLES = [
+    {
+        key: "coo",
+        label: "COO",
+        subtitle: "Python script",
+        node_keys: ["event_log", "live_bridge"],
+        summary: "Records the audit trail and publishes the read-only dashboard state."
+    },
+    {
+        key: "research_analyst",
+        label: "Research Analyst",
+        subtitle: "Local LLM",
+        node_keys: ["research_analyst", "shadow_intelligence"],
+        summary: "Compresses observations into local shadow research."
+    },
+    {
+        key: "strategy_lead",
+        label: "Strategy Lead",
+        subtitle: "Frontier LLM",
+        node_keys: ["strategy_lead", "worldview"],
+        summary: "Challenges theses and strategy posture after evidence exists."
+    },
+    {
+        key: "head_of_quant",
+        label: "Head of Quant",
+        subtitle: "Quantum/classical oracle",
+        node_keys: ["head_of_quant"],
+        summary: "Runs bounded pattern and ambiguity checks without execution authority."
+    },
+    {
+        key: "risk_agent",
+        label: "Risk Agent",
+        subtitle: "Signal and policy gate",
+        node_keys: ["signal_integrity_gate", "approval_policy_router", "risk_agent", "kill_switch_ledger", "execution_policy"],
+        summary: "Blocks weak, stale, oversized, or unauthorized ideas."
+    },
+    {
+        key: "paperops",
+        label: "PaperOps",
+        subtitle: "Paper lifecycle",
+        node_keys: ["staged_order_contract", "broker_reconciliation", "paper_submit_receipt", "trade_layer", "paper_account", "position_monitor"],
+        summary: "Tracks paper candidates, orders, positions, receipts, and outcomes."
+    }
+];
 const OPERATIONS_PIPELINE_LABELS = {
     conflict: "Conflict and geopolitics",
     physical: "Physical world, energy, shipping, and weather",
@@ -2391,6 +2435,33 @@ function buildOperationsRoleSpine(connectivity) {
     });
 }
 
+function aggregateNodeHealth(nodes = []) {
+    const list = asArray(nodes);
+    const hasBlocked = list.some((node) => node.health === "blocked" || asArray(node.authority_flags).length);
+    const hasDegraded = list.some((node) => node.health === "degraded");
+    const hasPending = list.some((node) => node.health === "pending");
+    const hasOnline = list.some((node) => ["online", "read-only", "local-only", "shadow-only", "supplemental"].includes(node.health));
+    if (hasBlocked) return "blocked";
+    if (hasDegraded) return "degraded";
+    if (hasPending) return "pending";
+    return hasOnline ? "online" : "pending";
+}
+
+function buildTeamHealthModel(connectivity) {
+    const nodesByKey = new Map(asArray(connectivity.nodes).map((node) => [node.key, node]));
+    return TEAM_HEALTH_ROLES.map((role) => {
+        const nodes = asArray(role.node_keys).map((key) => nodesByKey.get(key)).filter(Boolean);
+        const activeNode = nodes.find((node) => ["blocked", "degraded", "pending"].includes(node.health)) || nodes[0] || {};
+        return {
+            ...role,
+            status: aggregateNodeHealth(nodes),
+            node_count: nodes.length,
+            nodes: nodes.map((node) => node.key),
+            current: dashboardText(activeNode.expanded?.current_process || activeNode.purpose || activeNode.status, "No current process exported")
+        };
+    });
+}
+
 function buildSystemConnectivityModel(status = {}) {
     const backendMap = status.phase5_system_map || {};
     const backendNodes = asArray(backendMap.nodes);
@@ -2488,20 +2559,24 @@ function buildSystemConnectivityModel(status = {}) {
         edges,
         feed_clusters: feedClusters,
         authority_violations: authorityViolations,
-        overview_scope: {
-            placement: "overview-mini-map",
-            max_nodes: 8,
-            node_keys: ["watching", "event_log", "research_analyst", "strategy_lead", "head_of_quant", "risk_agent", "trade_layer", "postmortem_loop"].filter((key) => nodeByKey.has(key))
-        },
-        operations_scope: {
-            placement: "operations-full-map",
-            node_keys: nodeModels.map((node) => node.key),
-            role_keys: OPERATIONS_ROLE_SPINE.map((role) => role.key),
-            edge_states: ["active", "shadow/context-only", "degraded", "locked", "blocked"]
-        },
-        boundary: backendMap.boundary || "The system map is read-only and sanitized for the dashboard."
-    };
-}
+	        overview_scope: {
+	            placement: "overview-mini-map",
+	            canonical: true,
+	            max_nodes: nodeModels.length,
+	            node_keys: nodeModels.map((node) => node.key)
+	        },
+	        operations_scope: {
+	            placement: "operations-diagnostics",
+	            node_keys: nodeModels.map((node) => node.key),
+	            edge_states: ["active", "shadow/context-only", "degraded", "locked", "blocked"]
+	        },
+	        team_health_scope: {
+	            placement: "team-health-row",
+	            role_keys: TEAM_HEALTH_ROLES.map((role) => role.key)
+	        },
+	        boundary: backendMap.boundary || "The system map is read-only and sanitized for the dashboard."
+	    };
+	}
 
 function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
     const liveBridge = status.live_bridge || {};
@@ -2511,6 +2586,7 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
     const forbiddenActions = asArray(status.forbidden_actions);
     const connectivity = sharedModels.system_connectivity_model || buildSystemConnectivityModel(status);
     const roleSpine = buildOperationsRoleSpine(connectivity);
+    const teamHealth = buildTeamHealthModel(connectivity);
     const governance = sharedModels.governance_model || buildGovernanceModel(status);
     const communicationsAudit = governance.communications || {};
     const operatorInbox = governance.operator_inbox || {};
@@ -2540,19 +2616,19 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
             status: brokenItems.length ? "degraded" : "online",
             count: 5 + forbiddenActions.length + brokenItems.length
         },
-        {
-            id: "team_data_plumbing",
-            title: "Operating team and data plumbing",
-            summary: "The hedge-fund team roles and intelligence feed clusters that move observations into review.",
-            status: connectivity.feed_clusters.some((cluster) => cluster.status === "blocked") ? "blocked" : "online",
-            count: roleSpine.length + connectivity.feed_clusters.length
-        },
-        {
-            id: "system_map_event_trail",
-            title: "Full system map and event trail",
-            summary: "Node-by-node connectivity, handoff edge states, recent runtime events, and closed-loop logging rule.",
-            status: connectivity.authority_violations.length ? "blocked" : "online",
-            count: connectivity.node_count + processEvents.length
+	        {
+	            id: "team_data_plumbing",
+	            title: "Operating team and data plumbing",
+	            summary: "The hedge-fund team roles and intelligence feed clusters that move observations into review.",
+	            status: connectivity.feed_clusters.some((cluster) => cluster.status === "blocked") ? "blocked" : "online",
+	            count: teamHealth.length + connectivity.feed_clusters.length
+	        },
+	        {
+	            id: "system_map_event_trail",
+	            title: "System map diagnostics and event trail",
+	            summary: "Canonical-map counts, handoff edge states, recent runtime events, and closed-loop logging rule.",
+	            status: connectivity.authority_violations.length ? "blocked" : "online",
+	            count: connectivity.node_count + processEvents.length
         },
         {
             id: "governance_comms_audit",
@@ -2593,10 +2669,11 @@ function buildOperationsModel(status = {}, source = {}, sharedModels = {}) {
             authority_flags: authorityFlags,
             readiness_warnings: readinessWarnings,
             live_capital_enabled: Boolean(status.capital?.live_capital_enabled)
-        },
-        system_connectivity_model: connectivity,
-        role_spine: roleSpine,
-        operations_review_groups: reviewGroups,
+	        },
+	        system_connectivity_model: connectivity,
+	        role_spine: roleSpine,
+	        team_health: teamHealth,
+	        operations_review_groups: reviewGroups,
         model_dependencies: {
             system_connectivity_model: connectivity.id || "system_connectivity_model",
             governance_model: governance.id || "governance"
@@ -4232,6 +4309,20 @@ function renderOperationsReviewGroup(group = {}, bodyHtml = "", open = false) {
     `;
 }
 
+function renderTeamHealthCard(role = {}) {
+    return `
+        <article class="team-health-card ${statusClass(role.status)}">
+            <div>
+                ${renderStatusPill(role.status)}
+                <span>${htmlText(role.subtitle, "System role")}</span>
+            </div>
+            <strong>${htmlText(role.label, "Qadam role")}</strong>
+            <p>${htmlText(role.current || role.summary, "No current process exported")}</p>
+            <small>${htmlText(role.node_count || 0)} linked nodes</small>
+        </article>
+    `;
+}
+
 function renderOperationsWorkspace(model = {}, status = {}) {
     const connectivity = model.system_connectivity_model || {};
     const runtime = model.runtime || {};
@@ -4279,12 +4370,12 @@ function renderOperationsWorkspace(model = {}, status = {}) {
     return `
         <section class="operations-workspace" data-operations-workspace>
             <section id="operations-readout" class="operations-consolidated-readout" data-operations-consolidated-readout>
-                <div class="operations-workspace-head">
-                    <div>
-                        <p class="label">Operations workspace</p>
-                        <h3>Operations readout and full system map</h3>
-                        <p>${htmlText(model.summary)} This is the read-only runtime diagnostics and full system connectivity view: bridge health, safety stops, team roles, feed plumbing, map edges, event trail, governance, and outbound communications in one place.</p>
-                    </div>
+	                <div class="operations-workspace-head">
+	                    <div>
+	                        <p class="label">Operations workspace</p>
+	                        <h3>Operations diagnostics and event trail</h3>
+	                        <p>${htmlText(model.summary)} This is the read-only runtime diagnostics view: bridge health, safety stops, feed plumbing, map edge diagnostics, event trail, governance, and outbound communications. The canonical node-by-node system map is rendered once on Overview.</p>
+	                    </div>
                     <article class="operations-broken-card ${statusClass(broken.status)}">
                         <span>What is broken?</span>
                         <strong>${broken.item_count || 0} items</strong>
@@ -4360,17 +4451,17 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                     </section>
                 `, true)}
 
-                ${renderOperationsReviewGroup(groupById.get("team_data_plumbing"), `
-                    <section class="operations-role-spine" aria-label="Operations role spine">
-                        <div class="overview-section-head">
-                            <span>First-class operating roles</span>
-                            <strong>Human oversight, live data feeds, orchestrator, analysts, quant, risk gates, paper trading, and learning loop.</strong>
-                        </div>
-                        <div class="operations-role-grid">
-                            ${asArray(model.role_spine).map(renderOperationsRoleNode).join("")}
-                        </div>
-                    </section>
-                    <section class="operations-feed-clusters" aria-label="Live data feed clusters">
+	                ${renderOperationsReviewGroup(groupById.get("team_data_plumbing"), `
+	                    <section class="operations-team-health-diagnostics" aria-label="Operating team diagnostics">
+	                        <div class="overview-section-head">
+	                            <span>Operating team diagnostics</span>
+	                            <strong>Compact team health is shown once on Overview; diagnostics here explain source plumbing and linked node counts.</strong>
+	                        </div>
+	                        <div class="operations-team-diagnostic-row">
+	                            ${asArray(model.team_health).map((role) => renderMetric(role.label, `${role.status} · ${role.node_count || 0} nodes`)).join("")}
+	                        </div>
+	                    </section>
+	                    <section class="operations-feed-clusters" aria-label="Live data feed clusters">
                         <div class="overview-section-head">
                             <span>Live data feed clusters</span>
                             <strong>Five intelligence pipelines plus source provenance and supplemental adapters.</strong>
@@ -4381,14 +4472,14 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                     </section>
                 `)}
 
-                ${renderOperationsReviewGroup(groupById.get("system_map_event_trail"), `
-                    <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable system map">
-                        <div class="operations-full-map-head">
-                            <div>
-                                <p class="label">Q5-13 Functional System Map Dashboard</p>
-                                <h3>Full system map</h3>
-                                <p>${htmlText(connectivity.boundary)} Advanced phase labels and raw operational terms are intentionally kept in Operations.</p>
-                            </div>
+	                ${renderOperationsReviewGroup(groupById.get("system_map_event_trail"), `
+	                    <section class="operations-map-diagnostics" data-phase5-system-map aria-label="System map diagnostics">
+	                        <div class="operations-map-diagnostics-head">
+	                            <div>
+	                                <p class="label">Q5-13 Functional System Map Dashboard</p>
+	                                <h3>System map diagnostics</h3>
+	                                <p>${htmlText(connectivity.boundary)} The canonical node-by-node map is on Overview; Operations keeps counts, edge states, and raw diagnostic terms.</p>
+	                            </div>
                             <div class="summary-strip compact">
                                 ${renderMetric("Nodes", backendMap.node_count || connectivity.node_count || 0)}
                                 ${renderMetric("Layer B", backendMap.layer_b_node_count || 0)}
@@ -4410,17 +4501,11 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                             <span>Edge state</span>
                             ${["active", "shadow/context-only", "degraded", "locked", "blocked"].map((state) => renderInlineBadge(state, state)).join("")}
                         </div>
-                        <ul class="operations-edge-list">
-                            ${asArray(connectivity.edges).slice(0, 14).map((edge) => renderOperationsEdge(edge, connectivity)).join("")}
-                        </ul>
-                        <div class="system-flow-diagram operations-flow-diagram">
-                            ${asArray(connectivity.lanes).map((lane, laneIndex) => renderOperationsLane(lane, connectivity, laneIndex)).join("")}
-                            <div class="flow-return-loop">
-                                <strong>Closed-loop rule</strong>
-                                <span>Every observation, hypothesis, risk decision, paper state, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
-                            </div>
-                        </div>
-                    </section>
+	                        <ul class="operations-edge-list">
+	                            ${asArray(connectivity.edges).map((edge) => renderOperationsEdge(edge, connectivity)).join("")}
+	                        </ul>
+	                        <p class="operations-map-reference">Open the Overview tab for the single canonical node-by-node system map. This section is diagnostics only, so the dashboard does not render the operating flow twice.</p>
+	                    </section>
                     <section class="operations-event-trail">
                         <div class="overview-section-head">
                             <span>Recent runtime events</span>
@@ -6124,17 +6209,24 @@ const OVERVIEW_NODE_GUIDES = {
 function overviewNodeGuide(node = {}, role = "", label = "") {
     const guide = OVERVIEW_NODE_GUIDES[node.key] || {};
     const expanded = node.expanded || {};
-    const current = dashboardText(expanded.current_process || node.purpose || node.status, "No current process exported.");
-    const boundary = dashboardText(node.authority || expanded.current_status, "Read-only dashboard status.");
+    const current = overviewPlainText(expanded.current_process || node.purpose || node.status, "No current process exported.");
+    const boundary = overviewPlainText(node.authority || expanded.current_status, "Read-only dashboard status.");
     return {
-        label: label || node.label || "System node",
-        role: role || node.role || "Qadam node",
-        does: guide.does || dashboardText(node.purpose, "This node contributes to Qadam's operating flow."),
+        label: overviewPlainText(label || node.label, "System node"),
+        role: overviewPlainText(role || node.role, "Qadam node"),
+        does: guide.does || overviewPlainText(node.purpose, "This node contributes to Qadam's operating flow."),
         current,
         watch: guide.watch || "Use this status to decide whether the next node can trust the handoff.",
         boundary,
-        handoff: guide.handoff || dashboardText(expanded.handoff || node.output, "It passes sanitized state to the next review point.")
+        handoff: guide.handoff || overviewPlainText(expanded.handoff || node.output, "It passes sanitized state to the next review point.")
     };
+}
+
+function overviewPlainText(value, fallback = "") {
+    return dashboardText(value, fallback)
+        .replace(/\bQ\d+[A-Z]?(?:-\d+)?\b/g, "backend phase")
+        .replace(/\bD\d+[A-Z]?\b/g, "dashboard phase")
+        .replace(/\bPhase\s+\d+\b/gi, "current phase");
 }
 
 function renderOverviewChip(chip) {
@@ -6195,6 +6287,50 @@ function renderOverviewMiniNode(node, index, total) {
             </div>
         </details>
         ${connector}
+    `;
+}
+
+function renderOverviewCanonicalLane(lane = {}, connectivity = {}, laneIndex = 0, startIndex = 0, totalNodes = 0) {
+    const nodeByKey = new Map(asArray(connectivity.nodes).map((node) => [node.key, node]));
+    const nodes = asArray(lane.node_keys).map((key) => nodeByKey.get(key)).filter(Boolean);
+    const nodeHtml = nodes.map((node, nodeIndex) => (
+        renderOverviewMiniNode(node, startIndex + nodeIndex, totalNodes)
+    )).join("");
+    return {
+        node_count: nodes.length,
+        html: `
+            <section class="flow-lane overview-canonical-lane ${statusClass(lane.tone || "pending")}">
+                <header class="flow-lane-header">
+                    <span>${String(laneIndex + 1).padStart(2, "0")}</span>
+                    <div>
+                        <h3>${htmlText(lane.title, "System lane")}</h3>
+                        <p>${htmlText(lane.summary, "No lane summary exported")}</p>
+                    </div>
+                </header>
+                <div class="flow-lane-track overview-canonical-lane-track">${nodeHtml}</div>
+                <div class="lane-handoff"><span>${htmlText(lane.handoff, "passes state")}</span></div>
+            </section>
+        `
+    };
+}
+
+function renderOverviewCanonicalMap(connectivity = {}) {
+    const totalNodes = asArray(connectivity.nodes).length;
+    let offset = 0;
+    const lanes = asArray(connectivity.lanes).map((lane, laneIndex) => {
+        const rendered = renderOverviewCanonicalLane(lane, connectivity, laneIndex, offset, totalNodes);
+        offset += rendered.node_count;
+        return rendered.html;
+    }).join("");
+    if (!lanes) return `<span>No system connectivity nodes are visible yet.</span>`;
+    return `
+        <div class="system-flow-diagram overview-system-flow-diagram" data-phase5-system-map>
+            ${lanes}
+            <div class="flow-return-loop">
+                <strong>Closed-loop rule</strong>
+                <span>Every observation, hypothesis, risk decision, paper state, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
+            </div>
+        </div>
     `;
 }
 
@@ -6640,25 +6776,27 @@ function renderOverviewFirstScreen(viewModels) {
             .join("");
     }
 
-    const oversight = dashboardQuery("[data-overview-oversight]");
-    if (oversight) {
-        oversight.innerHTML = `
-            <span>Fund Manager oversight</span>
+	    const oversight = dashboardQuery("[data-overview-oversight]");
+	    if (oversight) {
+	        oversight.innerHTML = `
+	            <span>Fund Manager oversight</span>
             <strong>You supervise Qadam</strong>
             <p>${htmlText(overview.system_summary || "Live feeds, Python, models, gates, paper lifecycle, and learning loop stay visible from one map.")}</p>
-        `;
-    }
+	        `;
+	    }
+	
+	    const teamHealth = dashboardQuery("[data-team-health-row]");
+	    if (teamHealth) {
+	        const roles = viewModels?.operations_model?.team_health || buildTeamHealthModel(connectivity);
+	        teamHealth.innerHTML = roles.length
+	            ? roles.map(renderTeamHealthCard).join("")
+	            : `<span>No operating-team health rows are visible yet.</span>`;
+	    }
 
-    const miniMap = dashboardQuery("[data-overview-mini-map]");
-    if (miniMap) {
-        const nodeByKey = new Map(asArray(connectivity.nodes).map((node) => [node.key, node]));
-        const miniNodes = asArray(overview.mini_map?.node_keys)
-            .map((key) => nodeByKey.get(key))
-            .filter(Boolean);
-        miniMap.innerHTML = miniNodes.length
-            ? miniNodes.map((node, index) => renderOverviewMiniNode(node, index, miniNodes.length)).join("")
-            : `<span>No system connectivity nodes are visible yet.</span>`;
-    }
+	    const miniMap = dashboardQuery("[data-overview-mini-map]");
+	    if (miniMap) {
+	        miniMap.innerHTML = renderOverviewCanonicalMap(connectivity);
+	    }
 
     const feeds = dashboardQuery("[data-overview-feed-strip]");
     if (feeds) {

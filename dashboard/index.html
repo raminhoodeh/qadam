@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260606-cc3-safety">
+    <link rel="stylesheet" href="/auth.css?v=20260606-cc4-system-map">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -125,17 +125,39 @@
                     <p>Loading what Qadam is choosing to focus on, why it is focusing there, and how Akber's filter is shaping the decision.</p>
                 </section>
 
-                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
-                    <div class="overview-section-head">
-                        <span>How data becomes paper trade decisions</span>
-                        <strong>Operating flow - tap + to expand</strong>
-                    </div>
-                    <div class="overview-system-grid">
-                        <div class="overview-mini-map" data-overview-mini-map>
-                            <span>Loading system connectivity.</span>
-                        </div>
-                        <div class="overview-oversight" data-overview-oversight>
-                            <span>Fund Manager role</span>
+	                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
+	                    <div class="overview-section-head">
+	                        <span>How data becomes paper trade decisions</span>
+	                        <strong>Canonical operating flow - tap + to expand</strong>
+	                    </div>
+	                    <div class="team-health-row" data-team-health-row>
+	                        <span>Loading operating-team health.</span>
+	                    </div>
+	                    <div class="overview-system-grid">
+	                        <div class="overview-mini-map" data-overview-mini-map>
+	                            <div class="system-flow-diagram overview-system-flow-diagram" data-phase5-system-map>
+	                                <section class="flow-lane pending">
+	                                    <header class="flow-lane-header">
+	                                        <span>01</span>
+	                                        <div>
+	                                            <h3>Loading canonical system map</h3>
+	                                            <p>The live status snapshot replaces this with Qadam's full node-by-node operating flow.</p>
+	                                        </div>
+	                                    </header>
+	                                    <div class="flow-lane-track">
+	                                        <span>Loading system connectivity.</span>
+	                                        <div class="flow-connector" aria-hidden="true"><span>status handoff</span></div>
+	                                    </div>
+	                                    <div class="lane-handoff"><span>Observed facts must be logged before they count.</span></div>
+	                                </section>
+	                                <div class="flow-return-loop">
+	                                    <strong>Closed-loop rule</strong>
+	                                    <span>Every observation, hypothesis, risk decision, paper trade, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
+	                                </div>
+	                            </div>
+	                        </div>
+	                        <div class="overview-oversight" data-overview-oversight>
+	                            <span>Human oversight</span>
                             <strong>You supervise Qadam</strong>
                             <p>Qadam watches live sources, compresses evidence locally, escalates strategy, checks quant/risk, and stays inside the current maturity track.</p>
                         </div>
@@ -253,56 +275,23 @@
                             </dl>
                         </div>
                     </div>
-                    <p class="mini" data-snapshot-meta>Loading dashboard status...</p>
-                </div>
-
-                <div class="fund-model-grid" data-fund-model>
-                    <article class="fund-model-card">
-                        <span>Human oversight</span>
-                        <h3>You supervise Qadam</h3>
-                        <p>Review the operating map, challenge ideas, and add governance comments.</p>
-                        <small>Paper mode · static shell</small>
-                    </article>
-                    <article class="fund-model-card">
-                        <span>Orchestrator</span>
-                        <h3>Python records the system</h3>
-                        <p>The orchestrator turns source, model, and trade events into auditable state.</p>
-                        <small>Logged state first</small>
-                    </article>
-                    <article class="fund-model-card">
-                        <span>Analysts</span>
-                        <h3>Models research only</h3>
-                        <p>Local and frontier models form hypotheses, but they cannot create orders.</p>
-                        <small>No execution authority</small>
-                    </article>
-                    <article class="fund-model-card">
-                        <span>Quant + Risk</span>
-                        <h3>Models inform, gates decide</h3>
-                        <p>Quant checks are bounded; risk blocks weak, stale, or unauthorized ideas.</p>
-                        <small>Blocked unless safe</small>
-                    </article>
-                    <article class="fund-model-card">
-                        <span>Paper trading</span>
-                        <h3>Ideas become paper trades</h3>
-                        <p>Trade ideas are not orders. Verified records come from positions, exits, and postmortems.</p>
-                        <small>Live capital off</small>
-                    </article>
-                </div>
-
-                <div class="snapshot-banner" data-status-banner>
-                    <span>Dashboard status loaded.</span>
-                    <span>Read-only operating map. If the live bridge is unavailable, this page falls back to the sanitized status snapshot without implying control authority.</span>
-                </div>
+	                    <p class="mini" data-snapshot-meta>Loading dashboard status...</p>
+	                </div>
+	
+	                <div class="snapshot-banner" data-status-banner>
+	                    <span>Dashboard status loaded.</span>
+	                    <span>Read-only operating map. If the live bridge is unavailable, this page falls back to the sanitized status snapshot without implying control authority.</span>
+	                </div>
 
                 <div class="flow-map" data-flow-map>
                     <section class="operations-workspace" data-operations-workspace>
                         <section id="operations-readout" class="operations-consolidated-readout" data-operations-consolidated-readout>
-                            <div class="operations-workspace-head">
-                                <div>
-                                    <p class="label">Operations workspace</p>
-                                    <h3>Operations readout and full system map</h3>
-                                    <p>Read-only runtime diagnostics and full system connectivity load here: bridge health, safety stops, system roles, data pipelines, map edges, event trail, governance, and notifications.</p>
-                                </div>
+	                            <div class="operations-workspace-head">
+	                                <div>
+	                                    <p class="label">Operations workspace</p>
+	                                    <h3>Operations diagnostics and event trail</h3>
+	                                    <p>Read-only runtime diagnostics load here: bridge health, safety stops, source plumbing, map edge diagnostics, event trail, governance, and notifications. The canonical node-by-node system map lives once on Overview.</p>
+	                                </div>
                                 <article class="operations-broken-card pending">
                                     <span>What is broken?</span>
                                     <strong>Loading</strong>
@@ -330,9 +319,9 @@
                             <details class="operations-review-group" data-operations-review-group="team_data_plumbing">
                                 <summary><strong>Operating team and data plumbing</strong><span>The roles and source groups that move observations into review.</span><em>Loading</em></summary>
                             </details>
-                            <details class="operations-review-group" data-operations-review-group="system_map_event_trail" open>
-                                <summary><strong>Full system map and event trail</strong><span>Node-by-node connectivity, handoff edge states, recent runtime events, and closed-loop logging rule.</span><em>Loading</em></summary>
-                                <section class="operations-full-map" data-phase5-system-map aria-label="Full expandable system map">
+	                            <details class="operations-review-group" data-operations-review-group="system_map_event_trail" open>
+	                                <summary><strong>System map diagnostics and event trail</strong><span>Canonical-map counts, handoff edge states, recent runtime events, and closed-loop logging rule.</span><em>Loading</em></summary>
+	                                <section class="operations-map-diagnostics" data-phase5-system-map aria-label="System map diagnostics">
                                     <div class="operations-edge-legend">
                                         <span>Edge state</span>
                                         <span class="inline-badge online">OK</span>
@@ -352,191 +341,13 @@
                                     </details>
                                 </section>
                             </details>
-                            <details class="operations-review-group" data-operations-review-group="governance_comms_audit">
-                                <summary><strong>Governance, inbox, and communications audit</strong><span>Fund Manager comments, Chief Operating Officer inbox items, approval records, weekly review state, and outbound-only Telegram notifications.</span><em>Loading</em></summary>
-                            </details>
-                        </div>
-                    </section>
-                    <div class="system-flow-diagram">
-                        <section class="flow-lane online">
-                            <header class="flow-lane-header">
-                                <span>01</span>
-                                <div>
-                                    <h3>Observation</h3>
-                                    <p>World and market inputs enter as observations only.</p>
-                                </div>
-                            </header>
-                            <div class="flow-lane-track">
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Waiting</b><span>01 · Source desks</span></div>
-                                    <h3>Watched Sources</h3>
-                                    <p class="flow-summary">Conflict, physical, macro, market, narrative, and TradingView-assisted observations.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Feeds and alerts</dd></div>
-                                        <div><dt>Output</dt><dd>Observed facts</dd></div>
-                                    </dl>
-                                </article>
-                            </div>
-                            <div class="lane-handoff"><span>Observed facts must be logged before they count.</span></div>
-                        </section>
-
-                        <section class="flow-lane online">
-                            <header class="flow-lane-header">
-                                <span>02</span>
-                                <div>
-                                    <h3>System Memory</h3>
-                                    <p>The orchestrator records state and exposes only a safe dashboard mirror.</p>
-                                </div>
-                            </header>
-                            <div class="flow-lane-track">
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status local-only">Local only</b><span>02 · System memory</span></div>
-                                    <h3>Event Log</h3>
-                                    <p class="flow-summary">Every meaningful source, model, risk, and trade state must be logged before it counts.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Material events</dd></div>
-                                        <div><dt>Output</dt><dd>Audit trail</dd></div>
-                                    </dl>
-                                </article>
-                                <div class="flow-connector" aria-hidden="true"><span>logged state</span></div>
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Read-only</b><span>03 · Read-only bridge</span></div>
-                                    <h3>Secure Live Bridge</h3>
-                                    <p class="flow-summary">Authenticated read-only status endpoint with static snapshot fallback.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Safe snapshot</dd></div>
-                                        <div><dt>Output</dt><dd>Dashboard state</dd></div>
-                                    </dl>
-                                </article>
-                            </div>
-                            <div class="lane-handoff"><span>Logged state becomes dashboard state and research input.</span></div>
-                        </section>
-
-                        <section class="flow-lane pending">
-                            <header class="flow-lane-header">
-                                <span>03</span>
-                                <div>
-                                    <h3>Research</h3>
-                                    <p>Models shape questions and hypotheses without execution authority.</p>
-                                </div>
-                            </header>
-                            <div class="flow-lane-track">
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Waiting</b><span>04 · Research desk</span></div>
-                                    <h3>Research Analyst</h3>
-                                    <p class="flow-summary">Filters noisy events locally and compresses evidence into research notes.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Noisy observations</dd></div>
-                                        <div><dt>Output</dt><dd>Shadow analysis</dd></div>
-                                    </dl>
-                                </article>
-                                <div class="flow-connector" aria-hidden="true"><span>shadow analysis</span></div>
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Waiting</b><span>05 · Strategy desk</span></div>
-                                    <h3>Strategy Lead</h3>
-                                    <p class="flow-summary">Challenges hypotheses and builds deeper strategy packets only after evidence exists.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Evidence packets</dd></div>
-                                        <div><dt>Output</dt><dd>Challenge notes</dd></div>
-                                    </dl>
-                                </article>
-                            </div>
-                            <div class="lane-handoff"><span>Research outputs become challenge notes and evidence packets.</span></div>
-                        </section>
-
-                        <section class="flow-lane blocked">
-                            <header class="flow-lane-header">
-                                <span>04</span>
-                                <div>
-                                    <h3>Quant + Risk</h3>
-                                    <p>Bounded modelling can inform a gate; risk decides whether an idea may continue.</p>
-                                </div>
-                            </header>
-                            <div class="flow-lane-track">
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Deferred</b><span>06 · Quant desk</span></div>
-                                    <h3>Quantum / Classical Oracle</h3>
-                                    <p class="flow-summary">Runs bounded modelling checks. It cannot originate trades or bypass risk.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Bounded scenarios</dd></div>
-                                        <div><dt>Output</dt><dd>Oracle check</dd></div>
-                                    </dl>
-                                </article>
-                                <div class="flow-connector" aria-hidden="true"><span>bounded oracle check</span></div>
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status blocked">Blocked</b><span>07 · Risk desk</span></div>
-                                    <h3>Risk Agent</h3>
-                                    <p class="flow-summary">Blocks oversize, stale, low-evidence, or unauthorized ideas before paper execution.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Trade intents</dd></div>
-                                        <div><dt>Output</dt><dd>Blocks or gates</dd></div>
-                                    </dl>
-                                </article>
-                            </div>
-                            <div class="lane-handoff"><span>Only passed gates can become paper-trial state.</span></div>
-                        </section>
-
-                        <section class="flow-lane online">
-                            <header class="flow-lane-header">
-                                <span>05</span>
-                                <div>
-                                    <h3>Paper Trial</h3>
-                                    <p>Trade ideas become paper trades only after gates; outcomes return to learning.</p>
-                                </div>
-                            </header>
-                            <div class="flow-lane-track">
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status blocked">Paper only</b><span>08 · Paper desk</span></div>
-                                    <h3>Paper Trading</h3>
-                                    <p class="flow-summary">Shows observed signals, trade ideas, blocks, paper orders, and positions.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Approved intents</dd></div>
-                                        <div><dt>Output</dt><dd>Paper trade states</dd></div>
-                                    </dl>
-                                </article>
-                                <div class="flow-connector" aria-hidden="true"><span>paper state</span></div>
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status pending">Waiting</b><span>09 · Learning loop</span></div>
-                                    <h3>Postmortem Loop</h3>
-                                    <p class="flow-summary">Every closed paper trade becomes a lesson in the Knowledge Graph.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Closed trades</dd></div>
-                                        <div><dt>Output</dt><dd>Lessons</dd></div>
-                                    </dl>
-                                </article>
-                            </div>
-                            <div class="lane-handoff"><span>Closed paper outcomes and lessons return to memory.</span></div>
-                        </section>
-
-                        <section class="flow-lane pending">
-                            <header class="flow-lane-header">
-                                <span>06</span>
-                                <div>
-                                    <h3>Members</h3>
-                                    <p>Founding Fund Managers receive notifications and leave governance comments.</p>
-                                </div>
-                            </header>
-                            <div class="flow-lane-track">
-                                <article class="flow-node system-map-node">
-                                    <div class="node-topline"><b class="node-status dry-run">Dry run</b><span>10 · Member comms</span></div>
-                                    <h3>Telegram Bot</h3>
-                                    <p class="flow-summary">Outbound-only founding-member updates and dry-run delivery state.</p>
-                                    <dl class="node-facts">
-                                        <div><dt>Input</dt><dd>Status events</dd></div>
-                                        <div><dt>Output</dt><dd>Notifications</dd></div>
-                                    </dl>
-                                </article>
-                            </div>
-                            <div class="lane-handoff"><span>Human notes improve the system without creating broker authority.</span></div>
-                        </section>
-
-                        <div class="flow-return-loop">
-                            <strong>Closed-loop rule</strong>
-                            <span>Every observation, hypothesis, risk decision, paper trade, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+	                            <details class="operations-review-group" data-operations-review-group="governance_comms_audit">
+	                                <summary><strong>Governance, inbox, and communications audit</strong><span>Fund Manager comments, Chief Operating Officer inbox items, approval records, weekly review state, and outbound-only Telegram notifications.</span><em>Loading</em></summary>
+	                            </details>
+	                        </div>
+	                    </section>
+	                </div>
+	            </section>
 
             <section class="dashboard-detail-flow" aria-label="Dashboard operating detail">
                 <article id="watching" class="panel-card watching-panel" aria-label="Evidence and source quality" data-dashboard-view-section="evidence" data-cockpit-section="Evidence" hidden>
@@ -848,7 +659,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260606-cc3-safety"></script>
+    <script src="/dashboard.js?v=20260606-cc4-system-map"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 
