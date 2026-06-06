@@ -2522,8 +2522,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     overflow-wrap: anywhere;
 }
 
-.flow-node > span,
-.flow-node > .node-authority {
+.flow-node > span {
     border-top: 1px solid var(--line);
     bottom: 14px;
     color: var(--muted);
@@ -4923,8 +4922,7 @@ summary {
     min-height: 44px;
 }
 
-.flow-node > span,
-.flow-node > .node-authority {
+.flow-node > span {
     overflow-wrap: anywhere;
 }
 
@@ -5200,8 +5198,7 @@ summary {
         line-height: 1.2;
     }
 
-    .flow-node > span,
-    .flow-node > .node-authority {
+    .flow-node > span {
         border-top-color: rgba(255, 255, 255, 0.1);
         bottom: auto;
         font-size: 11px;
@@ -5757,8 +5754,7 @@ summary {
         content: "";
     }
 
-    .flow-node > span,
-    .flow-node > .node-authority {
+    .flow-node > span {
         bottom: auto;
         left: auto;
         margin-top: 12px;

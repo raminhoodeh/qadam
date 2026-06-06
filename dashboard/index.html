@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260605-cc2-cut">
+    <link rel="stylesheet" href="/auth.css?v=20260606-cc3-safety">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -68,14 +68,11 @@
             <section class="dashboard-safety-strip online" aria-label="Single dashboard safety strip" data-dashboard-safety-strip>
                 <div class="dashboard-safety-strip-main">
                 <p class="label">Safety status</p>
-                <h2>Paper-only, read-only, live capital off</h2>
-                    <p>Dashboard cannot place orders. AI cannot bypass risk checks. Qadam can only show status, evidence, trade ideas, paper-account mirror, and safety blocks.</p>
+                    <h2>Safety locked: paper-only readout</h2>
+                    <p>Dashboard cannot place orders; model outputs cannot bypass risk checks. This page shows status, evidence, trade ideas, paper-account mirror, and safety blocks.</p>
                 </div>
                 <div class="dashboard-safety-strip-badges">
-                    <span class="inline-badge online"><span class="dot"></span><span data-mode-label>OK - paper only</span></span>
-                    <span class="inline-badge online" data-capital-label>Loading paper account</span>
-                    <span class="inline-badge online" data-live-capital-label>OK - live capital off</span>
-                    <span class="inline-badge online">OK - read-only</span>
+                    <span class="inline-badge online" data-safety-label><span class="dot"></span>Paper-only readout · live capital off</span>
                 </div>
                 <div class="info-hover safety-strip-info">
                     <button class="info-button" type="button" aria-label="About Safety Status">i</button>
@@ -85,7 +82,7 @@
                         <dl class="explainer-grid compact">
                             <div><dt>Shows</dt><dd>Paper mode, live-capital state, order safety.</dd></div>
                             <div><dt>Watch</dt><dd>Any change from read-only paper trading.</dd></div>
-                            <div><dt>Limits</dt><dd>Readout only; this page cannot place orders.</dd></div>
+                            <div><dt>Scope</dt><dd>Status display, evidence, paper account, safety blocks.</dd></div>
                         </dl>
                     </div>
                 </div>
@@ -106,7 +103,7 @@
                             <dl class="explainer-grid compact">
                                 <div><dt>Shows</dt><dd>Status, data, strategy, thoughts, trades, capacity.</dd></div>
                                 <div><dt>Watch</dt><dd>Weak evidence, risk blocks, stale account data.</dd></div>
-                                <div><dt>Limits</dt><dd>Summary only; Diagnostics has technical detail.</dd></div>
+                                <div><dt>Scope</dt><dd>Summary first; Diagnostics keeps technical detail.</dd></div>
                             </dl>
                         </div>
                     </div>
@@ -140,13 +137,13 @@
                         <div class="overview-oversight" data-overview-oversight>
                             <span>Fund Manager role</span>
                             <strong>You supervise Qadam</strong>
-                            <p>Qadam watches live sources, compresses evidence locally, escalates strategy, checks quant/risk, and stays paper-only until you approve maturity.</p>
+                            <p>Qadam watches live sources, compresses evidence locally, escalates strategy, checks quant/risk, and stays inside the current maturity track.</p>
                         </div>
                     </div>
                     <div class="overview-feed-strip" data-overview-feed-strip></div>
                     <div class="overview-boundary-rail" data-overview-boundary-rail>
                         <span>How to read this</span>
-                        <p>Use Safety Status for order authority. Overview sections are readouts, and trade ideas are not orders.</p>
+                        <p>Safety Status is the authority summary. Overview sections are readouts, and trade ideas are not orders.</p>
                     </div>
                 </section>
 
@@ -210,7 +207,7 @@
                             <dl class="explainer-grid compact">
                                 <div><dt>Shows</dt><dd>Approved strategy families and review gates.</dd></div>
                                 <div><dt>Watch</dt><dd>Ideas that lack approval or evidence.</dd></div>
-                                <div><dt>Limits</dt><dd>Governance only; no provider or broker action.</dd></div>
+                                <div><dt>Scope</dt><dd>Governance status and review evidence.</dd></div>
                             </dl>
                         </div>
                     </div>
@@ -231,7 +228,7 @@
                         <dl class="panel-brief-facts">
                             <div><dt>State</dt><dd><span class="inline-badge blocked">Waiting for approval state</span></dd></div>
                             <div><dt>Watch</dt><dd>Explicit approval, research flags, validation errors, and certification state.</dd></div>
-                            <div><dt>Boundary</dt><dd>No execution. Strategy visibility cannot create trade ideas, stage orders, write brokers, or enable live capital.</dd></div>
+                            <div><dt>Scope</dt><dd>Strategy visibility, approvals, research flags, and certification state.</dd></div>
                         </dl>
                     </section>
                     <p class="empty-state">Strategy visibility is governance-only until the latest approval event is available.</p>
@@ -252,7 +249,7 @@
                             <dl class="explainer-grid compact">
                                 <div><dt>Shows</dt><dd>Data sources, reasoning, risk, paper trades.</dd></div>
                                 <div><dt>Watch</dt><dd>Stopped handoffs or unclear authority changes.</dd></div>
-                                <div><dt>Limits</dt><dd>Map only; nodes are not controls.</dd></div>
+                                <div><dt>Scope</dt><dd>Operating map and current handoffs.</dd></div>
                             </dl>
                         </div>
                     </div>
@@ -378,7 +375,6 @@
                                         <div><dt>Input</dt><dd>Feeds and alerts</dd></div>
                                         <div><dt>Output</dt><dd>Observed facts</dd></div>
                                     </dl>
-                                    <span class="node-authority">Observation only</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Observed facts must be logged before they count.</span></div>
@@ -401,7 +397,6 @@
                                         <div><dt>Input</dt><dd>Material events</dd></div>
                                         <div><dt>Output</dt><dd>Audit trail</dd></div>
                                     </dl>
-                                    <span class="node-authority">Source of truth</span>
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>logged state</span></div>
                                 <article class="flow-node system-map-node">
@@ -412,7 +407,6 @@
                                         <div><dt>Input</dt><dd>Safe snapshot</dd></div>
                                         <div><dt>Output</dt><dd>Dashboard state</dd></div>
                                     </dl>
-                                    <span class="node-authority">No command route</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Logged state becomes dashboard state and research input.</span></div>
@@ -435,7 +429,6 @@
                                         <div><dt>Input</dt><dd>Noisy observations</dd></div>
                                         <div><dt>Output</dt><dd>Shadow analysis</dd></div>
                                     </dl>
-                                    <span class="node-authority">No execution</span>
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>shadow analysis</span></div>
                                 <article class="flow-node system-map-node">
@@ -446,7 +439,6 @@
                                         <div><dt>Input</dt><dd>Evidence packets</dd></div>
                                         <div><dt>Output</dt><dd>Challenge notes</dd></div>
                                     </dl>
-                                    <span class="node-authority">Escalation only</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Research outputs become challenge notes and evidence packets.</span></div>
@@ -469,7 +461,6 @@
                                         <div><dt>Input</dt><dd>Bounded scenarios</dd></div>
                                         <div><dt>Output</dt><dd>Oracle check</dd></div>
                                     </dl>
-                                    <span class="node-authority">Weekly oracle</span>
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>bounded oracle check</span></div>
                                 <article class="flow-node system-map-node">
@@ -480,7 +471,6 @@
                                         <div><dt>Input</dt><dd>Trade intents</dd></div>
                                         <div><dt>Output</dt><dd>Blocks or gates</dd></div>
                                     </dl>
-                                    <span class="node-authority">Blocked unless safe</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Only passed gates can become paper-trial state.</span></div>
@@ -503,7 +493,6 @@
                                         <div><dt>Input</dt><dd>Approved intents</dd></div>
                                         <div><dt>Output</dt><dd>Paper trade states</dd></div>
                                     </dl>
-                                    <span class="node-authority">Live capital off</span>
                                 </article>
                                 <div class="flow-connector" aria-hidden="true"><span>paper state</span></div>
                                 <article class="flow-node system-map-node">
@@ -514,7 +503,6 @@
                                         <div><dt>Input</dt><dd>Closed trades</dd></div>
                                         <div><dt>Output</dt><dd>Lessons</dd></div>
                                     </dl>
-                                    <span class="node-authority">After-action review</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Closed paper outcomes and lessons return to memory.</span></div>
@@ -537,7 +525,6 @@
                                         <div><dt>Input</dt><dd>Status events</dd></div>
                                         <div><dt>Output</dt><dd>Notifications</dd></div>
                                     </dl>
-                                    <span class="node-authority">Notify only</span>
                                 </article>
                             </div>
                             <div class="lane-handoff"><span>Human notes improve the system without creating broker authority.</span></div>
@@ -566,7 +553,7 @@
                                 <dl class="explainer-grid compact">
                                     <div><dt>Shows</dt><dd>Quorum, credentials, packets, linked context.</dd></div>
                                     <div><dt>Watch</dt><dd>Stale, missing, local-only, or weak evidence.</dd></div>
-                                    <div><dt>Limits</dt><dd>Observation only; no order creation.</dd></div>
+                                    <div><dt>Scope</dt><dd>Source quality, corroboration, and linked context.</dd></div>
                                 </dl>
                             </div>
                         </div>
@@ -642,7 +629,7 @@
                                 <dl class="explainer-grid compact">
                                     <div><dt>Shows</dt><dd>Priors, hypotheses, evidence, model reviews.</dd></div>
                                     <div><dt>Watch</dt><dd>Model-only logic or weak corroboration.</dd></div>
-                                    <div><dt>Limits</dt><dd>Hypothesis only; risk still decides.</dd></div>
+                                    <div><dt>Scope</dt><dd>Priors, evidence, hypotheses, and review chain.</dd></div>
                                 </dl>
                             </div>
                         </div>
@@ -660,7 +647,7 @@
                                     <span class="inline-badge blocked">Prior, not evidence</span>
                                     <span class="inline-badge blocked">Hypothesis, not trade idea</span>
                                     <span class="inline-badge online">No paper/order authority</span>
-                                    <p>The browser cannot create trade ideas, stage paper orders, write brokers, or enable live capital.</p>
+                                    <p>Reasoning stays separated from execution authority and performance credit.</p>
                                 </div>
                             </div>
                             <section class="reasoning-consolidated-readout pending" data-reasoning-consolidated-readout>
@@ -728,7 +715,7 @@
                                 <dl class="explainer-grid compact">
                                     <div><dt>Shows</dt><dd>Signals, trade ideas, risk checks, paper trades.</dd></div>
                                     <div><dt>Watch</dt><dd>Trade ideas without checks or overdue postmortems.</dd></div>
-                                    <div><dt>Limits</dt><dd>A trade idea is not an order.</dd></div>
+                                    <div><dt>Scope</dt><dd>Signals, trade ideas, risk checks, and paper lifecycle.</dd></div>
                                 </dl>
                             </div>
                         </div>
@@ -782,7 +769,7 @@
                                 <dl class="explainer-grid compact">
                                     <div><dt>Shows</dt><dd>P&amp;L, drawdown, paper growth, maturity.</dd></div>
                                     <div><dt>Watch</dt><dd>Halts, stale mirror, missing postmortems.</dd></div>
-                                    <div><dt>Limits</dt><dd>Paper mirror; no funding authority.</dd></div>
+                                    <div><dt>Scope</dt><dd>P&amp;L, drawdown, paper growth, and maturity.</dd></div>
                                 </dl>
                             </div>
                         </div>
@@ -800,7 +787,7 @@
                                     <span class="inline-badge online">No forced trades</span>
                                     <span class="inline-badge online">Phase 5 trades excluded</span>
                                     <span class="inline-badge online">Verified records only</span>
-                                    <p>The dashboard cannot force trades, mark performance as mature, write brokers, or enable live capital.</p>
+                                    <p>Performance maturity comes only from verified records and completed reviews.</p>
                                 </div>
                             </div>
                             <div class="performance-status-grid">
@@ -843,7 +830,7 @@
                             <dl class="panel-brief-facts">
                                 <div><dt>State</dt><dd><span class="inline-badge pending">Loading paper mirror</span></dd></div>
                                 <div><dt>Watch</dt><dd>Open exposure, drawdown, stale mirror timestamps, closed trades without postmortems, and paper growth maturity.</dd></div>
-                                <div><dt>Boundary</dt><dd>Read-only paper account mirror. No funding authority and no live broker-write authority.</dd></div>
+                                <div><dt>Scope</dt><dd>Paper-account mirror, P&amp;L, drawdown, and maturity evidence.</dd></div>
                             </dl>
                         </section>
                         <div class="summary-strip">
@@ -861,7 +848,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260605-cc2-cut"></script>
+    <script src="/dashboard.js?v=20260606-cc3-safety"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

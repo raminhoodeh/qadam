@@ -3599,7 +3599,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             health: operations.system_connectivity_model.authority_violations.length ? "blocked" : "online"
         },
         system_summary: "Live data -> Qadam Orchestrator -> model research -> quant/risk checks -> paper trading -> learning loop.",
-        scope_note: "Use Safety Status for order authority. Overview only answers what changed and where to review next.",
+        scope_note: "Safety Status is the authority summary. Overview only answers what changed and where to review next.",
         model_dependencies: {
             sources_model: sources.id || "sources",
             trades_model: trades.id || "trades",
@@ -3647,7 +3647,7 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
                         : (
                             paperAuthorityStatus?.startsWith?.("paper_authorized_ready")
                                 ? "Paper action ready through guarded route"
-                                : "OK - paper only, read-only, live capital off"
+                                : "Safety locked: paper-only readout"
                         )
                 )
         );
@@ -3664,7 +3664,10 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         headline: tone === "blocked"
             ? "Review safety before reading the dashboard"
             : authorityHeadline,
-        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags; broker writes off. Dashboard cannot place orders. AI cannot bypass risk checks.`,
+        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags. Dashboard cannot place orders; model outputs cannot bypass risk checks.`,
+        safety_label: liveCapitalEnabled
+            ? "Review: live capital flag detected"
+            : "Paper-only readout · live capital off",
         authority_label: paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
         authority_tone: paperAuthorityTone,
         authority_status: paperAuthorityStatus,
@@ -3677,8 +3680,8 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         capital_label: `${formatCapitalMoney(paperBalance, capital)} paper account`,
         live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "OK - live capital off",
         read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "OK - read-only",
-        ui_broker_label: "Dashboard cannot place orders",
-        llm_broker_label: "AI cannot bypass risk checks",
+        ui_broker_label: "Dashboard display only",
+        llm_broker_label: "Model outputs stay behind risk checks",
         proof_label: "Paper growth maturity requires verified records",
         live_capital_enabled: liveCapitalEnabled,
         write_authority: writeAuthority,
@@ -3844,7 +3847,6 @@ function systemMapNode(module, index) {
                     <dd>${htmlText(details.output)}</dd>
                 </div>
             </dl>
-            <span class="node-authority">${htmlText(systemMapAuthorityLabel(module, details), "read only")}</span>
         </article>
     `;
 }
@@ -4170,7 +4172,6 @@ function renderOperationsNodeDetails(node, index) {
                     <div><dt>Related dashboard links</dt><dd>${links.map((href) => `<a href="${literalHtmlText(href)}">${htmlText(href)}</a>`).join(" ")}</dd></div>
                 </dl>
             </details>
-            <span class="node-authority">${htmlText(node.authority)}</span>
         </article>
     `;
 }
@@ -5092,11 +5093,7 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
             <p>${htmlText(strip.summary)}</p>
         </div>
         <div class="dashboard-safety-strip-badges">
-            <span class="inline-badge ${statusClass(strip.mode_label)}" data-mode-label>${htmlText(strip.mode_label)}</span>
-            <span class="inline-badge ${statusClass(strip.write_authority ? "blocked" : "online")}" data-capital-label>${htmlText(strip.capital_label)}</span>
-            <span class="inline-badge ${statusClass(strip.live_capital_enabled ? "blocked" : "online")}" data-live-capital-label>${htmlText(strip.live_capital_label)}</span>
-            ${renderInlineBadge(strip.authority_label, strip.authority_tone)}
-            ${renderInlineBadge(strip.read_only_label, strip.read_only_label === "OK - read-only" ? "online" : "blocked")}
+            <span class="inline-badge ${statusClass(strip.tone)}" data-safety-label><span class="dot"></span>${htmlText(strip.safety_label)}</span>
         </div>
         <div class="dashboard-safety-strip-authority">
             <strong>${htmlText(strip.authority_status)}</strong>
@@ -5109,10 +5106,10 @@ function renderDashboardSafetyStrip(status, viewModels = {}) {
                 <strong>Safety Status</strong>
                 <p>One place for paper mode, capital, and order authority.</p>
                 <dl class="explainer-grid compact">
-                    <div><dt>Shows</dt><dd>${htmlText(strip.mode_label)} · ${htmlText(strip.live_capital_label)}</dd></div>
+                    <div><dt>Shows</dt><dd>${htmlText(strip.safety_label)}</dd></div>
                     <div><dt>Paper authority</dt><dd>${htmlText(strip.authority_status)}</dd></div>
                     <div><dt>Watch</dt><dd>${htmlText(strip.authority_flag_count)} active authority flags.</dd></div>
-                    <div><dt>Limits</dt><dd>Readout only; this page cannot place orders.</dd></div>
+                    <div><dt>Scope</dt><dd>Status display, evidence, paper account, safety blocks.</dd></div>
                 </dl>
             </div>
         </div>
@@ -6677,7 +6674,7 @@ function renderOverviewFirstScreen(viewModels) {
     if (boundary) {
         boundary.innerHTML = `
             <span>How to read this</span>
-            <p>${htmlText(overview.scope_note || "Use Safety Status for order authority.")} A trade idea is not an order.</p>
+            <p>${htmlText(overview.scope_note || "Safety Status is the authority summary.")} A trade idea is not an order.</p>
         `;
     }
 
