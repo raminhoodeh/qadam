@@ -88,7 +88,7 @@ function loadRendererWindow() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "Operations readout and full system map",
+        "Operations diagnostics and event trail",
         "id=\"operations-readout\"",
         "data-operations-consolidated-readout",
         "data-operations-review-groups",
@@ -96,8 +96,8 @@ async function main() {
         "data-operations-review-group=\"team_data_plumbing\"",
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
-        "/auth.css?v=20260606-cc3-safety",
-        "/dashboard.js?v=20260606-cc3-safety"
+        "/auth.css?v=20260606-cc4-system-map",
+        "/dashboard.js?v=20260606-cc4-system-map"
     ], "D11I Operations static shell");
 
     assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 0, "legacy Operations panels should be removed after CC2");
@@ -140,29 +140,29 @@ async function main() {
     assert(model.safety.authority_flags.length === 0, "Operations authority flags present");
     assert(model.communications_audit.command_path_enabled === false, "Telegram command path became enabled");
     assert(model.communications_audit.live_send_allowed_count === 0, "Telegram live sends became enabled");
-    assert(model.system_connectivity_model.operations_scope?.placement === "operations-full-map", "Operations full map placement changed");
+    assert(model.system_connectivity_model.operations_scope?.placement === "operations-diagnostics", "Operations diagnostics placement changed");
 
     const rendered = await renderWithStatus(status);
     const operationsHtml = html(rendered, "[data-flow-map]");
 
     includesAll(operationsHtml, [
-        "Operations readout",
-        "Operations readout and full system map",
+        "Operations workspace",
+        "Operations diagnostics and event trail",
         "Runtime, bridge, and safety",
         "Operating team and data plumbing",
-        "Full system map and event trail",
+        "System map diagnostics and event trail",
         "Governance, inbox, and communications audit",
         "Hard safety stops",
-        "First-class operating roles",
+        "Operating team diagnostics",
         "Live data feed clusters",
-        "Full system map",
+        "System map diagnostics",
         "Recent runtime events",
         "Process console merged into Operations",
         "Governance and outbound communications",
         "Fund Manager review and Telegram state",
         "No Telegram command path",
         "No browser shell",
-        "Closed-loop rule",
+        "Open the Overview tab for the single canonical node-by-node system map",
         "Read-only bridge",
         "OK - live capital off"
     ], "rendered D11I Operations");

@@ -264,7 +264,7 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-flow-map]", "Telegram Bot");
-    assertIncludes(rendered, "[data-flow-map]", "Notify only");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Notify only");
     assertIncludes(rendered, "[data-flow-map]", "Governance, inbox, and communications audit");
     assertIncludes(rendered, "[data-flow-map]", "Governance and outbound communications");
     assertIncludes(rendered, "[data-flow-map]", "Fund Manager review and Telegram state without separate duplicate cards");

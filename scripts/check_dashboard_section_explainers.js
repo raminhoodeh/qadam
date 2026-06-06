@@ -112,7 +112,7 @@ requiredExplainers.forEach((id) => {
 
 assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
 assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
-assertIncludes(html, "/auth.css?v=20260606-cc3-safety", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260606-cc4-system-map", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

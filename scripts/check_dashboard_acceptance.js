@@ -127,8 +127,8 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260606-cc3-safety",
-    "/dashboard.js?v=20260606-cc3-safety"
+    "/auth.css?v=20260606-cc4-system-map",
+    "/dashboard.js?v=20260606-cc4-system-map"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -141,7 +141,7 @@ function assertNoUnsafePublicText(text, label) {
     "Read-only runtime diagnostics",
     "Summary first; Diagnostics keeps technical detail.",
     "Paper-account mirror, P&amp;L, drawdown, and maturity evidence.",
-    "cannot originate trades or bypass risk"
+    "model outputs cannot bypass risk checks"
 ].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
 
 [
@@ -245,18 +245,18 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-operating-summary]", "Source quality"],
         ["[data-operating-summary]", "Safety strip"],
         ["[data-operating-summary]", "Bridge"],
-        ["[data-fund-model]", "Fund Manager"],
-        ["[data-fund-model]", "Python records the system"],
-        ["[data-fund-model]", "Models inform, gates decide"],
-        ["[data-flow-map]", "Watched Sources"],
-        ["[data-flow-map]", "Event Log"],
-        ["[data-flow-map]", "Research Analyst"],
-        ["[data-flow-map]", "Risk Agent"],
-        ["[data-flow-map]", "Paper Account Mirror"],
-        ["[data-flow-map]", "Telegram Bot"],
-        ["[data-flow-map]", "Closed-loop rule"],
-        ["[data-flow-map]", "Input"],
-        ["[data-flow-map]", "Output"],
+        ["[data-team-health-row]", "COO"],
+        ["[data-team-health-row]", "Research Analyst"],
+        ["[data-team-health-row]", "PaperOps"],
+        ["[data-overview-mini-map]", "Live data feeds"],
+        ["[data-overview-mini-map]", "Event Log"],
+        ["[data-overview-mini-map]", "Research Analyst"],
+        ["[data-overview-mini-map]", "Risk gate"],
+        ["[data-overview-mini-map]", "Paper Account Mirror"],
+        ["[data-overview-mini-map]", "Telegram Bot"],
+        ["[data-overview-mini-map]", "Closed-loop rule"],
+        ["[data-overview-mini-map]", "What it does"],
+        ["[data-overview-mini-map]", "Boundary"],
         ["[data-source-summary]", "Sources"],
         ["[data-watching-list]", "pipeline-row"],
         ["[data-cognition]", "Reasoning readout"],

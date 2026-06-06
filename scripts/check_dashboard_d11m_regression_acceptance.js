@@ -202,9 +202,9 @@ async function assertRenderedDashboardContract() {
         ["[data-cognition]", "Hypotheses and evidence"],
         ["[data-cognition]", "Prior is not evidence"],
         ["[data-cognition]", "private priors"],
-        ["[data-flow-map]", "Operations readout and full system map"],
-        ["[data-flow-map]", "Full system map"],
-        ["[data-flow-map]", "Closed-loop rule"],
+        ["[data-flow-map]", "Operations diagnostics and event trail"],
+        ["[data-flow-map]", "System map diagnostics"],
+        ["[data-overview-mini-map]", "Closed-loop rule"],
         ["[data-flow-map]", "Governance, inbox, and communications audit"],
         ["[data-flow-map]", "Process console"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
@@ -222,7 +222,8 @@ async function assertRenderedDashboardContract() {
         "[data-source-summary]",
         "[data-watching-list]",
         "[data-cognition]",
-        "[data-flow-map]"
+        "[data-flow-map]",
+        "[data-overview-mini-map]"
     ].map((selector) => renderedHtml(rendered, selector)).join("\n");
 
     assertNoUnsafePublicText(publicRendered, "D11M rendered dashboard output");
@@ -230,8 +231,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260606-cc3-safety",
-        "/dashboard.js?v=20260606-cc3-safety"
+        "/auth.css?v=20260606-cc4-system-map",
+        "/dashboard.js?v=20260606-cc4-system-map"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

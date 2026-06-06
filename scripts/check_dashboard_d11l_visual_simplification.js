@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260606-cc3-safety",
-        "/dashboard.js?v=20260606-cc3-safety"
+        "/auth.css?v=20260606-cc4-system-map",
+        "/dashboard.js?v=20260606-cc4-system-map"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -132,7 +132,8 @@ async function main() {
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-source-summary]", "Sources"],
         ["[data-cognition]", "Reasoning readout"],
-        ["[data-flow-map]", "Full system map"],
+        ["[data-flow-map]", "System map diagnostics"],
+        ["[data-overview-mini-map]", "Closed-loop rule"],
         ["[data-capital]", "60-day paper growth"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
@@ -142,7 +143,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260606-cc3-safety");
+    console.log("dashboard_d11l_cache_key=20260606-cc4-system-map");
     console.log("dashboard_authority_unchanged=True");
 }
 

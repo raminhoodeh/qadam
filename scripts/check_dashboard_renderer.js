@@ -26,6 +26,7 @@ const selectors = [
     "[data-overview-system-status]",
     "[data-overview-paper-capacity]",
     "[data-overview-system-summary]",
+    "[data-team-health-row]",
     "[data-overview-feed-strip]",
     "[data-overview-oversight]",
     "[data-overview-mini-map]",
@@ -39,7 +40,6 @@ const selectors = [
     "[data-phase4-summary]",
     "[data-phase4-strategy]",
     "[data-flow-map]",
-    "[data-fund-model]",
     "[data-sources-workspace-slot]",
     "[data-source-summary]",
     "[data-watching-list]",
@@ -245,20 +245,20 @@ async function main() {
     assertIncludes(rendered, "[data-phase4-strategy]", "No certification blockers exported");
     assertIncludes(rendered, "[data-phase4-strategy]", "No execution");
     assertIncludes(rendered, "[data-phase4-strategy]", "Yahoo Finance supplemental");
-    assertIncludes(rendered, "[data-fund-model]", "Fund Manager");
-    assertIncludes(rendered, "[data-fund-model]", "Python records the system");
-    assertIncludes(rendered, "[data-fund-model]", "Models inform, gates decide");
-    assertIncludes(rendered, "[data-flow-map]", "Watched Sources");
-    assertIncludes(rendered, "[data-flow-map]", "Secure Live Bridge");
-    assertIncludes(rendered, "[data-flow-map]", "Trade Layer");
-    assertIncludes(rendered, "[data-flow-map]", "Input");
-    assertIncludes(rendered, "[data-flow-map]", "Output");
+    assertIncludes(rendered, "[data-team-health-row]", "COO");
+    assertIncludes(rendered, "[data-team-health-row]", "Research Analyst");
+    assertIncludes(rendered, "[data-team-health-row]", "PaperOps");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Live data feeds");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Secure Live Bridge");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Trade lifecycle");
+    assertIncludes(rendered, "[data-overview-mini-map]", "What it does");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Boundary");
     assertIncludes(rendered, "[data-flow-map]", "Q5-13 Functional System Map Dashboard");
     assertIncludes(rendered, "[data-flow-map]", "Backend parity");
     assertIncludes(rendered, "[data-flow-map]", "Unsafe controls");
     assertIncludes(rendered, "[data-flow-map]", "Yahoo Finance supplemental market confirmation only");
     assertIncludes(rendered, "[data-flow-map]", "Preference/PREF MCP");
-    assertIncludes(rendered, "[data-flow-map]", "live capital disabled");
+    assertIncludes(rendered, "[data-flow-map]", "OK - live capital off");
     assertIncludes(rendered, "[data-flow-map]", "paper submit path 1");
     assertIncludes(rendered, "[data-flow-map]", "dashboard does not say trading");
     assertIncludes(rendered, "[data-flow-map]", "Approval Policy Router");
@@ -369,9 +369,9 @@ async function main() {
 
     const unsafeStatus = clone(status);
     unsafeStatus.modules = (unsafeStatus.modules || []).map((module) => (
-        module.key === "research_analyst" ? {
+        module.key === "yahoo_finance" ? {
             ...module,
-            key: "research_analyst",
+            key: "yahoo_finance",
             label: "<script>alert(1)</script>",
             owner: "Renderer <Probe>",
             status: "\" onclick=\"bad",
@@ -382,7 +382,7 @@ async function main() {
     unsafeStatus.phase5_system_map = {
         ...(unsafeStatus.phase5_system_map || {}),
         nodes: (unsafeStatus.phase5_system_map?.nodes || []).map((node) => (
-            node.key === "research_analyst" ? {
+	            node.key === "yahoo_finance" ? {
                 ...node,
                 label: "<script>alert(1)</script>",
                 role: "Renderer <Probe>",
@@ -393,9 +393,9 @@ async function main() {
         ))
     };
     const unsafe = await renderWithStatus(unsafeStatus);
-    const flowHtml = html(unsafe, "[data-flow-map]");
-    assert(!flowHtml.includes("<script>"), "renderer emitted raw script tag from status data");
-    assert(flowHtml.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "renderer did not escape status HTML");
+    const overviewMapHtml = html(unsafe, "[data-overview-mini-map]");
+    assert(!overviewMapHtml.includes("<script>"), "renderer emitted raw script tag from status data");
+    assert(overviewMapHtml.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "renderer did not escape status HTML");
 
     const failed = await renderWithStatus(status, { fetchOk: false, statusCode: 404 });
     assert(

@@ -33,7 +33,7 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260606-cc3-safety",
+        "/auth.css?v=20260606-cc4-system-map",
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
         "aria-label=\"Dashboard views\"",
@@ -90,7 +90,8 @@ async function main() {
         ".overview-system-grid",
         ".overview-lifecycle-strip",
         ".trade-lifecycle-strip",
-        ".operations-role-grid",
+        ".team-health-row",
+        ".operations-team-diagnostic-row",
         ".operations-diagnostics-grid",
         ".operations-feed-grid",
         ".operations-edge-list",
@@ -111,8 +112,9 @@ async function main() {
     const tradesHtml = html(rendered, "[data-trade-layer]");
 
     assert(countOccurrences(overviewMapHtml, "overview-mini-node") >= 6, "overview mini-map rendered too few nodes");
-    assert(operationsHtml.includes("Full system map"), "operations full map missing");
-    assert(operationsHtml.includes("operations-flow-diagram"), "operations flow diagram missing");
+    assert(overviewMapHtml.includes("system-flow-diagram"), "overview canonical system map missing");
+    assert(operationsHtml.includes("System map diagnostics"), "operations map diagnostics missing");
+    assert(!operationsHtml.includes("operations-flow-diagram"), "operations duplicate flow diagram should be removed");
     assert(tradesHtml.includes("trade-lifecycle-filters"), "trade lifecycle filters missing");
     assert(tradesHtml.includes("aria-pressed=\"true\""), "selected trade filter state missing");
     assert(operationsHtml.includes("Governance and outbound communications"), "consolidated governance audit missing from Operations");

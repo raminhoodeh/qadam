@@ -79,7 +79,7 @@ function loadRendererWindow() {
 async function main() {
     includesAll(dashboardHtml, [
         "Operations workspace",
-        "Operations readout and full system map",
+        "Operations diagnostics and event trail",
         "data-operations-consolidated-readout",
         "data-operations-review-groups",
         "data-operations-review-group=\"runtime_safety\"",
@@ -90,9 +90,9 @@ async function main() {
         "Safety Status above",
         "Runtime, bridge, and safety",
         "Operating team and data plumbing",
-        "Full system map and event trail",
+        "System map diagnostics and event trail",
         "Governance, inbox, and communications audit",
-        "Full system map",
+        "System map diagnostics",
         "Expand diagnostics",
         "Event Log references",
         "Authority boundary",
@@ -110,26 +110,26 @@ async function main() {
         ".operations-workspace-head",
         ".operations-broken-card",
         ".operations-safety-reference",
-        ".operations-role-grid",
+        ".operations-team-health-diagnostics",
         ".operations-diagnostics-grid",
         ".operations-feed-grid",
-        ".operations-full-map",
+        ".operations-map-diagnostics",
         ".operations-edge-legend",
         ".operations-node-diagnostics",
         "html[data-dashboard-active-view=\"operations\"] .system-map-panel"
     ], "Operations workspace CSS");
 
     includesAll(renderer, [
-        "const OPERATIONS_ROLE_SPINE",
+        "const TEAM_HEALTH_ROLES",
         "function buildOperationsFeedClusters",
-        "function buildOperationsRoleSpine",
+        "function buildTeamHealthModel",
         "function renderOperationsWorkspace",
         "function renderOperationsReviewGroup",
-        "function renderOperationsNodeDetails",
+        "function renderTeamHealthCard",
         "function renderOperationsFeedCluster",
         "function renderOperationsEdge",
         "operations_review_groups",
-        "operations-full-map",
+        "operations-map-diagnostics",
         "What is broken?",
         "operations-safety-reference",
         "Safety Status above"
@@ -140,30 +140,27 @@ async function main() {
     const operations = window.buildQadamDashboardOperationsModel(status, { key: "static_snapshot" });
     const connectivity = operations.system_connectivity_model || {};
     const edgeStates = new Set((connectivity.edges || []).map((edge) => edge.state));
-    const roleLabels = (operations.role_spine || []).map((role) => role.label);
+    const teamLabels = (operations.team_health || []).map((role) => role.label);
     const feedLabels = (connectivity.feed_clusters || []).map((cluster) => cluster.label);
 
     assert(operations.id === "operations", "operations model id mismatch");
     assert(operations.operations_review_groups.length === 4, "operations model should expose four D11I review groups");
     assert(connectivity.id === "system_connectivity_model", "operations missing shared connectivity model");
-    assert(connectivity.operations_scope?.placement === "operations-full-map", "operations full-map placement missing");
+    assert(connectivity.operations_scope?.placement === "operations-diagnostics", "operations diagnostics placement missing");
     assert(connectivity.overview_scope?.placement === "overview-mini-map", "overview mini-map placement missing");
-    assert(connectivity.nodes.length >= 20, "operations full map should expose backend nodes");
-    assert(connectivity.edges.length > 0, "operations full map should expose edges");
+    assert(connectivity.nodes.length >= 20, "operations connectivity model should expose backend nodes");
+    assert(connectivity.edges.length > 0, "operations connectivity model should expose edges");
     ["active", "shadow/context-only", "locked", "blocked"].forEach((state) => {
         assert(edgeStates.has(state), `operations edge state missing ${state}`);
     });
     [
-        "Fund Manager supervisor",
-        "Live data feed clusters",
-        "Qadam Orchestrator",
-        "Local LLM Research Analyst",
-        "Frontier LLM Strategy Lead",
-        "Quantum/Classical Head of Quant",
-        "Signal/Risk Gates",
-        "Paper Lifecycle",
-        "Learning Loop"
-    ].forEach((label) => assert(roleLabels.includes(label), `missing operations role ${label}`));
+        "COO",
+        "Research Analyst",
+        "Strategy Lead",
+        "Head of Quant",
+        "Risk Agent",
+        "PaperOps"
+    ].forEach((label) => assert(teamLabels.includes(label), `missing team-health role ${label}`));
     [
         "Conflict and geopolitics",
         "Physical world, energy, shipping, and weather",
@@ -183,54 +180,35 @@ async function main() {
     const operationsHtml = html(rendered, "[data-flow-map]");
     [
         "Operations workspace",
-        "Operations readout and full system map",
+        "Operations diagnostics and event trail",
         "Runtime, bridge, and safety",
         "Operating team and data plumbing",
-        "Full system map and event trail",
+        "System map diagnostics and event trail",
         "Governance, inbox, and communications audit",
         "What is broken?",
         "Safety Status above",
-        "Fund Manager supervisor",
+        "Operating team diagnostics",
+        "COO",
+        "PaperOps",
         "Live data feed clusters",
-        "Qadam Orchestrator",
-        "Local LLM Research Analyst",
-        "Frontier LLM Strategy Lead",
-        "Quantum/Classical Head of Quant",
-        "Signal/Risk Gates",
-        "Paper Lifecycle",
-        "Learning Loop",
         "Bridge and snapshot",
         "Exporter and cache",
         "Module health",
         "Certification diagnostics",
         "Kill-switch ledger",
-        "Full system map",
+        "System map diagnostics",
         "Q5-13 Functional System Map Dashboard",
         "Backend parity",
         "Unsafe controls",
         "canonical sources",
         "Yahoo Finance supplemental market confirmation only",
         "Preference/PREF MCP",
-        "live capital disabled",
+        "OK - live capital off",
         "paper submit path 1",
         "dashboard does not say trading",
         "Edge state",
         "shadow/context-only",
-        "Expand diagnostics",
-        "Latest heartbeat",
-        "Dependencies",
-        "Degraded reasons",
-        "Event Log references",
-        "Authority boundary",
-        "Related dashboard links",
-        "Watched Sources",
-        "Secure Live Bridge",
-        "Research Analyst",
-        "Strategy Lead",
-        "Head of Quant",
-        "Risk Agent",
-        "Trade Layer",
-        "Postmortem Loop"
+        "Open the Overview tab for the single canonical node-by-node system map"
     ].forEach((needle) => assert(operationsHtml.includes(needle), `rendered operations workspace missing ${needle}`));
 
     [

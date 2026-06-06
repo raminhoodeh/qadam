@@ -6,6 +6,7 @@ const path = require("node:path");
 const {
     assert,
     assertIncludes,
+    html: renderedHtmlFor,
     renderWithStatus,
     status,
     statusPath
@@ -21,19 +22,21 @@ async function main() {
     const css = fs.readFileSync(cssPath, "utf8");
     const renderer = fs.readFileSync(rendererPath, "utf8");
 
-    [
-        "system-flow-diagram",
-        "flow-lane",
-        "flow-connector",
+	    [
+	        "system-flow-diagram",
+	        "flow-lane",
+	        "flow-connector",
         "lane-handoff",
         "flow-return-loop",
         "Closed-loop rule"
     ].forEach((needle) => assert(html.includes(needle), `static system map missing ${needle}`));
 
-    [
-        "function systemMapLane",
-        "function systemMapConnector",
-        "system-flow-diagram",
+	    [
+	        "function systemMapLane",
+	        "function systemMapConnector",
+	        "function renderOverviewCanonicalMap",
+	        "function buildTeamHealthModel",
+	        "system-flow-diagram",
         "flow-return-loop",
         "Observation",
         "System Memory",
@@ -55,38 +58,44 @@ async function main() {
     assert(!css.includes("grid-template-columns: repeat(11, minmax(176px, 1fr))"), "system map regressed to horizontal strip grid");
     assert(!css.includes("grid-auto-flow: column"), "system map regressed to forced column flow");
 
-    const rendered = await renderWithStatus(status);
-    [
-        "Operations readout and full system map",
-        "Fund Manager supervisor",
-        "Live data feed clusters",
-        "Qadam Orchestrator",
-        "Local LLM Research Analyst",
-        "Frontier LLM Strategy Lead",
-        "Quantum/Classical Head of Quant",
-        "Signal/Risk Gates",
-        "Paper Lifecycle",
-        "Learning Loop",
-        "Event Log",
-        "Secure Live Bridge",
-        "Research Analyst",
+	    const rendered = await renderWithStatus(status);
+	    const overviewMapHtml = renderedHtmlFor(rendered, "[data-overview-mini-map]");
+	    const operationsHtml = renderedHtmlFor(rendered, "[data-flow-map]");
+	    assert((overviewMapHtml.match(/class="system-flow-diagram/g) || []).length === 1, "Overview should render exactly one canonical system-flow-diagram");
+	    assert(!operationsHtml.includes("operations-flow-diagram"), "Operations should not render a duplicate operations-flow-diagram");
+	    [
+		        "Observation",
+	        "How to read this node",
+	        "Event Log",
+	        "Secure Live Bridge",
+	        "Research Analyst",
         "Strategy Lead",
         "Signal Integrity Gate",
-        "Risk Agent",
+	        "Risk gate",
         "Execution Policy",
         "Staged Order Contract",
         "Broker Reconciliation",
         "Paper Submit Receipt",
-        "Trade Layer",
-        "Paper Account Mirror",
-        "Postmortem Loop",
-        "Telegram Bot",
-        "Fund Manager Forum",
-        "Edge state",
-        "Authority boundary",
-        "Related dashboard links",
-        "live capital disabled"
-    ].forEach((needle) => assertIncludes(rendered, "[data-flow-map]", needle));
+	        "Trade lifecycle",
+	        "Paper Account Mirror",
+	        "Learning loop",
+	        "Telegram Bot / Notifier",
+	        "Fund Manager Forum",
+	        "Closed-loop rule",
+		        "Boundary",
+		        "Watch for",
+		        "Next handoff"
+	    ].forEach((needle) => assertIncludes(rendered, "[data-overview-mini-map]", needle));
+	    [
+	        "Operations diagnostics and event trail",
+	        "System map diagnostics",
+	        "Edge state",
+	        "Open the Overview tab for the single canonical node-by-node system map",
+		        "OK - live capital off"
+	    ].forEach((needle) => assertIncludes(rendered, "[data-flow-map]", needle));
+	    ["COO", "Research Analyst", "Strategy Lead", "Head of Quant", "Risk Agent", "PaperOps"].forEach((needle) => {
+	        assertIncludes(rendered, "[data-team-health-row]", needle);
+	    });
 
     console.log("dashboard_system_map=ok");
     console.log(`Rendered snapshot: ${statusPath}`);

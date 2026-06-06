@@ -100,7 +100,7 @@ async function main() {
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "20260606-cc3-safety"
+        "20260606-cc4-system-map"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

@@ -190,6 +190,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 - The pipeline is currently rendered **three times**: `fund-model-grid` (5 cards), `system-flow-diagram` (6 lanes / 10 nodes), and the operations role spine. Collapse to **one** canonical node-by-node system map that stays on the main view (per the 2026-06-05 decision — founders want the node detail). Lead it with a compact team-health row (COO · Research Analyst · Strategy Lead · Head of Quant · Risk Agent · PaperOps, each a status dot from `modules`), then the expandable map below it.
 - Delete the two redundant renderings; keep `buildSystemConnectivityModel` as the single source for the kept map.
 - **Done when:** the pipeline is rendered exactly once; node-by-node detail retained on main; team health legible in <2s.
+- **Status:** completed. The default Overview now renders one canonical node-by-node operating map from `buildSystemConnectivityModel`, preceded by the six-role team-health row. The old fund-model card grid and Operations duplicate flow map are removed from the visible path; Operations now keeps diagnostics, edge states, event trail, governance, and communications audit only.
 
 ### CC5 — Render only the contract *(JS — the core refactor)*
 - Rewrite the render entrypoint to consume `mission_control` and render the seven blocks in order. Collapse the 17 `build*` functions to ~6 (`team`, `sources`, `strategy`, `portfolio`, `trades`, `thinking`) + `diagnostics`. Delete the Overview/detail duplication and the view-switcher logic from the default path.
