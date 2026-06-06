@@ -1,0 +1,15 @@
+{
+  "algorithm": "sha256_digest",
+  "boundary": "Detached D9 status proof for the public-safe snapshot. It carries no secret material.",
+  "broker_write_route": false,
+  "browser_authority": "read_only",
+  "payload_file": "cockpit-status.json",
+  "payload_generated_at": "2026-06-06T00:46:39.976154+00:00",
+  "payload_schema_version": 1,
+  "read_only": true,
+  "schema_version": 1,
+  "signature": "fad06e3f8206055194679c6c6eab2f012b1ef1ce898b27d534c1b7a2528e3994",
+  "signature_configured": false,
+  "signed_at": "2026-06-06T00:46:39.976154+00:00",
+  "status": "digest_only"
+}
