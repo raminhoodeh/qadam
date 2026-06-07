@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260607-cc9-copy-runthrough">
+    <link rel="stylesheet" href="/auth.css?v=20260607-cc10-remove-view-card">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -48,10 +48,7 @@
             </section>
 
             <nav class="cockpit-nav dashboard-view-switcher" aria-label="Dashboard views" data-cockpit-nav data-dashboard-view-switcher>
-                <div class="cockpit-nav-head">
-                    <span>Dashboard view</span>
-                    <strong data-cockpit-nav-current data-dashboard-view-current>Overview</strong>
-                </div>
+                <span class="sr-only" data-cockpit-nav-current data-dashboard-view-current>Overview</span>
                 <div class="cockpit-nav-links">
                     <a href="#overview" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
                     <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
@@ -659,7 +656,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260607-cc9-copy-runthrough"></script>
+    <script src="/dashboard.js?v=20260607-cc10-remove-view-card"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

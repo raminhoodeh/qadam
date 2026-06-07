@@ -432,6 +432,18 @@ option {
     color: var(--text);
 }
 
+.sr-only {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
 .cockpit-nav {
     align-items: center;
     border: 1px solid rgba(var(--cyan-rgb), 0.22);
@@ -604,6 +616,18 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .dashboard-view-switcher {
     margin-bottom: 2px;
+}
+
+.dashboard-view-switcher {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: block;
+    margin: -8px 0 18px;
+    padding: 0;
+    position: static;
+    z-index: auto;
 }
 
 .dashboard-view-switcher .cockpit-nav-links a {
@@ -6538,7 +6562,7 @@ html[data-dashboard-active-view="trades"] .capital-panel {
 
 .dashboard-view-switcher {
     align-items: start;
-    grid-template-columns: minmax(150px, 0.16fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .dashboard-view-switcher .cockpit-nav-links {
