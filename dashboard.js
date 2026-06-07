@@ -3767,6 +3767,218 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     };
 }
 
+function normalizeContractSource(source = {}) {
+    return {
+        key: source.source_key || source.key || source.source_name || "source",
+        label: source.source_name || source.label || source.source_key || "Source",
+        pipeline: source.pipeline || "uncategorized",
+        status: source.status || "pending",
+        credential_status: source.credential_status || "unknown",
+        readiness: source.readiness || "status exported",
+        trust_score: source.trust_score,
+        latency_ms: source.latency_ms,
+        cadence: source.cadence || "snapshot",
+        heartbeat: source.heartbeat || source.last_seen_at || source.updated_at,
+        degraded_reason: source.degraded_reason || source.reason || "",
+        usable_for_research_context: Boolean(source.usable_for_research_context),
+        eligible_for_signal_review: Boolean(source.eligible_for_signal_review),
+        can_authorize_orders: Boolean(source.can_authorize_orders),
+        summary: [
+            source.readiness,
+            source.usable_for_research_context ? "research usable" : "observation only",
+            source.eligible_for_signal_review ? "signal-review eligible" : "not signal-review eligible"
+        ].filter(Boolean).join("; "),
+        boundary: source.boundary || "Observation input only."
+    };
+}
+
+function buildContractSourcePipelines(ledger = []) {
+    const groups = new Map();
+    asArray(ledger).forEach((source) => {
+        const pipelineKey = source.pipeline || "uncategorized";
+        if (!groups.has(pipelineKey)) {
+            groups.set(pipelineKey, {
+                pipeline: pipelineKey,
+                label: OPERATIONS_PIPELINE_LABELS[pipelineKey] || pipelineKey,
+                sources: [],
+                source_count: 0,
+                online_count: 0,
+                degraded_count: 0,
+                missing_credential_count: 0,
+                research_usable_count: 0,
+                signal_review_eligible_count: 0,
+                order_authority_count: 0
+            });
+        }
+        const group = groups.get(pipelineKey);
+        group.sources.push(source);
+        group.source_count += 1;
+        if (source.status === "online") group.online_count += 1;
+        if (source.status === "degraded") group.degraded_count += 1;
+        if (source.credential_status === "missing") group.missing_credential_count += 1;
+        if (source.usable_for_research_context) group.research_usable_count += 1;
+        if (source.eligible_for_signal_review) group.signal_review_eligible_count += 1;
+        if (source.can_authorize_orders) group.order_authority_count += 1;
+    });
+    return Array.from(groups.values()).map((group) => ({
+        ...group,
+        status: group.degraded_count || group.missing_credential_count
+            ? "degraded"
+            : (group.online_count ? "online" : "pending")
+    }));
+}
+
+function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) {
+    const mission = status.mission_control || fallbackMissionControl(status, source);
+    const dataSources = mission.data_sources || {};
+    const portfolio = mission.portfolio || {};
+    const strategy = mission.strategy || {};
+    const tradingPhilosophy = mission.trading_philosophy || {};
+    const trades = mission.trades || {};
+    const tradeIntent = mission.trade_intent || {};
+    const thinking = mission.thinking || {};
+    const safety = mission.safety || {};
+    const durableSpine = mission.durable_spine || status.durable_ingestion || {};
+    const team = asArray(mission.team).map((member) => ({
+        key: member.key || member.label || "team_member",
+        label: member.label || "Qadam team node",
+        subtitle: member.owner || member.authority || "Qadam",
+        status: member.status || "pending",
+        summary: member.one_line || member.current_process || "Status exported from Mission Control.",
+        current_process: member.current_process || member.one_line || "No current process exported.",
+        authority: member.authority || "status only"
+    }));
+    const ledger = asArray(dataSources.ledger).map(normalizeContractSource);
+    const sourcePipelines = buildContractSourcePipelines(ledger);
+    const sourceCounts = {
+        total: modelNumber(dataSources.total_count, ledger.length),
+        online: modelNumber(dataSources.online_count ?? dataSources.ok, ledger.filter((item) => item.status === "online").length),
+        degraded: modelNumber(dataSources.degraded_count ?? dataSources.degraded, ledger.filter((item) => item.status === "degraded").length),
+        missing_credentials: modelNumber(dataSources.missing_credential_count ?? dataSources.missing_credentials, ledger.filter((item) => item.credential_status === "missing").length),
+        local_only: modelNumber(dataSources.local_only_count, ledger.filter((item) => item.status === "local_only").length),
+        signal_review_eligible: ledger.filter((item) => item.eligible_for_signal_review).length,
+        research_usable: ledger.filter((item) => item.usable_for_research_context).length,
+        order_authority: ledger.filter((item) => item.can_authorize_orders).length
+    };
+    const lifecycleCounts = trades.lifecycle_counts || {};
+    const equityCurve = asArray(portfolio.equity_curve).map((point) => ({
+        equity_gbp: modelNumber(point.equity_gbp ?? point.balance_gbp ?? point.portfolio_value_gbp, modelNumber(portfolio.current_balance_gbp ?? portfolio.balance_gbp, 0)),
+        observed_at: point.observed_at || portfolio.observed_at || status.generated_at,
+        drawdown_pct: modelNumber(point.drawdown_pct, 0)
+    }));
+    const portfolioBalance = modelNumber(portfolio.current_balance_gbp ?? portfolio.balance_gbp, 0);
+    return {
+        id: "founder_contract_model",
+        source: status.mission_control ? "mission_control" : "mission_control_fallback",
+        status: mission.status || "pending",
+        schema_version: mission.schema_version || 1,
+        generated_at: status.generated_at,
+        headline: mission.headline || "Mission Control status exported.",
+        safety: {
+            mode: safety.mode || status.mode || "paper",
+            read_only: safety.read_only !== false,
+            live_capital_enabled: Boolean(safety.live_capital_enabled),
+            broker_write_route: safety.broker_write_route || "closed",
+            forbidden_action_count: modelNumber(safety.forbidden_action_count, 0),
+            hard_blocks: asArray(safety.hard_blocks),
+            boundary: safety.boundary || "Mission Control is read-only."
+        },
+        durable_spine: {
+            status: durableSpine.status || durableSpine.contract_status || "pending",
+            replay_status: durableSpine.replay_status || durableSpine.contract_status || durableSpine.status || "pending",
+            contract_status: durableSpine.contract_status || durableSpine.status || "pending",
+            replayed_source_count: modelNumber(durableSpine.replayed_source_count, 0),
+            expected_source_count: modelNumber(durableSpine.expected_source_count, sourceCounts?.total || 0),
+            observation_count: modelNumber(durableSpine.observation_count, 0),
+            boundary: durableSpine.boundary || "Durable replay is observation storage only."
+        },
+        team,
+        sources: {
+            ...sourceCounts,
+            status: dataSources.phase1_data_spine_operational_status || dataSources.phase1_data_spine_status || dataSources.quorum?.status || "pending",
+            quorum: dataSources.quorum || {},
+            ledger,
+            pipelines: sourcePipelines,
+            durable_replay_status: dataSources.durable_replay_status || "unknown",
+            durable_replayed_source_count: modelNumber(dataSources.durable_replayed_source_count, 0),
+            durable_expected_source_count: modelNumber(dataSources.durable_expected_source_count, 0),
+            boundary: dataSources.boundary || "Sources are observation inputs only."
+        },
+        strategy: {
+            posture: strategy.posture || tradingPhilosophy.status || "pending",
+            why: strategy.why || tradingPhilosophy.summary || "No strategy posture exported.",
+            active_lens: strategy.active_lens || tradingPhilosophy.ai_infrastructure_lens || {},
+            akber_lens: strategy.akber_lens || {},
+            universe: asArray(strategy.universe).length ? asArray(strategy.universe) : asArray(tradingPhilosophy.ai_infrastructure_lens?.target_bottlenecks),
+            decision_chain: asArray(strategy.decision_chain).length ? asArray(strategy.decision_chain) : asArray(tradingPhilosophy.decision_chain),
+            reference_assets: asArray(strategy.reference_assets).length ? asArray(strategy.reference_assets) : asArray(tradingPhilosophy.ai_infrastructure_lens?.reference_assets),
+            boundary: strategy.boundary || tradingPhilosophy.boundary || "Strategy is context only until gates pass."
+        },
+        portfolio: {
+            account_scope: portfolio.account_scope || "paper account",
+            broker: portfolio.broker || "paper broker",
+            connection_status: portfolio.connection_status || "pending",
+            portfolio_value_source: portfolio.portfolio_value_source || "paper account mirror",
+            balance_gbp: portfolioBalance,
+            delta_pct: modelNumber(portfolio.delta_pct, 0),
+            total_pnl_gbp: modelNumber(portfolio.total_pnl_gbp, 0),
+            realized_pnl_gbp: modelNumber(portfolio.realized_pnl_gbp, 0),
+            unrealized_pnl_gbp: modelNumber(portfolio.unrealized_pnl_gbp, 0),
+            drawdown_pct: modelNumber(portfolio.drawdown_pct, 0),
+            open_position_count: modelNumber(portfolio.open_position_count, asArray(portfolio.open_positions).length),
+            order_count: modelNumber(portfolio.order_count, asArray(portfolio.orders).length),
+            closed_trade_count: modelNumber(portfolio.closed_trade_count, 0),
+            postmortem_due_count: modelNumber(portfolio.postmortem_due_count, asArray(trades.postmortems_due).length),
+            mirror_freshness: portfolio.mirror_freshness || portfolio.mirror_freshness_label || "unknown",
+            equity_curve: equityCurve,
+            open_positions: asArray(portfolio.open_positions),
+            orders: asArray(portfolio.orders),
+            boundary: portfolio.boundary || "Read-only paper account mirror."
+        },
+        trades: {
+            state: tradeIntent.state || "pending",
+            summary: tradeIntent.summary || "No trade-intent summary exported.",
+            lifecycle_counts: {
+                observed: modelNumber(lifecycleCounts.observed, modelNumber(tradeIntent.observed_signal_count, 0)),
+                candidate: modelNumber(lifecycleCounts.candidate, modelNumber(tradeIntent.candidate_count, 0)),
+                blocked: modelNumber(lifecycleCounts.blocked, modelNumber(tradeIntent.blocked_count, 0)),
+                open: modelNumber(lifecycleCounts.open, modelNumber(portfolio.open_position_count, 0)),
+                closed: modelNumber(lifecycleCounts.closed, modelNumber(portfolio.closed_trade_count, 0)),
+                paper_order_submitted: modelNumber(lifecycleCounts.paper_order_submitted, modelNumber(tradeIntent.paper_order_submitted_count, 0)),
+                postmortem_due: modelNumber(lifecycleCounts.postmortem_due, modelNumber(portfolio.postmortem_due_count, 0))
+            },
+            board: asArray(trades.board),
+            open: asArray(trades.open),
+            postmortems_due: asArray(trades.postmortems_due),
+            top_candidates: asArray(tradeIntent.top_candidates),
+            blocked_trades: asArray(tradeIntent.blocked_trades),
+            boundary: trades.boundary || tradeIntent.boundary || "Trade intent is non-executing."
+        },
+        thinking: {
+            status: thinking.status || thinking.phase2_status || "pending",
+            phase2_mode: thinking.phase2_mode || "not exported",
+            research_goal_active_count: modelNumber(thinking.research_goal_active_count, 0),
+            hypothesis_count: modelNumber(thinking.hypothesis_count, asArray(thinking.hypotheses).length),
+            evidence_packet_count: modelNumber(thinking.evidence_packet_count, 0),
+            strategy_packet_count: modelNumber(thinking.strategy_packet_count, 0),
+            local_assessment_count: modelNumber(thinking.local_assessment_count, 0),
+            signal_integrity_status: thinking.signal_integrity_status || "pending",
+            research_goals: asArray(thinking.research_goals),
+            hypotheses: asArray(thinking.hypotheses),
+            missing_corroboration: asArray(thinking.missing_corroboration),
+            worldview_prior: thinking.worldview_prior || {},
+            boundary: thinking.boundary || "Reasoning is research-only."
+        },
+        diagnostics_linked_models: {
+            sources_model: sharedModels.sources_model?.id || "diagnostics_sources",
+            trades_model: sharedModels.trades_model?.id || "diagnostics_trades",
+            reasoning_model: sharedModels.reasoning_model?.id || "diagnostics_reasoning",
+            performance_model: sharedModels.performance_model?.id || "diagnostics_performance",
+            operations_model: sharedModels.operations_model?.id || "diagnostics_operations"
+        }
+    };
+}
+
 function buildQadamDashboardViewModels(status = {}, source = {}) {
     const sources = buildSourcesModel(status);
     const trades = buildTradesModel(status, { sources_model: sources });
@@ -3792,9 +4004,11 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         operations_model: operations,
         performance_model: performance
     });
+    const founderContract = buildFounderContractModel(status, source, sharedModels);
     const modelGraph = {
         contract: "single_shared_dashboard_view_model_bundle",
         build_order: [
+            "founder_contract_model",
             "sources_model",
             "trades_model",
             "reasoning_model",
@@ -3806,6 +4020,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
             "safety_strip_model"
         ],
         shared_dependencies: {
+            founder_contract_model: ["mission_control"],
             trades_model: ["sources_model"],
             operations_model: ["system_connectivity_model", "governance_model"],
             overview_model: [
@@ -3823,12 +4038,13 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
     };
     return {
         schema_version: "dashboard_view_models.v1",
-        model_contract_version: "dashboard_view_models.d11k.shared_bundle.v1",
+        model_contract_version: "dashboard_view_models.cc5.founder_contract.v1",
         generated_at: status.generated_at || null,
         status_source: source?.key || "unknown",
         public_safe: true,
         authority_boundary: "View models are read-only projections of sanitized dashboard status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
         model_graph: modelGraph,
+        founder_contract_model: founderContract,
         safety_strip_model: safetyStrip,
         overview_model: overview,
         trades_model: trades,
@@ -5288,6 +5504,7 @@ function fallbackMissionControl(status, source) {
     const blockedTrades = asArray(tradeLayer.blocked);
     const openPositions = asArray(capital.open_positions);
     const totalPnl = Number(capital.realized_pnl_gbp || 0) + Number(capital.unrealized_pnl_gbp || 0);
+    const phase2Cycle = cognition.phase2_shadow_cycle || {};
     const phase4 = phase4StrategyStatus(status);
     return {
         status: "read_only_mission_control",
@@ -6648,131 +6865,385 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
     `;
 }
 
-function renderOverviewFirstScreen(viewModels) {
-    const overview = viewModels?.overview_model;
-    const connectivity = viewModels?.system_connectivity_model;
-    if (!overview || !connectivity) return;
+function renderContractTeamMap(team = []) {
+    const nodes = asArray(team);
+    if (!nodes.length) return `<span>No Mission Control team nodes are visible yet.</span>`;
+    const nodeHtml = nodes.map((member, index) => renderOverviewMiniNode({
+        key: member.key,
+        label: member.label,
+        role: member.subtitle,
+        status: member.status,
+        health: member.status,
+        purpose: member.summary,
+        authority: member.authority,
+        expanded: {
+            current_process: member.current_process,
+            handoff: `${member.label || "This node"} passes its status to the next operating check.`
+        }
+    }, index, nodes.length)).join("");
+    return `
+        <div class="system-flow-diagram overview-system-flow-diagram cc5-contract-map" data-cc5-contract-source="mission_control">
+            <section class="flow-lane overview-canonical-lane online">
+                <header class="flow-lane-header">
+                    <span>01</span>
+                    <div>
+                        <h3>Qadam operating team</h3>
+                        <p>Mission Control renders these nodes from the founder contract.</p>
+                    </div>
+                </header>
+                <div class="flow-lane-track overview-canonical-lane-track">${nodeHtml}</div>
+                <div class="lane-handoff"><span>Data becomes evidence, evidence becomes strategy review, and only guarded paper checks can move toward paper trading.</span></div>
+            </section>
+            <div class="flow-return-loop">
+                <strong>Closed-loop rule</strong>
+                <span>Observations, hypotheses, paper trades, comments, and postmortems return to the Event Log before they can change Qadam.</span>
+            </div>
+        </div>
+    `;
+}
 
-    const proof = overview.demo_proof || {};
-    const readouts = asArray(overview.readouts || overview.cards);
-    const review = overview.review_focus || {};
-    const setupText = `${proof.eligible_setup_count || 0} potential setups`;
-    const proofText = `${proof.closed_proof_trade_count || 0}/${proof.mature_benchmark || 100} verified paper trades`;
+function renderContractSourceRow(source = {}) {
+    const trust = source.trust_score === undefined || source.trust_score === null ? "n/a" : Number(source.trust_score).toFixed(2);
+    return `
+        <li class="source-row overview-source-row">
+            <div class="source-main">
+                ${renderStatusPill(source.status)}
+                <div>
+                    <strong>${htmlText(source.label, source.key || "Source")}</strong>
+                    <span>${htmlText(source.pipeline)} · ${htmlText(source.readiness)} · ${htmlText(source.cadence)}</span>
+                </div>
+            </div>
+            <div class="source-meta">
+                ${renderInlineBadge(source.credential_status, source.credential_status === "missing" ? "degraded" : "online")}
+                ${renderInlineBadge(source.usable_for_research_context ? "research usable" : "observation only", source.usable_for_research_context ? "online" : "pending")}
+                ${renderInlineBadge(source.eligible_for_signal_review ? "signal-review eligible" : "not signal-review eligible", source.eligible_for_signal_review ? "online" : "pending")}
+                ${renderInlineBadge(source.can_authorize_orders ? "order authority" : "no order authority", source.can_authorize_orders ? "blocked" : "online")}
+                ${renderInlineBadge(`trust ${trust}`, trust === "n/a" ? "pending" : "online")}
+                ${renderInlineBadge(source.latency_ms ? `${Math.round(Number(source.latency_ms))}ms` : formatTime(source.heartbeat), source.status)}
+            </div>
+            <p>${htmlText(source.summary || source.degraded_reason || source.boundary)}</p>
+        </li>
+    `;
+}
+
+function renderContractSourcePipeline(pipeline = {}) {
+    const sources = asArray(pipeline.sources);
+    return `
+        <details class="overview-ledger-group">
+            <summary>
+                <strong>${htmlText(pipeline.label || pipeline.pipeline, "Source pipeline")}</strong>
+                <span>${htmlText(pipeline.online_count, "0")}/${htmlText(pipeline.source_count, sources.length)} online · ${htmlText(pipeline.research_usable_count, "0")} research usable · ${htmlText(pipeline.signal_review_eligible_count, "0")} signal-review eligible · ${htmlText(pipeline.missing_credential_count, "0")} missing credentials</span>
+            </summary>
+            <ul class="source-table">${sources.map(renderContractSourceRow).join("")}</ul>
+        </details>
+    `;
+}
+
+function renderContractStrategyBlock(contract = {}) {
+    const strategy = contract.strategy || {};
+    const activeLens = strategy.active_lens || {};
+    const akber = strategy.akber_lens || {};
+    const universe = asArray(strategy.universe);
+    const chain = asArray(strategy.decision_chain);
+    const questions = asArray(activeLens.decision_questions).slice(0, 5);
+    return `
+        <details class="overview-expandable-ledger" data-cc5-contract-source="mission_control" open>
+            <summary>
+                <span>Trading strategy</span>
+                <strong>${htmlText(activeLens.name || strategy.posture, "Evidence-gated paper strategy")}</strong>
+                <em>Click to see universe, Akber filter, and decision chain.</em>
+            </summary>
+            <div class="overview-ledger-body">
+                <p>${htmlText(strategy.why)}</p>
+                <section class="ai-infrastructure-lens ${statusClass(activeLens.status || strategy.posture || "online")}">
+                    <div>
+                        <span>Current lens</span>
+                        <h4>${htmlText(activeLens.name || "Second-order AI infrastructure beneficiary lens")}</h4>
+                        <p>${htmlText(activeLens.thesis || "Qadam compares obvious AI leaders against harder-to-price infrastructure bottlenecks before Akber's filter decides whether timing and risk are acceptable.")}</p>
+                    </div>
+                    <div class="ai-lens-columns">
+                        <article>
+                            <strong>Universe</strong>
+                            <ul>${(universe.length ? universe : ["power generation", "grid hardware", "data-centre electrical infrastructure", "fabrication capacity", "memory", "connectivity"]).map((item) => `<li>${htmlText(item)}</li>`).join("")}</ul>
+                        </article>
+                        <article>
+                            <strong>Akber filter</strong>
+                            <ul>${asArray(akber.stages).map((item) => `<li>${htmlText(item)}</li>`).join("") || `<li>${htmlText(akber.summary || "Context, catalyst, confirmation, risk, execution, postmortem learning.")}</li>`}</ul>
+                        </article>
+                        <article>
+                            <strong>Questions</strong>
+                            <ul>${(questions.length ? questions : chain).slice(0, 5).map((item) => `<li>${htmlText(item)}</li>`).join("")}</ul>
+                        </article>
+                    </div>
+                    <p class="mini">${htmlText(activeLens.gating_role || strategy.boundary)}</p>
+                </section>
+                <ol class="overview-contract-chain">
+                    ${chain.map((step) => `<li>${htmlText(step)}</li>`).join("")}
+                </ol>
+            </div>
+        </details>
+    `;
+}
+
+function renderContractStrategyNarrative(contract = {}) {
+    const strategy = contract.strategy || {};
+    const sources = contract.sources || {};
+    const trades = contract.trades || {};
+    const thinking = contract.thinking || {};
+    const activeLens = strategy.active_lens || {};
+    const topCandidate = asArray(trades.top_candidates)[0] || asArray(trades.board).find((item) => item.state === "candidate") || {};
+    const sourceSentence = `${modelNumber(sources.online, 0)}/${modelNumber(sources.total, 0)} sources are online, ${modelNumber(sources.research_usable, 0)} can shape research context, and ${modelNumber(sources.signal_review_eligible, 0)} can influence signal review.`;
+    const thinkingSentence = `${modelNumber(thinking.research_goal_active_count, 0)} research goals, ${modelNumber(thinking.hypothesis_count, 0)} hypotheses, and ${modelNumber(thinking.evidence_packet_count, 0)} evidence packets are feeding the current review.`;
+    const tradeSentence = topCandidate.instrument
+        ? `${dashboardText(topCandidate.instrument)} is the leading candidate readout, but it still needs source, risk, and paper-account gates before any paper order.`
+        : "No leading candidate is strong enough to summarize as an imminent paper order in this snapshot.";
+    return `
+        <div class="strategy-narrative-shell ${statusClass(strategy.posture || activeLens.status || "online")}" data-cc5-contract-source="mission_control">
+            <article class="strategy-narrative-lead">
+                <span>What Qadam is choosing now</span>
+                <h3>${htmlText(activeLens.name || strategy.posture || "Evidence-gated paper strategy")}</h3>
+                <p>${htmlText(strategy.why)}</p>
+                <p>${htmlText(sourceSentence)} ${htmlText(thinkingSentence)}</p>
+                <p>${htmlText(tradeSentence)}</p>
+            </article>
+            <div class="strategy-narrative-grid">
+                <article>
+                    <span>Akber method</span>
+                    <p>${htmlText(strategy.akber_lens?.summary || "Akber's six-stage method still filters context, catalyst, confirmation, risk, execution, and postmortem learning.")}</p>
+                </article>
+                <article>
+                    <span>Worldview role</span>
+                    <p>${htmlText(thinking.worldview_prior?.summary || "The worldview shapes questions and scenario generation, but it is not evidence or execution authority.")}</p>
+                </article>
+                <article>
+                    <span>Next constraint</span>
+                    <p>${htmlText(strategy.boundary || "Strategy remains non-executable until Signal Integrity and Risk Agent gates pass.")}</p>
+                </article>
+            </div>
+        </div>
+    `;
+}
+
+function renderContractPortfolioBlock(portfolio = {}) {
+    const chartPoints = asArray(portfolio.equity_curve).length
+        ? asArray(portfolio.equity_curve)
+        : paperAccountEquityPoints({
+            current_balance_gbp: portfolio.balance_gbp,
+            equity_gbp: portfolio.balance_gbp,
+            observed_at: portfolio.observed_at,
+            drawdown_pct: portfolio.drawdown_pct
+        });
+    const stats = paperAccountEquityStats(chartPoints);
+    const width = 520;
+    const height = 150;
+    const left = 66;
+    const right = 16;
+    const top = 18;
+    const bottom = 28;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const rawMin = stats.min;
+    const rawMax = stats.max;
+    const range = rawMax - rawMin;
+    const padding = range > 0 ? range * 0.18 : Math.max(10, Math.abs(rawMax || 1000) * 0.01);
+    const min = rawMin - padding;
+    const max = rawMax + padding;
+    const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
+    const xFor = (index) => left + (chartPoints.length <= 1 ? plotWidth / 2 : (index / (chartPoints.length - 1)) * plotWidth);
+    const path = chartPoints
+        .map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
+        .join(" ");
+    const tone = portfolio.mirror_freshness === "stale" ? "degraded" : "online";
+    return `
+        <div class="overview-capacity-chart-card ${statusClass(tone)}" data-cc5-contract-source="mission_control">
+            <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account portfolio value line" preserveAspectRatio="none" data-paper-capacity-line>
+                <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
+                <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.max).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.max).toFixed(2)}"></line>
+                <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.min).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.min).toFixed(2)}"></line>
+                <path class="paper-equity-line" d="${path}"></path>
+                <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(formatMoney(stats.max))}</text>
+                <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(formatMoney(stats.min))}</text>
+                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(chartPoints.at(-1)?.observed_at || portfolio.observed_at))}</text>
+            </svg>
+            <div class="overview-capacity-summary">
+                ${renderMetric("Balance", formatMoney(portfolio.balance_gbp))}
+                ${renderMetric("Total P&L", formatMoney(portfolio.total_pnl_gbp))}
+                ${renderMetric("Realized", formatMoney(portfolio.realized_pnl_gbp))}
+                ${renderMetric("Unrealized", formatMoney(portfolio.unrealized_pnl_gbp))}
+                ${renderMetric("Drawdown", formatPercent(portfolio.drawdown_pct))}
+                ${renderMetric("Open positions", portfolio.open_position_count)}
+                ${renderMetric("Orders", portfolio.order_count)}
+                ${renderMetric("Postmortems due", portfolio.postmortem_due_count)}
+            </div>
+        </div>
+    `;
+}
+
+function renderContractTradeBoard(trades = {}) {
+    const counts = trades.lifecycle_counts || {};
+    const rows = asArray(trades.board);
+    const summary = [
+        `${modelNumber(counts.observed, 0)} observed`,
+        `${modelNumber(counts.candidate, 0)} candidates`,
+        `${modelNumber(counts.blocked, 0)} blocked`,
+        `${modelNumber(counts.open, 0)} open`,
+        `${modelNumber(counts.closed, 0)} closed`,
+        `${modelNumber(counts.postmortem_due, 0)} postmortems due`
+    ].join(" · ");
+    return `
+        <div data-cc5-contract-source="mission_control">
+            <div class="overview-section-head">
+                <span>Trades being considered</span>
+                <strong>${htmlText(summary)}</strong>
+            </div>
+            <div class="overview-plain-card-grid">
+                ${rows.length ? rows.slice(0, 8).map((trade) => `
+                    <article class="overview-plain-card ${statusClass(trade.status || trade.state)}">
+                        <span>${htmlText(trade.state || trade.status, "trade state")}</span>
+                        <strong>${htmlText(trade.instrument || trade.title || "Trade idea")}</strong>
+                        <p>${htmlText(trade.summary || trades.summary)}</p>
+                    </article>
+                `).join("") : `<article class="overview-plain-card pending"><span>No active trade idea</span><strong>Monitoring only</strong><p>${htmlText(trades.summary, "Qadam has not exported an observed signal or candidate in this snapshot.")}</p></article>`}
+            </div>
+            <p class="mini">${htmlText(overviewPlainText(trades.boundary || "Trade rows are read-only. Candidate does not mean order."))}</p>
+        </div>
+    `;
+}
+
+function renderContractThinkingBlock(thinking = {}) {
+    const goals = asArray(thinking.research_goals);
+    const hypotheses = asArray(thinking.hypotheses);
+    const worldview = thinking.worldview_prior || {};
+    const cards = [
+        {
+            label: "Research goals",
+            status: thinking.status,
+            value: thinking.research_goal_active_count,
+            summary: goals[0]?.hypothesis || "No active research goal exported."
+        },
+        {
+            label: "Hypotheses",
+            status: thinking.signal_integrity_status,
+            value: thinking.hypothesis_count,
+            summary: hypotheses[0]?.thesis || "No hypothesis exported."
+        },
+        {
+            label: "Evidence packets",
+            status: thinking.status,
+            value: thinking.evidence_packet_count,
+            summary: `${thinking.strategy_packet_count || 0} strategy packets; ${thinking.local_assessment_count || 0} local assessments.`
+        },
+        {
+            label: "Worldview prior",
+            status: worldview.status || "pending",
+            value: worldview.role || "private prior",
+            summary: worldview.summary || "Worldview prior not exported."
+        }
+    ];
+    return `
+        <div data-cc5-contract-source="mission_control">
+            <div class="overview-section-head">
+                <span>Qadam's thoughts</span>
+                <strong>${htmlText(thinking.phase2_mode || thinking.status, "Research-only reasoning")}</strong>
+            </div>
+            <ol class="overview-thought-list">
+                ${cards.map(renderOverviewThoughtItem).join("")}
+            </ol>
+            <p class="mini">${htmlText(thinking.boundary || worldview.boundary || "Reasoning cannot approve trades.")}</p>
+        </div>
+    `;
+}
+
+function renderOverviewFirstScreen(viewModels) {
+    const contract = viewModels?.founder_contract_model;
+    if (!contract) return;
 
     const statusRail = dashboardQuery("[data-overview-status-rail]");
     if (statusRail) {
-        statusRail.innerHTML = asArray(overview.status_chips)
-            .map(renderOverviewChip)
-            .join("");
+        const source = contract.sources || {};
+        const portfolio = contract.portfolio || {};
+        statusRail.innerHTML = [
+            { label: "Sources", value: `${source.online}/${source.total}`, tone: source.degraded || source.missing_credentials ? "degraded" : "online" },
+            { label: "Research goals", value: contract.thinking?.research_goal_active_count || 0, tone: contract.thinking?.status || "pending" },
+            { label: "Paper value", value: formatMoney(portfolio.balance_gbp), tone: portfolio.mirror_freshness === "stale" ? "degraded" : "online" },
+            { label: "Trade candidates", value: contract.trades?.lifecycle_counts?.candidate || 0, tone: contract.trades?.state || "pending" }
+        ].map(renderOverviewChip).join("");
     }
 
     const missionBriefTarget = dashboardQuery("[data-overview-mission-brief]");
     if (missionBriefTarget) {
-        const missionBrief = overview.mission_brief || {};
-        const questions = asArray(missionBrief.questions);
-        const nextAction = missionBrief.next_action || {};
+        const safety = contract.safety || {};
         missionBriefTarget.innerHTML = `
             <div class="overview-section-head">
                 <span>Mission Control brief</span>
-                <strong>${htmlText(nextAction.label, "Continue monitoring")}</strong>
+                <strong>${htmlText(contract.headline)}</strong>
             </div>
-            <p>${htmlText(missionBrief.summary, "Seven-question Fund Manager brief.")}</p>
-            <nav class="overview-mission-nav" aria-label="Mission Control quick links">
-                ${asArray(missionBrief.navigation).map((item) => `
-                    <a href="${htmlText(item.href, "#mission-control")}">${htmlText(item.label, "View")}</a>
-                `).join("")}
-            </nav>
-            <div class="overview-mission-question-grid">
-                ${questions.map(renderOverviewMissionQuestion).join("")}
+            <p>Default dashboard view is rendered from the sanitized <strong>mission_control</strong> founder contract. Diagnostics retains raw technical detail.</p>
+            <div class="overview-mission-metrics">
+                ${renderOverviewMissionMetric({ label: "Contract", value: contract.source })}
+                ${renderOverviewMissionMetric({ label: "Generated", value: formatTime(contract.generated_at) })}
+                ${renderOverviewMissionMetric({ label: "Schema", value: contract.schema_version })}
+                ${renderOverviewMissionMetric({ label: "Mode", value: safety.mode || "paper" })}
             </div>
-            <div class="overview-mission-next ${statusClass(nextAction.tone || "online")}">
-                <span>Next Chief Operating Officer action</span>
-                <strong>${htmlText(nextAction.label, "Continue monitoring")}</strong>
-                <p>${htmlText(nextAction.summary, "No immediate action visible.")}</p>
+            <div class="overview-mission-next ${statusClass(safety.live_capital_enabled ? "blocked" : "online")}">
+                <span>Authority state</span>
+                <strong>${safety.live_capital_enabled ? "Live capital enabled" : "Paper-only, read-only"}</strong>
+                <p>${htmlText(safety.boundary)}</p>
             </div>
-            <p class="mini">${htmlText(missionBrief.boundary, "Mission Control is read-only.")}</p>
         `;
     }
 
     const strategyNarrativeTarget = dashboardQuery("[data-overview-strategy-narrative]");
     if (strategyNarrativeTarget) {
-        strategyNarrativeTarget.innerHTML = renderOverviewStrategyNarrative(viewModels, overview);
-    }
-
-    const hero = dashboardQuery("[data-overview-hero]");
-    if (hero) {
-        hero.innerHTML = `
-            <span>Current summary</span>
-            <h3>${htmlText(overview.summary)}</h3>
-            <p>${htmlText(overview.scope_note || overview.boundary)}</p>
-            <div class="overview-hero-metrics" data-overview-hero-metrics>
-                ${renderMetric("Paper growth", `${formatMoney(overview.paper_capacity?.equity_gbp || 0)} / ${formatMoney(overview.paper_capacity?.target_gbp || 0)}`)}
-                ${renderMetric("Setups", setupText)}
-                ${renderMetric("Next review", review.state || "Continue monitoring")}
-            </div>
-            <div class="overview-readout-list" data-overview-metrics>
-                ${readouts.slice(0, 4).map(renderOverviewReadout).join("")}
-            </div>
-        `;
-    }
-
-    const reviewCard = dashboardQuery("[data-overview-review-card]");
-    if (reviewCard) {
-        reviewCard.classList.remove("online", "pending", "degraded", "blocked");
-        reviewCard.classList.add(statusClass(review.tone || "online"));
-        reviewCard.innerHTML = `
-            <span>Needs review</span>
-            <strong data-overview-action-label>${htmlText(review.state || "Continue monitoring")}</strong>
-            <p data-overview-action-summary>${htmlText(review.summary || "No immediate action visible.")}</p>
-            <nav class="overview-next-links" aria-label="Next review links" data-overview-next-links>
-                ${asArray(overview.next_review_links).map((link) => `
-                    <a href="${htmlText(link.href)}">
-                        <strong>${htmlText(link.label)}</strong>
-                        <span>${htmlText(link.reason)}</span>
-                    </a>
-                `).join("")}
-            </nav>
-        `;
+        strategyNarrativeTarget.innerHTML = renderContractStrategyNarrative(contract);
     }
 
     const systemStatus = dashboardQuery("[data-overview-system-status]");
     if (systemStatus) {
+        const sources = contract.sources || {};
+        const trades = contract.trades || {};
+        const thinking = contract.thinking || {};
+        const durable = contract.durable_spine || {};
         systemStatus.innerHTML = `
             <div class="overview-section-head">
                 <span>System status</span>
-                <strong>Plain-language runtime state</strong>
+                <strong>Plain-language mission state</strong>
             </div>
             <div class="overview-plain-card-grid">
-                ${asArray(overview.system_status).map(renderOverviewPlainCard).join("")}
+                ${[
+                    { label: "Data sources", value: `${sources.online}/${sources.total} online`, status: sources.status, summary: `${sources.research_usable} research usable; ${sources.signal_review_eligible} signal-review eligible; ${sources.order_authority} order-authority sources.` },
+                    { label: "Durable replay", value: `${durable.replayed_source_count || 0}/${durable.expected_source_count || sources.total || 0} sources replayed`, status: durable.replay_status || durable.status, summary: `${durable.observation_count || 0} observations stored. ${durable.boundary || "Durable replay is observation storage only."}` },
+                    { label: "Strategy posture", value: contract.strategy?.active_lens?.name || contract.strategy?.posture, status: contract.strategy?.posture, summary: contract.strategy?.boundary },
+                    { label: "Thinking", value: `${thinking.research_goal_active_count} goals`, status: thinking.status, summary: `${thinking.hypothesis_count} hypotheses; ${thinking.evidence_packet_count} evidence packets; ${thinking.strategy_packet_count} strategy packets.` },
+                    { label: "Trade lifecycle", value: `${trades.lifecycle_counts?.candidate || 0} candidates`, status: trades.state, summary: `${trades.lifecycle_counts?.open || 0} open; ${trades.lifecycle_counts?.closed || 0} closed; ${trades.lifecycle_counts?.postmortem_due || 0} postmortems due.` }
+                ].map(renderOverviewPlainCard).join("")}
             </div>
         `;
     }
 
     const paperCapacity = dashboardQuery("[data-overview-paper-capacity]");
     if (paperCapacity) {
-        const capacity = overview.paper_capacity || {};
+        const portfolio = contract.portfolio || {};
         paperCapacity.innerHTML = `
             <div class="overview-section-head">
-                <span>Paper capacity</span>
-                <strong>${formatMoney(capacity.equity_gbp)} toward ${formatMoney(capacity.target_gbp)} in ${htmlText(capacity.target_horizon_days)} days</strong>
+                <span>Paper portfolio</span>
+                <strong>${formatMoney(portfolio.balance_gbp)} · ${htmlText(portfolio.mirror_freshness)} mirror</strong>
             </div>
-            <p>${htmlText(capacity.summary, "Paper capacity has not loaded.")}</p>
-            ${renderOverviewCapacityChart(capacity)}
+            <p>${htmlText(portfolio.portfolio_value_source, "Portfolio value is read from the paper-account mirror.")}</p>
+            ${renderContractPortfolioBlock(portfolio)}
         `;
     }
 
     const metrics = dashboardQuery("[data-overview-metrics]");
     if (metrics) {
-        metrics.innerHTML = readouts.slice(0, 4)
-            .map(renderOverviewReadout)
-            .join("");
+        metrics.innerHTML = "";
     }
 
-    setText("[data-overview-lifecycle-summary]", overview.lifecycle_summary || `${setupText}; ${proofText}.`);
+    setText("[data-overview-lifecycle-summary]", contract.trades?.summary || "Mission Control trade lifecycle is loaded.");
     const lifecycle = dashboardQuery("[data-overview-lifecycle]");
     if (lifecycle) {
-        lifecycle.innerHTML = asArray(overview.lifecycle)
-            .map(renderOverviewLifecycleItem)
+        lifecycle.innerHTML = Object.entries(contract.trades?.lifecycle_counts || {})
+            .map(([label, count], index) => renderOverviewLifecycleItem({ label: label.replaceAll("_", " "), count, tone: count ? "online" : "pending" }, index))
             .join("");
     }
 
@@ -6781,13 +7252,19 @@ function renderOverviewFirstScreen(viewModels) {
 	        oversight.innerHTML = `
 	            <span>Fund Manager oversight</span>
             <strong>You supervise Qadam</strong>
-            <p>${htmlText(overview.system_summary || "Live feeds, Python, models, gates, paper lifecycle, and learning loop stay visible from one map.")}</p>
+            <p>Live data -> Python COO -> Local LLM -> Strategy Lead -> Head of Quant -> risk gate -> paper trade lifecycle -> learning loop.</p>
 	        `;
 	    }
 	
 	    const teamHealth = dashboardQuery("[data-team-health-row]");
 	    if (teamHealth) {
-	        const roles = viewModels?.operations_model?.team_health || buildTeamHealthModel(connectivity);
+	        const roles = asArray(contract.team).map((member) => ({
+                label: member.label,
+                subtitle: member.subtitle,
+                status: member.status,
+                current: member.current_process || member.summary,
+                node_count: 1
+            }));
 	        teamHealth.innerHTML = roles.length
 	            ? roles.map(renderTeamHealthCard).join("")
 	            : `<span>No operating-team health rows are visible yet.</span>`;
@@ -6795,15 +7272,15 @@ function renderOverviewFirstScreen(viewModels) {
 
 	    const miniMap = dashboardQuery("[data-overview-mini-map]");
 	    if (miniMap) {
-	        miniMap.innerHTML = renderOverviewCanonicalMap(connectivity);
+	        miniMap.innerHTML = renderContractTeamMap(contract.team);
 	    }
 
     const feeds = dashboardQuery("[data-overview-feed-strip]");
     if (feeds) {
-        feeds.innerHTML = asArray(connectivity.feed_clusters).slice(0, 3).map((feed) => `
-            <span class="${statusClass(feed.status)}">
-                <strong>${htmlText(feed.label)}</strong>
-                ${htmlText(feed.status)} · ${htmlText(feed.count)} records
+        feeds.innerHTML = asArray(contract.sources?.pipelines).slice(0, 4).map((pipeline) => `
+            <span class="${statusClass(pipeline.status)}">
+                <strong>${htmlText(pipeline.label)}</strong>
+                ${htmlText(pipeline.online_count)} / ${htmlText(pipeline.source_count)} online · ${htmlText(pipeline.signal_review_eligible_count)} signal-review eligible
             </span>
         `).join("");
     }
@@ -6812,34 +7289,25 @@ function renderOverviewFirstScreen(viewModels) {
     if (boundary) {
         boundary.innerHTML = `
             <span>How to read this</span>
-            <p>${htmlText(overview.scope_note || "Safety Status is the authority summary.")} A trade idea is not an order.</p>
+            <p>${htmlText(contract.safety?.boundary || "Safety Status is the authority summary.")} A trade idea is not an order.</p>
         `;
     }
 
     const dataSources = dashboardQuery("[data-overview-data-sources]");
     if (dataSources) {
-        const visibleSources = asArray(overview.data_sources_connected).slice(0, 4);
-        const sourceModel = viewModels?.sources_model || {};
-        const allSources = asArray(sourceModel.all_sources);
-        const pipelines = asArray(sourceModel.pipelines);
-        const connectedCount = modelNumber(sourceModel.counts?.online, visibleSources.length);
-        const totalCount = modelNumber(sourceModel.counts?.total, allSources.length || visibleSources.length);
+        const sources = contract.sources || {};
+        const pipelines = asArray(sources.pipelines);
         dataSources.innerHTML = `
             <details class="overview-expandable-ledger" data-overview-source-ledger>
                 <summary>
                     <span>Data sources connected</span>
-                    <strong>${connectedCount}/${totalCount} connected</strong>
-                    <em>Click to expand the full source list and connection state.</em>
+                    <strong>${sources.online}/${sources.total} online</strong>
+                    <em>Click to expand the full source list and connection state from mission_control.</em>
                 </summary>
                 <div class="overview-ledger-body">
-                    <p>${htmlText(sourceModel.summary, "Source health has not loaded.")}</p>
-                    <div class="overview-plain-card-grid">
-                        ${visibleSources.map(renderOverviewPlainCard).join("")}
-                    </div>
+                    <p>${htmlText(`${sources.research_usable} sources can inform research context; ${sources.signal_review_eligible} can influence signal review; ${sources.order_authority} can authorize orders.`)}</p>
                     <div class="overview-ledger-list">
-                        ${pipelines.length
-            ? pipelines.map(renderOverviewSourcePipeline).join("")
-            : `<ul class="source-table">${allSources.map(renderOverviewSourceRow).join("")}</ul>`}
+                        ${pipelines.length ? pipelines.map(renderContractSourcePipeline).join("") : `<ul class="source-table">${asArray(sources.ledger).map(renderContractSourceRow).join("")}</ul>`}
                     </div>
                 </div>
             </details>
@@ -6848,70 +7316,22 @@ function renderOverviewFirstScreen(viewModels) {
 
     const strategies = dashboardQuery("[data-overview-trading-strategies]");
     if (strategies) {
-        const visibleStrategies = asArray(overview.trading_strategies).slice(0, 5);
-        const allStrategies = asArray(overview.trading_strategies);
-        const approvedCount = allStrategies.filter((strategy) => strategy.approval_state === "approved").length;
-        strategies.innerHTML = `
-            <details class="overview-expandable-ledger" data-overview-strategy-ledger>
-                <summary>
-                    <span>Trading strategies</span>
-                    <strong>${approvedCount}/${allStrategies.length || visibleStrategies.length} approved-shadow</strong>
-                    <em>Click to expand every strategy family Qadam is allowed to consider.</em>
-                </summary>
-                <div class="overview-ledger-body">
-                    <p>These are research and governance toggles. They tell Qadam what style of thesis it may consider; they do not approve orders.</p>
-                    <div class="overview-plain-card-grid strategy-grid">
-                        ${visibleStrategies.map(renderOverviewPlainCard).join("")}
-                    </div>
-                    <ul class="source-table">
-                        ${allStrategies.map(renderOverviewStrategyRow).join("")}
-                    </ul>
-                </div>
-            </details>
-        `;
+        strategies.innerHTML = renderContractStrategyBlock(contract);
     }
 
     const thoughtFeed = dashboardQuery("[data-overview-thought-feed]");
     if (thoughtFeed) {
-        const visibleThoughts = asArray(overview.thought_feed)
-            .filter((item) => item.label !== "Current focus")
-            .slice(0, 4);
-        thoughtFeed.innerHTML = `
-            <div class="overview-section-head">
-                <span>Qadam's thoughts</span>
-                <strong>Current reasoning feed</strong>
-            </div>
-            <ol class="overview-thought-list">
-                ${visibleThoughts.map(renderOverviewThoughtItem).join("")}
-            </ol>
-        `;
+        thoughtFeed.innerHTML = renderContractThinkingBlock(contract.thinking);
     }
 
     const tradeConsiderations = dashboardQuery("[data-overview-trade-considerations]");
     if (tradeConsiderations) {
-        const visibleTradeIdeas = asArray(overview.trade_considerations).slice(0, 5);
-        tradeConsiderations.innerHTML = `
-            <div class="overview-section-head">
-                <span>Trades being considered</span>
-                <strong>${htmlText(visibleTradeIdeas.length)} live ideas</strong>
-            </div>
-            <div class="overview-plain-card-grid">
-                ${visibleTradeIdeas.length
-        ? visibleTradeIdeas.map(renderOverviewPlainCard).join("")
-        : `<article class="overview-plain-card online"><span>No active trade idea</span><strong>Monitoring only</strong><p>Qadam has not exported an observed signal or candidate in this snapshot.</p></article>`}
-            </div>
-            <p class="mini">Candidate, not order. A candidate is still only something Qadam is thinking about.</p>
-        `;
+        tradeConsiderations.innerHTML = renderContractTradeBoard(contract.trades);
     }
 
     const nextLinks = dashboardQuery("[data-overview-next-links]");
     if (nextLinks) {
-        nextLinks.innerHTML = asArray(overview.next_review_links).map((link) => `
-            <a href="${htmlText(link.href)}">
-                <strong>${htmlText(link.label)}</strong>
-                <span>${htmlText(link.reason)}</span>
-            </a>
-        `).join("");
+        nextLinks.innerHTML = "";
     }
 }
 
