@@ -69,6 +69,13 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Evidence view",
     "Reasoning view",
     "Operations view",
+    "Six Founder Decision Blocks",
+    "System/team map",
+    "Sources",
+    "Strategy",
+    "Portfolio",
+    "Thinking",
+    "Diagnostics",
     "Safety Status",
     "Old Implementation Terms",
     "System map",
@@ -88,6 +95,13 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Evidence",
     "Reasoning",
     "Operations",
+    "Six Founder Decision Blocks",
+    "System/team map",
+    "Sources",
+    "Strategy",
+    "Portfolio",
+    "Thinking",
+    "Diagnostics",
     "Safety Status",
     "Old Implementation Terms",
     "System map",
@@ -99,6 +113,14 @@ assertIncludes(auth, "emailIsAllowed(session.user.email)", "auth allowlist");
     "Red Flags",
     "First Release Success"
 ].forEach((needle) => assertIncludes(guideDoc, needle, "guide markdown"));
+
+[
+    guideHtml,
+    guideDoc
+].forEach((text, index) => {
+    const label = index === 0 ? "guide HTML" : "guide markdown";
+    assert(!text.includes("five primary views"), `${label} still describes the old five-view IA`);
+});
 
 [
     "Online",

@@ -202,8 +202,13 @@ Use this sequence the first time you open Qadam.
 
 ## 9. How To Read The Dashboard
 
-The dashboard now has five primary views. Do not hunt for old standalone
-panels; those implementation names have been consolidated into the views below.
+Start in the Overview view. It is now organized around six founder decision
+blocks: System/team map, Sources, Strategy, Portfolio, Trades, and Thinking.
+Those blocks answer the main operating questions before you open the deeper
+review tabs. The navigation still includes Overview, Trades, Evidence,
+Reasoning, and Operations, but the default Overview is the primary mission
+control surface. Use Operations only when you need Diagnostics, legacy audit
+sections, raw event trails, or deployment/runtime details.
 
 ### Overview
 
@@ -215,6 +220,8 @@ Use it to answer:
 - whether sources, hypotheses, candidates, paper state, or safety gates need
   attention
 - how the high-level system is wired through the compact mini-map
+- how the system/team map, sources, strategy, portfolio, trades, and thinking
+  blocks fit together
 
 Overview is a readout, not a command surface. It cannot promote hypotheses,
 approve trades, submit paper orders, write to brokers, or enable live capital.
@@ -304,6 +311,20 @@ Use Operations when you need diagnostics rather than a quick operating read:
 
 Operations is still read-only. The full system map explains how modules connect;
 its nodes are not controls.
+
+### Six Founder Decision Blocks
+
+| Block | What It Answers |
+| --- | --- |
+| System/team map | Which part of the Qadam operating team is active: data spine, Chief Operating Officer, Local Research Analyst, Strategy Lead, Head of Quant, safety policy, and paper/demo state. |
+| Sources | Which data sources are online, degraded, missing, local-only, or blocked, and whether their quality can influence signal review. |
+| Strategy | Which trading philosophy Qadam is currently applying, including Akber's filter and the second-order AI infrastructure lens. |
+| Portfolio | Paper balance, open exposure, realized/unrealized P&L, drawdown, and whether the portfolio state matches the broker mirror. |
+| Trades | Observed signals, candidates, blocked ideas, staged paper orders, submitted paper orders, open positions, closed trades, and postmortems. |
+| Thinking | What Qadam is focused on next, what evidence is missing, which assumptions are being challenged, and where local/frontier/quant review fits. |
+
+Diagnostics are not a seventh operating block. They are a retained technical
+audit drawer for compatibility, checker evidence, and migration proof.
 
 ### Safety Status
 

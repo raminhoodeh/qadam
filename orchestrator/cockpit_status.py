@@ -5480,6 +5480,29 @@ def _mission_hypotheses(hypotheses: list[dict[str, Any]]) -> list[dict[str, Any]
     ]
 
 
+def _diagnostic_dependent_surfaces(key: str) -> list[str]:
+    surfaces = [
+        "diagnostics.audit_sections",
+        "scripts/check_cockpit_status.py",
+        "dashboard diagnostics drawer",
+    ]
+    if key == "phase5_system_map":
+        surfaces.extend(["dashboard overview operating flow", "dashboard operations system map"])
+    if key.startswith("phase5_"):
+        surfaces.extend(["Phase 5 dashboard checkers", "paper-trade readiness mirrors"])
+    if key.startswith("phase6_"):
+        surfaces.extend(["Phase 6 learning-loop checkers", "mission_control learning mirror"])
+    if key.startswith("phase7_"):
+        surfaces.extend(["Phase 7 proof-runner checks", "demo-proof continuity artifacts"])
+    if key.startswith("rs9_"):
+        surfaces.extend(["RS-9 learning-loop checks", "mission_control learning mirror"])
+    if key.startswith("rs10_"):
+        surfaces.extend(["RS-10 autonomy certification checks", "paper-autonomy safety strip"])
+    if key.startswith("paperops_") or key.startswith("paper_"):
+        surfaces.extend(["PaperOps automation checks", "dashboard trades and operations views"])
+    return list(dict.fromkeys(surfaces))
+
+
 def _diagnostics(payload: dict[str, Any]) -> dict[str, Any]:
     diagnostic_keys = [
         "phase3_readiness",
@@ -5531,6 +5554,19 @@ def _diagnostics(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(process_console, list)
         else process_console.get("events", [])
     )
+    retained_keys = [
+        {
+            "key": key,
+            "migration_status": "retained_for_checker_and_diagnostics_compatibility",
+            "retention_reason": (
+                "Still referenced by dashboard diagnostics, checkers, automations, "
+                "or status mirrors."
+            ),
+            "dependent_surfaces": _diagnostic_dependent_surfaces(key),
+            "namespace_shadow": f"diagnostics.audit_sections.{key}",
+        }
+        for key in diagnostic_keys
+    ]
     return {
         "schema_version": 1,
         "status": "diagnostics_available",
@@ -5546,6 +5582,20 @@ def _diagnostics(payload: dict[str, Any]) -> dict[str, Any]:
             for key in diagnostic_keys
         },
         "prune_candidates": diagnostic_keys,
+        "prune_audit": {
+            "schema_version": 1,
+            "status": "retained_due_to_active_dependencies",
+            "top_level_key_count": len(payload),
+            "candidate_count": len(diagnostic_keys),
+            "retained_count": len(retained_keys),
+            "safe_to_remove_count": 0,
+            "retained_top_level_keys": retained_keys,
+            "safe_to_remove_keys": [],
+            "boundary": (
+                "No raw top-level diagnostic key is removed until all referencing "
+                "checkers, automations, mirrors, and diagnostics have migrated."
+            ),
+        },
         "boundary": (
             "Diagnostics are read-only audit surfaces for the drawer. They preserve "
             "current checker dependencies and cannot change trading authority."

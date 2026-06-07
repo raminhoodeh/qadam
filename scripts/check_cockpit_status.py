@@ -2058,6 +2058,7 @@ DIAGNOSTICS_REQUIRED_FIELDS = {
     "governance_forum",
     "kill_switch_ledger",
     "process_console",
+    "prune_audit",
     "prune_candidates",
     "schema_version",
     "source_heartbeat_history",
@@ -8078,6 +8079,51 @@ def main() -> int:
     ):
         if expected_diagnostic not in diagnostics.get("audit_sections", {}):
             print(f"cockpit_status_diagnostics_section_missing={expected_diagnostic}")
+            return 1
+    prune_candidates = diagnostics.get("prune_candidates", [])
+    prune_audit = diagnostics.get("prune_audit", {})
+    if not isinstance(prune_candidates, list) or not prune_candidates:
+        print("cockpit_status_diagnostics_prune_candidates_invalid=true")
+        return 1
+    if not isinstance(prune_audit, dict) or not prune_audit:
+        print("cockpit_status_diagnostics_prune_audit_invalid=true")
+        return 1
+    if prune_audit.get("status") != "retained_due_to_active_dependencies":
+        print("cockpit_status_diagnostics_prune_audit_status_mismatch=true")
+        return 1
+    retained_entries = prune_audit.get("retained_top_level_keys", [])
+    if not isinstance(retained_entries, list) or not retained_entries:
+        print("cockpit_status_diagnostics_prune_audit_retained_invalid=true")
+        return 1
+    retained_keys = [entry.get("key") for entry in retained_entries if isinstance(entry, dict)]
+    if retained_keys != prune_candidates:
+        print("cockpit_status_diagnostics_prune_audit_retained_mismatch=true")
+        return 1
+    if prune_audit.get("candidate_count") != len(prune_candidates):
+        print("cockpit_status_diagnostics_prune_audit_candidate_count_mismatch=true")
+        return 1
+    if prune_audit.get("retained_count") != len(retained_entries):
+        print("cockpit_status_diagnostics_prune_audit_retained_count_mismatch=true")
+        return 1
+    if prune_audit.get("safe_to_remove_count") != 0 or prune_audit.get("safe_to_remove_keys") != []:
+        print("cockpit_status_diagnostics_prune_audit_safe_remove_without_proof=true")
+        return 1
+    for entry in retained_entries:
+        if not isinstance(entry, dict):
+            print("cockpit_status_diagnostics_prune_audit_entry_invalid=true")
+            return 1
+        for required_field in (
+            "key",
+            "migration_status",
+            "retention_reason",
+            "dependent_surfaces",
+            "namespace_shadow",
+        ):
+            if required_field not in entry:
+                print(f"cockpit_status_diagnostics_prune_audit_entry_field_missing={required_field}")
+                return 1
+        if not entry.get("dependent_surfaces"):
+            print(f"cockpit_status_diagnostics_prune_audit_dependency_missing={entry.get('key')}")
             return 1
     mission_brief = mission.get("mission_brief", {})
     missing_mission_brief_fields = sorted(MISSION_BRIEF_REQUIRED_FIELDS - set(mission_brief))

@@ -109,6 +109,14 @@ function assertGuideConcepts() {
     includesAll(guideDoc, [
         "Start in the Overview view.",
         "Safety Status",
+        "six founder decision",
+        "System/team map",
+        "Sources",
+        "Strategy",
+        "Portfolio",
+        "Trades",
+        "Thinking",
+        "Diagnostics are not a seventh operating block",
         "Overview's health readout and mini-map",
         "Open Evidence",
         "Open Reasoning",
@@ -123,6 +131,14 @@ function assertGuideConcepts() {
     includesAll(guideHtml, [
         "Start in the Overview view.",
         "Safety Status",
+        "six founder decision blocks",
+        "System/team map",
+        "Sources",
+        "Strategy",
+        "Portfolio",
+        "Trades",
+        "Thinking",
+        "Diagnostics are not a seventh operating block",
         "Overview's health readout and mini-map",
         "Open Evidence",
         "Open Reasoning",
@@ -149,6 +165,8 @@ function assertPlanAndChecks() {
         "Evidence view",
         "Reasoning view",
         "Operations view",
+        "Six Founder Decision Blocks",
+        "five primary views",
         "guide HTML still tells users to hunt old panel"
     ], "protected guide checker alignment");
     includesAll(d11mCheck, [

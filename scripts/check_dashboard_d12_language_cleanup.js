@@ -89,8 +89,8 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260607-cc7-visual-a11y",
-        "/dashboard.js?v=20260607-cc7-visual-a11y",
+        "/auth.css?v=20260607-cc8-prune-docs",
+        "/dashboard.js?v=20260607-cc8-prune-docs",
         "Qadam paper trading dashboard",
         "Paper Trading Overview",
         "Safety status",
@@ -159,7 +159,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260607-cc7-visual-a11y");
+    console.log("dashboard_d12_cache_key=20260607-cc8-prune-docs");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

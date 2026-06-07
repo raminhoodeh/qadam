@@ -152,8 +152,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260607-cc7-visual-a11y",
-    "/dashboard.js?v=20260607-cc7-visual-a11y",
+    "/auth.css?v=20260607-cc8-prune-docs",
+    "/dashboard.js?v=20260607-cc8-prune-docs",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links"
 ], "dashboard cache keys");
