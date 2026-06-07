@@ -1492,7 +1492,7 @@ function tradeLifecycleRecord(kind, item = {}, index = 0, options = {}) {
         risk_decision: firstPresent(item.risk_state, item.blocked_reason, item.status, options.risk_decision, "not reviewed"),
         broker_receipt_status: options.broker_receipt_status || "not present",
         references: options.references || [],
-        boundary: firstPresent(item.boundary, options.boundary, "Lifecycle display is read-only. A trade idea is not an order.")
+        boundary: firstPresent(item.boundary, options.boundary, "Lifecycle display is read-only. Trade ideas stay candidates until gated paper-order records exist.")
     };
 }
 
@@ -1695,7 +1695,7 @@ function buildTradesModel(status = {}, sharedModels = {}) {
         empty_state: observed.length || candidates.length || submittedLifecycle.length || openPositions.length || closedTrades.length
             ? null
             : dashboardModelEmptyState("normal_no_trade"),
-        boundary: tradeLayer.boundary || "A trade idea is not an order. Live capital stays disabled; only explicit paper trade state counts."
+        boundary: tradeLayer.boundary || "Trade ideas stay candidates until gated paper-order records exist. Live capital stays disabled; only explicit paper trade state counts."
     };
 }
 
@@ -3697,7 +3697,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             health: operations.system_connectivity_model.authority_violations.length ? "blocked" : "online"
         },
         system_summary: "Live data -> Qadam Orchestrator -> model research -> quant/risk checks -> paper trading -> learning loop.",
-        scope_note: "Safety Status is the authority summary. Overview only answers what changed and where to review next.",
+        scope_note: "Mission Control shows readable state first; Diagnostics keeps raw evidence.",
         model_dependencies: {
             sources_model: sources.id || "sources",
             trades_model: trades.id || "trades",
@@ -6101,7 +6101,7 @@ function fallbackMissionControl(status, source) {
             broker_write_allowed: false,
             forbidden_action_count: asArray(status.forbidden_actions).length,
             hard_blocks: asArray(status.forbidden_actions).map((item) => item.action || item.key || "blocked action"),
-            boundary: "Mission control is read-only. It cannot approve, place, modify, resize, close, or fund trades."
+            boundary: "This is read-only mission control: it cannot approve trades, broker writes, position changes, funding, or live capital changes."
         }
     };
 }
@@ -6138,7 +6138,7 @@ function renderMissionControl(status, source) {
                 ${renderMetric("Replay", `${durable.replayed_source_count || 0}/${durable.expected_source_count || 0}`)}
                 ${renderMetric("Safety", safety.live_capital_enabled ? "live enabled" : "live disabled")}
             </div>
-            <p class="mini">${htmlText(safety.boundary, "Mission control is read-only.")}</p>
+            <p class="mini">${htmlText(safety.boundary, "This is read-only mission control: it cannot approve trades or broker writes.")}</p>
         `;
     }
 
@@ -7205,7 +7205,7 @@ function renderContractThinkingBlock(thinking = {}) {
     return `
         <div data-cc5-contract-source="mission_control">
             <div class="overview-section-head">
-                <span>Qadam's thoughts</span>
+            <span>Reasoning queue</span>
                 <strong>${htmlText(thinking.phase2_mode || thinking.status, "Research-only reasoning")}</strong>
             </div>
             <ol class="overview-thought-list">
@@ -7237,10 +7237,10 @@ function renderOverviewFirstScreen(viewModels) {
         const safety = contract.safety || {};
         missionBriefTarget.innerHTML = `
             <div class="overview-section-head">
-                <span>Mission Control brief</span>
+                <span>Founder brief</span>
                 <strong>${htmlText(contract.headline)}</strong>
             </div>
-            <p>Default dashboard view is rendered from the sanitized <strong>mission_control</strong> founder contract. Diagnostics retains raw technical detail.</p>
+            <p>Sanitized founder contract: sources, strategy, portfolio, trades, reasoning, and safety state. Diagnostics keeps raw technical evidence.</p>
             <div class="overview-mission-metrics">
                 ${renderOverviewMissionMetric({ label: "Contract", value: contract.source })}
                 ${renderOverviewMissionMetric({ label: "Generated", value: formatTime(contract.generated_at) })}
@@ -7314,8 +7314,8 @@ function renderOverviewFirstScreen(viewModels) {
 	    if (oversight) {
 	        oversight.innerHTML = `
 	            <span>Fund Manager oversight</span>
-            <strong>You supervise Qadam</strong>
-            <p>Live data -> Python COO -> Local LLM -> Strategy Lead -> Head of Quant -> risk gate -> paper trade lifecycle -> learning loop.</p>
+            <strong>Human oversight</strong>
+            <p>Live data -> Python COO -> Local LLM -> Strategy Lead -> Head of Quant -> risk gate -> paper lifecycle -> learning loop.</p>
 	        `;
 	    }
 	
@@ -7352,7 +7352,7 @@ function renderOverviewFirstScreen(viewModels) {
     if (boundary) {
         boundary.innerHTML = `
             <span>How to read this</span>
-            <p>${htmlText(contract.safety?.boundary || "Safety Status is the authority summary.")} A trade idea is not an order.</p>
+            <p>${htmlText(contract.safety?.boundary || "This is read-only mission control: it cannot approve trades or broker writes.")} Trade ideas stay candidates until gated paper-order records exist.</p>
         `;
     }
 
@@ -7463,7 +7463,7 @@ function renderTradeLifecycleWorkspace(model) {
                 <div>
                     <p class="label">Trades workspace</p>
                     <h3>Trade lifecycle board</h3>
-                    <p>${htmlText(model.summary)} ${htmlText(model.boundary)} A trade idea is not an order.</p>
+                    <p>${htmlText(model.summary)} ${htmlText(model.boundary)} Trade ideas stay candidates until gated paper-order records exist.</p>
                 </div>
                 <div class="trade-lifecycle-safety">
                     <strong>Verified performance only</strong>
@@ -10056,7 +10056,7 @@ function renderTrades(status, viewModels = {}) {
             <div>
                 <p class="label">Consolidated trade readout</p>
                 <h3>${htmlText(tradesModel.summary)}</h3>
-                <p>${htmlText(tradeLayer.boundary, "No broker order path exists. A trade idea is not an order.")}</p>
+                <p>${htmlText(tradeLayer.boundary, "No broker order path exists. Trade ideas stay candidates until gated paper-order records exist.")}</p>
             </div>
             <div class="trade-consolidated-metrics">
                 ${renderMetric("Observed signals", observedSignals.length)}
