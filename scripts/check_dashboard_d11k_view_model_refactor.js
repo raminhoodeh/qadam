@@ -73,12 +73,13 @@ function main() {
     const models = window.buildQadamDashboardViewModels(status, { key: "live_bridge" });
 
     assert(models.schema_version === "dashboard_view_models.v1", "schema compatibility changed");
-    assert(models.model_contract_version === "dashboard_view_models.d11k.shared_bundle.v1", "D11K model contract missing");
+    assert(models.model_contract_version === "dashboard_view_models.cc5.founder_contract.v1", "D11K model contract missing");
     assert(models.model_graph?.contract === "single_shared_dashboard_view_model_bundle", "model graph contract missing");
     assert(models.model_graph?.renderer_entrypoint === "renderQadamDashboardStatus", "model graph renderer entrypoint missing");
     assert(models.model_graph?.renderer_uses_shared_bundle === true, "renderer shared-bundle flag missing");
 
     includesAll(JSON.stringify(models.model_graph), [
+        "founder_contract_model",
         "sources_model",
         "trades_model",
         "reasoning_model",
@@ -114,7 +115,7 @@ function main() {
         "const connectivity = sharedModels.system_connectivity_model || buildSystemConnectivityModel(status);",
         "const governance = sharedModels.governance_model || buildGovernanceModel(status);",
         "function buildOverviewModel(status = {}, source = {}, sharedOperations = null, sharedModels = {})",
-        "model_contract_version: \"dashboard_view_models.d11k.shared_bundle.v1\"",
+        "model_contract_version: \"dashboard_view_models.cc5.founder_contract.v1\"",
         "model_graph: modelGraph",
         "function renderWatching(status, viewModels = {})",
         "function renderCognition(status, viewModels = {})",
@@ -139,8 +140,8 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260606-cc4-system-map",
-        "/dashboard.js?v=20260606-cc4-system-map"
+        "/auth.css?v=20260607-cc5-contract-renderer",
+        "/dashboard.js?v=20260607-cc5-contract-renderer"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");

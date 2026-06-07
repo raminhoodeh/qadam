@@ -133,19 +133,10 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam watching?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam thinking about next?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam forbidden from doing?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Which trades are candidates or blocked?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What has Qadam traded on paper?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is the portfolio worth?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Why is Qadam blocked or waiting?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Next Chief Operating Officer action");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Open relevant view");
-    assert(
-        html(rendered, "[data-overview-mission-brief]").includes("<details"),
-        "RS-8 Mission Brief must render clickable details cards"
-    );
+    assertIncludes(rendered, "[data-overview-mission-brief]", "mission_control");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Authority state");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Paper-only, read-only");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission control is read-only");
     assert(
         !html(rendered, "[data-overview-mission-brief]").includes("hover"),
         "RS-8 Mission Brief should not rely on hover instructions"

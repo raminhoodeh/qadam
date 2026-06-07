@@ -100,13 +100,20 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
 
 [
     "renderOverviewFirstScreen",
+    "renderContractTeamMap",
+    "renderContractStrategyNarrative",
+    "renderContractStrategyBlock",
+    "renderContractPortfolioBlock",
+    "renderContractTradeBoard",
+    "renderContractThinkingBlock",
+    "founder_contract_model",
     "Fund Manager oversight",
-    "Python script",
+    "Chief Operating Officer",
     "Local LLM",
     "Frontier LLM",
-    "Quantum computer",
+    "Head of Quant",
     "overview-source-ledger",
-    "overview-strategy-ledger",
+    "data-cc5-contract-source",
     "A trade idea is not an order"
 ].forEach((needle) => assert(renderer.includes(needle), `Overview renderer missing ${needle}`));
 

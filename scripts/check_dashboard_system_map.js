@@ -64,23 +64,17 @@ async function main() {
 	    assert((overviewMapHtml.match(/class="system-flow-diagram/g) || []).length === 1, "Overview should render exactly one canonical system-flow-diagram");
 	    assert(!operationsHtml.includes("operations-flow-diagram"), "Operations should not render a duplicate operations-flow-diagram");
 	    [
-		        "Observation",
+        "Qadam operating team",
+        "mission_control",
 	        "How to read this node",
-	        "Event Log",
-	        "Secure Live Bridge",
+        "Intelligence Pipelines",
+        "Chief Operating Officer",
 	        "Research Analyst",
         "Strategy Lead",
-        "Signal Integrity Gate",
-	        "Risk gate",
-        "Execution Policy",
-        "Staged Order Contract",
-        "Broker Reconciliation",
-        "Paper Submit Receipt",
-	        "Trade lifecycle",
-	        "Paper Account Mirror",
-	        "Learning loop",
-	        "Telegram Bot / Notifier",
-	        "Fund Manager Forum",
+        "Head of Quant",
+        "Safety Policy",
+        "Paper/Demo State",
+        "Learning Review",
 	        "Closed-loop rule",
 		        "Boundary",
 		        "Watch for",
@@ -93,7 +87,7 @@ async function main() {
 	        "Open the Overview tab for the single canonical node-by-node system map",
 		        "OK - live capital off"
 	    ].forEach((needle) => assertIncludes(rendered, "[data-flow-map]", needle));
-	    ["COO", "Research Analyst", "Strategy Lead", "Head of Quant", "Risk Agent", "PaperOps"].forEach((needle) => {
+	    ["Chief Operating Officer", "Research Analyst", "Strategy Lead", "Head of Quant", "Safety Policy", "PaperOps"].forEach((needle) => {
 	        assertIncludes(rendered, "[data-team-health-row]", needle);
 	    });
 

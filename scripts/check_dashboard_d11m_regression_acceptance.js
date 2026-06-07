@@ -185,8 +185,10 @@ async function assertRenderedDashboardContract() {
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
         ["[data-overview-mission-brief]", "Mission Control brief"],
-        ["[data-overview-strategy-narrative]", "Trading strategy narrative"],
-        ["[data-overview-boundary-rail]", "Safety Status is the authority summary"],
+        ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
+        ["[data-overview-boundary-rail]", "Mission control is read-only"],
+        ["[data-overview-boundary-rail]", "It cannot approve, place, modify, resize, close, or fund trades"],
+        ["[data-overview-boundary-rail]", "A trade idea is not an order"],
         ["[data-trade-layer]", "Trade lifecycle board"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-trade-layer]", "Paper trade lifecycle"],
@@ -231,8 +233,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260606-cc4-system-map",
-        "/dashboard.js?v=20260606-cc4-system-map"
+        "/auth.css?v=20260607-cc5-contract-renderer",
+        "/dashboard.js?v=20260607-cc5-contract-renderer"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

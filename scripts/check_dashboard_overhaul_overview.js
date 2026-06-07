@@ -117,24 +117,30 @@ async function main() {
 
     includesAll(renderer, [
         "function renderOverviewFirstScreen",
-        "function renderOverviewMissionQuestion",
-        "overview.mission_brief",
-        "function renderOverviewStrategyNarrative",
-        "overview.trading_strategies",
-        "overview.system_status",
-        "overview.data_sources_connected",
-        "overview.trading_strategies",
-        "overview.thought_feed",
-        "overview.trade_considerations",
-        "overview.paper_capacity",
+        "function renderContractTeamMap",
+        "function renderContractStrategyNarrative",
+        "function renderContractStrategyBlock",
+        "function renderContractPortfolioBlock",
+        "function renderContractTradeBoard",
+        "function renderContractThinkingBlock",
+        "founder_contract_model",
+        "data-cc5-contract-source",
         "OVERVIEW_NODE_LABELS",
         "Fund Manager oversight",
         "overview-source-ledger",
-        "overview-strategy-ledger"
+        "mission_control"
     ], "Overview renderer");
 
     const models = buildModels();
     const overview = models.overview_model;
+    const contract = models.founder_contract_model;
+    assert(contract.source === "mission_control", "Overview should expose the founder contract model");
+    assert(contract.team.length >= 6, "Founder contract should expose team health nodes");
+    assert(contract.sources.ledger.length >= 20, "Founder contract should expose source ledger");
+    assert(contract.strategy.active_lens.name, "Founder contract should expose active strategy lens");
+    assert(contract.portfolio.equity_curve.length >= 1, "Founder contract should expose paper portfolio line");
+    assert(contract.trades.board.length >= 1, "Founder contract should expose trade lifecycle board");
+    assert(contract.thinking.research_goal_active_count >= 1, "Founder contract should expose research goals");
     assert(overview.id === "overview", "Overview model id mismatch");
     assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
     assert(overview.mission_brief.questions.length === 7, "Overview Mission Brief must expose seven questions");
@@ -160,33 +166,31 @@ async function main() {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "Paper-only readout · live capital off");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam watching?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is Qadam forbidden from doing?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "What is the portfolio worth?");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Next Chief Operating Officer action");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Open relevant view");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Trading strategy narrative");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "mission_control");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Authority state");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber method");
     assertIncludes(rendered, "[data-overview-system-status]", "System status");
-    assertIncludes(rendered, "[data-overview-system-status]", "Paper trading");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper capacity");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper capacity");
+    assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
     assertIncludes(rendered, "[data-overview-oversight]", "You supervise Qadam");
-    assertIncludes(rendered, "[data-overview-oversight]", "Qadam Orchestrator");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Python script");
+    assertIncludes(rendered, "[data-overview-oversight]", "Python COO");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Chief Operating Officer");
     assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Quantum computer");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Safety Status is the authority summary");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Head of Quant");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "Mission control is read-only");
     assertIncludes(rendered, "[data-overview-boundary-rail]", "A trade idea is not an order");
     assertIncludes(rendered, "[data-overview-data-sources]", "Data sources connected");
-    assertIncludes(rendered, "[data-overview-data-sources]", "Markets, broker, and prediction markets");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategies");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
+    assertIncludes(rendered, "[data-overview-data-sources]", "mission_control");
+    assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategy");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Akber filter");
     assertIncludes(rendered, "[data-overview-thought-feed]", "Qadam's thoughts");
-    assertIncludes(rendered, "[data-overview-thought-feed]", "Head of Quant");
+    assertIncludes(rendered, "[data-overview-thought-feed]", "Worldview prior");
     assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
-    assertIncludes(rendered, "[data-overview-trade-considerations]", "Candidate, not order");
+    assertIncludes(rendered, "[data-overview-trade-considerations]", "USO options watch");
 
     const overviewText = [
         html(rendered, "[data-overview-mission-brief]"),

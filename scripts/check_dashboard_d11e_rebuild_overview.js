@@ -100,7 +100,7 @@ async function main() {
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "20260606-cc4-system-map"
+        "20260607-cc5-contract-renderer"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -131,23 +131,29 @@ async function main() {
     ], "D11E overview CSS");
 
     includesAll(renderer, [
-        "mission_brief",
-        "renderOverviewStrategyNarrative",
-        "system_status",
-        "data_sources_connected",
-        "trading_strategies",
-        "thought_feed",
-        "trade_considerations",
-        "paper_capacity",
+        "founder_contract_model",
+        "renderContractTeamMap",
+        "renderContractStrategyNarrative",
+        "renderContractStrategyBlock",
+        "renderContractPortfolioBlock",
+        "renderContractTradeBoard",
+        "renderContractThinkingBlock",
         "function renderOverviewCapacityChart",
         "overview-source-ledger",
-        "overview-strategy-ledger"
+        "data-cc5-contract-source"
     ], "D11E overview renderer");
 
     const window = loadRendererWindow();
     assert(typeof window.buildQadamDashboardViewModels === "function", "view-model builder missing");
     const models = window.buildQadamDashboardViewModels(status, { key: "live_bridge" });
     const overview = models.overview_model;
+    const contract = models.founder_contract_model;
+    assert(contract.source === "mission_control", "D11E successor must expose founder contract");
+    assert(contract.team.length >= 6, "Founder contract should expose operating team");
+    assert(contract.sources.ledger.length >= 20, "Founder contract should expose source ledger");
+    assert(contract.portfolio.equity_curve.length >= 1, "Founder contract should expose portfolio line");
+    assert(contract.trades.board.length >= 1, "Founder contract should expose trade board");
+    assert(contract.thinking.research_goal_active_count >= 1, "Founder contract should expose research goals");
     assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
     assert(overview.mission_brief.authority.live_capital_enabled === false, "Overview Mission Brief must keep live capital disabled");
     assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
@@ -177,65 +183,62 @@ async function main() {
 
     includesAll(missionBrief, [
         "Mission Control brief",
-        "What is Qadam watching?",
-        "What is Qadam forbidden from doing?",
-        "What is the portfolio worth?",
-        "Next Chief Operating Officer action"
+        "mission_control",
+        "Authority state",
+        "Paper-only, read-only"
     ], "rendered D11E Mission Control brief");
 
     includesAll(strategyNarrative, [
-        "Trading strategy narrative",
+        "Second-order AI infrastructure beneficiary lens",
         "Akber",
-        "Data sources currently shaping the posture"
+        "Worldview role"
     ], "rendered D11E strategy narrative");
 
     includesAll(systemStatus, [
         "System status",
-        "Paper trading",
-        "Read-only bridge",
-        "Trade desk"
+        "Plain-language mission state",
+        "Data sources",
+        "Trade lifecycle"
     ], "rendered D11E system status");
 
     includesAll(paperCapacity, [
-        "Paper capacity",
-        "toward £200,000",
+        "Paper portfolio",
+        "mirror",
         "data-paper-capacity-line",
         "P&amp;L"
     ], "rendered D11E paper capacity");
 
     includesAll(dataSources, [
         "Data sources connected",
-        "Conflict and geopolitics",
-        "Markets, broker, and prediction markets"
+        "mission_control",
+        "ACLED API"
     ], "rendered D11E data sources");
 
     includesAll(strategies, [
-        "Trading strategies",
-        "Crude Oil Energy Security Disruption",
-        "Silver Macro Liquidity Stress",
-        "Active for paper research"
+        "Trading strategy",
+        "Akber filter",
+        "Signal Integrity Gate"
     ], "rendered D11E trading strategies");
 
     includesAll(thoughtFeed, [
         "Qadam's thoughts",
-        "Current reasoning feed",
-        "Research Analyst",
-        "Head of Quant"
+        "Research goals",
+        "Worldview prior"
     ], "rendered D11E thought feed");
 
     includesAll(tradeConsiderations, [
         "Trades being considered",
-        "Observed signal",
-        "Candidate, not order",
+        "observed",
+        "candidate",
         "USO options watch"
     ], "rendered D11E trade considerations");
 
     includesAll(system, [
         "You supervise Qadam",
-        "Python script",
+        "Chief Operating Officer",
         "Local LLM",
         "Frontier LLM",
-        "Quantum computer",
+        "Head of Quant",
         "A trade idea is not an order"
     ], "rendered D11E compact system map");
 

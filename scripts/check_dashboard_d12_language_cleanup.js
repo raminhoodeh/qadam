@@ -89,8 +89,8 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260606-cc4-system-map",
-        "/dashboard.js?v=20260606-cc4-system-map",
+        "/auth.css?v=20260607-cc5-contract-renderer",
+        "/dashboard.js?v=20260607-cc5-contract-renderer",
         "Qadam paper trading dashboard",
         "Paper Trading Overview",
         "Safety status",
@@ -103,9 +103,9 @@ async function main() {
     includesAll(renderer, [
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "Paper growth maturity requires verified records",
-        "Safety Status is the authority summary",
-        "Current summary",
-        "Potential setups",
+        "Mission control is read-only",
+        "What Qadam is choosing now",
+        "buildFounderContractModel",
         "Trade ideas",
         "Python records the system"
     ], "D12 renderer copy");
@@ -141,9 +141,12 @@ async function main() {
 
     includesAll(overviewText, [
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
-        "toward £200,000",
-        "What is Qadam watching?",
+        "Paper portfolio",
+        "Total P&L",
         "Mission Control brief",
+        "mission_control",
+        "Authority state",
+        "Paper-only, read-only",
         "Trades being considered",
         "A trade idea is not an order"
     ], "D12 rendered overview");
@@ -155,7 +158,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260606-cc4-system-map");
+    console.log("dashboard_d12_cache_key=20260607-cc5-contract-renderer");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

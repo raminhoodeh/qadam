@@ -196,6 +196,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 - Rewrite the render entrypoint to consume `mission_control` and render the seven blocks in order. Collapse the 17 `build*` functions to ~6 (`team`, `sources`, `strategy`, `portfolio`, `trades`, `thinking`) + `diagnostics`. Delete the Overview/detail duplication and the view-switcher logic from the default path.
 - Keep `fetchDashboardStatus`, currency, time, and status-tone helpers.
 - **Done when:** every block reads its single contract slice; no value is rendered twice; `dashboard.js` materially smaller; no console errors against a live snapshot.
+- **Status:** completed for the default founder view. `dashboard.js` now builds `founder_contract_model` from `mission_control` and renders the default Overview through seven contract-backed blocks: Mission Control brief, operating team map, source ledger, strategy narrative/ledger, paper portfolio line, trade lifecycle board, and thinking feed. Legacy raw-derived models remain exported for Diagnostics and checker compatibility until CC8 pruning.
 
 ### CC6 — Real portfolio timeline *(JS/CSS)*
 - Render `capital.equity_curve` (20 live points) as an inline SVG sparkline using existing `--green/--coral` tokens and the present `.chart-*` classes; show balance, Δ%, drawdown, realized/unrealized, `closed/target`, and a **stale-mirror** badge driven by `mirror_freshness_status` (currently `stale`).

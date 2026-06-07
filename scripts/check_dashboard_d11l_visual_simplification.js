@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260606-cc4-system-map",
-        "/dashboard.js?v=20260606-cc4-system-map"
+        "/auth.css?v=20260607-cc5-contract-renderer",
+        "/dashboard.js?v=20260607-cc5-contract-renderer"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -118,7 +118,7 @@ async function main() {
     assert(fs.existsSync(auditPath), "D11L audit document missing");
 
     includesAll(renderer, [
-        "model_contract_version: \"dashboard_view_models.d11k.shared_bundle.v1\"",
+        "model_contract_version: \"dashboard_view_models.cc5.founder_contract.v1\"",
         "renderDashboardSafetyStrip(status, viewModels)",
         "renderCapital(status, viewModels)"
     ], "D11L renderer authority continuity");
@@ -128,7 +128,7 @@ async function main() {
         ["[data-dashboard-safety-strip]", "Safety locked: paper-only readout"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-overview-mission-brief]", "Mission Control brief"],
-        ["[data-overview-strategy-narrative]", "Trading strategy narrative"],
+        ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-source-summary]", "Sources"],
         ["[data-cognition]", "Reasoning readout"],
@@ -143,7 +143,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260606-cc4-system-map");
+    console.log("dashboard_d11l_cache_key=20260607-cc5-contract-renderer");
     console.log("dashboard_authority_unchanged=True");
 }
 

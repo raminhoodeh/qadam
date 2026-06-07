@@ -69,6 +69,7 @@ function build(window, snapshot, source = { key: "live_bridge" }) {
 
 function assertModelShape(models) {
     [
+        "founder_contract_model",
         "overview_model",
         "trades_model",
         "sources_model",
@@ -82,11 +83,18 @@ function assertModelShape(models) {
     ].forEach((key) => assert(models[key], `view model missing ${key}`));
 
     assert(models.schema_version === "dashboard_view_models.v1", "wrong dashboard view-model schema version");
-    assert(models.model_contract_version === "dashboard_view_models.d11k.shared_bundle.v1", "wrong dashboard view-model contract version");
+    assert(models.model_contract_version === "dashboard_view_models.cc5.founder_contract.v1", "wrong dashboard view-model contract version");
     assert(models.public_safe === true, "view models must be public safe");
     assert(models.authority_boundary.includes("read-only projections"), "view-model authority boundary missing");
     assert(models.model_graph?.contract === "single_shared_dashboard_view_model_bundle", "view-model graph missing shared-bundle contract");
     assert(models.model_graph?.renderer_uses_shared_bundle === true, "view-model graph must require shared renderer bundle");
+    assert(models.founder_contract_model.source === "mission_control", "Founder contract model must read mission_control");
+    assert(models.founder_contract_model.team.length >= 6, "Founder contract model should expose team nodes");
+    assert(models.founder_contract_model.sources.ledger.length >= 20, "Founder contract model should expose source ledger");
+    assert(models.founder_contract_model.sources.signal_review_eligible >= 1, "Founder contract model should expose signal-review eligible sources");
+    assert(models.founder_contract_model.portfolio.equity_curve.length >= 1, "Founder contract model should expose paper portfolio timeline");
+    assert(models.founder_contract_model.trades.board.length >= 1, "Founder contract model should expose trade lifecycle board");
+    assert(models.founder_contract_model.thinking.research_goal_active_count >= 1, "Founder contract model should expose research goals");
     assert(models.overview_model.cards.length <= 4, "Overview model should expose a compact first-screen readout set");
     assert(models.overview_model.readouts.length === 4, "Overview model should expose exactly four readouts");
     assert(models.overview_model.status_chips.length === 6, "Overview model should expose six compact status chips");

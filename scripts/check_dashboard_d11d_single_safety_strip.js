@@ -156,7 +156,8 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
     assert(!stripHtml.includes("<dt>Limits</dt>"), "rendered safety strip still contains Limits row");
 
     includesAll(overviewBoundaryHtml, [
-        "Safety Status is the authority summary",
+        "Mission control is read-only",
+        "It cannot approve, place, modify, resize, close, or fund trades",
         "A trade idea is not an order"
     ], "overview safety reference");
     assert(!overviewBoundaryHtml.includes("Broker writes blocked"), "overview still duplicates broker-write safety copy");

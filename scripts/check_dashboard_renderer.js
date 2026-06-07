@@ -245,12 +245,13 @@ async function main() {
     assertIncludes(rendered, "[data-phase4-strategy]", "No certification blockers exported");
     assertIncludes(rendered, "[data-phase4-strategy]", "No execution");
     assertIncludes(rendered, "[data-phase4-strategy]", "Yahoo Finance supplemental");
-    assertIncludes(rendered, "[data-team-health-row]", "COO");
+    assertIncludes(rendered, "[data-team-health-row]", "Chief Operating Officer");
     assertIncludes(rendered, "[data-team-health-row]", "Research Analyst");
     assertIncludes(rendered, "[data-team-health-row]", "PaperOps");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Live data feeds");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Secure Live Bridge");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Trade lifecycle");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Qadam operating team");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Chief Operating Officer");
+    assertIncludes(rendered, "[data-overview-mini-map]", "Paper/Demo State");
+    assertIncludes(rendered, "[data-overview-mini-map]", "mission_control");
     assertIncludes(rendered, "[data-overview-mini-map]", "What it does");
     assertIncludes(rendered, "[data-overview-mini-map]", "Boundary");
     assertIncludes(rendered, "[data-flow-map]", "Q5-13 Functional System Map Dashboard");
@@ -301,12 +302,18 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mini-map]", "Strategy Lead");
     assertIncludes(rendered, "[data-overview-mini-map]", "Currently");
     assertIncludes(rendered, "[data-overview-mini-map]", "Next handoff");
-    assertIncludes(rendered, "[data-overview-data-sources]", "Click to expand the full source list");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "mission_control");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
+    assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
+    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");
+    assertIncludes(rendered, "[data-overview-data-sources]", "mission_control");
     assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
     assertIncludes(rendered, "[data-overview-data-sources]", "FRED API");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Click to expand every strategy family");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "no broker write");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Click to see universe");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Akber filter");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Signal Integrity Gate");
+    assertIncludes(rendered, "[data-overview-thought-feed]", "Worldview prior");
+    assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
     assertIncludes(rendered, "[data-trade-layer]", "Signal Review");
     assertIncludes(rendered, "[data-trade-layer]", "Decision chain");
     assertIncludes(rendered, "[data-trade-layer]", "Governance comment");
@@ -368,25 +375,14 @@ async function main() {
     assertIncludes(changed, "[data-trade-layer]", "D2-PROBE");
 
     const unsafeStatus = clone(status);
-    unsafeStatus.modules = (unsafeStatus.modules || []).map((module) => (
-        module.key === "yahoo_finance" ? {
-            ...module,
-            key: "yahoo_finance",
-            label: "<script>alert(1)</script>",
-            owner: "Renderer <Probe>",
-            status: "\" onclick=\"bad",
-            current_process: "escaping <must> hold",
-            authority: "read_only"
-        } : module
-    ));
-    unsafeStatus.phase5_system_map = {
-        ...(unsafeStatus.phase5_system_map || {}),
-        nodes: (unsafeStatus.phase5_system_map?.nodes || []).map((node) => (
-	            node.key === "yahoo_finance" ? {
+    unsafeStatus.mission_control = {
+        ...(unsafeStatus.mission_control || {}),
+        team: (unsafeStatus.mission_control?.team || []).map((node) => (
+            node.key === "coo" ? {
                 ...node,
                 label: "<script>alert(1)</script>",
-                role: "Renderer <Probe>",
-                display_status: "\" onclick=\"bad",
+                owner: "Renderer <Probe>",
+                status: "\" onclick=\"bad",
                 current_process: "escaping <must> hold",
                 authority: "read_only"
             } : node
