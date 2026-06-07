@@ -380,12 +380,15 @@ function setDashboardDebugControls(enabled) {
     document.querySelectorAll("[data-dashboard-debug-toggle]").forEach((button) => {
         button.setAttribute("aria-pressed", enabled ? "true" : "false");
         button.setAttribute("aria-expanded", enabled ? "true" : "false");
+        button.setAttribute("aria-label", enabled ? "Hide diagnostics navigation" : "Show diagnostics navigation");
         button.classList.toggle("active", enabled);
         button.textContent = enabled ? "Hide diagnostics" : "Diagnostics";
     });
     document.querySelectorAll("[data-dashboard-advanced-links]").forEach((links) => {
         links.hidden = !enabled;
         links.setAttribute("aria-hidden", enabled ? "false" : "true");
+        links.setAttribute("role", "region");
+        links.setAttribute("aria-label", "Diagnostics navigation");
     });
 }
 
@@ -503,6 +506,19 @@ function initCockpitNavigation() {
             }
             activateDashboardView(viewId);
         });
+
+        link.addEventListener("keydown", (event) => {
+            const key = event?.key;
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(key)) return;
+            event.preventDefault();
+            const currentIndex = links.indexOf(link);
+            let nextIndex = currentIndex;
+            if (key === "ArrowLeft") nextIndex = Math.max(0, currentIndex - 1);
+            if (key === "ArrowRight") nextIndex = Math.min(links.length - 1, currentIndex + 1);
+            if (key === "Home") nextIndex = 0;
+            if (key === "End") nextIndex = links.length - 1;
+            links[nextIndex]?.focus?.();
+        });
     });
 
     document.querySelectorAll("[data-dashboard-debug-toggle]").forEach((button) => {
@@ -519,6 +535,11 @@ function initCockpitNavigation() {
         });
         window.addEventListener("popstate", () => {
             activateDashboardViewFromHash(window.location?.hash || "", { scroll: true });
+        });
+        window.addEventListener("keydown", (event) => {
+            if (event?.key !== "Escape" || !dashboardDebugModeEnabled()) return;
+            setDashboardDebugMode(false, { persist: true, scroll: false });
+            document.querySelector("[data-dashboard-debug-toggle]")?.focus?.();
         });
     }
 }
@@ -3722,7 +3743,11 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
                     paperAuthorityStatus === "paper_authorized_waiting_for_setup"
                         ? "Paper authorized; waiting for setup"
                         : (
-                            paperAuthorityStatus?.startsWith?.("paper_authorized_ready")
+                            paperAuthorityStatus?.startsWith?.("paper_authorized_ready") || (
+                                paperAuthority.paper_authorized
+                                && !paperSafetyBlockers.length
+                                && !paperOperationalBlockers.length
+                            )
                                 ? "Paper action ready through guarded route"
                                 : "Safety locked: paper-only readout"
                         )
@@ -6497,7 +6522,7 @@ function renderOverviewMiniNode(node, index, total) {
     const connector = index < total - 1 ? `<span class="overview-mini-connector" aria-hidden="true">&rarr;</span>` : "";
     return `
         <details class="overview-mini-node ${statusClass(node.health || node.status)}">
-            <summary aria-controls="${guideId}">
+            <summary aria-controls="${guideId}" aria-describedby="${guideId}">
                 <div class="overview-mini-top">
                     <span class="overview-mini-step">${index + 1}</span>
                     <span class="overview-mini-role">${htmlText(role)}</span>
@@ -6505,7 +6530,7 @@ function renderOverviewMiniNode(node, index, total) {
                 <strong>${htmlText(label)}</strong>
                 <p>${htmlText(node.status)}</p>
             </summary>
-            <div class="overview-mini-guide" id="${guideId}" aria-label="${htmlText(label)} guide">
+            <div class="overview-mini-guide" id="${guideId}" role="group" aria-label="${htmlText(label)} guide">
                 <span>How to read this node</span>
                 <strong>${htmlText(guide.role)}: ${htmlText(guide.label)}</strong>
                 <dl>
