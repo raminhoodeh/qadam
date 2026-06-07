@@ -3830,6 +3830,7 @@ function buildContractSourcePipelines(ledger = []) {
 
 function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) {
     const mission = status.mission_control || fallbackMissionControl(status, source);
+    const capital = status.capital || {};
     const dataSources = mission.data_sources || {};
     const portfolio = mission.portfolio || {};
     const strategy = mission.strategy || {};
@@ -3861,12 +3862,19 @@ function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) 
         order_authority: ledger.filter((item) => item.can_authorize_orders).length
     };
     const lifecycleCounts = trades.lifecycle_counts || {};
-    const equityCurve = asArray(portfolio.equity_curve).map((point) => ({
-        equity_gbp: modelNumber(point.equity_gbp ?? point.balance_gbp ?? point.portfolio_value_gbp, modelNumber(portfolio.current_balance_gbp ?? portfolio.balance_gbp, 0)),
-        observed_at: point.observed_at || portfolio.observed_at || status.generated_at,
+    const rawCapitalCurve = asArray(capital.equity_curve);
+    const rawPortfolioCurve = asArray(portfolio.equity_curve);
+    const rawEquityCurve = rawCapitalCurve.length ? rawCapitalCurve : rawPortfolioCurve;
+    const portfolioBalance = modelNumber(capital.current_balance_gbp ?? portfolio.current_balance_gbp ?? portfolio.balance_gbp, 0);
+    const startingBalance = modelNumber(capital.starting_balance_gbp ?? portfolio.starting_balance_gbp, 0);
+    const derivedDeltaPct = startingBalance ? ((portfolioBalance - startingBalance) / startingBalance) * 100 : 0;
+    const equityCurve = rawEquityCurve.map((point) => ({
+        equity_gbp: modelNumber(point.equity_gbp ?? point.balance_gbp ?? point.portfolio_value_gbp, portfolioBalance),
+        observed_at: point.observed_at || capital.observed_at || portfolio.observed_at || status.generated_at,
         drawdown_pct: modelNumber(point.drawdown_pct, 0)
     }));
-    const portfolioBalance = modelNumber(portfolio.current_balance_gbp ?? portfolio.balance_gbp, 0);
+    const mirrorFreshnessStatus = capital.mirror_freshness_status || portfolio.mirror_freshness_status || portfolio.mirror_freshness || "unknown";
+    const mirrorFreshnessLabel = capital.mirror_freshness_label || portfolio.mirror_freshness_label || portfolio.mirror_freshness || mirrorFreshnessStatus;
     return {
         id: "founder_contract_model",
         source: status.mission_control ? "mission_control" : "mission_control_fallback",
@@ -3919,20 +3927,26 @@ function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) 
             broker: portfolio.broker || "paper broker",
             connection_status: portfolio.connection_status || "pending",
             portfolio_value_source: portfolio.portfolio_value_source || "paper account mirror",
+            timeline_source: rawCapitalCurve.length ? "capital.equity_curve" : (rawPortfolioCurve.length ? "mission_control.portfolio.equity_curve" : "missing"),
+            timeline_status: capital.timeline_status || portfolio.timeline_status || "not exported",
+            starting_balance_gbp: startingBalance,
             balance_gbp: portfolioBalance,
-            delta_pct: modelNumber(portfolio.delta_pct, 0),
-            total_pnl_gbp: modelNumber(portfolio.total_pnl_gbp, 0),
-            realized_pnl_gbp: modelNumber(portfolio.realized_pnl_gbp, 0),
-            unrealized_pnl_gbp: modelNumber(portfolio.unrealized_pnl_gbp, 0),
-            drawdown_pct: modelNumber(portfolio.drawdown_pct, 0),
-            open_position_count: modelNumber(portfolio.open_position_count, asArray(portfolio.open_positions).length),
-            order_count: modelNumber(portfolio.order_count, asArray(portfolio.orders).length),
-            closed_trade_count: modelNumber(portfolio.closed_trade_count, 0),
+            delta_pct: modelNumber(capital.delta_pct ?? portfolio.delta_pct, derivedDeltaPct),
+            total_pnl_gbp: modelNumber(capital.total_pnl_gbp ?? portfolio.total_pnl_gbp, 0),
+            realized_pnl_gbp: modelNumber(capital.realized_pnl_gbp ?? portfolio.realized_pnl_gbp, 0),
+            unrealized_pnl_gbp: modelNumber(capital.unrealized_pnl_gbp ?? portfolio.unrealized_pnl_gbp, 0),
+            drawdown_pct: modelNumber(capital.drawdown_pct ?? portfolio.drawdown_pct, 0),
+            open_position_count: modelNumber(capital.open_position_count ?? portfolio.open_position_count, asArray(portfolio.open_positions).length),
+            order_count: modelNumber(capital.order_count ?? portfolio.order_count, asArray(portfolio.orders).length),
+            closed_trade_count: modelNumber(capital.maturity_closed_trade_count ?? capital.closed_trade_count ?? portfolio.closed_trade_count, 0),
+            maturity_closed_trade_target: modelNumber(capital.maturity_closed_trade_target ?? portfolio.maturity_closed_trade_target, 100),
             postmortem_due_count: modelNumber(portfolio.postmortem_due_count, asArray(trades.postmortems_due).length),
-            mirror_freshness: portfolio.mirror_freshness || portfolio.mirror_freshness_label || "unknown",
+            mirror_freshness_status: mirrorFreshnessStatus,
+            mirror_freshness: mirrorFreshnessLabel,
             equity_curve: equityCurve,
-            open_positions: asArray(portfolio.open_positions),
-            orders: asArray(portfolio.orders),
+            observed_at: capital.observed_at || portfolio.observed_at || status.generated_at,
+            open_positions: asArray(capital.open_positions).length ? asArray(capital.open_positions) : asArray(portfolio.open_positions),
+            orders: asArray(capital.orders).length ? asArray(capital.orders) : asArray(portfolio.orders),
             boundary: portfolio.boundary || "Read-only paper account mirror."
         },
         trades: {
@@ -7025,14 +7039,31 @@ function renderContractStrategyNarrative(contract = {}) {
 }
 
 function renderContractPortfolioBlock(portfolio = {}) {
-    const chartPoints = asArray(portfolio.equity_curve).length
-        ? asArray(portfolio.equity_curve)
-        : paperAccountEquityPoints({
-            current_balance_gbp: portfolio.balance_gbp,
-            equity_gbp: portfolio.balance_gbp,
-            observed_at: portfolio.observed_at,
-            drawdown_pct: portfolio.drawdown_pct
-        });
+    const chartPoints = asArray(portfolio.equity_curve);
+    const freshnessStatus = portfolio.mirror_freshness_status || portfolio.mirror_freshness || "unknown";
+    const freshnessTone = freshnessStatus === "fresh" || freshnessStatus === "live"
+        ? "online"
+        : (freshnessStatus === "stale" || freshnessStatus === "unknown" ? "degraded" : "pending");
+    const freshnessLabel = `${freshnessStatus} mirror`;
+    const closedTarget = `${modelNumber(portfolio.closed_trade_count, 0)}/${modelNumber(portfolio.maturity_closed_trade_target, 100)}`;
+    if (!chartPoints.length) {
+        return `
+            <div class="overview-capacity-chart-card degraded" data-cc6-real-portfolio-timeline="missing" data-cc5-contract-source="mission_control">
+                <div class="overview-section-head">
+                    <span>Real portfolio timeline</span>
+                    <strong>No exported equity-curve points</strong>
+                    ${renderInlineBadge(freshnessLabel, freshnessTone)}
+                </div>
+                <p class="mini">The dashboard is not fabricating portfolio history. Export capital.equity_curve to render the paper-account line.</p>
+                <div class="overview-capacity-summary">
+                    ${renderMetric("Balance", formatMoney(portfolio.balance_gbp))}
+                    ${renderMetric("Delta", formatPercent(portfolio.delta_pct))}
+                    ${renderMetric("Closed/target", closedTarget)}
+                    ${renderMetric("Timeline source", portfolio.timeline_source || "missing")}
+                </div>
+            </div>
+        `;
+    }
     const stats = paperAccountEquityStats(chartPoints);
     const width = 520;
     const height = 150;
@@ -7053,27 +7084,33 @@ function renderContractPortfolioBlock(portfolio = {}) {
     const path = chartPoints
         .map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
         .join(" ");
-    const tone = portfolio.mirror_freshness === "stale" ? "degraded" : "online";
+    const lineTone = stats.change >= 0 ? "online" : "blocked";
     return `
-        <div class="overview-capacity-chart-card ${statusClass(tone)}" data-cc5-contract-source="mission_control">
+        <div class="overview-capacity-chart-card ${statusClass(freshnessTone)}" data-cc6-real-portfolio-timeline="capital.equity_curve" data-cc5-contract-source="mission_control">
+            <div class="overview-section-head">
+                <span>Real portfolio timeline</span>
+                <strong>${chartPoints.length} live points · ${htmlText(portfolio.timeline_source || "capital.equity_curve")}</strong>
+                ${renderInlineBadge(freshnessLabel, freshnessTone)}
+            </div>
             <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account portfolio value line" preserveAspectRatio="none" data-paper-capacity-line>
+                <title>Paper account equity curve from ${literalHtmlText(portfolio.timeline_source || "capital.equity_curve")}</title>
+                <desc>${literalHtmlText(`${chartPoints.length} real points, latest balance ${formatMoney(portfolio.balance_gbp)}, ${freshnessLabel}.`)}</desc>
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.max).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.max).toFixed(2)}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.min).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.min).toFixed(2)}"></line>
-                <path class="paper-equity-line" d="${path}"></path>
+                <path class="paper-equity-line ${statusClass(lineTone)}" d="${path}"></path>
                 <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(formatMoney(stats.max))}</text>
                 <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(formatMoney(stats.min))}</text>
                 <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(chartPoints.at(-1)?.observed_at || portfolio.observed_at))}</text>
             </svg>
             <div class="overview-capacity-summary">
                 ${renderMetric("Balance", formatMoney(portfolio.balance_gbp))}
-                ${renderMetric("Total P&L", formatMoney(portfolio.total_pnl_gbp))}
+                ${renderMetric("Delta", formatPercent(portfolio.delta_pct))}
+                ${renderMetric("Drawdown", formatPercent(portfolio.drawdown_pct))}
                 ${renderMetric("Realized", formatMoney(portfolio.realized_pnl_gbp))}
                 ${renderMetric("Unrealized", formatMoney(portfolio.unrealized_pnl_gbp))}
-                ${renderMetric("Drawdown", formatPercent(portfolio.drawdown_pct))}
-                ${renderMetric("Open positions", portfolio.open_position_count)}
-                ${renderMetric("Orders", portfolio.order_count)}
-                ${renderMetric("Postmortems due", portfolio.postmortem_due_count)}
+                ${renderMetric("Closed/target", closedTarget)}
+                ${renderMetric("Timeline", `${chartPoints.length} live points`)}
             </div>
         </div>
     `;
@@ -7165,7 +7202,7 @@ function renderOverviewFirstScreen(viewModels) {
         statusRail.innerHTML = [
             { label: "Sources", value: `${source.online}/${source.total}`, tone: source.degraded || source.missing_credentials ? "degraded" : "online" },
             { label: "Research goals", value: contract.thinking?.research_goal_active_count || 0, tone: contract.thinking?.status || "pending" },
-            { label: "Paper value", value: formatMoney(portfolio.balance_gbp), tone: portfolio.mirror_freshness === "stale" ? "degraded" : "online" },
+            { label: "Paper value", value: formatMoney(portfolio.balance_gbp), tone: portfolio.mirror_freshness_status === "stale" ? "degraded" : "online" },
             { label: "Trade candidates", value: contract.trades?.lifecycle_counts?.candidate || 0, tone: contract.trades?.state || "pending" }
         ].map(renderOverviewChip).join("");
     }
@@ -7227,9 +7264,10 @@ function renderOverviewFirstScreen(viewModels) {
         paperCapacity.innerHTML = `
             <div class="overview-section-head">
                 <span>Paper portfolio</span>
-                <strong>${formatMoney(portfolio.balance_gbp)} · ${htmlText(portfolio.mirror_freshness)} mirror</strong>
+                <strong>${formatMoney(portfolio.balance_gbp)} · ${asArray(portfolio.equity_curve).length} live points</strong>
+                ${renderInlineBadge(`${portfolio.mirror_freshness_status || portfolio.mirror_freshness || "unknown"} mirror`, portfolio.mirror_freshness_status === "stale" ? "degraded" : "online")}
             </div>
-            <p>${htmlText(portfolio.portfolio_value_source, "Portfolio value is read from the paper-account mirror.")}</p>
+            <p>${htmlText(portfolio.portfolio_value_source, "Portfolio value is read from the paper-account mirror.")} Timeline source: ${htmlText(portfolio.timeline_source || "capital.equity_curve")}.</p>
             ${renderContractPortfolioBlock(portfolio)}
         `;
     }
