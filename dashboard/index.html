@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260607-cc10-remove-view-card">
+    <link rel="stylesheet" href="/auth.css?v=20260607-cc11-final-dashboard-structure">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -86,32 +86,41 @@
             </section>
 
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
-                <div class="panel-heading">
-                    <div>
-                        <p class="label">Overview</p>
-                        <h2>Mission Control</h2>
-                        <p class="panel-subtitle">Source health, strategy posture, trade lifecycle, portfolio state, and safety authority in one pass.</p>
-                    </div>
-                    <div class="info-hover">
-                        <button class="info-button" type="button" aria-label="About the overview">i</button>
-                        <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control" data-tooltip-contract="compact">
-                            <strong>Overview</strong>
-                            <p>Six blocks: sources, strategy, portfolio, trades, reasoning, and flow.</p>
-                            <dl class="explainer-grid compact">
-                                <div><dt>Shows</dt><dd>Status, data, strategy, thoughts, trades, capacity.</dd></div>
-                                <div><dt>Watch</dt><dd>Weak evidence, risk blocks, stale account data.</dd></div>
-                                <div><dt>Scope</dt><dd>Readable summary first; Diagnostics keeps raw evidence.</dd></div>
-                            </dl>
-                        </div>
+                <p class="sr-only">Readable summary first; Diagnostics keeps raw evidence.</p>
+                <div class="mission-control-help info-hover">
+                    <button class="info-button" type="button" aria-label="About Mission Control">i</button>
+                    <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control" data-tooltip-contract="compact">
+                        <strong>Mission Control</strong>
+                        <p>Readable summary first; Diagnostics keeps raw evidence.</p>
+                        <dl class="explainer-grid compact">
+                            <div><dt>Shows</dt><dd>Status, data, strategy, thoughts, trades, capacity.</dd></div>
+                            <div><dt>Watch</dt><dd>Weak evidence, risk blocks, stale account data.</dd></div>
+                            <div><dt>Scope</dt><dd>Six blocks: sources, strategy, portfolio, trades, reasoning, and flow.</dd></div>
+                        </dl>
                     </div>
                 </div>
+                <section class="overview-command-grid" aria-label="Current mission state">
+                    <section class="overview-mission-brief" aria-label="Founder brief" data-overview-mission-brief>
+                        <div class="overview-section-head">
+                            <span>Founder brief</span>
+                            <strong>Loading current mission summary</strong>
+                        </div>
+                        <p>Loading source health, strategy posture, trade lifecycle, portfolio state, and safety authority.</p>
+                    </section>
 
-                <section class="overview-mission-brief" aria-label="Founder brief" data-overview-mission-brief>
-                    <div class="overview-section-head">
-                        <span>Founder brief</span>
-                        <strong>Loading current mission summary</strong>
-                    </div>
-                    <p>Loading source health, strategy posture, trade lifecycle, portfolio state, and safety authority.</p>
+                    <article class="overview-paper-capacity-panel" data-overview-paper-capacity>
+                        <div class="overview-section-head">
+                            <span>Paper portfolio</span>
+                            <strong>Loading paper account</strong>
+                        </div>
+                    </article>
+
+                    <article class="overview-trade-considerations-panel" data-overview-trade-considerations>
+                        <div class="overview-section-head">
+                            <span>Trades being considered</span>
+                            <strong>Loading trade ideas</strong>
+                        </div>
+                    </article>
                 </section>
 
                 <section class="overview-strategy-narrative" aria-label="Current trading strategy narrative" data-overview-strategy-narrative>
@@ -122,35 +131,35 @@
                     <p>Loading the current strategy lens, Akber filter state, and source-driven constraints.</p>
                 </section>
 
-	                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
-	                    <div class="overview-section-head">
-	                        <span>Operating flow</span>
-	                        <strong>Tap + to expand each role</strong>
-	                    </div>
-	                    <div class="team-health-row" data-team-health-row>
-	                        <span>Loading operating-team health.</span>
-	                    </div>
-	                    <div class="overview-system-grid">
-	                        <div class="overview-mini-map" data-overview-mini-map>
-	                            <div class="system-flow-diagram overview-system-flow-diagram" data-phase5-system-map>
-	                                <section class="flow-lane pending">
-	                                    <header class="flow-lane-header">
-	                                        <span>01</span>
-	                                        <div>
-	                                            <h3>Loading canonical system map</h3>
-	                                            <p>The live status snapshot replaces this with Qadam's role-by-role operating flow.</p>
-	                                        </div>
-	                                    </header>
-	                                    <div class="flow-lane-track">
-	                                        <span>Loading system connectivity.</span>
-	                                        <div class="flow-connector" aria-hidden="true"><span>status handoff</span></div>
-	                                    </div>
-	                                    <div class="lane-handoff"><span>Observed facts must be logged before they count.</span></div>
-	                                </section>
-	                                <div class="flow-return-loop">
-	                                    <strong>Closed-loop rule</strong>
-	                                    <span>Every observation, hypothesis, risk decision, paper trade, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
-	                                </div>
+                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
+                    <div class="overview-section-head">
+                        <span>Operating flow</span>
+                        <strong>Tap + to expand each role</strong>
+                    </div>
+                    <div class="team-health-row" data-team-health-row hidden>
+                        <span>Loading operating-team health.</span>
+                    </div>
+                    <div class="overview-system-grid">
+                        <div class="overview-mini-map" data-overview-mini-map>
+                            <div class="system-flow-diagram overview-system-flow-diagram" data-phase5-system-map>
+                                <section class="flow-lane pending">
+                                    <header class="flow-lane-header">
+                                        <span>01</span>
+                                        <div>
+                                            <h3>Loading canonical system map</h3>
+                                            <p>The live status snapshot replaces this with Qadam's role-by-role operating flow.</p>
+                                        </div>
+                                    </header>
+                                    <div class="flow-lane-track">
+                                        <span>Loading system connectivity.</span>
+                                        <div class="flow-connector" aria-hidden="true"><span>status handoff</span></div>
+                                    </div>
+                                    <div class="lane-handoff"><span>Observed facts must be logged before they count.</span></div>
+                                </section>
+                                <div class="flow-return-loop">
+                                    <strong>Closed-loop rule</strong>
+                                    <span>Every observation, hypothesis, risk decision, paper trade, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
+                                </div>
 	                            </div>
 	                        </div>
 	                        <div class="overview-oversight" data-overview-oversight>
@@ -173,10 +182,10 @@
                             <strong>Loading runtime state</strong>
                         </div>
                     </article>
-                    <article class="overview-paper-capacity-panel" data-overview-paper-capacity>
+                    <article class="overview-thought-feed-panel" data-overview-thought-feed>
                         <div class="overview-section-head">
-                            <span>Paper capacity</span>
-                            <strong>Loading paper account</strong>
+                            <span>Reasoning queue</span>
+                            <strong>Loading reasoning feed</strong>
                         </div>
                     </article>
                 </section>
@@ -196,20 +205,7 @@
                     </article>
                 </section>
 
-                <section class="overview-plain-grid" aria-label="Reasoning and trade ideas" data-overview-thinking-grid>
-                    <article class="overview-thought-feed-panel" data-overview-thought-feed>
-                        <div class="overview-section-head">
-                            <span>Reasoning queue</span>
-                            <strong>Loading reasoning feed</strong>
-                        </div>
-                    </article>
-                    <article class="overview-trade-considerations-panel" data-overview-trade-considerations>
-                        <div class="overview-section-head">
-                            <span>Trades being considered</span>
-                            <strong>Loading trade ideas</strong>
-                        </div>
-                    </article>
-                </section>
+                <section class="overview-plain-grid overview-thinking-grid" aria-label="Reasoning and trade ideas" data-overview-thinking-grid hidden></section>
             </section>
 
             <section id="strategy-manifestation" class="operating-review-panel" aria-label="Strategy approval status" data-dashboard-view-section="reasoning" data-cockpit-section="Strategy" hidden>
@@ -656,7 +652,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260607-cc10-remove-view-card"></script>
+    <script src="/dashboard.js?v=20260607-cc11-final-dashboard-structure"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

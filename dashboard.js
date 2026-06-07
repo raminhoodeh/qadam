@@ -6921,18 +6921,14 @@ function renderContractTeamMap(team = []) {
         }
     }, index, nodes.length)).join("");
     return `
-        <div class="system-flow-diagram overview-system-flow-diagram cc5-contract-map" data-cc5-contract-source="mission_control">
-            <section class="flow-lane overview-canonical-lane online">
-                <header class="flow-lane-header">
-                    <span>01</span>
-                    <div>
-                        <h3>Qadam operating team</h3>
-                        <p>Mission Control renders these nodes from the founder contract.</p>
-                    </div>
-                </header>
-                <div class="flow-lane-track overview-canonical-lane-track">${nodeHtml}</div>
-                <div class="lane-handoff"><span>Data becomes evidence, evidence becomes strategy review, and only guarded paper checks can move toward paper trading.</span></div>
-            </section>
+        <div class="system-flow-diagram overview-system-flow-diagram cc5-contract-map overview-operating-flow" data-cc5-contract-source="mission_control">
+            <div class="overview-operating-flow-head">
+                <span>Qadam operating team</span>
+                <strong>Data -> evidence -> strategy review -> guarded paper lifecycle</strong>
+                <p>Open any node to see what it does, what it is doing now, and where its authority stops.</p>
+            </div>
+            <div class="flow-lane-track overview-canonical-lane-track overview-operating-node-grid">${nodeHtml}</div>
+            <div class="lane-handoff"><span>Data becomes evidence, evidence becomes strategy review, and only guarded paper checks can move toward paper trading.</span></div>
             <div class="flow-return-loop">
                 <strong>Closed-loop rule</strong>
                 <span>Observations, hypotheses, paper trades, comments, and postmortems return to the Event Log before they can change Qadam.</span>
@@ -6986,7 +6982,7 @@ function renderContractStrategyBlock(contract = {}) {
     const chain = asArray(strategy.decision_chain);
     const questions = asArray(activeLens.decision_questions).slice(0, 5);
     return `
-        <details class="overview-expandable-ledger" data-cc5-contract-source="mission_control" open>
+        <details class="overview-expandable-ledger" data-cc5-contract-source="mission_control">
             <summary>
                 <span>Trading strategy</span>
                 <strong>${htmlText(activeLens.name || strategy.posture, "Evidence-gated paper strategy")}</strong>
