@@ -36,6 +36,10 @@ def main() -> int:
         and candidate.get("preference_context_policy", {}).get("source_quorum_credit_allowed") is False
         and candidate.get("preference_context_policy", {}).get("preference_only_confirmation_allowed") is False
     )
+    pricing_gap_policy_tier_counts: dict[str, int] = {}
+    for candidate in candidates:
+        tier = str(candidate.get("market_confirmation_requirements", {}).get("pricing_gap_policy_tier") or "missing")
+        pricing_gap_policy_tier_counts[tier] = pricing_gap_policy_tier_counts.get(tier, 0) + 1
     source_weight_complete_count = sum(
         1
         for candidate in candidates
@@ -88,6 +92,12 @@ def main() -> int:
     yahoo_only_probe["candidates"][0]["market_confirmation_requirements"]["yahoo_only_confirmation_allowed"] = True
     yahoo_only_probe_errors = validate_candidate_strategy_universe(yahoo_only_probe)
 
+    pricing_gap_policy_tier_probe = deepcopy(artifact)
+    pricing_gap_policy_tier_probe["candidates"][0]["market_confirmation_requirements"]["pricing_gap_policy_tier"] = (
+        "invalid_tier"
+    )
+    pricing_gap_policy_tier_probe_errors = validate_candidate_strategy_universe(pricing_gap_policy_tier_probe)
+
     preference_source_quorum_probe = deepcopy(artifact)
     preference_source_quorum_probe["candidates"][0]["preference_context_policy"]["source_quorum_credit_allowed"] = True
     preference_source_quorum_probe_errors = validate_candidate_strategy_universe(preference_source_quorum_probe)
@@ -137,6 +147,7 @@ def main() -> int:
     print(f"phase4_candidate_strategy_no_trade_complete_count={no_trade_complete_count}")
     print(f"phase4_candidate_strategy_invalidation_complete_count={invalidation_complete_count}")
     print(f"phase4_candidate_strategy_preference_policy_complete_count={preference_policy_complete_count}")
+    print(f"phase4_candidate_strategy_pricing_gap_policy_tier_counts={pricing_gap_policy_tier_counts}")
     print(f"phase4_candidate_strategy_source_weight_complete_count={source_weight_complete_count}")
     print(
         "phase4_candidate_strategy_decision_source_coverage_complete_count="
@@ -162,6 +173,10 @@ def main() -> int:
     print(f"phase4_candidate_strategy_risk_handoff_probe_error_count={len(risk_handoff_probe_errors)}")
     print(f"phase4_candidate_strategy_authority_probe_error_count={len(authority_probe_errors)}")
     print(f"phase4_candidate_strategy_yahoo_only_probe_error_count={len(yahoo_only_probe_errors)}")
+    print(
+        "phase4_candidate_strategy_pricing_gap_policy_tier_probe_error_count="
+        f"{len(pricing_gap_policy_tier_probe_errors)}"
+    )
     print(
         "phase4_candidate_strategy_preference_source_quorum_probe_error_count="
         f"{len(preference_source_quorum_probe_errors)}"
@@ -262,6 +277,11 @@ def main() -> int:
         for error in yahoo_only_probe_errors
     ):
         errors.append("yahoo_only_probe_not_rejected")
+    if not any(
+        error.startswith("strategy_candidate_pricing_gap_policy_tier_invalid:")
+        for error in pricing_gap_policy_tier_probe_errors
+    ):
+        errors.append("pricing_gap_policy_tier_probe_not_rejected")
     if not any(
         error.startswith("strategy_candidate_preference_source_quorum_allowed:")
         for error in preference_source_quorum_probe_errors

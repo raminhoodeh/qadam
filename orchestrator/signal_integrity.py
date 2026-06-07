@@ -20,7 +20,8 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.intelligence import ShadowSignalStore, run_shadow_intelligence_sample
 
-SIGNAL_INTEGRITY_SCHEMA_VERSION = 4
+SIGNAL_INTEGRITY_SCHEMA_VERSION = 6
+SIGNAL_INTEGRITY_FUNNEL_DIAGNOSTICS_SCHEMA_VERSION = 2
 SIGNAL_INTEGRITY_STATUSES = {"blocked", "hold_for_corroboration", "passed_to_risk_shadow"}
 MARKET_CONFIRMATION_MAX_AGE = timedelta(hours=48)
 MARKET_CONFIRMATION_EVENT_TYPE = "market_price_confirmation"
@@ -29,6 +30,8 @@ PREFERENCE_MCP_SOURCE = "supplemental.preference_mcp"
 TRADINGVIEW_MCP_SOURCE = "market.tradingview_mcp"
 TRADINGVIEW_MCP_EVENT_TYPE = "technical_analysis_context"
 PRICING_GAP_EVENT_TYPES = {"pricing_gap_assumption", "transaction_cost_assumption"}
+# Legacy text markers are fallback-only for older signals that predate
+# structured pricing-gap evidence items.
 PRICING_GAP_CONFIRMATION_MARKERS = (
     "pricing gap confirmed",
     "pass_pricing_gap_confirmed",
@@ -50,6 +53,20 @@ TRADINGVIEW_MCP_CONTEXT_MARKERS = (
     "technical analysis context",
     "support/resistance",
 )
+SIGNAL_INTEGRITY_FUNNEL_DIAGNOSTICS_RUNTIME_ARTIFACT = (
+    "signal_integrity_funnel_diagnostics.json"
+)
+PHASE5_RISK_SIZING_RUNTIME_ARTIFACT = "phase5_risk_sizing_reviews.json"
+PRICING_GAP_POLICY_TIERS = {"required_strict", "required_light", "not_required"}
+PRICING_GAP_ROLLOUT_STAGES = {"stage_a", "stage_b"}
+INSTRUMENT_FOCUS_PRICING_GAP_POLICY_TIER = {
+    "prediction_markets": "not_required",
+    "crude_oil": "required_light",
+    "defence": "required_light",
+    "silver": "required_light",
+    "semiconductors": "required_strict",
+}
+PRICING_GAP_ONLY_RISK_BLOCKER_PREFIX = "signal_pricing_gap_"
 
 
 @dataclass(frozen=True)
@@ -148,17 +165,126 @@ def _is_market_confirmation_item(item: dict[str, Any]) -> bool:
     )
 
 
-def _pricing_gap_status(items: tuple[dict[str, Any], ...]) -> str:
-    summary_text = " ".join(str(item.get("summary") or "") for item in items).lower()
-    explicit_event = any(
-        str(item.get("event_type") or "").lower() in PRICING_GAP_EVENT_TYPES for item in items
+def _pricing_gap_policy_tier_for_signal(signal: dict[str, Any]) -> str:
+    instrument_focus = str(signal.get("instrument_focus") or "").strip()
+    return INSTRUMENT_FOCUS_PRICING_GAP_POLICY_TIER.get(
+        instrument_focus,
+        "required_light",
     )
-    explicit_marker = any(marker in summary_text for marker in PRICING_GAP_CONFIRMATION_MARKERS)
-    return "pass_pricing_gap_confirmed" if explicit_event or explicit_marker else "hold_pricing_gap_required"
+
+
+def _pricing_gap_rollout_stage_for_signal(signal: dict[str, Any]) -> str:
+    stage = str(
+        signal.get("pricing_gap_rollout_stage")
+        or Settings.from_env().pricing_gap_rollout_stage
+        or "stage_a"
+    ).strip().lower()
+    if stage not in PRICING_GAP_ROLLOUT_STAGES:
+        return "stage_a"
+    return stage
+
+
+def _pricing_gap_status_is_satisfied(pricing_gap_status: str) -> bool:
+    return pricing_gap_status in {
+        "pass_pricing_gap_confirmed",
+        "pass_pricing_gap_transaction_cost_only",
+        "pass_pricing_gap_not_required",
+    }
+
+
+def _pricing_gap_policy(
+    items: tuple[dict[str, Any], ...],
+    *,
+    market_confirmation_status: str,
+    pricing_gap_policy_tier: str,
+    pricing_gap_rollout_stage: str,
+) -> dict[str, Any]:
+    if pricing_gap_policy_tier not in PRICING_GAP_POLICY_TIERS:
+        pricing_gap_policy_tier = "required_light"
+    if pricing_gap_rollout_stage not in PRICING_GAP_ROLLOUT_STAGES:
+        pricing_gap_rollout_stage = "stage_a"
+    explicit_event = _signal_has_pricing_gap_event(items)
+    transaction_cost_present = _signal_has_transaction_cost_event(items)
+    explicit_marker = _signal_has_pricing_gap_marker(items)
+    legacy_marker_fallback = False
+    relaxed_policy_enabled = pricing_gap_rollout_stage == "stage_b"
+    relaxed_candidate = (
+        pricing_gap_policy_tier == "not_required"
+        or (pricing_gap_policy_tier == "required_light" and transaction_cost_present)
+    )
+    if explicit_event:
+        detailed_status = "pass_pricing_gap_confirmed"
+        failure_reason = None
+        result = "confirmed"
+        confirmation_source = "structured_event"
+    elif not explicit_event and explicit_marker:
+        detailed_status = "pass_pricing_gap_confirmed"
+        failure_reason = None
+        result = "confirmed"
+        confirmation_source = "legacy_summary_marker"
+        legacy_marker_fallback = True
+    elif (
+        relaxed_policy_enabled
+        and pricing_gap_policy_tier == "required_light"
+        and transaction_cost_present
+    ):
+        detailed_status = "pass_pricing_gap_transaction_cost_only"
+        failure_reason = None
+        result = "confirmed_light"
+        confirmation_source = "structured_transaction_cost_event"
+    elif relaxed_policy_enabled and pricing_gap_policy_tier == "not_required":
+        detailed_status = "pass_pricing_gap_not_required"
+        failure_reason = None
+        result = "not_required"
+        confirmation_source = "not_required_by_policy"
+    elif relaxed_candidate and not relaxed_policy_enabled:
+        detailed_status = "pricing_gap_rollout_stage_a_strict_hold"
+        failure_reason = "pricing_gap_rollout_stage_a_strict_hold"
+        result = "held_pending_stage_b"
+        confirmation_source = "rollout_stage_a_strict"
+    elif market_confirmation_status == "market_confirmation_unavailable":
+        detailed_status = "pricing_gap_unavailable_market_confirmation_unavailable"
+        failure_reason = "pricing_gap_unavailable_market_confirmation_unavailable"
+        result = "unavailable"
+        confirmation_source = "missing"
+    elif market_confirmation_status == "market_confirmation_stale":
+        detailed_status = "pricing_gap_unavailable_market_confirmation_stale"
+        failure_reason = "pricing_gap_unavailable_market_confirmation_stale"
+        result = "unavailable"
+        confirmation_source = "missing"
+    elif market_confirmation_status == "market_confirmation_single_source_hold":
+        detailed_status = "pricing_gap_unavailable_single_source_hold"
+        failure_reason = "pricing_gap_unavailable_single_source_hold"
+        result = "unavailable"
+        confirmation_source = "missing"
+    else:
+        detailed_status = "pricing_gap_unavailable_not_modeled"
+        failure_reason = "pricing_gap_unavailable_not_modeled"
+        result = "unavailable"
+        confirmation_source = "missing"
+    return {
+        "pricing_gap": (
+            detailed_status if _pricing_gap_status_is_satisfied(detailed_status) else "hold_pricing_gap_required"
+        ),
+        "pricing_gap_status": detailed_status,
+        "pricing_gap_result": result,
+        "pricing_gap_policy_tier": pricing_gap_policy_tier,
+        "pricing_gap_rollout_stage": pricing_gap_rollout_stage,
+        "pricing_gap_relaxed_policy_enabled": relaxed_policy_enabled,
+        "pricing_gap_relaxed_candidate": relaxed_candidate,
+        "pricing_gap_confirmation_source": confirmation_source,
+        "pricing_gap_event_present": explicit_event,
+        "transaction_cost_event_present": transaction_cost_present,
+        "pricing_gap_marker_present": explicit_marker,
+        "pricing_gap_legacy_marker_fallback_used": legacy_marker_fallback,
+        "pricing_gap_failure_reason": failure_reason,
+        "pricing_gap_signal_invalid": False,
+    }
 
 
 def _market_confirmation_policy(
     *,
+    signal: dict[str, Any],
     trail: dict[str, Any],
     source_count: int,
 ) -> dict[str, Any]:
@@ -202,6 +328,12 @@ def _market_confirmation_policy(
     else:
         status = "market_confirmation_corroboration_available"
 
+    pricing_gap_policy = _pricing_gap_policy(
+        items,
+        market_confirmation_status=status,
+        pricing_gap_policy_tier=_pricing_gap_policy_tier_for_signal(signal),
+        pricing_gap_rollout_stage=_pricing_gap_rollout_stage_for_signal(signal),
+    )
     return {
         "status": status,
         "market_price_confirmation": (
@@ -209,7 +341,6 @@ def _market_confirmation_policy(
             if status == "market_confirmation_corroboration_available"
             else f"hold_{status}"
         ),
-        "pricing_gap": _pricing_gap_status(items),
         "providers": providers,
         "uses_yahoo_finance": uses_yahoo,
         "single_source_hold": source_count < 2,
@@ -224,6 +355,7 @@ def _market_confirmation_policy(
             "Market confirmation is supplemental corroboration only. Yahoo Finance can inform price "
             "context but cannot create signals, orders, fills, receipts, or reconciliation truth."
         ),
+        **pricing_gap_policy,
     }
 
 
@@ -410,7 +542,10 @@ def _failure_reasons(
         "technical_context_stale_hold",
     }:
         reasons.append(str(technical_policy["status"]))
-    if market_policy["pricing_gap"] != "pass_pricing_gap_confirmed":
+    if not _pricing_gap_status_is_satisfied(str(market_policy.get("pricing_gap_status") or "")):
+        detailed_pricing_gap_reason = str(market_policy.get("pricing_gap_failure_reason") or "").strip()
+        if detailed_pricing_gap_reason:
+            reasons.append(detailed_pricing_gap_reason)
         reasons.append("missing_pricing_gap")
     reasons.extend(missing)
     return tuple(dict.fromkeys(reasons))[:10]
@@ -453,6 +588,9 @@ def _review_status(
         "preference_context_stale_hold",
         "preference_context_quota_degraded_hold",
     }
+    pricing_gap_satisfied = _pricing_gap_status_is_satisfied(
+        str(market_policy.get("pricing_gap_status") or "")
+    )
     if evidence_item_count < 1 or min_trust_score < 0.5 or signal_confidence < 0.45:
         return "blocked"
     if (
@@ -460,7 +598,7 @@ def _review_status(
         or missing
         or average_trust_score < 0.65
         or market_policy["status"] != "market_confirmation_corroboration_available"
-        or market_policy["pricing_gap"] != "pass_pricing_gap_confirmed"
+        or not pricing_gap_satisfied
         or preference_hold_status
         or technical_policy["status"]
         in {"tradingview_mcp_context_only_hold", "technical_context_stale_hold"}
@@ -495,6 +633,16 @@ def _next_steps(status: str, failure_reasons: tuple[str, ...]) -> tuple[str, ...
         steps.append("Refresh TradingView MCP technical context before Strategy Lead review.")
     if "maritime_confirmation" in failure_reasons:
         steps.append("Add maritime, logistics, or vessel confirmation.")
+    if "pricing_gap_unavailable_market_confirmation_unavailable" in failure_reasons:
+        steps.append("Attach current market confirmation before modeling pricing-gap assumptions.")
+    if "pricing_gap_unavailable_market_confirmation_stale" in failure_reasons:
+        steps.append("Refresh market confirmation, then refresh pricing-gap assumptions.")
+    if "pricing_gap_unavailable_single_source_hold" in failure_reasons:
+        steps.append("Add a second independent market source before treating pricing-gap assumptions as usable.")
+    if "pricing_gap_unavailable_not_modeled" in failure_reasons:
+        steps.append("Attach explicit pricing-gap and transaction-cost assumptions to the evidence trail.")
+    if "pricing_gap_rollout_stage_a_strict_hold" in failure_reasons:
+        steps.append("Stage A strict rollout is active; keep structured evidence visible and wait for Stage B enablement.")
     if "missing_pricing_gap" in failure_reasons:
         steps.append("Attach pricing-gap and transaction-cost assumptions.")
     steps.append("Keep Risk Agent and broker-write routes blocked until later phases.")
@@ -562,7 +710,7 @@ def build_signal_integrity_review(signal: dict[str, Any]) -> SignalIntegrityRevi
     average_trust_score = round(_float(trail.get("average_trust_score"), 0), 3)
     min_trust_score = round(_float(trail.get("min_trust_score"), 0), 3)
     signal_confidence = round(_float(signal.get("confidence"), 0), 3)
-    market_policy = _market_confirmation_policy(trail=trail, source_count=source_count)
+    market_policy = _market_confirmation_policy(signal=signal, trail=trail, source_count=source_count)
     preference_policy = _preference_context_policy(trail=trail, source_count=source_count)
     technical_policy = _technical_context_policy(trail=trail, source_count=source_count)
     status = _review_status(
@@ -702,6 +850,340 @@ class SignalIntegrityReviewStore:
         }
 
 
+def signal_integrity_funnel_diagnostics_path(
+    settings: Settings | None = None,
+) -> Path:
+    settings = settings or Settings.from_env()
+    return Path(settings.runtime_dir) / SIGNAL_INTEGRITY_FUNNEL_DIAGNOSTICS_RUNTIME_ARTIFACT
+
+
+def _runtime_json_artifact(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def _phase5_risk_sizing_runtime_artifact(settings: Settings) -> dict[str, Any]:
+    return _runtime_json_artifact(Path(settings.runtime_dir) / PHASE5_RISK_SIZING_RUNTIME_ARTIFACT)
+
+
+def _signal_generated_by(signal: dict[str, Any]) -> str:
+    return str(signal.get("generated_by") or "unknown_generator")[:120]
+
+
+def _signal_items(signal: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+    return _evidence_items(_signal_trail(signal))
+
+
+def _signal_has_pricing_gap_event(items: tuple[dict[str, Any], ...]) -> bool:
+    return any(
+        str(item.get("event_type") or "").lower() == "pricing_gap_assumption"
+        for item in items
+    )
+
+
+def _signal_has_transaction_cost_event(items: tuple[dict[str, Any], ...]) -> bool:
+    return any(
+        str(item.get("event_type") or "").lower() == "transaction_cost_assumption"
+        for item in items
+    )
+
+
+def _signal_has_pricing_gap_marker(items: tuple[dict[str, Any], ...]) -> bool:
+    summary_text = " ".join(str(item.get("summary") or "") for item in items).lower()
+    return any(marker in summary_text for marker in PRICING_GAP_CONFIRMATION_MARKERS)
+
+
+def _latest_reviews_by_signal_id(
+    reviews: tuple[dict[str, Any], ...],
+) -> dict[str, dict[str, Any]]:
+    latest: dict[str, dict[str, Any]] = {}
+    for review in reviews:
+        signal_id = str(review.get("source_signal_id") or "").strip()
+        if signal_id:
+            latest[signal_id] = review
+    return latest
+
+
+def _producer_summary(
+    *,
+    generated_by: str,
+    signals: list[dict[str, Any]],
+    latest_reviews: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    producer_signals = [signal for signal in signals if _signal_generated_by(signal) == generated_by]
+    review_status_counts: Counter[str] = Counter()
+    instrument_focuses: Counter[str] = Counter()
+    market_confirmation_signal_count = 0
+    pricing_gap_event_signal_count = 0
+    transaction_cost_event_signal_count = 0
+    pricing_gap_marker_signal_count = 0
+    pricing_gap_confirmed_signal_count = 0
+    pricing_gap_confirmed_structured_signal_count = 0
+    pricing_gap_confirmed_legacy_fallback_signal_count = 0
+    hold_missing_pricing_gap_count = 0
+    latest_signal_created_at = ""
+
+    for signal in producer_signals:
+        instrument_focuses[str(signal.get("instrument_focus") or "unknown_focus")] += 1
+        latest_signal_created_at = max(
+            latest_signal_created_at,
+            str(signal.get("created_at") or ""),
+        )
+        items = _signal_items(signal)
+        has_market_confirmation = bool(tuple(item for item in items if _is_market_confirmation_item(item)))
+        has_pricing_gap_event = _signal_has_pricing_gap_event(items)
+        has_transaction_cost_event = _signal_has_transaction_cost_event(items)
+        has_pricing_gap_marker = _signal_has_pricing_gap_marker(items)
+        if has_market_confirmation:
+            market_confirmation_signal_count += 1
+        if has_pricing_gap_event:
+            pricing_gap_event_signal_count += 1
+        if has_transaction_cost_event:
+            transaction_cost_event_signal_count += 1
+        if has_pricing_gap_marker:
+            pricing_gap_marker_signal_count += 1
+        signal_pricing_gap_policy = _pricing_gap_policy(
+            items,
+            market_confirmation_status=(
+                "market_confirmation_corroboration_available"
+                if has_market_confirmation
+                else "market_confirmation_unavailable"
+            ),
+            pricing_gap_policy_tier=_pricing_gap_policy_tier_for_signal(signal),
+            pricing_gap_rollout_stage=_pricing_gap_rollout_stage_for_signal(signal),
+        )
+        if _pricing_gap_status_is_satisfied(
+            str(signal_pricing_gap_policy.get("pricing_gap_status") or "")
+        ):
+            pricing_gap_confirmed_signal_count += 1
+            if signal_pricing_gap_policy["pricing_gap_confirmation_source"] == "structured_event":
+                pricing_gap_confirmed_structured_signal_count += 1
+            if signal_pricing_gap_policy["pricing_gap_confirmation_source"] == "structured_transaction_cost_event":
+                pricing_gap_confirmed_structured_signal_count += 1
+            if signal_pricing_gap_policy["pricing_gap_confirmation_source"] == "legacy_summary_marker":
+                pricing_gap_confirmed_legacy_fallback_signal_count += 1
+
+        review = latest_reviews.get(str(signal.get("signal_id") or ""), {})
+        status = str(review.get("status") or "missing_review")
+        review_status_counts[status] += 1
+        failure_reasons = review.get("failure_reasons", [])
+        if (
+            status == "hold_for_corroboration"
+            and isinstance(failure_reasons, list)
+            and "missing_pricing_gap" in failure_reasons
+        ):
+            hold_missing_pricing_gap_count += 1
+
+    return {
+        "generated_by": generated_by,
+        "signal_count": len(producer_signals),
+        "instrument_focuses": dict(sorted(instrument_focuses.items())),
+        "latest_signal_created_at": latest_signal_created_at or None,
+        "market_confirmation_signal_count": market_confirmation_signal_count,
+        "pricing_gap_event_signal_count": pricing_gap_event_signal_count,
+        "transaction_cost_event_signal_count": transaction_cost_event_signal_count,
+        "pricing_gap_marker_signal_count": pricing_gap_marker_signal_count,
+        "pricing_gap_confirmed_signal_count": pricing_gap_confirmed_signal_count,
+        "pricing_gap_confirmed_structured_signal_count": pricing_gap_confirmed_structured_signal_count,
+        "pricing_gap_confirmed_legacy_fallback_signal_count": (
+            pricing_gap_confirmed_legacy_fallback_signal_count
+        ),
+        "review_status_counts": dict(sorted(review_status_counts.items())),
+        "hold_missing_pricing_gap_count": hold_missing_pricing_gap_count,
+        "likely_missing_pricing_gap_producer": (
+            market_confirmation_signal_count > 0
+            and pricing_gap_confirmed_signal_count == 0
+            and hold_missing_pricing_gap_count > 0
+        ),
+    }
+
+
+def build_signal_integrity_funnel_diagnostics(
+    *,
+    settings: Settings | None = None,
+    signal_store: ShadowSignalStore | None = None,
+    review_store: SignalIntegrityReviewStore | None = None,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    signal_store = signal_store or ShadowSignalStore(settings=settings)
+    review_store = review_store or SignalIntegrityReviewStore(settings=settings)
+    signals = list(signal_store.read())
+    reviews = review_store.read()
+    latest_reviews = _latest_reviews_by_signal_id(reviews)
+    risk_sizing_bundle = _phase5_risk_sizing_runtime_artifact(settings)
+    rollout_stage = (
+        settings.pricing_gap_rollout_stage
+        if settings.pricing_gap_rollout_stage in PRICING_GAP_ROLLOUT_STAGES
+        else "stage_a"
+    )
+    generated_bys = sorted({_signal_generated_by(signal) for signal in signals})
+    producer_summaries = [
+        _producer_summary(
+            generated_by=generated_by,
+            signals=signals,
+            latest_reviews=latest_reviews,
+        )
+        for generated_by in generated_bys
+    ]
+
+    signals_with_market_confirmation_count = 0
+    signals_with_pricing_gap_evidence_count = 0
+    signals_blocked_only_by_missing_pricing_gap_count = 0
+    signals_passed_to_risk_count = 0
+    stage_b_candidate_signal_count = 0
+    unresolved_signals: list[dict[str, Any]] = []
+    for signal in signals:
+        signal_id = str(signal.get("signal_id") or "")
+        items = _signal_items(signal)
+        review = latest_reviews.get(signal_id, {})
+        failure_reasons = review.get("failure_reasons", [])
+        has_market_confirmation = bool(tuple(item for item in items if _is_market_confirmation_item(item)))
+        has_pricing_gap_event = _signal_has_pricing_gap_event(items)
+        has_transaction_cost_event = _signal_has_transaction_cost_event(items)
+        has_pricing_gap_marker = _signal_has_pricing_gap_marker(items)
+        if has_market_confirmation:
+            signals_with_market_confirmation_count += 1
+        if has_pricing_gap_event or has_transaction_cost_event or has_pricing_gap_marker:
+            signals_with_pricing_gap_evidence_count += 1
+        review_status = str(review.get("status") or "missing_review")
+        if review_status == "passed_to_risk_shadow":
+            signals_passed_to_risk_count += 1
+        signal_policy = _pricing_gap_policy(
+            items,
+            market_confirmation_status=(
+                "market_confirmation_corroboration_available"
+                if has_market_confirmation
+                else "market_confirmation_unavailable"
+            ),
+            pricing_gap_policy_tier=_pricing_gap_policy_tier_for_signal(signal),
+            pricing_gap_rollout_stage=_pricing_gap_rollout_stage_for_signal(signal),
+        )
+        if signal_policy.get("pricing_gap_status") == "pricing_gap_rollout_stage_a_strict_hold":
+            stage_b_candidate_signal_count += 1
+        if (
+            isinstance(failure_reasons, list)
+            and set(str(reason) for reason in failure_reasons) == {"missing_pricing_gap"}
+        ):
+            signals_blocked_only_by_missing_pricing_gap_count += 1
+        unresolved_signals.append(
+            {
+                "signal_id": signal_id,
+                "generated_by": _signal_generated_by(signal),
+                "instrument_focus": str(signal.get("instrument_focus") or "unknown_focus"),
+                "created_at": str(signal.get("created_at") or ""),
+                "source_count": int(_float(_signal_trail(signal).get("source_count"), 0)),
+                "market_confirmation_present": has_market_confirmation,
+                "pricing_gap_event_present": has_pricing_gap_event,
+                "transaction_cost_event_present": has_transaction_cost_event,
+                "pricing_gap_marker_present": has_pricing_gap_marker,
+                "pricing_gap_status_from_signal": signal_policy["pricing_gap_status"],
+                "pricing_gap_confirmation_source_from_signal": signal_policy[
+                    "pricing_gap_confirmation_source"
+                ],
+                "review_status": review_status,
+                "review_failure_reasons": (
+                    [str(reason) for reason in failure_reasons[:6]]
+                    if isinstance(failure_reasons, list)
+                    else []
+                ),
+            }
+        )
+
+    unresolved_signals.sort(
+        key=lambda item: (
+            item["review_status"] != "hold_for_corroboration",
+            not item["market_confirmation_present"],
+            not _pricing_gap_status_is_satisfied(item["pricing_gap_status_from_signal"]),
+            item["generated_by"],
+            item["signal_id"],
+        )
+    )
+    flagged_producers = [
+        summary["generated_by"]
+        for summary in producer_summaries
+        if summary.get("likely_missing_pricing_gap_producer") is True
+    ]
+    risk_reviews = risk_sizing_bundle.get("reviews", [])
+    if not isinstance(risk_reviews, list):
+        risk_reviews = []
+    risk_reviews_blocked_only_by_pricing_gap_policy_count = 0
+    for review in risk_reviews:
+        if not isinstance(review, dict):
+            continue
+        blockers = review.get("risk_blockers", [])
+        if not isinstance(blockers, list) or not blockers:
+            continue
+        normalized_blockers = [str(blocker) for blocker in blockers if str(blocker).strip()]
+        if (
+            normalized_blockers
+            and review.get("status") == "blocked"
+            and review.get("pricing_gap_policy_satisfied") is False
+            and all(blocker.startswith(PRICING_GAP_ONLY_RISK_BLOCKER_PREFIX) for blocker in normalized_blockers)
+        ):
+            risk_reviews_blocked_only_by_pricing_gap_policy_count += 1
+    return {
+        "schema_version": SIGNAL_INTEGRITY_FUNNEL_DIAGNOSTICS_SCHEMA_VERSION,
+        "artifact_type": "signal_integrity_funnel_diagnostics",
+        "artifact_id": "signal_integrity:funnel-diagnostics",
+        "generated_at": _now(),
+        "public_safe": True,
+        "pricing_gap_rollout_stage": rollout_stage,
+        "pricing_gap_rollout_relaxed_policy_enabled": rollout_stage == "stage_b",
+        "shadow_signal_count": len(signals),
+        "review_count": len(reviews),
+        "missing_review_count": sum(
+            1 for signal in signals if str(signal.get("signal_id") or "") not in latest_reviews
+        ),
+        "signals_with_market_confirmation_count": signals_with_market_confirmation_count,
+        "signals_with_pricing_gap_evidence_count": signals_with_pricing_gap_evidence_count,
+        "signals_blocked_only_by_missing_pricing_gap_count": (
+            signals_blocked_only_by_missing_pricing_gap_count
+        ),
+        "signals_passed_to_risk_count": signals_passed_to_risk_count,
+        "risk_review_count": (
+            len(risk_reviews)
+            if risk_sizing_bundle.get("artifact_type") == "phase5_risk_sizing_review_bundle"
+            else 0
+        ),
+        "risk_reviews_blocked_only_by_pricing_gap_policy_count": (
+            risk_reviews_blocked_only_by_pricing_gap_policy_count
+        ),
+        "stage_b_candidate_signal_count": stage_b_candidate_signal_count,
+        "producer_count": len(producer_summaries),
+        "flagged_missing_pricing_gap_producer_count": len(flagged_producers),
+        "flagged_missing_pricing_gap_producers": flagged_producers,
+        "producer_summaries": producer_summaries,
+        "unresolved_signals": unresolved_signals[:50],
+        "boundary": (
+            "Signal Integrity funnel diagnostics are read-only. They inspect shadow-signal "
+            "evidence and Signal Integrity review outputs only; they cannot create signals, "
+            "change gate decisions, create trade candidates, or enable orders."
+        ),
+    }
+
+
+def write_signal_integrity_funnel_diagnostics(
+    *,
+    settings: Settings | None = None,
+    signal_store: ShadowSignalStore | None = None,
+    review_store: SignalIntegrityReviewStore | None = None,
+) -> dict[str, Any]:
+    settings = settings or Settings.from_env()
+    artifact = build_signal_integrity_funnel_diagnostics(
+        settings=settings,
+        signal_store=signal_store,
+        review_store=review_store,
+    )
+    path = signal_integrity_funnel_diagnostics_path(settings)
+    path.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return artifact
+
+
 def run_signal_integrity_gate(
     *,
     limit: int = 5,
@@ -722,6 +1204,11 @@ def run_signal_integrity_gate(
     for review in reviews:
         review_store.write(review, event_log=event_log)
     health = review_store.health()
+    funnel_diagnostics = write_signal_integrity_funnel_diagnostics(
+        settings=settings,
+        signal_store=signal_store,
+        review_store=review_store,
+    )
     return {
         "status": "ok",
         "schema_version": SIGNAL_INTEGRITY_SCHEMA_VERSION,
@@ -735,6 +1222,10 @@ def run_signal_integrity_gate(
         "paper_order_allowed_count": sum(1 for review in reviews if review.paper_order_allowed),
         "trade_candidate_created_count": sum(1 for review in reviews if review.trade_candidate_created),
         "store": health,
+        "funnel_diagnostics_artifact_path": str(signal_integrity_funnel_diagnostics_path(settings)),
+        "flagged_missing_pricing_gap_producer_count": int(
+            funnel_diagnostics.get("flagged_missing_pricing_gap_producer_count", 0) or 0
+        ),
         "event_log": event_log.health(),
         "boundary": health["boundary"],
     }
@@ -742,4 +1233,27 @@ def run_signal_integrity_gate(
 
 def signal_integrity_summary(settings: Settings | None = None) -> dict[str, Any]:
     settings = settings or Settings.from_env()
-    return SignalIntegrityReviewStore(settings=settings).health()
+    health = SignalIntegrityReviewStore(settings=settings).health()
+    diagnostics_path = signal_integrity_funnel_diagnostics_path(settings)
+    if diagnostics_path.exists():
+        diagnostics = _runtime_json_artifact(diagnostics_path)
+        health["funnel_diagnostics_artifact_path"] = str(diagnostics_path)
+        for key in (
+            "shadow_signal_count",
+            "signals_with_market_confirmation_count",
+            "signals_with_pricing_gap_evidence_count",
+            "signals_blocked_only_by_missing_pricing_gap_count",
+            "signals_passed_to_risk_count",
+            "risk_review_count",
+            "risk_reviews_blocked_only_by_pricing_gap_policy_count",
+            "stage_b_candidate_signal_count",
+            "flagged_missing_pricing_gap_producer_count",
+        ):
+            health[key] = int(diagnostics.get(key, 0) or 0)
+        health["pricing_gap_rollout_stage"] = str(
+            diagnostics.get("pricing_gap_rollout_stage") or "stage_a"
+        )
+        health["pricing_gap_rollout_relaxed_policy_enabled"] = (
+            diagnostics.get("pricing_gap_rollout_relaxed_policy_enabled") is True
+        )
+    return health

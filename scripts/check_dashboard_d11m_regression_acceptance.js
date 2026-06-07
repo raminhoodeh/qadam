@@ -112,7 +112,7 @@ function assertSafetyStripIsSingleGlobalAuthority() {
         "dashboard must expose exactly one global safety strip"
     );
     includesAll(dashboardHtml, [
-        "Safety locked: paper-only readout",
+        "Paper action ready through guarded route",
         "Paper-only readout · live capital off",
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "One place for paper mode, capital, and order authority"
@@ -179,7 +179,7 @@ async function assertRenderedDashboardContract() {
     );
 
     [
-        ["[data-dashboard-safety-strip]", "Safety locked: paper-only readout"],
+        ["[data-dashboard-safety-strip]", "Paper action ready through guarded route"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
         ["[data-balance-ticker]", "Paper balance"],
@@ -233,8 +233,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260607-cc5-contract-renderer",
-        "/dashboard.js?v=20260607-cc5-contract-renderer"
+        "/auth.css?v=20260607-cc6-portfolio-timeline",
+        "/dashboard.js?v=20260607-cc6-portfolio-timeline"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

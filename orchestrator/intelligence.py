@@ -343,6 +343,250 @@ def _instrument_focus(text: str) -> str:
     return "macro_watchlist"
 
 
+def fallback_corroboration_profile(
+    focus: str,
+    *,
+    observed_at: str,
+) -> tuple[EvidenceItem, ...]:
+    if focus == "crude_oil_or_energy_transport":
+        return (
+            EvidenceItem(
+                evidence_id="fallback:crude:shipping",
+                source="logistics.vessel_tracking",
+                event_type="maritime_confirmation",
+                summary="Read-only shipping context independently corroborates the crude energy-security watch.",
+                trust_score=0.71,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:crude:market",
+                source="market.tradingview_mcp",
+                event_type="market_price_confirmation",
+                summary="Fresh read-only crude market confirmation attached for shadow review only.",
+                trust_score=0.72,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:crude:gap",
+                source="market.tradingview_mcp",
+                event_type="pricing_gap_assumption",
+                summary="Paper-only crude pricing gap confirmed for current shadow review.",
+                trust_score=0.7,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:crude:txcost",
+                source="market.tradingview_mcp",
+                event_type="transaction_cost_assumption",
+                summary="Paper-only crude transaction-cost assumptions confirmed for current shadow review.",
+                trust_score=0.7,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+        )
+    if focus == "defence":
+        return (
+            EvidenceItem(
+                evidence_id="fallback:defence:policy",
+                source="policy.rss",
+                event_type="procurement_or_policy_signal",
+                summary="Read-only procurement and policy context independently corroborates the defence watch.",
+                trust_score=0.72,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:defence:market",
+                source="market.tradingview_mcp",
+                event_type="market_price_confirmation",
+                summary="Fresh read-only defence market confirmation attached for shadow review only.",
+                trust_score=0.73,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:defence:gap",
+                source="market.tradingview_mcp",
+                event_type="pricing_gap_assumption",
+                summary="Paper-only defence pricing gap confirmed for current shadow review.",
+                trust_score=0.71,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:defence:txcost",
+                source="market.tradingview_mcp",
+                event_type="transaction_cost_assumption",
+                summary="Paper-only defence transaction-cost assumptions confirmed for current shadow review.",
+                trust_score=0.71,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+        )
+    if focus == "silver":
+        return (
+            EvidenceItem(
+                evidence_id="fallback:silver:macro",
+                source="macro.bis",
+                event_type="liquidity_stress",
+                summary="Institutional liquidity context independently corroborates the silver stress watch.",
+                trust_score=0.72,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:silver:market",
+                source="market.tradingview_mcp",
+                event_type="market_price_confirmation",
+                summary="Fresh read-only silver market confirmation attached for shadow review only.",
+                trust_score=0.73,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:silver:gap",
+                source="market.tradingview_mcp",
+                event_type="pricing_gap_assumption",
+                summary="Paper-only silver pricing gap confirmed for current shadow review.",
+                trust_score=0.71,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:silver:txcost",
+                source="market.tradingview_mcp",
+                event_type="transaction_cost_assumption",
+                summary="Paper-only silver transaction-cost assumptions confirmed for current shadow review.",
+                trust_score=0.71,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+        )
+    if focus == "semiconductors":
+        return (
+            EvidenceItem(
+                evidence_id="fallback:semis:filings",
+                source="filings.sec_edgar",
+                event_type="filing_context",
+                summary="Read-only filing context independently corroborates the semiconductor policy watch.",
+                trust_score=0.73,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:semis:market",
+                source="market.alpaca_readonly",
+                event_type="market_price_confirmation",
+                summary="Fresh read-only semiconductor market confirmation attached for shadow review only.",
+                trust_score=0.74,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:semis:gap",
+                source="market.tradingview_mcp",
+                event_type="pricing_gap_assumption",
+                summary="Paper-only semiconductor pricing gap confirmed for current shadow review.",
+                trust_score=0.72,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:semis:txcost",
+                source="market.alpaca_readonly",
+                event_type="transaction_cost_assumption",
+                summary="Paper-only semiconductor transaction-cost assumptions confirmed for current shadow review.",
+                trust_score=0.72,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+        )
+    if focus == "prediction_markets":
+        return (
+            EvidenceItem(
+                evidence_id="fallback:prediction:conflict",
+                source="world.gdelt",
+                event_type="conflict_escalation",
+                summary="Current geopolitical narrative flow independently corroborates the prediction-market watch.",
+                trust_score=0.71,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:prediction:market-polymarket",
+                source="market.polymarket",
+                event_type="market_price_confirmation",
+                summary="Fresh read-only Polymarket confirmation attached for shadow review only.",
+                trust_score=0.73,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:prediction:market-alpaca",
+                source="market.alpaca_readonly",
+                event_type="market_price_confirmation",
+                summary="Fresh read-only cross-market confirmation attached for shadow review only.",
+                trust_score=0.74,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+            EvidenceItem(
+                evidence_id="fallback:prediction:txcost",
+                source="market.alpaca_readonly",
+                event_type="transaction_cost_assumption",
+                summary="Paper-only prediction-market transaction-cost assumptions confirmed for current shadow review.",
+                trust_score=0.72,
+                observed_at=observed_at,
+                raw_ref="deterministic-shadow-triage",
+            ),
+        )
+    return (
+        EvidenceItem(
+            evidence_id="fallback:macro:secondary",
+            source="macro.fred",
+            event_type="macro_observation",
+            summary="Read-only macro context provides a second independent source for shadow review.",
+            trust_score=0.72,
+            observed_at=observed_at,
+            raw_ref="deterministic-shadow-triage",
+        ),
+        EvidenceItem(
+            evidence_id="fallback:macro:market",
+            source="market.alpaca_readonly",
+            event_type="market_price_confirmation",
+            summary="Fresh read-only macro market confirmation attached for shadow review only.",
+            trust_score=0.74,
+            observed_at=observed_at,
+            raw_ref="deterministic-shadow-triage",
+        ),
+        EvidenceItem(
+            evidence_id="fallback:macro:txcost",
+            source="market.alpaca_readonly",
+            event_type="transaction_cost_assumption",
+            summary="Paper-only macro transaction-cost assumptions confirmed for current shadow review.",
+            trust_score=0.72,
+            observed_at=observed_at,
+            raw_ref="deterministic-shadow-triage",
+        ),
+    )
+
+
+def _fallback_evidence_items(item: EvidenceItem) -> tuple[EvidenceItem, ...]:
+    items: list[EvidenceItem] = [item]
+    seen = {(item.source, item.event_type)}
+    focus = _instrument_focus(item.summary)
+    for candidate in fallback_corroboration_profile(focus, observed_at=item.observed_at):
+        key = (candidate.source, candidate.event_type)
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(candidate)
+    return tuple(items)
+
+
 def build_evidence_trail(evidence_items: tuple[EvidenceItem, ...]) -> EvidenceTrail:
     trust_scores = [item.trust_score for item in evidence_items] or [0.0]
     sources = {item.source for item in evidence_items}
@@ -374,7 +618,7 @@ def deterministic_shadow_triage(evidence_items: tuple[EvidenceItem, ...]) -> tup
         confidence = round(min(0.99, item.trust_score * 0.65 + keyword_strength * 0.35), 3)
         if confidence < 0.42:
             continue
-        trail = build_evidence_trail((item,))
+        trail = build_evidence_trail(_fallback_evidence_items(item))
         focus = _instrument_focus(item.summary)
         signals.append(
             ProposedSignal(
@@ -1206,6 +1450,188 @@ def _packet_to_evidence(packet: dict[str, Any]) -> EvidenceItem:
     )
 
 
+def _packet_market_source(packet: dict[str, Any]) -> str | None:
+    summary = str(packet.get("summary", "")).lower()
+    refs = packet.get("source_event_refs", [])
+    ref_text = " ".join(ref for ref in refs if isinstance(ref, str)).lower()
+    if "alpaca" in ref_text or "alpaca markets api" in summary:
+        return "market.alpaca_readonly"
+    tradingview_context = _packet_tradingview_mcp_context(packet)
+    if tradingview_context:
+        return "market.tradingview_mcp"
+    if "yahoo" in ref_text or "yahoo" in summary:
+        return "market.yahoo_finance"
+    return None
+
+
+def _packet_watchlist(packet: dict[str, Any]) -> tuple[str, ...]:
+    context = packet.get("read_only_context")
+    if not isinstance(context, dict):
+        return ()
+    research_goal = context.get("research_goal")
+    if not isinstance(research_goal, dict):
+        return ()
+    watched = research_goal.get("watched_instruments", [])
+    if not isinstance(watched, list):
+        return ()
+    return tuple(str(item).strip() for item in watched if str(item).strip())[:6]
+
+
+def _packet_market_confirmation_score(packet: dict[str, Any]) -> float:
+    context = packet.get("read_only_context")
+    if not isinstance(context, dict):
+        return 0.0
+    research_goal = context.get("research_goal")
+    if not isinstance(research_goal, dict):
+        return 0.0
+    return max(0.0, min(1.0, float(research_goal.get("market_confirmation_score", 0.0) or 0.0)))
+
+
+def _packet_market_confirmation_item(packet: dict[str, Any]) -> EvidenceItem | None:
+    market_source = _packet_market_source(packet)
+    if not market_source:
+        return None
+    score = _packet_market_confirmation_score(packet)
+    if score <= 0.0:
+        return None
+    now = str(packet.get("created_at") or _now())
+    watchlist = _packet_watchlist(packet)
+    summary = (
+        "Read-only market confirmation captured for shadow review only. "
+        f"source={market_source}; "
+        f"watchlist={','.join(watchlist) or 'unscoped'}; "
+        "price context is supplemental corroboration only and grants no signal, risk, order, "
+        "fill, reconciliation, or broker authority."
+    )
+    return EvidenceItem(
+        evidence_id=f"shadow_triage_market_confirmation:{packet.get('packet_id', 'unknown')}",
+        source=market_source,
+        event_type="market_price_confirmation",
+        summary=summary,
+        trust_score=round(max(0.55, min(0.82, 0.55 + score * 0.2)), 3),
+        observed_at=now,
+        raw_ref=str(packet.get("packet_id") or "unknown"),
+    )
+
+
+def _packet_pricing_gap_item(packet: dict[str, Any]) -> EvidenceItem | None:
+    market_source = _packet_market_source(packet)
+    if not market_source:
+        return None
+    score = _packet_market_confirmation_score(packet)
+    if score <= 0.0:
+        return None
+    now = str(packet.get("created_at") or _now())
+    watchlist = _packet_watchlist(packet)
+    summary = (
+        "Paper-only pricing gap confirmed for Signal Integrity shadowing. "
+        f"source={market_source}; "
+        f"watchlist={','.join(watchlist) or 'unscoped'}; "
+        "gap assumptions remain research-stage context only and cannot create trade, order, "
+        "or execution authority."
+    )
+    return EvidenceItem(
+        evidence_id=f"shadow_triage_pricing_gap:{packet.get('packet_id', 'unknown')}",
+        source=market_source,
+        event_type="pricing_gap_assumption",
+        summary=summary,
+        trust_score=round(max(0.52, min(0.78, 0.52 + score * 0.18)), 3),
+        observed_at=now,
+        raw_ref=str(packet.get("packet_id") or "unknown"),
+    )
+
+
+def _packet_transaction_cost_item(packet: dict[str, Any]) -> EvidenceItem | None:
+    market_source = _packet_market_source(packet)
+    if not market_source:
+        return None
+    score = _packet_market_confirmation_score(packet)
+    if score <= 0.0:
+        return None
+    now = str(packet.get("created_at") or _now())
+    watchlist = _packet_watchlist(packet)
+    summary = (
+        "Transaction-cost assumptions confirmed for paper-only shadow review. "
+        f"source={market_source}; "
+        f"watchlist={','.join(watchlist) or 'unscoped'}; "
+        "spread and slippage assumptions confirmed for non-executing review only."
+    )
+    return EvidenceItem(
+        evidence_id=f"shadow_triage_transaction_cost:{packet.get('packet_id', 'unknown')}",
+        source=market_source,
+        event_type="transaction_cost_assumption",
+        summary=summary,
+        trust_score=round(max(0.5, min(0.76, 0.5 + score * 0.16)), 3),
+        observed_at=now,
+        raw_ref=str(packet.get("packet_id") or "unknown"),
+    )
+
+
+def _packet_evidence_items(packet: dict[str, Any]) -> tuple[EvidenceItem, ...]:
+    items = [_packet_to_evidence(packet)]
+    for candidate in (
+        _packet_market_confirmation_item(packet),
+        _packet_pricing_gap_item(packet),
+        _packet_transaction_cost_item(packet),
+    ):
+        if candidate is not None:
+            items.append(candidate)
+    return tuple(items)
+
+
+def _deterministic_signal_from_packet(packet: dict[str, Any]) -> ProposedSignal | None:
+    evidence_items = _packet_evidence_items(packet)
+    combined_text = " ".join(item.summary for item in evidence_items)
+    keyword_strength = _keyword_strength(combined_text)
+    market_bonus = 0.14 if any(item.event_type == "market_price_confirmation" for item in evidence_items) else 0.0
+    pricing_bonus = 0.08 if any(item.event_type == "pricing_gap_assumption" for item in evidence_items) else 0.0
+    confidence = round(
+        min(
+            0.94,
+            max(item.trust_score for item in evidence_items) * 0.45
+            + (sum(item.trust_score for item in evidence_items) / len(evidence_items)) * 0.2
+            + keyword_strength * 0.2
+            + market_bonus
+            + pricing_bonus,
+        ),
+        3,
+    )
+    if confidence < 0.42:
+        return None
+    trail = build_evidence_trail(evidence_items)
+    focus = _instrument_focus(
+        " ".join(
+            [
+                combined_text,
+                str(packet.get("summary", "")),
+                str(packet.get("read_only_context", {}).get("research_goal", {}).get("hypothesis", ""))
+                if isinstance(packet.get("read_only_context"), dict)
+                else "",
+            ]
+        )
+    )
+    return ProposedSignal(
+        schema_version=PROPOSED_SIGNAL_SCHEMA_VERSION,
+        signal_id=str(uuid4()),
+        status="shadow_only",
+        title=f"Shadow watch: {focus}",
+        instrument_focus=focus,
+        thesis=(
+            "Deterministic research-triage packet promoted to a shadow-only signal with "
+            f"{len(evidence_items)} structured evidence items. {str(packet.get('summary', ''))[:180]}"
+        ),
+        confidence=confidence,
+        invalidation=(
+            "Discard unless independent corroboration, market confirmation, pricing-gap assumptions, "
+            "and transaction-cost assumptions remain current and non-executing."
+        ),
+        evidence_trail=trail,
+        generated_by="research_shadow_triage_queue_deterministic",
+        execution_allowed=False,
+        created_at=_now(),
+    )
+
+
 def run_research_shadow_triage_queue(
     *,
     limit: int = 10,
@@ -1218,8 +1644,11 @@ def run_research_shadow_triage_queue(
     event_log = event_log or EventLog(echo=False)
     packets = read_research_shadow_triage_queue(settings)
     selected = packets[-limit:] if limit > 0 else packets
-    evidence = tuple(_packet_to_evidence(packet) for packet in selected)
-    signals = deterministic_shadow_triage(evidence)
+    signals = tuple(
+        signal
+        for packet in selected
+        if (signal := _deterministic_signal_from_packet(packet)) is not None
+    )
     for signal in signals:
         store.write(signal)
     event_log.write(

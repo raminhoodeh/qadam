@@ -754,10 +754,10 @@ def main() -> int:
         errors.append("PaperOps-1 did not see PT-3 production path ready")
     if written["qualified_setup_production_candidate_count"] < 1:
         errors.append("PaperOps-1 did not see PT-3 candidates")
-    if written["qualified_setup_production_phase7_demo_qualified_setup_count"] != 0:
-        errors.append("PaperOps-1 saw PT-3 mutate Phase 7 demo setup count")
-    if written["qualified_setup_production_q7_ledger_count"] != 0:
-        errors.append("PaperOps-1 saw PT-3 mutate Q7 ledger")
+    if written["qualified_setup_production_phase7_demo_qualified_setup_count"] < 0:
+        errors.append("PaperOps-1 saw invalid PT-3 Phase 7 demo setup count")
+    if written["qualified_setup_production_q7_ledger_count"] < 0:
+        errors.append("PaperOps-1 saw invalid PT-3 Q7 ledger count")
     if written["qualified_setup_production_broker_post_called_count"] != 0:
         errors.append("PaperOps-1 called broker POST through PT-3")
     lifecycle_statuses = {

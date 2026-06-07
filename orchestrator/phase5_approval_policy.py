@@ -240,6 +240,9 @@ def _market_confirmation_summary(candidate: dict[str, Any]) -> dict[str, Any]:
         "yahoo_only_confirmation_allowed": policy.get("yahoo_only_confirmation_allowed") is True,
         "stale_confirmation_allowed": policy.get("stale_confirmation_allowed") is True,
         "single_source_confirmation_allowed": policy.get("single_source_confirmation_allowed") is True,
+        "pricing_gap_required": policy.get("pricing_gap_required") is True,
+        "pricing_gap_policy_tier": str(policy.get("pricing_gap_policy_tier") or "missing"),
+        "pricing_gap_satisfaction_rule": str(policy.get("pricing_gap_satisfaction_rule") or "missing"),
     }
 
 
@@ -463,7 +466,7 @@ def _strategy_decision(
     if preference_summary["quota_degraded"]:
         cautions.append("preference_quota_degraded_context_only")
     if preference_summary["context_stale"]:
-        hold_reasons.append("preference_context_stale")
+        cautions.append("preference_context_stale_context_only")
 
     if blockers:
         status = "blocked"

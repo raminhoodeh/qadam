@@ -910,8 +910,11 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
             errors.append("paperops_30_day_operations_paper_live_unattended_while_blocked")
         if _int(artifact.get("paper_live_certification_blocker_count")) < 1:
             errors.append("paperops_30_day_operations_paper_live_blockers_missing")
-    if artifact.get("paper_live_certification_submission_delegation_allowed") is not False:
-        errors.append("paperops_30_day_operations_paper_live_submission_delegated")
+    if (
+        artifact.get("paper_live_certification_submission_delegation_allowed") is True
+        and artifact.get("paper_live_certification_paper_live_certified") is not True
+    ):
+        errors.append("paperops_30_day_operations_paper_live_submission_delegated_while_blocked")
     if (
         artifact.get("paper_live_certification_qctrl_hold_visible") is True
         and artifact.get("paper_live_certification_submit_visible_as_held") is not True

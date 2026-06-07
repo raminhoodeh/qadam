@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260607-cc5-contract-renderer",
-        "/dashboard.js?v=20260607-cc5-contract-renderer"
+        "/auth.css?v=20260607-cc6-portfolio-timeline",
+        "/dashboard.js?v=20260607-cc6-portfolio-timeline"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -125,7 +125,7 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        ["[data-dashboard-safety-strip]", "Safety locked: paper-only readout"],
+        ["[data-dashboard-safety-strip]", "Paper action ready through guarded route"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-overview-mission-brief]", "Mission Control brief"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
@@ -143,7 +143,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260607-cc5-contract-renderer");
+    console.log("dashboard_d11l_cache_key=20260607-cc6-portfolio-timeline");
     console.log("dashboard_authority_unchanged=True");
 }
 

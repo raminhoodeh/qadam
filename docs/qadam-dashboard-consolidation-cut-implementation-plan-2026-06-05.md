@@ -201,6 +201,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 ### CC6 — Real portfolio timeline *(JS/CSS)*
 - Render `capital.equity_curve` (20 live points) as an inline SVG sparkline using existing `--green/--coral` tokens and the present `.chart-*` classes; show balance, Δ%, drawdown, realized/unrealized, `closed/target`, and a **stale-mirror** badge driven by `mirror_freshness_status` (currently `stale`).
 - **Done when:** the curve reflects real data; staleness is visible; no fabricated points.
+- **Status:** completed. The founder Overview portfolio block now reads `capital.equity_curve` through the Mission Control contract, renders 20 real portfolio points, shows balance/Delta/drawdown/realized/unrealized/closed-target, exposes the stale mirror badge from `mirror_freshness_status`, and fails preflight if the renderer fabricates fallback points.
 
 ### CC7 — Visual system, responsive, a11y *(CSS/HTML)*
 - Reuse `auth.css` tokens only (no new palette). Tighten vertical rhythm to `--section-gap`; ensure single-column phone layout; verify focus order, `aria-current`, contrast (AA), reduced-motion for the sparkline, and that the drawer is keyboard-operable.

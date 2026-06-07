@@ -138,6 +138,7 @@ class Settings:
     tradingview_mcp_enabled: bool
     tradingview_mcp_live_calls_enabled: bool
     tradingview_mcp_symbol_allowlist: tuple[str, ...]
+    pricing_gap_rollout_stage: str
     paper_operational_enabled: bool
     alpaca_paper_submit_enabled: bool
     alpaca_paper_exit_enabled: bool
@@ -264,6 +265,11 @@ class Settings:
             tradingview_mcp_symbol_allowlist=_csv_tuple(
                 os.getenv("TRADINGVIEW_MCP_SYMBOL_ALLOWLIST", "USO,SLV,SMH,XLE,LMT,NVDA")
             ),
+            pricing_gap_rollout_stage=os.getenv(
+                "QADAM_PRICING_GAP_ROLLOUT_STAGE",
+                "stage_b",
+            ).strip().lower()
+            or "stage_b",
             paper_operational_enabled=_bool_env("QADAM_PAPER_OPERATIONAL_ENABLED", False),
             alpaca_paper_submit_enabled=_bool_env("QADAM_ALPACA_PAPER_SUBMIT_ENABLED", False),
             alpaca_paper_exit_enabled=_bool_env("QADAM_ALPACA_PAPER_EXIT_ENABLED", False),

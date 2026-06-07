@@ -61,6 +61,39 @@ def _staged_probe(record: dict) -> dict:
     probe["time_in_force"] = "day"
     probe["event_log_prewrite_ready"] = True
     probe["idempotency_key"] = "q5-6-test-idempotency-key"
+    probe["blocked_by_global_context"] = False
+    probe["blocked_by_approval_policy"] = False
+    probe["blocked_by_signal_integrity"] = False
+    probe["blocked_by_risk_sizing"] = False
+    probe["blocked_by_source_posture"] = False
+    probe["blocked_by_kill_switch"] = False
+    probe["blocked_by_execution_adapter"] = False
+    probe["blocked_by_order_fields"] = False
+    probe["blocked_by_idempotency_prewrite"] = False
+    probe["blocked_primary_cause"] = "not_blocked"
+    probe["blocked_primary_cause_details"] = []
+    return probe
+
+
+def _blocked_probe(record: dict, *, primary_cause: str, details: list[str]) -> dict:
+    probe = deepcopy(record)
+    probe["status"] = "blocked"
+    probe["order_state"] = "blocked_not_staged"
+    probe["staging_allowed"] = False
+    probe["blocked_by_global_context"] = False
+    probe["blocked_by_approval_policy"] = False
+    probe["blocked_by_signal_integrity"] = False
+    probe["blocked_by_risk_sizing"] = False
+    probe["blocked_by_source_posture"] = False
+    probe["blocked_by_kill_switch"] = False
+    probe["blocked_by_execution_adapter"] = False
+    probe["blocked_by_order_fields"] = False
+    probe["blocked_by_idempotency_prewrite"] = False
+    probe[f"blocked_by_{primary_cause}"] = True
+    probe["blocked_primary_cause"] = primary_cause
+    probe["blocked_primary_cause_details"] = details
+    probe["blocked_reasons"] = details[:]
+    probe["blocked_reason_count"] = len(probe["blocked_reasons"])
     return probe
 
 
@@ -134,6 +167,29 @@ def main() -> int:
     exposure_probe["raw_payload_exposed"] = True
     exposure_errors = validate_phase5_paper_order_staging_record(exposure_probe)
 
+    approval_primary_cause_probe = _blocked_probe(
+        first_record,
+        primary_cause="approval_policy",
+        details=["approval_policy_status:hold"],
+    )
+    approval_primary_cause_errors = validate_phase5_paper_order_staging_record(approval_primary_cause_probe)
+
+    kill_switch_primary_cause_probe = _blocked_probe(
+        first_record,
+        primary_cause="kill_switch",
+        details=["active_kill_switch:global:all"],
+    )
+    kill_switch_primary_cause_errors = validate_phase5_paper_order_staging_record(kill_switch_primary_cause_probe)
+
+    signal_integrity_primary_cause_probe = _blocked_probe(
+        first_record,
+        primary_cause="signal_integrity",
+        details=["signal_pricing_gap_not_modeled"],
+    )
+    signal_integrity_primary_cause_errors = validate_phase5_paper_order_staging_record(
+        signal_integrity_primary_cause_probe
+    )
+
     print("phase5_paper_order_staging_status=" + written_bundle["status"])
     print(
         "phase5_paper_order_staging_schema_version="
@@ -161,6 +217,10 @@ def main() -> int:
     print(
         "phase5_paper_order_staging_blocked_count="
         f"{written_bundle['blocked_count']}"
+    )
+    print(
+        "phase5_paper_order_staging_blocked_primary_cause_counts="
+        f"{written_bundle.get('blocked_primary_cause_counts', {})}"
     )
     print(
         "phase5_paper_order_staging_required_check_count="
@@ -246,6 +306,22 @@ def main() -> int:
         "phase5_paper_order_staging_exposure_probe_error_count="
         f"{len(exposure_errors)}"
     )
+    print(
+        "phase5_paper_order_staging_approval_primary_cause_probe_error_count="
+        f"{len(approval_primary_cause_errors)}"
+    )
+    print(
+        "phase5_paper_order_staging_kill_switch_primary_cause_probe_error_count="
+        f"{len(kill_switch_primary_cause_errors)}"
+    )
+    print(
+        "phase5_paper_order_staging_signal_integrity_primary_cause_probe_error_count="
+        f"{len(signal_integrity_primary_cause_errors)}"
+    )
+    print(
+        "phase5_paper_order_staging_first_record_primary_cause="
+        f"{first_record.get('blocked_primary_cause', 'missing')}"
+    )
     print("phase5_paper_order_staging_boundary=" + written_bundle["boundary"])
 
     if validation_errors:
@@ -292,6 +368,26 @@ def main() -> int:
         errors.append("paper_order_staging_event_log_not_written")
     if event_replay["total_events"] != written_bundle["staging_record_count"]:
         errors.append("paper_order_staging_event_log_count_mismatch")
+    if not isinstance(written_bundle.get("blocked_primary_cause_counts"), dict):
+        errors.append("paper_order_staging_primary_cause_counts_missing")
+    if first_record.get("status") == "blocked":
+        if first_record.get("blocked_primary_cause") in {None, "", "not_blocked"}:
+            errors.append("paper_order_staging_blocked_record_primary_cause_missing")
+        if not any(
+            first_record.get(field) is True
+            for field in (
+                "blocked_by_global_context",
+                "blocked_by_approval_policy",
+                "blocked_by_signal_integrity",
+                "blocked_by_risk_sizing",
+                "blocked_by_source_posture",
+                "blocked_by_kill_switch",
+                "blocked_by_execution_adapter",
+                "blocked_by_order_fields",
+                "blocked_by_idempotency_prewrite",
+            )
+        ):
+            errors.append("paper_order_staging_blocked_record_flags_missing")
     for key in (
         "risk_approval_allowed_count",
         "trade_candidate_created_count",
@@ -335,6 +431,12 @@ def main() -> int:
         errors.append("live_capital_probe_not_rejected")
     if "paper_order_staging_exposure_enabled:raw_payload_exposed" not in exposure_errors:
         errors.append("exposure_probe_not_rejected")
+    if approval_primary_cause_errors:
+        errors.append("approval_primary_cause_probe_not_accepted")
+    if kill_switch_primary_cause_errors:
+        errors.append("kill_switch_primary_cause_probe_not_accepted")
+    if signal_integrity_primary_cause_errors:
+        errors.append("signal_integrity_primary_cause_probe_not_accepted")
 
     if errors:
         for error in errors:

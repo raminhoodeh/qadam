@@ -152,8 +152,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260607-cc5-contract-renderer",
-    "/dashboard.js?v=20260607-cc5-contract-renderer",
+    "/auth.css?v=20260607-cc6-portfolio-timeline",
+    "/dashboard.js?v=20260607-cc6-portfolio-timeline",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links"
 ], "dashboard cache keys");

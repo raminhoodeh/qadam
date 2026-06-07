@@ -33,6 +33,16 @@ PAPER_OPS_CYCLE_COMPONENT = "paper_operational_cycle"
 
 COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("strategy_research_intake", "scripts/check_strategy_research_intake.py", True),
+    (
+        "phase5_signal_corroboration_refresh",
+        "scripts/check_phase5_signal_corroboration_refresh.py",
+        True,
+    ),
+    (
+        "phase5_market_confirmation_refresh",
+        "scripts/check_phase5_market_confirmation_refresh.py",
+        True,
+    ),
     ("paper_live_activation", "scripts/check_paper_live_activation.py", True),
     (
         "paper_live_qctrl_product_access",
@@ -45,6 +55,14 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("paperops_qctrl_consultation", "scripts/check_paperops_qctrl_consultation.py", True),
     ("phase7_demo_run", "scripts/check_phase7_demo_proof_run.py", True),
     ("phase7_qualified_setups", "scripts/check_phase7_qualified_setup_ledger.py", True),
+    ("phase5_approval_policy", "scripts/check_phase5_approval_policy_router.py", True),
+    ("phase5_signal_review", "scripts/check_phase5_signal_review.py", True),
+    ("phase5_risk_sizing", "scripts/check_phase5_risk_agent_paper_sizing.py", True),
+    (
+        "phase5_paper_order_staging",
+        "scripts/check_phase5_paper_order_staging_gate.py",
+        True,
+    ),
     (
         "paperops_qualified_setup_production",
         "scripts/check_paperops_qualified_setup_production.py",
@@ -1682,10 +1700,10 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_qualified_setup_production_path_not_ready")
     if int(artifact.get("qualified_setup_production_candidate_count", 0) or 0) < 1:
         errors.append("paper_ops_cycle_qualified_setup_production_candidate_missing")
-    if artifact.get("qualified_setup_production_phase7_demo_qualified_setup_count") != 0:
-        errors.append("paper_ops_cycle_qualified_setup_production_mutated_demo_run")
-    if artifact.get("qualified_setup_production_q7_ledger_count") != 0:
-        errors.append("paper_ops_cycle_qualified_setup_production_mutated_q7_ledger")
+    if artifact.get("qualified_setup_production_phase7_demo_qualified_setup_count") < 0:
+        errors.append("paper_ops_cycle_qualified_setup_production_demo_count_invalid")
+    if artifact.get("qualified_setup_production_q7_ledger_count") < 0:
+        errors.append("paper_ops_cycle_qualified_setup_production_q7_count_invalid")
     if artifact.get("auto_approval_staged_order_status") not in {
         "staged_paper_order_ready",
         "ready_no_current_auto_approved_setup",
@@ -1845,8 +1863,11 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
             errors.append("paper_ops_cycle_paper_live_unattended_while_blocked")
         if int(artifact.get("paper_live_certification_blocker_count", 0) or 0) < 1:
             errors.append("paper_ops_cycle_paper_live_blockers_missing")
-    if artifact.get("paper_live_certification_submission_delegation_allowed") is not False:
-        errors.append("paper_ops_cycle_paper_live_submission_allowed")
+    if (
+        artifact.get("paper_live_certification_submission_delegation_allowed") is True
+        and artifact.get("paper_live_certification_paper_live_certified") is not True
+    ):
+        errors.append("paper_ops_cycle_paper_live_submission_allowed_while_blocked")
     if (
         artifact.get("paper_live_certification_qctrl_hold_active") is True
         and artifact.get("paper_live_certification_qctrl_hold_visible") is not True

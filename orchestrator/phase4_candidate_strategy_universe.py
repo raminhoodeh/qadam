@@ -170,6 +170,20 @@ PREFERENCE_DOMAIN_PACK_BLUEPRINTS: dict[str, tuple[dict[str, str], ...]] = {
     ),
 }
 
+PRICING_GAP_POLICY_TIERS: tuple[str, ...] = (
+    "required_strict",
+    "required_light",
+    "not_required",
+)
+
+STRATEGY_PRICING_GAP_POLICY_TIERS: dict[str, str] = {
+    "prediction_market_geopolitical_dislocation": "not_required",
+    "crude_oil_energy_security_disruption": "required_light",
+    "defence_repricing_geopolitical_watch": "required_light",
+    "silver_macro_liquidity_stress": "required_light",
+    "semiconductor_policy_options_asymmetry": "required_strict",
+}
+
 
 @dataclass(frozen=True)
 class StrategyFamilyBlueprint:
@@ -562,13 +576,25 @@ def _head_of_quant_context(results: list[dict[str, Any]], instrument_universe: t
     }
 
 
-def _market_confirmation_requirements() -> dict[str, Any]:
+def _market_confirmation_requirements(blueprint: StrategyFamilyBlueprint) -> dict[str, Any]:
+    pricing_gap_policy_tier = STRATEGY_PRICING_GAP_POLICY_TIERS.get(
+        blueprint.candidate_key,
+        "required_light",
+    )
     return {
         "required": True,
         "non_yahoo_independent_confirmation_required": True,
         "yahoo_finance_role": "supplemental_market_confirmation_only",
         "yahoo_only_confirmation_allowed": False,
-        "pricing_gap_required": True,
+        "pricing_gap_required": pricing_gap_policy_tier in {"required_strict", "required_light"},
+        "pricing_gap_policy_tier": pricing_gap_policy_tier,
+        "pricing_gap_satisfaction_rule": (
+            "explicit pricing-gap evidence required"
+            if pricing_gap_policy_tier == "required_strict"
+            else "pricing-gap or transaction-cost evidence required"
+            if pricing_gap_policy_tier == "required_light"
+            else "pricing-gap evidence optional after market confirmation"
+        ),
         "stale_confirmation_allowed": False,
         "single_source_confirmation_allowed": False,
         "boundary": (
@@ -783,7 +809,7 @@ def _candidate_from_blueprint(
         source_weights=source_weights,
         decision_source_coverage=decision_source_coverage,
         model_weights=_model_weights(),
-        market_confirmation_requirements=_market_confirmation_requirements(),
+        market_confirmation_requirements=_market_confirmation_requirements(blueprint),
         preference_context_policy=preference_policy,
         quantum_role=_quantum_role(),
         strategy_research_context=_strategy_research_context(blueprint, artifacts=artifacts),
@@ -1033,6 +1059,17 @@ def validate_candidate_strategy_universe(artifact: dict[str, Any]) -> list[str]:
                 errors.append(f"strategy_candidate_yahoo_only_confirmation_allowed:{candidate_key}")
             if market_confirmation.get("single_source_confirmation_allowed") is not False:
                 errors.append(f"strategy_candidate_single_source_confirmation_allowed:{candidate_key}")
+            tier = str(market_confirmation.get("pricing_gap_policy_tier") or "")
+            if tier not in PRICING_GAP_POLICY_TIERS:
+                errors.append(f"strategy_candidate_pricing_gap_policy_tier_invalid:{candidate_key}:{tier or 'missing'}")
+            expected_tier = STRATEGY_PRICING_GAP_POLICY_TIERS.get(candidate_key)
+            if expected_tier and tier != expected_tier:
+                errors.append(f"strategy_candidate_pricing_gap_policy_tier_mismatch:{candidate_key}:{tier}")
+            expected_required = tier in {"required_strict", "required_light"}
+            if market_confirmation.get("pricing_gap_required") is not expected_required:
+                errors.append(f"strategy_candidate_pricing_gap_required_mismatch:{candidate_key}")
+            if "pricing-gap" not in str(market_confirmation.get("pricing_gap_satisfaction_rule") or ""):
+                errors.append(f"strategy_candidate_pricing_gap_rule_missing:{candidate_key}")
 
         preference_policy = candidate.get("preference_context_policy", {})
         if not isinstance(preference_policy, dict):

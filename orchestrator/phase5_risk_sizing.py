@@ -114,6 +114,14 @@ INSTRUMENT_ALIASES: dict[str, tuple[str, ...]] = {
     "semiconductors": ("semiconductors", "semiconductor", "chips", "ai_chip"),
 }
 
+STRATEGY_FAMILY_FOCUS_ALIASES: dict[str, tuple[str, ...]] = {
+    "crude_oil_energy_security_disruption": ("crude_oil_or_energy_transport", "crude_oil", "energy_transport"),
+    "defence_repricing_geopolitical_watch": ("defence", "defense", "geopolitical"),
+    "prediction_market_geopolitical_dislocation": ("prediction_markets", "polymarket", "kalshi"),
+    "semiconductor_policy_options_asymmetry": ("semiconductors", "semiconductor", "chips"),
+    "silver_macro_liquidity_stress": ("silver", "macro", "liquidity"),
+}
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -193,15 +201,40 @@ def _matches_instrument(primary_instrument: str, review_focus: str) -> bool:
     return any(alias in focus for alias in aliases)
 
 
+def _review_matches_strategy(
+    strategy_family_key: str,
+    primary_instrument: str,
+    review: dict[str, Any],
+) -> bool:
+    review_focus = str(review.get("instrument_focus") or "")
+    if _matches_instrument(primary_instrument, review_focus):
+        return True
+    signal_id = str(review.get("source_signal_id") or "").lower()
+    if strategy_family_key and strategy_family_key.lower() in signal_id:
+        return True
+    aliases = STRATEGY_FAMILY_FOCUS_ALIASES.get(strategy_family_key, ())
+    focus = review_focus.lower()
+    return any(alias in focus or alias in signal_id for alias in aliases)
+
+
+def _review_sort_key(review: dict[str, Any]) -> tuple[str, str]:
+    return (
+        str(review.get("reviewed_at") or ""),
+        str(review.get("review_id") or ""),
+    )
+
+
 def _matching_signal_reviews(
+    strategy_family_key: str,
     primary_instrument: str,
     signal_reviews: tuple[dict[str, Any], ...],
 ) -> tuple[dict[str, Any], ...]:
     matches = [
         review
         for review in signal_reviews
-        if _matches_instrument(primary_instrument, str(review.get("instrument_focus") or ""))
+        if _review_matches_strategy(strategy_family_key, primary_instrument, review)
     ]
+    matches.sort(key=_review_sort_key)
     return tuple(matches[-20:])
 
 
@@ -236,13 +269,14 @@ def _latest_signal_review(matching_reviews: tuple[dict[str, Any], ...]) -> dict[
 
 def _signal_evidence_summary(
     candidate: dict[str, Any],
+    strategy_family_key: str,
     primary_instrument: str,
     signal_reviews: tuple[dict[str, Any], ...],
 ) -> dict[str, Any]:
     context = candidate.get("signal_integrity_context", {})
     if not isinstance(context, dict):
         context = {}
-    matching = _matching_signal_reviews(primary_instrument, signal_reviews)
+    matching = _matching_signal_reviews(strategy_family_key, primary_instrument, signal_reviews)
     latest = _latest_signal_review(matching)
     live_counts = Counter(str(review.get("status") or "unknown") for review in matching)
     status_counts = _merge_counts(context.get("status_counts", {}), dict(live_counts))
@@ -262,6 +296,7 @@ def _signal_evidence_summary(
         "hold_for_corroboration_count": int(status_counts.get("hold_for_corroboration", 0) or 0),
         "blocked_count": int(status_counts.get("blocked", 0) or 0),
         "latest_review_id": latest.get("review_id"),
+        "latest_review_source_signal_id": str(latest.get("source_signal_id") or "missing"),
         "latest_review_status": str(latest.get("status") or "missing"),
         "latest_reviewed_at": latest.get("reviewed_at"),
         "latest_integrity_score": _float(latest.get("integrity_score"), 0.0),
@@ -271,6 +306,21 @@ def _signal_evidence_summary(
         "latest_min_trust_score": _float(latest.get("min_trust_score"), 0.0),
         "latest_market_confirmation_status": str(latest_market.get("status") or "missing"),
         "latest_market_confirmation_pricing_gap": str(latest_market.get("pricing_gap") or "missing"),
+        "latest_market_confirmation_pricing_gap_status": str(
+            latest_market.get("pricing_gap_status") or "missing"
+        ),
+        "latest_market_confirmation_pricing_gap_result": str(
+            latest_market.get("pricing_gap_result") or "missing"
+        ),
+        "latest_market_confirmation_pricing_gap_confirmation_source": str(
+            latest_market.get("pricing_gap_confirmation_source") or "missing"
+        ),
+        "latest_market_confirmation_pricing_gap_rollout_stage": str(
+            latest_market.get("pricing_gap_rollout_stage") or "stage_a"
+        ),
+        "latest_market_confirmation_pricing_gap_relaxed_policy_enabled": (
+            latest_market.get("pricing_gap_relaxed_policy_enabled") is True
+        ),
         "latest_market_confirmation_stale": latest_market.get("stale") is True,
         "latest_market_confirmation_unavailable": latest_market.get("unavailable") is True,
         "latest_market_uses_yahoo_finance": latest_market.get("uses_yahoo_finance") is True,
@@ -349,7 +399,47 @@ def _market_policy_summary(decision: dict[str, Any], candidate: dict[str, Any]) 
         "stale_confirmation_allowed": policy.get("stale_confirmation_allowed") is True,
         "single_source_confirmation_allowed": policy.get("single_source_confirmation_allowed") is True,
         "pricing_gap_required": policy.get("pricing_gap_required") is True,
+        "pricing_gap_policy_tier": str(policy.get("pricing_gap_policy_tier") or "missing"),
+        "pricing_gap_satisfaction_rule": str(policy.get("pricing_gap_satisfaction_rule") or "missing"),
     }
+
+
+def _pricing_gap_status_satisfies_policy(
+    *,
+    pricing_gap_status: str,
+    pricing_gap_policy_tier: str,
+    pricing_gap_rollout_stage: str,
+) -> bool:
+    if pricing_gap_rollout_stage != "stage_b":
+        return pricing_gap_status == "pass_pricing_gap_confirmed"
+    if pricing_gap_policy_tier == "required_strict":
+        return pricing_gap_status == "pass_pricing_gap_confirmed"
+    if pricing_gap_policy_tier == "required_light":
+        return pricing_gap_status in {
+            "pass_pricing_gap_confirmed",
+            "pass_pricing_gap_transaction_cost_only",
+        }
+    if pricing_gap_policy_tier == "not_required":
+        return pricing_gap_status in {
+            "pass_pricing_gap_confirmed",
+            "pass_pricing_gap_transaction_cost_only",
+            "pass_pricing_gap_not_required",
+        }
+    return False
+
+
+def _pricing_gap_relaxed_policy_path_used(
+    *,
+    pricing_gap_status: str,
+    pricing_gap_policy_tier: str,
+    pricing_gap_rollout_stage: str,
+) -> bool:
+    if pricing_gap_rollout_stage != "stage_b":
+        return False
+    return (
+        (pricing_gap_policy_tier == "required_light" and pricing_gap_status == "pass_pricing_gap_transaction_cost_only")
+        or (pricing_gap_policy_tier == "not_required" and pricing_gap_status == "pass_pricing_gap_not_required")
+    )
 
 
 def _preference_policy_summary(decision: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
@@ -425,7 +515,12 @@ def _risk_review(
     source_summary = _source_summary(candidate)
     market_policy = _market_policy_summary(decision, candidate)
     preference_policy = _preference_policy_summary(decision, candidate)
-    signal_evidence = _signal_evidence_summary(candidate, primary_instrument, signal_reviews)
+    signal_evidence = _signal_evidence_summary(
+        candidate,
+        strategy_key,
+        primary_instrument,
+        signal_reviews,
+    )
     risk_caps = _risk_caps(settings, account_context)
     invalidation_conditions = [
         str(item) for item in candidate.get("invalidation_conditions", []) or []
@@ -473,7 +568,10 @@ def _risk_review(
             "single_source_confirmation_blocked",
             not market_policy["single_source_confirmation_allowed"],
         ),
-        _check("pricing_gap_required", market_policy["pricing_gap_required"]),
+        _check(
+            "pricing_gap_policy_tier_supported",
+            market_policy["pricing_gap_policy_tier"] in {"required_strict", "required_light", "not_required"},
+        ),
         _check(
             "latest_market_confirmation_available",
             signal_evidence["latest_market_confirmation_status"]
@@ -485,8 +583,15 @@ def _risk_review(
         ),
         _check(
             "pricing_gap_confirmed",
-            signal_evidence["latest_market_confirmation_pricing_gap"]
-            == "pass_pricing_gap_confirmed",
+            _pricing_gap_status_satisfies_policy(
+                pricing_gap_status=signal_evidence["latest_market_confirmation_pricing_gap_status"],
+                pricing_gap_policy_tier=market_policy["pricing_gap_policy_tier"],
+                pricing_gap_rollout_stage=str(
+                    signal_evidence.get("latest_market_confirmation_pricing_gap_rollout_stage")
+                    or settings.pricing_gap_rollout_stage
+                    or "stage_a"
+                ).strip().lower(),
+            ),
         ),
         _check("invalidation_conditions_present", bool(invalidation_conditions)),
         _check("no_trade_conditions_present", bool(no_trade_conditions)),
@@ -513,12 +618,28 @@ def _risk_review(
         }
     ]
     risk_blockers.extend(global_errors)
+    pricing_gap_rollout_stage = str(
+        signal_evidence.get("latest_market_confirmation_pricing_gap_rollout_stage")
+        or settings.pricing_gap_rollout_stage
+        or "stage_a"
+    ).strip().lower()
+    if pricing_gap_rollout_stage not in {"stage_a", "stage_b"}:
+        pricing_gap_rollout_stage = "stage_a"
+    pricing_gap_policy_satisfied = _pricing_gap_status_satisfies_policy(
+        pricing_gap_status=signal_evidence["latest_market_confirmation_pricing_gap_status"],
+        pricing_gap_policy_tier=market_policy["pricing_gap_policy_tier"],
+        pricing_gap_rollout_stage=pricing_gap_rollout_stage,
+    )
+    pricing_gap_relaxed_policy_path_used = _pricing_gap_relaxed_policy_path_used(
+        pricing_gap_status=signal_evidence["latest_market_confirmation_pricing_gap_status"],
+        pricing_gap_policy_tier=market_policy["pricing_gap_policy_tier"],
+        pricing_gap_rollout_stage=pricing_gap_rollout_stage,
+    )
     latest_signal_ready = (
         signal_evidence["latest_review_status"] == "passed_to_risk_shadow"
         and signal_evidence["latest_market_confirmation_status"]
         == "market_confirmation_corroboration_available"
-        and signal_evidence["latest_market_confirmation_pricing_gap"]
-        == "pass_pricing_gap_confirmed"
+        and pricing_gap_policy_satisfied
     )
     top_failures = set(signal_evidence.get("top_failure_reasons", {}))
     if not latest_signal_ready:
@@ -528,8 +649,19 @@ def _risk_review(
             risk_blockers.append("signal_market_confirmation_stale")
         if "preference_only_confirmation_hold" in top_failures:
             risk_blockers.append("signal_preference_only_confirmation_hold")
-        if "missing_pricing_gap" in top_failures:
-            risk_blockers.append("signal_pricing_gap_missing")
+        if market_policy["pricing_gap_policy_tier"] in {"required_strict", "required_light"}:
+            if "pricing_gap_unavailable_market_confirmation_unavailable" in top_failures:
+                risk_blockers.append("signal_pricing_gap_market_confirmation_unavailable")
+            if "pricing_gap_unavailable_market_confirmation_stale" in top_failures:
+                risk_blockers.append("signal_pricing_gap_market_confirmation_stale")
+            if "pricing_gap_unavailable_single_source_hold" in top_failures:
+                risk_blockers.append("signal_pricing_gap_single_source_hold")
+            if "pricing_gap_unavailable_not_modeled" in top_failures:
+                risk_blockers.append("signal_pricing_gap_not_modeled")
+            if "pricing_gap_rollout_stage_a_strict_hold" in top_failures:
+                risk_blockers.append("signal_pricing_gap_rollout_stage_a_strict_hold")
+            if "missing_pricing_gap" in top_failures:
+                risk_blockers.append("signal_pricing_gap_missing")
     risk_blockers = sorted(dict.fromkeys(risk_blockers))
     cautions: list[str] = []
     if preference_policy["quota_degraded"]:
@@ -584,6 +716,12 @@ def _risk_review(
         "source_summary": source_summary,
         "signal_evidence": signal_evidence,
         "market_confirmation_policy": market_policy,
+        "pricing_gap_rollout_stage": pricing_gap_rollout_stage,
+        "pricing_gap_relaxed_policy_enabled": pricing_gap_rollout_stage == "stage_b",
+        "pricing_gap_policy_tier": market_policy["pricing_gap_policy_tier"],
+        "pricing_gap_policy_satisfaction_rule": market_policy["pricing_gap_satisfaction_rule"],
+        "pricing_gap_policy_satisfied": pricing_gap_policy_satisfied,
+        "pricing_gap_relaxed_policy_path_used": pricing_gap_relaxed_policy_path_used,
         "preference_policy": preference_policy,
         "invalidation_conditions": invalidation_conditions,
         "invalidation_condition_count": len(invalidation_conditions),
@@ -604,7 +742,13 @@ def _risk_review(
         "next_required_action": (
             "Evaluate kill switches in Q5-4 before any execution intent or order staging."
             if status == "eligible"
-            else "Repair evidence, market confirmation, pricing gap, or safety blockers before Q5-4."
+            else (
+                "Repair evidence, market confirmation, or strict pricing-gap blockers before Q5-4."
+                if market_policy["pricing_gap_policy_tier"] == "required_strict"
+                else "Repair evidence, market confirmation, or light-tier transaction-cost / pricing-gap blockers before Q5-4."
+                if market_policy["pricing_gap_policy_tier"] == "required_light"
+                else "Repair evidence or market-confirmation blockers before Q5-4."
+            )
         ),
         "risk_approval_allowed": False,
         "risk_approval_authority": False,
@@ -668,7 +812,7 @@ def build_phase5_risk_sizing_reviews(settings: Settings | None = None) -> dict[s
     approval_bundle = _approval_policy_bundle(settings)
     candidate_universe = _candidate_universe(settings)
     account_context = paper_account_shadow_context(settings)
-    signal_reviews = SignalIntegrityReviewStore(settings=settings).read(limit=300)
+    signal_reviews = SignalIntegrityReviewStore(settings=settings).read()
     candidates = _candidate_by_key(candidate_universe)
     global_errors = _global_context_errors(
         approval_bundle=approval_bundle,
@@ -687,6 +831,17 @@ def build_phase5_risk_sizing_reviews(settings: Settings | None = None) -> dict[s
     ]
     status_counts = Counter(str(review.get("status") or "unknown") for review in reviews)
     risk_decision_counts = Counter(str(review.get("risk_decision") or "unknown") for review in reviews)
+    rollout_stage = settings.pricing_gap_rollout_stage
+    if rollout_stage not in {"stage_a", "stage_b"}:
+        rollout_stage = "stage_a"
+    stage_b_candidate_count = sum(
+        1
+        for review in reviews
+        if isinstance(review, dict)
+        and review.get("pricing_gap_rollout_stage") == "stage_a"
+        and "signal_pricing_gap_rollout_stage_a_strict_hold"
+        in (review.get("risk_blockers", []) or [])
+    )
     bundle = {
         "schema_version": PHASE5_RISK_SIZING_SCHEMA_VERSION,
         "artifact_type": "phase5_risk_sizing_review_bundle",
@@ -712,6 +867,9 @@ def build_phase5_risk_sizing_reviews(settings: Settings | None = None) -> dict[s
         "approval_policy_eligible_count": int(approval_bundle.get("eligible_count", 0) or 0),
         "global_risk_errors": global_errors,
         "global_risk_error_count": len(global_errors),
+        "pricing_gap_rollout_stage": rollout_stage,
+        "pricing_gap_relaxed_policy_enabled": rollout_stage == "stage_b",
+        "pricing_gap_stage_b_candidate_count": stage_b_candidate_count,
         "risk_review_count": len(reviews),
         "eligible_count": status_counts.get("eligible", 0),
         "hold_count": status_counts.get("hold", 0),
@@ -820,6 +978,32 @@ def validate_phase5_risk_sizing_review(review: dict[str, Any]) -> list[str]:
             errors.append("market_yahoo_role_not_supplemental")
         if market_policy.get("yahoo_only_confirmation_allowed") is not False:
             errors.append("market_yahoo_only_confirmation_allowed")
+        policy_tier = str(market_policy.get("pricing_gap_policy_tier") or "missing")
+        if policy_tier not in {"required_strict", "required_light", "not_required"}:
+            errors.append("market_pricing_gap_policy_tier_invalid")
+        signal_evidence = review.get("signal_evidence", {})
+        if not isinstance(signal_evidence, dict):
+            signal_evidence = {}
+        expected_pricing_gap_satisfied = _pricing_gap_status_satisfies_policy(
+            pricing_gap_status=str(signal_evidence.get("latest_market_confirmation_pricing_gap_status") or "missing"),
+            pricing_gap_policy_tier=policy_tier,
+            pricing_gap_rollout_stage=str(review.get("pricing_gap_rollout_stage") or "stage_a"),
+        )
+        if review.get("pricing_gap_policy_tier") != policy_tier:
+            errors.append("pricing_gap_policy_tier_mismatch")
+        if review.get("pricing_gap_policy_satisfied") is not expected_pricing_gap_satisfied:
+            errors.append("pricing_gap_policy_satisfied_mismatch")
+        expected_relaxed_path = _pricing_gap_relaxed_policy_path_used(
+            pricing_gap_status=str(signal_evidence.get("latest_market_confirmation_pricing_gap_status") or "missing"),
+            pricing_gap_policy_tier=policy_tier,
+            pricing_gap_rollout_stage=str(review.get("pricing_gap_rollout_stage") or "stage_a"),
+        )
+        if review.get("pricing_gap_relaxed_policy_path_used") is not expected_relaxed_path:
+            errors.append("pricing_gap_relaxed_policy_path_mismatch")
+        if str(review.get("pricing_gap_rollout_stage") or "stage_a") not in {"stage_a", "stage_b"}:
+            errors.append("pricing_gap_rollout_stage_invalid")
+        if str(review.get("status") or "") == "eligible" and not expected_pricing_gap_satisfied:
+            errors.append("eligible_without_policy_satisfied_pricing_gap")
     preference_policy = review.get("preference_policy", {})
     if not isinstance(preference_policy, dict):
         errors.append("preference_policy_invalid")
@@ -915,6 +1099,18 @@ def validate_phase5_risk_sizing_bundle(bundle: dict[str, Any]) -> list[str]:
         errors.append("hold_count_mismatch")
     if bundle.get("blocked_count") != status_counts.get("blocked", 0):
         errors.append("blocked_count_mismatch")
+    if str(bundle.get("pricing_gap_rollout_stage") or "stage_a") not in {"stage_a", "stage_b"}:
+        errors.append("bundle_pricing_gap_rollout_stage_invalid")
+    expected_stage_b_candidate_count = sum(
+        1
+        for review in reviews
+        if isinstance(review, dict)
+        and review.get("pricing_gap_rollout_stage") == "stage_a"
+        and "signal_pricing_gap_rollout_stage_a_strict_hold"
+        in (review.get("risk_blockers", []) or [])
+    )
+    if bundle.get("pricing_gap_stage_b_candidate_count") != expected_stage_b_candidate_count:
+        errors.append("bundle_pricing_gap_stage_b_candidate_count_mismatch")
     if bundle.get("event_log_written") is True:
         if not str(bundle.get("event_log_path") or "").strip():
             errors.append("bundle_event_log_path_missing")

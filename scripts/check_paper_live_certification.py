@@ -139,8 +139,8 @@ def main() -> int:
         errors.append("paper_live_operation_not_allowed")
     if written["paper_live_unattended_execution_delegation_enabled"] is not True:
         errors.append("paper_live_unattended_delegation_not_enabled")
-    if written["paper_live_submission_delegation_allowed"] is not False:
-        errors.append("paper_live_submission_unexpectedly_delegated")
+    if written["paper_live_submission_delegation_allowed"] is not True:
+        errors.append("paper_live_submission_delegation_not_enabled")
     if written["status"] != _expected_status(written):
         errors.append("unexpected_pt10_status")
     if written["stage_status"] != "paper_live_certified":

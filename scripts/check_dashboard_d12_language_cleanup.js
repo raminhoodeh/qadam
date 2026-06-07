@@ -89,8 +89,8 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260607-cc5-contract-renderer",
-        "/dashboard.js?v=20260607-cc5-contract-renderer",
+        "/auth.css?v=20260607-cc6-portfolio-timeline",
+        "/dashboard.js?v=20260607-cc6-portfolio-timeline",
         "Qadam paper trading dashboard",
         "Paper Trading Overview",
         "Safety status",
@@ -142,7 +142,8 @@ async function main() {
     includesAll(overviewText, [
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "Paper portfolio",
-        "Total P&L",
+        "Realized",
+        "Unrealized",
         "Mission Control brief",
         "mission_control",
         "Authority state",
@@ -158,7 +159,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260607-cc5-contract-renderer");
+    console.log("dashboard_d12_cache_key=20260607-cc6-portfolio-timeline");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

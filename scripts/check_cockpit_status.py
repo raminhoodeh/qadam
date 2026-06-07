@@ -841,6 +841,15 @@ PHASE5_SIGNAL_REVIEW_REQUIRED_FIELDS = {
     "decision_chain_count",
     "event_log_event_count",
     "event_log_written",
+    "funnel_flagged_missing_pricing_gap_producer_count",
+    "funnel_review_count",
+    "funnel_risk_reviews_blocked_only_by_pricing_gap_policy_count",
+    "funnel_shadow_signal_count",
+    "funnel_signals_blocked_only_by_missing_pricing_gap_count",
+    "funnel_signals_passed_to_risk_count",
+    "funnel_signals_with_market_confirmation_count",
+    "funnel_signals_with_pricing_gap_evidence_count",
+    "funnel_stage_b_candidate_signal_count",
     "governance_action_count",
     "governance_comment_count",
     "governance_comment_event_count",
@@ -865,6 +874,8 @@ PHASE5_SIGNAL_REVIEW_REQUIRED_FIELDS = {
     "position_resize_control_enabled_count",
     "prediction_market_write_allowed",
     "prediction_market_write_allowed_count",
+    "pricing_gap_rollout_relaxed_policy_enabled",
+    "pricing_gap_rollout_stage",
     "public_safe",
     "raw_payload_exposed_count",
     "recorded",
@@ -4300,6 +4311,38 @@ def main() -> int:
         f"{phase5_signal_review.get('signal_review_record_count')}"
     )
     print(
+        "cockpit_status_phase5_signal_review_pricing_gap_rollout_stage="
+        f"{phase5_signal_review.get('pricing_gap_rollout_stage')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_shadow_signal_count="
+        f"{phase5_signal_review.get('funnel_shadow_signal_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_market_confirmation_count="
+        f"{phase5_signal_review.get('funnel_signals_with_market_confirmation_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_pricing_gap_evidence_count="
+        f"{phase5_signal_review.get('funnel_signals_with_pricing_gap_evidence_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_missing_pricing_gap_only_count="
+        f"{phase5_signal_review.get('funnel_signals_blocked_only_by_missing_pricing_gap_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_passed_to_risk_count="
+        f"{phase5_signal_review.get('funnel_signals_passed_to_risk_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_risk_pricing_gap_only_count="
+        f"{phase5_signal_review.get('funnel_risk_reviews_blocked_only_by_pricing_gap_policy_count')}"
+    )
+    print(
+        "cockpit_status_phase5_signal_review_funnel_stage_b_candidate_signal_count="
+        f"{phase5_signal_review.get('funnel_stage_b_candidate_signal_count')}"
+    )
+    print(
         "cockpit_status_phase5_signal_review_decision_chain_count="
         f"{phase5_signal_review.get('decision_chain_count')}"
     )
@@ -5720,6 +5763,23 @@ def main() -> int:
     if phase5_signal_review.get("backend_validation_error_count") != 0:
         print("cockpit_status_phase5_signal_review_backend_validation_errors=true")
         return 1
+    if phase5_signal_review.get("pricing_gap_rollout_stage") not in {"stage_a", "stage_b"}:
+        print("cockpit_status_phase5_signal_review_rollout_stage_invalid=true")
+        return 1
+    for key in (
+        "funnel_shadow_signal_count",
+        "funnel_review_count",
+        "funnel_signals_with_market_confirmation_count",
+        "funnel_signals_with_pricing_gap_evidence_count",
+        "funnel_signals_blocked_only_by_missing_pricing_gap_count",
+        "funnel_signals_passed_to_risk_count",
+        "funnel_risk_reviews_blocked_only_by_pricing_gap_policy_count",
+        "funnel_stage_b_candidate_signal_count",
+        "funnel_flagged_missing_pricing_gap_producer_count",
+    ):
+        if int(phase5_signal_review.get(key, 0) or 0) < 0:
+            print(f"cockpit_status_phase5_signal_review_negative_count={key}")
+            return 1
     if phase5_signal_review.get("event_log_written") is not True:
         print("cockpit_status_phase5_signal_review_event_log_not_written=true")
         return 1

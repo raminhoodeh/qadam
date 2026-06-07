@@ -127,12 +127,12 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260607-cc5-contract-renderer",
-    "/dashboard.js?v=20260607-cc5-contract-renderer"
+    "/auth.css?v=20260607-cc6-portfolio-timeline",
+    "/dashboard.js?v=20260607-cc6-portfolio-timeline"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
-    "Safety locked: paper-only readout",
+    "Paper action ready through guarded route",
     "Paper-only readout · live capital off",
     "Safety Status is the authority summary.",
     "Status display, evidence, paper account, safety blocks.",
@@ -216,7 +216,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
     [
         ["[data-status-banner]", "Dashboard status loaded"],
         ["[data-status-banner]", "Live status connected"],
-        ["[data-dashboard-safety-strip]", "Safety locked: paper-only readout"],
+        ["[data-dashboard-safety-strip]", "Paper action ready through guarded route"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
         ["[data-overview-mission-brief]", "Mission Control brief"],

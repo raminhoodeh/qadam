@@ -918,6 +918,15 @@ PHASE5_SIGNAL_REVIEW_PUBLIC_REQUIRED_FIELDS = {
     "decision_chain_count",
     "event_log_event_count",
     "event_log_written",
+    "funnel_flagged_missing_pricing_gap_producer_count",
+    "funnel_review_count",
+    "funnel_risk_reviews_blocked_only_by_pricing_gap_policy_count",
+    "funnel_shadow_signal_count",
+    "funnel_signals_blocked_only_by_missing_pricing_gap_count",
+    "funnel_signals_passed_to_risk_count",
+    "funnel_signals_with_market_confirmation_count",
+    "funnel_signals_with_pricing_gap_evidence_count",
+    "funnel_stage_b_candidate_signal_count",
     "governance_action_count",
     "governance_comment_count",
     "governance_comment_event_count",
@@ -942,6 +951,8 @@ PHASE5_SIGNAL_REVIEW_PUBLIC_REQUIRED_FIELDS = {
     "position_resize_control_enabled_count",
     "prediction_market_write_allowed",
     "prediction_market_write_allowed_count",
+    "pricing_gap_rollout_relaxed_policy_enabled",
+    "pricing_gap_rollout_stage",
     "public_safe",
     "raw_payload_exposed_count",
     "recorded",
@@ -4657,6 +4668,7 @@ def _phase5_signal_review_public_status(settings: Settings) -> dict[str, Any]:
     runtime_bundle = _read_runtime_json(settings, SIGNAL_REVIEW_RUNTIME_ARTIFACT)
     recorded = runtime_bundle is not None
     bundle = runtime_bundle or build_phase5_signal_review(settings=settings)
+    signal_integrity = signal_integrity_summary(settings)
     validation_errors = validate_phase5_signal_review_bundle(bundle)
     records = [
         record
@@ -4693,6 +4705,43 @@ def _phase5_signal_review_public_status(settings: Settings) -> dict[str, Any]:
         "event_log_written": bundle.get("event_log_written") is True,
         "event_log_event_count": int(bundle.get("event_log_event_count", 0) or 0),
         "validation_error_count": len(validation_errors),
+        "pricing_gap_rollout_stage": str(
+            signal_integrity.get("pricing_gap_rollout_stage") or "stage_a"
+        ),
+        "pricing_gap_rollout_relaxed_policy_enabled": (
+            signal_integrity.get("pricing_gap_rollout_relaxed_policy_enabled") is True
+        ),
+        "funnel_shadow_signal_count": int(signal_integrity.get("shadow_signal_count", 0) or 0),
+        "funnel_review_count": int(signal_integrity.get("review_count", 0) or 0),
+        "funnel_signals_with_market_confirmation_count": int(
+            signal_integrity.get("signals_with_market_confirmation_count", 0) or 0
+        ),
+        "funnel_signals_with_pricing_gap_evidence_count": int(
+            signal_integrity.get("signals_with_pricing_gap_evidence_count", 0) or 0
+        ),
+        "funnel_signals_blocked_only_by_missing_pricing_gap_count": int(
+            signal_integrity.get(
+                "signals_blocked_only_by_missing_pricing_gap_count",
+                0,
+            )
+            or 0
+        ),
+        "funnel_signals_passed_to_risk_count": int(
+            signal_integrity.get("signals_passed_to_risk_count", 0) or 0
+        ),
+        "funnel_risk_reviews_blocked_only_by_pricing_gap_policy_count": int(
+            signal_integrity.get(
+                "risk_reviews_blocked_only_by_pricing_gap_policy_count",
+                0,
+            )
+            or 0
+        ),
+        "funnel_stage_b_candidate_signal_count": int(
+            signal_integrity.get("stage_b_candidate_signal_count", 0) or 0
+        ),
+        "funnel_flagged_missing_pricing_gap_producer_count": int(
+            signal_integrity.get("flagged_missing_pricing_gap_producer_count", 0) or 0
+        ),
         "signal_review_record_count": int(bundle.get("signal_review_record_count", 0) or 0),
         "chain_step_count": int(bundle.get("chain_step_count", 0) or 0),
         "decision_chain_count": int(bundle.get("decision_chain_count", 0) or 0),
@@ -10188,6 +10237,21 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("Phase 5 signal review validation errors present")
     if phase5_signal_review.get("backend_validation_error_count") != 0:
         raise ValueError("Phase 5 signal review backend validation errors present")
+    if phase5_signal_review.get("pricing_gap_rollout_stage") not in {"stage_a", "stage_b"}:
+        raise ValueError("Phase 5 signal review pricing-gap rollout stage invalid")
+    for key in (
+        "funnel_shadow_signal_count",
+        "funnel_review_count",
+        "funnel_signals_with_market_confirmation_count",
+        "funnel_signals_with_pricing_gap_evidence_count",
+        "funnel_signals_blocked_only_by_missing_pricing_gap_count",
+        "funnel_signals_passed_to_risk_count",
+        "funnel_risk_reviews_blocked_only_by_pricing_gap_policy_count",
+        "funnel_stage_b_candidate_signal_count",
+        "funnel_flagged_missing_pricing_gap_producer_count",
+    ):
+        if int(phase5_signal_review.get(key, 0) or 0) < 0:
+            raise ValueError(f"Phase 5 signal review funnel count negative: {key}")
     if phase5_signal_review.get("event_log_written") is not True:
         raise ValueError("Phase 5 signal review must write Event Log")
     expected_signal_events = (

@@ -43,6 +43,57 @@ def _eligible_probe(review: dict) -> dict:
     probe["approved_strategy_toggle_state"] = "approved_shadow"
     probe.setdefault("signal_evidence", {})["signal_integrity_passed"] = True
     probe["invalidation_condition_count"] = max(1, int(probe.get("invalidation_condition_count", 1) or 1))
+    probe["pricing_gap_rollout_stage"] = "stage_a"
+    probe["pricing_gap_relaxed_policy_enabled"] = False
+    return probe
+
+
+def _light_tier_eligible_probe(review: dict) -> dict:
+    probe = _eligible_probe(review)
+    probe["market_confirmation_policy"]["pricing_gap_policy_tier"] = "required_light"
+    probe["pricing_gap_policy_tier"] = "required_light"
+    probe["market_confirmation_policy"]["pricing_gap_satisfaction_rule"] = (
+        "pricing-gap or transaction-cost evidence required"
+    )
+    probe["pricing_gap_policy_satisfaction_rule"] = (
+        "pricing-gap or transaction-cost evidence required"
+    )
+    probe["signal_evidence"]["latest_market_confirmation_pricing_gap_status"] = (
+        "pass_pricing_gap_transaction_cost_only"
+    )
+    probe["signal_evidence"]["latest_market_confirmation_pricing_gap_rollout_stage"] = "stage_b"
+    probe["signal_evidence"]["latest_market_confirmation_pricing_gap_confirmation_source"] = (
+        "structured_transaction_cost_event"
+    )
+    probe["pricing_gap_rollout_stage"] = "stage_b"
+    probe["pricing_gap_relaxed_policy_enabled"] = True
+    probe["pricing_gap_policy_satisfied"] = True
+    probe["pricing_gap_relaxed_policy_path_used"] = True
+    return probe
+
+
+def _not_required_eligible_probe(review: dict) -> dict:
+    probe = _eligible_probe(review)
+    probe["market_confirmation_policy"]["pricing_gap_policy_tier"] = "not_required"
+    probe["pricing_gap_policy_tier"] = "not_required"
+    probe["market_confirmation_policy"]["pricing_gap_required"] = False
+    probe["market_confirmation_policy"]["pricing_gap_satisfaction_rule"] = (
+        "pricing-gap evidence optional after market confirmation"
+    )
+    probe["pricing_gap_policy_satisfaction_rule"] = (
+        "pricing-gap evidence optional after market confirmation"
+    )
+    probe["signal_evidence"]["latest_market_confirmation_pricing_gap_status"] = (
+        "pass_pricing_gap_not_required"
+    )
+    probe["signal_evidence"]["latest_market_confirmation_pricing_gap_rollout_stage"] = "stage_b"
+    probe["signal_evidence"]["latest_market_confirmation_pricing_gap_confirmation_source"] = (
+        "not_required_by_policy"
+    )
+    probe["pricing_gap_rollout_stage"] = "stage_b"
+    probe["pricing_gap_relaxed_policy_enabled"] = True
+    probe["pricing_gap_policy_satisfied"] = True
+    probe["pricing_gap_relaxed_policy_path_used"] = True
     return probe
 
 
@@ -118,6 +169,36 @@ def main() -> int:
     preference_probe["preference_policy"]["source_quorum_credit_allowed"] = True
     preference_errors = validate_phase5_risk_sizing_review(preference_probe)
 
+    light_tier_probe = _light_tier_eligible_probe(first_review)
+    light_tier_errors = validate_phase5_risk_sizing_review(light_tier_probe)
+
+    not_required_probe = _not_required_eligible_probe(first_review)
+    not_required_errors = validate_phase5_risk_sizing_review(not_required_probe)
+
+    stage_a_light_probe = _eligible_probe(first_review)
+    stage_a_light_probe["market_confirmation_policy"]["pricing_gap_policy_tier"] = "required_light"
+    stage_a_light_probe["pricing_gap_policy_tier"] = "required_light"
+    stage_a_light_probe["signal_evidence"]["latest_market_confirmation_pricing_gap_status"] = (
+        "pass_pricing_gap_transaction_cost_only"
+    )
+    stage_a_light_probe["signal_evidence"]["latest_market_confirmation_pricing_gap_rollout_stage"] = "stage_a"
+    stage_a_light_probe["pricing_gap_policy_satisfied"] = False
+    stage_a_light_probe["pricing_gap_relaxed_policy_path_used"] = False
+    stage_a_light_errors = validate_phase5_risk_sizing_review(stage_a_light_probe)
+
+    strict_tier_probe = _eligible_probe(first_review)
+    strict_tier_probe["market_confirmation_policy"]["pricing_gap_policy_tier"] = "required_strict"
+    strict_tier_probe["pricing_gap_policy_tier"] = "required_strict"
+    strict_tier_probe["signal_evidence"]["latest_market_confirmation_pricing_gap_status"] = (
+        "pass_pricing_gap_transaction_cost_only"
+    )
+    strict_tier_probe["signal_evidence"]["latest_market_confirmation_pricing_gap_rollout_stage"] = "stage_b"
+    strict_tier_probe["pricing_gap_rollout_stage"] = "stage_b"
+    strict_tier_probe["pricing_gap_relaxed_policy_enabled"] = True
+    strict_tier_probe["pricing_gap_policy_satisfied"] = False
+    strict_tier_probe["pricing_gap_relaxed_policy_path_used"] = False
+    strict_tier_errors = validate_phase5_risk_sizing_review(strict_tier_probe)
+
     source_coverage_complete_count = sum(
         1
         for review in written_bundle.get("reviews", [])
@@ -133,12 +214,20 @@ def main() -> int:
     print(f"phase5_risk_sizing_history_path={history_path}")
     print(f"phase5_risk_sizing_event_log_path={event_log_path}")
     print(f"phase5_risk_sizing_review_count={written_bundle['risk_review_count']}")
+    print(
+        "phase5_risk_sizing_pricing_gap_rollout_stage="
+        f"{written_bundle.get('pricing_gap_rollout_stage')}"
+    )
     print(f"phase5_risk_sizing_eligible_count={written_bundle['eligible_count']}")
     print(f"phase5_risk_sizing_hold_count={written_bundle['hold_count']}")
     print(f"phase5_risk_sizing_blocked_count={written_bundle['blocked_count']}")
     print(
         "phase5_risk_sizing_paper_size_eligible_count="
         f"{written_bundle['paper_size_eligible_count']}"
+    )
+    print(
+        "phase5_risk_sizing_stage_b_candidate_count="
+        f"{written_bundle.get('pricing_gap_stage_b_candidate_count', 0)}"
     )
     print(
         "phase5_risk_sizing_approval_policy_eligible_count="
@@ -198,6 +287,10 @@ def main() -> int:
     print(f"phase5_risk_sizing_paper_order_probe_error_count={len(paper_order_errors)}")
     print(f"phase5_risk_sizing_yahoo_probe_error_count={len(yahoo_errors)}")
     print(f"phase5_risk_sizing_preference_probe_error_count={len(preference_errors)}")
+    print(f"phase5_risk_sizing_light_tier_probe_error_count={len(light_tier_errors)}")
+    print(f"phase5_risk_sizing_not_required_probe_error_count={len(not_required_errors)}")
+    print(f"phase5_risk_sizing_stage_a_light_probe_error_count={len(stage_a_light_errors)}")
+    print(f"phase5_risk_sizing_strict_tier_probe_error_count={len(strict_tier_errors)}")
     print("phase5_risk_sizing_boundary=" + written_bundle["boundary"])
 
     if validation_errors:
@@ -261,6 +354,14 @@ def main() -> int:
         errors.append("yahoo_probe_not_rejected")
     if "preference_policy_source_quorum_credit_allowed" not in preference_errors:
         errors.append("preference_probe_not_rejected")
+    if light_tier_errors:
+        errors.append("light_tier_probe_not_accepted")
+    if not_required_errors:
+        errors.append("not_required_probe_not_accepted")
+    if "eligible_without_policy_satisfied_pricing_gap" not in stage_a_light_errors:
+        errors.append("stage_a_light_probe_not_rejected")
+    if "eligible_without_policy_satisfied_pricing_gap" not in strict_tier_errors:
+        errors.append("strict_tier_probe_not_rejected")
 
     if errors:
         for error in errors:

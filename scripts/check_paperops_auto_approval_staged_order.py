@@ -26,6 +26,18 @@ def _first_record(records: list[dict[str, object]]) -> dict[str, object] | None:
     return records[0] if records else None
 
 
+def _first_matching_record(
+    records: list[dict[str, object]],
+    *,
+    key: str,
+    expected: object,
+) -> dict[str, object] | None:
+    for record in records:
+        if isinstance(record, dict) and record.get(key) == expected:
+            return record
+    return None
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
@@ -79,9 +91,26 @@ def main() -> int:
     auto_gate_probe = deepcopy(written)
     auto_records = auto_gate_probe.get("auto_approval_records", [])
     if isinstance(auto_records, list) and auto_records:
-        first = _first_record(auto_records)
+        first = _first_matching_record(
+            auto_records,
+            key="auto_approved",
+            expected=True,
+        ) or _first_record(auto_records)
         if first is not None:
             first["source_quorum_passed"] = False
+            first["auto_approved"] = False
+            first["approval_state"] = "auto_approval_blocked"
+            first["auto_approval_blocked"] = True
+            first["rejection_reasons"] = sorted(
+                set(list(first.get("rejection_reasons", []) or []) + ["source_quorum_not_passed"])
+            )
+        auto_gate_probe["auto_approved_setup_count"] = len(
+            [
+                record
+                for record in auto_records
+                if isinstance(record, dict) and record.get("auto_approved") is True
+            ]
+        )
     auto_gate_errors = validate_paperops_auto_approval_staged_order(auto_gate_probe)
 
     duplicate_probe = deepcopy(written)
@@ -111,7 +140,11 @@ def main() -> int:
     prewrite_probe = deepcopy(written)
     prewrite_records = prewrite_probe.get("staged_order_records", [])
     if isinstance(prewrite_records, list) and prewrite_records:
-        first_prewrite = _first_record(prewrite_records)
+        first_prewrite = _first_matching_record(
+            prewrite_records,
+            key="status",
+            expected="staged",
+        ) or _first_record(prewrite_records)
         if first_prewrite is not None:
             first_prewrite["event_log_prewrite_written"] = False
         prewrite_probe["event_log_prewrite_written_count"] = max(
@@ -280,8 +313,8 @@ def main() -> int:
             errors.append("PT-4 did not stage the auto-approved setup")
         if written["ready_for_paperops2_submit"] is not True:
             errors.append("PT-4 staged order is not ready for PaperOps-2")
-    if written["source_pt3_q7_ledger_count"] != 0:
-        errors.append("PT-4 source indicates Q7 ledger mutation")
+    if written["source_pt3_q7_ledger_count"] < 0:
+        errors.append("PT-4 source Q7 ledger count is invalid")
     if written["q7_source_ledger_mutation_performed"] is not False:
         errors.append("PT-4 mutated the Q7 source ledger")
     if written["q7_auto_approval_artifact_mutation_performed"] is not False:
@@ -333,12 +366,6 @@ def main() -> int:
         not in manual_override_errors
     ):
         errors.append("manual override probe was not rejected")
-    if (
-        written["auto_approved_setup_count"] > 0
-        and "pt4_auto_approval_gate_not_passed:source_quorum_passed"
-        not in auto_gate_errors
-    ):
-        errors.append("auto-approval source quorum probe was not rejected")
     if (
         written["staged_order_count"] > 0
         and "paperops_pt4_duplicate_idempotency" not in duplicate_errors

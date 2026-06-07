@@ -108,6 +108,12 @@ PAPEROPS_ALPACA_PAPER_PROXY_SYMBOLS = {
     "semiconductors": "SMH",
     "silver": "SLV",
 }
+PAPEROPS_ALPACA_PAPER_SETUP_PREFIXES = {
+    "crude_oil": ("crude_oil_",),
+    "defence": ("defence_",),
+    "semiconductors": ("semiconductor_", "semiconductors_"),
+    "silver": ("silver_",),
+}
 
 
 def _now() -> str:
@@ -376,16 +382,32 @@ def _alpaca_symbol_for_record(record: dict[str, Any]) -> tuple[str, str]:
     explicit_symbol = str(record.get("symbol") or record.get("alpaca_symbol") or "").upper()
     if explicit_symbol:
         return explicit_symbol, "source_record_symbol"
-    instrument = str(record.get("instrument") or "").strip().lower()
+    instrument = _instrument_for_record(record)
     mapped = PAPEROPS_ALPACA_PAPER_PROXY_SYMBOLS.get(instrument, "")
     if mapped:
         return mapped, "paperops_proxy_symbol_map"
     return "", "missing_symbol_mapping"
 
 
+def _instrument_for_record(record: dict[str, Any]) -> str:
+    explicit = str(record.get("instrument") or "").strip().lower()
+    if explicit:
+        return explicit
+    for key in ("source_setup_record_id", "setup_id", "source_staged_order_artifact_id"):
+        raw = str(record.get(key) or "").strip().lower()
+        if not raw:
+            continue
+        tail = raw.rsplit(":", 1)[-1]
+        for instrument, prefixes in PAPEROPS_ALPACA_PAPER_SETUP_PREFIXES.items():
+            if any(tail.startswith(prefix) for prefix in prefixes):
+                return instrument
+    return ""
+
+
 def _source_record_errors(record: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     request = record.get("submit_request_payload", {})
+    symbol, _ = _alpaca_symbol_for_record(record)
     if not isinstance(request, dict):
         request = {}
         errors.append("source_request_payload_missing")
@@ -404,6 +426,8 @@ def _source_record_errors(record: dict[str, Any]) -> list[str]:
         errors.append("source_pre_trade_snapshot_missing")
     if request.get("endpoint_classification") != "alpaca_paper_endpoint":
         errors.append("source_endpoint_not_paper")
+    if not symbol:
+        errors.append("source_alpaca_symbol_missing")
     for key in (
         "authorization_header_included",
         "base_url_exposed",
@@ -507,11 +531,15 @@ def _request_preview(record: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(request, dict):
         request = {}
     source_key = str(record.get("idempotency_key") or "")
+    symbol, symbol_source = _alpaca_symbol_for_record(record)
+    request_symbol = str(request.get("symbol") or "").upper()
     return {
         "request_type": "paperops_alpaca_paper_order_post",
         "method": "POST",
         "path": "/v2/orders",
-        "symbol": str(request.get("symbol") or "").upper(),
+        "symbol": request_symbol or symbol,
+        "symbol_source": "source_request_symbol" if request_symbol else symbol_source,
+        "instrument": _instrument_for_record(record) or None,
         "qty": str(request.get("qty") or ""),
         "side": str(request.get("side") or "").lower(),
         "type": str(request.get("type") or "market").lower(),

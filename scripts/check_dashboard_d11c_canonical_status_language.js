@@ -96,7 +96,7 @@ includesAll(renderer, [
 includesAll(dashboardHtml, [
     "Blocked",
     "Waiting",
-    "Safety locked: paper-only readout",
+    "Paper action ready through guarded route",
     "Paper-only readout · live capital off",
     "Read-only lock"
 ], "static fallback canonical vocabulary");

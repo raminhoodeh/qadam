@@ -159,6 +159,62 @@ PAPER_ORDER_STAGING_BOUNDARY = (
     "enable live capital."
 )
 
+SIGNAL_INTEGRITY_RISK_BLOCKER_PREFIXES: tuple[str, ...] = (
+    "signal_",
+    "signal_integrity",
+)
+SOURCE_POSTURE_CHECKS: frozenset[str] = frozenset(
+    {
+        "source_posture_valid",
+        "decision_source_coverage_complete",
+    }
+)
+KILL_SWITCH_CHECKS: frozenset[str] = frozenset(
+    {
+        "kill_switch_ledger_valid",
+        "kill_switch_clear",
+    }
+)
+EXECUTION_ADAPTER_CHECKS: frozenset[str] = frozenset(
+    {
+        "execution_adapter_bundle_valid",
+        "venue_read_ready",
+        "venue_write_blocked",
+    }
+)
+ORDER_FIELD_CHECKS: frozenset[str] = frozenset(
+    {
+        "instrument_valid",
+        "side_valid",
+        "quantity_positive",
+        "order_type_valid",
+        "limit_stop_fields_valid",
+        "time_in_force_valid",
+        "invalidation_present",
+        "max_loss_within_risk",
+    }
+)
+IDEMPOTENCY_AND_PREWRITE_CHECKS: frozenset[str] = frozenset(
+    {
+        "idempotency_seed_valid",
+        "event_log_prewrite_ready",
+        "reconciliation_prerequisites_recorded",
+        "submission_separated",
+    }
+)
+STAGING_PRIMARY_CAUSE_PRIORITY: tuple[str, ...] = (
+    "global_context",
+    "approval_policy",
+    "signal_integrity",
+    "risk_sizing",
+    "source_posture",
+    "kill_switch",
+    "execution_adapter",
+    "order_fields",
+    "idempotency_prewrite",
+    "unknown",
+)
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -351,6 +407,104 @@ def _prewrite_payload(
     }
 
 
+def _failed_check_names(checks: list[dict[str, Any]]) -> set[str]:
+    return {
+        str(check.get("name") or "")
+        for check in checks
+        if isinstance(check, dict) and check.get("passed") is False
+    }
+
+
+def _signal_integrity_risk_blockers(risk_review: dict[str, Any]) -> list[str]:
+    blockers = risk_review.get("risk_blockers", [])
+    if not isinstance(blockers, list):
+        return []
+    return [
+        str(blocker)
+        for blocker in blockers
+        if isinstance(blocker, str)
+        and (
+            blocker == "signal_integrity_passed"
+            or blocker.startswith(SIGNAL_INTEGRITY_RISK_BLOCKER_PREFIXES)
+        )
+    ]
+
+
+def _blocked_diagnostics(
+    *,
+    risk_review: dict[str, Any],
+    checks: list[dict[str, Any]],
+    global_errors: list[str],
+    kill_context: dict[str, Any],
+) -> dict[str, Any]:
+    failed_checks = _failed_check_names(checks)
+    signal_integrity_blockers = _signal_integrity_risk_blockers(risk_review)
+    approval_policy_blocked = str(risk_review.get("approval_policy_status") or "") != "eligible"
+    risk_sizing_blocked = (
+        risk_review.get("paper_size_eligible") is not True
+        or str(risk_review.get("risk_decision") or "") != "paper_size_eligible"
+    )
+    diagnostics = {
+        "blocked_by_global_context": bool(global_errors),
+        "blocked_by_approval_policy": approval_policy_blocked,
+        "blocked_by_signal_integrity": bool(signal_integrity_blockers),
+        "blocked_by_risk_sizing": risk_sizing_blocked,
+        "blocked_by_source_posture": bool(failed_checks & SOURCE_POSTURE_CHECKS),
+        "blocked_by_kill_switch": (
+            bool(failed_checks & KILL_SWITCH_CHECKS)
+            or bool(kill_context.get("blockers"))
+            or int(kill_context.get("validation_error_count", 0) or 0) > 0
+        ),
+        "blocked_by_execution_adapter": bool(failed_checks & EXECUTION_ADAPTER_CHECKS),
+        "blocked_by_order_fields": bool(failed_checks & ORDER_FIELD_CHECKS),
+        "blocked_by_idempotency_prewrite": bool(failed_checks & IDEMPOTENCY_AND_PREWRITE_CHECKS),
+        "signal_integrity_blockers": signal_integrity_blockers,
+    }
+    cause_details = {
+        "global_context": sorted(dict.fromkeys(str(item) for item in global_errors)),
+        "approval_policy": (
+            [f"approval_policy_status:{risk_review.get('approval_policy_status')}"]
+            if approval_policy_blocked
+            else []
+        ),
+        "signal_integrity": signal_integrity_blockers,
+        "risk_sizing": (
+            [
+                f"risk_decision:{risk_review.get('risk_decision')}",
+                f"paper_size_eligible:{risk_review.get('paper_size_eligible')}",
+            ]
+            if risk_sizing_blocked
+            else []
+        ),
+        "source_posture": sorted(failed_checks & SOURCE_POSTURE_CHECKS),
+        "kill_switch": sorted(
+            dict.fromkeys(
+                list(failed_checks & KILL_SWITCH_CHECKS)
+                + [str(item) for item in kill_context.get("blockers", []) or []]
+            )
+        ),
+        "execution_adapter": sorted(failed_checks & EXECUTION_ADAPTER_CHECKS),
+        "order_fields": sorted(failed_checks & ORDER_FIELD_CHECKS),
+        "idempotency_prewrite": sorted(failed_checks & IDEMPOTENCY_AND_PREWRITE_CHECKS),
+        "unknown": [],
+    }
+    primary_cause = "not_blocked"
+    primary_cause_details: list[str] = []
+    for cause in STAGING_PRIMARY_CAUSE_PRIORITY:
+        if diagnostics.get(f"blocked_by_{cause}") is True:
+            primary_cause = cause
+            primary_cause_details = cause_details.get(cause, [])
+            break
+    if primary_cause == "not_blocked" and any(
+        value is True for key, value in diagnostics.items() if key.startswith("blocked_by_")
+    ):
+        primary_cause = "unknown"
+        primary_cause_details = cause_details["unknown"]
+    diagnostics["blocked_primary_cause"] = primary_cause
+    diagnostics["blocked_primary_cause_details"] = primary_cause_details[:8]
+    return diagnostics
+
+
 def _staging_gate_record(
     risk_review: dict[str, Any],
     *,
@@ -427,6 +581,28 @@ def _staging_gate_record(
     blockers = sorted(dict.fromkeys(blockers))
     staged = not blockers
     order_state = "staged_ready_for_dry_run" if staged else "blocked_not_staged"
+    blocked_diagnostics = _blocked_diagnostics(
+        risk_review=risk_review,
+        checks=checks,
+        global_errors=global_errors,
+        kill_context=kill_context,
+    )
+    if staged:
+        blocked_diagnostics.update(
+            {
+                "blocked_by_global_context": False,
+                "blocked_by_approval_policy": False,
+                "blocked_by_signal_integrity": False,
+                "blocked_by_risk_sizing": False,
+                "blocked_by_source_posture": False,
+                "blocked_by_kill_switch": False,
+                "blocked_by_execution_adapter": False,
+                "blocked_by_order_fields": False,
+                "blocked_by_idempotency_prewrite": False,
+                "blocked_primary_cause": "not_blocked",
+                "blocked_primary_cause_details": [],
+            }
+        )
     prewrite_payload = _prewrite_payload(
         artifact_id=artifact_id,
         strategy_key=strategy_key,
@@ -511,6 +687,7 @@ def _staging_gate_record(
         "failed_check_count": sum(1 for check in checks if not check["passed"]),
         "blocked_reasons": blockers,
         "blocked_reason_count": len(blockers),
+        **blocked_diagnostics,
         "kill_switch_clear": kill_context["clear"],
         "kill_switch_matched_scopes": kill_context["matched_scopes"],
         "kill_switch_active_switches": kill_context["active_switches"],
@@ -572,6 +749,11 @@ def build_phase5_paper_order_staging_gate(settings: Settings | None = None) -> d
     ]
     status_counts = Counter(str(record.get("status") or "unknown") for record in records)
     order_state_counts = Counter(str(record.get("order_state") or "unknown") for record in records)
+    blocked_primary_cause_counts = Counter(
+        str(record.get("blocked_primary_cause") or "unknown")
+        for record in records
+        if isinstance(record, dict)
+    )
     bundle = {
         "schema_version": PHASE5_PAPER_ORDER_STAGING_SCHEMA_VERSION,
         "artifact_type": "phase5_paper_order_staging_gate_bundle",
@@ -602,6 +784,7 @@ def build_phase5_paper_order_staging_gate(settings: Settings | None = None) -> d
         "failed_reconciliation_count": status_counts.get("failed_reconciliation", 0),
         "status_counts": dict(sorted(status_counts.items())),
         "order_state_counts": dict(sorted(order_state_counts.items())),
+        "blocked_primary_cause_counts": dict(sorted(blocked_primary_cause_counts.items())),
         "required_check_count": len(PAPER_ORDER_STAGING_REQUIRED_CHECKS),
         "reconciliation_prerequisite_count": len(PAPER_ORDER_STAGING_RECONCILIATION_PREREQUISITES),
         "cancellation_condition_count": len(PAPER_ORDER_STAGING_CANCELLATION_CONDITIONS),
@@ -619,6 +802,22 @@ def build_phase5_paper_order_staging_gate(settings: Settings | None = None) -> d
 def _staging_status_errors(record: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     status = str(record.get("status") or "missing")
+    blocked_flags = {
+        "global_context": record.get("blocked_by_global_context") is True,
+        "approval_policy": record.get("blocked_by_approval_policy") is True,
+        "signal_integrity": record.get("blocked_by_signal_integrity") is True,
+        "risk_sizing": record.get("blocked_by_risk_sizing") is True,
+        "source_posture": record.get("blocked_by_source_posture") is True,
+        "kill_switch": record.get("blocked_by_kill_switch") is True,
+        "execution_adapter": record.get("blocked_by_execution_adapter") is True,
+        "order_fields": record.get("blocked_by_order_fields") is True,
+        "idempotency_prewrite": record.get("blocked_by_idempotency_prewrite") is True,
+    }
+    primary_cause = str(record.get("blocked_primary_cause") or "missing")
+    primary_cause_details = record.get("blocked_primary_cause_details", [])
+    if not isinstance(primary_cause_details, list):
+        errors.append("blocked_primary_cause_details_not_list")
+        primary_cause_details = []
     blockers = record.get("blocked_reasons", [])
     if not isinstance(blockers, list):
         errors.append("blocked_reasons_not_list")
@@ -626,6 +825,12 @@ def _staging_status_errors(record: dict[str, Any]) -> list[str]:
     if record.get("blocked_reason_count") != len(blockers):
         errors.append("blocked_reason_count_mismatch")
     if status == "staged":
+        if any(blocked_flags.values()):
+            errors.append("staged_order_has_blocked_flags")
+        if primary_cause != "not_blocked":
+            errors.append("staged_order_primary_cause_invalid")
+        if primary_cause_details:
+            errors.append("staged_order_primary_cause_details_present")
         if blockers:
             errors.append("staged_order_has_blockers")
         if record.get("paper_size_eligible") is not True:
@@ -656,8 +861,15 @@ def _staging_status_errors(record: dict[str, Any]) -> list[str]:
             errors.append("staged_order_invalid_side")
         if record.get("order_type") not in {"market", "limit", "stop", "stop_limit"}:
             errors.append("staged_order_invalid_order_type")
-    if status == "blocked" and not blockers:
-        errors.append("blocked_staging_without_blockers")
+    if status == "blocked":
+        if not blockers:
+            errors.append("blocked_staging_without_blockers")
+        if not any(blocked_flags.values()):
+            errors.append("blocked_staging_without_blocked_flags")
+        if primary_cause not in STAGING_PRIMARY_CAUSE_PRIORITY:
+            errors.append("blocked_primary_cause_invalid")
+        elif blocked_flags.get(primary_cause) is not True:
+            errors.append("blocked_primary_cause_flag_mismatch")
     if record.get("submission_allowed") is not False:
         errors.append("staging_submission_not_separated")
     if record.get("broker_submit_ready") is not False:
@@ -769,6 +981,13 @@ def validate_phase5_paper_order_staging_bundle(bundle: dict[str, Any]) -> list[s
         errors.append("staged_order_count_mismatch")
     if bundle.get("blocked_count") != status_counts.get("blocked", 0):
         errors.append("blocked_count_mismatch")
+    blocked_primary_cause_counts = Counter(
+        str(record.get("blocked_primary_cause") or "unknown")
+        for record in records
+        if isinstance(record, dict)
+    )
+    if bundle.get("blocked_primary_cause_counts") != dict(sorted(blocked_primary_cause_counts.items())):
+        errors.append("blocked_primary_cause_counts_mismatch")
     if bundle.get("event_log_written") is True:
         if not str(bundle.get("event_log_path") or "").strip():
             errors.append("bundle_event_log_path_missing")

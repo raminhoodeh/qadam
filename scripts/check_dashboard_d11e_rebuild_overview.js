@@ -100,7 +100,7 @@ async function main() {
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "20260607-cc5-contract-renderer"
+        "20260607-cc6-portfolio-timeline"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -205,7 +205,8 @@ async function main() {
         "Paper portfolio",
         "mirror",
         "data-paper-capacity-line",
-        "P&amp;L"
+        "Realized",
+        "Unrealized"
     ], "rendered D11E paper capacity");
 
     includesAll(dataSources, [
