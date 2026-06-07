@@ -206,6 +206,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 ### CC7 — Visual system, responsive, a11y *(CSS/HTML)*
 - Reuse `auth.css` tokens only (no new palette). Tighten vertical rhythm to `--section-gap`; ensure single-column phone layout; verify focus order, `aria-current`, contrast (AA), reduced-motion for the sparkline, and that the drawer is keyboard-operable.
 - **Done when:** clean on a 390px viewport in one scroll; axe/Lighthouse a11y ≥ 95.
+- **Status:** completed. The dashboard now uses the existing `--font-sans`/`--font-mono` tokens in the latest visual block, ships the `20260607-cc7-visual-a11y` asset key, keeps the founder view single-column on phone widths, exposes plus/minus click/tap disclosures, adds keyboard tab navigation plus Escape-to-close for diagnostics, labels the diagnostics drawer as a region, and validates the contract through `scripts/check_dashboard_cc7_visual_a11y.js`.
 
 ### CC8 — Prune payload, tests, docs, deploy *(backend/infra)*
 - Remove now-unused raw top-level keys from the assembler only after every referencing checker, automation, and mirror has migrated. If any production path still depends on a key, keep it and record it in a `diagnostics.prune_candidates` list.

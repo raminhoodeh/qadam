@@ -72,6 +72,7 @@ node scripts/check_dashboard_rs10_final_paper_autonomy.js
 node scripts/check_dashboard_system_map.js
 node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_cc6_real_portfolio_timeline.js
+node scripts/check_dashboard_cc7_visual_a11y.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js
 node scripts/check_dashboard_watching_view.js
@@ -145,6 +146,7 @@ git diff --check -- \
   scripts/check_dashboard_rs9_learning_loop.js \
   scripts/check_dashboard_rs10_final_paper_autonomy.js \
   scripts/check_dashboard_cc6_real_portfolio_timeline.js \
+  scripts/check_dashboard_cc7_visual_a11y.js \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   docs/qadam-user-guide.md \
   scripts/check_dashboard_acceptance.js \

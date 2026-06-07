@@ -100,7 +100,7 @@ async function main() {
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "20260607-cc6-portfolio-timeline"
+        "20260607-cc7-visual-a11y"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
