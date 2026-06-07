@@ -49,6 +49,33 @@ OPTIONAL_COVERAGE_GAP_KEYS = {
     "wingbits_api_key_missing",
 }
 
+SELF_HEAL_REPAIR_SCOPE = "paperops_repo_artifact_repair_only"
+SELF_HEAL_FORBIDDEN_ACTIONS = (
+    "force_trades",
+    "edit_secrets_or_env",
+    "load_live_credentials",
+    "enable_live_capital",
+    "call_live_broker_endpoints",
+    "bypass_qctrl",
+    "submit_outside_guarded_alpaca_paper_route",
+    "grant_proof_credit",
+    "enable_telegram_commands",
+)
+SELF_HEAL_REPAIR_PROMPT = (
+    "Run a Qadam PaperOps self-heal repair pass. Read "
+    "data/runtime/paperops_autonomous_pass_summary.json first and use its "
+    "failed_commands, blockers, validation_errors, command_results[].parsed, "
+    "stdout_tail, and stderr_tail as the source of truth. Apply the narrowest "
+    "repo or runtime-artifact fix needed to clear the failure. Preserve the "
+    "actual 30-day paper growth trial calendar; do not backfill, simulate time, "
+    "force trades, edit secrets or .env files, load live credentials, enable "
+    "live capital, call live broker endpoints, bypass Q-CTRL, grant proof "
+    "credit, enable Telegram commands, or submit outside the guarded Alpaca "
+    "Paper route. After the fix, rerun exactly `.venv/bin/python "
+    "scripts/run_paperops_autonomous_pass.py` and report only from "
+    "data/runtime/paperops_autonomous_pass_summary.json."
+)
+
 
 def now_utc() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -182,6 +209,44 @@ def _status(command_results: list[dict[str, Any]], blockers: list[str]) -> str:
     if cycle_status == "paper_cycle_full_paper_operational_ready":
         return "ready_actionable"
     return "degraded"
+
+
+def _self_healing_request(summary: dict[str, Any]) -> dict[str, Any]:
+    failed_commands = list(summary.get("failed_commands") or [])
+    blockers = list(summary.get("blockers") or [])
+    validation_errors = list(summary.get("validation_errors") or [])
+    status = str(summary.get("status") or "missing")
+    closeout_status = str(summary.get("states", {}).get("closeout_status") or "missing")
+    trigger_reasons: list[str] = []
+    if status not in {"ready_idle", "ready_actionable"}:
+        trigger_reasons.append(f"status:{status}")
+    if failed_commands:
+        trigger_reasons.append("failed_commands:" + ",".join(failed_commands))
+    if blockers:
+        trigger_reasons.append("blockers:" + ",".join(blockers))
+    if validation_errors:
+        trigger_reasons.append("validation_errors:" + ",".join(validation_errors))
+    if closeout_status != "ready":
+        trigger_reasons.append(f"closeout_status:{closeout_status}")
+    needs_repair = bool(trigger_reasons)
+    return {
+        "enabled": True,
+        "needs_repair": needs_repair,
+        "codex_reprompt_required": needs_repair,
+        "status": "repair_requested" if needs_repair else "no_repair_needed",
+        "trigger_reasons": trigger_reasons,
+        "failed_commands": failed_commands,
+        "blockers": blockers,
+        "validation_errors": validation_errors,
+        "repair_scope": SELF_HEAL_REPAIR_SCOPE,
+        "forbidden_actions": list(SELF_HEAL_FORBIDDEN_ACTIONS),
+        "repair_prompt": SELF_HEAL_REPAIR_PROMPT if needs_repair else None,
+        "boundary": (
+            "Self-healing is limited to Codex repo and runtime-artifact repair. "
+            "It cannot create trade authority, force paper orders, bypass guards, "
+            "enable live capital, write secrets, or grant proof credit."
+        ),
+    }
 
 
 def build_paperops_autonomous_pass_summary(
@@ -753,6 +818,11 @@ def build_paperops_autonomous_pass_summary(
     summary["validation_error_count"] = len(summary["validation_errors"])
     if summary["validation_errors"] and summary["status"] == "ready_idle":
         summary["status"] = "degraded"
+    summary["self_healing"] = _self_healing_request(summary)
+    if summary["self_healing"]["needs_repair"]:
+        summary["automation_report_lines"].append(
+            "Self-heal repair requested for the next automation pass."
+        )
     return summary
 
 

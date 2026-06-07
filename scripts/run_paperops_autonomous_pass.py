@@ -116,6 +116,22 @@ def main() -> int:
         "paperops_autonomous_pass_validation_errors="
         + ",".join(summary["validation_errors"])
     )
+    print(
+        "paperops_autonomous_pass_self_heal_enabled="
+        f"{summary['self_healing']['enabled']}"
+    )
+    print(
+        "paperops_autonomous_pass_self_heal_needed="
+        f"{summary['self_healing']['needs_repair']}"
+    )
+    print(
+        "paperops_autonomous_pass_self_heal_status="
+        f"{summary['self_healing']['status']}"
+    )
+    print(
+        "paperops_autonomous_pass_self_heal_trigger_reasons="
+        + ",".join(summary["self_healing"]["trigger_reasons"])
+    )
     return 0
 
 

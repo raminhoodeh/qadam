@@ -178,8 +178,7 @@ def _build_refresh_signal(signal: dict[str, Any], *, observed_at: str) -> Corrob
     return CorroborationSignal(signal=shadow_signal, target_focus=focus, source_signal_id=source_signal_id)
 
 
-def _refresh_candidates(settings: Settings) -> tuple[dict[str, Any], ...]:
-    signals = ShadowSignalStore(settings=settings).read()
+def _refresh_candidates(signals: tuple[dict[str, Any], ...]) -> tuple[dict[str, Any], ...]:
     candidates: list[dict[str, Any]] = []
     for signal in signals:
         if not isinstance(signal, dict):
@@ -198,15 +197,6 @@ def _refresh_candidates(settings: Settings) -> tuple[dict[str, Any], ...]:
     return tuple(candidates)
 
 
-def _latest_review_for_signal(*, signal_id: str, settings: Settings) -> dict[str, Any] | None:
-    reviews = [
-        review
-        for review in SignalIntegrityReviewStore(settings=settings).read()
-        if isinstance(review, dict) and review.get("source_signal_id") == signal_id
-    ]
-    return deepcopy(reviews[-1]) if reviews else None
-
-
 def _ready_review(review: dict[str, Any] | None) -> bool:
     if not isinstance(review, dict):
         return False
@@ -222,26 +212,34 @@ def _ready_review(review: dict[str, Any] | None) -> bool:
     )
 
 
-def _write_signal_once(signal: ProposedSignal, settings: Settings) -> bool:
-    store = ShadowSignalStore(settings=settings)
-    if any(record.get("signal_id") == signal.signal_id for record in store.read()):
+def _write_signal_once(
+    signal: ProposedSignal,
+    *,
+    existing_signal_ids: set[str],
+    store: ShadowSignalStore,
+) -> bool:
+    if signal.signal_id in existing_signal_ids:
         return False
     store.write(signal)
+    existing_signal_ids.add(signal.signal_id)
     return True
 
 
 def _write_review_once(
     signal: ProposedSignal,
     *,
-    settings: Settings,
+    latest_reviews_by_signal: dict[str, dict[str, Any]],
+    store: SignalIntegrityReviewStore,
     event_log: EventLog | None = None,
 ) -> tuple[dict[str, Any], bool]:
-    existing = _latest_review_for_signal(signal_id=signal.signal_id, settings=settings)
+    existing = deepcopy(latest_reviews_by_signal.get(signal.signal_id))
     if _ready_review(existing):
-        return deepcopy(existing), False
+        return existing, False
     review: SignalIntegrityReview = build_signal_integrity_review(signal.to_dict())
-    written = SignalIntegrityReviewStore(settings=settings).write(review, event_log=event_log)
-    return written.to_dict(), True
+    written = store.write(review, event_log=event_log)
+    payload = written.to_dict()
+    latest_reviews_by_signal[signal.signal_id] = payload
+    return payload, True
 
 
 def build_phase5_signal_corroboration_refresh(
@@ -257,18 +255,38 @@ def build_phase5_signal_corroboration_refresh(
     review_written_count = 0
     passed_to_risk_shadow_count = 0
     hold_count = 0
-    candidates = _refresh_candidates(settings)
+    signal_store = ShadowSignalStore(settings=settings)
+    review_store = SignalIntegrityReviewStore(settings=settings)
+    existing_signals = signal_store.read()
+    existing_signal_ids = {
+        str(signal.get("signal_id") or "")
+        for signal in existing_signals
+        if isinstance(signal, dict) and signal.get("signal_id")
+    }
+    latest_reviews_by_signal: dict[str, dict[str, Any]] = {}
+    for review in review_store.read():
+        if not isinstance(review, dict):
+            continue
+        source_signal_id = str(review.get("source_signal_id") or "").strip()
+        if source_signal_id:
+            latest_reviews_by_signal[source_signal_id] = review
+    candidates = _refresh_candidates(existing_signals)
 
     for source_signal in candidates:
         refreshed_signal = _build_refresh_signal(source_signal, observed_at=observed_at)
         if refreshed_signal is None:
             continue
-        signal_written = _write_signal_once(refreshed_signal.signal, settings)
+        signal_written = _write_signal_once(
+            refreshed_signal.signal,
+            existing_signal_ids=existing_signal_ids,
+            store=signal_store,
+        )
         if signal_written:
             signal_written_count += 1
         review_payload, review_written = _write_review_once(
             refreshed_signal.signal,
-            settings=settings,
+            latest_reviews_by_signal=latest_reviews_by_signal,
+            store=review_store,
             event_log=event_log,
         )
         if review_written:

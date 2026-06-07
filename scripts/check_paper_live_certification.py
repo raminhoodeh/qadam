@@ -55,6 +55,20 @@ def _expected_status(written: dict) -> str:
     return "blocked_pending_certification_gates"
 
 
+def _paper_live_submission_delegation_error(written: dict) -> str | None:
+    expected = (
+        written["paper_live_certified"] is True
+        and written["paper_submit_step_allowed"] is True
+        and written["qctrl_hold_active"] is not True
+    )
+    actual = written["paper_live_submission_delegation_allowed"] is True
+    if actual == expected:
+        return None
+    if expected:
+        return "paper_live_submission_delegation_not_enabled"
+    return "paper_live_submission_unexpectedly_delegated"
+
+
 def main() -> int:
     errors: list[str] = []
     settings = Settings.from_env()
@@ -139,8 +153,8 @@ def main() -> int:
         errors.append("paper_live_operation_not_allowed")
     if written["paper_live_unattended_execution_delegation_enabled"] is not True:
         errors.append("paper_live_unattended_delegation_not_enabled")
-    if written["paper_live_submission_delegation_allowed"] is not True:
-        errors.append("paper_live_submission_delegation_not_enabled")
+    if submission_error := _paper_live_submission_delegation_error(written):
+        errors.append(submission_error)
     if written["status"] != _expected_status(written):
         errors.append("unexpected_pt10_status")
     if written["stage_status"] != "paper_live_certified":

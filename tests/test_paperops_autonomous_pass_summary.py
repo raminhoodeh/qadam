@@ -28,6 +28,10 @@ def test_recovered_ready_pass_stays_ready_and_idle() -> None:
     )
     assert "unusual_whales_api_key_missing" in summary["optional_gaps"]
     assert "unusual_whales_api_key_missing" not in summary["blockers"]
+    assert summary["self_healing"]["enabled"] is True
+    assert summary["self_healing"]["needs_repair"] is False
+    assert summary["self_healing"]["codex_reprompt_required"] is False
+    assert summary["self_healing"]["repair_prompt"] is None
     assert summary["validation_errors"] == []
 
 
@@ -45,6 +49,16 @@ def test_blocked_pasted_state_keeps_optional_credentials_nonblocking() -> None:
     assert "paperops_autonomous_pass_optional_gap_promoted_to_blocker" not in (
         summary["validation_errors"]
     )
+    assert summary["self_healing"]["needs_repair"] is True
+    assert summary["self_healing"]["codex_reprompt_required"] is True
+    assert "status:blocked" in summary["self_healing"]["trigger_reasons"]
+    assert "blockers:paper_operational_cycle_not_ready,source_spine_available_not_ready" in (
+        summary["self_healing"]["trigger_reasons"]
+    )
+    assert "force_trades" in summary["self_healing"]["forbidden_actions"]
+    assert "enable_live_capital" in summary["self_healing"]["forbidden_actions"]
+    assert "scripts/run_paperops_autonomous_pass.py" in summary["self_healing"]["repair_prompt"]
+    assert "Self-heal repair requested" in "\n".join(summary["automation_report_lines"])
 
 
 def test_optional_data_coverage_gaps_stay_optional() -> None:
