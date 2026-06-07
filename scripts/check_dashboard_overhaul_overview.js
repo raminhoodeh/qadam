@@ -142,7 +142,7 @@ async function main() {
     assert(contract.trades.board.length >= 1, "Founder contract should expose trade lifecycle board");
     assert(contract.thinking.research_goal_active_count >= 1, "Founder contract should expose research goals");
     assert(overview.id === "overview", "Overview model id mismatch");
-    assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
+    assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Founder brief");
     assert(overview.mission_brief.questions.length === 7, "Overview Mission Brief must expose seven questions");
     assert(overview.mission_brief.questions.some((item) => item.question === "What is Qadam watching?"), "Overview Mission Brief missing watching question");
     assert(overview.mission_brief.questions.some((item) => item.question === "What is Qadam thinking about next?"), "Overview Mission Brief missing thinking question");
@@ -165,8 +165,8 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "Paper-only readout · live capital off");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "mission_control");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Founder brief");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Sanitized founder contract");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Authority state");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber method");
@@ -174,20 +174,20 @@ async function main() {
     assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
-    assertIncludes(rendered, "[data-overview-oversight]", "You supervise Qadam");
+    assertIncludes(rendered, "[data-overview-oversight]", "Human oversight");
     assertIncludes(rendered, "[data-overview-oversight]", "Python COO");
     assertIncludes(rendered, "[data-overview-mini-map]", "Chief Operating Officer");
     assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
     assertIncludes(rendered, "[data-overview-mini-map]", "Head of Quant");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Mission control is read-only");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "A trade idea is not an order");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "This is read-only mission control");
+    assertIncludes(rendered, "[data-overview-boundary-rail]", "Trade ideas stay candidates until gated paper-order records exist");
     assertIncludes(rendered, "[data-overview-data-sources]", "Data sources connected");
     assertIncludes(rendered, "[data-overview-data-sources]", "mission_control");
     assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
     assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategy");
     assertIncludes(rendered, "[data-overview-trading-strategies]", "Akber filter");
-    assertIncludes(rendered, "[data-overview-thought-feed]", "Qadam's thoughts");
+    assertIncludes(rendered, "[data-overview-thought-feed]", "Reasoning queue");
     assertIncludes(rendered, "[data-overview-thought-feed]", "Worldview prior");
     assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
     assertIncludes(rendered, "[data-overview-trade-considerations]", "USO options watch");

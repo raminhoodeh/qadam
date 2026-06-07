@@ -112,7 +112,7 @@ function assertNoUnsafePublicText(text, label) {
     "data-balance-ticker",
     "data-trade-toast-rail",
     "data-overview-first-screen",
-    "Paper Trading Overview",
+    "Mission Control",
     "data-mission-control",
     "data-overview-mission-brief",
     "data-overview-strategy-narrative",
@@ -127,19 +127,19 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260607-cc8-prune-docs",
-    "/dashboard.js?v=20260607-cc8-prune-docs"
+    "/auth.css?v=20260607-cc9-copy-runthrough",
+    "/dashboard.js?v=20260607-cc9-copy-runthrough"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
     "Paper action ready through guarded route",
     "Paper-only readout · live capital off",
-    "Safety Status is the authority summary.",
+    "Readouts only. Authority, trade lifecycle, and paper-account state remain backend-derived.",
     "Status display, evidence, paper account, safety blocks.",
-    "trade ideas are not orders",
+    "Readouts only. Authority, trade lifecycle, and paper-account state remain backend-derived.",
     "outbound-only Telegram notifications",
     "Read-only runtime diagnostics",
-    "Summary first; Diagnostics keeps technical detail.",
+    "Readable summary first; Diagnostics keeps raw evidence.",
     "Paper-account mirror, P&amp;L, drawdown, and maturity evidence.",
     "model outputs cannot bypass risk checks"
 ].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
@@ -219,8 +219,8 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-dashboard-safety-strip]", "Paper action ready through guarded route"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
-        ["[data-overview-mission-brief]", "Mission Control brief"],
-        ["[data-overview-mission-brief]", "mission_control"],
+        ["[data-overview-mission-brief]", "Founder brief"],
+        ["[data-overview-mission-brief]", "Sanitized founder contract"],
         ["[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens"],
         ["[data-overview-strategy-narrative]", "Akber method"],
         ["[data-overview-mini-map]", "Qadam operating team"],
@@ -236,7 +236,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-trading-strategies]", "Click to see universe"],
         ["[data-overview-trading-strategies]", "Akber filter"],
         ["[data-overview-trading-strategies]", "Signal Integrity Gate"],
-        ["[data-overview-boundary-rail]", "Mission control is read-only"],
+        ["[data-overview-boundary-rail]", "This is read-only mission control"],
         ["[data-mission-sources]", "logged-in/configured"],
         ["[data-mission-sources]", "replay"],
         ["[data-mission-philosophy]", "Trading philosophy"],

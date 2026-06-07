@@ -156,9 +156,9 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
     assert(!stripHtml.includes("<dt>Limits</dt>"), "rendered safety strip still contains Limits row");
 
     includesAll(overviewBoundaryHtml, [
-        "Mission control is read-only",
-        "It cannot approve, place, modify, resize, close, or fund trades",
-        "A trade idea is not an order"
+        "This is read-only mission control",
+        "it cannot approve trades, broker writes, position changes, funding, or live capital changes",
+        "Trade ideas stay candidates until gated paper-order records exist"
     ], "overview safety reference");
     assert(!overviewBoundaryHtml.includes("Broker writes blocked"), "overview still duplicates broker-write safety copy");
     assert(!overviewBoundaryHtml.includes("live capital disabled"), "overview still duplicates live-capital safety copy");

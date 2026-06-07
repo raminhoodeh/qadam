@@ -212,7 +212,7 @@ Sequenced so each stage ships independently, the safety contract holds at every 
 - Remove now-unused raw top-level keys from the assembler only after every referencing checker, automation, and mirror has migrated. If any production path still depends on a key, keep it and record it in a `diagnostics.prune_candidates` list.
 - CC8 migration rule: keep `diagnostics.prune_candidates` as the compatibility list and add `diagnostics.prune_audit` for every retained raw key. The audit must name the retained key, dependent surfaces, namespace shadow, and safe-removal state. Current posture is conservative: `safe_to_remove_count=0` until checker, automation, mirror, and diagnostics references have migrated.
 - Update the User Guide (`landing-page-repo/guide/index.html`) and the whitepaper "How To Use Qadam" section to match the new six-block IA.
-- Deploy via `landing-page-repo/scripts/deploy-vercel-production.sh` with the CC0 rollback ready; bump the asset version query to `20260607-cc8-prune-docs`.
+- Deploy via `landing-page-repo/scripts/deploy-vercel-production.sh` with the CC0 rollback ready; the asset version query was advanced from `20260607-cc8-prune-docs` to `20260607-cc9-copy-runthrough` after the dashboard copy runthrough removed repetitive founder-view language.
 - **Done when:** payload key count is reduced where safe or every retained raw key has a documented dependent; all checkers green; guide/whitepaper aligned; production verified.
 
 ---

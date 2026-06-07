@@ -219,7 +219,7 @@ async function main() {
     );
     assertIncludes(rendered, "[data-status-banner]", "Dashboard status loaded");
     assertIncludes(rendered, "[data-status-banner]", "Live status connected");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Founder brief");
     assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
     assertIncludes(rendered, "[data-mission-sources]", "Preference MCP");
     assertIncludes(rendered, "[data-mission-philosophy]", "Trading philosophy");
@@ -302,7 +302,7 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mini-map]", "Strategy Lead");
     assertIncludes(rendered, "[data-overview-mini-map]", "Currently");
     assertIncludes(rendered, "[data-overview-mini-map]", "Next handoff");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "mission_control");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Sanitized founder contract");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
     assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");

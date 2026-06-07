@@ -47,9 +47,9 @@ assert(map < detailFlow, "detail panels must appear after the system map");
     "data-overview-trading-strategies",
     "data-overview-thought-feed",
     "data-overview-trade-considerations",
-    "Paper Trading Overview",
-    "Mission Control brief",
-    "Trading strategy narrative",
+    "Mission Control",
+    "Founder brief",
+    "Strategy posture",
     "Data sources connected",
     "Trading strategies",
     "Trades being considered",
@@ -114,7 +114,7 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
     "Head of Quant",
     "overview-source-ledger",
     "data-cc5-contract-source",
-    "A trade idea is not an order"
+    "Trade ideas stay candidates until gated paper-order records exist"
 ].forEach((needle) => assert(renderer.includes(needle), `Overview renderer missing ${needle}`));
 
 console.log("dashboard_information_hierarchy=ok");

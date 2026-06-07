@@ -90,9 +90,9 @@ requiredExplainers.forEach((id) => {
 
 [
     "One place for paper mode, capital, and order authority.",
-    "The current status of Qadam's paper trading system.",
+    "Six blocks: sources, strategy, portfolio, trades, reasoning, and flow.",
     "Strategy visibility and approval state.",
-    "Summary first; Diagnostics keeps technical detail.",
+    "Readable summary first; Diagnostics keeps raw evidence.",
     "Governance status and review evidence.",
     "Operating map and current handoffs.",
     "Source quality, corroboration, and linked context.",
@@ -112,7 +112,7 @@ requiredExplainers.forEach((id) => {
 
 assert(!html.includes("<dt>Use it to</dt>"), "dashboard still has verbose tooltip label: Use it to");
 assert(!html.includes("<dt>Watch for</dt>"), "dashboard still has verbose tooltip label: Watch for");
-assertIncludes(html, "/auth.css?v=20260607-cc8-prune-docs", "dashboard stylesheet cache key");
+assertIncludes(html, "/auth.css?v=20260607-cc9-copy-runthrough", "dashboard stylesheet cache key");
 assertIncludes(plan, "Phase D10E - Section Explainers", "dashboard implementation plan");
 assertNoUnsafePublicText(html, "dashboard explainers");
 

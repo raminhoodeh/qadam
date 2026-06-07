@@ -89,21 +89,21 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260607-cc8-prune-docs",
-        "/dashboard.js?v=20260607-cc8-prune-docs",
+        "/auth.css?v=20260607-cc9-copy-runthrough",
+        "/dashboard.js?v=20260607-cc9-copy-runthrough",
         "Qadam paper trading dashboard",
-        "Paper Trading Overview",
+        "Mission Control",
         "Safety status",
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "60-day paper growth trial",
-        "How data becomes paper trade decisions",
+        "Operating flow",
         "Loading trade ideas"
     ], "D12 dashboard shell");
 
     includesAll(renderer, [
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "Paper growth maturity requires verified records",
-        "Mission control is read-only",
+        "This is read-only mission control",
         "What Qadam is choosing now",
         "buildFounderContractModel",
         "Trade ideas",
@@ -144,12 +144,12 @@ async function main() {
         "Paper portfolio",
         "Realized",
         "Unrealized",
-        "Mission Control brief",
-        "mission_control",
+        "Founder brief",
+        "Sanitized founder contract",
         "Authority state",
         "Paper-only, read-only",
         "Trades being considered",
-        "A trade idea is not an order"
+        "Trade ideas stay candidates until gated paper-order records exist"
     ], "D12 rendered overview");
     assertNoSlop(overviewText, "D12 rendered overview");
 
@@ -159,7 +159,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260607-cc8-prune-docs");
+    console.log("dashboard_d12_cache_key=20260607-cc9-copy-runthrough");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

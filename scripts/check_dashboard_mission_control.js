@@ -355,7 +355,7 @@ async function main() {
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-mission-primary]", "Operating thesis");
     assertIncludes(rendered, "[data-mission-primary]", "hypotheses");
-    assertIncludes(rendered, "[data-mission-primary]", "Mission control is read-only");
+    assertIncludes(rendered, "[data-mission-primary]", "This is read-only mission control");
     assertIncludes(rendered, "[data-mission-primary]", "Replay");
     assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
     assertIncludes(rendered, "[data-mission-sources]", "missing credentials");

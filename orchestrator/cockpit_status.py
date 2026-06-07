@@ -7682,7 +7682,7 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 action.get("action") or action.get("key") or "blocked_action"
                 for action in forbidden_actions[:8]
             ],
-            "boundary": "Mission control is read-only. It cannot approve, place, modify, resize, close, or fund trades.",
+            "boundary": "This is read-only mission control: it cannot approve trades, broker writes, position changes, funding, or live capital changes.",
         },
         "mission_brief": mission_brief,
     }

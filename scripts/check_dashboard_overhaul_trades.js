@@ -166,7 +166,7 @@ async function main() {
     [
         "Trade lifecycle board",
         "Verified performance only",
-        "A trade idea is not an order",
+        "Trade ideas stay candidates until gated paper-order records exist",
         "Observed signal",
         "Trade idea",
         "Blocked idea",

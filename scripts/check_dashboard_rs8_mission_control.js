@@ -132,11 +132,11 @@ async function main() {
     assert(brief.boundary.includes("cannot approve"), "Mission Brief boundary must deny approval authority");
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Control brief");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "mission_control");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Founder brief");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Sanitized founder contract");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Authority state");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Paper-only, read-only");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission control is read-only");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "This is read-only mission control");
     assert(
         !html(rendered, "[data-overview-mission-brief]").includes("hover"),
         "RS-8 Mission Brief should not rely on hover instructions"

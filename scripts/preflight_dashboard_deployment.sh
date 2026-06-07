@@ -74,6 +74,7 @@ node scripts/check_dashboard_durable_spine.js
 node scripts/check_dashboard_cc6_real_portfolio_timeline.js
 node scripts/check_dashboard_cc7_visual_a11y.js
 node scripts/check_dashboard_cc8_prune_docs_deploy.js
+node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js
 node scripts/check_dashboard_watching_view.js
@@ -98,6 +99,7 @@ git diff --check -- \
   landing-page-repo/dashboard.js \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
+  orchestrator/cockpit_status.py \
   orchestrator/telegram_codebase_upgrade_notifications.py \
   orchestrator/telegram_comms.py \
   orchestrator/telegram_daily_portfolio_digest.py \
@@ -149,6 +151,7 @@ git diff --check -- \
   scripts/check_dashboard_cc6_real_portfolio_timeline.js \
   scripts/check_dashboard_cc7_visual_a11y.js \
   scripts/check_dashboard_cc8_prune_docs_deploy.js \
+  scripts/check_dashboard_cc9_slop_repetition.js \
   docs/qadam-dashboard-consolidation-cut-implementation-plan-2026-06-05.md \
   docs/qadam-dashboard-overhaul-master-implementation-plan.md \
   docs/qadam-user-guide.md \

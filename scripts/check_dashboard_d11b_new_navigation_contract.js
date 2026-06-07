@@ -152,8 +152,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260607-cc8-prune-docs",
-    "/dashboard.js?v=20260607-cc8-prune-docs",
+    "/auth.css?v=20260607-cc9-copy-runthrough",
+    "/dashboard.js?v=20260607-cc9-copy-runthrough",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links"
 ], "dashboard cache keys");
@@ -222,7 +222,7 @@ includesAll(plan, [
     assert(rendered.document.documentElement.dataset.dashboardDensity === undefined, "rendered dashboard must not set density state");
     includesAll(dashboardHtml, ["data-dashboard-debug-toggle", "data-dashboard-advanced-links hidden"], "D11B advanced debug shell");
     const missionBrief = renderedHtml(rendered, "[data-overview-mission-brief]");
-    includesAll(missionBrief, ["Mission Control brief", "mission_control", "Authority state", "Paper-only, read-only"], "rendered overview mission brief");
+    includesAll(missionBrief, ["Founder brief", "Sanitized founder contract", "Authority state", "Paper-only, read-only"], "rendered overview mission brief");
     excludesAll(missionBrief, ["#sources", "#performance", "#governance"], "rendered overview mission brief");
     console.log("dashboard_d11b_new_navigation_contract=ok");
     console.log("dashboard_d11b_registered_view_count=5");

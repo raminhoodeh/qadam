@@ -100,7 +100,7 @@ async function main() {
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "20260607-cc8-prune-docs"
+        "20260607-cc9-copy-runthrough"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [
@@ -154,7 +154,7 @@ async function main() {
     assert(contract.portfolio.equity_curve.length >= 1, "Founder contract should expose portfolio line");
     assert(contract.trades.board.length >= 1, "Founder contract should expose trade board");
     assert(contract.thinking.research_goal_active_count >= 1, "Founder contract should expose research goals");
-    assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Mission Control brief");
+    assert(overview.mission_brief.question_count === 7, "Overview must expose the seven-question Founder brief");
     assert(overview.mission_brief.authority.live_capital_enabled === false, "Overview Mission Brief must keep live capital disabled");
     assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
     assert(!overview.summary.toLowerCase().includes("live capital"), "Overview summary must not duplicate live-capital safety copy");
@@ -182,11 +182,11 @@ async function main() {
     ].join(" ");
 
     includesAll(missionBrief, [
-        "Mission Control brief",
-        "mission_control",
+        "Founder brief",
+        "Sanitized founder contract",
         "Authority state",
         "Paper-only, read-only"
-    ], "rendered D11E Mission Control brief");
+    ], "rendered D11E Founder brief");
 
     includesAll(strategyNarrative, [
         "Second-order AI infrastructure beneficiary lens",
@@ -222,7 +222,7 @@ async function main() {
     ], "rendered D11E trading strategies");
 
     includesAll(thoughtFeed, [
-        "Qadam's thoughts",
+        "Reasoning queue",
         "Research goals",
         "Worldview prior"
     ], "rendered D11E thought feed");
@@ -235,12 +235,12 @@ async function main() {
     ], "rendered D11E trade considerations");
 
     includesAll(system, [
-        "You supervise Qadam",
+        "Human oversight",
         "Chief Operating Officer",
         "Local LLM",
         "Frontier LLM",
         "Head of Quant",
-        "A trade idea is not an order"
+        "Trade ideas stay candidates until gated paper-order records exist"
     ], "rendered D11E compact system map");
 
     assert(fs.existsSync(auditPath), "D11E audit document missing");

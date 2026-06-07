@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260607-cc8-prune-docs",
-        "/dashboard.js?v=20260607-cc8-prune-docs"
+        "/auth.css?v=20260607-cc9-copy-runthrough",
+        "/dashboard.js?v=20260607-cc9-copy-runthrough"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -127,7 +127,7 @@ async function main() {
     [
         ["[data-dashboard-safety-strip]", "Paper action ready through guarded route"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
-        ["[data-overview-mission-brief]", "Mission Control brief"],
+        ["[data-overview-mission-brief]", "Founder brief"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-source-summary]", "Sources"],
@@ -143,7 +143,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260607-cc8-prune-docs");
+    console.log("dashboard_d11l_cache_key=20260607-cc9-copy-runthrough");
     console.log("dashboard_authority_unchanged=True");
 }
 
