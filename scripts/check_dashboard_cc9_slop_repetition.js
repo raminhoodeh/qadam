@@ -92,7 +92,7 @@ async function main() {
     assert(count(overviewText, "Trade ideas stay candidates") <= 2, "rendered overview repeats trade-candidate boundary too often");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260607-cc10-remove-view-card");
+    console.log("dashboard_cc9_cache_key=20260607-cc11-final-dashboard-structure");
 }
 
 main().catch((error) => {

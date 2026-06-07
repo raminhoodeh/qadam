@@ -25,8 +25,8 @@ function includesAll(text, needles, label) {
 }
 
 includesAll(html, [
-    "/auth.css?v=20260607-cc10-remove-view-card",
-    "/dashboard.js?v=20260607-cc10-remove-view-card",
+    "/auth.css?v=20260607-cc11-final-dashboard-structure",
+    "/dashboard.js?v=20260607-cc11-final-dashboard-structure",
     "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
     "aria-current=\"page\"",
     "class=\"sr-only\" data-cockpit-nav-current data-dashboard-view-current",
@@ -81,6 +81,6 @@ assert(!/font-size:\s*[^;]*(vw|vmin|vmax|clamp\()/i.test(css), "CC7 should not i
 assert(!/letter-spacing:\s*-/i.test(css), "CC7 should not introduce negative letter spacing");
 
 console.log("dashboard_cc7_visual_a11y=ok");
-console.log("dashboard_cc7_cache_key=20260607-cc10-remove-view-card");
+console.log("dashboard_cc7_cache_key=20260607-cc11-final-dashboard-structure");
 console.log("dashboard_cc7_phone_single_column=True");
 console.log("dashboard_cc7_keyboard_drawer=True");

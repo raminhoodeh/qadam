@@ -152,8 +152,8 @@ links.forEach((link) => {
 });
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260607-cc10-remove-view-card",
-    "/dashboard.js?v=20260607-cc10-remove-view-card",
+    "/auth.css?v=20260607-cc11-final-dashboard-structure",
+    "/dashboard.js?v=20260607-cc11-final-dashboard-structure",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links"
 ], "dashboard cache keys");
