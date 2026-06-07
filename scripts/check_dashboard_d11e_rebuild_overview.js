@@ -100,7 +100,7 @@ async function main() {
         "data-overview-trading-strategies",
         "data-overview-thought-feed",
         "data-overview-trade-considerations",
-        "20260607-cc9-copy-runthrough"
+        "20260607-cc10-remove-view-card"
     ], "D11E overview HTML");
 
     excludesAll(dashboardHtml, [

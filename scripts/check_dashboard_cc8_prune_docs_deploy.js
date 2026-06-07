@@ -113,8 +113,8 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260607-cc9-copy-runthrough",
-    "/dashboard.js?v=20260607-cc9-copy-runthrough"
+    "/auth.css?v=20260607-cc10-remove-view-card",
+    "/dashboard.js?v=20260607-cc10-remove-view-card"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",
@@ -124,7 +124,7 @@ includesAll(plan, [
     "CC8",
     "Prune payload, tests, docs, deploy",
     "prune_audit",
-    "20260607-cc9-copy-runthrough"
+    "20260607-cc10-remove-view-card"
 ], "CC8 plan");
 
 assertPublicSafe(guideHtml, "guide HTML");

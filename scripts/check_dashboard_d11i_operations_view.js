@@ -96,8 +96,8 @@ async function main() {
         "data-operations-review-group=\"team_data_plumbing\"",
         "data-operations-review-group=\"system_map_event_trail\"",
         "data-operations-review-group=\"governance_comms_audit\"",
-        "/auth.css?v=20260607-cc9-copy-runthrough",
-        "/dashboard.js?v=20260607-cc9-copy-runthrough"
+        "/auth.css?v=20260607-cc10-remove-view-card",
+        "/dashboard.js?v=20260607-cc10-remove-view-card"
     ], "D11I Operations static shell");
 
     assert(countOccurrences(dashboardHtml, "legacy-operations-panel") === 0, "legacy Operations panels should be removed after CC2");

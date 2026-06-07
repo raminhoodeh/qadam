@@ -25,15 +25,18 @@ function includesAll(text, needles, label) {
 }
 
 includesAll(html, [
-    "/auth.css?v=20260607-cc9-copy-runthrough",
-    "/dashboard.js?v=20260607-cc9-copy-runthrough",
+    "/auth.css?v=20260607-cc10-remove-view-card",
+    "/dashboard.js?v=20260607-cc10-remove-view-card",
     "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
     "aria-current=\"page\"",
+    "class=\"sr-only\" data-cockpit-nav-current data-dashboard-view-current",
     "aria-controls=\"dashboard-debug-tabs\"",
     "id=\"dashboard-debug-tabs\"",
     "role=\"region\"",
     "aria-label=\"Diagnostics navigation\""
 ], "CC7 dashboard shell");
+
+assert(!html.includes("<div class=\"cockpit-nav-head\">"), "CC7 dashboard shell should not render the removed Dashboard View card");
 
 assert(!css.includes("var(--mono)"), "CC7 CSS must use --font-mono, not --mono");
 assert(!css.includes("var(--font)"), "CC7 CSS must use --font-sans, not --font");
@@ -78,6 +81,6 @@ assert(!/font-size:\s*[^;]*(vw|vmin|vmax|clamp\()/i.test(css), "CC7 should not i
 assert(!/letter-spacing:\s*-/i.test(css), "CC7 should not introduce negative letter spacing");
 
 console.log("dashboard_cc7_visual_a11y=ok");
-console.log("dashboard_cc7_cache_key=20260607-cc9-copy-runthrough");
+console.log("dashboard_cc7_cache_key=20260607-cc10-remove-view-card");
 console.log("dashboard_cc7_phone_single_column=True");
 console.log("dashboard_cc7_keyboard_drawer=True");

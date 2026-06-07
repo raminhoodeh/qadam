@@ -140,8 +140,8 @@ function main() {
     });
 
     includesAll(html, [
-        "/auth.css?v=20260607-cc9-copy-runthrough",
-        "/dashboard.js?v=20260607-cc9-copy-runthrough"
+        "/auth.css?v=20260607-cc10-remove-view-card",
+        "/dashboard.js?v=20260607-cc10-remove-view-card"
     ], "D11K cache key");
 
     assert(fs.existsSync(auditPath), "D11K audit document missing");

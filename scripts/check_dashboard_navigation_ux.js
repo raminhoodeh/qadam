@@ -36,9 +36,16 @@ function assertIncludes(text, needle, label) {
     "data-dashboard-view-target=\"operations\"",
     "data-dashboard-debug-toggle",
     "data-dashboard-advanced-links hidden",
-    "/auth.css?v=20260607-cc9-copy-runthrough",
-    "/dashboard.js?v=20260607-cc9-copy-runthrough"
+    "/auth.css?v=20260607-cc10-remove-view-card",
+    "/dashboard.js?v=20260607-cc10-remove-view-card"
 ].forEach((needle) => assertIncludes(html, needle, "dashboard HTML"));
+
+[
+    "<div class=\"cockpit-nav-head\">",
+    "<span>Dashboard view</span>"
+].forEach((needle) => {
+    assert(!html.includes(needle), `dashboard HTML still includes removed overview view-card chrome: ${needle}`);
+});
 
 [
     "mission-control",
@@ -56,8 +63,6 @@ assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
 
 [
     ".cockpit-nav",
-    "position: sticky",
-    ".cockpit-nav-head",
     ".cockpit-nav-links",
     ".dashboard-debug-toggle",
     ".dashboard-debug-links",
@@ -71,6 +76,12 @@ assertIncludes(html, "data-cockpit-section=", "dashboard cockpit sections");
     "@media (max-width: 900px)",
     "@media (max-width: 560px)"
 ].forEach((needle) => assertIncludes(css, needle, "navigation CSS"));
+
+[
+    ".sr-only",
+    "position: static",
+    "box-shadow: none"
+].forEach((needle) => assertIncludes(css, needle, "flattened navigation CSS"));
 
 [
     "function initCockpitNavigation",
