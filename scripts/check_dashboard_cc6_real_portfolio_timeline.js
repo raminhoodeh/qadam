@@ -81,11 +81,12 @@ assert(first.equity_gbp === capitalCurve[0].equity_gbp, "first equity point must
 assert(last.equity_gbp === capitalCurve.at(-1).equity_gbp, "last equity point must match capital.equity_curve");
 
 const html = context.renderContractPortfolioBlock(portfolio);
+const expectedFreshnessLabel = `${portfolio.mirror_freshness_status || portfolio.mirror_freshness || "unknown"} mirror`;
 [
     "data-cc6-real-portfolio-timeline=\"capital.equity_curve\"",
     "data-paper-capacity-line",
     "20 live points",
-    "stale mirror",
+    expectedFreshnessLabel,
     "Closed/target",
     "7/100",
     "capital.equity_curve",
@@ -119,6 +120,26 @@ assert(missingPortfolio.timeline_source === "missing", "empty exported curves mu
 assert(missingPortfolio.equity_curve.length === 0, "empty exported curves must not gain fallback points");
 assert(missingHtml.includes("data-cc6-real-portfolio-timeline=\"missing\""), "empty state must identify missing real timeline");
 assert(!missingHtml.includes("data-paper-capacity-line"), "missing real timeline must not render a chart line");
+
+const stale = clone(status);
+stale.capital = {
+    ...stale.capital,
+    mirror_freshness_status: "stale",
+    mirror_freshness_label: "stale mirror"
+};
+stale.mission_control = {
+    ...stale.mission_control,
+    portfolio: {
+        ...stale.mission_control.portfolio,
+        mirror_freshness_status: "stale",
+        mirror_freshness_label: "stale mirror"
+    }
+};
+const staleModels = context.buildQadamDashboardViewModels(stale, { key: "live_bridge" });
+const stalePortfolio = staleModels.founder_contract_model.portfolio;
+const staleHtml = context.renderContractPortfolioBlock(stalePortfolio);
+assert(stalePortfolio.mirror_freshness_status === "stale", "stale fixture must preserve stale freshness");
+assert(staleHtml.includes("stale mirror"), "stale fixture must render stale mirror warning");
 
 console.log("dashboard_cc6_real_portfolio_timeline=ok");
 console.log(`dashboard_cc6_points=${portfolio.equity_curve.length}`);
