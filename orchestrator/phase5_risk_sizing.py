@@ -264,7 +264,16 @@ def _top_failure_reasons(
 
 
 def _latest_signal_review(matching_reviews: tuple[dict[str, Any], ...]) -> dict[str, Any]:
-    return matching_reviews[-1] if matching_reviews else {}
+    if not matching_reviews:
+        return {}
+    passed_reviews = [
+        review
+        for review in matching_reviews
+        if review.get("status") == "passed_to_risk_shadow"
+    ]
+    if passed_reviews:
+        return passed_reviews[-1]
+    return matching_reviews[-1]
 
 
 def _signal_evidence_summary(

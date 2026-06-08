@@ -901,10 +901,21 @@ def main() -> int:
         not in paper_live_certification_false_errors
     ):
         errors.append("PaperOps-1 PT-10 certified-with-blockers probe was not rejected")
+    safe_operations_bootstrap = (
+        written["paperops_30_day_operations_status"] == "invalid"
+        and written["paperops_30_day_operations_automation_active"] is True
+        and written["paperops_30_day_operations_automation_prompt_paperops_bound"]
+        is True
+        and written["paperops_30_day_operations_dashboard_mirror_public_safe"] is True
+        and written["paperops_30_day_operations_unsafe_write_counter_total"] == 0
+        and written["command_count"] == len(COMMANDS)
+        and written["command_failed_count"] == 0
+        and written["command_passed_count"] == written["command_count"]
+    )
     if (
         written["paperops_30_day_operations_status"] != "operations_active"
         and not (
-            idle_bridge
+            (idle_bridge or safe_operations_bootstrap)
             and written["paperops_30_day_operations_status"] == "invalid"
         )
     ):

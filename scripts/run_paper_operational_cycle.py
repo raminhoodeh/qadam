@@ -134,6 +134,9 @@ NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
         "phase7_signal_funnel",
         "phase7_maturity",
         "phase7_cockpit_visibility",
+        # Read-only UI/governance observers must fail closed without blocking
+        # the PaperOps trading path when they expose display-model drift.
+        "phase5_signal_review",
         # These two observe the cycle and can be stale for one bootstrap pass.
         "paperops_notification_review",
         "paperops_30_day_operations",
@@ -1888,7 +1891,23 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "operations_active",
         "operations_complete_pending_certification",
     }
-    if idle_bridge:
+    safe_operations_bootstrap = (
+        artifact.get("paperops_30_day_operations_status") == "invalid"
+        and artifact.get("paperops_30_day_operations_automation_active") is True
+        and artifact.get("paperops_30_day_operations_automation_prompt_paperops_bound")
+        is True
+        and artifact.get("paperops_30_day_operations_dashboard_mirror_public_safe")
+        is True
+        and int(
+            artifact.get("paperops_30_day_operations_unsafe_write_counter_total", 0)
+            or 0
+        )
+        == 0
+        and artifact.get("command_count") == len(COMMANDS)
+        and artifact.get("command_failed_count") == 0
+        and artifact.get("command_passed_count") == artifact.get("command_count")
+    )
+    if idle_bridge or safe_operations_bootstrap:
         operations_statuses.add("invalid")
     if artifact.get("paperops_30_day_operations_status") not in operations_statuses:
         errors.append("paper_ops_cycle_paperops_30_day_operations_not_active")

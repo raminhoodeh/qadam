@@ -20,6 +20,7 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
+from orchestrator.paper_account import PaperAccountMirrorStore
 from orchestrator.paperops_alpaca_paper_post import _endpoint_context, _headers, _orders_url
 from orchestrator.paperops_paper_lifecycle_poller import (
     PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION,
@@ -256,6 +257,102 @@ def _source_exit_candidates(source: dict[str, Any]) -> tuple[list[dict[str, Any]
     return candidates, eligible
 
 
+def _mirror_position_to_exit_candidate(
+    position: Any,
+    *,
+    pending_close_symbols: set[str],
+) -> dict[str, Any]:
+    symbol = str(getattr(position, "instrument", "") or "").upper()
+    position_id = getattr(position, "position_id", None)
+    position_hash = _hash_identifier(f"paper-mirror:{symbol}:{position_id}")
+    request_preview = {
+        "request_type": "paperops_alpaca_paper_position_close",
+        "method": "DELETE",
+        "path": "/v2/positions/{symbol}",
+        "symbol": symbol,
+        "source_lifecycle_state": "open_position",
+        "source_record_type": "alpaca_paper_mirror_position",
+        "client_order_id_hash": position_hash,
+        "broker_order_id_hash": position_hash,
+        "base_url_exposed": False,
+        "authorization_header_included": False,
+        "raw_payload_exposed": False,
+        "broker_identifier_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+    }
+    errors = []
+    if not symbol:
+        errors.append("source_symbol_missing")
+    if getattr(position, "status", None) != "open_position":
+        errors.append("source_lifecycle_state_not_open_position")
+    if not position_hash:
+        errors.append("source_position_hash_missing")
+    if symbol in pending_close_symbols:
+        errors.append("source_pending_close_order_exists")
+    return {
+        "schema_version": PAPEROPS_EXIT_PATH_SCHEMA_VERSION,
+        "record_type": "paperops_paper_exit_candidate",
+        "exit_intent_id": f"paperops-exit:{symbol.lower() or 'unknown'}:{str(position_hash or 'unknown')[:12]}",
+        "source_lifecycle_record_type": "alpaca_paper_mirror_position",
+        "source_lifecycle_state": "open_position",
+        "source_submit_record_artifact_id": None,
+        "source_staged_order_artifact_id": None,
+        "source_proof_order_id": None,
+        "source_auto_approval_decision_id": None,
+        "source_setup_record_id": None,
+        "client_order_id_hash": position_hash,
+        "broker_order_id_hash": position_hash,
+        "symbol": symbol,
+        "filled_qty": getattr(position, "quantity", None),
+        "exit_action": "close_paper_position",
+        "exit_method": "DELETE",
+        "exit_path_template": "/v2/positions/{symbol}",
+        "request_preview": request_preview,
+        "request_fingerprint": _fingerprint(request_preview),
+        "source_record_errors": errors,
+        "eligible_for_paper_exit": not errors,
+        "status": "eligible" if not errors else "blocked_source_contract",
+        "base_url_exposed": False,
+        "authorization_header_included": False,
+        "authorization_header_exposed": False,
+        "raw_broker_payload_stored": False,
+        "raw_broker_payload_exposed": False,
+        "broker_order_identifier_exposed": False,
+        "secret_value_exposed": False,
+        "live_endpoint_allowed": False,
+        "live_capital_enabled": False,
+        "manual_trade_level_override_allowed": False,
+    }
+
+
+def _mirror_position_exit_candidates(
+    settings: Settings,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str]:
+    try:
+        store = PaperAccountMirrorStore(settings=settings)
+        positions = store.read_positions()
+        orders = store.read_orders()
+    except Exception:  # noqa: BLE001 - exit gate must fail closed on corrupt mirror.
+        return [], [], "mirror_unavailable"
+    pending_close_symbols = {
+        str(getattr(order, "instrument", "") or "").upper()
+        for order in orders
+        if str(getattr(order, "direction", "") or "").lower() == "sell"
+        and str(getattr(order, "status", "") or "").lower()
+        in {"new", "accepted", "pending_new", "partially_filled"}
+    }
+    candidates = [
+        _mirror_position_to_exit_candidate(
+            position,
+            pending_close_symbols=pending_close_symbols,
+        )
+        for position in positions
+    ]
+    eligible = [candidate for candidate in candidates if candidate["eligible_for_paper_exit"]]
+    return candidates, eligible, "mirror_available"
+
+
 def _sanitize_close_receipt(payload: dict[str, Any] | list[Any], *, closed_at: str) -> dict[str, Any]:
     if isinstance(payload, dict):
         order_payload = payload
@@ -410,8 +507,17 @@ def build_paperops_paper_exit_path(
         validate_paperops_paper_lifecycle_poller(source) if source_present else []
     )
     source_valid = source_present and not source_validation_errors
-    all_candidates, eligible_candidates = _source_exit_candidates(source)
+    source_candidates, source_eligible_candidates = _source_exit_candidates(source)
+    mirror_candidates, mirror_eligible_candidates, mirror_source_status = (
+        _mirror_position_exit_candidates(settings)
+    )
+    eligible_candidates = source_eligible_candidates or mirror_eligible_candidates
+    all_candidates = source_candidates + mirror_candidates
     selected_candidate = eligible_candidates[0] if eligible_candidates else None
+    source_or_mirror_present = source_present or bool(mirror_candidates)
+    source_or_mirror_valid = (source_valid if source_present else True) and (
+        mirror_source_status == "mirror_available" or not mirror_candidates
+    )
     preconditions = {
         "mode_is_paper": settings.mode == "paper",
         "live_capital_disabled": settings.live_capital_enabled is False,
@@ -420,8 +526,8 @@ def build_paperops_paper_exit_path(
         "alpaca_endpoint_classified_paper": endpoint["paper_endpoint_confirmed"] is True,
         "alpaca_paper_credentials_configured": endpoint["alpaca_api_key_configured"] is True
         and endpoint["alpaca_api_secret_configured"] is True,
-        "paperops_3_source_present": source_present,
-        "paperops_3_source_valid": source_valid,
+        "paperops_3_or_paper_mirror_source_present": source_or_mirror_present,
+        "paperops_3_or_paper_mirror_source_valid": source_or_mirror_valid,
         "open_position_readback_present": selected_candidate is not None,
     }
     precondition_failures = [
@@ -478,8 +584,8 @@ def build_paperops_paper_exit_path(
         settings=settings,
         paper_exit_effective=paper_exit_effective,
         endpoint=endpoint,
-        source_present=source_present,
-        source_valid=source_valid,
+        source_present=source_or_mirror_present,
+        source_valid=source_or_mirror_valid,
         eligible_count=len(eligible_candidates),
         execute_exit=execute_exit,
         close_result=close_result,
@@ -565,6 +671,9 @@ def build_paperops_paper_exit_path(
         )
         if source_present
         else 0,
+        "paper_account_mirror_position_source_status": mirror_source_status,
+        "paper_account_mirror_open_position_count": len(mirror_candidates),
+        "paper_account_mirror_eligible_exit_count": len(mirror_eligible_candidates),
         "open_position_readback_count": len(eligible_candidates),
         "eligible_exit_record_count": len(eligible_candidates),
         "blocked_source_record_count": len(all_candidates) - len(eligible_candidates),

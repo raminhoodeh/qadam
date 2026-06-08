@@ -827,7 +827,10 @@ def main() -> int:
             print(f"signal_integrity_gate_preference_policy_probe_invalid={probe['source_signal_id']}:{policy_error}")
             return 1
         if probe["status"] != "hold_for_corroboration":
-            print(f"signal_integrity_gate_preference_policy_probe_not_held={probe['source_signal_id']}")
+            print(
+                "signal_integrity_gate_preference_policy_probe_status_invalid="
+                f"{probe['source_signal_id']}:{probe['status']}"
+            )
             return 1
         if probe["execution_allowed"] is not False or probe["paper_order_allowed"] is not False:
             print(f"signal_integrity_gate_preference_policy_probe_authority_enabled={probe['source_signal_id']}")

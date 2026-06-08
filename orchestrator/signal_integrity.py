@@ -582,11 +582,9 @@ def _review_status(
     preference_policy: dict[str, Any],
     technical_policy: dict[str, Any],
 ) -> str:
-    preference_hold_status = preference_policy["status"] in {
+    preference_hard_hold_status = preference_policy["status"] in {
         "preference_only_confirmation_hold",
         "preference_context_missing_provenance_hold",
-        "preference_context_stale_hold",
-        "preference_context_quota_degraded_hold",
     }
     pricing_gap_satisfied = _pricing_gap_status_is_satisfied(
         str(market_policy.get("pricing_gap_status") or "")
@@ -599,7 +597,7 @@ def _review_status(
         or average_trust_score < 0.65
         or market_policy["status"] != "market_confirmation_corroboration_available"
         or not pricing_gap_satisfied
-        or preference_hold_status
+        or preference_hard_hold_status
         or technical_policy["status"]
         in {"tradingview_mcp_context_only_hold", "technical_context_stale_hold"}
     ):
