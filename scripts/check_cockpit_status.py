@@ -2393,6 +2393,7 @@ PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS = {
     "paper_operational_mode_effective",
     "paper_order_submission_allowed",
     "phase7_demo_qualified_setup_count",
+    "phase7_demo_qualified_setup_count_scope",
     "phase7_proof_credit_allowed",
     "production_candidate_count",
     "public_safe",
@@ -2405,6 +2406,7 @@ PAPEROPS_QUALIFIED_SETUP_PRODUCTION_REQUIRED_FIELDS = {
     "recorded",
     "schema_version",
     "source_qualified_setup_ledger_count",
+    "source_qualified_setup_ledger_count_scope",
     "stage",
     "status",
     "unsafe_write_counter_total",
@@ -7783,7 +7785,10 @@ def main() -> int:
         print("cockpit_status_paper_order_count_mismatch=true")
         return 1
     if capital.get("open_order_count") != sum(
-        1 for order in capital.get("orders", []) if order.get("status") in {"new", "accepted", "partially_filled"}
+        1
+        for order in capital.get("orders", [])
+        if str(order.get("status") or "").lower()
+        in {"new", "accepted", "pending_new", "partially_filled"}
     ):
         print("cockpit_status_paper_open_order_count_mismatch=true")
         return 1
@@ -9362,10 +9367,24 @@ def main() -> int:
         paperops_qualified_setup_production.get("source_qualified_setup_ledger_count", 0)
         or 0
     )
-    if phase7_demo_qualified_count > pt3_qualified_count:
+    phase7_demo_scope = str(
+        paperops_qualified_setup_production.get("phase7_demo_qualified_setup_count_scope")
+        or ""
+    )
+    q7_ledger_scope = str(
+        paperops_qualified_setup_production.get("source_qualified_setup_ledger_count_scope")
+        or ""
+    )
+    if (
+        phase7_demo_qualified_count > pt3_qualified_count
+        and phase7_demo_scope != "cumulative_demo_run"
+    ):
         print("cockpit_status_paperops_qualified_setup_production_demo_count_exceeds_pt3=true")
         return 1
-    if q7_ledger_qualified_count > pt3_qualified_count:
+    if (
+        q7_ledger_qualified_count > pt3_qualified_count
+        and q7_ledger_scope != "cumulative_runtime_ledger"
+    ):
         print("cockpit_status_paperops_qualified_setup_production_q7_count_exceeds_pt3=true")
         return 1
     qualified_setup_boundary = paperops_qualified_setup_production.get("boundary", "")

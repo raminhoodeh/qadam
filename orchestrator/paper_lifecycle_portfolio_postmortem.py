@@ -136,6 +136,34 @@ def _paper_lifecycle_portfolio_postmortem_paths(
     )
 
 
+def _source_artifact_newer_than_status(
+    *,
+    settings: Settings,
+    status_path: Path,
+) -> bool:
+    if not status_path.exists():
+        return True
+    runtime = _runtime_dir(settings)
+    try:
+        status_mtime = status_path.stat().st_mtime
+    except OSError:
+        return True
+    source_paths = (
+        runtime / "alpaca_paper_mirror.json",
+        runtime / "paper_account_snapshots.jsonl",
+        runtime / "paper_positions.jsonl",
+        runtime / "paper_closed_trades.jsonl",
+        runtime / "paper_orders.jsonl",
+    )
+    for source_path in source_paths:
+        try:
+            if source_path.exists() and source_path.stat().st_mtime > status_mtime:
+                return True
+        except OSError:
+            continue
+    return False
+
+
 def _phase7_lifecycle(settings: Settings) -> dict[str, Any]:
     return _read_json(_runtime_dir(settings) / "phase7_proof_lifecycle_monitor.json")
 
@@ -467,7 +495,10 @@ def paper_lifecycle_portfolio_postmortem_status(
 ) -> dict[str, Any]:
     settings = settings or Settings.from_env()
     runtime_path, _, _ = _paper_lifecycle_portfolio_postmortem_paths(settings)
-    if runtime_path.exists():
+    if runtime_path.exists() and not _source_artifact_newer_than_status(
+        settings=settings,
+        status_path=runtime_path,
+    ):
         payload = _read_json(runtime_path)
         if payload:
             return payload

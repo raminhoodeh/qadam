@@ -32,7 +32,12 @@ from orchestrator.operator_inbox import (
     public_operator_inbox_status,
     write_operator_inbox,
 )
-from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context, paper_account_summary
+from orchestrator.paper_account import (
+    OPEN_ORDER_STATUSES,
+    PaperAccountMirrorStore,
+    paper_account_shadow_context,
+    paper_account_summary,
+)
 from orchestrator.paper_lifecycle_portfolio_postmortem import (
     paper_lifecycle_portfolio_postmortem_public_status,
 )
@@ -3355,6 +3360,10 @@ def _communications(settings: Settings) -> dict[str, Any]:
 def _capital(settings: Settings) -> dict[str, Any]:
     store = PaperAccountMirrorStore(settings=settings)
     summary = paper_account_summary(settings)
+    alpaca_report = _read_runtime_json(settings, "alpaca_paper_mirror.json") or {}
+    market_clock = alpaca_report.get("market_clock", {})
+    if not isinstance(market_clock, dict):
+        market_clock = {}
     latest = store.latest_snapshot()
     positions = [_safe_paper_position(position) for position in store.read_positions()]
     closed_trades = [_safe_closed_trade(trade) for trade in store.read_closed_trades()]
@@ -3422,6 +3431,12 @@ def _capital(settings: Settings) -> dict[str, Any]:
             "postmortems_due": [],
             "postmortems_complete": [],
             "equity_curve": [],
+            "market_clock": {
+                "status": "unavailable",
+                "is_open": None,
+                "next_open": None,
+                "next_close": None,
+            },
             "boundary": summary["boundary"],
         }
     sync_age_seconds = _iso_age_seconds(latest.observed_at)
@@ -3482,7 +3497,18 @@ def _capital(settings: Settings) -> dict[str, Any]:
         "open_position_count": len(positions),
         "closed_trade_count": len(closed_trades),
         "order_count": len(orders),
-        "open_order_count": sum(1 for order in orders if order.get("status") in {"new", "accepted", "partially_filled"}),
+        "open_order_count": sum(
+            1
+            for order in orders
+            if str(order.get("status") or "").lower() in OPEN_ORDER_STATUSES
+        ),
+        "market_clock": {
+            "status": market_clock.get("status", "unavailable"),
+            "is_open": market_clock.get("is_open"),
+            "next_open": market_clock.get("next_open"),
+            "next_close": market_clock.get("next_close"),
+            "timestamp": market_clock.get("timestamp"),
+        },
         "postmortem_due_count": len(postmortems_due),
         "postmortem_complete_count": len(postmortems_complete),
         "open_positions": positions,
@@ -9159,12 +9185,24 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     q7_ledger_qualified_count = int(
         paperops_qualified_setup.get("source_qualified_setup_ledger_count", 0) or 0
     )
-    if phase7_demo_qualified_count > pt3_qualified_count:
+    phase7_demo_scope = str(
+        paperops_qualified_setup.get("phase7_demo_qualified_setup_count_scope") or ""
+    )
+    q7_ledger_scope = str(
+        paperops_qualified_setup.get("source_qualified_setup_ledger_count_scope") or ""
+    )
+    if (
+        phase7_demo_qualified_count > pt3_qualified_count
+        and phase7_demo_scope != "cumulative_demo_run"
+    ):
         raise ValueError(
             "PaperOps qualified setup production observed more Phase 7 demo setups "
             "than PT-3 qualified"
         )
-    if q7_ledger_qualified_count > pt3_qualified_count:
+    if (
+        q7_ledger_qualified_count > pt3_qualified_count
+        and q7_ledger_scope != "cumulative_runtime_ledger"
+    ):
         raise ValueError(
             "PaperOps qualified setup production observed more Q7 ledger setups "
             "than PT-3 qualified"

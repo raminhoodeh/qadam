@@ -41,8 +41,10 @@ ALPACA_READONLY_PATHS = frozenset(
         "/positions",
         "/orders",
         "/account/portfolio/history",
+        "/clock",
     }
 )
+OPEN_ORDER_STATUSES = frozenset({"new", "accepted", "pending_new", "partially_filled"})
 
 
 @dataclass(frozen=True)
@@ -315,7 +317,7 @@ class PaperAccountMirrorStore:
             "open_position_count": len(positions),
             "closed_trade_count": len(closed_trades),
             "order_count": len(orders),
-            "open_order_count": sum(1 for order in orders if order.status in {"new", "accepted", "partially_filled"}),
+            "open_order_count": sum(1 for order in orders if order.status in OPEN_ORDER_STATUSES),
             "postmortem_due_count": sum(
                 1 for trade in closed_trades if trade.postmortem_status == "postmortem_due"
             ),
@@ -453,7 +455,7 @@ def paper_account_shadow_context(settings: Settings | None = None) -> dict[str, 
     closed_trades = store.read_closed_trades()
     current_balance = latest.current_balance_gbp if latest else float(settings.trial_balance_gbp)
     drawdown = latest.drawdown_pct if latest else 0.0
-    open_orders = tuple(order for order in orders if order.status in {"new", "accepted", "partially_filled"})
+    open_orders = tuple(order for order in orders if order.status in OPEN_ORDER_STATUSES)
     return {
         "status": health.get("status", "not_initialized"),
         "schema_version": PAPER_ACCOUNT_SCHEMA_VERSION,
@@ -582,6 +584,7 @@ class AlpacaReadOnlyPaperMirror:
         account = self._get("/account")
         positions = self._get("/positions")
         orders = self._get("/orders", params={"status": "all", "limit": 100, "direction": "desc", "nested": "true"})
+        clock = self._get("/clock")
         history = self._get(
             "/account/portfolio/history",
             params={"period": "1M", "timeframe": "1D", "intraday_reporting": "market_hours"},
@@ -590,6 +593,7 @@ class AlpacaReadOnlyPaperMirror:
             "account": account if isinstance(account, dict) else {},
             "positions": positions if isinstance(positions, list) else [],
             "orders": orders if isinstance(orders, list) else [],
+            "clock": clock if isinstance(clock, dict) else {},
             "portfolio_history": history if isinstance(history, dict) else {},
         }
 
@@ -598,6 +602,7 @@ class AlpacaReadOnlyPaperMirror:
         account = payload["account"]
         positions_payload = payload["positions"]
         orders_payload = payload["orders"]
+        clock = payload["clock"]
         history = payload["portfolio_history"]
 
         positions = tuple(self._position_from_alpaca(item) for item in positions_payload if isinstance(item, dict))
@@ -697,10 +702,31 @@ class AlpacaReadOnlyPaperMirror:
             "display_currency": snapshot.display_currency,
             "broker_reconciliation_status": snapshot.broker_reconciliation_status,
             "broker_reconciliation_delta": snapshot.broker_reconciliation_delta,
+            "market_clock": self._sanitize_clock(clock),
             "boundary": snapshot.boundary,
         }
         self._write_report(report)
         return report
+
+    def _sanitize_clock(self, clock: dict[str, Any]) -> dict[str, Any]:
+        if not clock:
+            return {
+                "status": "unavailable",
+                "is_open": None,
+                "next_open": None,
+                "next_close": None,
+                "timestamp": None,
+                "boundary": "Read-only Alpaca clock unavailable; no execution authority is granted.",
+            }
+        is_open = clock.get("is_open")
+        return {
+            "status": "open" if is_open is True else "closed" if is_open is False else "unknown",
+            "is_open": is_open if isinstance(is_open, bool) else None,
+            "next_open": clock.get("next_open"),
+            "next_close": clock.get("next_close"),
+            "timestamp": clock.get("timestamp"),
+            "boundary": "Read-only Alpaca market clock. It cannot place, cancel, replace, or close orders.",
+        }
 
     def _money(self, value: Any) -> float:
         return round(_float(value) * self.fx_to_gbp, 2)

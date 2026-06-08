@@ -50,7 +50,7 @@ const {
     });
 
     [
-        "Paper action ready through guarded route",
+        "Paper orders queued; waiting for Alpaca fill",
         "Paper-only readout · live capital off"
     ].forEach((label) => {
         assert(safetyStripHtml.includes(label), `safety strip OK label missing: ${label}`);

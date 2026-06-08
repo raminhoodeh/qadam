@@ -112,7 +112,7 @@ function assertSafetyStripIsSingleGlobalAuthority() {
         "dashboard must expose exactly one global safety strip"
     );
     includesAll(dashboardHtml, [
-        "Paper action ready through guarded route",
+        "Paper orders queued; waiting for Alpaca fill",
         "Paper-only readout · live capital off",
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "One place for paper mode, capital, and order authority"
@@ -179,7 +179,7 @@ async function assertRenderedDashboardContract() {
     );
 
     [
-        ["[data-dashboard-safety-strip]", "Paper action ready through guarded route"],
+        ["[data-dashboard-safety-strip]", "Paper orders queued; waiting for Alpaca fill"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
         ["[data-balance-ticker]", "Paper balance"],

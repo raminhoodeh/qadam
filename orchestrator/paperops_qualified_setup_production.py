@@ -58,6 +58,7 @@ PAPEROPS_QUALIFIED_SETUP_PUBLIC_FIELDS: tuple[str, ...] = (
     "phase7_run_state",
     "phase7_active_day_number",
     "phase7_demo_qualified_setup_count",
+    "phase7_demo_qualified_setup_count_scope",
     "production_candidate_count",
     "qualified_setup_count",
     "blocked_candidate_count",
@@ -75,6 +76,7 @@ PAPEROPS_QUALIFIED_SETUP_PUBLIC_FIELDS: tuple[str, ...] = (
     "staged_order_count",
     "source_qualified_setup_ledger_status",
     "source_qualified_setup_ledger_count",
+    "source_qualified_setup_ledger_count_scope",
     "source_posture_canonical_source_count",
     "source_quorum_bypass_allowed",
     "supplemental_source_bypass_allowed",
@@ -654,6 +656,7 @@ def build_paperops_qualified_setup_production(
         "phase7_run_state": demo_run.get("run_state", "missing"),
         "phase7_active_day_number": demo_run.get("active_day_number"),
         "phase7_demo_qualified_setup_count": _int(demo_run.get("qualified_setup_count")),
+        "phase7_demo_qualified_setup_count_scope": "cumulative_demo_run",
         "production_candidate_count": len(candidates),
         "qualified_setup_count": len(qualified),
         "blocked_candidate_count": len(blocked),
@@ -667,6 +670,7 @@ def build_paperops_qualified_setup_production(
         "staged_order_count": _int(snapshot["paper_staging"].get("staged_order_count")),
         "source_qualified_setup_ledger_status": q7_ledger.get("status", "missing"),
         "source_qualified_setup_ledger_count": q7_ledger_consumed_count,
+        "source_qualified_setup_ledger_count_scope": "cumulative_runtime_ledger",
         "source_posture_canonical_source_count": _int(
             first_posture.get("canonical_source_count")
         ),

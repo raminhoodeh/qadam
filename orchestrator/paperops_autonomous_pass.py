@@ -10,6 +10,7 @@ import sys
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
 
 
 PAPEROPS_AUTONOMOUS_PASS_SCHEMA_VERSION = 1
@@ -172,6 +173,46 @@ def _unique(items: list[str]) -> list[str]:
     return list(dict.fromkeys(item for item in items if item))
 
 
+def _paper_mirror_runtime() -> dict[str, Any]:
+    try:
+        store = PaperAccountMirrorStore()
+        latest = store.latest_snapshot()
+        positions = store.read_positions()
+        closed_trades = store.read_closed_trades()
+        orders = store.read_orders()
+    except Exception as exc:  # noqa: BLE001 - summary should degrade, not crash.
+        return {
+            "status": "unavailable",
+            "error": exc.__class__.__name__,
+            "open_position_count": 0,
+            "closed_paper_trade_count": 0,
+            "paper_order_count": 0,
+            "open_order_count": 0,
+            "order_status_counts": {},
+            "current_balance_gbp": None,
+            "observed_at": None,
+        }
+    order_status_counts: dict[str, int] = {}
+    for order in orders:
+        status = str(order.status or "unknown").lower()
+        order_status_counts[status] = order_status_counts.get(status, 0) + 1
+    open_order_count = sum(
+        count
+        for status, count in order_status_counts.items()
+        if status in OPEN_ORDER_STATUSES
+    )
+    return {
+        "status": "ok",
+        "open_position_count": len(positions),
+        "closed_paper_trade_count": len(closed_trades),
+        "paper_order_count": len(orders),
+        "open_order_count": open_order_count,
+        "order_status_counts": order_status_counts,
+        "current_balance_gbp": latest.current_balance_gbp if latest else None,
+        "observed_at": latest.observed_at if latest else None,
+    }
+
+
 def _status(command_results: list[dict[str, Any]], blockers: list[str]) -> str:
     command_failures = [
         str(result.get("label"))
@@ -256,6 +297,7 @@ def build_paperops_autonomous_pass_summary(
     summary_path: str | Path | None = None,
 ) -> dict[str, Any]:
     generated = generated_at or now_utc()
+    mirror_runtime = _paper_mirror_runtime()
     required_gaps = _csv(
         _value(command_results, (("paper_closeout", "qadam_paper_closeout_required_gaps"),), "")
     )
@@ -342,6 +384,11 @@ def build_paperops_autonomous_pass_summary(
     )
     if active_automation_state == "active_automation_enabled_idle" and not idle_reason:
         idle_reason = "no_fresh_eligible_candidate"
+    if (
+        active_automation_state == "active_automation_enabled_idle"
+        and _int(mirror_runtime.get("open_order_count")) > 0
+    ):
+        idle_reason = "open_orders_pending_fill"
     idempotency_guard_message = None
     if duplicate_submit_count:
         idempotency_guard_message = (
@@ -504,24 +551,37 @@ def build_paperops_autonomous_pass_summary(
             "submitted_paper_order_count": submitted_paper_order_count,
             "idle_reason": idle_reason,
             "idempotency_guard_message": idempotency_guard_message,
-            "open_position_count": _int(
-                _value(
-                    command_results,
-                    (
-                        ("cockpit_status", "cockpit_status_paper_open_position_count"),
-                        ("active_automation_check", "paperops_active_automation_paperops3_open_position_count"),
-                    ),
-                )
+            "open_position_count": max(
+                _int(mirror_runtime.get("open_position_count")),
+                _int(
+                    _value(
+                        command_results,
+                        (
+                            ("cockpit_status", "cockpit_status_paper_open_position_count"),
+                            ("active_automation_check", "paperops_active_automation_paperops3_open_position_count"),
+                        ),
+                    )
+                ),
             ),
-            "closed_paper_trade_count": _int(
-                _value(
-                    command_results,
-                    (("cockpit_status", "cockpit_status_paper_closed_trade_count"),),
-                )
+            "closed_paper_trade_count": max(
+                _int(mirror_runtime.get("closed_paper_trade_count")),
+                _int(
+                    _value(
+                        command_results,
+                        (("cockpit_status", "cockpit_status_paper_closed_trade_count"),),
+                    )
+                ),
             ),
-            "paper_order_count": _int(
-                _value(command_results, (("cockpit_status", "cockpit_status_paper_order_count"),))
+            "paper_order_count": max(
+                _int(mirror_runtime.get("paper_order_count")),
+                _int(
+                    _value(command_results, (("cockpit_status", "cockpit_status_paper_order_count"),))
+                ),
             ),
+            "open_order_count": _int(mirror_runtime.get("open_order_count")),
+            "order_status_counts": mirror_runtime.get("order_status_counts", {}),
+            "paper_mirror_observed_at": mirror_runtime.get("observed_at"),
+            "paper_mirror_status": mirror_runtime.get("status"),
         },
         "first_week_paper_trade_mandate": {
             "status": _value(
@@ -801,6 +861,8 @@ def build_paperops_autonomous_pass_summary(
         (
             "Active paper runner is idle: daily paper target met."
             if idle_reason == "daily_paper_trade_target_met"
+            else "Active paper runner is waiting on open Alpaca paper orders to fill."
+            if idle_reason == "open_orders_pending_fill"
             else "Active paper runner is idle: no fresh eligible candidate."
             if idle_reason == "no_fresh_eligible_candidate"
             else f"Active paper runner state is {active_automation_state}."
@@ -814,6 +876,12 @@ def build_paperops_autonomous_pass_summary(
             "minimum notional."
         ),
     ]
+    if _int(summary["paper_runtime"].get("open_order_count")):
+        summary["automation_report_lines"].append(
+            "Paper broker mirror has "
+            f"{summary['paper_runtime']['open_order_count']} open orders pending fill; "
+            "closed-trade count moves only after Alpaca fills them."
+        )
     summary["validation_errors"] = validate_paperops_autonomous_pass_summary(summary)
     summary["validation_error_count"] = len(summary["validation_errors"])
     if summary["validation_errors"] and summary["status"] == "ready_idle":
@@ -877,7 +945,11 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         == "active_automation_enabled_idle"
         and summary.get("paper_runtime", {}).get("fresh_eligible_submit_count") == 0
         and summary.get("paper_runtime", {}).get("idle_reason")
-        not in {"no_fresh_eligible_candidate", "daily_paper_trade_target_met"}
+        not in {
+            "no_fresh_eligible_candidate",
+            "daily_paper_trade_target_met",
+            "open_orders_pending_fill",
+        }
     ):
         errors.append("paperops_autonomous_pass_missing_idle_reason")
     return sorted(set(errors))

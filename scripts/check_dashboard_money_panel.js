@@ -90,7 +90,7 @@ async function main() {
     assert(capital.closed_trade_count === closedTrades.length, "closed trade count mismatch");
     assert(capital.order_count === orders.length, "order count mismatch");
     assert(
-        capital.open_order_count === orders.filter((order) => ["new", "accepted", "partially_filled"].includes(order.status)).length,
+        capital.open_order_count === orders.filter((order) => ["new", "accepted", "pending_new", "partially_filled"].includes(order.status)).length,
         "open order count mismatch"
     );
     assert(capital.postmortem_due_count === postmortemsDue.length, "postmortem due count mismatch");
