@@ -484,6 +484,29 @@ def _hold_reason(allowed: bool, failures: list[str], idle_reason: str) -> str:
     return idle_reason
 
 
+def _exit_hold_reason(
+    *,
+    allowed: bool,
+    failures: list[str],
+    paperops4: dict[str, Any],
+) -> str:
+    if allowed:
+        return "allowed"
+    if failures:
+        return ",".join(failures)
+    if (
+        paperops4.get("status") == "paper_exit_close_recorded"
+        and _int(paperops4.get("paper_position_close_called_count")) >= 1
+    ):
+        return "paper_exit_already_recorded_waiting_lifecycle_refresh"
+    if (
+        paperops4.get("paper_exit_path_available") is True
+        and _int(paperops4.get("eligible_exit_record_count")) >= 1
+    ):
+        return "paper_exit_candidate_available_pending_explicit_execute"
+    return "no_open_position_exit_candidate"
+
+
 def _post_candidates(paperops2: dict[str, Any]) -> list[dict[str, Any]]:
     records = paperops2.get("post_candidates", [])
     if not isinstance(records, list):
@@ -989,10 +1012,10 @@ def build_paperops_active_paper_trading_automation(
             blockers if blockers else [],
             "no_submitted_order_to_poll",
         ),
-        "exit_hold_reason": _hold_reason(
-            paper_exit_allowed,
-            blockers if blockers else [],
-            "no_open_position_exit_candidate",
+        "exit_hold_reason": _exit_hold_reason(
+            allowed=paper_exit_allowed,
+            failures=blockers if blockers else [],
+            paperops4=paperops4,
         ),
         "delegated_submit_allowed": paper_submit_allowed,
         "delegated_poll_allowed": paper_poll_allowed,
