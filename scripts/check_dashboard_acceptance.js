@@ -132,7 +132,7 @@ function assertNoUnsafePublicText(text, label) {
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
-    "Paper orders queued; waiting for Alpaca fill",
+    "Paper trading authorized",
     "Paper-only readout · live capital off",
     "Readouts only. Authority, trade lifecycle, and paper-account state remain backend-derived.",
     "Status display, evidence, paper account, safety blocks.",
@@ -216,7 +216,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
     [
         ["[data-status-banner]", "Dashboard status loaded"],
         ["[data-status-banner]", "Live status connected"],
-        ["[data-dashboard-safety-strip]", "Paper orders queued; waiting for Alpaca fill"],
+        ["[data-dashboard-safety-strip]", "Paper trading authorized"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
         ["[data-overview-mission-brief]", "Founder brief"],

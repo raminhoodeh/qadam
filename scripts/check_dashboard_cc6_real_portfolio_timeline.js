@@ -82,13 +82,14 @@ assert(last.equity_gbp === capitalCurve.at(-1).equity_gbp, "last equity point mu
 
 const html = context.renderContractPortfolioBlock(portfolio);
 const expectedFreshnessLabel = `${portfolio.mirror_freshness_status || portfolio.mirror_freshness || "unknown"} mirror`;
+const expectedClosedTarget = `${portfolio.closed_trade_count}/${portfolio.maturity_closed_trade_target}`;
 [
     "data-cc6-real-portfolio-timeline=\"capital.equity_curve\"",
     "data-paper-capacity-line",
     "20 live points",
     expectedFreshnessLabel,
     "Closed/target",
-    "7/100",
+    expectedClosedTarget,
     "capital.equity_curve",
     "Balance",
     "Delta",

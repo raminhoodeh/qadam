@@ -194,10 +194,6 @@ def _build_opportunity_or_risk_blockers(active: dict[str, Any]) -> list[str]:
         and active.get("paperops3_status") != "paper_lifecycle_poll_recorded"
     ):
         blockers.append("paper_poll_gate_not_ready")
-    if active.get("paper_exit_step_allowed") is not True and _int(
-        active.get("paperops4_eligible_exit_record_count")
-    ) > 0:
-        blockers.append("paper_exit_gate_not_ready")
     return blockers
 
 
@@ -239,6 +235,11 @@ def _build_downstream_waiting_reasons(active: dict[str, Any]) -> list[str]:
         and _int(active.get("paperops4_eligible_exit_record_count")) < 1
     ):
         _append_unique(reasons, "exit_gate_waiting_for_eligible_exit_candidate")
+    if (
+        active.get("paper_exit_step_allowed") is not True
+        and _int(active.get("paperops4_eligible_exit_record_count")) > 0
+    ):
+        _append_unique(reasons, "exit_gate_waiting_for_explicit_guarded_exit")
     return reasons
 
 

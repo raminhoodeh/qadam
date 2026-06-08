@@ -125,7 +125,7 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        ["[data-dashboard-safety-strip]", "Paper orders queued; waiting for Alpaca fill"],
+        ["[data-dashboard-safety-strip]", "Paper trading authorized"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-overview-mission-brief]", "Founder brief"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],

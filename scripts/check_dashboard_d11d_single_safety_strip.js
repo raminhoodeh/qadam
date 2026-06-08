@@ -78,7 +78,7 @@ assert(count(dashboardHtml, "data-dashboard-safety-strip") === 1, "static shell 
 
 includesAll(dashboardHtml, [
     "Safety status",
-    "Paper orders queued; waiting for Alpaca fill",
+    "Paper trading authorized",
     "Paper-only readout · live capital off",
     "Dashboard cannot place orders; model outputs cannot bypass risk checks",
     "One place for paper mode, capital, and order authority",
@@ -147,7 +147,7 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
 
     includesAll(stripHtml, [
         "Safety status",
-        "Paper orders queued; waiting for Alpaca fill",
+        "Paper trading authorized",
         "Paper-only readout · live capital off",
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "One place for paper mode, capital, and order authority"
