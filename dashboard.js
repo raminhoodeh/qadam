@@ -3725,9 +3725,21 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const paperOpportunityBlockers = asArray(paperAuthority.opportunity_or_risk_blockers);
     const paperCurrentBlockers = asArray(paperAuthority.current_blockers);
     const paperAuthorityStatus = paperAuthority.status || "not_exported";
+    const openPaperOrderCount = modelNumber(
+        capital.open_order_count,
+        asArray(capital.orders).filter((order) => {
+            const orderStatus = String(order.status || "").toLowerCase();
+            return ["new", "accepted", "pending_new", "partially_filled"].includes(orderStatus);
+        }).length
+    );
+    const marketClock = capital.market_clock || {};
+    const marketClockStatus = dashboardText(marketClock.status, marketClock.is_open === true ? "open" : "unknown");
+    const marketClockSummary = marketClock.is_open === true
+        ? "Alpaca paper market is open."
+        : `Alpaca paper market is ${marketClockStatus}${marketClock.next_open ? `; next open ${formatTime(marketClock.next_open)}` : ""}.`;
     const paperAuthorityTone = paperSafetyBlockers.length
         ? "blocked"
-        : (paperOperationalBlockers.length || paperOpportunityBlockers.length ? "pending" : "online");
+        : (openPaperOrderCount || paperOperationalBlockers.length || paperOpportunityBlockers.length ? "pending" : "online");
     const tone = liveCapitalEnabled || writeAuthority || authorityFlags.length
         ? "blocked"
         : paperAuthorityTone;
@@ -3740,21 +3752,27 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
             paperAuthorityStatus === "paper_authorized_blocked_operational"
                 ? "Paper authorized; runner not armed"
                 : (
-                    paperAuthorityStatus === "paper_authorized_waiting_for_setup"
-                        ? "Paper authorized; waiting for setup"
+                    openPaperOrderCount
+                        ? "Paper trading authorized; waiting on paper fills"
+                        : paperAuthorityStatus === "paper_authorized_waiting_for_setup"
+                        ? "Paper trading authorized; waiting for next setup"
                         : (
-                            paperAuthorityStatus?.startsWith?.("paper_authorized_ready") || (
-                                paperAuthority.paper_authorized
-                                && !paperSafetyBlockers.length
-                                && !paperOperationalBlockers.length
-                            )
-                                ? "Paper action ready through guarded route"
-                                : "Safety locked: paper-only readout"
+                            paperAuthorityStatus?.startsWith?.("paper_authorized_ready")
+                                ? "Paper trading authorized; action ready through guarded route"
+                                : (
+                                    paperAuthority.paper_authorized
+                                    && !paperSafetyBlockers.length
+                                    && !paperOperationalBlockers.length
+                                )
+                                    ? "Paper trading authorized; live capital off"
+                                    : "Safety locked: paper-only readout"
                         )
                 )
         );
     const authoritySummary = dashboardText(
-        paperAuthority.why_not_trading_now,
+        openPaperOrderCount
+            ? `${openPaperOrderCount} Alpaca paper orders are open. Closed-trade count updates after Alpaca fills or closes those orders. ${marketClockSummary}`
+            : paperAuthority.why_not_trading_now,
         "Qadam can only act through guarded PaperOps paper routes when all gates pass."
     );
     const authorityBlockerLabel = paperCurrentBlockers.length
@@ -6121,9 +6139,23 @@ function renderMissionControl(status, source) {
     const phase7DemoProof = mission.phase7_demo_proof || status.phase7_demo_proof || {};
     const thinking = mission.thinking || {};
     const tradeIntent = mission.trade_intent || {};
-    const portfolio = mission.portfolio || {};
+    const capital = status.capital || {};
+    const portfolio = { ...(mission.portfolio || {}), ...capital };
     const safety = mission.safety || {};
     const durable = mission.durable_spine || status.durable_ingestion || {};
+    const openPaperOrders = asArray(portfolio.orders).filter((order) => {
+        const orderStatus = String(order.status || "").toLowerCase();
+        return ["new", "accepted", "pending_new", "partially_filled"].includes(orderStatus);
+    });
+    const openPaperOrderCount = modelNumber(portfolio.open_order_count, openPaperOrders.length);
+    const marketClock = portfolio.market_clock || {};
+    const marketClockStatus = dashboardText(marketClock.status, marketClock.is_open === true ? "open" : "unknown");
+    const marketClockNote = marketClock.is_open === true
+        ? "Alpaca paper market is open."
+        : `Alpaca paper market is ${marketClockStatus}${marketClock.next_open ? `; next open ${formatTime(marketClock.next_open)}` : ""}.`;
+    const paperFillNote = openPaperOrderCount
+        ? `${openPaperOrderCount} Alpaca paper orders are queued/pending fill. Closed-trade count updates only after Alpaca fills them. ${marketClockNote}`
+        : `No queued Alpaca paper orders are visible. ${marketClockNote}`;
 
     const primary = dashboardQuery("[data-mission-primary]");
     if (primary) {
@@ -6135,9 +6167,11 @@ function renderMissionControl(status, source) {
                 ${renderMetric("Thinking", `${thinking.hypothesis_count || 0} hyp · ${thinking.phase2_mode || "pending"}`)}
                 ${renderMetric("Intent", `${tradeIntent.candidate_count || 0} candidates`)}
                 ${renderMetric("Holdings", `${portfolio.open_position_count || 0} open`)}
+                ${renderMetric("Queued", `${openPaperOrderCount} paper orders`)}
                 ${renderMetric("Replay", `${durable.replayed_source_count || 0}/${durable.expected_source_count || 0}`)}
                 ${renderMetric("Safety", safety.live_capital_enabled ? "live enabled" : "live disabled")}
             </div>
+            <p class="mini">${htmlText(paperFillNote)}</p>
             <p class="mini">${htmlText(safety.boundary, "This is read-only mission control: it cannot approve trades or broker writes.")}</p>
         `;
     }
@@ -6282,9 +6316,11 @@ function renderMissionControl(status, source) {
             <span>Paper account</span>
             <h3>${portfolioMoney(portfolio.current_balance_gbp)} · ${portfolioMoney(portfolio.total_pnl_gbp)} P&L</h3>
             <p>${htmlText(portfolio.connection_status, "pending")} · ${htmlText(portfolio.mirror_freshness_label, "freshness unknown")} · ${htmlText(portfolio.portfolio_value_source, "paper mirror")} · history ${htmlText(reconciliationStatus)}</p>
+            <p>${htmlText(paperFillNote)}</p>
             <div class="mission-mini-grid compact">
                 ${renderMetric("Open", portfolio.open_position_count || 0)}
                 ${renderMetric("Orders", portfolio.order_count || 0)}
+                ${renderMetric("Queued", openPaperOrderCount)}
                 ${renderMetric("Closed", portfolio.closed_trade_count || 0)}
                 ${renderMetric("Write", portfolio.write_authority ? "enabled" : "blocked")}
             </div>
