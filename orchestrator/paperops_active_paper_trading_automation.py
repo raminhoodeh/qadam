@@ -495,6 +495,11 @@ def _exit_hold_reason(
     if failures:
         return ",".join(failures)
     if (
+        paperops4.get("status") == "paper_exit_close_failed_sanitized"
+        and _int(paperops4.get("paper_position_close_failed_count")) >= 1
+    ):
+        return "paper_exit_close_failed_sanitized_waiting_retry_or_lifecycle_refresh"
+    if (
         paperops4.get("status") == "paper_exit_close_recorded"
         and _int(paperops4.get("paper_position_close_called_count")) >= 1
     ):

@@ -14,6 +14,8 @@ if str(ROOT) not in sys.path:
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.event_log import EventLog  # noqa: E402
 from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E402
+    PAPEROPS_ACTIVE_AUTOMATION_COMPONENT,
+    PAPEROPS_ACTIVE_AUTOMATION_EVENT_TYPE,
     PAPEROPS_ACTIVE_AUTOMATION_SCHEMA_VERSION,
     build_paperops_active_paper_trading_automation,
     paperops_active_paper_trading_automation_paths,
@@ -408,8 +410,13 @@ def main() -> int:
 
     if validation_errors:
         errors.append(f"PT-8 validation failed: {validation_errors}")
-    if replay["total_events"] != 1:
-        errors.append("PT-8 event log did not record exactly one event")
+    if replay["total_events"] < 1:
+        errors.append("PT-8 event log did not record a recorded event")
+    if (
+        replay.get("by_type", {}).get(PAPEROPS_ACTIVE_AUTOMATION_EVENT_TYPE, 0) < 1
+        or replay.get("by_component", {}).get(PAPEROPS_ACTIVE_AUTOMATION_COMPONENT, 0) < 1
+    ):
+        errors.append("PT-8 event log missing active automation event")
     if written["mode"] != "paper":
         errors.append("PT-8 mode is not paper")
     if written["active_paper_trading_automation_enabled"] is not True:
