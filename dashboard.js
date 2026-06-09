@@ -618,6 +618,23 @@ function htmlText(value, fallback = "Not connected yet") {
     })[char]);
 }
 
+function publicOverviewText(value, fallback = "Not connected yet") {
+    return dashboardText(value, fallback)
+        .replace(/\bQ5E\b/g, "paper-lifecycle")
+        .replace(/\bQ5\b/g, "paper-trading")
+        .replace(/\bQ4\b/g, "strategy-review")
+        .replace(/\bQ6\b/g, "learning-loop")
+        .replace(/\bQ7\b/g, "proof-run")
+        .replace(/\bPhase 4\b/g, "strategy review")
+        .replace(/\bPhase 5\b/g, "paper-trading layer")
+        .replace(/\bPhase 6\b/g, "learning loop")
+        .replace(/\bPhase 7\b/g, "proof run");
+}
+
+function overviewHtmlText(value, fallback = "Not connected yet") {
+    return htmlText(publicOverviewText(value, fallback), fallback);
+}
+
 function literalHtmlText(value, fallback = "Not connected yet") {
     if (value === null || value === undefined || value === "") return fallback;
     return String(value).replace(/[&<>"']/g, (char) => ({
@@ -6738,9 +6755,9 @@ function renderOverviewStrategyRow(strategy = {}) {
 function renderOverviewThoughtItem(item) {
     return `
         <li class="${statusClass(item.tone || item.status)}">
-            <span>${htmlText(item.label)}</span>
-            <strong>${htmlText(item.value || item.status)}</strong>
-            <p>${htmlText(item.summary)}</p>
+            <span>${overviewHtmlText(item.label)}</span>
+            <strong>${overviewHtmlText(item.value || item.status)}</strong>
+            <p>${overviewHtmlText(item.summary)}</p>
         </li>
     `;
 }
