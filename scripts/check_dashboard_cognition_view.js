@@ -333,7 +333,7 @@ async function main() {
     assertIncludes(rendered, "[data-cognition]", "Required next steps");
     assertIncludes(rendered, "[data-cognition]", "Candidates created");
     assertIncludes(rendered, "[data-cognition]", "Missing corroboration");
-    assertIncludes(rendered, "[data-cognition]", "research shadow triage packet");
+    assertIncludes(rendered, "[data-cognition]", "research packets");
     assertIncludes(rendered, "[data-cognition]", "trade layer not reached");
     assertIncludes(
         rendered,
