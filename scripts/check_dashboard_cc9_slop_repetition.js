@@ -36,6 +36,11 @@ function count(text, needle) {
     return String(text).split(needle).length - 1;
 }
 
+function assertCount(text, needle, expected, label) {
+    const actual = count(text, needle);
+    assert(actual === expected, `${label} expected ${expected} occurrence(s) of ${needle}, got ${actual}`);
+}
+
 async function main() {
     const combinedSource = `${dashboardHtml}\n${renderer}`;
     [
@@ -69,6 +74,7 @@ async function main() {
         html(rendered, "[data-overview-strategy-narrative]"),
         html(rendered, "[data-overview-system-summary]"),
         html(rendered, "[data-overview-oversight]"),
+        html(rendered, "[data-overview-trading-strategies]"),
         html(rendered, "[data-overview-thought-feed]"),
         html(rendered, "[data-overview-boundary-rail]")
     ].join(" "));
@@ -90,6 +96,25 @@ async function main() {
 
     assert(count(overviewText, "This is read-only mission control") <= 2, "rendered overview repeats read-only mission control too often");
     assert(count(overviewText, "Trade ideas stay candidates") <= 2, "rendered overview repeats trade-candidate boundary too often");
+
+    [
+        "Semiconductor Policy Options Asymmetry",
+        "Defence Repricing Geopolitical Watch",
+        "Silver Macro Liquidity Stress",
+        "Crude Oil Energy Security Disruption",
+        "Prediction Market Geopolitical Dislocation",
+        "Qadam-native edge"
+    ].forEach((needle) => assertCount(overviewText, needle, 1, "rendered overview strategy universe"));
+
+    [
+        "Click to see universe",
+        "picks-and-shovels",
+        "harder to fool",
+        "faster to click",
+        "AI slop",
+        "magic",
+        "revolutionary"
+    ].forEach((needle) => assertAbsent(overviewText, needle, "rendered overview"));
 
     console.log("dashboard_cc9_slop_repetition=ok");
     console.log("dashboard_cc9_cache_key=20260607-cc11-final-dashboard-structure");

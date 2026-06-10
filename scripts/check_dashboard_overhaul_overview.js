@@ -169,7 +169,9 @@ async function main() {
     assertIncludes(rendered, "[data-overview-mission-brief]", "Sanitized founder contract");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Authority state");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber method");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Asymmetric Catalyst Proxy Trading");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Currently qualified");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting on gates");
     assertIncludes(rendered, "[data-overview-system-status]", "System status");
     assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
     assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");
@@ -186,6 +188,13 @@ async function main() {
     assertIncludes(rendered, "[data-overview-data-sources]", "mission_control");
     assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
     assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategy");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Open the full universe");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Asymmetric Catalyst Proxy Trading");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Semiconductor Policy Options Asymmetry");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Defence Repricing Geopolitical Watch");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Silver Macro Liquidity Stress");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
+    assertIncludes(rendered, "[data-overview-trading-strategies]", "Prediction Market Geopolitical Dislocation");
     assertIncludes(rendered, "[data-overview-trading-strategies]", "Akber filter");
     assertIncludes(rendered, "[data-overview-thought-feed]", "Reasoning queue");
     assertIncludes(rendered, "[data-overview-thought-feed]", "Worldview prior");

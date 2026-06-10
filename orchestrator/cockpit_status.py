@@ -2168,7 +2168,7 @@ def _decision_philosophy() -> dict[str, Any]:
             "Qadam starts from a power-map worldview: energy, security, money, institutional "
             "incentives, narrative control, and hidden coordination shape what markets price late. "
             "Inside the AI infrastructure buildout, it now treats obvious AI leaders as reference "
-            "assets and looks for second-order picks-and-shovels beneficiaries in power generation, "
+            "assets and looks for second-order infrastructure beneficiaries in power generation, "
             "grid hardware, data-centre electrical systems, fabrication capacity, memory, connectivity, "
             "and networking. "
             "The worldview powers questions and scenario generation, but live evidence, the Akber "
@@ -2192,7 +2192,7 @@ def _decision_philosophy() -> dict[str, Any]:
             "institutional incentive",
             "US-China grand-bargain scenario",
             "hidden coordination risk",
-            "AI infrastructure picks-and-shovels constraints",
+            "AI infrastructure capacity constraints",
         ],
         "boundary": summary.get(
             "evidence_boundary",
@@ -5394,10 +5394,206 @@ def _mission_source_ledger(watching: list[dict[str, Any]]) -> list[dict[str, Any
     ]
 
 
-def _mission_strategy(decision_philosophy: dict[str, Any]) -> dict[str, Any]:
+QADAM_NATIVE_STRATEGY_FAMILIES: dict[str, dict[str, Any]] = {
+    "semiconductor_policy_options_asymmetry": {
+        "rank": 1,
+        "fit": "high",
+        "fit_score": 0.94,
+        "instrument": "semiconductors",
+        "label": "Semiconductor Policy Options Asymmetry",
+        "catalyst_focus": "export-control shifts, AI-chip supply constraints, and policy bargains",
+        "qadam_fit_reason": (
+            "Best match for Qadam's policy, filings, patents, macro, technical context, "
+            "and liquid paper-proxy strengths."
+        ),
+        "route_fit": "strong_alpaca_paper_proxy_fit",
+    },
+    "defence_repricing_geopolitical_watch": {
+        "rank": 2,
+        "fit": "high",
+        "fit_score": 0.9,
+        "instrument": "defence",
+        "label": "Defence Repricing Geopolitical Watch",
+        "catalyst_focus": "defence posture shifts, conflict escalation, and procurement or policy signals",
+        "qadam_fit_reason": (
+            "Strong fit for conflict, news, filings, procurement, Strategy Lead challenge, "
+            "and paper-tradable proxy expression."
+        ),
+        "route_fit": "strong_alpaca_paper_proxy_fit",
+    },
+    "silver_macro_liquidity_stress": {
+        "rank": 3,
+        "fit": "medium-high",
+        "fit_score": 0.82,
+        "instrument": "silver",
+        "label": "Silver Macro Liquidity Stress",
+        "catalyst_focus": "liquidity stress, rates shocks, and currency-confidence shifts",
+        "qadam_fit_reason": (
+            "Good fit for macro/liquidity evidence with simple, liquid paper-market expression."
+        ),
+        "route_fit": "clean_alpaca_paper_proxy_fit",
+    },
+    "crude_oil_energy_security_disruption": {
+        "rank": 4,
+        "fit": "medium",
+        "fit_score": 0.72,
+        "instrument": "crude_oil",
+        "label": "Crude Oil Energy Security Disruption",
+        "catalyst_focus": "energy security, shipping chokepoints, and conflict-fire disruption",
+        "qadam_fit_reason": (
+            "Conceptually strong for Qadam's physical and geopolitical feeds, but it depends "
+            "on cleaner physical confirmation and risk-stage evidence."
+        ),
+        "route_fit": "conditional_paper_proxy_fit",
+    },
+    "prediction_market_geopolitical_dislocation": {
+        "rank": 5,
+        "fit": "conceptual-high execution-low",
+        "fit_score": 0.64,
+        "instrument": "prediction_markets",
+        "label": "Prediction Market Geopolitical Dislocation",
+        "catalyst_focus": "conflict escalation, narrative coordination, and policy shocks",
+        "qadam_fit_reason": (
+            "Intellectually aligned with Qadam's event reasoning, but current venue, adapter, "
+            "and credential constraints make it weaker for guarded paper execution."
+        ),
+        "route_fit": "blocked_until_prediction_market_route_is_ready",
+    },
+}
+
+STRATEGY_SETUP_BLOCKER_LABELS = {
+    "signal_integrity_passed": "source corroboration",
+    "risk_agent_paper_sizing": "paper risk sizing",
+    "paper_order_staged_not_submitted": "paper staging readiness",
+    "notional_within_paperops_cap": "positive paper notional inside cap",
+    "execution_adapter_read_ready": "paper execution route readiness",
+    "venue_read_available": "paper venue route readiness",
+}
+
+
+def _strategy_setup_record_by_key(
+    paperops_qualified_setup_production: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    return {
+        str(record.get("strategy_family_key")): record
+        for record in paperops_qualified_setup_production.get("candidate_setup_records", [])
+        if isinstance(record, dict) and record.get("strategy_family_key")
+    }
+
+
+def _mission_strategy_families(
+    phase4_strategy: dict[str, Any],
+    paperops_qualified_setup_production: dict[str, Any],
+) -> list[dict[str, Any]]:
+    toggles = phase4_strategy.get("strategy_toggles", {}).get("toggles", [])
+    toggle_by_key = {
+        str(toggle.get("strategy_key")): toggle
+        for toggle in toggles
+        if isinstance(toggle, dict) and toggle.get("strategy_key")
+    }
+    setup_by_key = _strategy_setup_record_by_key(paperops_qualified_setup_production)
+    keys = list(dict.fromkeys([*QADAM_NATIVE_STRATEGY_FAMILIES.keys(), *toggle_by_key.keys()]))
+    families: list[dict[str, Any]] = []
+    for key in keys:
+        definition = QADAM_NATIVE_STRATEGY_FAMILIES.get(key, {})
+        toggle = toggle_by_key.get(key, {})
+        setup = setup_by_key.get(key, {})
+        qualified_setup = setup.get("qualified_setup") is True
+        setup_state = str(setup.get("setup_state") or "not_currently_qualified")
+        rejection_reasons = [
+            str(reason)
+            for reason in setup.get("rejection_reasons", [])
+            if str(reason).strip()
+        ]
+        if qualified_setup:
+            current_state = "qualified_for_guarded_paper_review"
+            current_reason = "Current guarded paper checks show a production-qualified paper setup."
+        elif rejection_reasons:
+            current_state = "waiting_on_required_gates"
+            current_reason = "Waiting on " + ", ".join(
+                STRATEGY_SETUP_BLOCKER_LABELS.get(reason, reason.replace("_", " "))
+                for reason in rejection_reasons[:3]
+            )
+        else:
+            current_state = "watching_for_evidence"
+            current_reason = "No current production-qualified paper setup is exported for this family."
+        label = str(
+            toggle.get("label")
+            or definition.get("label")
+            or key.replace("_", " ").title()
+        )
+        families.append(
+            {
+                "key": key,
+                "rank": int(definition.get("rank") or 99),
+                "label": label,
+                "instrument": str(setup.get("instrument") or definition.get("instrument") or "strategy_family"),
+                "fit": str(definition.get("fit") or "review"),
+                "fit_score": float(definition.get("fit_score") or 0),
+                "catalyst_focus": str(definition.get("catalyst_focus") or "strategy-family catalyst"),
+                "qadam_fit_reason": str(definition.get("qadam_fit_reason") or "Strategy family is visible in Qadam governance."),
+                "route_fit": str(definition.get("route_fit") or "route_under_review"),
+                "approval_state": str(toggle.get("approval_state") or "approved"),
+                "toggle_state": str(toggle.get("toggle_state") or "visible"),
+                "visible_in_cockpit": bool(toggle.get("visible_in_cockpit", True)),
+                "current_state": current_state,
+                "setup_state": setup_state,
+                "qualified_setup": qualified_setup,
+                "side": str(setup.get("side") or "not_determined"),
+                "notional_gbp": float(setup.get("notional_gbp") or 0),
+                "rejection_reasons": rejection_reasons,
+                "current_reason": current_reason,
+                "paper_order_submission_allowed": False,
+                "broker_write_allowed": False,
+                "live_capital_enabled": False,
+            }
+        )
+    return sorted(families, key=lambda family: (family["rank"], family["label"]))
+
+
+def _mission_strategy(
+    decision_philosophy: dict[str, Any],
+    *,
+    phase4_strategy: dict[str, Any] | None = None,
+    paperops_qualified_setup_production: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     ai_lens = decision_philosophy.get("ai_infrastructure_lens", {})
+    strategy_families = _mission_strategy_families(
+        phase4_strategy or {},
+        paperops_qualified_setup_production or {},
+    )
+    qualified_family_count = sum(1 for family in strategy_families if family["qualified_setup"])
     return {
         "posture": "shadow_paper_strategy_with_second_order_ai_infrastructure_lens",
+        "native_edge": {
+            "name": "Asymmetric Catalyst Proxy Trading",
+            "status": "active_qadam_native_strategy",
+            "thesis": (
+                "Qadam detects catalyst setups, challenges them with model review, verifies "
+                "source quorum, sizes risk deterministically, and expresses only approved "
+                "setups through guarded paper-tradable proxies."
+            ),
+            "why_this_fits_qadam": [
+                "Python scripts provide deterministic gates, ledgers, sizing, idempotency, and audit trails.",
+                "The local LLM is useful for low-cost triage, extraction, and recurring analyst packets.",
+                "The frontier LLM is useful for contradiction checks, narrative synthesis, and Strategy Lead challenges.",
+                "Q-CTRL is an uncertainty and optimization consultation layer, not execution authority.",
+                "Canonical and supplemental data sources make source-quorum discipline more valuable than discretionary prediction.",
+            ],
+            "decision_spine": [
+                "catalyst detected",
+                "source quorum",
+                "LLM challenge",
+                "market proxy",
+                "risk sizing",
+                "guarded Alpaca Paper",
+                "paper proof ledger",
+            ],
+            "summary": (
+                "Every setup must survive evidence, reasoning, risk, duplicate-exposure, "
+                "idempotency, and guarded Alpaca Paper route checks."
+            ),
+        },
         "why": decision_philosophy.get(
             "trading_philosophy",
             "Qadam uses private priors to ask sharper questions, then waits for live evidence and gates.",
@@ -5417,7 +5613,18 @@ def _mission_strategy(decision_philosophy: dict[str, Any]) -> dict[str, Any]:
                 "postmortem learning",
             ],
         },
-        "universe": ai_lens.get("target_bottlenecks", []),
+        "strategy_family_count": len(strategy_families),
+        "qualified_strategy_family_count": qualified_family_count,
+        "strategy_families": strategy_families,
+        "fit_matrix": strategy_families,
+        "universe": [
+            "prediction markets",
+            "crude oil",
+            "defence",
+            "silver",
+            "semiconductors",
+        ],
+        "ai_infrastructure_universe": ai_lens.get("target_bottlenecks", []),
         "reference_assets": ai_lens.get("reference_assets", []),
         "active_lens": {
             "name": ai_lens.get("name", "Second-order AI infrastructure beneficiary lens"),
@@ -5427,9 +5634,9 @@ def _mission_strategy(decision_philosophy: dict[str, Any]) -> dict[str, Any]:
             "gating_role": ai_lens.get("gating_role"),
         },
         "decision_chain": decision_philosophy.get("decision_chain", []),
-        "boundary": decision_philosophy.get(
-            "boundary",
-            "Worldview is a private prior only, not a trade trigger.",
+        "boundary": (
+            "Strategy fit is public-safe context. It cannot create trade candidates, approve risk, "
+            "stage or submit paper orders, write brokers, call live endpoints, or enable live capital."
         ),
     }
 
@@ -6147,7 +6354,11 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "Worldview is a private prior only, not a trade trigger.",
             ),
         },
-        "strategy": _mission_strategy(decision_philosophy),
+        "strategy": _mission_strategy(
+            decision_philosophy,
+            phase4_strategy=phase4_strategy,
+            paperops_qualified_setup_production=paperops_qualified_setup_production,
+        ),
         "system_stack": {
             "coo": _module_status(payload, "event_log"),
             "data_spine": phase1_data_spine.get("status", _module_status(payload, "watching")),
@@ -8196,6 +8407,19 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("Mission Control safety projection must remain read-only")
     if mission_control["safety"].get("live_capital_enabled") is not False:
         raise ValueError("Mission Control safety projection must keep live capital disabled")
+    mission_strategy = mission_control["strategy"]
+    if mission_strategy.get("native_edge", {}).get("name") != "Asymmetric Catalyst Proxy Trading":
+        raise ValueError("Mission Control strategy native edge missing")
+    if int(mission_strategy.get("strategy_family_count", 0) or 0) < 5:
+        raise ValueError("Mission Control strategy universe must expose at least five families")
+    if len(mission_strategy.get("strategy_families", [])) < 5:
+        raise ValueError("Mission Control strategy family list missing")
+    if not any(
+        family.get("qualified_setup") is True
+        for family in mission_strategy.get("strategy_families", [])
+        if isinstance(family, dict)
+    ):
+        raise ValueError("Mission Control strategy universe must expose current setup state")
     diagnostics = payload["diagnostics"]
     if diagnostics.get("status") != "diagnostics_available":
         raise ValueError("cockpit diagnostics status mismatch")

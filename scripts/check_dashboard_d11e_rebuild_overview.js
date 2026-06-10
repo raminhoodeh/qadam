@@ -189,9 +189,12 @@ async function main() {
     ], "rendered D11E Founder brief");
 
     includesAll(strategyNarrative, [
+        "Asymmetric Catalyst Proxy Trading",
+        "Universe",
+        "Currently qualified",
+        "Waiting on gates",
         "Second-order AI infrastructure beneficiary lens",
-        "Akber",
-        "Worldview role"
+        "Boundary"
     ], "rendered D11E strategy narrative");
 
     includesAll(systemStatus, [
@@ -217,8 +220,15 @@ async function main() {
 
     includesAll(strategies, [
         "Trading strategy",
+        "Asymmetric Catalyst Proxy Trading",
+        "Qadam-native edge",
+        "Semiconductor Policy Options Asymmetry",
+        "Defence Repricing Geopolitical Watch",
+        "Silver Macro Liquidity Stress",
+        "Crude Oil Energy Security Disruption",
+        "Prediction Market Geopolitical Dislocation",
         "Akber filter",
-        "Signal Integrity Gate"
+        "guarded Alpaca Paper"
     ], "rendered D11E trading strategies");
 
     includesAll(thoughtFeed, [
