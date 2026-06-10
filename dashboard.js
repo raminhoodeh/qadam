@@ -3288,6 +3288,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const capital = status.capital || {};
     const tradeLayer = status.trade_layer || {};
     const phase4 = status.phase4_strategy || {};
+    const missionStrategy = status.mission_control?.strategy || {};
     const unattendedArmed = Boolean(
         paperLive.paper_live_unattended_execution_delegation_enabled
             || activeAutomation.unattended_paper_execution_delegation_enabled
@@ -3526,8 +3527,39 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             pipeline.order_authority_count ? `${pipeline.order_authority_count} order authority` : "0 order authority"
         ].filter(Boolean).join("; ")
     }));
+    const missionStrategyFamilies = asArray(missionStrategy.strategy_families);
     const strategyToggles = asArray(phase4.strategy_toggles?.toggles);
-    const tradingStrategies = strategyToggles.length
+    const tradingStrategies = missionStrategyFamilies.length
+        ? missionStrategyFamilies.map((strategy) => ({
+            key: strategy.key,
+            label: dashboardText(strategy.label, strategy.key || "Strategy family"),
+            value: strategy.qualified_setup ? "Qualified paper setup" : "Waiting on gates",
+            tone: strategy.qualified_setup ? "online" : "pending",
+            rank: modelNumber(strategy.rank, 99),
+            fit: strategy.fit || "review",
+            fit_score: modelNumber(strategy.fit_score, 0),
+            instrument: strategy.instrument || "strategy family",
+            catalyst_focus: strategy.catalyst_focus || "Catalyst focus not exported",
+            qadam_fit_reason: strategy.qadam_fit_reason || "Qadam fit reason not exported.",
+            route_fit: strategy.route_fit || "route under review",
+            current_state: strategy.current_state || strategy.setup_state || "watching_for_evidence",
+            current_reason: strategy.current_reason || "No current PaperOps reason exported.",
+            setup_state: strategy.setup_state || "not_currently_qualified",
+            qualified_setup: Boolean(strategy.qualified_setup),
+            side: strategy.side || "not_determined",
+            notional_gbp: modelNumber(strategy.notional_gbp, 0),
+            approval_state: strategy.approval_state || "not exported",
+            toggle_state: strategy.toggle_state || "not exported",
+            visible_in_cockpit: strategy.visible_in_cockpit !== false,
+            event_log_required: false,
+            execution_allowed: false,
+            paper_order_allowed: false,
+            broker_write_allowed: false,
+            live_capital_enabled: false,
+            boundary: "Strategy-family fit is context only; only guarded PaperOps can submit paper orders.",
+            summary: strategy.qadam_fit_reason || "Visible to Qadam's research and risk workflow; not an order route."
+        }))
+        : strategyToggles.length
         ? strategyToggles.map((strategy) => ({
             key: strategy.strategy_key,
             label: dashboardText(strategy.label, strategy.strategy_key || "Strategy family"),
@@ -3699,6 +3731,13 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
             summary: opportunityScanSummary,
             boundary: opportunityScan.boundary || "The opportunity scanner is read-only and cannot submit orders."
         },
+        native_strategy: missionStrategy.native_edge || null,
+        strategy_family_count: modelNumber(missionStrategy.strategy_family_count, tradingStrategies.length),
+        qualified_strategy_family_count: modelNumber(
+            missionStrategy.qualified_strategy_family_count,
+            tradingStrategies.filter((strategy) => strategy.qualified_setup).length
+        ),
+        strategy_decision_spine: asArray(missionStrategy.native_edge?.decision_spine),
         trading_strategies: tradingStrategies,
         thought_feed: thoughtFeed,
         trade_considerations: tradeConsiderations,
@@ -3975,9 +4014,18 @@ function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) 
         strategy: {
             posture: strategy.posture || tradingPhilosophy.status || "pending",
             why: strategy.why || tradingPhilosophy.summary || "No strategy posture exported.",
+            native_edge: strategy.native_edge || {},
             active_lens: strategy.active_lens || tradingPhilosophy.ai_infrastructure_lens || {},
             akber_lens: strategy.akber_lens || {},
+            strategy_family_count: modelNumber(strategy.strategy_family_count, asArray(strategy.strategy_families).length),
+            qualified_strategy_family_count: modelNumber(
+                strategy.qualified_strategy_family_count,
+                asArray(strategy.strategy_families).filter((family) => family.qualified_setup).length
+            ),
+            strategy_families: asArray(strategy.strategy_families),
+            fit_matrix: asArray(strategy.fit_matrix).length ? asArray(strategy.fit_matrix) : asArray(strategy.strategy_families),
             universe: asArray(strategy.universe).length ? asArray(strategy.universe) : asArray(tradingPhilosophy.ai_infrastructure_lens?.target_bottlenecks),
+            ai_infrastructure_universe: asArray(strategy.ai_infrastructure_universe),
             decision_chain: asArray(strategy.decision_chain).length ? asArray(strategy.decision_chain) : asArray(tradingPhilosophy.decision_chain),
             reference_assets: asArray(strategy.reference_assets).length ? asArray(strategy.reference_assets) : asArray(tradingPhilosophy.ai_infrastructure_lens?.reference_assets),
             boundary: strategy.boundary || tradingPhilosophy.boundary || "Strategy is context only until gates pass."
@@ -6826,133 +6874,125 @@ function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
     const sourceModel = viewModels.sources_model || {};
     const tradesModel = viewModels.trades_model || {};
     const reasoningModel = viewModels.reasoning_model || {};
-    const strategyList = asArray(overview.trading_strategies);
-    const approvedStrategies = strategyList.filter((strategy) => strategy.approval_state === "approved" || strategy.tone === "online");
-    const akberStrategy = strategyList.find((strategy) => /akber|six|6 stage|6-stage/i.test(`${strategy.key || ""} ${strategy.label || ""} ${strategy.summary || ""}`));
-    const preferredStrategies = (approvedStrategies.length ? approvedStrategies : strategyList).slice(0, 3);
-    const activeStrategyLabel = akberStrategy?.label
-        || preferredStrategies[0]?.label
-        || "evidence-gated paper strategy";
-    const sourceCounts = sourceModel.counts || {};
-    const tradeCounts = tradesModel.counts || {};
-    const reasoningCounts = reasoningModel.counts || {};
-    const opportunityScan = overview.opportunity_scan_cadence || {};
-    const reviewFocus = overview.review_focus || {};
-    const candidateCount = modelNumber(tradeCounts.candidate, 0);
-    const observedCount = modelNumber(tradeCounts.observed_signal, 0);
-    const openCount = modelNumber(tradeCounts.open_position, 0);
-    const submittedCount = modelNumber(tradeCounts.submitted_paper_order, 0);
-    const eligibleSetups = modelNumber(overview.demo_proof?.eligible_setup_count, 0);
-    const cadenceMinutes = modelNumber(opportunityScan.interval_minutes, 20);
-    const sourceTone = sourceModel.tone || (sourceCounts.degraded ? "degraded" : "online");
-    const tradeTone = candidateCount ? "pending" : (submittedCount || openCount ? "online" : "pending");
-    const postureTone = sourceTone === "degraded" ? "degraded" : tradeTone;
-    const posture = candidateCount
-        ? "candidate review"
-        : (eligibleSetups || observedCount ? "setup discovery" : "patient scanning");
-    const strategyNames = preferredStrategies.map((strategy) => strategy.label || strategy.key).filter(Boolean);
-    const strategySentence = strategyNames.length
-        ? `Current approved-shadow families: ${strategyNames.join(", ")}.`
-        : "No explicit strategy family list is exported in this snapshot, so Qadam is using the default evidence-gated paper strategy.";
-    const reasonSentence = candidateCount
-        ? `${candidateCount} trade idea${candidateCount === 1 ? "" : "s"} exist, so Qadam is comparing evidence, risk, and paper-account constraints before anything can become a paper order.`
-        : `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online and ${reasoningCounts.hypotheses || 0} hypotheses are under review, but no fresh qualified trade idea is currently clear enough to advance.`;
-    const aiLens = overview.trading_philosophy?.ai_infrastructure_lens || {};
-    const aiInfrastructureSentence = aiLens.thesis || "AI infrastructure is treated as a second-order picks-and-shovels lens: Qadam can compare obvious AI leaders with power, grid hardware, data-centre electrical systems, fabrication capacity, memory, connectivity, and networking before Akber's filter decides whether the setup is tradable.";
-    const aiLensTargets = asArray(aiLens.target_bottlenecks);
-    const aiLensQuestions = asArray(aiLens.decision_questions).slice(0, 3);
-    const aiLensControls = asArray(aiLens.risk_controls).slice(0, 3);
-    const aiLensHtml = `
-        <section class="ai-infrastructure-lens ${statusClass(aiLens.status || "online")}">
-            <div>
-                <span>Strategy lens</span>
-                <h4>${htmlText(aiLens.name || "Second-order AI infrastructure beneficiary lens")}</h4>
-                <p>${htmlText(aiInfrastructureSentence)}</p>
-            </div>
-            <div class="ai-lens-columns">
-                <article>
-                    <strong>What Qadam watches</strong>
-                    <ul>${(aiLensTargets.length ? aiLensTargets : ["power generation", "data-centre electrical systems", "fabrication capacity", "memory", "connectivity", "networking"]).map((target) => `<li>${htmlText(target)}</li>`).join("")}</ul>
-                </article>
-                <article>
-                    <strong>What it must prove</strong>
-                    <ul>${(aiLensQuestions.length ? aiLensQuestions : ["Is the supplier bottleneck less efficiently priced than the obvious AI leader?", "Is there live evidence of orders, scarcity, capex, or pricing power?", "Does Akber's filter still confirm timing and risk?"]).map((question) => `<li>${htmlText(question)}</li>`).join("")}</ul>
-                </article>
-                <article>
-                    <strong>What it cannot do</strong>
-                    <ul>${(aiLensControls.length ? aiLensControls : ["reject narrative-only AI exposure", "require Signal Integrity and Risk Agent checks", "never override paper-account gates"]).map((control) => `<li>${htmlText(control)}</li>`).join("")}</ul>
-                </article>
-            </div>
-            <p class="mini">${htmlText(aiLens.boundary || "This is a strategy lens only. It cannot create trades, approve risk, stage orders, submit to Alpaca, or enable live capital.")}</p>
-        </section>
-    `;
-    const evolutionSentence = [
-        `${reasoningCounts.evidence_packets || 0} evidence packets`,
-        `${reasoningCounts.hypotheses || 0} hypotheses`,
-        `${candidateCount} trade ideas`,
-        `${submittedCount} submitted paper orders`,
-        `${openCount} open paper positions`
-    ].join("; ");
-    const sourceInfluenceRows = asArray(sourceModel.pipelines)
-        .slice()
-        .sort((a, b) => {
-            const aScore = modelNumber(a.signal_review_eligible_count, 0) + modelNumber(a.research_usable_count, 0) + modelNumber(a.online_count, 0);
-            const bScore = modelNumber(b.signal_review_eligible_count, 0) + modelNumber(b.research_usable_count, 0) + modelNumber(b.online_count, 0);
-            return bScore - aScore;
-        })
-        .slice(0, 4);
-    const sourceInfluenceHtml = sourceInfluenceRows.length
-        ? sourceInfluenceRows.map((pipeline) => {
-            const label = OPERATIONS_PIPELINE_LABELS[pipeline.pipeline] || pipeline.label || pipeline.pipeline || "Source group";
-            const researchCount = modelNumber(pipeline.research_usable_count, 0);
-            const signalCount = modelNumber(pipeline.signal_review_eligible_count, pipeline.signal_influencing_count || 0);
-            const detail = [
-                `${modelNumber(pipeline.online_count, 0)}/${modelNumber(pipeline.source_count, 0)} online`,
-                researchCount ? `${researchCount} research usable` : "observation input",
-                signalCount ? `${signalCount} signal-review eligible` : "not yet signal-review eligible",
-                modelNumber(pipeline.degraded_count, 0) ? `${modelNumber(pipeline.degraded_count, 0)} degraded` : null
-            ].filter(Boolean).join("; ");
-            return `<li><strong>${htmlText(label)}</strong><span>${htmlText(detail)}</span></li>`;
-        }).join("")
-        : `<li><strong>Source influence</strong><span>No source-pipeline detail is exported yet.</span></li>`;
-    const topTrade = asArray(overview.trade_considerations)[0] || {};
-    const tradeSentence = topTrade.label
-        ? `${dashboardText(topTrade.label)} is visible as ${dashboardText(topTrade.value || topTrade.status, "a trade idea")}: ${dashboardText(topTrade.summary, "evidence review pending")}`
-        : "No active trade idea is exported in this snapshot; Qadam is still scanning and preserving paper-account state.";
+    const strategyFamilies = asArray(overview.trading_strategies);
+    return renderContractStrategyNarrative({
+        strategy: {
+            native_edge: overview.native_strategy || {},
+            active_lens: overview.trading_philosophy?.ai_infrastructure_lens || {},
+            strategy_families: strategyFamilies,
+            fit_matrix: strategyFamilies,
+            strategy_family_count: overview.strategy_family_count || strategyFamilies.length,
+            qualified_strategy_family_count: overview.qualified_strategy_family_count,
+            boundary: overview.boundary
+        },
+        sources: sourceModel.counts || {},
+        trades: {
+            board: asArray(overview.trade_considerations),
+            top_candidates: asArray(overview.trade_considerations).filter((item) => item.status === "candidate" || item.state === "candidate")
+        },
+        thinking: {
+            research_goal_active_count: reasoningModel.counts?.research_goal_active_count || reasoningModel.counts?.research_goals || 0,
+            hypothesis_count: reasoningModel.counts?.hypotheses || 0,
+            evidence_packet_count: reasoningModel.counts?.evidence_packets || 0
+        }
+    });
+}
 
+function renderStrategyCapabilityCompass(nativeEdge = {}) {
+    const capabilities = asArray(nativeEdge.why_this_fits_qadam);
+    const labels = ["Python control plane", "Local LLM", "Frontier LLM", "Quantum/Q-CTRL", "Data sources"];
+    const fallback = [
+        "Python scripts provide deterministic gates, ledgers, sizing, idempotency, and audit trails.",
+        "The local LLM handles low-cost triage, extraction, and recurring analyst packets.",
+        "The frontier LLM challenges contradictions, narratives, and second-order effects.",
+        "Q-CTRL is an uncertainty consultation layer, not execution authority.",
+        "Data sources make source-quorum discipline more valuable than discretionary prediction."
+    ];
     return `
-        <div class="overview-section-head">
-            <span>Trading strategy narrative</span>
-            <strong>${htmlText(activeStrategyLabel)} · ${htmlText(posture)}</strong>
+        <div class="strategy-capability-compass">
+            ${(capabilities.length ? capabilities : fallback).slice(0, 5).map((item, index) => {
+                const parts = String(item).split(":", 2);
+                const label = parts.length > 1 ? parts[0] : labels[index] || "Capability";
+                const detail = parts.length > 1 ? parts[1] : item;
+                return `
+                    <article>
+                        <span>${htmlText(label || "Capability")}</span>
+                        <p>${htmlText(detail || item)}</p>
+                    </article>
+                `;
+            }).join("")}
         </div>
-        <div class="strategy-narrative-shell ${statusClass(postureTone)}">
-            <article class="strategy-narrative-lead">
-                <span>What Qadam is choosing now</span>
-                <h3>${htmlText(posture === "candidate review" ? "Review trade ideas before paper action" : posture === "setup discovery" ? "Search for a qualified setup" : "Keep scanning until evidence improves")}</h3>
-                <p>${htmlText(reasonSentence)}</p>
-                <p>${htmlText(strategySentence)} Qadam is still using Akber's 6-stage trading method as the practical filter: context, catalyst, confirmation, risk, execution, and postmortem learning.</p>
-                <p>${htmlText(aiInfrastructureSentence)}</p>
+    `;
+}
+
+function renderStrategyDecisionSpine(nativeEdge = {}, fallbackChain = []) {
+    const spine = asArray(nativeEdge.decision_spine).length
+        ? asArray(nativeEdge.decision_spine)
+        : asArray(fallbackChain);
+    if (!spine.length) return "";
+    return `
+        <ol class="strategy-decision-spine">
+            ${spine.map((step) => `<li>${htmlText(step)}</li>`).join("")}
+        </ol>
+    `;
+}
+
+function renderStrategyFamilyCard(strategy = {}) {
+    const qualified = Boolean(strategy.qualified_setup);
+    const tone = qualified ? "online" : statusClass(strategy.current_state || strategy.tone || "pending");
+    const stateLabel = qualified ? "Qualified" : dashboardText(strategy.current_state || strategy.value || "Waiting");
+    const notional = modelNumber(strategy.notional_gbp, 0);
+    return `
+        <article class="strategy-fit-card ${statusClass(tone)}">
+            <div>
+                <span>#${htmlText(strategy.rank || "")} · ${htmlText(strategy.fit || "fit review")}</span>
+                <strong>${htmlText(strategy.label || strategy.key || "Strategy family")}</strong>
+                <p>${htmlText(strategy.qadam_fit_reason || strategy.summary || "Qadam fit reason not exported.")}</p>
+            </div>
+            <dl>
+                <div><dt>Focus</dt><dd>${htmlText(strategy.catalyst_focus || "Catalyst focus not exported")}</dd></div>
+                <div><dt>Route</dt><dd>${htmlText(strategy.route_fit || "route under review")}</dd></div>
+                <div><dt>State</dt><dd>${htmlText(stateLabel)}${notional ? ` · ${htmlText(formatMoney(notional))}` : ""}</dd></div>
+            </dl>
+            <small>${htmlText(strategy.current_reason || strategy.boundary || "Context only until guarded paper gates pass.")}</small>
+        </article>
+    `;
+}
+
+function renderStrategyFitMatrix(strategies = [], limit = 5) {
+    const rows = asArray(strategies)
+        .slice()
+        .sort((a, b) => modelNumber(a.rank, 99) - modelNumber(b.rank, 99))
+        .slice(0, limit);
+    if (!rows.length) return "";
+    return `
+        <div class="strategy-fit-matrix">
+            ${rows.map(renderStrategyFamilyCard).join("")}
+        </div>
+    `;
+}
+
+function renderStrategySummaryStrip(strategy = {}, strategyFamilies = []) {
+    const families = asArray(strategyFamilies);
+    const qualifiedCount = families.filter((family) => family.qualified_setup).length;
+    const waitingCount = Math.max(families.length - qualifiedCount, 0);
+    return `
+        <div class="strategy-summary-strip">
+            <article>
+                <span>Universe</span>
+                <strong>${htmlText(families.length || strategy.strategy_family_count || 0)} families</strong>
+                <p>Full fit, route, and gate state lives in the Trading strategies ledger below.</p>
             </article>
-            <div class="strategy-narrative-grid">
-                <article>
-                    <span>Why this strategy</span>
-                    <p>${htmlText(`${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are connected, ${sourceCounts.research_context_usable || 0} are research usable, ${sourceCounts.signal_review_eligible || sourceCounts.signal_influencing || 0} are signal-review eligible, and ${sourceCounts.order_authority || 0} can authorize orders. The ${cadenceMinutes}-minute opportunity scan keeps refreshing candidates without bypassing gates.`)}</p>
-                </article>
-                <article>
-                    <span>How it is evolving</span>
-                    <p>${htmlText(evolutionSentence)}. Next review: ${htmlText(reviewFocus.state || "Continue monitoring")}.</p>
-                </article>
-                <article>
-                    <span>Trade implication</span>
-                    <p>${htmlText(tradeSentence)} Candidate does not mean order; PaperOps still needs fresh setup, duplicate-submit, risk, and paper-account checks.</p>
-                </article>
-            </div>
-            ${aiLensHtml}
-            <div class="strategy-narrative-sources">
-                <span>Data sources currently shaping the posture</span>
-                <ul>${sourceInfluenceHtml}</ul>
-            </div>
-            <p class="mini">${htmlText(overview.boundary || "Overview is read-only and cannot approve, place, modify, close, fund, or verify performance credit for trades.")}</p>
+            <article>
+                <span>Currently qualified</span>
+                <strong>${htmlText(qualifiedCount || strategy.qualified_strategy_family_count || 0)}</strong>
+                <p>These families can continue through guarded paper review only after downstream checks pass.</p>
+            </article>
+            <article>
+                <span>Waiting on gates</span>
+                <strong>${htmlText(waitingCount)}</strong>
+                <p>Unqualified families stay visible as watchlist context, not paper-order intent.</p>
+            </article>
         </div>
     `;
 }
@@ -7034,40 +7074,51 @@ function renderContractStrategyBlock(contract = {}) {
     const universe = asArray(strategy.universe);
     const chain = asArray(strategy.decision_chain);
     const questions = asArray(activeLens.decision_questions).slice(0, 5);
+    const nativeEdge = strategy.native_edge || {};
+    const strategyFamilies = asArray(strategy.fit_matrix).length ? asArray(strategy.fit_matrix) : asArray(strategy.strategy_families);
     return `
         <details class="overview-expandable-ledger" data-cc5-contract-source="mission_control">
             <summary>
                 <span>Trading strategy</span>
-                <strong>${htmlText(activeLens.name || strategy.posture, "Evidence-gated paper strategy")}</strong>
-                <em>Click to see universe, Akber filter, and decision chain.</em>
+                <strong>${htmlText(strategy.strategy_family_count || strategyFamilies.length || universe.length, "0")} strategy families · ${htmlText(strategy.qualified_strategy_family_count || strategyFamilies.filter((family) => family.qualified_setup).length || 0)} qualified now</strong>
+                <em>Open the full universe, gate state, and paper-route boundary.</em>
             </summary>
             <div class="overview-ledger-body">
-                <p>${htmlText(strategy.why)}</p>
+                <section class="strategy-native-edge ${statusClass(nativeEdge.status || strategy.posture || "online")}">
+                    <div>
+                        <span>Qadam-native edge</span>
+                        <h4>${htmlText(nativeEdge.name || "Asymmetric Catalyst Proxy Trading")}</h4>
+                        <p>${htmlText(nativeEdge.thesis || "Qadam detects real-world catalysts, challenges them with model reasoning, validates them with source quorum, sizes them deterministically, and expresses them through guarded paper-tradable proxies.")}</p>
+                    </div>
+                    ${renderStrategyCapabilityCompass(nativeEdge)}
+                    ${renderStrategyDecisionSpine(nativeEdge, chain)}
+                </section>
+                ${renderStrategyFitMatrix(strategyFamilies)}
                 <section class="ai-infrastructure-lens ${statusClass(activeLens.status || strategy.posture || "online")}">
                     <div>
-                        <span>Current lens</span>
+                        <span>Filter stack</span>
                         <h4>${htmlText(activeLens.name || "Second-order AI infrastructure beneficiary lens")}</h4>
-                        <p>${htmlText(activeLens.thesis || "Qadam compares obvious AI leaders against harder-to-price infrastructure bottlenecks before Akber's filter decides whether timing and risk are acceptable.")}</p>
-                    </div>
+                        <p>${htmlText(activeLens.thesis || "Qadam uses this lens to compare catalyst evidence before the practical trading filter and paper-route checks.")}</p>
+                        </div>
                     <div class="ai-lens-columns">
                         <article>
-                            <strong>Universe</strong>
-                            <ul>${(universe.length ? universe : ["power generation", "grid hardware", "data-centre electrical infrastructure", "fabrication capacity", "memory", "connectivity"]).map((item) => `<li>${htmlText(item)}</li>`).join("")}</ul>
+                            <strong>Universe status</strong>
+                            <ul>
+                                <li>${htmlText(strategyFamilies.length || universe.length || 0)} families exported</li>
+                                <li>${htmlText(strategy.qualified_strategy_family_count || strategyFamilies.filter((family) => family.qualified_setup).length || 0)} currently qualified</li>
+                            </ul>
                         </article>
                         <article>
                             <strong>Akber filter</strong>
                             <ul>${asArray(akber.stages).map((item) => `<li>${htmlText(item)}</li>`).join("") || `<li>${htmlText(akber.summary || "Context, catalyst, confirmation, risk, execution, postmortem learning.")}</li>`}</ul>
                         </article>
                         <article>
-                            <strong>Questions</strong>
-                            <ul>${(questions.length ? questions : chain).slice(0, 5).map((item) => `<li>${htmlText(item)}</li>`).join("")}</ul>
+                            <strong>Boundary</strong>
+                            <ul><li>${htmlText(strategy.boundary || activeLens.gating_role || "Strategy context cannot create orders or bypass PaperOps gates.")}</li></ul>
                         </article>
                     </div>
                     <p class="mini">${htmlText(activeLens.gating_role || strategy.boundary)}</p>
                 </section>
-                <ol class="overview-contract-chain">
-                    ${chain.map((step) => `<li>${htmlText(step)}</li>`).join("")}
-                </ol>
             </div>
         </details>
     `;
@@ -7079,6 +7130,8 @@ function renderContractStrategyNarrative(contract = {}) {
     const trades = contract.trades || {};
     const thinking = contract.thinking || {};
     const activeLens = strategy.active_lens || {};
+    const nativeEdge = strategy.native_edge || {};
+    const strategyFamilies = asArray(strategy.fit_matrix).length ? asArray(strategy.fit_matrix) : asArray(strategy.strategy_families);
     const topCandidate = asArray(trades.top_candidates)[0] || asArray(trades.board).find((item) => item.state === "candidate") || {};
     const sourceSentence = `${modelNumber(sources.online, 0)}/${modelNumber(sources.total, 0)} sources are online, ${modelNumber(sources.research_usable, 0)} can shape research context, and ${modelNumber(sources.signal_review_eligible, 0)} can influence signal review.`;
     const thinkingSentence = `${modelNumber(thinking.research_goal_active_count, 0)} research goals, ${modelNumber(thinking.hypothesis_count, 0)} hypotheses, and ${modelNumber(thinking.evidence_packet_count, 0)} evidence packets are feeding the current review.`;
@@ -7089,22 +7142,23 @@ function renderContractStrategyNarrative(contract = {}) {
         <div class="strategy-narrative-shell ${statusClass(strategy.posture || activeLens.status || "online")}" data-cc5-contract-source="mission_control">
             <article class="strategy-narrative-lead">
                 <span>What Qadam is choosing now</span>
-                <h3>${htmlText(activeLens.name || strategy.posture || "Evidence-gated paper strategy")}</h3>
-                <p>${htmlText(strategy.why)}</p>
+                <h3>${htmlText(nativeEdge.name || activeLens.name || strategy.posture || "Evidence-gated paper strategy")}</h3>
+                <p>${htmlText(nativeEdge.thesis || strategy.why || "Qadam reviews catalyst setups through source, model, risk, and paper-route checks.")}</p>
                 <p>${htmlText(sourceSentence)} ${htmlText(thinkingSentence)}</p>
                 <p>${htmlText(tradeSentence)}</p>
             </article>
+            ${renderStrategySummaryStrip(strategy, strategyFamilies)}
             <div class="strategy-narrative-grid">
                 <article>
-                    <span>Akber method</span>
-                    <p>${htmlText(strategy.akber_lens?.summary || "Akber's six-stage method still filters context, catalyst, confirmation, risk, execution, and postmortem learning.")}</p>
+                    <span>Decision route</span>
+                    <p>${htmlText((nativeEdge.decision_spine || strategy.decision_chain || []).slice(0, 7).join(" -> ") || "Catalyst -> source quorum -> paper risk -> guarded paper route.")}</p>
                 </article>
                 <article>
-                    <span>Worldview role</span>
-                    <p>${htmlText(thinking.worldview_prior?.summary || "The worldview shapes questions and scenario generation, but it is not evidence or execution authority.")}</p>
+                    <span>Strategy lens</span>
+                    <p>${htmlText(activeLens.name || "Second-order AI infrastructure beneficiary lens")}: ${htmlText(activeLens.gating_role || "comparison input only, not a trade trigger.")}</p>
                 </article>
                 <article>
-                    <span>Next constraint</span>
+                    <span>Boundary</span>
                     <p>${htmlText(strategy.boundary || "Strategy remains non-executable until Signal Integrity and Risk Agent gates pass.")}</p>
                 </article>
             </div>
