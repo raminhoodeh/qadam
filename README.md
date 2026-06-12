@@ -50,6 +50,19 @@ First-release cockpit access is limited to Ramin, Troy, Akber, Ion, Dan, and pen
 
 Qadam is not HFT, copy trading, a general stock screener, a financial advisor, a black-box bot, or a frequency machine. Two proof trades per week is a discipline target, not a quota. Rare high-conviction opportunities are expected to be scarce.
 
+## Trading Edge
+
+Qadam's potential edge is architectural rather than a single indicator. It combines noisy cross-domain signals into a disciplined, replayable decision chain that can explain why a trade idea exists, why it is blocked, or why it deserves guarded paper execution.
+
+- Cross-domain fusion: conflict, physical infrastructure, logistics, macro, prediction markets, market structure, news, social context, and broker readouts are evaluated together.
+- Worldview as a question engine: the private world-model helps Qadam ask where incentives, power, scarcity, and narrative may be mispriced, but it remains a prior and cannot replace evidence.
+- Second-order infrastructure focus: Qadam can look past obvious AI leaders toward power generation, data-centre electrical systems, semiconductor capacity, memory, connectivity, and networking constraints.
+- Separated agent roles: the Python COO coordinates, the Local Research Analyst compresses noisy observations, the Strategy Lead challenges the thesis, the Head of Quant checks ambiguity, and risk/execution gates control whether action is allowed.
+- Source-quality discipline: latency, trust, corroboration, replayability, and source health determine whether an observation can influence signal review.
+- Durable learning: observations, paper orders, closed trades, and postmortems are stored so Qadam can compare present decisions against prior mistakes.
+
+The edge only becomes real if Qadam continues to find fresh qualified setups, avoids forcing trades when conditions are poor, and learns visibly from its postmortems.
+
 ## First Release Trial Mode
 
 The first release is a local-first autonomous trial on a £1000 paper/test account. Qadam may trade autonomously in that test account once the paper-trading gates are built, but no live capital is in scope.
