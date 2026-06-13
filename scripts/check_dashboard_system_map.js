@@ -23,13 +23,11 @@ async function main() {
     const renderer = fs.readFileSync(rendererPath, "utf8");
 
 	    [
-	        "system-flow-diagram",
-	        "flow-lane",
-	        "flow-connector",
-        "lane-handoff",
-        "flow-return-loop",
-        "Closed-loop rule"
-    ].forEach((needle) => assert(html.includes(needle), `static system map missing ${needle}`));
+	        "data-overview-control-plane",
+	        "Control Plane",
+        "Loading operating map and oversight",
+        "Loading roles, handoffs, oversight route, and dashboard boundary."
+    ].forEach((needle) => assert(html.includes(needle), `static Control Plane shell missing ${needle}`));
 
 	    [
 	        "function systemMapLane",
@@ -59,9 +57,9 @@ async function main() {
     assert(!css.includes("grid-auto-flow: column"), "system map regressed to forced column flow");
 
 	    const rendered = await renderWithStatus(status);
-	    const overviewMapHtml = renderedHtmlFor(rendered, "[data-overview-mini-map]");
+	    const controlPlaneHtml = renderedHtmlFor(rendered, "[data-overview-control-plane]");
 	    const operationsHtml = renderedHtmlFor(rendered, "[data-flow-map]");
-	    assert((overviewMapHtml.match(/class="system-flow-diagram/g) || []).length === 1, "Overview should render exactly one canonical system-flow-diagram");
+	    assert((controlPlaneHtml.match(/class="system-flow-diagram/g) || []).length === 1, "Control Plane should render exactly one canonical system-flow-diagram");
 	    assert(!operationsHtml.includes("operations-flow-diagram"), "Operations should not render a duplicate operations-flow-diagram");
 	    [
         "Qadam operating team",
@@ -79,7 +77,7 @@ async function main() {
 		        "Boundary",
 		        "Watch for",
 		        "Next handoff"
-	    ].forEach((needle) => assertIncludes(rendered, "[data-overview-mini-map]", needle));
+	    ].forEach((needle) => assertIncludes(rendered, "[data-overview-control-plane]", needle));
 	    [
 	        "Operations diagnostics and event trail",
 	        "System map diagnostics",
@@ -88,7 +86,7 @@ async function main() {
 		        "OK - live capital off"
 	    ].forEach((needle) => assertIncludes(rendered, "[data-flow-map]", needle));
 	    ["Chief Operating Officer", "Research Analyst", "Strategy Lead", "Head of Quant", "Safety Policy", "PaperOps"].forEach((needle) => {
-	        assertIncludes(rendered, "[data-team-health-row]", needle);
+	        assertIncludes(rendered, "[data-overview-control-plane]", needle);
 	    });
 
     console.log("dashboard_system_map=ok");

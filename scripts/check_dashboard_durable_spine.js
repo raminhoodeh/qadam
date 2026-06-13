@@ -51,10 +51,10 @@ async function main() {
     );
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-overview-system-status]", "Durable replay");
-    assertIncludes(rendered, "[data-overview-system-status]", "sources replayed");
-    assertIncludes(rendered, "[data-overview-system-status]", "replayed");
-    assertIncludes(rendered, "[data-overview-data-sources]", "connected");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Durable replay");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "sources replayed");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "replayed");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Evidence summary");
 
     console.log("dashboard_durable_spine=ok");
 }

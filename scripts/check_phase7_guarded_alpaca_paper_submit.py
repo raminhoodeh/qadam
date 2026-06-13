@@ -497,7 +497,10 @@ def main() -> int:
             errors.append(f"phase7_guarded_submit_forbidden_authority:{flag_key}")
     if written["event_log_written"] is not True:
         errors.append("phase7_guarded_submit_event_log_not_written")
-    if replay["total_events"] != 1:
+    expected_event_count = written["submit_record_count"] if has_submitted_order else 1
+    if written["event_log_event_count"] != expected_event_count:
+        errors.append("phase7_guarded_submit_event_log_count_mismatch")
+    if replay["total_events"] != expected_event_count:
         errors.append("phase7_guarded_submit_event_log_replay_count_mismatch")
 
     if valid_submit_errors:

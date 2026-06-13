@@ -81,35 +81,29 @@ async function main() {
         "data-overview-first-screen",
         "data-overview-mission-brief",
         "data-overview-strategy-narrative",
-        "data-overview-cockpit-grid",
-        "data-overview-system-status",
-        "data-overview-paper-capacity",
-        "data-overview-system-summary",
-        "data-overview-oversight",
-        "data-overview-feed-strip",
-        "data-overview-mini-map",
-        "data-overview-boundary-rail",
-        "data-overview-data-sources",
-        "data-overview-trading-strategies",
-        "data-overview-thought-feed",
-        "data-overview-trade-considerations"
+        "data-overview-strategy-universe",
+        "data-overview-paper-trade-state",
+        "data-overview-control-plane",
+        "data-overview-source-summary",
     ], "Overview first-screen HTML");
 
     includesAll(css, [
         ".overview-first-screen",
         ".overview-mission-brief",
+        ".overview-mission-snapshot-grid",
         ".overview-strategy-narrative",
         ".overview-mission-question",
         ".overview-mission-question-grid",
         ".overview-mission-nav",
-        ".overview-cockpit-grid",
-        ".overview-system-status-panel",
-        ".overview-paper-capacity-panel",
-        ".overview-system-summary",
+        ".overview-paper-trade-state-panel",
+        ".paper-trade-state-grid",
+        ".overview-control-plane",
+        ".control-plane-grid",
+        ".overview-source-summary-panel",
+        ".overview-ledger-routing",
         ".overview-plain-grid",
         ".overview-plain-card-grid",
         ".overview-capacity-line",
-        ".overview-mini-map",
         ".overview-boundary-rail",
         ".overview-expandable-ledger",
         "@media (max-width: 900px)"
@@ -118,16 +112,21 @@ async function main() {
     includesAll(renderer, [
         "function renderOverviewFirstScreen",
         "function renderContractTeamMap",
+        "function renderContractControlPlane",
+        "function renderContractStrategyUniverse",
         "function renderContractStrategyNarrative",
         "function renderContractStrategyBlock",
         "function renderContractPortfolioBlock",
-        "function renderContractTradeBoard",
-        "function renderContractThinkingBlock",
+        "function renderContractTradeStateSummary",
+        "function renderContractPaperTradeState",
+        "function renderContractSourceSummary",
+        "function renderOverviewDecisionRecords",
         "founder_contract_model",
         "data-cc5-contract-source",
         "OVERVIEW_NODE_LABELS",
-        "Fund Manager oversight",
-        "overview-source-ledger",
+        "Human oversight",
+        "Oversight route",
+        "detail_ledger_placement",
         "mission_control"
     ], "Overview renderer");
 
@@ -153,66 +152,72 @@ async function main() {
     assert(overview.mission_brief.authority.live_capital_enabled === false, "Overview Mission Brief must keep live capital disabled");
     assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
     assert(overview.trading_strategies.length >= 5, "Overview must expose the current strategy families");
-    assert(overview.mini_map.source_model === "system_connectivity_model", "Overview mini-map must use shared connectivity model");
+    assert(overview.mini_map.source_model === "system_connectivity_model", "Control Plane must use shared connectivity model");
     assert(overview.system_status.length >= 6, "Overview must expose paper system status and runner cards");
-    assert(overview.data_sources_connected.length >= 3, "Overview must expose source groups on the main page");
+    assert(overview.source_summary.detail_view === "evidence", "Overview must route source detail to Evidence");
     assert(overview.trading_strategies.length >= 5, "Overview must expose the approved strategy families on the main page");
-    assert(overview.thought_feed.length >= 4, "Overview must expose Qadam's thought feed on the main page");
-    assert(overview.trade_considerations.length >= 2, "Overview must expose trade considerations on the main page");
+    assert(overview.reasoning_summary.detail_view === "reasoning", "Overview must route reasoning detail to Reasoning");
+    assert(overview.trade_state_summary.detail_view === "trades", "Overview must route trade detail to Trades");
+    assert(overview.detail_ledger_placement.overview_scope === "summary_only", "Overview must be summary-only for detailed ledgers");
     assert(overview.paper_capacity.total_gbp === 100000, "Overview must expose the GBP 100,000 paper capacity");
-    assert(models.system_connectivity_model.overview_scope.placement === "overview-mini-map", "Mini-map placement mismatch");
+    assert(models.system_connectivity_model.overview_scope.placement === "control-plane", "Control Plane placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
     const rendered = await renderWithStatus(status);
     assertIncludes(rendered, "[data-dashboard-safety-strip]", "Paper-only readout · live capital off");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Founder brief");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Sanitized founder contract");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Authority state");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Snapshot");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Default to Mission Snapshot");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "data-overview-decision-records");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Durable replay");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Trade lifecycle");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Safety boundary");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Strategy Universe");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Use Strategy Universe for strategy posture");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Asymmetric Catalyst Proxy Trading");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Currently qualified");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting on gates");
-    assertIncludes(rendered, "[data-overview-system-status]", "System status");
-    assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "data-paper-capacity-line");
-    assertIncludes(rendered, "[data-overview-oversight]", "Human oversight");
-    assertIncludes(rendered, "[data-overview-oversight]", "Python COO");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Chief Operating Officer");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Local LLM");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Frontier LLM");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Head of Quant");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "This is read-only mission control");
-    assertIncludes(rendered, "[data-overview-boundary-rail]", "Trade ideas stay candidates until gated paper-order records exist");
-    assertIncludes(rendered, "[data-overview-data-sources]", "Data sources connected");
-    assertIncludes(rendered, "[data-overview-data-sources]", "mission_control");
-    assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Trading strategy");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Open the full universe");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Asymmetric Catalyst Proxy Trading");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Semiconductor Policy Options Asymmetry");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Defence Repricing Geopolitical Watch");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Silver Macro Liquidity Stress");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Prediction Market Geopolitical Dislocation");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Akber filter");
-    assertIncludes(rendered, "[data-overview-thought-feed]", "Reasoning queue");
-    assertIncludes(rendered, "[data-overview-thought-feed]", "Worldview prior");
-    assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
-    assertIncludes(rendered, "[data-overview-trade-considerations]", "USO options watch");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Strategy family ledger");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Open the full universe");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Qadam-native edge");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Semiconductor Policy Options Asymmetry");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Defence Repricing Geopolitical Watch");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Silver Macro Liquidity Stress");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Crude Oil Energy Security Disruption");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber filter");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Paper Account &amp; Trade State");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "data-paper-capacity-line");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Realized");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Unrealized");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Trade state");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Read paper mirror and lifecycle counts");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Full signal rows, candidate lineage");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Control Plane");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Control Plane owns operating flow");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Human oversight");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Python COO");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Chief Operating Officer");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Local LLM");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Frontier LLM");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Head of Quant");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Mission Snapshot owns authority state");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Trade ideas stay candidates until gated paper-order records exist");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Evidence summary");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Show source posture only");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Full source rows and connection ledgers live in Evidence");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Reasoning owns hypotheses");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Trades owns signal rows");
+    assert(!html(rendered, "[data-overview-paper-trade-state]").includes("USO options watch"), "Overview trade state must not show named trade rows");
+    assert(!html(rendered, "[data-overview-source-summary]").includes("ACLED API"), "Overview source summary must not show named source rows");
+    assert(!html(rendered, "[data-overview-source-summary]").includes("Worldview prior"), "Overview source summary must not show reasoning ledger rows");
 
     const overviewText = [
         html(rendered, "[data-overview-mission-brief]"),
         html(rendered, "[data-overview-strategy-narrative]"),
-        html(rendered, "[data-overview-system-status]"),
-        html(rendered, "[data-overview-paper-capacity]"),
-        html(rendered, "[data-overview-oversight]"),
-        html(rendered, "[data-overview-mini-map]"),
-        html(rendered, "[data-overview-boundary-rail]"),
-        html(rendered, "[data-overview-data-sources]"),
-        html(rendered, "[data-overview-trading-strategies]"),
-        html(rendered, "[data-overview-thought-feed]"),
-        html(rendered, "[data-overview-trade-considerations]")
+        html(rendered, "[data-overview-paper-trade-state]"),
+        html(rendered, "[data-overview-control-plane]"),
+        html(rendered, "[data-overview-source-summary]")
     ].join(" ");
     [
         "D0",

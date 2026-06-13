@@ -379,7 +379,12 @@ def _runtime_submit_enabled(enablement: dict[str, Any]) -> bool:
 
 
 def _alpaca_symbol_for_record(record: dict[str, Any]) -> tuple[str, str]:
-    explicit_symbol = str(record.get("symbol") or record.get("alpaca_symbol") or "").upper()
+    request = record.get("submit_request_payload")
+    if not isinstance(request, dict):
+        request = {}
+    explicit_symbol = str(
+        record.get("symbol") or record.get("alpaca_symbol") or request.get("symbol") or ""
+    ).upper()
     if explicit_symbol:
         return explicit_symbol, "source_record_symbol"
     instrument = _instrument_for_record(record)
@@ -393,6 +398,11 @@ def _instrument_for_record(record: dict[str, Any]) -> str:
     explicit = str(record.get("instrument") or "").strip().lower()
     if explicit:
         return explicit
+    request = record.get("submit_request_payload")
+    if isinstance(request, dict):
+        request_instrument = str(request.get("instrument") or "").strip().lower()
+        if request_instrument:
+            return request_instrument
     for key in ("source_setup_record_id", "setup_id", "source_staged_order_artifact_id"):
         raw = str(record.get(key) or "").strip().lower()
         if not raw:
@@ -695,6 +705,16 @@ def _source_record_to_submit_candidate(record: dict[str, Any]) -> dict[str, Any]
         "source_proof_order_id": record.get("source_proof_order_id"),
         "source_auto_approval_decision_id": record.get("source_auto_approval_decision_id"),
         "source_setup_record_id": record.get("source_setup_record_id"),
+        "paperops_source_setup_record_id": record.get("paperops_source_setup_record_id"),
+        "research_goal_id": record.get("research_goal_id"),
+        "research_goal_lineage": deepcopy(record.get("research_goal_lineage") or {}),
+        "candidate_identity": record.get("candidate_identity"),
+        "signal_evidence_lineage_key": record.get("signal_evidence_lineage_key"),
+        "source_signal_id": record.get("source_signal_id"),
+        "source_signal_review_id": record.get("source_signal_review_id"),
+        "source_signal_reviewed_at": record.get("source_signal_reviewed_at"),
+        "source_signal_status": record.get("source_signal_status"),
+        "setup_freshness_key": record.get("setup_freshness_key"),
         "source_idempotency_key": source_key,
         "idempotency_key": preview["client_order_id"],
         "idempotency_namespace": record.get("idempotency_namespace"),
@@ -704,6 +724,9 @@ def _source_record_to_submit_candidate(record: dict[str, Any]) -> dict[str, Any]
         "source_pre_trade_snapshot_fingerprint": snapshot_fingerprint,
         "selected_venue": "alpaca_paper",
         "endpoint_classification": "alpaca_paper_endpoint",
+        "instrument": _instrument_for_record(record) or None,
+        "alpaca_symbol": preview["symbol"],
+        "alpaca_symbol_source": preview["symbol_source"],
         "request_preview": preview,
         "request_fingerprint": _fingerprint(preview),
         "source_record_errors": source_errors,

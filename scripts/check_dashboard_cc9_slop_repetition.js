@@ -41,9 +41,27 @@ function assertCount(text, needle, expected, label) {
     assert(actual === expected, `${label} expected ${expected} occurrence(s) of ${needle}, got ${actual}`);
 }
 
+function assertCountAtLeast(text, needle, expected, label) {
+    const actual = count(text, needle);
+    assert(actual >= expected, `${label} expected at least ${expected} occurrence(s) of ${needle}, got ${actual}`);
+}
+
+function assertCountAtMost(text, needle, expected, label) {
+    const actual = count(text, needle);
+    assert(actual <= expected, `${label} expected at most ${expected} occurrence(s) of ${needle}, got ${actual}`);
+}
+
+function assertAllAbsent(text, needles, label) {
+    needles.forEach((needle) => assertAbsent(text, needle, label));
+}
+
+function assertAllIncludes(text, needles, label) {
+    needles.forEach((needle) => assertIncludes(text, needle, label));
+}
+
 async function main() {
     const combinedSource = `${dashboardHtml}\n${renderer}`;
-    [
+    assertAllAbsent(combinedSource, [
         "Paper Trading Overview",
         "Mission Control brief",
         "Mission control is read-only",
@@ -54,48 +72,116 @@ async function main() {
         "You supervise Qadam",
         "Safety Status is the authority summary.",
         "Qadam's thoughts",
-        "One screen for what Qadam is watching, thinking, considering, holding, and doing"
-    ].forEach((needle) => assertAbsent(combinedSource, needle, "dashboard source"));
+        "One screen for what Qadam is watching, thinking, considering, holding, and doing",
+        "One source-backed readout",
+        "One source-backed module",
+        "Fund Manager oversight",
+        "Fund Manager oversight is merged",
+        "Loading paper account mirror",
+        "Loading the active thesis",
+        "The fit matrix below",
+        "These families can continue",
+        "Unqualified families stay",
+        "Loading the operating team, handoff path",
+        "Fund Manager oversight, source feed state",
+        "Overview shows source posture only",
+        "Trade rows are lifecycle state only",
+        "data-overview-data-sources",
+        "data-overview-thought-feed",
+        "data-overview-cockpit-grid",
+        "data-overview-thinking-grid",
+        "data-overview-trade-board"
+    ], "dashboard source");
 
-    [
+    assertAllIncludes(combinedSource, [
         "Mission Control",
-        "Founder brief",
-        "Strategy posture",
-        "Operating flow",
-        "Tap + to expand each role",
-        "Reasoning queue",
+        "Mission Snapshot",
+        "Strategy Universe",
+        "Control Plane",
+        "Loading operating map and oversight",
+        "Evidence summary",
         "Human oversight",
-        "This is read-only mission control"
-    ].forEach((needle) => assertIncludes(combinedSource, needle, "dashboard source"));
+        "Mission Snapshot owns authority state",
+        "overview-decision-records",
+        "renderOverviewDecisionRecords"
+    ], "dashboard source");
+
+    assertCountAtLeast(dashboardHtml, "overview-decision-records", 5, "static dashboard shell decision records");
 
     const rendered = await renderWithStatus(status);
-    const overviewText = textOnly([
+    const overviewHtml = [
         html(rendered, "[data-overview-mission-brief]"),
         html(rendered, "[data-overview-strategy-narrative]"),
-        html(rendered, "[data-overview-system-summary]"),
-        html(rendered, "[data-overview-oversight]"),
-        html(rendered, "[data-overview-trading-strategies]"),
-        html(rendered, "[data-overview-thought-feed]"),
-        html(rendered, "[data-overview-boundary-rail]")
-    ].join(" "));
+        html(rendered, "[data-overview-paper-trade-state]"),
+        html(rendered, "[data-overview-control-plane]"),
+        html(rendered, "[data-overview-source-summary]"),
+    ].join(" ");
+    const overviewText = textOnly(overviewHtml);
 
-    [
+    assertAllAbsent(overviewText, [
         "Mission Control brief",
         "You supervise Qadam",
         "Qadam's thoughts",
         "A trade idea is not an order",
-        "Safety Status is the authority summary"
-    ].forEach((needle) => assertAbsent(overviewText, needle, "rendered overview"));
+        "Safety Status is the authority summary",
+        "One source-backed readout",
+        "One source-backed module",
+        "Fund Manager oversight",
+        "Fund Manager oversight is merged",
+        "Loading paper account mirror",
+        "Loading the active thesis",
+        "The fit matrix below",
+        "These families can continue",
+        "Unqualified families stay",
+        "Overview shows source posture only",
+        "Trade rows are lifecycle state only",
+        "live capital enabled"
+    ], "rendered overview");
 
-    [
-        "Founder brief",
+    assertAllAbsent(overviewHtml, [
+        "data-overview-data-sources",
+        "data-overview-thought-feed",
+        "data-overview-cockpit-grid",
+        "data-overview-thinking-grid",
+        "data-overview-trade-board",
+        "ACLED API",
+        "FRED API",
+        "Worldview prior",
+        "USO options watch"
+    ], "rendered overview html");
+
+    assertAllIncludes(overviewText, [
+        "Mission Snapshot",
         "Human oversight",
-        "Reasoning queue",
-        "Trade ideas stay candidates until gated paper-order records exist"
-    ].forEach((needle) => assertIncludes(overviewText, needle, "rendered overview"));
+        "Control Plane",
+        "Evidence summary",
+        "Paper Account & Trade State",
+        "Reasoning owns hypotheses",
+        "Trade ideas stay candidates until gated paper-order records exist",
+        "Default to Mission Snapshot",
+        "Safety boundary",
+        "Use Strategy Universe for strategy posture",
+        "Read paper mirror and lifecycle counts",
+        "Show lifecycle counts only",
+        "Show source posture only",
+        "Control Plane owns operating flow",
+        "No dashboard command authority"
+    ], "rendered overview");
 
-    assert(count(overviewText, "This is read-only mission control") <= 2, "rendered overview repeats read-only mission control too often");
-    assert(count(overviewText, "Trade ideas stay candidates") <= 2, "rendered overview repeats trade-candidate boundary too often");
+    assertCountAtLeast(overviewHtml, "data-overview-decision-records", 7, "rendered overview decision records");
+    assertCountAtMost(overviewText, "This is read-only mission control", 2, "rendered overview read-only mission control copy");
+    assertCountAtMost(overviewText, "Trade ideas stay candidates", 2, "rendered overview trade-candidate boundary");
+    assertCountAtMost(overviewText, "Full source rows and connection ledgers live in Evidence", 1, "rendered overview evidence routing copy");
+    assertCountAtMost(overviewText, "Full signal rows, candidate lineage", 1, "rendered overview trade routing copy");
+
+    assertAllIncludes(overviewText, [
+        "Semiconductor Policy Options Asymmetry",
+        "Defence Repricing Geopolitical Watch",
+        "Silver Macro Liquidity Stress",
+        "Crude Oil Energy Security Disruption",
+        "Prediction Market Geopolitical Dislocation",
+        "Qadam-native edge"
+    ], "rendered overview strategy universe");
 
     [
         "Semiconductor Policy Options Asymmetry",
@@ -106,15 +192,23 @@ async function main() {
         "Qadam-native edge"
     ].forEach((needle) => assertCount(overviewText, needle, 1, "rendered overview strategy universe"));
 
-    [
+    assertAllAbsent(overviewText, [
         "Click to see universe",
         "picks-and-shovels",
         "harder to fool",
         "faster to click",
         "AI slop",
         "magic",
-        "revolutionary"
-    ].forEach((needle) => assertAbsent(overviewText, needle, "rendered overview"));
+        "revolutionary",
+        "cutting-edge",
+        "game-changing",
+        "seamless",
+        "unlock",
+        "holistic",
+        "synergy",
+        "AI-powered",
+        "intelligent insights"
+    ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
     console.log("dashboard_cc9_cache_key=20260607-cc11-final-dashboard-structure");

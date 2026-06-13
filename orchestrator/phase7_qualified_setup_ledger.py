@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -74,6 +75,12 @@ PHASE7_QUALIFIED_SETUP_BOUNDARY = (
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _hash_payload(payload: dict[str, Any]) -> str:
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
 
 
 def _runtime_dir(settings: Settings | None = None) -> Path:
@@ -549,8 +556,21 @@ def _paperops_q7_handoff_records(handoff: dict[str, Any]) -> list[dict[str, Any]
             and not handoff_forbidden
         )
         strategy_key = str(source.get("strategy_family_key") or "unknown")
+        lineage_material = {
+            "strategy_family_key": strategy_key,
+            "source_origin_record_id": source.get("setup_record_id"),
+            "source_signal_id": source.get("source_signal_id"),
+            "source_signal_review_id": source.get("source_signal_review_id"),
+            "setup_freshness_key": source.get("setup_freshness_key"),
+            "research_goal_id": source.get("research_goal_id"),
+            "candidate_identity": source.get("candidate_identity"),
+        }
+        lineage_token = _hash_payload(lineage_material)[:16]
+        research_goal_lineage = source.get("research_goal_lineage")
+        if not isinstance(research_goal_lineage, dict):
+            research_goal_lineage = {}
         record = {
-            "setup_record_id": f"q7-3:paperops-handoff:{strategy_key}",
+            "setup_record_id": f"q7-3:paperops-handoff:{strategy_key}:{lineage_token}",
             "setup_state": (
                 "qualified_pending_auto_approval" if qualified else "blocked"
             ),
@@ -571,6 +591,22 @@ def _paperops_q7_handoff_records(handoff: dict[str, Any]) -> list[dict[str, Any]
             "source_phase": "Q7",
             "source_origin_phase": "PaperOps",
             "source_origin_record_id": source.get("setup_record_id"),
+            "paperops_source_setup_record_id": source.get("setup_record_id"),
+            "source_signal_id": source.get("source_signal_id"),
+            "source_signal_review_id": source.get("source_signal_review_id"),
+            "source_signal_reviewed_at": source.get("source_signal_reviewed_at"),
+            "source_signal_status": source.get("source_signal_status"),
+            "signal_evidence_lineage_key": source.get("signal_evidence_lineage_key"),
+            "setup_freshness_key": source.get("setup_freshness_key"),
+            "research_goal_id": source.get("research_goal_id")
+            or f"paperops-research-goal:{strategy_key}:{lineage_token}",
+            "research_goal_lineage": {
+                **research_goal_lineage,
+                "q7_handoff_lineage_token": lineage_token,
+                "q7_handoff_lineage_material": lineage_material,
+            },
+            "candidate_identity": source.get("candidate_identity")
+            or f"paperops-candidate:{strategy_key}:{lineage_token}",
             "source_artifact_ref": (
                 f"data/runtime/{PAPEROPS_QUALIFIED_SETUP_RUNTIME_ARTIFACT}"
             ),

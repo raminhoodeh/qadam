@@ -184,11 +184,14 @@ async function assertRenderedDashboardContract() {
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
-        ["[data-overview-mission-brief]", "Founder brief"],
+        ["[data-overview-mission-brief]", "Mission Snapshot"],
+        ["[data-overview-strategy-narrative]", "Strategy Universe"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
-        ["[data-overview-boundary-rail]", "This is read-only mission control"],
-        ["[data-overview-boundary-rail]", "it cannot approve trades, broker writes, position changes, funding, or live capital changes"],
-        ["[data-overview-boundary-rail]", "Trade ideas stay candidates until gated paper-order records exist"],
+        ["[data-overview-mission-brief]", "Safety boundary"],
+        ["[data-overview-mission-brief]", "it cannot approve trades, broker writes, position changes, funding, or live capital changes"],
+        ["[data-overview-control-plane]", "Control Plane"],
+        ["[data-overview-control-plane]", "Mission Snapshot owns authority state"],
+        ["[data-overview-control-plane]", "Trade ideas stay candidates until gated paper-order records exist"],
         ["[data-trade-layer]", "Trade lifecycle board"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-trade-layer]", "Paper trade lifecycle"],
@@ -206,7 +209,7 @@ async function assertRenderedDashboardContract() {
         ["[data-cognition]", "private priors"],
         ["[data-flow-map]", "Operations diagnostics and event trail"],
         ["[data-flow-map]", "System map diagnostics"],
-        ["[data-overview-mini-map]", "Closed-loop rule"],
+        ["[data-overview-control-plane]", "Closed-loop rule"],
         ["[data-flow-map]", "Governance, inbox, and communications audit"],
         ["[data-flow-map]", "Process console"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
@@ -217,7 +220,7 @@ async function assertRenderedDashboardContract() {
         "[data-trade-toast-rail]",
         "[data-overview-mission-brief]",
         "[data-overview-strategy-narrative]",
-        "[data-overview-boundary-rail]",
+        "[data-overview-control-plane]",
         "[data-trade-layer]",
         "[data-capital]",
         "[data-sources-workspace-slot]",
@@ -225,7 +228,7 @@ async function assertRenderedDashboardContract() {
         "[data-watching-list]",
         "[data-cognition]",
         "[data-flow-map]",
-        "[data-overview-mini-map]"
+        "[data-overview-control-plane]"
     ].map((selector) => renderedHtml(rendered, selector)).join("\n");
 
     assertNoUnsafePublicText(publicRendered, "D11M rendered dashboard output");

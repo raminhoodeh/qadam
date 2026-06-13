@@ -39,8 +39,8 @@ async function main() {
         "aria-label=\"Dashboard views\"",
         "aria-current=\"page\"",
         "data-dashboard-view-link",
-        "data-overview-mini-map",
-        "data-phase5-system-map",
+        "data-overview-control-plane",
+        "Control Plane",
         "role=\"tooltip\""
     ], "Responsive/accessibility static shell");
 
@@ -85,6 +85,7 @@ async function main() {
     assert(!css.includes("node-authority"), "responsive CSS still references removed node-authority badges");
 
     [
+        ".control-plane-grid",
         ".overview-mini-map",
         ".overview-readout-list",
         ".overview-system-grid",
@@ -107,12 +108,12 @@ async function main() {
     assert(countOccurrences(css, ":focus-visible") >= 8, "focus-visible coverage too thin");
 
     const rendered = await renderWithStatus(status);
-    const overviewMapHtml = html(rendered, "[data-overview-mini-map]");
+    const controlPlaneHtml = html(rendered, "[data-overview-control-plane]");
     const operationsHtml = html(rendered, "[data-flow-map]");
     const tradesHtml = html(rendered, "[data-trade-layer]");
 
-    assert(countOccurrences(overviewMapHtml, "overview-mini-node") >= 6, "overview mini-map rendered too few nodes");
-    assert(overviewMapHtml.includes("system-flow-diagram"), "overview canonical system map missing");
+    assert(countOccurrences(controlPlaneHtml, "overview-mini-node") >= 6, "Control Plane rendered too few nodes");
+    assert(controlPlaneHtml.includes("system-flow-diagram"), "Control Plane canonical system map missing");
     assert(operationsHtml.includes("System map diagnostics"), "operations map diagnostics missing");
     assert(!operationsHtml.includes("operations-flow-diagram"), "operations duplicate flow diagram should be removed");
     assert(tradesHtml.includes("trade-lifecycle-filters"), "trade lifecycle filters missing");
@@ -131,7 +132,7 @@ async function main() {
         "request_body",
         "broker_identifier"
     ].forEach((needle) => {
-        assert(!overviewMapHtml.includes(needle), `overview mini-map leaked non-public-safe marker ${needle}`);
+        assert(!controlPlaneHtml.includes(needle), `Control Plane leaked non-public-safe marker ${needle}`);
         assert(!operationsHtml.includes(needle), `operations map leaked non-public-safe marker ${needle}`);
         assert(!tradesHtml.includes(needle), `trades workspace leaked non-public-safe marker ${needle}`);
     });
@@ -148,7 +149,7 @@ async function main() {
     console.log("dashboard_responsive_skip_link=True");
     console.log("dashboard_responsive_focus_visible=True");
     console.log("dashboard_responsive_mobile_breakpoint_count=3");
-    console.log("dashboard_responsive_overview_mini_node_count=" + countOccurrences(overviewMapHtml, "overview-mini-node"));
+    console.log("dashboard_responsive_control_plane_node_count=" + countOccurrences(controlPlaneHtml, "overview-mini-node"));
     console.log("dashboard_responsive_authority_unchanged=True");
 }
 

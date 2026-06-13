@@ -91,15 +91,10 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-overview-mission-brief",
         "data-overview-strategy-narrative",
-        "data-overview-cockpit-grid",
-        "data-overview-system-status",
-        "data-overview-paper-capacity",
-        "data-overview-system-summary",
-        "data-overview-mini-map",
-        "data-overview-data-sources",
-        "data-overview-trading-strategies",
-        "data-overview-thought-feed",
-        "data-overview-trade-considerations",
+        "data-overview-strategy-universe",
+        "data-overview-paper-trade-state",
+        "data-overview-control-plane",
+        "data-overview-source-summary",
         "20260607-cc11-final-dashboard-structure"
     ], "D11E overview HTML");
 
@@ -112,11 +107,14 @@ async function main() {
 
     includesAll(css, [
         ".overview-mission-brief",
+        ".overview-mission-snapshot-grid",
         ".overview-strategy-narrative",
-        ".overview-cockpit-grid",
-        ".overview-system-status-panel",
-        ".overview-paper-capacity-panel",
-        ".overview-system-summary",
+        ".overview-paper-trade-state-panel",
+        ".paper-trade-state-grid",
+        ".overview-control-plane",
+        ".control-plane-grid",
+        ".overview-source-summary-panel",
+        ".overview-ledger-routing",
         ".overview-plain-grid",
         ".overview-plain-card",
         ".overview-capacity-line",
@@ -133,13 +131,17 @@ async function main() {
     includesAll(renderer, [
         "founder_contract_model",
         "renderContractTeamMap",
+        "renderContractControlPlane",
+        "renderContractStrategyUniverse",
         "renderContractStrategyNarrative",
         "renderContractStrategyBlock",
         "renderContractPortfolioBlock",
-        "renderContractTradeBoard",
-        "renderContractThinkingBlock",
+        "renderContractTradeStateSummary",
+        "renderContractPaperTradeState",
+        "renderContractSourceSummary",
+        "renderOverviewDecisionRecords",
         "function renderOverviewCapacityChart",
-        "overview-source-ledger",
+        "detail_ledger_placement",
         "data-cc5-contract-source"
     ], "D11E overview renderer");
 
@@ -159,68 +161,42 @@ async function main() {
     assert(overview.mission_brief.authority.dashboard_write_authority === false, "Overview Mission Brief must be read-only");
     assert(!overview.summary.toLowerCase().includes("live capital"), "Overview summary must not duplicate live-capital safety copy");
     assert(overview.system_status.length >= 6, "Overview should expose paper system status and runner cards");
-    assert(overview.data_sources_connected.length >= 3, "Overview should expose connected source groups");
+    assert(overview.source_summary.detail_view === "evidence", "Overview should route source detail to Evidence");
     assert(overview.trading_strategies.length >= 5, "Overview should expose approved trading strategy families");
-    assert(overview.thought_feed.length >= 4, "Overview should expose Qadam thought feed");
-    assert(overview.trade_considerations.length >= 2, "Overview should expose observed/candidate trade considerations");
+    assert(overview.reasoning_summary.detail_view === "reasoning", "Overview should route reasoning detail to Reasoning");
+    assert(overview.trade_state_summary.detail_view === "trades", "Overview should route trade detail to Trades");
+    assert(overview.detail_ledger_placement.overview_scope === "summary_only", "Overview should keep detailed ledgers out of the first screen");
     assert(overview.paper_capacity.total_gbp === 100000, "Overview should expose GBP 100,000 paper capacity");
 
     const rendered = await renderWithStatus(status);
     const missionBrief = html(rendered, "[data-overview-mission-brief]");
     const strategyNarrative = html(rendered, "[data-overview-strategy-narrative]");
-    const systemStatus = html(rendered, "[data-overview-system-status]");
-    const paperCapacity = html(rendered, "[data-overview-paper-capacity]");
-    const dataSources = html(rendered, "[data-overview-data-sources]");
-    const strategies = html(rendered, "[data-overview-trading-strategies]");
-    const thoughtFeed = html(rendered, "[data-overview-thought-feed]");
-    const tradeConsiderations = html(rendered, "[data-overview-trade-considerations]");
-    const system = [
-        html(rendered, "[data-overview-oversight]"),
-        html(rendered, "[data-overview-mini-map]"),
-        html(rendered, "[data-overview-feed-strip]"),
-        html(rendered, "[data-overview-boundary-rail]")
-    ].join(" ");
+    const paperTradeState = html(rendered, "[data-overview-paper-trade-state]");
+    const sourceSummary = html(rendered, "[data-overview-source-summary]");
+    const controlPlane = html(rendered, "[data-overview-control-plane]");
 
     includesAll(missionBrief, [
-        "Founder brief",
-        "Sanitized founder contract",
-        "Authority state",
+        "Mission Snapshot",
+        "Default to Mission Snapshot",
+        "data-overview-decision-records",
+        "Durable replay",
+        "Data sources",
+        "Trade lifecycle",
+        "Safety boundary",
         "Paper-only, read-only"
-    ], "rendered D11E Founder brief");
+    ], "rendered D11E Mission Snapshot");
 
     includesAll(strategyNarrative, [
+        "Strategy Universe",
+        "Use Strategy Universe for strategy posture",
         "Asymmetric Catalyst Proxy Trading",
         "Universe",
         "Currently qualified",
         "Waiting on gates",
         "Second-order AI infrastructure beneficiary lens",
-        "Boundary"
-    ], "rendered D11E strategy narrative");
-
-    includesAll(systemStatus, [
-        "System status",
-        "Plain-language mission state",
-        "Data sources",
-        "Trade lifecycle"
-    ], "rendered D11E system status");
-
-    includesAll(paperCapacity, [
-        "Paper portfolio",
-        "mirror",
-        "data-paper-capacity-line",
-        "Realized",
-        "Unrealized"
-    ], "rendered D11E paper capacity");
-
-    includesAll(dataSources, [
-        "Data sources connected",
-        "mission_control",
-        "ACLED API"
-    ], "rendered D11E data sources");
-
-    includesAll(strategies, [
-        "Trading strategy",
-        "Asymmetric Catalyst Proxy Trading",
+        "Boundary",
+        "Strategy family ledger",
+        "Open the full universe",
         "Qadam-native edge",
         "Semiconductor Policy Options Asymmetry",
         "Defence Repricing Geopolitical Watch",
@@ -229,29 +205,42 @@ async function main() {
         "Prediction Market Geopolitical Dislocation",
         "Akber filter",
         "guarded Alpaca Paper"
-    ], "rendered D11E trading strategies");
+    ], "rendered D11E strategy narrative");
 
-    includesAll(thoughtFeed, [
-        "Reasoning queue",
-        "Research goals",
-        "Worldview prior"
-    ], "rendered D11E thought feed");
-
-    includesAll(tradeConsiderations, [
-        "Trades being considered",
+    includesAll(paperTradeState, [
+        "Paper Account &amp; Trade State",
+        "mirror",
+        "data-paper-capacity-line",
+        "Realized",
+        "Unrealized",
+        "Trade state",
+        "Read paper mirror and lifecycle counts",
         "observed",
         "candidate",
-        "USO options watch"
-    ], "rendered D11E trade considerations");
+        "Full signal rows, candidate lineage"
+    ], "rendered D11E paper account and trade state");
 
-    includesAll(system, [
+    includesAll(sourceSummary, [
+        "Evidence summary",
+        "Show source posture only",
+        "Full source rows and connection ledgers live in Evidence",
+        "Reasoning owns hypotheses",
+        "Trades owns signal rows"
+    ], "rendered D11E source summary");
+    assert(!paperTradeState.includes("USO options watch"), "D11E Overview must not show named trade rows");
+    assert(!sourceSummary.includes("ACLED API"), "D11E Overview must not show named source rows");
+    assert(!sourceSummary.includes("Worldview prior"), "D11E Overview must not show reasoning ledger rows");
+
+    includesAll(controlPlane, [
+        "Control Plane",
+        "Control Plane owns operating flow",
         "Human oversight",
         "Chief Operating Officer",
         "Local LLM",
         "Frontier LLM",
         "Head of Quant",
         "Trade ideas stay candidates until gated paper-order records exist"
-    ], "rendered D11E compact system map");
+    ], "rendered D11E Control Plane");
 
     assert(fs.existsSync(auditPath), "D11E audit document missing");
     includesAll(plan, [

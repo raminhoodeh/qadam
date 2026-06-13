@@ -22,21 +22,10 @@ const selectors = [
     "[data-operating-summary]",
     "[data-overview-mission-brief]",
     "[data-overview-strategy-narrative]",
-    "[data-overview-cockpit-grid]",
-    "[data-overview-system-status]",
-    "[data-overview-paper-capacity]",
-    "[data-overview-system-summary]",
-    "[data-team-health-row]",
-    "[data-overview-feed-strip]",
-    "[data-overview-oversight]",
-    "[data-overview-mini-map]",
-    "[data-overview-boundary-rail]",
+    "[data-overview-paper-trade-state]",
+    "[data-overview-control-plane]",
     "[data-overview-plain-grid]",
-    "[data-overview-data-sources]",
-    "[data-overview-trading-strategies]",
-    "[data-overview-thinking-grid]",
-    "[data-overview-thought-feed]",
-    "[data-overview-trade-considerations]",
+    "[data-overview-source-summary]",
     "[data-phase4-summary]",
     "[data-phase4-strategy]",
     "[data-flow-map]",
@@ -219,7 +208,7 @@ async function main() {
     );
     assertIncludes(rendered, "[data-status-banner]", "Dashboard status loaded");
     assertIncludes(rendered, "[data-status-banner]", "Live status connected");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Founder brief");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Snapshot");
     assertIncludes(rendered, "[data-mission-sources]", "logged-in/configured");
     assertIncludes(rendered, "[data-mission-sources]", "Preference MCP");
     assertIncludes(rendered, "[data-mission-philosophy]", "Trading philosophy");
@@ -245,15 +234,16 @@ async function main() {
     assertIncludes(rendered, "[data-phase4-strategy]", "No certification blockers exported");
     assertIncludes(rendered, "[data-phase4-strategy]", "No execution");
     assertIncludes(rendered, "[data-phase4-strategy]", "Yahoo Finance supplemental");
-    assertIncludes(rendered, "[data-team-health-row]", "Chief Operating Officer");
-    assertIncludes(rendered, "[data-team-health-row]", "Research Analyst");
-    assertIncludes(rendered, "[data-team-health-row]", "PaperOps");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Qadam operating team");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Chief Operating Officer");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Paper/Demo State");
-    assertIncludes(rendered, "[data-overview-mini-map]", "mission_control");
-    assertIncludes(rendered, "[data-overview-mini-map]", "What it does");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Boundary");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Control Plane");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Human oversight");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Qadam operating team");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Chief Operating Officer");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Research Analyst");
+    assertIncludes(rendered, "[data-overview-control-plane]", "PaperOps");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Paper/Demo State");
+    assertIncludes(rendered, "[data-overview-control-plane]", "mission_control");
+    assertIncludes(rendered, "[data-overview-control-plane]", "What it does");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Boundary");
     assertIncludes(rendered, "[data-flow-map]", "Q5-13 Functional System Map Dashboard");
     assertIncludes(rendered, "[data-flow-map]", "Backend parity");
     assertIncludes(rendered, "[data-flow-map]", "Unsafe controls");
@@ -298,31 +288,41 @@ async function main() {
     assertIncludes(rendered, "[data-trade-layer]", "Phase 5 certified");
     assertIncludes(rendered, "[data-trade-layer]", "Q5-14 exit passed");
     assertIncludes(rendered, "[data-trade-layer]", "Phase 6 handoff allowed");
-    assertIncludes(rendered, "[data-overview-mini-map]", "How to read this node");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Strategy Lead");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Currently");
-    assertIncludes(rendered, "[data-overview-mini-map]", "Next handoff");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Sanitized founder contract");
+    assertIncludes(rendered, "[data-overview-control-plane]", "How to read this node");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Strategy Lead");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Currently");
+    assertIncludes(rendered, "[data-overview-control-plane]", "Next handoff");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Durable replay");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Trade lifecycle");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Safety boundary");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "data-overview-decision-records");
+    assertIncludes(rendered, "[data-overview-mission-brief]", "Default to Mission Snapshot");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Strategy Universe");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Asymmetric Catalyst Proxy Trading");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Currently qualified");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting on gates");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
-    assertIncludes(rendered, "[data-overview-system-status]", "Plain-language mission state");
-    assertIncludes(rendered, "[data-overview-paper-capacity]", "Paper portfolio");
-    assertIncludes(rendered, "[data-overview-data-sources]", "mission_control");
-    assertIncludes(rendered, "[data-overview-data-sources]", "ACLED API");
-    assertIncludes(rendered, "[data-overview-data-sources]", "FRED API");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Open the full universe");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Asymmetric Catalyst Proxy Trading");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Semiconductor Policy Options Asymmetry");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Defence Repricing Geopolitical Watch");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Silver Macro Liquidity Stress");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Crude Oil Energy Security Disruption");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Prediction Market Geopolitical Dislocation");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "Akber filter");
-    assertIncludes(rendered, "[data-overview-trading-strategies]", "guarded Alpaca Paper");
-    assertIncludes(rendered, "[data-overview-thought-feed]", "Worldview prior");
-    assertIncludes(rendered, "[data-overview-trade-considerations]", "Trades being considered");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Open the full universe");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Qadam-native edge");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Semiconductor Policy Options Asymmetry");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Defence Repricing Geopolitical Watch");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Silver Macro Liquidity Stress");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Crude Oil Energy Security Disruption");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber filter");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "guarded Alpaca Paper");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Paper Account &amp; Trade State");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "data-paper-capacity-line");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Trade state");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Show lifecycle counts only");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Full signal rows, candidate lineage");
+    assert(!html(rendered, "[data-overview-paper-trade-state]").includes("USO options watch"), "Overview trade state must not render trade-row ledgers");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Evidence summary");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Show source posture only");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Full source rows and connection ledgers live in Evidence");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Reasoning owns hypotheses");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Trades owns signal rows");
+    assert(!html(rendered, "[data-overview-source-summary]").includes("ACLED API"), "Overview source summary must not render source-row ledgers");
     assertIncludes(rendered, "[data-trade-layer]", "Signal Review");
     assertIncludes(rendered, "[data-trade-layer]", "Decision chain");
     assertIncludes(rendered, "[data-trade-layer]", "Governance comment");
@@ -398,9 +398,9 @@ async function main() {
         ))
     };
     const unsafe = await renderWithStatus(unsafeStatus);
-    const overviewMapHtml = html(unsafe, "[data-overview-mini-map]");
-    assert(!overviewMapHtml.includes("<script>"), "renderer emitted raw script tag from status data");
-    assert(overviewMapHtml.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "renderer did not escape status HTML");
+    const controlPlaneHtml = html(unsafe, "[data-overview-control-plane]");
+    assert(!controlPlaneHtml.includes("<script>"), "renderer emitted raw script tag from status data");
+    assert(controlPlaneHtml.includes("&lt;script&gt;alert(1)&lt;/script&gt;"), "renderer did not escape status HTML");
 
     const failed = await renderWithStatus(status, { fetchOk: false, statusCode: 404 });
     assert(

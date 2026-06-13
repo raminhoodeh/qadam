@@ -142,7 +142,7 @@ assert(model.authority_flag_count === 0, "safety strip reports authority flags")
 (async () => {
     const rendered = await renderWithStatus(status);
     const stripHtml = html(rendered, "[data-dashboard-safety-strip]");
-    const overviewBoundaryHtml = html(rendered, "[data-overview-boundary-rail]");
+    const overviewBoundaryHtml = html(rendered, "[data-overview-control-plane]");
     const operationsHtml = html(rendered, "[data-flow-map]");
 
     includesAll(stripHtml, [

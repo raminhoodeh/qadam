@@ -530,7 +530,10 @@ def main() -> int:
             errors.append(f"phase7_proof_order_staging_forbidden_authority:{flag_key}")
     if written["event_log_written"] is not True:
         errors.append("phase7_proof_order_staging_event_log_not_written")
-    if replay["total_events"] != 1:
+    expected_event_count = written["staged_order_count"] if has_staged_order else 1
+    if written["event_log_event_count"] != expected_event_count:
+        errors.append("phase7_proof_order_staging_event_log_count_mismatch")
+    if replay["total_events"] != expected_event_count:
         errors.append("phase7_proof_order_staging_event_log_replay_count_mismatch")
 
     if not has_staged_order and valid_staged_errors:

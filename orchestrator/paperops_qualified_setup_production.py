@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -171,6 +172,12 @@ def _float(value: Any) -> float:
         return 0.0
 
 
+def _hash_payload(payload: dict[str, Any]) -> str:
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+
+
 def _records(payload: dict[str, Any], key: str) -> list[dict[str, Any]]:
     value = payload.get(key, [])
     if not isinstance(value, list):
@@ -250,6 +257,35 @@ def _source_summary(record: dict[str, Any]) -> dict[str, Any]:
     return summary if isinstance(summary, dict) else {}
 
 
+def _lineage_material(
+    *,
+    strategy: str,
+    staging_record: dict[str, Any],
+    risk_record: dict[str, Any],
+    signal: dict[str, Any],
+) -> dict[str, Any]:
+    source_signal_id = str(signal.get("latest_review_source_signal_id") or "").strip()
+    review_id = str(signal.get("latest_review_id") or "").strip()
+    if source_signal_id:
+        identity = {"latest_review_source_signal_id": source_signal_id}
+    elif review_id:
+        identity = {"latest_review_id": review_id}
+    else:
+        identity = {
+            "source_staging_artifact_id": staging_record.get("artifact_id"),
+            "source_risk_sizing_artifact_id": risk_record.get("artifact_id"),
+        }
+    return {
+        "strategy_family_key": strategy,
+        **identity,
+        "latest_review_status": signal.get("latest_review_status"),
+        "latest_market_confirmation_status": signal.get("latest_market_confirmation_status"),
+        "latest_market_confirmation_pricing_gap_status": signal.get(
+            "latest_market_confirmation_pricing_gap_status"
+        ),
+    }
+
+
 def _candidate_record(
     *,
     settings: Settings,
@@ -262,6 +298,15 @@ def _candidate_record(
     posture = _source_posture(staging_record) or _source_posture(risk_record)
     source_summary = _source_summary(staging_record) or _source_summary(risk_record)
     signal = _signal_evidence(risk_record)
+    lineage_material = _lineage_material(
+        strategy=strategy,
+        staging_record=staging_record,
+        risk_record=risk_record,
+        signal=signal,
+    )
+    lineage_token = _hash_payload(lineage_material)[:16]
+    research_goal_id = f"paperops-research-goal:{strategy}:{lineage_token}"
+    candidate_identity = f"paperops-candidate:{strategy}:{lineage_token}"
     checks = _records(staging_record, "checks")
     check_pass = {
         str(check.get("name")): check.get("passed") is True for check in checks
@@ -424,13 +469,30 @@ def _candidate_record(
         gate["gate_key"] for gate in gates if gate.get("passed") is not True
     ]
     return {
-        "setup_record_id": f"paperops:pt-3:qualified-setup:{strategy}",
+        "setup_record_id": f"paperops:pt-3:qualified-setup:{strategy}:{lineage_token}",
         "source_phase": "Q5",
         "source_artifact_id": staging_record.get("artifact_id"),
         "source_risk_sizing_artifact_id": staging_record.get(
             "source_risk_sizing_artifact_id"
         )
         or risk_record.get("artifact_id"),
+        "source_signal_id": signal.get("latest_review_source_signal_id"),
+        "source_signal_review_id": signal.get("latest_review_id"),
+        "source_signal_reviewed_at": signal.get("latest_reviewed_at"),
+        "source_signal_status": signal.get("latest_review_status"),
+        "signal_evidence_lineage_key": f"paperops-signal-lineage:{lineage_token}",
+        "setup_freshness_key": f"paperops-fresh:{strategy}:{lineage_token}",
+        "research_goal_id": research_goal_id,
+        "research_goal_lineage": {
+            "strategy_family_key": strategy,
+            "lineage_token": lineage_token,
+            "source_signal_id": signal.get("latest_review_source_signal_id"),
+            "source_signal_review_id": signal.get("latest_review_id"),
+            "source_signal_reviewed_at": signal.get("latest_reviewed_at"),
+            "source_signal_status": signal.get("latest_review_status"),
+            "lineage_material": lineage_material,
+        },
+        "candidate_identity": candidate_identity,
         "strategy_family_key": strategy,
         "instrument": staging_record.get("instrument"),
         "selected_venue": staging_record.get("selected_venue"),

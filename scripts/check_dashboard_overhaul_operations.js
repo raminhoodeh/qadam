@@ -147,7 +147,7 @@ async function main() {
     assert(operations.operations_review_groups.length === 4, "operations model should expose four D11I review groups");
     assert(connectivity.id === "system_connectivity_model", "operations missing shared connectivity model");
     assert(connectivity.operations_scope?.placement === "operations-diagnostics", "operations diagnostics placement missing");
-    assert(connectivity.overview_scope?.placement === "overview-mini-map", "overview mini-map placement missing");
+    assert(connectivity.overview_scope?.placement === "control-plane", "Control Plane placement missing");
     assert(connectivity.nodes.length >= 20, "operations connectivity model should expose backend nodes");
     assert(connectivity.edges.length > 0, "operations connectivity model should expose edges");
     ["active", "shadow/context-only", "locked", "blocked"].forEach((state) => {

@@ -96,8 +96,9 @@ async function main() {
         "Safety status",
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
         "60-day paper growth trial",
-        "Operating flow",
-        "Loading trade ideas"
+        "Control Plane",
+        "Paper Account &amp; Trade State",
+        "Loading account and trade lifecycle"
     ], "D12 dashboard shell");
 
     includesAll(renderer, [
@@ -130,25 +131,21 @@ async function main() {
         html(rendered, "[data-dashboard-safety-strip]"),
         html(rendered, "[data-overview-mission-brief]"),
         html(rendered, "[data-overview-strategy-narrative]"),
-        html(rendered, "[data-overview-system-status]"),
-        html(rendered, "[data-overview-paper-capacity]"),
-        html(rendered, "[data-overview-data-sources]"),
-        html(rendered, "[data-overview-trading-strategies]"),
-        html(rendered, "[data-overview-thought-feed]"),
-        html(rendered, "[data-overview-trade-considerations]"),
-        html(rendered, "[data-overview-boundary-rail]")
+        html(rendered, "[data-overview-paper-trade-state]"),
+        html(rendered, "[data-overview-source-summary]"),
+        html(rendered, "[data-overview-control-plane]")
     ].map(textOnly).join(" ");
 
     includesAll(overviewText, [
         "Dashboard cannot place orders; model outputs cannot bypass risk checks",
-        "Paper portfolio",
+        "Paper Account & Trade State",
         "Realized",
         "Unrealized",
-        "Founder brief",
-        "Sanitized founder contract",
-        "Authority state",
+        "Mission Snapshot",
+        "Durable replay",
+        "Safety boundary",
         "Paper-only, read-only",
-        "Trades being considered",
+        "Trade state",
         "Trade ideas stay candidates until gated paper-order records exist"
     ], "D12 rendered overview");
     assertNoSlop(overviewText, "D12 rendered overview");

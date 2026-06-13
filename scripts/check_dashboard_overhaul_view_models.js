@@ -111,10 +111,11 @@ function assertModelShape(models) {
     assert(models.overview_model.mission_brief.authority.telegram_command_authority === false, "Mission Brief must keep Telegram command authority off");
     assert(models.overview_model.review_focus.state, "Overview model should expose review focus");
     assert(models.overview_model.system_status.length >= 6, "Overview model should expose paper system status and runner cards");
-    assert(models.overview_model.data_sources_connected.length >= 3, "Overview model should expose connected source groups");
+    assert(models.overview_model.source_summary.detail_view === "evidence", "Overview model should route source detail to Evidence");
     assert(models.overview_model.trading_strategies.length >= 5, "Overview model should expose trading strategy families");
-    assert(models.overview_model.thought_feed.length >= 4, "Overview model should expose Qadam thought feed");
-    assert(models.overview_model.trade_considerations.length >= 2, "Overview model should expose trade considerations");
+    assert(models.overview_model.reasoning_summary.detail_view === "reasoning", "Overview model should route reasoning detail to Reasoning");
+    assert(models.overview_model.trade_state_summary.detail_view === "trades", "Overview model should route trade detail to Trades");
+    assert(models.overview_model.detail_ledger_placement.overview_scope === "summary_only", "Overview model should keep detailed ledgers out of the first screen");
     assert(models.overview_model.paper_capacity.total_gbp === 100000, "Overview model should expose GBP 100,000 paper capacity");
     assert(models.trades_model.lifecycle.length >= 8, "Trades model should expose lifecycle states");
     assert(models.system_connectivity_model.id === "system_connectivity_model", "connectivity model id mismatch");

@@ -127,13 +127,14 @@ async function main() {
     [
         ["[data-dashboard-safety-strip]", "Paper trading authorized"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
-        ["[data-overview-mission-brief]", "Founder brief"],
+        ["[data-overview-mission-brief]", "Mission Snapshot"],
+        ["[data-overview-strategy-narrative]", "Strategy Universe"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-source-summary]", "Sources"],
         ["[data-cognition]", "Reasoning readout"],
         ["[data-flow-map]", "System map diagnostics"],
-        ["[data-overview-mini-map]", "Closed-loop rule"],
+        ["[data-overview-control-plane]", "Closed-loop rule"],
         ["[data-capital]", "60-day paper growth"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
