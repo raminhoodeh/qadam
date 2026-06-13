@@ -54,7 +54,6 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("head_of_quant_oracle", "scripts/check_quantum_oracle.py", True),
     ("paperops_qctrl_consultation", "scripts/check_paperops_qctrl_consultation.py", True),
     ("phase7_demo_run", "scripts/check_phase7_demo_proof_run.py", True),
-    ("phase7_qualified_setups", "scripts/check_phase7_qualified_setup_ledger.py", True),
     ("phase5_approval_policy", "scripts/check_phase5_approval_policy_router.py", True),
     ("phase5_signal_review", "scripts/check_phase5_signal_review.py", True),
     ("phase5_risk_sizing", "scripts/check_phase5_risk_agent_paper_sizing.py", True),
@@ -78,10 +77,16 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         "scripts/check_paperops_alpaca_paper_submit_enablement.py",
         True,
     ),
+    ("phase7_qualified_setups", "scripts/check_phase7_qualified_setup_ledger.py", True),
     ("phase7_auto_approval", "scripts/check_phase7_test_mode_auto_approval_router.py", True),
     ("phase7_order_staging", "scripts/check_phase7_proof_order_staging.py", True),
     ("phase7_guarded_paper_submit", "scripts/check_phase7_guarded_alpaca_paper_submit.py", True),
     ("paperops_alpaca_paper_post", "scripts/check_paperops_alpaca_paper_post.py", True),
+    (
+        "paperops_submit_regression_guard",
+        "scripts/check_paperops_submit_regression_guard.py",
+        True,
+    ),
     (
         "paperops_paper_lifecycle_polling_enablement",
         "scripts/check_paperops_paper_lifecycle_polling_enablement.py",
@@ -99,7 +104,13 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
         True,
     ),
     ("paperops_paper_exit_path", "scripts/check_paperops_paper_exit_path.py", True),
+    ("paperops_close_to_ledger", "scripts/check_paperops_close_to_ledger.py", True),
     ("paperops_notification_review", "scripts/check_paperops_notification_review.py", True),
+    (
+        "paperops_source_gap_visibility",
+        "scripts/check_paperops_source_gap_visibility.py",
+        True,
+    ),
     (
         "paperops_cockpit_notification_upgrade",
         "scripts/check_paperops_cockpit_notification_upgrade.py",
@@ -114,8 +125,34 @@ COMMANDS: tuple[tuple[str, str, bool], ...] = (
     ("phase7_maturity", "scripts/check_phase7_maturity_tracker.py", True),
     ("phase7_cockpit_visibility", "scripts/check_phase7_cockpit_visibility.py", True),
     ("paperops_30_day_operations", "scripts/check_paperops_30_day_operations.py", True),
+    ("cockpit_status_pre_certification", "scripts/check_cockpit_status.py", True),
+    (
+        "rs10_final_paper_autonomy",
+        "scripts/check_rs10_final_paper_autonomy_certification.py",
+        True,
+    ),
     ("paper_live_certification", "scripts/check_paper_live_certification.py", True),
+    ("cockpit_status_post_certification", "scripts/check_cockpit_status.py", True),
     ("paper_ops_readiness", "scripts/check_paper_operational_readiness.py", True),
+)
+
+REQUIRED_FRESHNESS_ORDER: tuple[str, ...] = (
+    "phase5_signal_review",
+    "phase5_risk_sizing",
+    "phase5_paper_order_staging",
+    "paperops_qualified_setup_production",
+    "phase7_qualified_setups",
+    "phase7_auto_approval",
+    "phase7_order_staging",
+    "phase7_guarded_paper_submit",
+    "paperops_alpaca_paper_post",
+    "paperops_submit_regression_guard",
+    "paperops_active_paper_trading_automation",
+    "paperops_source_gap_visibility",
+    "cockpit_status_pre_certification",
+    "rs10_final_paper_autonomy",
+    "paper_live_certification",
+    "cockpit_status_post_certification",
 )
 
 NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
@@ -140,6 +177,8 @@ NONBLOCKING_SAFE_FAILURE_LABELS = frozenset(
         # These two observe the cycle and can be stale for one bootstrap pass.
         "paperops_notification_review",
         "paperops_30_day_operations",
+        "cockpit_status_pre_certification",
+        "cockpit_status_post_certification",
         "paper_live_certification",
         "paper_ops_readiness",
         # These are permitted to fail closed on no-fresh-candidate/no-open-position
@@ -266,6 +305,14 @@ def _has_unsafe_output(parsed: dict[str, str]) -> bool:
             if _parsed_bool(value):
                 return True
     return False
+
+
+def _labels_in_order(labels: list[str], required_order: tuple[str, ...]) -> bool:
+    positions = {label: index for index, label in enumerate(labels)}
+    if any(label not in positions for label in required_order):
+        return False
+    ordered_positions = [positions[label] for label in required_order]
+    return ordered_positions == sorted(ordered_positions)
 
 
 def _run_command(label: str, script: str) -> dict[str, Any]:
@@ -481,6 +528,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         ),
         {},
     )
+    submit_regression_guard = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_submit_regression_guard"
+        ),
+        {},
+    )
     lifecycle_polling_enablement = next(
         (
             record["parsed"]
@@ -510,6 +565,14 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             record["parsed"]
             for record in command_records
             if record["label"] == "paperops_cockpit_notification_upgrade"
+        ),
+        {},
+    )
+    source_gap_visibility = next(
+        (
+            record["parsed"]
+            for record in command_records
+            if record["label"] == "paperops_source_gap_visibility"
         ),
         {},
     )
@@ -554,6 +617,8 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
             "paper_ops_alpaca_submit_enablement_broker_post_called_count",
             "paper_ops_alpaca_submit_enablement_alpaca_post_called_count",
             "paper_ops_alpaca_submit_enablement_live_endpoint_called_count",
+            "paper_ops_submit_regression_guard_live_endpoint_called_count",
+            "paper_ops_submit_regression_guard_broker_post_called_count",
             "paper_ops_lifecycle_polling_enablement_broker_get_called_count",
             "paper_ops_lifecycle_polling_enablement_live_endpoint_called_count",
             "paper_ops_exit_runtime_enablement_close_called_count",
@@ -568,6 +633,30 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
         )
     ) + int(
         operations.get("paperops_30_day_operations_unsafe_write_counter_total", "0")
+        or 0
+    ) + int(
+        submit_regression_guard.get(
+            "paperops_submit_regression_guard_live_endpoint_called_count",
+            "0",
+        )
+        or 0
+    ) + int(
+        submit_regression_guard.get(
+            "paperops_submit_regression_guard_broker_post_called_count",
+            "0",
+        )
+        or 0
+    ) + int(
+        source_gap_visibility.get(
+            "paperops_source_gap_visibility_live_endpoint_called_count",
+            "0",
+        )
+        or 0
+    ) + int(
+        source_gap_visibility.get(
+            "paperops_source_gap_visibility_broker_post_called_count",
+            "0",
+        )
         or 0
     )
     safe_to_continue = readiness.get("paper_ops_safe_to_continue_paper_only") == "True"
@@ -890,6 +979,155 @@ def build_paper_operational_cycle(settings: Settings | None = None) -> dict[str,
                 "0",
             )
             or 0
+        ),
+        "submit_regression_guard_status": submit_regression_guard.get(
+            "paperops_submit_regression_guard_status",
+            "missing",
+        ),
+        "submit_regression_guard_source_paperops2_status": (
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_source_paperops2_status"
+            )
+        ),
+        "submit_regression_guard_source_stale_after_post_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_source_stale_after_post_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_fresh_eligible_submit_record_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_fresh_eligible_submit_record_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_duplicate_submit_record_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_duplicate_submit_record_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_fresh_submitted_ledger_collision_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_duplicate_misclassified_as_fresh_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_blocker_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_blocker_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_live_endpoint_called_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_broker_post_called_count": int(
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_broker_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "submit_regression_guard_live_capital_enabled": (
+            submit_regression_guard.get(
+                "paperops_submit_regression_guard_live_capital_enabled"
+            )
+            == "True"
+        ),
+        "source_gap_visibility_status": source_gap_visibility.get(
+            "paperops_source_gap_visibility_status",
+            "missing",
+        ),
+        "source_gap_visibility_policy_status": source_gap_visibility.get(
+            "paperops_source_gap_visibility_policy_status",
+            "missing",
+        ),
+        "source_gap_visibility_optional_gap_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_optional_gap_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_optional_gap_keys": [
+            key
+            for key in source_gap_visibility.get(
+                "paperops_source_gap_visibility_optional_gap_keys",
+                "",
+            ).split(",")
+            if key
+        ],
+        "source_gap_visibility_required_gap_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_required_gap_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_trade_blocking_gap_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_trade_blocking_gap_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_source_quorum_blocking_gap_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_source_quorum_blocking_gap_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_silent_blocker_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_silent_blocker_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_blocker_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_blocker_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_live_endpoint_called_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_live_endpoint_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_broker_post_called_count": int(
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_broker_post_called_count",
+                "0",
+            )
+            or 0
+        ),
+        "source_gap_visibility_live_capital_enabled": (
+            source_gap_visibility.get(
+                "paperops_source_gap_visibility_live_capital_enabled"
+            )
+            == "True"
         ),
         "lifecycle_polling_enablement_status": (
             lifecycle_polling_enablement.get(
@@ -1645,6 +1883,10 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         "alpaca_submit_enablement_broker_post_called_count",
         "alpaca_submit_enablement_alpaca_post_called_count",
         "alpaca_submit_enablement_live_endpoint_called_count",
+        "submit_regression_guard_live_endpoint_called_count",
+        "submit_regression_guard_broker_post_called_count",
+        "source_gap_visibility_live_endpoint_called_count",
+        "source_gap_visibility_broker_post_called_count",
         "lifecycle_polling_enablement_live_endpoint_called_count",
         "guarded_exit_enablement_close_called_count",
         "guarded_exit_enablement_live_endpoint_called_count",
@@ -1751,6 +1993,44 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
     ):
         if artifact.get(key) is not False:
             errors.append(f"paper_ops_cycle_paper_live_qctrl_forbidden:{key}")
+    if artifact.get("submit_regression_guard_status") not in {
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+    }:
+        errors.append("paper_ops_cycle_submit_regression_guard_not_ready")
+    if artifact.get("submit_regression_guard_blocker_count") != 0:
+        errors.append("paper_ops_cycle_submit_regression_guard_blocked")
+    for key in (
+        "submit_regression_guard_source_stale_after_post_count",
+        "submit_regression_guard_fresh_submitted_ledger_collision_count",
+        "submit_regression_guard_duplicate_misclassified_as_fresh_count",
+    ):
+        if artifact.get(key) != 0:
+            errors.append(f"paper_ops_cycle_submit_regression_counter_nonzero:{key}")
+    if artifact.get("submit_regression_guard_live_capital_enabled") is not False:
+        errors.append("paper_ops_cycle_submit_regression_live_capital_enabled")
+    if artifact.get("source_gap_visibility_status") not in {
+        "explicit_optional_source_gaps",
+        "all_optional_sources_configured",
+    }:
+        errors.append("paper_ops_cycle_source_gap_visibility_not_ready")
+    if artifact.get("source_gap_visibility_policy_status") != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        errors.append("paper_ops_cycle_source_gap_visibility_policy_invalid")
+    if artifact.get("source_gap_visibility_blocker_count") != 0:
+        errors.append("paper_ops_cycle_source_gap_visibility_blocked")
+    for key in (
+        "source_gap_visibility_required_gap_count",
+        "source_gap_visibility_trade_blocking_gap_count",
+        "source_gap_visibility_source_quorum_blocking_gap_count",
+        "source_gap_visibility_silent_blocker_count",
+    ):
+        if artifact.get(key) != 0:
+            errors.append(f"paper_ops_cycle_source_gap_visibility_counter_nonzero:{key}")
+    if artifact.get("source_gap_visibility_live_capital_enabled") is not False:
+        errors.append("paper_ops_cycle_source_gap_visibility_live_capital_enabled")
     lifecycle_statuses = {
         "enabled_pending_submitted_paper_orders",
         "enabled_pending_explicit_poll",
@@ -1919,6 +2199,13 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
         errors.append("paper_ops_cycle_paperops_30_day_operations_dashboard_not_safe")
     if artifact.get("command_count") != len(COMMANDS):
         errors.append("paper_ops_cycle_command_count_mismatch")
+    command_labels = [
+        str(record.get("label"))
+        for record in artifact.get("command_records", [])
+        if isinstance(record, dict)
+    ]
+    if not _labels_in_order(command_labels, REQUIRED_FRESHNESS_ORDER):
+        errors.append("paper_ops_cycle_freshness_command_order_invalid")
     if artifact.get("command_failed_count") != 0:
         errors.append("paper_ops_cycle_failed_commands_present")
     if artifact.get("command_passed_count") != artifact.get("command_count"):
@@ -2330,6 +2617,46 @@ def main() -> int:
     print(
         "paper_ops_cycle_active_paper_automation_live_endpoint_called_count="
         f"{written['active_paper_automation_live_endpoint_called_count']}"
+    )
+    print(
+        "paper_ops_cycle_submit_regression_guard_status="
+        f"{written['submit_regression_guard_status']}"
+    )
+    print(
+        "paper_ops_cycle_submit_regression_guard_fresh_eligible_submit_record_count="
+        f"{written['submit_regression_guard_fresh_eligible_submit_record_count']}"
+    )
+    print(
+        "paper_ops_cycle_submit_regression_guard_duplicate_submit_record_count="
+        f"{written['submit_regression_guard_duplicate_submit_record_count']}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_status="
+        f"{written['source_gap_visibility_status']}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_policy_status="
+        f"{written['source_gap_visibility_policy_status']}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_optional_gap_count="
+        f"{written['source_gap_visibility_optional_gap_count']}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_optional_gap_keys="
+        f"{','.join(written['source_gap_visibility_optional_gap_keys'])}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_required_gap_count="
+        f"{written['source_gap_visibility_required_gap_count']}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_trade_blocking_gap_count="
+        f"{written['source_gap_visibility_trade_blocking_gap_count']}"
+    )
+    print(
+        "paper_ops_cycle_source_gap_visibility_silent_blocker_count="
+        f"{written['source_gap_visibility_silent_blocker_count']}"
     )
     print(f"paper_ops_cycle_safe_to_continue_paper_only={written['safe_to_continue_paper_only']}")
     print(f"paper_ops_cycle_full_paper_operational_ready={written['full_paper_operational_ready']}")

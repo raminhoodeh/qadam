@@ -108,6 +108,75 @@ def main() -> int:
         active_automation_qctrl_probe
     )
 
+    submit_regression_blocked_probe = deepcopy(written)
+    submit_regression_blocked_probe[
+        "paperops_submit_regression_guard_status"
+    ] = "blocked_submit_regression"
+    submit_regression_blocked_probe[
+        "paperops_submit_regression_guard_blocker_count"
+    ] = 1
+    submit_regression_blocked_errors = validate_paperops_30_day_operations(
+        submit_regression_blocked_probe
+    )
+
+    submit_regression_collision_probe = deepcopy(written)
+    submit_regression_collision_probe[
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count"
+    ] = 1
+    submit_regression_collision_errors = validate_paperops_30_day_operations(
+        submit_regression_collision_probe
+    )
+
+    submit_regression_misclassified_probe = deepcopy(written)
+    submit_regression_misclassified_probe[
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count"
+    ] = 1
+    submit_regression_misclassified_errors = validate_paperops_30_day_operations(
+        submit_regression_misclassified_probe
+    )
+
+    source_gap_required_probe = deepcopy(written)
+    source_gap_required_probe["paperops_source_gap_visibility_required_gap_count"] = 1
+    source_gap_required_errors = validate_paperops_30_day_operations(
+        source_gap_required_probe
+    )
+
+    source_gap_trade_blocking_probe = deepcopy(written)
+    source_gap_trade_blocking_probe[
+        "paperops_source_gap_visibility_trade_blocking_gap_count"
+    ] = 1
+    source_gap_trade_blocking_errors = validate_paperops_30_day_operations(
+        source_gap_trade_blocking_probe
+    )
+
+    source_gap_silent_blocker_probe = deepcopy(written)
+    source_gap_silent_blocker_probe[
+        "paperops_source_gap_visibility_silent_blocker_count"
+    ] = 1
+    source_gap_silent_blocker_errors = validate_paperops_30_day_operations(
+        source_gap_silent_blocker_probe
+    )
+
+    source_gap_unsafe_probe = deepcopy(written)
+    source_gap_unsafe_probe[
+        "paperops_source_gap_visibility_live_endpoint_called_count"
+    ] = 1
+    source_gap_unsafe_probe[
+        "paperops_source_gap_visibility_broker_post_called_count"
+    ] = 1
+    source_gap_unsafe_probe["unsafe_write_counter_total"] = 2
+    source_gap_unsafe_errors = validate_paperops_30_day_operations(
+        source_gap_unsafe_probe
+    )
+
+    source_gap_live_capital_probe = deepcopy(written)
+    source_gap_live_capital_probe[
+        "paperops_source_gap_visibility_live_capital_enabled"
+    ] = True
+    source_gap_live_capital_errors = validate_paperops_30_day_operations(
+        source_gap_live_capital_probe
+    )
+
     cockpit_notification_probe = deepcopy(written)
     cockpit_notification_probe[
         "paperops_cockpit_notification_live_send_allowed_count"
@@ -207,6 +276,98 @@ def main() -> int:
     print(
         "paperops_30_day_operations_closed_proof_trade_count="
         f"{written['closed_proof_trade_count']}"
+    )
+    print(
+        "paperops_30_day_operations_close_to_ledger_status="
+        f"{written['paperops_close_to_ledger_status']}"
+    )
+    print(
+        "paperops_30_day_operations_close_to_ledger_closed_proof_trade_count="
+        f"{written['paperops_close_to_ledger_closed_proof_trade_count']}"
+    )
+    print(
+        "paperops_30_day_operations_close_to_ledger_postmortem_due_marker_created_count="
+        f"{written['paperops_close_to_ledger_postmortem_due_marker_created_count']}"
+    )
+    print(
+        "paperops_30_day_operations_close_to_ledger_blocker_count="
+        f"{written['paperops_close_to_ledger_blocker_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_status="
+        f"{written['paperops_submit_regression_guard_status']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_source_paperops2_status="
+        f"{written['paperops_submit_regression_guard_source_paperops2_status']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_fresh_eligible_submit_record_count="
+        f"{written['paperops_submit_regression_guard_fresh_eligible_submit_record_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_duplicate_submit_record_count="
+        f"{written['paperops_submit_regression_guard_duplicate_submit_record_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_source_stale_after_post_count="
+        f"{written['paperops_submit_regression_guard_source_stale_after_post_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_fresh_submitted_ledger_collision_count="
+        f"{written['paperops_submit_regression_guard_fresh_submitted_ledger_collision_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_duplicate_misclassified_as_fresh_count="
+        f"{written['paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_blocker_count="
+        f"{written['paperops_submit_regression_guard_blocker_count']}"
+    )
+    print(
+        "paperops_30_day_operations_submit_regression_guard_validation_error_count="
+        f"{written['paperops_submit_regression_guard_validation_error_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_status="
+        f"{written['paperops_source_gap_visibility_status']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_policy_status="
+        f"{written['paperops_source_gap_visibility_policy_status']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_optional_gap_count="
+        f"{written['paperops_source_gap_visibility_optional_gap_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_optional_gap_keys="
+        f"{','.join(written['paperops_source_gap_visibility_optional_gap_keys'])}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_required_gap_count="
+        f"{written['paperops_source_gap_visibility_required_gap_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_trade_blocking_gap_count="
+        f"{written['paperops_source_gap_visibility_trade_blocking_gap_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_silent_blocker_count="
+        f"{written['paperops_source_gap_visibility_silent_blocker_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_blocker_count="
+        f"{written['paperops_source_gap_visibility_blocker_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_live_endpoint_called_count="
+        f"{written['paperops_source_gap_visibility_live_endpoint_called_count']}"
+    )
+    print(
+        "paperops_30_day_operations_source_gap_visibility_broker_post_called_count="
+        f"{written['paperops_source_gap_visibility_broker_post_called_count']}"
     )
     print(
         "paperops_30_day_operations_no_trade_rationale="
@@ -485,6 +646,107 @@ def main() -> int:
         not in active_automation_qctrl_errors
     ):
         errors.append("active automation Q-CTRL-hold probe was not rejected")
+    if written["paperops_submit_regression_guard_status"] not in {
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+    }:
+        errors.append("submit regression guard status is not ready or healthy idle")
+    if written["paperops_submit_regression_guard_blocker_count"] != 0:
+        errors.append("submit regression guard blocker count is nonzero")
+    if written["paperops_submit_regression_guard_validation_error_count"] != 0:
+        errors.append("submit regression guard validation error count is nonzero")
+    if written["paperops_submit_regression_guard_source_stale_after_post_count"] != 0:
+        errors.append("submit regression guard saw stale source artifact")
+    if (
+        written[
+            "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count"
+        ]
+        != 0
+    ):
+        errors.append("submit regression guard saw fresh ledger collision")
+    if (
+        written[
+            "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count"
+        ]
+        != 0
+    ):
+        errors.append("submit regression guard saw duplicate misclassified as fresh")
+    if (
+        "paperops_30_day_operations_submit_regression_guard_not_ready"
+        not in submit_regression_blocked_errors
+    ):
+        errors.append("submit regression blocked-status probe was not rejected")
+    if (
+        "paperops_30_day_operations_submit_regression_counter_nonzero:"
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count"
+        not in submit_regression_collision_errors
+    ):
+        errors.append("submit regression fresh-ledger collision probe was not rejected")
+    if (
+        "paperops_30_day_operations_submit_regression_counter_nonzero:"
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count"
+        not in submit_regression_misclassified_errors
+    ):
+        errors.append("submit regression duplicate-misclassification probe was not rejected")
+    if written["paperops_source_gap_visibility_status"] not in {
+        "explicit_optional_source_gaps",
+        "all_optional_sources_configured",
+    }:
+        errors.append("source gap visibility status is not ready")
+    if written["paperops_source_gap_visibility_policy_status"] != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        errors.append("source gap policy is not explicit non-blocking")
+    if written["paperops_source_gap_visibility_required_gap_count"] != 0:
+        errors.append("source gap visibility has required gaps")
+    if written["paperops_source_gap_visibility_trade_blocking_gap_count"] != 0:
+        errors.append("source gap visibility has trade-blocking gaps")
+    if written["paperops_source_gap_visibility_silent_blocker_count"] != 0:
+        errors.append("source gap visibility has silent blockers")
+    if written["paperops_source_gap_visibility_blocker_count"] != 0:
+        errors.append("source gap visibility has blockers")
+    if written["paperops_source_gap_visibility_live_endpoint_called_count"] != 0:
+        errors.append("source gap visibility has live endpoint calls")
+    if written["paperops_source_gap_visibility_broker_post_called_count"] != 0:
+        errors.append("source gap visibility has broker POST calls")
+    if written["paperops_source_gap_visibility_live_capital_enabled"] is not False:
+        errors.append("source gap visibility enabled live capital")
+    if (
+        "paperops_30_day_operations_source_gap_counter_nonzero:"
+        "paperops_source_gap_visibility_required_gap_count"
+        not in source_gap_required_errors
+    ):
+        errors.append("source-gap required-gap probe was not rejected")
+    if (
+        "paperops_30_day_operations_source_gap_counter_nonzero:"
+        "paperops_source_gap_visibility_trade_blocking_gap_count"
+        not in source_gap_trade_blocking_errors
+    ):
+        errors.append("source-gap trade-blocking probe was not rejected")
+    if (
+        "paperops_30_day_operations_source_gap_counter_nonzero:"
+        "paperops_source_gap_visibility_silent_blocker_count"
+        not in source_gap_silent_blocker_errors
+    ):
+        errors.append("source-gap silent-blocker probe was not rejected")
+    if (
+        "paperops_30_day_operations_unsafe_counter_nonzero:"
+        "paperops_source_gap_visibility_live_endpoint_called_count"
+        not in source_gap_unsafe_errors
+    ):
+        errors.append("source-gap live-endpoint probe was not rejected")
+    if (
+        "paperops_30_day_operations_unsafe_counter_nonzero:"
+        "paperops_source_gap_visibility_broker_post_called_count"
+        not in source_gap_unsafe_errors
+    ):
+        errors.append("source-gap broker-POST probe was not rejected")
+    if (
+        "paperops_30_day_operations_source_gap_live_capital_enabled"
+        not in source_gap_live_capital_errors
+    ):
+        errors.append("source-gap live-capital probe was not rejected")
     if written["paperops_cockpit_notification_upgrade_status"] != (
         "cockpit_notification_upgrade_ready"
     ):

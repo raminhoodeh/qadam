@@ -174,14 +174,91 @@ def main() -> int:
     print(f"paperops_exit_open_position_readback_count={written['open_position_readback_count']}")
     print(f"paperops_exit_eligible_record_count={written['eligible_exit_record_count']}")
     print(
+        "paperops_exit_suppressed_candidate_count="
+        f"{written.get('suppressed_exit_candidate_count', 0)}"
+    )
+    print(
+        "paperops_exit_stale_not_found_candidate_count="
+        f"{written.get('stale_not_found_exit_candidate_count', 0)}"
+    )
+    print(
+        "paperops_exit_suppressed_stale_not_found_count="
+        f"{written.get('suppressed_stale_not_found_exit_candidate_count', 0)}"
+    )
+    print(
+        "paperops_exit_pending_close_request_candidate_count="
+        f"{written.get('pending_close_request_exit_candidate_count', 0)}"
+    )
+    print(
+        "paperops_exit_suppressed_pending_close_request_count="
+        f"{written.get('suppressed_pending_close_request_exit_candidate_count', 0)}"
+    )
+    print(
+        "paperops_exit_lifecycle_mirror_freshness_status="
+        f"{written.get('lifecycle_mirror_freshness_status')}"
+    )
+    print(
+        "paperops_exit_lifecycle_mirror_fresh_after_latest_close="
+        f"{written.get('lifecycle_mirror_fresh_after_latest_close')}"
+    )
+    print(
+        "paperops_exit_paperops_lifecycle_fresh_after_latest_close="
+        f"{written.get('paperops_lifecycle_fresh_after_latest_close')}"
+    )
+    print(
+        "paperops_exit_paper_mirror_fresh_after_latest_close="
+        f"{written.get('paper_mirror_fresh_after_latest_close')}"
+    )
+    print(
+        "paperops_exit_latest_successful_close_requested_at="
+        f"{written.get('latest_successful_close_requested_at')}"
+    )
+    print(
+        "paperops_exit_paperops_lifecycle_poll_observed_at="
+        f"{written.get('paperops_lifecycle_poll_observed_at')}"
+    )
+    print(
+        "paperops_exit_paper_mirror_observed_at="
+        f"{written.get('paper_mirror_observed_at')}"
+    )
+    print(
+        "paperops_exit_preflight_readback_status="
+        f"{written.get('paper_position_preflight_readback_status')}"
+    )
+    print(
+        "paperops_exit_preflight_readback_called_count="
+        f"{written.get('paper_position_preflight_readback_called_count', 0)}"
+    )
+    print(
+        "paperops_exit_preflight_readback_symbol_count="
+        f"{written.get('paper_position_preflight_readback_symbol_count', 0)}"
+    )
+    print(
         "paperops_exit_prewrite_written="
         f"{written['paperops_exit_event_log_prewrite_written']}"
+    )
+    print(
+        "paperops_exit_prewrite_count="
+        f"{written.get('paperops_exit_event_log_prewrite_count', 0)}"
     )
     print(f"paperops_exit_close_called_count={written['paper_position_close_called_count']}")
     print(
         "paperops_exit_close_succeeded_count="
         f"{written['paper_position_close_succeeded_count']}"
     )
+    print(
+        "paperops_exit_close_failed_count="
+        f"{written.get('paper_position_close_failed_count', 0)}"
+    )
+    print(
+        "paperops_exit_close_stale_not_found_count="
+        f"{written.get('paper_position_close_stale_not_found_count', 0)}"
+    )
+    print(
+        "paperops_exit_close_attempt_limit="
+        f"{written.get('paper_position_close_attempt_limit', 0)}"
+    )
+    print(f"paperops_exit_broker_get_called_count={written.get('broker_get_called_count', 0)}")
     print(f"paperops_exit_broker_write_called_count={written['broker_write_called_count']}")
     print(f"paperops_exit_broker_post_called_count={written['broker_post_called_count']}")
     print(f"paperops_exit_order_cancel_called_count={written['order_cancel_called_count']}")
@@ -212,7 +289,7 @@ def main() -> int:
 
     if validation_errors:
         errors.append(f"PaperOps-4 validation failed: {validation_errors}")
-    expected_event_count = 2 if written["paperops_exit_event_log_prewrite_written"] else 1
+    expected_event_count = int(written.get("paperops_exit_event_log_prewrite_count", 0) or 0) + 1
     if replay["total_events"] != expected_event_count:
         errors.append("PaperOps-4 event log did not record the expected event count")
     if written["mode"] != "paper":
@@ -239,7 +316,10 @@ def main() -> int:
     if written["paper_exit_runtime_enablement_validation_error_count"] != 0:
         errors.append("PaperOps-4 saw invalid PT-7 runtime enablement")
     if written["open_position_readback_count"] == 0:
-        if written["status"] != "ready_no_exit_candidate":
+        if written["status"] not in {
+            "ready_no_exit_candidate",
+            "blocked_paper_position_preflight_readback_failed",
+        }:
             errors.append("PaperOps-4 should be ready but idle without open positions")
         if written["paper_exit_path_available"] is not False:
             errors.append("PaperOps-4 exposed exit path without open-position readback")
@@ -249,6 +329,16 @@ def main() -> int:
         errors.append("PaperOps-4 enabled preview should not request execution")
     if enabled_preview["paper_position_close_called_count"] != 0:
         errors.append("PaperOps-4 enabled preview called Alpaca")
+    if written["paper_position_close_called_count"] > written.get(
+        "paper_position_close_attempt_limit",
+        0,
+    ):
+        errors.append("PaperOps-4 exceeded close attempt limit")
+    if written.get("paper_position_close_stale_not_found_count", 0) > written.get(
+        "paper_position_close_failed_count",
+        0,
+    ):
+        errors.append("PaperOps-4 stale-not-found count exceeds failed close count")
     for key in (
         "broker_post_called_count",
         "alpaca_post_called_count",

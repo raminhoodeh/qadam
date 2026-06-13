@@ -46,6 +46,26 @@ def main() -> int:
         f"{summary['paper_runtime']['duplicate_submit_count']}"
     )
     print(
+        "paperops_autonomous_pass_submit_regression_guard_status="
+        f"{summary['submit_regression_guard']['status']}"
+    )
+    print(
+        "paperops_autonomous_pass_submit_regression_guard_blocker_count="
+        f"{summary['submit_regression_guard']['blocker_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_submit_regression_guard_fresh_ledger_collision_count="
+        f"{summary['submit_regression_guard']['fresh_submitted_ledger_collision_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_submit_regression_guard_duplicate_misclassified_count="
+        f"{summary['submit_regression_guard']['duplicate_misclassified_as_fresh_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_submit_regression_guard_source_stale_after_post_count="
+        f"{summary['submit_regression_guard']['source_stale_after_post_tolerance_count']}"
+    )
+    print(
         "paperops_autonomous_pass_submitted_paper_order_count="
         f"{summary['paper_runtime']['submitted_paper_order_count']}"
     )
@@ -107,6 +127,26 @@ def main() -> int:
     print(
         "paperops_autonomous_pass_optional_gaps="
         + ",".join(summary["optional_gaps"])
+    )
+    print(
+        "paperops_autonomous_pass_source_gap_visibility_status="
+        f"{summary['source_gap_visibility']['status']}"
+    )
+    print(
+        "paperops_autonomous_pass_source_gap_optional_count="
+        f"{summary['source_gap_visibility']['optional_gap_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_source_gap_optional_keys="
+        + ",".join(summary["source_gap_visibility"]["optional_gap_keys"])
+    )
+    print(
+        "paperops_autonomous_pass_source_gap_trade_blocking_count="
+        f"{summary['source_gap_visibility']['trade_blocking_source_gap_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_source_gap_silent_blocker_count="
+        f"{summary['source_gap_visibility']['silent_blocker_count']}"
     )
     print(
         "paperops_autonomous_pass_validation_error_count="

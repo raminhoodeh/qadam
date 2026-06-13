@@ -16,6 +16,7 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.paper_account import PaperAccountMirrorStore
+from orchestrator.paperops_close_to_ledger import build_paperops_close_to_ledger
 from orchestrator.release_contract import PAPER_ACCOUNT_SCOPE
 
 
@@ -69,6 +70,9 @@ RS6_PUBLIC_STATUS_FIELDS = {
     "paper_proof_ledger_uses_verified_lifecycle_only",
     "paper_proof_ledger_verified_record_count",
     "phase7_closed_proof_trade_count",
+    "paperops_close_to_ledger_status",
+    "paperops_close_to_ledger_blocker_count",
+    "paperops_close_to_ledger_postmortem_due_marker_created_count",
     "mirror_trade_counted_for_proof_count",
     "proof_ledger_status",
     "validation_error_count",
@@ -154,6 +158,7 @@ def _source_artifact_newer_than_status(
         runtime / "paper_positions.jsonl",
         runtime / "paper_closed_trades.jsonl",
         runtime / "paper_orders.jsonl",
+        runtime / "paperops_close_to_ledger.json",
     )
     for source_path in source_paths:
         try:
@@ -271,7 +276,8 @@ def build_paper_lifecycle_portfolio_postmortem(
         if latest is not None
         else "missing_snapshot"
     )
-    proof_verified_count = _int(phase7_lifecycle.get("closed_proof_trade_count"))
+    close_to_ledger = build_paperops_close_to_ledger(settings=settings)
+    proof_verified_count = _int(close_to_ledger.get("closed_proof_trade_count"))
     artifact = {
         "schema_version": PAPER_LIFECYCLE_PORTFOLIO_POSTMORTEM_SCHEMA_VERSION,
         "status": "ok",
@@ -318,6 +324,11 @@ def build_paper_lifecycle_portfolio_postmortem(
         "phase7_closed_proof_trade_count": proof_verified_count,
         "phase7_postmortem_status": phase7_postmortem.get("status", "missing"),
         "phase7_postmortem_due_count": _int(phase7_postmortem.get("postmortem_due_count")),
+        "paperops_close_to_ledger_status": close_to_ledger.get("status", "missing"),
+        "paperops_close_to_ledger_blocker_count": _int(close_to_ledger.get("blocker_count")),
+        "paperops_close_to_ledger_postmortem_due_marker_created_count": _int(
+            close_to_ledger.get("postmortem_due_marker_created_count")
+        ),
         "paperops_lifecycle_poller_status": paperops_lifecycle.get("status", "missing"),
         "paperops_lifecycle_readback_records": _int(
             paperops_lifecycle.get("lifecycle_readback_records")
@@ -328,6 +339,7 @@ def build_paper_lifecycle_portfolio_postmortem(
         "proof_ledger_status": "verified_lifecycle_only",
         "proof_ledger_policy": {
             "phase7_verified_lifecycle_required": True,
+            "paperops_close_to_ledger_required": True,
             "mirror_only_closed_trades_count_as_proof": False,
             "phase5_or_external_mirror_trades_count_as_phase7_proof": False,
             "proof_credit_allowed": False,

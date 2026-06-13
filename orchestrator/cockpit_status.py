@@ -75,6 +75,23 @@ from orchestrator.paper_authority_reconciliation import (
     validate_paper_authority_reconciliation,
 )
 from orchestrator.paperops_paper_exit_path import paperops_paper_exit_path_public_status
+from orchestrator.paperops_closed_trade_funnel import (
+    build_paperops_closed_trade_funnel,
+    validate_paperops_closed_trade_funnel,
+)
+from orchestrator.paperops_close_to_ledger import (
+    build_paperops_close_to_ledger,
+    validate_paperops_close_to_ledger,
+)
+from orchestrator.paperops_submit_regression_guard import (
+    paperops_submit_regression_guard_public_status,
+)
+from orchestrator.paperops_source_gap_visibility import (
+    paperops_source_gap_visibility_public_status,
+)
+from orchestrator.paperops_lifecycle_mirror_freshness import (
+    build_paperops_lifecycle_mirror_freshness,
+)
 from orchestrator.paperops_notification_review import (
     paperops_notification_review_public_status,
 )
@@ -1216,6 +1233,14 @@ PAPEROPS_30_DAY_OPERATIONS_PUBLIC_REQUIRED_FIELDS = {
     "live_capital_enabled",
     "paper_operational_cycle_command_count",
     "paper_operational_cycle_status",
+    "paperops_submit_regression_guard_blocker_count",
+    "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+    "paperops_submit_regression_guard_duplicate_submit_record_count",
+    "paperops_submit_regression_guard_fresh_eligible_submit_record_count",
+    "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+    "paperops_submit_regression_guard_source_stale_after_post_count",
+    "paperops_submit_regression_guard_status",
+    "paperops_submit_regression_guard_validation_error_count",
     "phase7_proof_credit_allowed",
     "public_safe",
     "qualified_setup_count",
@@ -5770,6 +5795,8 @@ def _diagnostics(payload: dict[str, Any]) -> dict[str, Any]:
         "paperops_guarded_paper_exit_enablement",
         "paperops_paper_exit_path",
         "paperops_notification_review",
+        "paperops_submit_regression_guard",
+        "paperops_source_gap_visibility",
         "paperops_30_day_operations",
         "paperops_opportunity_scan_cadence",
         "paperops_cockpit_notification_upgrade",
@@ -5910,7 +5937,21 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         {},
     )
     paperops_exit_path = payload.get("paperops_paper_exit_path", {})
+    paperops_closed_trade_funnel = payload.get("paperops_closed_trade_funnel", {})
+    paperops_lifecycle_mirror_freshness = payload.get(
+        "paperops_lifecycle_mirror_freshness",
+        {},
+    )
+    paperops_close_to_ledger = payload.get("paperops_close_to_ledger", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
+    paperops_submit_regression_guard = payload.get(
+        "paperops_submit_regression_guard",
+        {},
+    )
+    paperops_source_gap_visibility = payload.get(
+        "paperops_source_gap_visibility",
+        {},
+    )
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
     paperops_opportunity_scan = payload.get("paperops_opportunity_scan_cadence", {})
     paperops_cockpit_notification_upgrade = payload.get(
@@ -6023,8 +6064,14 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
         if operator_high_count or postmortem_due_count
         else ("pending" if blocked_trades or missing_credentials else "online")
     )
+    closed_trade_funnel_blocker = (
+        paperops_closed_trade_funnel.get("next_required_action")
+        if paperops_closed_trade_funnel.get("blocked_stage")
+        else None
+    )
     paperops_blocker = (
-        paperops_active_automation.get("why_not_trading_now")
+        closed_trade_funnel_blocker
+        or paperops_active_automation.get("why_not_trading_now")
         or paper_live_certification.get(
             "paper_live_unattended_execution_delegation_reason"
         )
@@ -6281,6 +6328,42 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "optional_missing_credential_source_count",
                 missing_credentials,
             ),
+            "source_gap_visibility_status": paperops_source_gap_visibility.get(
+                "status",
+                "not_run",
+            ),
+            "source_gap_policy_status": paperops_source_gap_visibility.get(
+                "source_gap_policy_status",
+                "not_run",
+            ),
+            "optional_source_gap_count": paperops_source_gap_visibility.get(
+                "optional_gap_count",
+                0,
+            ),
+            "optional_source_gap_keys": paperops_source_gap_visibility.get(
+                "optional_gap_keys",
+                [],
+            ),
+            "optional_source_gap_records": paperops_source_gap_visibility.get(
+                "optional_gap_records",
+                [],
+            ),
+            "required_source_gap_count": paperops_source_gap_visibility.get(
+                "required_gap_count",
+                0,
+            ),
+            "trade_blocking_source_gap_count": paperops_source_gap_visibility.get(
+                "trade_blocking_source_gap_count",
+                0,
+            ),
+            "source_gap_silent_blocker_count": paperops_source_gap_visibility.get(
+                "silent_blocker_count",
+                0,
+            ),
+            "source_gap_blocker_count": paperops_source_gap_visibility.get(
+                "blocker_count",
+                0,
+            ),
             "durable_replay_status": durable_ingestion.get("replay_status", "unknown"),
             "durable_replayed_source_count": durable_ingestion.get("replayed_source_count", 0),
             "durable_expected_source_count": durable_ingestion.get("expected_source_count", 0),
@@ -6465,12 +6548,104 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "paper_position_close_called_count",
                 0,
             ),
+            "paperops_paper_exit_path_suppressed_stale_not_found_count": (
+                paperops_exit_path.get(
+                    "suppressed_stale_not_found_exit_candidate_count",
+                    0,
+                )
+            ),
+            "paperops_paper_exit_path_suppressed_pending_close_request_count": (
+                paperops_exit_path.get(
+                    "suppressed_pending_close_request_exit_candidate_count",
+                    0,
+                )
+            ),
+            "paperops_lifecycle_mirror_freshness": (
+                paperops_lifecycle_mirror_freshness.get("status", "not_run")
+            ),
+            "paperops_lifecycle_mirror_fresh_after_latest_close": (
+                paperops_lifecycle_mirror_freshness.get(
+                    "fresh_after_latest_close",
+                    True,
+                )
+            ),
+            "paperops_close_to_ledger": paperops_close_to_ledger.get(
+                "status",
+                "not_run",
+            ),
+            "paperops_close_to_ledger_closed_proof_trade_count": (
+                paperops_close_to_ledger.get("closed_proof_trade_count", 0)
+            ),
+            "paperops_close_to_ledger_postmortem_due_marker_created_count": (
+                paperops_close_to_ledger.get("postmortem_due_marker_created_count", 0)
+            ),
+            "paperops_closed_trade_funnel": paperops_closed_trade_funnel.get(
+                "status",
+                "not_run",
+            ),
+            "paperops_closed_trade_funnel_blocked_stage": (
+                paperops_closed_trade_funnel.get("blocked_stage")
+            ),
+            "paperops_closed_trade_funnel_close_receipt_count": (
+                paperops_closed_trade_funnel.get("counts", {}).get(
+                    "paper_close_receipt_count",
+                    0,
+                )
+            ),
+            "paperops_closed_trade_funnel_closed_proof_trade_count": (
+                paperops_closed_trade_funnel.get("counts", {}).get(
+                    "closed_proof_trade_count",
+                    0,
+                )
+            ),
             "paperops_notification_review": paperops_notification_review.get(
                 "status",
                 "not_run",
             ),
             "paperops_notification_review_live_send_allowed_count": (
                 paperops_notification_review.get("live_send_allowed_count", 0)
+            ),
+            "paperops_submit_regression_guard": (
+                paperops_submit_regression_guard.get("status", "not_run")
+            ),
+            "paperops_submit_regression_guard_source_paperops2": (
+                paperops_submit_regression_guard.get(
+                    "source_paperops2_status",
+                    "not_run",
+                )
+            ),
+            "paperops_submit_regression_guard_fresh_submit_count": (
+                paperops_submit_regression_guard.get(
+                    "fresh_eligible_submit_record_count",
+                    0,
+                )
+            ),
+            "paperops_submit_regression_guard_duplicate_submit_count": (
+                paperops_submit_regression_guard.get(
+                    "duplicate_submit_record_count",
+                    0,
+                )
+            ),
+            "paperops_submit_regression_guard_blocker_count": (
+                paperops_submit_regression_guard.get("blocker_count", 0)
+            ),
+            "paperops_submit_regression_guard_fresh_ledger_collision_count": (
+                paperops_submit_regression_guard.get(
+                    "fresh_submitted_ledger_collision_count",
+                    0,
+                )
+            ),
+            "paperops_submit_regression_guard_duplicate_misclassified_count": (
+                paperops_submit_regression_guard.get(
+                    "duplicate_misclassified_as_fresh_count",
+                    0,
+                )
+            ),
+            "paperops_submit_regression_guard_source_stale_after_post_count": (
+                paperops_submit_regression_guard.get(
+                    "source_stale_after_post_tolerance_count",
+                    0,
+                )
             ),
             "paperops_30_day_operations": paperops_30_day_operations.get(
                 "status",
@@ -8193,7 +8368,27 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             paperops_guarded_paper_exit_enablement_public_status(settings)
         ),
         "paperops_paper_exit_path": paperops_paper_exit_path_public_status(settings),
+        "paperops_lifecycle_mirror_freshness": (
+            build_paperops_lifecycle_mirror_freshness(
+                settings=settings,
+                generated_at=generated_at,
+            )
+        ),
+        "paperops_close_to_ledger": build_paperops_close_to_ledger(
+            settings=settings,
+            generated_at=generated_at,
+        ),
+        "paperops_closed_trade_funnel": build_paperops_closed_trade_funnel(
+            settings,
+            generated_at=generated_at,
+        ),
         "paperops_notification_review": paperops_notification_review_public_status(settings),
+        "paperops_submit_regression_guard": (
+            paperops_submit_regression_guard_public_status(settings)
+        ),
+        "paperops_source_gap_visibility": (
+            paperops_source_gap_visibility_public_status(settings)
+        ),
         "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
         "paperops_opportunity_scan_cadence": (
             paperops_opportunity_scan_cadence_public_status(settings)
@@ -8337,6 +8532,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_guarded_paper_exit_enablement",
         "paperops_paper_exit_path",
         "paperops_notification_review",
+        "paperops_submit_regression_guard",
+        "paperops_source_gap_visibility",
         "paperops_30_day_operations",
         "paperops_opportunity_scan_cadence",
         "paperops_cockpit_notification_upgrade",
@@ -8829,9 +9026,11 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "not_run",
         "disabled_pending_enablement",
         "ready_no_exit_candidate",
+        "ready_pending_lifecycle_mirror_refresh",
         "ready_pending_explicit_execute",
         "paper_exit_close_recorded",
         "paper_exit_close_failed_sanitized",
+        "blocked_paper_position_preflight_readback_failed",
         "blocked_not_paper_mode",
         "blocked_live_capital_enabled",
         "blocked_non_paper_endpoint",
@@ -8863,6 +9062,42 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     exit_boundary = paperops_exit.get("boundary", "")
     if "guarded Alpaca paper-only exit path" not in exit_boundary:
         raise ValueError("PaperOps exit path public boundary is weak")
+    lifecycle_mirror_freshness = payload["paperops_lifecycle_mirror_freshness"]
+    if lifecycle_mirror_freshness.get("public_safe") is not True:
+        raise ValueError("PaperOps lifecycle/mirror freshness must be public-safe")
+    if lifecycle_mirror_freshness.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps lifecycle/mirror freshness must keep live capital disabled")
+    if int(lifecycle_mirror_freshness.get("live_endpoint_called_count", 0) or 0) != 0:
+        raise ValueError("PaperOps lifecycle/mirror freshness must not call live endpoints")
+    if int(lifecycle_mirror_freshness.get("broker_post_called_count", 0) or 0) != 0:
+        raise ValueError("PaperOps lifecycle/mirror freshness must not call broker POST routes")
+    if lifecycle_mirror_freshness.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps lifecycle/mirror freshness must not grant proof credit")
+    close_to_ledger = payload["paperops_close_to_ledger"]
+    close_to_ledger_errors = validate_paperops_close_to_ledger(close_to_ledger)
+    if close_to_ledger_errors:
+        raise ValueError(
+            "PaperOps close-to-ledger invalid: " + ",".join(close_to_ledger_errors)
+        )
+    if close_to_ledger.get("public_safe") is not True:
+        raise ValueError("PaperOps close-to-ledger must be public-safe")
+    if close_to_ledger.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps close-to-ledger must keep live capital disabled")
+    if int(close_to_ledger.get("live_endpoint_called_count", 0) or 0) != 0:
+        raise ValueError("PaperOps close-to-ledger must not call live endpoints")
+    if int(close_to_ledger.get("broker_post_called_count", 0) or 0) != 0:
+        raise ValueError("PaperOps close-to-ledger must not call broker POST routes")
+    if close_to_ledger.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps close-to-ledger must not grant Phase 7 proof credit")
+    closed_trade_funnel = payload["paperops_closed_trade_funnel"]
+    funnel_errors = validate_paperops_closed_trade_funnel(closed_trade_funnel)
+    if funnel_errors:
+        raise ValueError("PaperOps closed trade funnel invalid: " + ",".join(funnel_errors))
+    if closed_trade_funnel.get("boundary") != (
+        "Read-only closed paper trade funnel diagnostic. It cannot submit, close, "
+        "cancel, resize, approve, or grant paper proof ledger credit."
+    ):
+        raise ValueError("PaperOps closed trade funnel public boundary is weak")
     paperops_notification = payload["paperops_notification_review"]
     if paperops_notification.get("status") not in {
         "not_run",
@@ -8914,6 +9149,87 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         or "separate explicit send-test approval" not in notification_boundary
     ):
         raise ValueError("PaperOps notification review boundary is weak")
+    submit_regression_guard = payload["paperops_submit_regression_guard"]
+    if submit_regression_guard.get("status") not in {
+        "not_run",
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+        "blocked_submit_regression",
+        "invalid",
+    }:
+        raise ValueError("PaperOps submit regression guard public status is invalid")
+    if submit_regression_guard.get("public_safe") is not True:
+        raise ValueError("PaperOps submit regression guard must be public-safe")
+    if submit_regression_guard.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps submit regression guard must keep live capital disabled")
+    if submit_regression_guard.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps submit regression guard must not grant proof credit")
+    for key in (
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "broker_write_allowed_count",
+        "source_stale_after_post_tolerance_count",
+        "fresh_submitted_ledger_collision_count",
+        "duplicate_misclassified_as_fresh_count",
+    ):
+        if int(submit_regression_guard.get(key, 0) or 0) != 0:
+            raise ValueError(f"PaperOps submit regression guard count nonzero: {key}")
+    if int(submit_regression_guard.get("blocker_count", 0) or 0) != 0:
+        raise ValueError("PaperOps submit regression guard has blockers")
+    for key in (
+        "secret_value_exposed",
+        "raw_payload_exposed",
+        "raw_broker_payload_exposed",
+        "broker_order_identifier_exposed",
+    ):
+        if submit_regression_guard.get(key) is not False:
+            raise ValueError(f"PaperOps submit regression guard must keep {key}=False")
+    guard_boundary = str(submit_regression_guard.get("boundary") or "")
+    for phrase in (
+        "submit-side regression guard",
+        "cannot submit",
+        "cannot call live endpoints",
+        "cannot enable live capital",
+        "cannot grant proof credit",
+    ):
+        if phrase not in guard_boundary:
+            raise ValueError("PaperOps submit regression guard boundary is weak")
+    source_gap_visibility = payload["paperops_source_gap_visibility"]
+    if source_gap_visibility.get("status") not in {
+        "explicit_optional_source_gaps",
+        "all_optional_sources_configured",
+    }:
+        raise ValueError("PaperOps source-gap visibility status is invalid")
+    if int(source_gap_visibility.get("validation_error_count", 0) or 0) != 0:
+        raise ValueError("PaperOps source-gap visibility has validation errors")
+    if source_gap_visibility.get("public_safe") is not True:
+        raise ValueError("PaperOps source-gap visibility must be public-safe")
+    if source_gap_visibility.get("source_gap_policy_status") != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        raise ValueError("PaperOps source-gap policy status is invalid")
+    if int(source_gap_visibility.get("required_gap_count", 0) or 0) != 0:
+        raise ValueError("PaperOps source-gap visibility has required source gaps")
+    if int(source_gap_visibility.get("trade_blocking_source_gap_count", 0) or 0) != 0:
+        raise ValueError("PaperOps source-gap visibility has trade-blocking gaps")
+    if int(source_gap_visibility.get("source_quorum_blocking_gap_count", 0) or 0) != 0:
+        raise ValueError("PaperOps source-gap visibility has source-quorum blockers")
+    if int(source_gap_visibility.get("silent_blocker_count", 0) or 0) != 0:
+        raise ValueError("PaperOps source-gap visibility has silent blockers")
+    if int(source_gap_visibility.get("blocker_count", 0) or 0) != 0:
+        raise ValueError("PaperOps source-gap visibility has blockers")
+    if source_gap_visibility.get("live_capital_enabled") is not False:
+        raise ValueError("PaperOps source-gap visibility must keep live capital disabled")
+    if source_gap_visibility.get("phase7_proof_credit_allowed") is not False:
+        raise ValueError("PaperOps source-gap visibility must not grant proof credit")
+    for key in (
+        "broker_post_called_count",
+        "broker_write_allowed_count",
+        "live_endpoint_called_count",
+    ):
+        if int(source_gap_visibility.get(key, 0) or 0) != 0:
+            raise ValueError(f"PaperOps source-gap visibility unsafe count nonzero: {key}")
     paperops_30_day = payload["paperops_30_day_operations"]
     missing_paperops_30_day = sorted(
         PAPEROPS_30_DAY_OPERATIONS_PUBLIC_REQUIRED_FIELDS - set(paperops_30_day)

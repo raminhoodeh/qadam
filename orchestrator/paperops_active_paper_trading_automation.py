@@ -32,6 +32,10 @@ from orchestrator.paperops_paper_lifecycle_poller import (
 from orchestrator.paperops_paper_lifecycle_polling_enablement import (
     validate_paperops_paper_lifecycle_polling_enablement,
 )
+from orchestrator.paperops_submit_regression_guard import (
+    build_paperops_submit_regression_guard,
+    validate_paperops_submit_regression_guard,
+)
 
 
 PAPEROPS_ACTIVE_AUTOMATION_SCHEMA_VERSION = 1
@@ -164,6 +168,12 @@ PAPEROPS_ACTIVE_AUTOMATION_PUBLIC_FIELDS: tuple[str, ...] = (
     "paperops2_duplicate_submit_record_count",
     "paperops2_duplicate_submit_interpretation",
     "paperops2_idempotency_ledger_active",
+    "paperops_submit_regression_guard_status",
+    "paperops_submit_regression_guard_blocker_count",
+    "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+    "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+    "paperops_submit_regression_guard_source_stale_after_post_count",
+    "paperops_submit_regression_guard_validation_error_count",
     "first_week_paper_trade_mandate_status",
     "first_week_paper_trade_mandate_active",
     "first_week_paper_trade_mandate_day_number",
@@ -365,6 +375,10 @@ def _automation_status(automation: dict[str, Any], settings: Settings) -> dict[s
 
 def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
     runtime = _runtime_dir(settings)
+    paperops2 = build_paperops_alpaca_paper_post(
+        settings=settings,
+        execute_post=False,
+    )
     return {
         "readiness": _read_json(runtime / "paper_operational_readiness.json"),
         "paper_live_qctrl_product_access": _read_json(
@@ -373,9 +387,10 @@ def _source_snapshot(settings: Settings) -> dict[str, dict[str, Any]]:
         "qctrl_consultation": _read_json(
             runtime / "paperops_qctrl_paper_consultation.json"
         ),
-        "paperops2": build_paperops_alpaca_paper_post(
+        "paperops2": paperops2,
+        "submit_regression_guard": build_paperops_submit_regression_guard(
             settings=settings,
-            execute_post=False,
+            paperops2=paperops2,
         ),
         "paperops3": _read_json(runtime / "paperops_paper_lifecycle_poller.json"),
         "paperops4": _read_json(runtime / "paperops_paper_exit_path.json"),
@@ -499,6 +514,12 @@ def _exit_hold_reason(
         and _int(paperops4.get("paper_position_close_failed_count")) >= 1
     ):
         return "paper_exit_close_failed_sanitized_waiting_retry_or_lifecycle_refresh"
+    if paperops4.get("status") == "blocked_paper_position_preflight_readback_failed":
+        return "paper_position_preflight_readback_failed_waiting_lifecycle_refresh"
+    if paperops4.get("status") == "ready_pending_lifecycle_mirror_refresh":
+        return "paper_lifecycle_mirror_refresh_required_after_close"
+    if _int(paperops4.get("suppressed_pending_close_request_exit_candidate_count")) >= 1:
+        return "paper_exit_close_request_pending_waiting_lifecycle_refresh"
     if (
         paperops4.get("status") == "paper_exit_close_recorded"
         and _int(paperops4.get("paper_position_close_called_count")) >= 1
@@ -650,12 +671,12 @@ def _status(
         return "blocked_active_automation_safety_or_binding"
     if qctrl_hold:
         return "active_automation_enabled_qctrl_hold"
-    if exit_allowed:
-        return "active_automation_ready_to_exit"
-    if poll_allowed:
-        return "active_automation_ready_to_poll"
     if submit_allowed:
         return "active_automation_ready_to_submit"
+    if poll_allowed:
+        return "active_automation_ready_to_poll"
+    if exit_allowed:
+        return "active_automation_ready_to_exit"
     return "active_automation_enabled_idle"
 
 
@@ -696,6 +717,7 @@ def build_paperops_active_paper_trading_automation(
     automation = _automation_status(_automation_config(), settings)
     readiness = snapshot["readiness"]
     paperops2 = snapshot["paperops2"]
+    submit_regression_guard = snapshot["submit_regression_guard"]
     paperops3 = snapshot["paperops3"]
     paperops4 = snapshot["paperops4"]
     pt6 = snapshot["pt6"]
@@ -706,7 +728,25 @@ def build_paperops_active_paper_trading_automation(
     qctrl_hold = settings.quantum_paper_parity_required and not qctrl_ready
     pt6_ready = _pt6_ready(pt6)
     pt7_ready = _pt7_ready(pt7)
-    paperops2_ready = _paperops2_ready(paperops2)
+    submit_regression_guard_errors = validate_paperops_submit_regression_guard(
+        submit_regression_guard
+    )
+    submit_regression_guard_ready = (
+        submit_regression_guard.get("status") == "ready_fresh_submit_consistent"
+        and _int(submit_regression_guard.get("blocker_count")) == 0
+        and not submit_regression_guard_errors
+    )
+    submit_regression_guard_safe_idle = (
+        submit_regression_guard.get("status")
+        in {
+            "healthy_idle_idempotency_guarded",
+            "healthy_idle_no_fresh_submit",
+            "ready_fresh_submit_consistent",
+        }
+        and _int(submit_regression_guard.get("blocker_count")) == 0
+        and not submit_regression_guard_errors
+    )
+    paperops2_ready = _paperops2_ready(paperops2) and submit_regression_guard_ready
     paperops3_ready = _paperops3_poll_ready(paperops3, pt6_ready)
     paperops4_ready = _paperops4_exit_ready(paperops4, pt7_ready)
     first_week_mandate_active = (
@@ -767,6 +807,8 @@ def build_paperops_active_paper_trading_automation(
         submit_failures.append("qctrl_paper_consultation_hold")
     if not paperops2_ready:
         submit_failures.append("paperops2_submit_gate_not_ready")
+    if not submit_regression_guard_safe_idle:
+        submit_failures.append("paperops_submit_regression_guard_not_ready")
     paper_submit_allowed = not submit_failures
     paper_poll_allowed = not blockers and paperops3_ready
     paper_exit_allowed = not blockers and paperops4_ready
@@ -915,6 +957,25 @@ def build_paperops_active_paper_trading_automation(
         "paperops2_duplicate_submit_interpretation": duplicate_submit_interpretation,
         "paperops2_idempotency_ledger_active": (
             paperops2.get("idempotency_ledger_active") is True
+        ),
+        "paperops_submit_regression_guard_status": submit_regression_guard.get(
+            "status",
+            "missing",
+        ),
+        "paperops_submit_regression_guard_blocker_count": _int(
+            submit_regression_guard.get("blocker_count")
+        ),
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count": _int(
+            submit_regression_guard.get("fresh_submitted_ledger_collision_count")
+        ),
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count": _int(
+            submit_regression_guard.get("duplicate_misclassified_as_fresh_count")
+        ),
+        "paperops_submit_regression_guard_source_stale_after_post_count": _int(
+            submit_regression_guard.get("source_stale_after_post_tolerance_count")
+        ),
+        "paperops_submit_regression_guard_validation_error_count": len(
+            submit_regression_guard_errors
         ),
         "first_week_paper_trade_mandate_status": paperops2.get(
             "source_first_week_mandate_status",
@@ -1133,6 +1194,10 @@ def validate_paperops_active_paper_trading_automation(
             errors.append("paperops_active_automation_unattended_without_prompt")
         if artifact.get("paperops2_idempotency_ledger_active") is not True:
             errors.append("paperops_active_automation_unattended_without_idempotency")
+        if _int(artifact.get("paperops_submit_regression_guard_blocker_count")) != 0:
+            errors.append("paperops_active_automation_unattended_with_submit_regression")
+        if _int(artifact.get("paperops_submit_regression_guard_validation_error_count")) != 0:
+            errors.append("paperops_active_automation_unattended_with_submit_guard_invalid")
     if artifact.get("active_paper_trading_automation_enabled") is True:
         if artifact.get("status") not in PAPEROPS_ACTIVE_AUTOMATION_READY_STATUSES:
             errors.append("paperops_active_automation_status_invalid")
@@ -1143,12 +1208,33 @@ def validate_paperops_active_paper_trading_automation(
             errors.append("paperops_active_automation_submit_allowed_under_qctrl_hold")
         if artifact.get("paperops2_status") != "ready_pending_explicit_execute":
             errors.append("paperops_active_automation_submit_without_paperops2_ready")
+        if artifact.get("paperops_submit_regression_guard_status") != (
+            "ready_fresh_submit_consistent"
+        ):
+            errors.append("paperops_active_automation_submit_without_submit_guard_ready")
         if _int(artifact.get("paperops2_eligible_submit_record_count")) < 1:
             errors.append("paperops_active_automation_submit_without_eligible_order")
         if _int(artifact.get("paperops2_fresh_eligible_submit_record_count")) < 1:
             errors.append("paperops_active_automation_submit_without_fresh_order")
         if artifact.get("why_not_trading_now") != "fresh_guarded_paper_submit_ready":
             errors.append("paperops_active_automation_submit_why_not_mismatch")
+    if artifact.get("paperops_submit_regression_guard_status") not in {
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+    }:
+        errors.append("paperops_active_automation_submit_guard_status_invalid")
+    if _int(artifact.get("paperops_submit_regression_guard_blocker_count")) != 0:
+        errors.append("paperops_active_automation_submit_guard_blocked")
+    if _int(artifact.get("paperops_submit_regression_guard_validation_error_count")) != 0:
+        errors.append("paperops_active_automation_submit_guard_validation_errors")
+    for key in (
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+        "paperops_submit_regression_guard_source_stale_after_post_count",
+    ):
+        if _int(artifact.get(key)) != 0:
+            errors.append(f"paperops_active_automation_submit_guard_counter_nonzero:{key}")
     if artifact.get("rs5_guarded_paper_autonomy_status") != (
         "guarded_paper_autonomy_contract_active"
     ):

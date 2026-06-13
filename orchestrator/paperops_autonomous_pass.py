@@ -11,6 +11,22 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
+from orchestrator.paperops_closed_trade_funnel import (
+    build_paperops_closed_trade_funnel,
+    validate_paperops_closed_trade_funnel,
+)
+from orchestrator.paperops_close_to_ledger import (
+    build_paperops_close_to_ledger,
+    validate_paperops_close_to_ledger,
+)
+from orchestrator.paperops_submit_regression_guard import (
+    build_paperops_submit_regression_guard,
+    validate_paperops_submit_regression_guard,
+)
+from orchestrator.paperops_source_gap_visibility import (
+    build_paperops_source_gap_visibility,
+    validate_paperops_source_gap_visibility,
+)
 
 
 PAPEROPS_AUTONOMOUS_PASS_SCHEMA_VERSION = 1
@@ -23,6 +39,7 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         ("scripts/check_paperops_first_week_paper_trade_mandate.py",),
     ),
     ("paper_ops_cycle", ("scripts/check_paper_operational_cycle.py",)),
+    ("submit_regression_guard", ("scripts/check_paperops_submit_regression_guard.py",)),
     ("active_automation_check", ("scripts/check_paperops_active_paper_trading_automation.py",)),
     (
         "active_automation_execute",
@@ -30,7 +47,13 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
     ("cockpit_notification", ("scripts/check_paperops_cockpit_notification_upgrade.py",)),
     ("paperops_30_day_operations", ("scripts/check_paperops_30_day_operations.py",)),
+    ("cockpit_status_pre_certification", ("scripts/check_cockpit_status.py",)),
+    (
+        "rs10_final_paper_autonomy",
+        ("scripts/check_rs10_final_paper_autonomy_certification.py",),
+    ),
     ("paper_live_certification", ("scripts/check_paper_live_certification.py",)),
+    ("source_gap_visibility", ("scripts/check_paperops_source_gap_visibility.py",)),
     ("paper_closeout", ("scripts/check_qadam_paper_closeout.py",)),
     ("cockpit_status", ("scripts/check_cockpit_status.py",)),
 )
@@ -313,13 +336,27 @@ def build_paperops_autonomous_pass_summary(
     )
     blockers = _unique([*required_gaps, *cycle_blockers, *operations_blockers])
     optional_gaps = _unique(
-        _csv(
-            _value(
-                command_results,
-                (("paper_closeout", "qadam_paper_closeout_optional_gaps"),),
-                "",
+        [
+            *_csv(
+                _value(
+                    command_results,
+                    (("paper_closeout", "qadam_paper_closeout_optional_gaps"),),
+                    "",
+                )
+            ),
+            *_csv(
+                _value(
+                    command_results,
+                    (
+                        (
+                            "source_gap_visibility",
+                            "paperops_source_gap_visibility_optional_gap_keys",
+                        ),
+                    ),
+                    "",
+                )
             )
-        )
+        ]
     )
     fresh_submit_count = _int(
         _value(
@@ -394,6 +431,8 @@ def build_paperops_autonomous_pass_summary(
         idempotency_guard_message = (
             "idempotency guard active: existing paper submit already recorded"
         )
+    submit_regression_guard = build_paperops_submit_regression_guard()
+    source_gap_visibility = build_paperops_source_gap_visibility()
 
     summary = {
         "schema_version": PAPEROPS_AUTONOMOUS_PASS_SCHEMA_VERSION,
@@ -843,11 +882,25 @@ def build_paperops_autonomous_pass_summary(
         "optional_coverage_gaps": [
             gap for gap in optional_gaps if gap in OPTIONAL_COVERAGE_GAP_KEYS
         ],
+        "source_gap_visibility": source_gap_visibility,
+        "submit_regression_guard": submit_regression_guard,
         "command_results": command_results,
     }
     summary["paper_runtime"]["submitted_paper_order_count"] = max(
         _int(summary["paper_runtime"].get("submitted_paper_order_count")),
         _int(summary["first_week_paper_trade_mandate"].get("daily_submitted_count")),
+    )
+    summary["close_to_ledger"] = build_paperops_close_to_ledger(
+        generated_at=generated,
+    )
+    summary["paper_proof_ledger"]["closed_proof_trade_count"] = max(
+        _int(summary["paper_proof_ledger"].get("closed_proof_trade_count")),
+        _int(summary["close_to_ledger"].get("closed_proof_trade_count")),
+    )
+    summary["closed_trade_funnel"] = build_paperops_closed_trade_funnel(
+        generated_at=generated,
+        paper_runtime=summary["paper_runtime"],
+        paper_proof_ledger=summary["paper_proof_ledger"],
     )
     summary["status"] = _status(command_results, blockers)
     summary["automation_report_lines"] = [
@@ -874,6 +927,25 @@ def build_paperops_autonomous_pass_summary(
             "paper orders submitted today at "
             f"USD {summary['first_week_paper_trade_mandate']['minimum_notional_usd']:.0f} "
             "minimum notional."
+        ),
+        (
+            "Closed paper trade funnel is blocked at "
+            f"{summary['closed_trade_funnel']['blocked_stage'] or 'none'}: "
+            f"{summary['closed_trade_funnel']['next_required_action']}"
+        ),
+        (
+            "Submit-side guard is "
+            f"{summary['submit_regression_guard']['status']} with "
+            f"{summary['submit_regression_guard']['fresh_eligible_submit_record_count']} "
+            "fresh eligible submits and "
+            f"{summary['submit_regression_guard']['duplicate_submit_record_count']} "
+            "idempotency-held duplicates."
+        ),
+        (
+            "Source gaps are explicit: "
+            f"{summary['source_gap_visibility']['optional_gap_count']} optional, "
+            f"{summary['source_gap_visibility']['trade_blocking_source_gap_count']} "
+            "trade-blocking."
         ),
     ]
     if _int(summary["paper_runtime"].get("open_order_count")):
@@ -918,6 +990,72 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         errors.append("paperops_autonomous_pass_optional_gap_promoted_to_blocker")
     if not set(summary.get("optional_coverage_gaps", []) or []).issubset(optional_gaps):
         errors.append("paperops_autonomous_pass_optional_coverage_gap_mismatch")
+    source_gap_visibility = summary.get("source_gap_visibility")
+    if not isinstance(source_gap_visibility, dict):
+        errors.append("paperops_autonomous_pass_source_gap_visibility_missing")
+    else:
+        for error in validate_paperops_source_gap_visibility(source_gap_visibility):
+            errors.append(f"paperops_autonomous_pass_source_gap_visibility:{error}")
+        source_optional = set(source_gap_visibility.get("optional_gap_keys", []) or [])
+        if not source_optional.issubset(optional_gaps):
+            errors.append("paperops_autonomous_pass_source_gap_optional_missing")
+        if blockers & source_optional:
+            errors.append("paperops_autonomous_pass_source_gap_promoted_to_blocker")
+        if _int(source_gap_visibility.get("required_gap_count")) != 0:
+            errors.append("paperops_autonomous_pass_source_gap_required_nonzero")
+        if _int(source_gap_visibility.get("trade_blocking_source_gap_count")) != 0:
+            errors.append("paperops_autonomous_pass_source_gap_trade_blocking")
+        if _int(source_gap_visibility.get("silent_blocker_count")) != 0:
+            errors.append("paperops_autonomous_pass_source_gap_silent_blocker")
+        if _int(source_gap_visibility.get("blocker_count")) != 0:
+            errors.append("paperops_autonomous_pass_source_gap_blocker_nonzero")
+    funnel = summary.get("closed_trade_funnel")
+    if not isinstance(funnel, dict):
+        errors.append("paperops_autonomous_pass_closed_trade_funnel_missing")
+    else:
+        for error in validate_paperops_closed_trade_funnel(funnel):
+            errors.append(f"paperops_autonomous_pass_closed_trade_funnel:{error}")
+    close_to_ledger = summary.get("close_to_ledger")
+    if not isinstance(close_to_ledger, dict):
+        errors.append("paperops_autonomous_pass_close_to_ledger_missing")
+    else:
+        for error in validate_paperops_close_to_ledger(close_to_ledger):
+            errors.append(f"paperops_autonomous_pass_close_to_ledger:{error}")
+    submit_regression_guard = summary.get("submit_regression_guard")
+    if not isinstance(submit_regression_guard, dict):
+        errors.append("paperops_autonomous_pass_submit_regression_guard_missing")
+    else:
+        for error in validate_paperops_submit_regression_guard(submit_regression_guard):
+            errors.append(f"paperops_autonomous_pass_submit_regression_guard:{error}")
+        if submit_regression_guard.get("status") not in {
+            "healthy_idle_idempotency_guarded",
+            "healthy_idle_no_fresh_submit",
+            "ready_fresh_submit_consistent",
+        }:
+            errors.append("paperops_autonomous_pass_submit_regression_guard_not_ready")
+        if _int(submit_regression_guard.get("blocker_count")) != 0:
+            errors.append("paperops_autonomous_pass_submit_regression_guard_blocked")
+        for key in (
+            "source_stale_after_post_tolerance_count",
+            "fresh_submitted_ledger_collision_count",
+            "duplicate_misclassified_as_fresh_count",
+            "live_endpoint_called_count",
+            "broker_post_called_count",
+            "broker_write_allowed_count",
+        ):
+            if _int(submit_regression_guard.get(key)) != 0:
+                errors.append(
+                    f"paperops_autonomous_pass_submit_regression_counter_nonzero:{key}"
+                )
+        paper_runtime = summary.get("paper_runtime", {})
+        if _int(
+            submit_regression_guard.get("fresh_eligible_submit_record_count")
+        ) != _int(paper_runtime.get("fresh_eligible_submit_count")):
+            errors.append("paperops_autonomous_pass_submit_regression_fresh_mismatch")
+        if _int(
+            submit_regression_guard.get("duplicate_submit_record_count")
+        ) != _int(paper_runtime.get("duplicate_submit_count")):
+            errors.append("paperops_autonomous_pass_submit_regression_duplicate_mismatch")
     first_week = summary.get("first_week_paper_trade_mandate", {})
     if first_week.get("active") is True:
         if _int(first_week.get("daily_target_trade_count")) != 3:

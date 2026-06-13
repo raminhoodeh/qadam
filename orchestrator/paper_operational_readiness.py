@@ -645,6 +645,7 @@ def _capability_records(settings: Settings, snapshot: dict[str, dict[str, Any]])
         and paper_exit_path.get("status")
         in {
             "ready_no_exit_candidate",
+            "ready_pending_lifecycle_mirror_refresh",
             "ready_pending_explicit_execute",
             "paper_exit_close_recorded",
         }

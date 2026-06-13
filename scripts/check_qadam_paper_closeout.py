@@ -23,28 +23,16 @@ from orchestrator.paperops_active_paper_trading_automation import (  # noqa: E40
     build_paperops_active_paper_trading_automation,
     validate_paperops_active_paper_trading_automation,
 )
+from orchestrator.paperops_source_gap_visibility import (  # noqa: E402
+    build_paperops_source_gap_visibility,
+    validate_paperops_source_gap_visibility,
+)
 from orchestrator.quantum import (  # noqa: E402
     qctrl_fire_opal_ibm_readiness,
     validate_qctrl_fire_opal_ibm_readiness,
 )
 from orchestrator.secrets import secret_status  # noqa: E402
 from orchestrator.system_state import module_map  # noqa: E402
-
-
-OPTIONAL_COVERAGE_CREDENTIAL_GROUPS: tuple[
-    tuple[str, tuple[tuple[str, ...], ...]]
-] = (
-    ("twitter_x_bearer_token_missing", (("X_BEARER_TOKEN",),)),
-    ("reddit_credentials_missing", (("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),)),
-    (
-        "ais_maritime_credential_missing",
-        (("AISSTREAM_API_KEY",), ("SPIRE_API_KEY",), ("MARINETRAFFIC_API_KEY",)),
-    ),
-    ("aviationstack_api_key_missing", (("AVIATIONSTACK_API_KEY",),)),
-    ("un_comtrade_api_key_missing", (("COMTRADE_API_KEY",),)),
-    ("kalshi_credentials_missing", (("KALSHI_API_KEY", "KALSHI_API_SECRET"),)),
-    ("stock_act_capitol_trades_api_key_missing", (("CAPITOL_TRADES_API_KEY",),)),
-)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -75,16 +63,6 @@ def _module_status(modules: list[dict[str, str]], key: str) -> str:
     return "missing"
 
 
-def _any_secret_group_configured(
-    settings: Settings,
-    groups: tuple[tuple[str, ...], ...],
-) -> bool:
-    return any(
-        all(secret_status(name, settings).configured is True for name in group)
-        for group in groups
-    )
-
-
 def main() -> int:
     args = _parse_args()
     settings = Settings.from_env()
@@ -97,6 +75,8 @@ def main() -> int:
     qctrl_access = _read_json(runtime / "paper_live_qctrl_product_access.json")
     active_runner = build_paperops_active_paper_trading_automation(settings=settings)
     active_runner_errors = validate_paperops_active_paper_trading_automation(active_runner)
+    source_gaps = build_paperops_source_gap_visibility(settings=settings)
+    source_gap_errors = validate_paperops_source_gap_visibility(source_gaps)
     fire_opal = qctrl_fire_opal_ibm_readiness(settings=settings)
     validate_qctrl_fire_opal_ibm_readiness(fire_opal)
     modules = module_map(settings=settings)
@@ -135,9 +115,15 @@ def main() -> int:
         )
     elif fire_opal.get("status") not in {"device_probe_submitted", "ready"}:
         optional_gaps.append(f"quantum_provider_diagnostic:{fire_opal.get('status')}")
-    for gap, groups in OPTIONAL_COVERAGE_CREDENTIAL_GROUPS:
-        if not _any_secret_group_configured(settings, groups):
-            optional_gaps.append(gap)
+    optional_gaps.extend(source_gaps.get("optional_gap_keys", []) or [])
+    if source_gap_errors:
+        required_gaps.append("source_gap_visibility_validation_errors")
+    if int(source_gaps.get("required_gap_count", 0) or 0):
+        required_gaps.append("source_gap_visibility_required_source_gap")
+    if int(source_gaps.get("trade_blocking_source_gap_count", 0) or 0):
+        required_gaps.append("source_gap_visibility_trade_blocking_source_gap")
+    if int(source_gaps.get("silent_blocker_count", 0) or 0):
+        required_gaps.append("source_gap_visibility_silent_blocker")
     telegram_paper_trade_live_ready = (
         settings.telegram_trade_group_notifications_enabled is True
         and settings.telegram_trade_group_notifications_dry_run is False
@@ -160,6 +146,42 @@ def main() -> int:
     print(f"qadam_paper_closeout_optional_gap_count={len(optional_gaps)}")
     print(f"qadam_paper_closeout_required_gaps={','.join(required_gaps)}")
     print(f"qadam_paper_closeout_optional_gaps={','.join(optional_gaps)}")
+    print(
+        "qadam_paper_closeout_source_gap_visibility_status="
+        f"{source_gaps.get('status')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_policy_status="
+        f"{source_gaps.get('source_gap_policy_status')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_optional_count="
+        f"{source_gaps.get('optional_gap_count')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_optional_keys="
+        f"{','.join(source_gaps.get('optional_gap_keys', []) or [])}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_required_count="
+        f"{source_gaps.get('required_gap_count')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_trade_blocking_count="
+        f"{source_gaps.get('trade_blocking_source_gap_count')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_silent_blocker_count="
+        f"{source_gaps.get('silent_blocker_count')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_blocker_count="
+        f"{source_gaps.get('blocker_count')}"
+    )
+    print(
+        "qadam_paper_closeout_source_gap_validation_error_count="
+        f"{len(source_gap_errors)}"
+    )
     print(f"qadam_paper_closeout_paper_live_certified={_bool_text(paper_live.get('paper_live_certified'))}")
     print(
         "qadam_paper_closeout_operation_allowed="

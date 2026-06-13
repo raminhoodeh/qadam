@@ -32,6 +32,9 @@ from orchestrator.paperops_guarded_paper_exit_enablement import (
     read_latest_paperops_guarded_paper_exit_enablement,
     validate_paperops_guarded_paper_exit_enablement,
 )
+from orchestrator.paperops_lifecycle_mirror_freshness import (
+    build_paperops_lifecycle_mirror_freshness,
+)
 
 
 PAPEROPS_EXIT_PATH_SCHEMA_VERSION = 1
@@ -41,6 +44,12 @@ PAPEROPS_EXIT_PATH_EVENT_LOG = "paperops_paper_exit_path_events.jsonl"
 PAPEROPS_EXIT_PATH_EVENT_TYPE = "paperops_paper_exit_path_recorded"
 PAPEROPS_EXIT_PATH_PREWRITE_EVENT_TYPE = "paperops_paper_exit_path_prewrite"
 PAPEROPS_EXIT_PATH_COMPONENT = "paperops_paper_exit_path"
+PAPEROPS_EXIT_CLOSE_ATTEMPT_LIMIT = 2
+PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR = "source_previous_close_not_found"
+PAPEROPS_EXIT_PREVIOUS_CLOSE_REQUEST_ERROR = "source_previous_close_request_pending"
+PAPEROPS_EXIT_CURRENT_READBACK_MISSING_ERROR = (
+    "source_not_in_current_paper_position_readback"
+)
 
 PAPEROPS_EXIT_AUTHORITY_FALSE_FIELDS = (
     "execution_allowed",
@@ -162,6 +171,12 @@ def _close_position_url(settings: Settings, symbol: str) -> str:
     return f"{base}/positions/{symbol.upper()}"
 
 
+def _positions_url(settings: Settings) -> str:
+    orders_url = _orders_url(settings)
+    base = orders_url.rsplit("/orders", 1)[0]
+    return f"{base}/positions"
+
+
 def _source_record_errors(record: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if record.get("record_type") != "paperops_q7_lifecycle_readback_record":
@@ -255,6 +270,234 @@ def _source_exit_candidates(source: dict[str, Any]) -> tuple[list[dict[str, Any]
     candidates = [_source_record_to_exit_candidate(record) for record in records]
     eligible = [candidate for candidate in candidates if candidate["eligible_for_paper_exit"]]
     return candidates, eligible
+
+
+def _candidate_identity(candidate: dict[str, Any]) -> str:
+    return str(
+        candidate.get("request_fingerprint")
+        or candidate.get("client_order_id_hash")
+        or candidate.get("broker_order_id_hash")
+        or candidate.get("symbol")
+        or ""
+    )
+
+
+def _block_exit_candidate(candidate: dict[str, Any], error: str) -> dict[str, Any]:
+    blocked = deepcopy(candidate)
+    errors = list(blocked.get("source_record_errors") or [])
+    if error not in errors:
+        errors.append(error)
+    blocked["source_record_errors"] = sorted(set(str(item) for item in errors if item))
+    blocked["eligible_for_paper_exit"] = False
+    blocked["status"] = "blocked_source_contract"
+    return blocked
+
+
+def _is_not_found_close_record(record: dict[str, Any]) -> bool:
+    if not isinstance(record, dict):
+        return False
+    failure_class = str(record.get("broker_failure_class") or "")
+    status_code = _int(record.get("sanitized_http_status"))
+    return (
+        record.get("status") == "paper_exit_close_failed_sanitized"
+        and (status_code == 404 or failure_class == "http_404")
+    )
+
+
+def _is_close_requested_record(record: dict[str, Any]) -> bool:
+    if not isinstance(record, dict):
+        return False
+    status_code = _int(record.get("sanitized_http_status"))
+    return (
+        record.get("status") == "paper_exit_close_recorded"
+        and (
+            record.get("paper_position_close_succeeded") is True
+            or record.get("paper_position_close_succeeded") is None
+        )
+        and 200 <= status_code < 300
+    )
+
+
+def _stale_not_found_exit_candidate_keys(settings: Settings) -> set[str]:
+    keys: set[str] = set()
+    latest = read_latest_paperops_paper_exit_path(settings)
+    for record in latest.get("selected_exit_records", []) or []:
+        if isinstance(record, dict) and _is_not_found_close_record(record):
+            identity = _candidate_identity(record)
+            if identity:
+                keys.add(identity)
+    for record in latest.get("stale_not_found_exit_candidates", []) or []:
+        if isinstance(record, dict):
+            identity = _candidate_identity(record)
+            if identity:
+                keys.add(identity)
+    _, history_path, _ = paperops_paper_exit_path_paths(settings)
+    if not history_path.exists():
+        return keys
+    try:
+        lines = history_path.read_text(encoding="utf-8").splitlines()[-250:]
+    except OSError:
+        return keys
+    for line in lines:
+        try:
+            history = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(history, dict):
+            continue
+        for identity in history.get("stale_not_found_candidate_keys", []) or []:
+            if str(identity or "").strip():
+                keys.add(str(identity))
+        for record in history.get("selected_exit_records", []) or []:
+            if isinstance(record, dict) and _is_not_found_close_record(record):
+                identity = _candidate_identity(record)
+                if identity:
+                    keys.add(identity)
+    return keys
+
+
+def _pending_close_request_exit_candidate_keys(settings: Settings) -> set[str]:
+    keys: set[str] = set()
+    latest = read_latest_paperops_paper_exit_path(settings)
+    for record in latest.get("selected_exit_records", []) or []:
+        if isinstance(record, dict) and _is_close_requested_record(record):
+            identity = _candidate_identity(record)
+            if identity:
+                keys.add(identity)
+    for record in latest.get("pending_close_request_exit_candidates", []) or []:
+        if isinstance(record, dict):
+            identity = _candidate_identity(record)
+            if identity:
+                keys.add(identity)
+    _, history_path, _ = paperops_paper_exit_path_paths(settings)
+    if not history_path.exists():
+        return keys
+    try:
+        lines = history_path.read_text(encoding="utf-8").splitlines()[-250:]
+    except OSError:
+        return keys
+    for line in lines:
+        try:
+            history = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(history, dict):
+            continue
+        for identity in history.get("pending_close_request_candidate_keys", []) or []:
+            if str(identity or "").strip():
+                keys.add(str(identity))
+        for record in history.get("selected_exit_records", []) or []:
+            if isinstance(record, dict) and _is_close_requested_record(record):
+                identity = _candidate_identity(record)
+                if identity:
+                    keys.add(identity)
+    return keys
+
+
+def _paper_position_preflight_readback(
+    *,
+    settings: Settings,
+    enabled: bool,
+    timeout_seconds: float = 12.0,
+) -> dict[str, Any]:
+    if not enabled:
+        return {
+            "status": "not_requested",
+            "paper_position_preflight_readback_called_count": 0,
+            "paper_position_preflight_readback_succeeded_count": 0,
+            "paper_position_preflight_readback_symbol_count": 0,
+            "paper_position_preflight_symbols": [],
+            "sanitized_http_status": None,
+            "failure_class": None,
+        }
+    try:
+        import httpx
+    except ImportError:
+        return {
+            "status": "failed_sanitized",
+            "paper_position_preflight_readback_called_count": 0,
+            "paper_position_preflight_readback_succeeded_count": 0,
+            "paper_position_preflight_readback_symbol_count": 0,
+            "paper_position_preflight_symbols": [],
+            "sanitized_http_status": None,
+            "failure_class": "missing_httpx",
+        }
+    try:
+        with httpx.Client(timeout=timeout_seconds, follow_redirects=False) as client:
+            response = client.get(_positions_url(settings), headers=_headers(settings))
+        status_code = response.status_code
+        if status_code < 200 or status_code >= 300:
+            return {
+                "status": "failed_sanitized",
+                "paper_position_preflight_readback_called_count": 1,
+                "paper_position_preflight_readback_succeeded_count": 0,
+                "paper_position_preflight_readback_symbol_count": 0,
+                "paper_position_preflight_symbols": [],
+                "sanitized_http_status": status_code,
+                "failure_class": f"http_{status_code}",
+            }
+        payload = response.json()
+        if not isinstance(payload, list):
+            payload = []
+        symbols = sorted(
+            {
+                str(item.get("symbol") or "").upper()
+                for item in payload
+                if isinstance(item, dict) and str(item.get("symbol") or "").strip()
+            }
+        )
+        return {
+            "status": "recorded",
+            "paper_position_preflight_readback_called_count": 1,
+            "paper_position_preflight_readback_succeeded_count": 1,
+            "paper_position_preflight_readback_symbol_count": len(symbols),
+            "paper_position_preflight_symbols": symbols,
+            "sanitized_http_status": status_code,
+            "failure_class": None,
+        }
+    except Exception as exc:  # noqa: BLE001 - persist sanitized class only.
+        return {
+            "status": "failed_sanitized",
+            "paper_position_preflight_readback_called_count": 1,
+            "paper_position_preflight_readback_succeeded_count": 0,
+            "paper_position_preflight_readback_symbol_count": 0,
+            "paper_position_preflight_symbols": [],
+            "sanitized_http_status": None,
+            "failure_class": type(exc).__name__,
+        }
+
+
+def _apply_candidate_suppression(
+    candidates: list[dict[str, Any]],
+    *,
+    stale_not_found_keys: set[str],
+    pending_close_request_keys: set[str],
+    current_position_symbols: set[str] | None,
+) -> list[dict[str, Any]]:
+    suppressed: list[dict[str, Any]] = []
+    for candidate in candidates:
+        identity = _candidate_identity(candidate)
+        symbol = str(candidate.get("symbol") or "").upper()
+        if identity and identity in stale_not_found_keys:
+            suppressed.append(
+                _block_exit_candidate(candidate, PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR)
+            )
+            continue
+        if identity and identity in pending_close_request_keys:
+            suppressed.append(
+                _block_exit_candidate(candidate, PAPEROPS_EXIT_PREVIOUS_CLOSE_REQUEST_ERROR)
+            )
+            continue
+        if current_position_symbols is not None and symbol not in current_position_symbols:
+            suppressed.append(
+                _block_exit_candidate(
+                    candidate,
+                    PAPEROPS_EXIT_CURRENT_READBACK_MISSING_ERROR,
+                )
+            )
+            continue
+        suppressed.append(candidate)
+    return suppressed
 
 
 def _mirror_position_to_exit_candidate(
@@ -447,6 +690,8 @@ def _status(
     endpoint: dict[str, Any],
     source_present: bool,
     source_valid: bool,
+    preflight_failed: bool,
+    lifecycle_mirror_fresh: bool,
     eligible_count: int,
     execute_exit: bool,
     close_result: dict[str, Any] | None,
@@ -465,6 +710,10 @@ def _status(
         return "blocked_missing_paper_lifecycle_source"
     if not source_valid:
         return "blocked_invalid_paper_lifecycle_source"
+    if preflight_failed:
+        return "blocked_paper_position_preflight_readback_failed"
+    if not lifecycle_mirror_fresh:
+        return "ready_pending_lifecycle_mirror_refresh"
     if eligible_count < 1:
         return "ready_no_exit_candidate"
     if not execute_exit:
@@ -501,6 +750,7 @@ def build_paperops_paper_exit_path(
         and not exit_enablement_validation_errors
     )
     paper_exit_effective = settings.alpaca_paper_exit_enabled or runtime_exit_enabled
+    previous_exit_path = read_latest_paperops_paper_exit_path(settings)
     source = read_latest_paperops_paper_lifecycle_poller(settings)
     source_present = bool(source)
     source_validation_errors = (
@@ -511,6 +761,52 @@ def build_paperops_paper_exit_path(
     mirror_candidates, mirror_eligible_candidates, mirror_source_status = (
         _mirror_position_exit_candidates(settings)
     )
+    lifecycle_mirror_freshness_for_gate = build_paperops_lifecycle_mirror_freshness(
+        settings=settings,
+        exit_path=previous_exit_path,
+        lifecycle_poller=source,
+        generated_at=generated_at,
+    )
+    preflight_readback_enabled = (
+        execute_exit
+        and settings.mode == "paper"
+        and settings.live_capital_enabled is False
+        and endpoint["paper_endpoint_confirmed"] is True
+        and endpoint["alpaca_api_key_configured"] is True
+        and endpoint["alpaca_api_secret_configured"] is True
+        and lifecycle_mirror_freshness_for_gate.get("fresh_after_latest_close") is True
+    )
+    preflight_readback = _paper_position_preflight_readback(
+        settings=settings,
+        enabled=preflight_readback_enabled,
+    )
+    current_position_symbols = (
+        set(preflight_readback.get("paper_position_preflight_symbols") or [])
+        if preflight_readback.get("status") == "recorded"
+        else set()
+        if preflight_readback_enabled
+        else None
+    )
+    stale_not_found_keys = _stale_not_found_exit_candidate_keys(settings)
+    pending_close_request_keys = _pending_close_request_exit_candidate_keys(settings)
+    source_candidates = _apply_candidate_suppression(
+        source_candidates,
+        stale_not_found_keys=stale_not_found_keys,
+        pending_close_request_keys=pending_close_request_keys,
+        current_position_symbols=current_position_symbols,
+    )
+    mirror_candidates = _apply_candidate_suppression(
+        mirror_candidates,
+        stale_not_found_keys=stale_not_found_keys,
+        pending_close_request_keys=pending_close_request_keys,
+        current_position_symbols=current_position_symbols,
+    )
+    source_eligible_candidates = [
+        candidate for candidate in source_candidates if candidate["eligible_for_paper_exit"]
+    ]
+    mirror_eligible_candidates = [
+        candidate for candidate in mirror_candidates if candidate["eligible_for_paper_exit"]
+    ]
     eligible_candidates = source_eligible_candidates or mirror_eligible_candidates
     all_candidates = source_candidates + mirror_candidates
     selected_candidate = eligible_candidates[0] if eligible_candidates else None
@@ -528,69 +824,142 @@ def build_paperops_paper_exit_path(
         and endpoint["alpaca_api_secret_configured"] is True,
         "paperops_3_or_paper_mirror_source_present": source_or_mirror_present,
         "paperops_3_or_paper_mirror_source_valid": source_or_mirror_valid,
+        "lifecycle_and_mirror_fresh_after_latest_close": (
+            lifecycle_mirror_freshness_for_gate.get("fresh_after_latest_close") is True
+        ),
+        "paper_position_preflight_readback_available": (
+            not preflight_readback_enabled
+            or preflight_readback.get("status") == "recorded"
+        ),
         "open_position_readback_present": selected_candidate is not None,
     }
     precondition_failures = [
         key for key, passed in preconditions.items() if passed is not True
     ]
     exit_path_available = not precondition_failures
-    close_result: dict[str, Any] | None = None
-    prewrite_entry_ref: str | None = None
+    close_results: list[dict[str, Any]] = []
+    attempted_records: list[dict[str, Any]] = []
+    prewrite_entry_refs: list[str] = []
     prewrite_event_count = 0
 
     if execute_exit and exit_path_available and selected_candidate is not None:
         event_path = Path(event_log_path or (_runtime_dir(settings) / PAPEROPS_EXIT_PATH_EVENT_LOG))
-        prewrite = EventLog(event_path, echo=False).write(
-            PAPEROPS_EXIT_PATH_PREWRITE_EVENT_TYPE,
-            PAPEROPS_EXIT_PATH_COMPONENT,
-            payload={
-                "status": "prewrite_before_alpaca_paper_position_close",
-                "exit_intent_id": selected_candidate.get("exit_intent_id"),
-                "source_proof_order_id": selected_candidate.get("source_proof_order_id"),
-                "source_staged_order_artifact_id": selected_candidate.get(
-                    "source_staged_order_artifact_id"
-                ),
-                "symbol": selected_candidate.get("symbol"),
-                "request_fingerprint": selected_candidate.get("request_fingerprint"),
-                "endpoint_classification": endpoint["endpoint_classification"],
-                "live_endpoint_allowed": False,
-                "live_capital_enabled": False,
-            },
-        )
-        prewrite_entry_ref = prewrite.correlation_id
-        prewrite_event_count = 1
-        close_result = _close_alpaca_paper_position(
-            settings=settings,
-            candidate=selected_candidate,
-        )
-        selected_candidate = deepcopy(selected_candidate)
-        selected_candidate["paperops_exit_event_log_prewrite_written"] = True
-        selected_candidate["paperops_exit_event_log_prewrite_ref"] = prewrite_entry_ref
-        selected_candidate["paper_position_close_called"] = close_result["close_attempted"]
-        selected_candidate["paper_position_close_succeeded"] = close_result["close_succeeded"]
-        selected_candidate["sanitized_http_status"] = close_result["sanitized_http_status"]
-        selected_candidate["broker_failure_class"] = close_result["failure_class"]
-        selected_candidate["broker_failure_message_persisted"] = False
-        selected_candidate["broker_close_receipt"] = close_result["receipt"]
-        selected_candidate["status"] = (
-            "paper_exit_close_recorded"
-            if close_result["close_succeeded"]
-            else "paper_exit_close_failed_sanitized"
-        )
+        for candidate in eligible_candidates[:PAPEROPS_EXIT_CLOSE_ATTEMPT_LIMIT]:
+            prewrite = EventLog(event_path, echo=False).write(
+                PAPEROPS_EXIT_PATH_PREWRITE_EVENT_TYPE,
+                PAPEROPS_EXIT_PATH_COMPONENT,
+                payload={
+                    "status": "prewrite_before_alpaca_paper_position_close",
+                    "exit_intent_id": candidate.get("exit_intent_id"),
+                    "source_proof_order_id": candidate.get("source_proof_order_id"),
+                    "source_staged_order_artifact_id": candidate.get(
+                        "source_staged_order_artifact_id"
+                    ),
+                    "symbol": candidate.get("symbol"),
+                    "request_fingerprint": candidate.get("request_fingerprint"),
+                    "endpoint_classification": endpoint["endpoint_classification"],
+                    "live_endpoint_allowed": False,
+                    "live_capital_enabled": False,
+                },
+            )
+            prewrite_entry_refs.append(prewrite.correlation_id)
+            prewrite_event_count += 1
+            close_result = _close_alpaca_paper_position(
+                settings=settings,
+                candidate=candidate,
+            )
+            close_results.append(close_result)
+            attempted_candidate = deepcopy(candidate)
+            attempted_candidate["paperops_exit_event_log_prewrite_written"] = True
+            attempted_candidate["paperops_exit_event_log_prewrite_ref"] = prewrite.correlation_id
+            attempted_candidate["paper_position_close_called"] = close_result["close_attempted"]
+            attempted_candidate["paper_position_close_succeeded"] = close_result[
+                "close_succeeded"
+            ]
+            attempted_candidate["sanitized_http_status"] = close_result["sanitized_http_status"]
+            attempted_candidate["broker_failure_class"] = close_result["failure_class"]
+            attempted_candidate["broker_failure_message_persisted"] = False
+            attempted_candidate["broker_close_receipt"] = close_result["receipt"]
+            attempted_candidate["status"] = (
+                "paper_exit_close_recorded"
+                if close_result["close_succeeded"]
+                else "paper_exit_close_failed_sanitized"
+            )
+            if _is_not_found_close_record(attempted_candidate):
+                errors = list(attempted_candidate.get("source_record_errors") or [])
+                if PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR not in errors:
+                    errors.append(PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR)
+                attempted_candidate["source_record_errors"] = sorted(set(errors))
+            attempted_records.append(attempted_candidate)
+            if close_result["close_succeeded"]:
+                break
 
-    close_attempted = bool(close_result and close_result.get("close_attempted"))
-    close_succeeded = bool(close_result and close_result.get("close_succeeded"))
+    close_attempted_count = sum(
+        1 for result in close_results if result.get("close_attempted") is True
+    )
+    close_succeeded_count = sum(
+        1 for result in close_results if result.get("close_succeeded") is True
+    )
+    close_failed_count = max(close_attempted_count - close_succeeded_count, 0)
+    close_result_for_status = (
+        next(
+            (result for result in close_results if result.get("close_succeeded") is True),
+            None,
+        )
+        or (close_results[-1] if close_results else None)
+    )
     status = _status(
         settings=settings,
         paper_exit_effective=paper_exit_effective,
         endpoint=endpoint,
         source_present=source_or_mirror_present,
         source_valid=source_or_mirror_valid,
+        preflight_failed=(
+            preflight_readback_enabled
+            and preflight_readback.get("status") != "recorded"
+        ),
+        lifecycle_mirror_fresh=(
+            lifecycle_mirror_freshness_for_gate.get("fresh_after_latest_close") is True
+        ),
         eligible_count=len(eligible_candidates),
         execute_exit=execute_exit,
-        close_result=close_result,
+        close_result=close_result_for_status,
     )
-    selected_records = [selected_candidate] if selected_candidate is not None else []
+    selected_records = attempted_records or ([selected_candidate] if selected_candidate is not None else [])
+    freshness_exit_path = (
+        {"selected_exit_records": selected_records}
+        if any(
+            isinstance(record, dict) and record.get("paper_position_close_succeeded") is True
+            for record in selected_records
+        )
+        else previous_exit_path
+    )
+    lifecycle_mirror_freshness = build_paperops_lifecycle_mirror_freshness(
+        settings=settings,
+        exit_path=freshness_exit_path,
+        lifecycle_poller=source,
+        generated_at=generated_at,
+    )
+    stale_not_found_records = [
+        record for record in all_candidates + selected_records if _is_not_found_close_record(record)
+    ]
+    pending_close_request_records = [
+        record
+        for record in all_candidates + selected_records
+        if _is_close_requested_record(record)
+    ]
+    suppressed_stale_records = [
+        record
+        for record in all_candidates
+        if PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR
+        in set(record.get("source_record_errors") or [])
+    ]
+    suppressed_pending_close_records = [
+        record
+        for record in all_candidates
+        if PAPEROPS_EXIT_PREVIOUS_CLOSE_REQUEST_ERROR
+        in set(record.get("source_record_errors") or [])
+    ]
     artifact = {
         "schema_version": PAPEROPS_EXIT_PATH_SCHEMA_VERSION,
         "artifact_type": "paperops_paper_exit_path",
@@ -674,21 +1043,105 @@ def build_paperops_paper_exit_path(
         "paper_account_mirror_position_source_status": mirror_source_status,
         "paper_account_mirror_open_position_count": len(mirror_candidates),
         "paper_account_mirror_eligible_exit_count": len(mirror_eligible_candidates),
+        "paper_position_preflight_readback_status": preflight_readback.get("status"),
+        "paper_position_preflight_readback_called_count": preflight_readback.get(
+            "paper_position_preflight_readback_called_count",
+            0,
+        ),
+        "paper_position_preflight_readback_succeeded_count": preflight_readback.get(
+            "paper_position_preflight_readback_succeeded_count",
+            0,
+        ),
+        "paper_position_preflight_readback_symbol_count": preflight_readback.get(
+            "paper_position_preflight_readback_symbol_count",
+            0,
+        ),
+        "paper_position_preflight_readback_failure_class": preflight_readback.get(
+            "failure_class"
+        ),
+        "paper_position_preflight_readback_http_status": preflight_readback.get(
+            "sanitized_http_status"
+        ),
+        "paper_position_preflight_symbols": preflight_readback.get(
+            "paper_position_preflight_symbols",
+            [],
+        ),
+        "lifecycle_mirror_freshness": lifecycle_mirror_freshness,
+        "lifecycle_mirror_freshness_status": lifecycle_mirror_freshness.get("status"),
+        "lifecycle_mirror_freshness_required": lifecycle_mirror_freshness.get(
+            "freshness_required"
+        ),
+        "lifecycle_mirror_fresh_after_latest_close": lifecycle_mirror_freshness.get(
+            "fresh_after_latest_close"
+        ),
+        "paperops_lifecycle_fresh_after_latest_close": lifecycle_mirror_freshness.get(
+            "lifecycle_fresh_after_latest_close"
+        ),
+        "paper_mirror_fresh_after_latest_close": lifecycle_mirror_freshness.get(
+            "paper_mirror_fresh_after_latest_close"
+        ),
+        "latest_successful_close_requested_at": lifecycle_mirror_freshness.get(
+            "latest_successful_close_requested_at"
+        ),
+        "latest_successful_close_symbol": lifecycle_mirror_freshness.get(
+            "latest_successful_close_symbol"
+        ),
+        "paperops_lifecycle_poll_observed_at": lifecycle_mirror_freshness.get(
+            "paperops_lifecycle_poll_observed_at"
+        ),
+        "paper_mirror_observed_at": lifecycle_mirror_freshness.get(
+            "paper_mirror_observed_at"
+        ),
+        "stale_not_found_exit_candidate_count": len(stale_not_found_records),
+        "suppressed_stale_not_found_exit_candidate_count": len(suppressed_stale_records),
+        "pending_close_request_exit_candidate_count": len(
+            pending_close_request_records
+        ),
+        "suppressed_pending_close_request_exit_candidate_count": len(
+            suppressed_pending_close_records
+        ),
+        "suppressed_exit_candidate_count": len(
+            [
+                record
+                for record in all_candidates
+                if PAPEROPS_EXIT_STALE_NOT_FOUND_ERROR
+                in set(record.get("source_record_errors") or [])
+                or PAPEROPS_EXIT_PREVIOUS_CLOSE_REQUEST_ERROR
+                in set(record.get("source_record_errors") or [])
+                or PAPEROPS_EXIT_CURRENT_READBACK_MISSING_ERROR
+                in set(record.get("source_record_errors") or [])
+            ]
+        ),
+        "stale_not_found_exit_candidates": stale_not_found_records + suppressed_stale_records,
+        "pending_close_request_exit_candidates": (
+            pending_close_request_records + suppressed_pending_close_records
+        ),
         "open_position_readback_count": len(eligible_candidates),
         "eligible_exit_record_count": len(eligible_candidates),
         "blocked_source_record_count": len(all_candidates) - len(eligible_candidates),
         "exit_candidates": all_candidates,
         "selected_exit_records": selected_records,
         "paperops_exit_event_log_prewrite_required": bool(execute_exit and selected_candidate),
-        "paperops_exit_event_log_prewrite_written": prewrite_entry_ref is not None,
-        "paperops_exit_event_log_prewrite_ref": prewrite_entry_ref,
+        "paperops_exit_event_log_prewrite_written": bool(prewrite_entry_refs),
+        "paperops_exit_event_log_prewrite_ref": (
+            prewrite_entry_refs[0] if prewrite_entry_refs else None
+        ),
+        "paperops_exit_event_log_prewrite_refs": prewrite_entry_refs,
         "paperops_exit_event_log_prewrite_count": prewrite_event_count,
-        "paper_position_close_called_count": 1 if close_attempted else 0,
-        "paper_position_close_succeeded_count": 1 if close_succeeded else 0,
-        "paper_position_close_failed_count": 1 if close_attempted and not close_succeeded else 0,
-        "alpaca_paper_close_called_count": 1 if close_attempted else 0,
-        "broker_write_called_count": 1 if close_attempted else 0,
-        "broker_close_receipt_created_count": 1 if close_succeeded else 0,
+        "paper_position_close_attempt_limit": PAPEROPS_EXIT_CLOSE_ATTEMPT_LIMIT,
+        "paper_position_close_called_count": close_attempted_count,
+        "paper_position_close_succeeded_count": close_succeeded_count,
+        "paper_position_close_failed_count": close_failed_count,
+        "paper_position_close_stale_not_found_count": len(
+            [record for record in selected_records if _is_not_found_close_record(record)]
+        ),
+        "alpaca_paper_close_called_count": close_attempted_count,
+        "broker_get_called_count": preflight_readback.get(
+            "paper_position_preflight_readback_called_count",
+            0,
+        ),
+        "broker_write_called_count": close_attempted_count,
+        "broker_close_receipt_created_count": close_succeeded_count,
         "broker_post_called_count": 0,
         "alpaca_post_called_count": 0,
         "order_cancel_called_count": 0,
@@ -729,6 +1182,9 @@ def build_paperops_paper_exit_path(
         "raw_broker_response_persisted": False,
         "broker_failure_message_persisted": False,
         "recommended_next_stage": (
+            "Refresh PaperOps-3 lifecycle polling and the paper-account mirror"
+            if status == "ready_pending_lifecycle_mirror_refresh"
+            else
             "PaperOps-5 notification and review"
             if status in EXIT_READY_STATUSES
             else "Wait for PaperOps-3 open-position readback and explicit paper-exit enablement"
@@ -1070,6 +1526,50 @@ def write_paperops_paper_exit_path(
         "paper_position_close_succeeded_count": written.get(
             "paper_position_close_succeeded_count"
         ),
+        "paper_position_close_stale_not_found_count": written.get(
+            "paper_position_close_stale_not_found_count",
+            0,
+        ),
+        "suppressed_stale_not_found_exit_candidate_count": written.get(
+            "suppressed_stale_not_found_exit_candidate_count",
+            0,
+        ),
+        "suppressed_pending_close_request_exit_candidate_count": written.get(
+            "suppressed_pending_close_request_exit_candidate_count",
+            0,
+        ),
+        "stale_not_found_candidate_keys": [
+            _candidate_identity(record)
+            for record in written.get("stale_not_found_exit_candidates", []) or []
+            if isinstance(record, dict) and _candidate_identity(record)
+        ],
+        "pending_close_request_candidate_keys": [
+            _candidate_identity(record)
+            for record in written.get("pending_close_request_exit_candidates", []) or []
+            if isinstance(record, dict) and _candidate_identity(record)
+        ],
+        "latest_successful_close_requested_at": written.get(
+            "latest_successful_close_requested_at"
+        ),
+        "lifecycle_mirror_freshness_status": written.get(
+            "lifecycle_mirror_freshness_status"
+        ),
+        "selected_exit_records": [
+            {
+                "status": record.get("status"),
+                "paper_position_close_succeeded": record.get(
+                    "paper_position_close_succeeded"
+                ),
+                "request_fingerprint": record.get("request_fingerprint"),
+                "client_order_id_hash": record.get("client_order_id_hash"),
+                "broker_order_id_hash": record.get("broker_order_id_hash"),
+                "symbol": record.get("symbol"),
+                "sanitized_http_status": record.get("sanitized_http_status"),
+                "broker_failure_class": record.get("broker_failure_class"),
+            }
+            for record in written.get("selected_exit_records", []) or []
+            if isinstance(record, dict)
+        ],
         "live_endpoint_called_count": written.get("live_endpoint_called_count"),
         "validation_error_count": len(written.get("validation_errors", [])),
     }
@@ -1098,9 +1598,31 @@ def paperops_paper_exit_path_public_status(
             "paper_exit_runtime_enablement_idle_until_open_position": False,
             "paper_exit_path_available": False,
             "eligible_exit_record_count": 0,
+            "suppressed_exit_candidate_count": 0,
+            "stale_not_found_exit_candidate_count": 0,
+            "suppressed_stale_not_found_exit_candidate_count": 0,
+            "pending_close_request_exit_candidate_count": 0,
+            "suppressed_pending_close_request_exit_candidate_count": 0,
+            "lifecycle_mirror_freshness_status": "freshness_not_required",
+            "lifecycle_mirror_freshness_required": False,
+            "lifecycle_mirror_fresh_after_latest_close": True,
+            "paperops_lifecycle_fresh_after_latest_close": True,
+            "paper_mirror_fresh_after_latest_close": True,
+            "latest_successful_close_requested_at": None,
+            "latest_successful_close_symbol": None,
+            "paperops_lifecycle_poll_observed_at": None,
+            "paper_mirror_observed_at": None,
+            "paper_position_preflight_readback_status": "not_run",
+            "paper_position_preflight_readback_called_count": 0,
+            "paper_position_preflight_readback_succeeded_count": 0,
+            "paper_position_preflight_readback_symbol_count": 0,
             "paper_position_close_called_count": 0,
             "paper_position_close_succeeded_count": 0,
+            "paper_position_close_failed_count": 0,
+            "paper_position_close_stale_not_found_count": 0,
+            "paper_position_close_attempt_limit": PAPEROPS_EXIT_CLOSE_ATTEMPT_LIMIT,
             "broker_write_called_count": 0,
+            "broker_get_called_count": 0,
             "broker_post_called_count": 0,
             "order_cancel_called_count": 0,
             "position_resize_called_count": 0,
@@ -1153,6 +1675,66 @@ def paperops_paper_exit_path_public_status(
         ),
         "open_position_readback_count": artifact.get("open_position_readback_count", 0),
         "eligible_exit_record_count": artifact.get("eligible_exit_record_count", 0),
+        "suppressed_exit_candidate_count": artifact.get(
+            "suppressed_exit_candidate_count",
+            0,
+        ),
+        "stale_not_found_exit_candidate_count": artifact.get(
+            "stale_not_found_exit_candidate_count",
+            0,
+        ),
+        "suppressed_stale_not_found_exit_candidate_count": artifact.get(
+            "suppressed_stale_not_found_exit_candidate_count",
+            0,
+        ),
+        "pending_close_request_exit_candidate_count": artifact.get(
+            "pending_close_request_exit_candidate_count",
+            0,
+        ),
+        "suppressed_pending_close_request_exit_candidate_count": artifact.get(
+            "suppressed_pending_close_request_exit_candidate_count",
+            0,
+        ),
+        "lifecycle_mirror_freshness_status": artifact.get(
+            "lifecycle_mirror_freshness_status"
+        ),
+        "lifecycle_mirror_freshness_required": artifact.get(
+            "lifecycle_mirror_freshness_required"
+        ),
+        "lifecycle_mirror_fresh_after_latest_close": artifact.get(
+            "lifecycle_mirror_fresh_after_latest_close"
+        ),
+        "paperops_lifecycle_fresh_after_latest_close": artifact.get(
+            "paperops_lifecycle_fresh_after_latest_close"
+        ),
+        "paper_mirror_fresh_after_latest_close": artifact.get(
+            "paper_mirror_fresh_after_latest_close"
+        ),
+        "latest_successful_close_requested_at": artifact.get(
+            "latest_successful_close_requested_at"
+        ),
+        "latest_successful_close_symbol": artifact.get(
+            "latest_successful_close_symbol"
+        ),
+        "paperops_lifecycle_poll_observed_at": artifact.get(
+            "paperops_lifecycle_poll_observed_at"
+        ),
+        "paper_mirror_observed_at": artifact.get("paper_mirror_observed_at"),
+        "paper_position_preflight_readback_status": artifact.get(
+            "paper_position_preflight_readback_status"
+        ),
+        "paper_position_preflight_readback_called_count": artifact.get(
+            "paper_position_preflight_readback_called_count",
+            0,
+        ),
+        "paper_position_preflight_readback_succeeded_count": artifact.get(
+            "paper_position_preflight_readback_succeeded_count",
+            0,
+        ),
+        "paper_position_preflight_readback_symbol_count": artifact.get(
+            "paper_position_preflight_readback_symbol_count",
+            0,
+        ),
         "paperops_exit_event_log_prewrite_written": artifact.get(
             "paperops_exit_event_log_prewrite_written"
         ),
@@ -1164,7 +1746,20 @@ def paperops_paper_exit_path_public_status(
             "paper_position_close_succeeded_count",
             0,
         ),
+        "paper_position_close_failed_count": artifact.get(
+            "paper_position_close_failed_count",
+            0,
+        ),
+        "paper_position_close_stale_not_found_count": artifact.get(
+            "paper_position_close_stale_not_found_count",
+            0,
+        ),
+        "paper_position_close_attempt_limit": artifact.get(
+            "paper_position_close_attempt_limit",
+            PAPEROPS_EXIT_CLOSE_ATTEMPT_LIMIT,
+        ),
         "broker_write_called_count": artifact.get("broker_write_called_count", 0),
+        "broker_get_called_count": artifact.get("broker_get_called_count", 0),
         "broker_post_called_count": artifact.get("broker_post_called_count", 0),
         "order_cancel_called_count": artifact.get("order_cancel_called_count", 0),
         "position_resize_called_count": artifact.get("position_resize_called_count", 0),

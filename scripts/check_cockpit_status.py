@@ -28,6 +28,12 @@ from orchestrator.paper_authority_reconciliation import (  # noqa: E402
     PAPER_AUTHORITY_RECONCILIATION_PUBLIC_FIELDS,
     validate_paper_authority_reconciliation,
 )
+from orchestrator.paperops_closed_trade_funnel import (  # noqa: E402
+    validate_paperops_closed_trade_funnel,
+)
+from orchestrator.paperops_close_to_ledger import (  # noqa: E402
+    validate_paperops_close_to_ledger,
+)
 from orchestrator.paper_lifecycle_portfolio_postmortem import (  # noqa: E402
     RS6_PUBLIC_STATUS_FIELDS,
 )
@@ -2119,6 +2125,9 @@ MISSION_DATA_SOURCES_REQUIRED_FIELDS = {
     "logged_in_sources",
     "missing_credential_count",
     "online_count",
+    "optional_source_gap_count",
+    "optional_source_gap_keys",
+    "optional_source_gap_records",
     "pending_count",
     "pipeline_count",
     "preference_mcp_catalog_status",
@@ -2129,7 +2138,13 @@ MISSION_DATA_SOURCES_REQUIRED_FIELDS = {
     "preference_mcp_quota_status",
     "preference_mcp_shadow_context_status",
     "preference_mcp_status",
+    "required_source_gap_count",
+    "source_gap_blocker_count",
+    "source_gap_policy_status",
+    "source_gap_silent_blocker_count",
+    "source_gap_visibility_status",
     "total_count",
+    "trade_blocking_source_gap_count",
 }
 
 MISSION_PHILOSOPHY_REQUIRED_FIELDS = {
@@ -2172,8 +2187,25 @@ MISSION_STACK_REQUIRED_FIELDS = {
     "paperops_guarded_paper_exit_close_called_count",
     "paperops_paper_exit_path",
     "paperops_paper_exit_path_close_called_count",
+    "paperops_lifecycle_mirror_freshness",
+    "paperops_lifecycle_mirror_fresh_after_latest_close",
+    "paperops_close_to_ledger",
+    "paperops_close_to_ledger_closed_proof_trade_count",
+    "paperops_close_to_ledger_postmortem_due_marker_created_count",
+    "paperops_closed_trade_funnel",
+    "paperops_closed_trade_funnel_blocked_stage",
+    "paperops_closed_trade_funnel_close_receipt_count",
+    "paperops_closed_trade_funnel_closed_proof_trade_count",
     "paperops_notification_review",
     "paperops_notification_review_live_send_allowed_count",
+    "paperops_submit_regression_guard",
+    "paperops_submit_regression_guard_source_paperops2",
+    "paperops_submit_regression_guard_fresh_submit_count",
+    "paperops_submit_regression_guard_duplicate_submit_count",
+    "paperops_submit_regression_guard_blocker_count",
+    "paperops_submit_regression_guard_fresh_ledger_collision_count",
+    "paperops_submit_regression_guard_duplicate_misclassified_count",
+    "paperops_submit_regression_guard_source_stale_after_post_count",
     "paperops_30_day_operations",
     "paperops_30_day_operations_scheduler_status",
     "paperops_30_day_operations_active_day_number",
@@ -2368,6 +2400,14 @@ PAPEROPS_30_DAY_OPERATIONS_REQUIRED_FIELDS = {
     "live_capital_enabled",
     "paper_operational_cycle_command_count",
     "paper_operational_cycle_status",
+    "paperops_submit_regression_guard_blocker_count",
+    "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+    "paperops_submit_regression_guard_duplicate_submit_record_count",
+    "paperops_submit_regression_guard_fresh_eligible_submit_record_count",
+    "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+    "paperops_submit_regression_guard_source_stale_after_post_count",
+    "paperops_submit_regression_guard_status",
+    "paperops_submit_regression_guard_validation_error_count",
     "phase7_proof_credit_allowed",
     "public_safe",
     "qualified_setup_count",
@@ -3354,6 +3394,18 @@ def main() -> int:
         f"{payload.get('mission_control', {}).get('data_sources', {}).get('logged_in_count')}"
     )
     print(
+        "cockpit_status_mission_optional_source_gap_count="
+        f"{payload.get('mission_control', {}).get('data_sources', {}).get('optional_source_gap_count')}"
+    )
+    print(
+        "cockpit_status_mission_trade_blocking_source_gap_count="
+        f"{payload.get('mission_control', {}).get('data_sources', {}).get('trade_blocking_source_gap_count')}"
+    )
+    print(
+        "cockpit_status_mission_source_gap_silent_blocker_count="
+        f"{payload.get('mission_control', {}).get('data_sources', {}).get('source_gap_silent_blocker_count')}"
+    )
+    print(
         "cockpit_status_mission_candidate_count="
         f"{payload.get('mission_control', {}).get('trade_intent', {}).get('candidate_count')}"
     )
@@ -3511,7 +3563,17 @@ def main() -> int:
         {},
     )
     paperops_paper_exit_path = payload.get("paperops_paper_exit_path", {})
+    paperops_closed_trade_funnel = payload.get("paperops_closed_trade_funnel", {})
+    paperops_close_to_ledger = payload.get("paperops_close_to_ledger", {})
     paperops_notification_review = payload.get("paperops_notification_review", {})
+    paperops_submit_regression_guard = payload.get(
+        "paperops_submit_regression_guard",
+        {},
+    )
+    paperops_source_gap_visibility = payload.get(
+        "paperops_source_gap_visibility",
+        {},
+    )
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
     paperops_cockpit_notification = payload.get(
         "paperops_cockpit_notification_upgrade",
@@ -3733,8 +3795,73 @@ def main() -> int:
         f"{paperops_paper_exit_path.get('paper_position_close_called_count')}"
     )
     print(
+        "cockpit_status_paperops_exit_path_suppressed_stale_not_found_count="
+        f"{paperops_paper_exit_path.get('suppressed_stale_not_found_exit_candidate_count')}"
+    )
+    print(
+        "cockpit_status_paperops_exit_path_suppressed_pending_close_request_count="
+        f"{paperops_paper_exit_path.get('suppressed_pending_close_request_exit_candidate_count')}"
+    )
+    print(
         "cockpit_status_paperops_exit_path_live_endpoint_called_count="
         f"{paperops_paper_exit_path.get('live_endpoint_called_count')}"
+    )
+    paperops_lifecycle_mirror_freshness = payload.get(
+        "paperops_lifecycle_mirror_freshness",
+        {},
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_mirror_freshness_status="
+        f"{paperops_lifecycle_mirror_freshness.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_mirror_fresh_after_latest_close="
+        f"{paperops_lifecycle_mirror_freshness.get('fresh_after_latest_close')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_mirror_latest_close_at="
+        f"{paperops_lifecycle_mirror_freshness.get('latest_successful_close_requested_at')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_mirror_poll_observed_at="
+        f"{paperops_lifecycle_mirror_freshness.get('paperops_lifecycle_poll_observed_at')}"
+    )
+    print(
+        "cockpit_status_paperops_lifecycle_mirror_mirror_observed_at="
+        f"{paperops_lifecycle_mirror_freshness.get('paper_mirror_observed_at')}"
+    )
+    paperops_close_to_ledger = payload.get("paperops_close_to_ledger", {})
+    print(
+        "cockpit_status_paperops_close_to_ledger_status="
+        f"{paperops_close_to_ledger.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_close_to_ledger_closed_proof_trade_count="
+        f"{paperops_close_to_ledger.get('closed_proof_trade_count')}"
+    )
+    print(
+        "cockpit_status_paperops_close_to_ledger_postmortem_due_marker_created_count="
+        f"{paperops_close_to_ledger.get('postmortem_due_marker_created_count')}"
+    )
+    print(
+        "cockpit_status_paperops_close_to_ledger_blockers="
+        f"{','.join(paperops_close_to_ledger.get('blockers') or [])}"
+    )
+    print(
+        "cockpit_status_paperops_closed_trade_funnel_status="
+        f"{paperops_closed_trade_funnel.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_closed_trade_funnel_blocked_stage="
+        f"{paperops_closed_trade_funnel.get('blocked_stage')}"
+    )
+    print(
+        "cockpit_status_paperops_closed_trade_funnel_close_receipt_count="
+        f"{paperops_closed_trade_funnel.get('counts', {}).get('paper_close_receipt_count')}"
+    )
+    print(
+        "cockpit_status_paperops_closed_trade_funnel_closed_proof_trade_count="
+        f"{paperops_closed_trade_funnel.get('counts', {}).get('closed_proof_trade_count')}"
     )
     print(
         "cockpit_status_paperops_notification_review_status="
@@ -3751,6 +3878,58 @@ def main() -> int:
     print(
         "cockpit_status_paperops_notification_review_command_path_enabled_count="
         f"{paperops_notification_review.get('telegram_command_path_enabled_count')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_status="
+        f"{paperops_submit_regression_guard.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_source_paperops2_status="
+        f"{paperops_submit_regression_guard.get('source_paperops2_status')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_fresh_submit_count="
+        f"{paperops_submit_regression_guard.get('fresh_eligible_submit_record_count')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_duplicate_submit_count="
+        f"{paperops_submit_regression_guard.get('duplicate_submit_record_count')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_blocker_count="
+        f"{paperops_submit_regression_guard.get('blocker_count')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_fresh_ledger_collision_count="
+        f"{paperops_submit_regression_guard.get('fresh_submitted_ledger_collision_count')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_duplicate_misclassified_count="
+        f"{paperops_submit_regression_guard.get('duplicate_misclassified_as_fresh_count')}"
+    )
+    print(
+        "cockpit_status_paperops_submit_regression_guard_source_stale_after_post_count="
+        f"{paperops_submit_regression_guard.get('source_stale_after_post_tolerance_count')}"
+    )
+    print(
+        "cockpit_status_paperops_source_gap_visibility_status="
+        f"{paperops_source_gap_visibility.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_source_gap_visibility_optional_count="
+        f"{paperops_source_gap_visibility.get('optional_gap_count')}"
+    )
+    print(
+        "cockpit_status_paperops_source_gap_visibility_optional_keys="
+        f"{','.join(paperops_source_gap_visibility.get('optional_gap_keys') or [])}"
+    )
+    print(
+        "cockpit_status_paperops_source_gap_visibility_trade_blocking_count="
+        f"{paperops_source_gap_visibility.get('trade_blocking_source_gap_count')}"
+    )
+    print(
+        "cockpit_status_paperops_source_gap_visibility_silent_blocker_count="
+        f"{paperops_source_gap_visibility.get('silent_blocker_count')}"
     )
     print(
         "cockpit_status_paperops_30_day_operations_status="
@@ -7996,6 +8175,38 @@ def main() -> int:
     if mission_sources.get("missing_credentials") != mission_sources.get("missing_credential_count"):
         print("cockpit_status_mission_sources_missing_credential_mismatch=true")
         return 1
+    if mission_sources.get("source_gap_visibility_status") != (
+        paperops_source_gap_visibility.get("status")
+    ):
+        print("cockpit_status_mission_sources_source_gap_status_mismatch=true")
+        return 1
+    if mission_sources.get("source_gap_policy_status") != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        print("cockpit_status_mission_sources_source_gap_policy_invalid=true")
+        return 1
+    if mission_sources.get("optional_source_gap_count") != (
+        paperops_source_gap_visibility.get("optional_gap_count")
+    ):
+        print("cockpit_status_mission_sources_optional_gap_count_mismatch=true")
+        return 1
+    if mission_sources.get("optional_source_gap_keys") != (
+        paperops_source_gap_visibility.get("optional_gap_keys")
+    ):
+        print("cockpit_status_mission_sources_optional_gap_keys_mismatch=true")
+        return 1
+    if mission_sources.get("required_source_gap_count") != 0:
+        print("cockpit_status_mission_sources_required_source_gap_nonzero=true")
+        return 1
+    if mission_sources.get("trade_blocking_source_gap_count") != 0:
+        print("cockpit_status_mission_sources_trade_blocking_source_gap_nonzero=true")
+        return 1
+    if mission_sources.get("source_gap_silent_blocker_count") != 0:
+        print("cockpit_status_mission_sources_source_gap_silent_blocker_nonzero=true")
+        return 1
+    if mission_sources.get("source_gap_blocker_count") != 0:
+        print("cockpit_status_mission_sources_source_gap_blocker_nonzero=true")
+        return 1
     source_ledger = mission_sources.get("ledger", [])
     if not isinstance(source_ledger, list) or len(source_ledger) != len(payload.get("watching", [])):
         print("cockpit_status_mission_source_ledger_invalid=true")
@@ -8081,6 +8292,8 @@ def main() -> int:
         "paper_authority_reconciliation",
         "rs10_final_paper_autonomy_certification",
         "paperops_active_paper_trading_automation",
+        "paperops_submit_regression_guard",
+        "paperops_source_gap_visibility",
     ):
         if expected_diagnostic not in diagnostics.get("audit_sections", {}):
             print(f"cockpit_status_diagnostics_section_missing={expected_diagnostic}")
@@ -8454,6 +8667,75 @@ def main() -> int:
     ):
         print("cockpit_status_mission_stack_paperops_exit_path_count_mismatch=true")
         return 1
+    if mission_stack.get(
+        "paperops_paper_exit_path_suppressed_stale_not_found_count"
+    ) != paperops_paper_exit_path.get(
+        "suppressed_stale_not_found_exit_candidate_count"
+    ):
+        print("cockpit_status_mission_stack_paperops_exit_path_stale_suppression_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_paper_exit_path_suppressed_pending_close_request_count"
+    ) != paperops_paper_exit_path.get(
+        "suppressed_pending_close_request_exit_candidate_count"
+    ):
+        print("cockpit_status_mission_stack_paperops_exit_path_pending_close_suppression_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_lifecycle_mirror_freshness") != (
+        paperops_lifecycle_mirror_freshness.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_lifecycle_mirror_freshness_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_lifecycle_mirror_fresh_after_latest_close"
+    ) != paperops_lifecycle_mirror_freshness.get("fresh_after_latest_close"):
+        print("cockpit_status_mission_stack_paperops_lifecycle_mirror_freshness_count_mismatch=true")
+        return 1
+    close_to_ledger_errors = validate_paperops_close_to_ledger(paperops_close_to_ledger)
+    if close_to_ledger_errors:
+        print("cockpit_status_paperops_close_to_ledger_invalid=true")
+        print("cockpit_status_paperops_close_to_ledger_errors=" + ",".join(close_to_ledger_errors))
+        return 1
+    if mission_stack.get("paperops_close_to_ledger") != (
+        paperops_close_to_ledger.get("status")
+    ):
+        print("cockpit_status_mission_stack_paperops_close_to_ledger_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_close_to_ledger_closed_proof_trade_count"
+    ) != paperops_close_to_ledger.get("closed_proof_trade_count"):
+        print("cockpit_status_mission_stack_paperops_close_to_ledger_closed_count_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_close_to_ledger_postmortem_due_marker_created_count"
+    ) != paperops_close_to_ledger.get("postmortem_due_marker_created_count"):
+        print("cockpit_status_mission_stack_paperops_close_to_ledger_postmortem_count_mismatch=true")
+        return 1
+    funnel_errors = validate_paperops_closed_trade_funnel(paperops_closed_trade_funnel)
+    if funnel_errors:
+        print("cockpit_status_paperops_closed_trade_funnel_invalid=true")
+        print("cockpit_status_paperops_closed_trade_funnel_errors=" + ",".join(funnel_errors))
+        return 1
+    if mission_stack.get("paperops_closed_trade_funnel") != (
+        paperops_closed_trade_funnel.get("status")
+    ):
+        print("cockpit_status_mission_stack_closed_trade_funnel_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_closed_trade_funnel_blocked_stage") != (
+        paperops_closed_trade_funnel.get("blocked_stage")
+    ):
+        print("cockpit_status_mission_stack_closed_trade_funnel_stage_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_closed_trade_funnel_close_receipt_count") != (
+        paperops_closed_trade_funnel.get("counts", {}).get("paper_close_receipt_count")
+    ):
+        print("cockpit_status_mission_stack_closed_trade_funnel_receipt_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_closed_trade_funnel_closed_proof_trade_count") != (
+        paperops_closed_trade_funnel.get("counts", {}).get("closed_proof_trade_count")
+    ):
+        print("cockpit_status_mission_stack_closed_trade_funnel_proof_count_mismatch=true")
+        return 1
     if mission_stack.get("paperops_notification_review") != paperops_notification_review.get(
         "status"
     ):
@@ -8463,6 +8745,116 @@ def main() -> int:
         paperops_notification_review.get("live_send_allowed_count")
     ):
         print("cockpit_status_mission_stack_paperops_notification_review_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_submit_regression_guard") != (
+        paperops_submit_regression_guard.get("status")
+    ):
+        print("cockpit_status_mission_stack_submit_regression_status_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_submit_regression_guard_source_paperops2") != (
+        paperops_submit_regression_guard.get("source_paperops2_status")
+    ):
+        print("cockpit_status_mission_stack_submit_regression_source_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_submit_regression_guard_fresh_submit_count") != (
+        paperops_submit_regression_guard.get("fresh_eligible_submit_record_count")
+    ):
+        print("cockpit_status_mission_stack_submit_regression_fresh_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_submit_regression_guard_duplicate_submit_count") != (
+        paperops_submit_regression_guard.get("duplicate_submit_record_count")
+    ):
+        print("cockpit_status_mission_stack_submit_regression_duplicate_count_mismatch=true")
+        return 1
+    if mission_stack.get("paperops_submit_regression_guard_blocker_count") != (
+        paperops_submit_regression_guard.get("blocker_count")
+    ):
+        print("cockpit_status_mission_stack_submit_regression_blocker_count_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_submit_regression_guard_fresh_ledger_collision_count"
+    ) != paperops_submit_regression_guard.get(
+        "fresh_submitted_ledger_collision_count"
+    ):
+        print("cockpit_status_mission_stack_submit_regression_collision_count_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_submit_regression_guard_duplicate_misclassified_count"
+    ) != paperops_submit_regression_guard.get(
+        "duplicate_misclassified_as_fresh_count"
+    ):
+        print("cockpit_status_mission_stack_submit_regression_misclassified_count_mismatch=true")
+        return 1
+    if mission_stack.get(
+        "paperops_submit_regression_guard_source_stale_after_post_count"
+    ) != paperops_submit_regression_guard.get("source_stale_after_post_tolerance_count"):
+        print("cockpit_status_mission_stack_submit_regression_stale_count_mismatch=true")
+        return 1
+    if paperops_submit_regression_guard.get("status") not in {
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+    }:
+        print("cockpit_status_paperops_submit_regression_guard_not_healthy=true")
+        return 1
+    if int(paperops_submit_regression_guard.get("blocker_count", 0) or 0) != 0:
+        print("cockpit_status_paperops_submit_regression_guard_blocked=true")
+        return 1
+    for guard_counter in (
+        "source_stale_after_post_tolerance_count",
+        "fresh_submitted_ledger_collision_count",
+        "duplicate_misclassified_as_fresh_count",
+        "live_endpoint_called_count",
+        "broker_post_called_count",
+        "broker_write_allowed_count",
+    ):
+        if int(paperops_submit_regression_guard.get(guard_counter, 0) or 0) != 0:
+            print(
+                "cockpit_status_paperops_submit_regression_guard_counter_nonzero="
+                + guard_counter
+            )
+            return 1
+    if paperops_submit_regression_guard.get("live_capital_enabled") is not False:
+        print("cockpit_status_paperops_submit_regression_guard_live_capital_enabled=true")
+        return 1
+    if paperops_submit_regression_guard.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_paperops_submit_regression_guard_proof_credit_allowed=true")
+        return 1
+    if paperops_source_gap_visibility.get("status") not in {
+        "explicit_optional_source_gaps",
+        "all_optional_sources_configured",
+    }:
+        print("cockpit_status_paperops_source_gap_visibility_status_invalid=true")
+        return 1
+    if int(paperops_source_gap_visibility.get("validation_error_count", 0) or 0) != 0:
+        print("cockpit_status_paperops_source_gap_visibility_validation_errors=true")
+        return 1
+    if paperops_source_gap_visibility.get("source_gap_policy_status") != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        print("cockpit_status_paperops_source_gap_visibility_policy_invalid=true")
+        return 1
+    for source_gap_counter in (
+        "required_gap_count",
+        "trade_blocking_source_gap_count",
+        "source_quorum_blocking_gap_count",
+        "silent_blocker_count",
+        "blocker_count",
+        "broker_post_called_count",
+        "broker_write_allowed_count",
+        "live_endpoint_called_count",
+    ):
+        if int(paperops_source_gap_visibility.get(source_gap_counter, 0) or 0) != 0:
+            print(
+                "cockpit_status_paperops_source_gap_visibility_counter_nonzero="
+                + source_gap_counter
+            )
+            return 1
+    if paperops_source_gap_visibility.get("live_capital_enabled") is not False:
+        print("cockpit_status_paperops_source_gap_visibility_live_capital_enabled=true")
+        return 1
+    if paperops_source_gap_visibility.get("phase7_proof_credit_allowed") is not False:
+        print("cockpit_status_paperops_source_gap_visibility_proof_credit_allowed=true")
         return 1
     if mission_stack.get("paperops_30_day_operations") != paperops_30_day_operations.get(
         "status"
@@ -8925,6 +9317,37 @@ def main() -> int:
     if paperops_30_day_operations.get("dashboard_mirror_public_safe") is not True:
         print("cockpit_status_paperops_30_day_operations_dashboard_not_safe=true")
         return 1
+    if paperops_30_day_operations.get("paperops_submit_regression_guard_status") not in {
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+    }:
+        print("cockpit_status_paperops_30_day_submit_regression_not_healthy=true")
+        return 1
+    if (
+        int(
+            paperops_30_day_operations.get(
+                "paperops_submit_regression_guard_blocker_count",
+                0,
+            )
+            or 0
+        )
+        != 0
+    ):
+        print("cockpit_status_paperops_30_day_submit_regression_blocked=true")
+        return 1
+    for submit_guard_counter in (
+        "paperops_submit_regression_guard_source_stale_after_post_count",
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+        "paperops_submit_regression_guard_validation_error_count",
+    ):
+        if int(paperops_30_day_operations.get(submit_guard_counter, 0) or 0) != 0:
+            print(
+                "cockpit_status_paperops_30_day_submit_regression_counter_nonzero="
+                + submit_guard_counter
+            )
+            return 1
     if paperops_30_day_operations.get("live_capital_enabled") is not False:
         print("cockpit_status_paperops_30_day_operations_live_capital_enabled=true")
         return 1

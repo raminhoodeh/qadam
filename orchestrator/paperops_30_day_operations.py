@@ -18,6 +18,13 @@ from typing import Any
 
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog, EventLogEntry
+from orchestrator.paperops_close_to_ledger import build_paperops_close_to_ledger
+from orchestrator.paperops_source_gap_visibility import (
+    build_paperops_source_gap_visibility,
+)
+from orchestrator.paperops_submit_regression_guard import (
+    build_paperops_submit_regression_guard,
+)
 
 
 PAPEROPS_30_DAY_OPERATIONS_SCHEMA_VERSION = 1
@@ -93,6 +100,31 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "qualified_setup_count",
     "submitted_paper_order_count",
     "closed_proof_trade_count",
+    "paperops_close_to_ledger_status",
+    "paperops_close_to_ledger_closed_proof_trade_count",
+    "paperops_close_to_ledger_postmortem_due_marker_created_count",
+    "paperops_close_to_ledger_blocker_count",
+    "paperops_submit_regression_guard_status",
+    "paperops_submit_regression_guard_source_paperops2_status",
+    "paperops_submit_regression_guard_fresh_eligible_submit_record_count",
+    "paperops_submit_regression_guard_duplicate_submit_record_count",
+    "paperops_submit_regression_guard_source_stale_after_post_count",
+    "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+    "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+    "paperops_submit_regression_guard_blocker_count",
+    "paperops_submit_regression_guard_validation_error_count",
+    "paperops_source_gap_visibility_status",
+    "paperops_source_gap_visibility_policy_status",
+    "paperops_source_gap_visibility_optional_gap_count",
+    "paperops_source_gap_visibility_optional_gap_keys",
+    "paperops_source_gap_visibility_required_gap_count",
+    "paperops_source_gap_visibility_trade_blocking_gap_count",
+    "paperops_source_gap_visibility_source_quorum_blocking_gap_count",
+    "paperops_source_gap_visibility_silent_blocker_count",
+    "paperops_source_gap_visibility_blocker_count",
+    "paperops_source_gap_visibility_live_endpoint_called_count",
+    "paperops_source_gap_visibility_broker_post_called_count",
+    "paperops_source_gap_visibility_live_capital_enabled",
     "no_trade_rationale",
     "collection_state",
     "scheduler_status",
@@ -460,6 +492,53 @@ def _blockers(artifact: dict[str, Any]) -> list[str]:
         blockers.append("paperops_cycle_not_safe_to_continue")
     if artifact.get("dashboard_mirror_public_safe") is not True:
         blockers.append("dashboard_mirror_not_public_safe")
+    if artifact.get("paperops_submit_regression_guard_status") == (
+        "blocked_submit_regression"
+    ):
+        blockers.append("paperops_submit_regression_guard_blocked")
+    if _int(artifact.get("paperops_submit_regression_guard_blocker_count")):
+        blockers.append("paperops_submit_regression_guard_has_blockers")
+    if _int(
+        artifact.get("paperops_submit_regression_guard_validation_error_count")
+    ):
+        blockers.append("paperops_submit_regression_guard_invalid")
+    if _int(
+        artifact.get("paperops_submit_regression_guard_source_stale_after_post_count")
+    ):
+        blockers.append("paperops_submit_regression_source_stale")
+    if _int(
+        artifact.get(
+            "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count"
+        )
+    ):
+        blockers.append("paperops_submit_regression_fresh_ledger_collision")
+    if _int(
+        artifact.get(
+            "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count"
+        )
+    ):
+        blockers.append("paperops_submit_regression_duplicate_misclassified")
+    if artifact.get("paperops_source_gap_visibility_status") not in {
+        "explicit_optional_source_gaps",
+        "all_optional_sources_configured",
+    }:
+        blockers.append("paperops_source_gap_visibility_invalid")
+    if artifact.get("paperops_source_gap_visibility_policy_status") != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        blockers.append("paperops_source_gap_visibility_policy_invalid")
+    if _int(artifact.get("paperops_source_gap_visibility_required_gap_count")):
+        blockers.append("paperops_source_gap_required_gap_present")
+    if _int(artifact.get("paperops_source_gap_visibility_trade_blocking_gap_count")):
+        blockers.append("paperops_source_gap_trade_blocking")
+    if _int(
+        artifact.get("paperops_source_gap_visibility_source_quorum_blocking_gap_count")
+    ):
+        blockers.append("paperops_source_gap_source_quorum_blocking")
+    if _int(artifact.get("paperops_source_gap_visibility_silent_blocker_count")):
+        blockers.append("paperops_source_gap_silent_blocker")
+    if _int(artifact.get("paperops_source_gap_visibility_blocker_count")):
+        blockers.append("paperops_source_gap_visibility_has_blockers")
     if artifact.get("paperops_cockpit_notification_upgrade_status") != (
         "cockpit_notification_upgrade_ready"
     ):
@@ -493,6 +572,9 @@ def build_paperops_30_day_operations(
     active_automation = snapshot["active_automation"]
     cockpit_notification_upgrade = snapshot["cockpit_notification_upgrade"]
     paper_live_certification = snapshot["paper_live_certification"]
+    close_to_ledger = build_paperops_close_to_ledger(settings=settings)
+    submit_regression_guard = build_paperops_submit_regression_guard(settings=settings)
+    source_gap_visibility = build_paperops_source_gap_visibility(settings=settings)
     automation = _automation_status(_automation_config(), settings)
     dashboard = _dashboard_mirror_status(snapshot["cockpit"])
     cycle_summary = _cycle_status(cycle)
@@ -534,6 +616,10 @@ def build_paperops_30_day_operations(
             notification_command_count,
             notification_broker_write_count,
             active_automation_live_endpoint_count,
+            submit_regression_guard.get("live_endpoint_called_count"),
+            submit_regression_guard.get("broker_post_called_count"),
+            source_gap_visibility.get("live_endpoint_called_count"),
+            source_gap_visibility.get("broker_post_called_count"),
             cockpit_notification_live_send_count,
             cockpit_notification_command_count,
             cockpit_notification_broker_write_count,
@@ -591,7 +677,85 @@ def build_paperops_30_day_operations(
         "submitted_paper_order_count": _int(
             demo_run.get("submitted_paper_order_count")
         ),
-        "closed_proof_trade_count": _int(demo_run.get("closed_proof_trade_count")),
+        "closed_proof_trade_count": max(
+            _int(demo_run.get("closed_proof_trade_count")),
+            _int(close_to_ledger.get("closed_proof_trade_count")),
+        ),
+        "paperops_close_to_ledger_status": close_to_ledger.get("status", "missing"),
+        "paperops_close_to_ledger_closed_proof_trade_count": _int(
+            close_to_ledger.get("closed_proof_trade_count")
+        ),
+        "paperops_close_to_ledger_postmortem_due_marker_created_count": _int(
+            close_to_ledger.get("postmortem_due_marker_created_count")
+        ),
+        "paperops_close_to_ledger_blocker_count": _int(
+            close_to_ledger.get("blocker_count")
+        ),
+        "paperops_submit_regression_guard_status": submit_regression_guard.get(
+            "status", "missing"
+        ),
+        "paperops_submit_regression_guard_source_paperops2_status": (
+            submit_regression_guard.get("source_paperops2_status", "missing")
+        ),
+        "paperops_submit_regression_guard_fresh_eligible_submit_record_count": _int(
+            submit_regression_guard.get("fresh_eligible_submit_record_count")
+        ),
+        "paperops_submit_regression_guard_duplicate_submit_record_count": _int(
+            submit_regression_guard.get("duplicate_submit_record_count")
+        ),
+        "paperops_submit_regression_guard_source_stale_after_post_count": _int(
+            submit_regression_guard.get("source_stale_after_post_tolerance_count")
+        ),
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count": _int(
+            submit_regression_guard.get("fresh_submitted_ledger_collision_count")
+        ),
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count": _int(
+            submit_regression_guard.get("duplicate_misclassified_as_fresh_count")
+        ),
+        "paperops_submit_regression_guard_blocker_count": _int(
+            submit_regression_guard.get("blocker_count")
+        ),
+        "paperops_submit_regression_guard_validation_error_count": _int(
+            submit_regression_guard.get("validation_error_count")
+        ),
+        "paperops_source_gap_visibility_status": source_gap_visibility.get(
+            "status", "missing"
+        ),
+        "paperops_source_gap_visibility_policy_status": source_gap_visibility.get(
+            "source_gap_policy_status", "missing"
+        ),
+        "paperops_source_gap_visibility_optional_gap_count": _int(
+            source_gap_visibility.get("optional_gap_count")
+        ),
+        "paperops_source_gap_visibility_optional_gap_keys": [
+            str(key)
+            for key in source_gap_visibility.get("optional_gap_keys", []) or []
+            if str(key).strip()
+        ],
+        "paperops_source_gap_visibility_required_gap_count": _int(
+            source_gap_visibility.get("required_gap_count")
+        ),
+        "paperops_source_gap_visibility_trade_blocking_gap_count": _int(
+            source_gap_visibility.get("trade_blocking_source_gap_count")
+        ),
+        "paperops_source_gap_visibility_source_quorum_blocking_gap_count": _int(
+            source_gap_visibility.get("source_quorum_blocking_gap_count")
+        ),
+        "paperops_source_gap_visibility_silent_blocker_count": _int(
+            source_gap_visibility.get("silent_blocker_count")
+        ),
+        "paperops_source_gap_visibility_blocker_count": _int(
+            source_gap_visibility.get("blocker_count")
+        ),
+        "paperops_source_gap_visibility_live_endpoint_called_count": _int(
+            source_gap_visibility.get("live_endpoint_called_count")
+        ),
+        "paperops_source_gap_visibility_broker_post_called_count": _int(
+            source_gap_visibility.get("broker_post_called_count")
+        ),
+        "paperops_source_gap_visibility_live_capital_enabled": (
+            source_gap_visibility.get("live_capital_enabled") is True
+        ),
         "no_trade_rationale": demo_run.get("no_trade_rationale"),
         "collection_state": demo_run.get("collection_state"),
         "scheduler_status": "active_hourly_paperops_runner",
@@ -832,6 +996,50 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         errors.append("paperops_30_day_operations_dashboard_not_paper")
     if artifact.get("dashboard_mirror_trigger_trading_allowed") is not False:
         errors.append("paperops_30_day_operations_dashboard_can_trigger_trading")
+    if artifact.get("paperops_submit_regression_guard_status") not in {
+        "healthy_idle_idempotency_guarded",
+        "healthy_idle_no_fresh_submit",
+        "ready_fresh_submit_consistent",
+    }:
+        errors.append("paperops_30_day_operations_submit_regression_guard_not_ready")
+    if _int(artifact.get("paperops_submit_regression_guard_blocker_count")) != 0:
+        errors.append("paperops_30_day_operations_submit_regression_guard_blocked")
+    if _int(
+        artifact.get("paperops_submit_regression_guard_validation_error_count")
+    ) != 0:
+        errors.append("paperops_30_day_operations_submit_regression_guard_invalid")
+    for key in (
+        "paperops_submit_regression_guard_source_stale_after_post_count",
+        "paperops_submit_regression_guard_fresh_submitted_ledger_collision_count",
+        "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count",
+    ):
+        if _int(artifact.get(key)) != 0:
+            errors.append(
+                f"paperops_30_day_operations_submit_regression_counter_nonzero:{key}"
+            )
+    if artifact.get("paperops_source_gap_visibility_status") not in {
+        "explicit_optional_source_gaps",
+        "all_optional_sources_configured",
+    }:
+        errors.append("paperops_30_day_operations_source_gap_visibility_not_ready")
+    if artifact.get("paperops_source_gap_visibility_policy_status") != (
+        "optional_gaps_explicit_non_blocking"
+    ):
+        errors.append("paperops_30_day_operations_source_gap_visibility_policy_invalid")
+    if _int(artifact.get("paperops_source_gap_visibility_blocker_count")) != 0:
+        errors.append("paperops_30_day_operations_source_gap_visibility_blocked")
+    for key in (
+        "paperops_source_gap_visibility_required_gap_count",
+        "paperops_source_gap_visibility_trade_blocking_gap_count",
+        "paperops_source_gap_visibility_source_quorum_blocking_gap_count",
+        "paperops_source_gap_visibility_silent_blocker_count",
+    ):
+        if _int(artifact.get(key)) != 0:
+            errors.append(
+                f"paperops_30_day_operations_source_gap_counter_nonzero:{key}"
+            )
+    if artifact.get("paperops_source_gap_visibility_live_capital_enabled") is not False:
+        errors.append("paperops_30_day_operations_source_gap_live_capital_enabled")
     for key in (
         "live_capital_enabled",
         "live_credentials_loaded",
@@ -850,6 +1058,8 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
         "paperops_notification_command_path_enabled_count",
         "paperops_notification_broker_write_allowed_count",
         "paperops_active_automation_live_endpoint_called_count",
+        "paperops_source_gap_visibility_live_endpoint_called_count",
+        "paperops_source_gap_visibility_broker_post_called_count",
         "paperops_cockpit_notification_live_send_allowed_count",
         "paperops_cockpit_notification_command_path_enabled_count",
         "paperops_cockpit_notification_broker_write_allowed_count",
@@ -988,6 +1198,10 @@ def paperops_30_day_operations_public_status(
             "qualified_setup_count": 0,
             "submitted_paper_order_count": 0,
             "closed_proof_trade_count": 0,
+            "paperops_submit_regression_guard_status": "not_run",
+            "paperops_submit_regression_guard_fresh_eligible_submit_record_count": 0,
+            "paperops_submit_regression_guard_duplicate_submit_record_count": 0,
+            "paperops_submit_regression_guard_blocker_count": 0,
             "scheduler_status": "not_run",
             "automation_active": False,
             "automation_prompt_paperops_bound": False,

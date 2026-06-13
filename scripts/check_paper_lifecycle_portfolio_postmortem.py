@@ -114,6 +114,18 @@ def main() -> int:
         + str(artifact["paper_proof_ledger_verified_record_count"])
     )
     print(
+        "paper_lifecycle_portfolio_postmortem_close_to_ledger_status="
+        + str(artifact["paperops_close_to_ledger_status"])
+    )
+    print(
+        "paper_lifecycle_portfolio_postmortem_close_to_ledger_blocker_count="
+        + str(artifact["paperops_close_to_ledger_blocker_count"])
+    )
+    print(
+        "paper_lifecycle_portfolio_postmortem_close_to_ledger_postmortem_due_marker_created_count="
+        + str(artifact["paperops_close_to_ledger_postmortem_due_marker_created_count"])
+    )
+    print(
         "paper_lifecycle_portfolio_postmortem_mirror_trade_counted_for_proof_count="
         + str(artifact["mirror_trade_counted_for_proof_count"])
     )

@@ -133,6 +133,26 @@ def main() -> int:
     why_not_probe["why_not_trading_now_reasons"] = []
     why_not_errors = validate_paperops_active_paper_trading_automation(why_not_probe)
 
+    submit_guard_probe = deepcopy(written)
+    submit_guard_probe["paperops_submit_regression_guard_status"] = "blocked_submit_regression"
+    submit_guard_probe["paperops_submit_regression_guard_blocker_count"] = 1
+    submit_guard_errors = validate_paperops_active_paper_trading_automation(
+        submit_guard_probe
+    )
+
+    submit_guard_bypass_probe = deepcopy(written)
+    submit_guard_bypass_probe["paper_submit_step_allowed"] = True
+    submit_guard_bypass_probe["paperops2_status"] = "ready_pending_explicit_execute"
+    submit_guard_bypass_probe["paperops2_eligible_submit_record_count"] = 1
+    submit_guard_bypass_probe["paperops2_fresh_eligible_submit_record_count"] = 1
+    submit_guard_bypass_probe["why_not_trading_now"] = "fresh_guarded_paper_submit_ready"
+    submit_guard_bypass_probe["paperops_submit_regression_guard_status"] = (
+        "healthy_idle_idempotency_guarded"
+    )
+    submit_guard_bypass_errors = validate_paperops_active_paper_trading_automation(
+        submit_guard_bypass_probe
+    )
+
     print(f"paperops_active_automation_status={written['status']}")
     print(
         "paperops_active_automation_schema_version="
@@ -231,6 +251,30 @@ def main() -> int:
     print(
         "paperops_active_automation_paperops2_idempotency_ledger_active="
         f"{written['paperops2_idempotency_ledger_active']}"
+    )
+    print(
+        "paperops_active_automation_submit_regression_guard_status="
+        f"{written['paperops_submit_regression_guard_status']}"
+    )
+    print(
+        "paperops_active_automation_submit_regression_guard_blocker_count="
+        f"{written['paperops_submit_regression_guard_blocker_count']}"
+    )
+    print(
+        "paperops_active_automation_submit_regression_guard_fresh_ledger_collision_count="
+        f"{written['paperops_submit_regression_guard_fresh_submitted_ledger_collision_count']}"
+    )
+    print(
+        "paperops_active_automation_submit_regression_guard_duplicate_misclassified_count="
+        f"{written['paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count']}"
+    )
+    print(
+        "paperops_active_automation_submit_regression_guard_source_stale_after_post_count="
+        f"{written['paperops_submit_regression_guard_source_stale_after_post_count']}"
+    )
+    print(
+        "paperops_active_automation_submit_regression_guard_validation_error_count="
+        f"{written['paperops_submit_regression_guard_validation_error_count']}"
     )
     print(
         "paperops_active_automation_first_week_mandate_status="
@@ -505,6 +549,14 @@ def main() -> int:
         errors.append("RS-5 transport probe was not rejected")
     if "paperops_active_automation_why_not_trading_missing" not in why_not_errors:
         errors.append("why-not-trading probe was not rejected")
+    if "paperops_active_automation_submit_guard_status_invalid" not in submit_guard_errors:
+        errors.append("submit-regression guard blocked probe was not rejected")
+    if "paperops_active_automation_submit_guard_blocked" not in submit_guard_errors:
+        errors.append("submit-regression guard blocker probe was not rejected")
+    if "paperops_active_automation_submit_without_submit_guard_ready" not in (
+        submit_guard_bypass_errors
+    ):
+        errors.append("submit-regression guard bypass probe was not rejected")
 
     if errors:
         print("paperops_active_paper_trading_automation_check=failed")

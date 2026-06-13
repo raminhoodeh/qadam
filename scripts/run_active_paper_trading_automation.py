@@ -389,6 +389,30 @@ def main() -> int:
         f"{written['paperops2_duplicate_submit_interpretation']}"
     )
     print(
+        "paperops_active_runner_submit_regression_guard_status="
+        f"{written['paperops_submit_regression_guard_status']}"
+    )
+    print(
+        "paperops_active_runner_submit_regression_guard_blocker_count="
+        f"{written['paperops_submit_regression_guard_blocker_count']}"
+    )
+    print(
+        "paperops_active_runner_submit_regression_guard_fresh_submitted_ledger_collision_count="
+        f"{written['paperops_submit_regression_guard_fresh_submitted_ledger_collision_count']}"
+    )
+    print(
+        "paperops_active_runner_submit_regression_guard_duplicate_misclassified_as_fresh_count="
+        f"{written['paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count']}"
+    )
+    print(
+        "paperops_active_runner_submit_regression_guard_source_stale_after_post_count="
+        f"{written['paperops_submit_regression_guard_source_stale_after_post_count']}"
+    )
+    print(
+        "paperops_active_runner_submit_regression_guard_validation_error_count="
+        f"{written['paperops_submit_regression_guard_validation_error_count']}"
+    )
+    print(
         "paperops_active_runner_first_week_mandate_status="
         f"{written['first_week_paper_trade_mandate_status']}"
     )
