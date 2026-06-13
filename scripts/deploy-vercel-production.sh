@@ -144,13 +144,7 @@ if ! (
   "${QADAM_PYTHON_BIN}" "${ROOT_DIR}/scripts/send_codebase_upgrade_telegram_notification.py" \
     --live \
     --source "production_deploy" \
-    --summary "Production dashboard deploy completed and Qadam codebase-upgrade notifications are active." \
-    --detail "The deploy hook now sends this group update after Vercel production aliases are updated." \
-    --detail "The runtime artifact records the core commit, dashboard commit, delivery status, and failure category." \
-    --detail "The dashboard Communications panel mirrors the latest codebase-upgrade notification state." \
-    --benefit "Fund Managers can see what changed and why it matters without checking Git, Vercel, or local logs." \
-    --benefit "Failed upgrade notifications are visible instead of silently disappearing after deploy." \
-    --benefit "The message states the safety boundary, so a dashboard/code update is not confused with trading authority." \
+    --summary "Latest committed Qadam runtime and dashboard changes are live on qadam.trade." \
     --deployment-url "${deployment_url}" \
       --alias "qadam.trade" \
       --alias "www.qadam.trade"
