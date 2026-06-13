@@ -9154,6 +9154,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "not_run",
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
         "blocked_submit_regression",
         "invalid",

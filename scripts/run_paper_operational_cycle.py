@@ -1996,6 +1996,7 @@ def validate_paper_operational_cycle(artifact: dict[str, Any]) -> list[str]:
     if artifact.get("submit_regression_guard_status") not in {
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
     }:
         errors.append("paper_ops_cycle_submit_regression_guard_not_ready")

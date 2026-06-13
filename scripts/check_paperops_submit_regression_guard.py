@@ -138,6 +138,14 @@ def main() -> int:
         f"{written['fresh_submitted_ledger_collision_count']}"
     )
     print(
+        "paperops_submit_regression_guard_fresh_submitted_idempotency_recorded_count="
+        f"{written['fresh_submitted_idempotency_recorded_count']}"
+    )
+    print(
+        "paperops_submit_regression_guard_fresh_submitted_idempotency_missing_count="
+        f"{written['fresh_submitted_idempotency_missing_count']}"
+    )
+    print(
         "paperops_submit_regression_guard_duplicate_misclassified_as_fresh_count="
         f"{written['duplicate_misclassified_as_fresh_count']}"
     )
@@ -220,6 +228,8 @@ def main() -> int:
         errors.append("submit regression guard did not see active idempotency ledger")
     if written["fresh_submitted_ledger_collision_count"] != 0:
         errors.append("fresh submit candidate is already in idempotency ledger")
+    if written["fresh_submitted_idempotency_missing_count"] != 0:
+        errors.append("submitted fresh candidate is missing from idempotency ledger")
     if written["duplicate_misclassified_as_fresh_count"] != 0:
         errors.append("duplicate candidate is misclassified as fresh")
     if "paperops_submit_regression_unblocked:source_stale_after_post_tolerance_count" not in stale_errors:

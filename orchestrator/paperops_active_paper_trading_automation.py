@@ -741,6 +741,7 @@ def build_paperops_active_paper_trading_automation(
         in {
             "healthy_idle_idempotency_guarded",
             "healthy_idle_no_fresh_submit",
+            "healthy_submitted_idempotency_recorded",
             "ready_fresh_submit_consistent",
         }
         and _int(submit_regression_guard.get("blocker_count")) == 0
@@ -1221,6 +1222,7 @@ def validate_paperops_active_paper_trading_automation(
     if artifact.get("paperops_submit_regression_guard_status") not in {
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
     }:
         errors.append("paperops_active_automation_submit_guard_status_invalid")

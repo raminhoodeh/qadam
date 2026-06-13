@@ -8793,6 +8793,7 @@ def main() -> int:
     if paperops_submit_regression_guard.get("status") not in {
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
     }:
         print("cockpit_status_paperops_submit_regression_guard_not_healthy=true")
@@ -9320,6 +9321,7 @@ def main() -> int:
     if paperops_30_day_operations.get("paperops_submit_regression_guard_status") not in {
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
     }:
         print("cockpit_status_paperops_30_day_submit_regression_not_healthy=true")

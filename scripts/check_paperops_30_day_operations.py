@@ -649,6 +649,7 @@ def main() -> int:
     if written["paperops_submit_regression_guard_status"] not in {
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
     }:
         errors.append("submit regression guard status is not ready or healthy idle")

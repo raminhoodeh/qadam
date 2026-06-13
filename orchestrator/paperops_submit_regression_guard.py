@@ -40,6 +40,13 @@ PAPEROPS_SUBMIT_REGRESSION_BOUNDARY = (
     "enable live capital, or cannot grant proof credit."
 )
 
+PAPEROPS_SUBMIT_REGRESSION_READY_STATUSES = {
+    "healthy_idle_idempotency_guarded",
+    "healthy_idle_no_fresh_submit",
+    "healthy_submitted_idempotency_recorded",
+    "ready_fresh_submit_consistent",
+}
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -257,11 +264,34 @@ def build_paperops_submit_regression_guard(
     ledger = _submission_ledger(settings)
     submitted_client_ids = set(ledger.get("submitted_client_order_ids", []) or [])
     submitted_source_keys = set(ledger.get("submitted_source_idempotency_keys", []) or [])
+    paperops2_submitted_to_paper = (
+        source.get("status") == "submitted_to_alpaca_paper"
+        and _int(source.get("alpaca_paper_post_succeeded_count")) > 0
+        and _int(source.get("broker_submit_receipt_created_count")) > 0
+    )
+
+    def _fresh_record_in_submission_ledger(record: dict[str, Any]) -> bool:
+        return (
+            str(record.get("idempotency_key") or "") in submitted_client_ids
+            or str(record.get("source_idempotency_key") or "") in submitted_source_keys
+        )
+
+    fresh_submitted_idempotency_records = [
+        record
+        for record in fresh_records
+        if paperops2_submitted_to_paper and _fresh_record_in_submission_ledger(record)
+    ]
+    fresh_submitted_idempotency_missing_records = [
+        record
+        for record in fresh_records
+        if source.get("status") == "submitted_to_alpaca_paper"
+        and not _fresh_record_in_submission_ledger(record)
+    ]
     fresh_ledger_collisions = [
         record
         for record in fresh_records
-        if str(record.get("idempotency_key") or "") in submitted_client_ids
-        or str(record.get("source_idempotency_key") or "") in submitted_source_keys
+        if _fresh_record_in_submission_ledger(record)
+        and record not in fresh_submitted_idempotency_records
     ]
     fresh_candidate_identities = [_candidate_identity(record) for record in fresh_records]
     fresh_research_goals = [_research_goal_identity(record) for record in fresh_records]
@@ -282,6 +312,8 @@ def build_paperops_submit_regression_guard(
         blockers.append("paperops2_duplicate_submit_count_mismatch")
     if fresh_ledger_collisions:
         blockers.append("fresh_submit_candidate_already_in_idempotency_ledger")
+    if fresh_submitted_idempotency_missing_records:
+        blockers.append("paperops2_submitted_fresh_candidate_missing_idempotency_ledger")
     if misclassified_duplicate_records:
         blockers.append("duplicate_submit_candidate_misclassified_as_fresh")
     if any(not value for value in fresh_candidate_identities):
@@ -304,6 +336,12 @@ def build_paperops_submit_regression_guard(
     blocker_count = len(sorted(set(blockers)))
     if blocker_count:
         status = "blocked_submit_regression"
+    elif (
+        paperops2_submitted_to_paper
+        and fresh_records
+        and len(fresh_submitted_idempotency_records) == len(fresh_records)
+    ):
+        status = "healthy_submitted_idempotency_recorded"
     elif fresh_records:
         status = "ready_fresh_submit_consistent"
     elif duplicate_records:
@@ -354,6 +392,12 @@ def build_paperops_submit_regression_guard(
         "submitted_source_idempotency_key_count": len(submitted_source_keys),
         "idempotency_ledger_active": source.get("idempotency_ledger_active") is True,
         "fresh_submitted_ledger_collision_count": len(fresh_ledger_collisions),
+        "fresh_submitted_idempotency_recorded_count": len(
+            fresh_submitted_idempotency_records
+        ),
+        "fresh_submitted_idempotency_missing_count": len(
+            fresh_submitted_idempotency_missing_records
+        ),
         "duplicate_misclassified_as_fresh_count": len(misclassified_duplicate_records),
         "fresh_candidate_identity_missing_count": sum(
             1 for value in fresh_candidate_identities if not value
@@ -380,6 +424,14 @@ def build_paperops_submit_regression_guard(
         "fresh_submitted_ledger_collision_records": [
             _candidate_summary(record) for record in fresh_ledger_collisions
         ],
+        "fresh_submitted_idempotency_recorded_records": [
+            _candidate_summary(record)
+            for record in fresh_submitted_idempotency_records
+        ],
+        "fresh_submitted_idempotency_missing_records": [
+            _candidate_summary(record)
+            for record in fresh_submitted_idempotency_missing_records
+        ],
         "duplicate_misclassified_records": [
             _candidate_summary(record) for record in misclassified_duplicate_records
         ],
@@ -398,7 +450,11 @@ def build_paperops_submit_regression_guard(
             "Fix PaperOps-2 submit-source freshness or idempotency classification before delegation."
             if blocker_count
             else (
-                "Delegate only through PaperOps-2 guarded Alpaca Paper route when the active runner executes."
+                (
+                    "Keep active runner idle: the guarded paper submit is already recorded in the idempotency ledger."
+                    if status == "healthy_submitted_idempotency_recorded"
+                    else "Delegate only through PaperOps-2 guarded Alpaca Paper route when the active runner executes."
+                )
                 if fresh_records
                 else "Keep active runner idle until a fresh distinct PaperOps-2 submit candidate appears."
             )
@@ -432,6 +488,8 @@ def validate_paperops_submit_regression_guard(artifact: dict[str, Any]) -> list[
         "fresh_research_goal_lineage_collision_count",
         "fresh_research_goal_lineage_missing_count",
         "fresh_submitted_ledger_collision_count",
+        "fresh_submitted_idempotency_recorded_count",
+        "fresh_submitted_idempotency_missing_count",
         "generated_at",
         "idempotency_ledger_active",
         "live_capital_enabled",
@@ -486,6 +544,7 @@ def validate_paperops_submit_regression_guard(artifact: dict[str, Any]) -> list[
     guarded_metrics = (
         ("source_stale_after_post_tolerance_count", "paperops2_source_artifact_stale_after_submit_artifact"),
         ("fresh_submitted_ledger_collision_count", "fresh_submit_candidate_already_in_idempotency_ledger"),
+        ("fresh_submitted_idempotency_missing_count", "paperops2_submitted_fresh_candidate_missing_idempotency_ledger"),
         ("duplicate_misclassified_as_fresh_count", "duplicate_submit_candidate_misclassified_as_fresh"),
         ("fresh_candidate_identity_missing_count", "fresh_submit_candidate_identity_missing"),
         ("fresh_research_goal_lineage_missing_count", "fresh_submit_research_goal_lineage_missing"),
@@ -503,11 +562,7 @@ def validate_paperops_submit_regression_guard(artifact: dict[str, Any]) -> list[
         errors.append("paperops_submit_regression_idempotency_inactive_unblocked")
     if blockers and artifact.get("status") != "blocked_submit_regression":
         errors.append("paperops_submit_regression_blockers_status_mismatch")
-    if not blockers and artifact.get("status") not in {
-        "healthy_idle_idempotency_guarded",
-        "healthy_idle_no_fresh_submit",
-        "ready_fresh_submit_consistent",
-    }:
+    if not blockers and artifact.get("status") not in PAPEROPS_SUBMIT_REGRESSION_READY_STATUSES:
         errors.append("paperops_submit_regression_ready_status_invalid")
     source_records = artifact.get("source_artifact_records", [])
     if not isinstance(source_records, list):

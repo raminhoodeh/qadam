@@ -999,6 +999,7 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
     if artifact.get("paperops_submit_regression_guard_status") not in {
         "healthy_idle_idempotency_guarded",
         "healthy_idle_no_fresh_submit",
+        "healthy_submitted_idempotency_recorded",
         "ready_fresh_submit_consistent",
     }:
         errors.append("paperops_30_day_operations_submit_regression_guard_not_ready")

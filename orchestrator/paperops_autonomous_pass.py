@@ -1030,6 +1030,7 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         if submit_regression_guard.get("status") not in {
             "healthy_idle_idempotency_guarded",
             "healthy_idle_no_fresh_submit",
+            "healthy_submitted_idempotency_recorded",
             "ready_fresh_submit_consistent",
         }:
             errors.append("paperops_autonomous_pass_submit_regression_guard_not_ready")
@@ -1048,13 +1049,38 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
                     f"paperops_autonomous_pass_submit_regression_counter_nonzero:{key}"
                 )
         paper_runtime = summary.get("paper_runtime", {})
-        if _int(
+        submit_guard_fresh_count = _int(
             submit_regression_guard.get("fresh_eligible_submit_record_count")
-        ) != _int(paper_runtime.get("fresh_eligible_submit_count")):
-            errors.append("paperops_autonomous_pass_submit_regression_fresh_mismatch")
-        if _int(
+        )
+        submit_guard_duplicate_count = _int(
             submit_regression_guard.get("duplicate_submit_record_count")
-        ) != _int(paper_runtime.get("duplicate_submit_count")):
+        )
+        if (
+            submit_regression_guard.get("status")
+            == "healthy_submitted_idempotency_recorded"
+        ):
+            recorded_submit_count = _int(
+                submit_regression_guard.get(
+                    "fresh_submitted_idempotency_recorded_count"
+                )
+            )
+            expected_runtime_fresh_count = max(
+                submit_guard_fresh_count - recorded_submit_count,
+                0,
+            )
+            expected_runtime_duplicate_count = (
+                submit_guard_duplicate_count + recorded_submit_count
+            )
+        else:
+            expected_runtime_fresh_count = submit_guard_fresh_count
+            expected_runtime_duplicate_count = submit_guard_duplicate_count
+        if expected_runtime_fresh_count != _int(
+            paper_runtime.get("fresh_eligible_submit_count")
+        ):
+            errors.append("paperops_autonomous_pass_submit_regression_fresh_mismatch")
+        if expected_runtime_duplicate_count != _int(
+            paper_runtime.get("duplicate_submit_count")
+        ):
             errors.append("paperops_autonomous_pass_submit_regression_duplicate_mismatch")
     first_week = summary.get("first_week_paper_trade_mandate", {})
     if first_week.get("active") is True:
