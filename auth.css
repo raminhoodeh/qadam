@@ -813,6 +813,11 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.overview-plain-grid .overview-data-sources-panel,
+.overview-plain-grid .overview-source-summary-panel {
+    grid-column: 1 / -1;
+}
+
 .overview-plain-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -932,7 +937,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-mission-metrics {
     display: grid;
     gap: 8px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .overview-mission-metrics span {
@@ -962,6 +967,79 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     overflow-wrap: anywhere;
 }
 
+.overview-decision-records {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+}
+
+.overview-decision-records.compact {
+    grid-template-columns: 1fr;
+}
+
+.overview-decision-records > div {
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    padding: 10px;
+}
+
+.overview-decision-records > div.online {
+    border-color: rgba(var(--green-rgb), 0.24);
+}
+
+.overview-decision-records > div.pending,
+.overview-decision-records > div.degraded {
+    border-color: rgba(var(--amber-rgb), 0.28);
+}
+
+.overview-decision-records > div.blocked {
+    border-color: rgba(var(--coral-rgb), 0.34);
+}
+
+.overview-decision-records dt {
+    color: var(--muted-soft);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.overview-decision-records dd {
+    display: grid;
+    gap: 3px;
+    margin: 0;
+    min-width: 0;
+}
+
+.overview-decision-records strong {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.overview-decision-records span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.overview-mission-snapshot-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-top: 12px;
+}
+
+.overview-mission-snapshot-grid .overview-plain-card {
+    min-height: 132px;
+}
+
 .overview-mission-next {
     display: grid;
     gap: 6px;
@@ -978,11 +1056,12 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-system-summary,
 .strategy-narrative-shell,
 .overview-system-status-panel,
-.overview-paper-capacity-panel,
+.overview-paper-trade-state-panel,
 .overview-data-sources-panel,
+.overview-source-summary-panel,
 .overview-strategies-panel,
 .overview-thought-feed-panel,
-.overview-trade-considerations-panel,
+.trade-state-summary-card,
 .overview-plain-card,
 .overview-capacity-chart-card,
 .overview-mini-node,
@@ -999,11 +1078,12 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-proof-flow,
 .overview-system-summary,
 .overview-system-status-panel,
-.overview-paper-capacity-panel,
+.overview-paper-trade-state-panel,
 .overview-data-sources-panel,
+.overview-source-summary-panel,
 .overview-strategies-panel,
 .overview-thought-feed-panel,
-.overview-trade-considerations-panel,
+.trade-state-summary-card,
 .overview-plain-card,
 .overview-capacity-chart-card,
 .overview-next-links a {
@@ -1067,8 +1147,10 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-review-card > span,
 .overview-review-card p,
 .overview-mission-brief p,
+.overview-decision-records span,
 .overview-strategy-narrative p,
 .strategy-narrative-shell p,
+.strategy-narrative-grid small,
 .strategy-narrative-shell li span,
 .overview-mission-question p,
 .overview-mission-question summary em,
@@ -1090,6 +1172,8 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-thought-list p,
 .overview-oversight span,
 .overview-oversight p,
+.control-plane-oversight span,
+.control-plane-oversight p,
 .overview-boundary-rail span,
 .overview-boundary-rail p,
 .overview-next-links span {
@@ -1108,6 +1192,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-plain-card span,
 .overview-thought-list span,
 .overview-oversight span,
+.control-plane-oversight span,
 .overview-boundary-rail span {
     font-size: 12px;
     line-height: 1.25;
@@ -1123,6 +1208,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-plain-card strong,
 .overview-thought-list strong,
 .overview-oversight strong,
+.control-plane-oversight strong,
 .strategy-narrative-shell strong,
 .strategy-narrative-shell h3,
 .overview-next-links strong {
@@ -1156,11 +1242,10 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-strategy-narrative,
 .strategy-narrative-shell,
 .overview-system-status-panel,
-.overview-paper-capacity-panel,
+.overview-paper-trade-state-panel,
 .overview-data-sources-panel,
 .overview-strategies-panel,
 .overview-thought-feed-panel,
-.overview-trade-considerations-panel,
 .overview-mini-node,
 .flow-node,
 .trade-lifecycle-card,
@@ -1183,6 +1268,7 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-plain-card p,
 .overview-thought-list p,
 .overview-oversight p,
+.control-plane-oversight p,
 .overview-boundary-rail p,
 .overview-next-links span {
     line-height: 1.38;
@@ -1247,17 +1333,18 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 }
 
 .overview-system-status-panel,
-.overview-paper-capacity-panel,
+.overview-paper-trade-state-panel,
 .overview-data-sources-panel,
+.overview-source-summary-panel,
 .overview-strategies-panel,
 .overview-thought-feed-panel,
-.overview-trade-considerations-panel {
+.overview-source-summary-card,
+.trade-state-summary-card {
     display: grid;
     gap: 12px;
 }
 
-.overview-paper-capacity-panel > p,
-.overview-trade-considerations-panel > p {
+.overview-paper-trade-state-panel > p {
     color: var(--muted);
     line-height: 1.45;
     margin: 0;
@@ -1274,6 +1361,49 @@ html[data-dashboard-active-view="operations"] .comments-panel {
     display: block;
     min-height: 140px;
     width: 100%;
+}
+
+.paper-trade-state-shell,
+.paper-trade-state-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.paper-trade-state-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.overview-ledger-routing {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.overview-ledger-routing a {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px;
+    text-decoration: none;
+}
+
+.overview-ledger-routing a:hover {
+    border-color: rgba(var(--cyan-rgb), 0.45);
+    background: rgba(var(--cyan-rgb), 0.07);
+}
+
+.overview-ledger-routing strong {
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+.overview-ledger-routing span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
 }
 
 .overview-capacity-bar {
@@ -1298,6 +1428,29 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 
 .overview-capacity-bar.target span {
     background: linear-gradient(90deg, var(--cyan), rgba(var(--amber-rgb), 0.82));
+}
+
+.control-plane-shell,
+.control-plane-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.control-plane-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.34fr);
+}
+
+.control-plane-map {
+    min-width: 0;
+}
+
+.control-plane-oversight {
+    border: 1px solid rgba(var(--cyan-rgb), 0.22);
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(90deg, rgba(var(--cyan-rgb), 0.08), rgba(var(--green-rgb), 0.045));
 }
 
 .overview-capacity-summary {
@@ -1408,9 +1561,14 @@ html[data-dashboard-active-view="operations"] .comments-panel {
 .overview-proof-flow,
 .overview-system-summary,
 .overview-strategy-narrative,
+.strategy-universe-shell,
 .strategy-narrative-shell {
     display: grid;
     gap: 10px;
+}
+
+.strategy-universe-shell {
+    border-color: rgba(var(--cyan-rgb), 0.24);
 }
 
 .strategy-narrative-shell {
@@ -5821,20 +5979,23 @@ summary {
     .overview-command-surface,
     .overview-mission-question-grid,
     .overview-mission-metrics,
+    .overview-mission-snapshot-grid,
     .overview-status-rail,
-    .overview-readout-list,
-    .overview-system-grid,
-    .strategy-narrative-grid,
-    .strategy-capability-compass,
-    .strategy-fit-matrix,
-    .strategy-summary-strip,
-    .strategy-decision-spine,
+.overview-readout-list,
+.overview-system-grid,
+.strategy-narrative-grid,
+.strategy-capability-compass,
+.strategy-fit-matrix,
+.strategy-summary-strip,
+.overview-decision-records,
+.strategy-decision-spine,
     .ai-lens-columns,
     .strategy-narrative-sources ul,
     .overview-cockpit-grid,
     .overview-plain-grid,
     .overview-plain-card-grid,
     .overview-capacity-summary,
+    .overview-ledger-routing,
     .overview-feed-strip,
     .overview-next-links,
     .overview-mission-nav,
@@ -6064,11 +6225,11 @@ html[data-dashboard-debug="off"] .overview-first-screen {
 
 html[data-dashboard-debug="off"] .overview-system-summary,
 html[data-dashboard-debug="off"] .overview-system-status-panel,
-html[data-dashboard-debug="off"] .overview-paper-capacity-panel,
+html[data-dashboard-debug="off"] .overview-paper-trade-state-panel,
 html[data-dashboard-debug="off"] .overview-data-sources-panel,
+html[data-dashboard-debug="off"] .overview-source-summary-panel,
 html[data-dashboard-debug="off"] .overview-strategies-panel,
-html[data-dashboard-debug="off"] .overview-thought-feed-panel,
-html[data-dashboard-debug="off"] .overview-trade-considerations-panel {
+html[data-dashboard-debug="off"] .overview-thought-feed-panel {
     gap: 9px;
     padding: 10px;
 }
@@ -6448,11 +6609,11 @@ button:hover,
 .overview-proof-flow,
 .overview-system-summary,
 .overview-system-status-panel,
-.overview-paper-capacity-panel,
+.overview-paper-trade-state-panel,
 .overview-data-sources-panel,
+.overview-source-summary-panel,
 .overview-strategies-panel,
 .overview-thought-feed-panel,
-.overview-trade-considerations-panel,
 .overview-plain-card,
 .overview-capacity-chart-card,
 .overview-mini-node,
@@ -6778,6 +6939,11 @@ html[data-dashboard-active-view="trades"] .capital-panel {
     gap: 16px;
 }
 
+.overview-control-plane {
+    gap: 14px;
+}
+
+.control-plane-grid,
 .overview-system-grid,
 html[data-dashboard-debug="off"] .overview-system-grid {
     grid-template-columns: 1fr;
@@ -7123,6 +7289,10 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     .overview-ledger-group > summary {
         grid-template-columns: 1fr;
     }
+
+    .overview-ledger-routing {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 620px) {
@@ -7315,9 +7485,7 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     align-items: stretch;
     display: grid;
     gap: 14px;
-    grid-template-areas:
-        "brief portfolio"
-        "brief trades";
+    grid-template-areas: "brief account";
     grid-template-columns: minmax(0, 1.12fr) minmax(340px, 0.88fr);
 }
 
@@ -7325,17 +7493,12 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     grid-area: brief;
 }
 
-.overview-command-grid > [data-overview-paper-capacity] {
-    grid-area: portfolio;
-}
-
-.overview-command-grid > [data-overview-trade-considerations] {
-    grid-area: trades;
+.overview-command-grid > [data-overview-paper-trade-state] {
+    grid-area: account;
 }
 
 .overview-command-grid .overview-mission-brief,
-.overview-command-grid .overview-paper-capacity-panel,
-.overview-command-grid .overview-trade-considerations-panel {
+.overview-command-grid .overview-paper-trade-state-panel {
     min-height: 0;
 }
 
@@ -7346,9 +7509,8 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
         var(--surface-section);
 }
 
-.overview-command-grid [data-overview-paper-capacity] > p,
-.overview-command-grid [data-overview-trade-considerations] > p,
-.overview-command-grid [data-overview-trade-considerations] .mini {
+.overview-command-grid [data-overview-paper-trade-state] > p,
+.overview-command-grid [data-overview-paper-trade-state] .mini {
     font-size: 13px;
 }
 
@@ -7366,14 +7528,14 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.overview-command-grid [data-overview-trade-considerations] .overview-plain-card-grid {
+.overview-command-grid [data-overview-paper-trade-state] .overview-plain-card-grid {
     grid-template-columns: 1fr;
     max-height: min(42vh, 390px);
     overflow: auto;
     padding-right: 3px;
 }
 
-.overview-command-grid [data-overview-trade-considerations] .overview-plain-card {
+.overview-command-grid [data-overview-paper-trade-state] .overview-plain-card {
     min-height: 0;
 }
 
@@ -7454,11 +7616,10 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     .overview-command-grid {
         grid-template-areas:
             "brief"
-            "portfolio"
-            "trades";
+            "account";
     }
 
-    .overview-command-grid [data-overview-trade-considerations] .overview-plain-card-grid {
+    .overview-command-grid [data-overview-paper-trade-state] .overview-plain-card-grid {
         max-height: none;
         overflow: visible;
         padding-right: 0;

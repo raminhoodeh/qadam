@@ -100,112 +100,73 @@
                     </div>
                 </div>
                 <section class="overview-command-grid" aria-label="Current mission state">
-                    <section class="overview-mission-brief" aria-label="Founder brief" data-overview-mission-brief>
+                    <section class="overview-mission-brief" aria-label="Mission Snapshot" data-overview-mission-brief>
                         <div class="overview-section-head">
-                            <span>Founder brief</span>
-                            <strong>Loading current mission summary</strong>
+                            <span>Mission Snapshot</span>
+                            <strong>Loading current mission state</strong>
                         </div>
-                        <p>Loading source health, strategy posture, trade lifecycle, portfolio state, and safety authority.</p>
+                        <dl class="overview-decision-records">
+                            <div>
+                                <dt>Decision</dt>
+                                <dd><strong>Default to Mission Snapshot</strong><span>Loading status, sources, paper account, trade lifecycle, and boundary.</span></dd>
+                            </div>
+                        </dl>
                     </section>
 
-                    <article class="overview-paper-capacity-panel" data-overview-paper-capacity>
+                    <article class="overview-paper-trade-state-panel" data-overview-paper-trade-state>
                         <div class="overview-section-head">
-                            <span>Paper portfolio</span>
-                            <strong>Loading paper account</strong>
+                            <span>Paper Account &amp; Trade State</span>
+                            <strong>Loading account and trade lifecycle</strong>
                         </div>
-                    </article>
-
-                    <article class="overview-trade-considerations-panel" data-overview-trade-considerations>
-                        <div class="overview-section-head">
-                            <span>Trades being considered</span>
-                            <strong>Loading trade ideas</strong>
-                        </div>
+                        <dl class="overview-decision-records compact">
+                            <div>
+                                <dt>Decision</dt>
+                                <dd><strong>Read paper mirror and lifecycle counts</strong><span>Loading portfolio timeline and lifecycle counts. Detailed rows stay in Trades.</span></dd>
+                            </div>
+                        </dl>
                     </article>
                 </section>
 
-                <section class="overview-strategy-narrative" aria-label="Current trading strategy narrative" data-overview-strategy-narrative>
+                <section class="overview-strategy-narrative" aria-label="Strategy Universe" data-overview-strategy-narrative data-overview-strategy-universe>
                     <div class="overview-section-head">
-                        <span>Strategy posture</span>
-                        <strong>Loading current strategy posture</strong>
+                        <span>Strategy Universe</span>
+                        <strong>Loading strategy families</strong>
                     </div>
-                    <p>Loading the current strategy lens, Akber filter state, and source-driven constraints.</p>
+                    <dl class="overview-decision-records">
+                        <div>
+                            <dt>Decision</dt>
+                            <dd><strong>Use Strategy Universe for strategy posture</strong><span>Loading active thesis, family counts, filter state, and paper-route boundary.</span></dd>
+                        </div>
+                    </dl>
                 </section>
 
-                <section class="overview-system-summary" aria-label="System connectivity summary" data-overview-system-summary>
+                <section class="overview-system-summary overview-control-plane" aria-label="Control Plane" data-overview-control-plane>
                     <div class="overview-section-head">
-                        <span>Operating flow</span>
-                        <strong>Tap + to expand each role</strong>
+                        <span>Control Plane</span>
+                        <strong>Loading operating map and oversight</strong>
                     </div>
-                    <div class="team-health-row" data-team-health-row hidden>
-                        <span>Loading operating-team health.</span>
-                    </div>
-                    <div class="overview-system-grid">
-                        <div class="overview-mini-map" data-overview-mini-map>
-                            <div class="system-flow-diagram overview-system-flow-diagram" data-phase5-system-map>
-                                <section class="flow-lane pending">
-                                    <header class="flow-lane-header">
-                                        <span>01</span>
-                                        <div>
-                                            <h3>Loading canonical system map</h3>
-                                            <p>The live status snapshot replaces this with Qadam's role-by-role operating flow.</p>
-                                        </div>
-                                    </header>
-                                    <div class="flow-lane-track">
-                                        <span>Loading system connectivity.</span>
-                                        <div class="flow-connector" aria-hidden="true"><span>status handoff</span></div>
-                                    </div>
-                                    <div class="lane-handoff"><span>Observed facts must be logged before they count.</span></div>
-                                </section>
-                                <div class="flow-return-loop">
-                                    <strong>Closed-loop rule</strong>
-                                    <span>Every observation, hypothesis, risk decision, paper trade, comment, and postmortem returns to the Event Log before it changes Qadam.</span>
-                                </div>
-	                            </div>
-	                        </div>
-	                        <div class="overview-oversight" data-overview-oversight>
-	                            <span>Fund Manager oversight</span>
-                            <strong>Human oversight</strong>
-                            <p>Qadam reads evidence, proposes paper actions, records outcomes, and keeps approval authority visible.</p>
+                    <dl class="overview-decision-records">
+                        <div>
+                            <dt>Decision</dt>
+                            <dd><strong>Control Plane owns operating flow</strong><span>Loading roles, handoffs, oversight route, and dashboard boundary.</span></dd>
                         </div>
-                    </div>
-                    <div class="overview-feed-strip" data-overview-feed-strip></div>
-                    <div class="overview-boundary-rail" data-overview-boundary-rail>
-                        <span>How to read this</span>
-                        <p>Readouts only. Authority, trade lifecycle, and paper-account state remain backend-derived.</p>
-                    </div>
+                    </dl>
                 </section>
 
-                <section class="overview-cockpit-grid" aria-label="Current system state" data-overview-cockpit-grid>
-                    <article class="overview-system-status-panel" data-overview-system-status>
+                <section class="overview-plain-grid" aria-label="Connected sources" data-overview-plain-grid>
+                    <article class="overview-source-summary-panel" data-overview-source-summary>
                         <div class="overview-section-head">
-                            <span>System status</span>
-                            <strong>Loading runtime state</strong>
+                            <span>Evidence summary</span>
+                            <strong>Loading source posture</strong>
                         </div>
-                    </article>
-                    <article class="overview-thought-feed-panel" data-overview-thought-feed>
-                        <div class="overview-section-head">
-                            <span>Reasoning queue</span>
-                            <strong>Loading reasoning feed</strong>
-                        </div>
-                    </article>
-                </section>
-
-                <section class="overview-plain-grid" aria-label="Connected sources and active strategies" data-overview-plain-grid>
-                    <article class="overview-data-sources-panel" data-overview-data-sources>
-                        <div class="overview-section-head">
-                            <span>Data sources connected</span>
-                            <strong>Loading source groups</strong>
-                        </div>
-                    </article>
-                    <article class="overview-strategies-panel" data-overview-trading-strategies>
-                        <div class="overview-section-head">
-                            <span>Trading strategies</span>
-                            <strong>Loading approved strategy families</strong>
-                        </div>
+                        <dl class="overview-decision-records compact">
+                            <div>
+                                <dt>Decision</dt>
+                                <dd><strong>Show source posture only</strong><span>Loading source counts. Detailed rows stay in Evidence.</span></dd>
+                            </div>
+                        </dl>
                     </article>
                 </section>
-
-                <section class="overview-plain-grid overview-thinking-grid" aria-label="Reasoning and trade ideas" data-overview-thinking-grid hidden></section>
             </section>
 
             <section id="strategy-manifestation" class="operating-review-panel" aria-label="Strategy approval status" data-dashboard-view-section="reasoning" data-cockpit-section="Strategy" hidden>
