@@ -93,6 +93,7 @@ This does not dilute Qadam. It reduces cognitive load. The project remains deep,
 | Dashboard UX overhaul appendix | `docs/qadam-dashboard-overhaul-master-implementation-plan.md` | Control plan for replacing the long cockpit page with a segmented Overview, Trades, Sources, Reasoning, Performance, Operations, and Governance experience. |
 | Telegram appendix | `docs/qadam-telegram-bot-implementation-plan.md` | Member communications rail, bot phases, message classes, and dashboard visibility. |
 | OSS reference appendix | `docs/qadam-oss-reference-implementation-plan.md` | Implementation overlay for adopting useful patterns from external financial-agent, terminal, MCP, chat, and durable inbox repos without importing unsafe execution authority. |
+| Trading edge realization appendix | `docs/qadam-trading-edge-realization-plan.md` | Multi-stage plan for turning Qadam's architecture edge into fresh setup identity, candidate generation, strategy routing, market confirmation, risk sizing, exits, postmortems, and idle-state diagnosis without relaxing paper-only safety. |
 | User guide | `docs/qadam-user-guide.md` | Full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries. |
 | Live source appendix | `docs/api-source-inventory.md` | 35 live/live-adjacent feeds and source conflicts. |
 | API credential appendix | `docs/api-specs.md` | Full API/provider inventory, credential placeholders, onboarding batches, and current provider decisions. |
@@ -131,6 +132,12 @@ Qadam's trading philosophy is not chart-first. It is world-model first, evidence
 The `how-the-world-works/` corpus powers the questions Qadam asks before a trade exists. It pushes Qadam to inspect power hierarchy, energy and security dependencies, monetary plumbing, institutional self-preservation, narrative asymmetry, US-China strategic bargaining, and hidden coordination risk. This is the private philosophical foundation behind Qadam's suspicion, scenario generation, and market-channel watchlists.
 
 That foundation is not allowed to become proof by itself. In the trading chain, the worldview creates hypotheses and observable signatures; live sources must corroborate them; the Akber 6-stage filter must structure them; the Signal Integrity Gate must validate them; and the Risk Agent must authorize sizing before the paper rail can act. The dashboard must therefore show the worldview lens beside each decision while clearly labelling it as a private prior, not evidence or execution authority.
+
+### Trading Edge Realization Roadmap
+
+The next quality-throughput layer is defined in `docs/qadam-trading-edge-realization-plan.md`. Its purpose is to make Qadam better at converting observations into fresh, distinct, evidence-backed paper candidates without weakening any safety gate. The plan covers Fresh Setup Identity v2, a Trade Candidate Factory, Strategy Router, second-order AI infrastructure universe, market confirmation layer, dynamic risk sizing, exit intelligence, postmortem-driven weight proposals, durable replay watchdog, idle-state diagnosis, and final paper-autonomy certification refresh.
+
+This roadmap does not grant new live-capital authority. It preserves the rule that Qadam may submit multiple Alpaca paper trades per day only when distinct qualified setups pass source quorum, market confirmation, Signal Integrity, Strategy Lead review, Head of Quant shadow annotation where applicable, Risk Agent sizing, Execution Policy, kill-switch, idempotency, Event Log, broker-readiness, and reconciliation gates.
 
 ## 4. System Shape
 
