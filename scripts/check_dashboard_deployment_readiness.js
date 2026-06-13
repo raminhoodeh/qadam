@@ -106,11 +106,21 @@ const deployScript = readText(deployScriptPath);
     "dashboard-deployment-receipt.json",
     "send_codebase_upgrade_telegram_notification.py",
     "Codebase upgrade Telegram notification",
-    "--detail",
-    "--benefit",
+    "--live",
+    "--source \"production_deploy\"",
+    "--summary \"Latest committed Qadam runtime and dashboard changes are live on qadam.trade.\"",
     "No production aliases were changed",
     "Production deployment:"
 ].forEach((needle) => assertIncludes(deployScript, needle, "production deploy script"));
+
+[
+    "--detail",
+    "--benefit",
+    "Fund Managers can see what changed and why it matters without checking Git",
+    "The deploy hook now sends this group update after Vercel production aliases are updated"
+].forEach((needle) => {
+    assert(!deployScript.includes(needle), `production deploy script should not force verbose Telegram copy: ${needle}`);
+});
 
 const plan = readText(planPath);
 [

@@ -153,14 +153,18 @@ def _change_area_for_path(path: str) -> str:
         return "PaperOps trading control plane"
     if path.startswith("orchestrator/"):
         return "Python orchestration logic"
-    if path.startswith("scripts/"):
-        return "operator scripts and readiness checks"
-    if path in {"dashboard.js", "landing-page-repo/dashboard.js"}:
-        return "dashboard Communications experience"
+    if path in {"dashboard.js", "dashboard/index.html", "auth.css"} or path in {
+        "landing-page-repo/dashboard.js",
+        "landing-page-repo/dashboard/index.html",
+        "landing-page-repo/auth.css",
+    }:
+        return "dashboard overview experience"
     if path.startswith("scripts/") and "deploy" in path:
         return "dashboard deployment automation"
     if path.startswith("landing-page-repo/scripts/"):
         return "dashboard deployment automation"
+    if path.startswith("scripts/"):
+        return "operator scripts and readiness checks"
     if path.startswith("status/") or path.startswith("landing-page-repo/status/"):
         return "public cockpit status snapshot"
     if path.startswith("landing-page-repo/"):
@@ -198,6 +202,22 @@ def _area_lines(repo_state: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _compact_area_parts(repo_state: dict[str, Any], label: str, *, count: int = 2) -> list[str]:
+    parts: list[str] = []
+    for item in repo_state.get("change_areas", []):
+        if not isinstance(item, dict):
+            continue
+        area = _clean_text(item.get("area"), "source", limit=64)
+        file_count = _int(item.get("file_count"))
+        if not area or not file_count:
+            continue
+        unit = "file" if file_count == 1 else "files"
+        parts.append(f"{label}: {area} ({file_count} {unit})")
+        if len(parts) >= count:
+            break
+    return parts
+
+
 def _derived_details(root_repo: dict[str, Any], dashboard_repo: dict[str, Any]) -> list[str]:
     details = _area_lines(root_repo) + _area_lines(dashboard_repo)
     if root_repo.get("last_commit_subject"):
@@ -221,7 +241,7 @@ def _derived_benefits(root_repo: dict[str, Any], dashboard_repo: dict[str, Any])
         benefits.append("Telegram updates now carry event-specific context instead of repeating a fixed template.")
     if "Telegram regression checks" in areas:
         benefits.append("Low-information Telegram notices are caught by checks before they reach the team.")
-    if "dashboard Communications experience" in areas:
+    if "dashboard overview experience" in areas:
         benefits.append("The dashboard can show the communication state and why the latest update matters.")
     if "dashboard deployment automation" in areas:
         benefits.append("Production deploys can carry richer context automatically after aliases are updated.")
@@ -275,6 +295,31 @@ def _sent_delivery_keys(settings: Settings) -> set[str]:
     return keys
 
 
+def _sent_commit_pairs(settings: Settings) -> set[tuple[str, str]]:
+    _, history_path, _ = telegram_codebase_upgrade_paths(settings)
+    if not history_path.exists():
+        return set()
+    pairs: set[tuple[str, str]] = set()
+    with history_path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                payload = json.loads(stripped)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            if payload.get("status") != "sent" and payload.get("live_send_succeeded") is not True:
+                continue
+            root = str(payload.get("root_commit_short") or "").strip()
+            dashboard = str(payload.get("dashboard_commit_short") or "").strip()
+            if root and dashboard:
+                pairs.add((root, dashboard))
+    return pairs
+
+
 def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
     safe_payload = {
         "schema_version": TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION,
@@ -285,6 +330,8 @@ def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
         "delivery_key": payload.get("delivery_key"),
         "telegram_message_id": payload.get("telegram_message_id"),
         "failure_category": payload.get("failure_category"),
+        "root_commit_short": payload.get("root_commit_short"),
+        "dashboard_commit_short": payload.get("dashboard_commit_short"),
         "send_requested": payload.get("send_requested") is True,
         "live_send_attempted": payload.get("live_send_attempted") is True,
         "bot_token_exposed": False,
@@ -343,7 +390,7 @@ def _git_repo_state(repo: Path, label: str) -> dict[str, Any]:
     ]
     status_paths = _status_paths(status_lines)
     last_commit_paths = _git_file_list(repo, "show", "--name-only", "--pretty=format:", "--no-renames", "HEAD")
-    change_paths = status_paths or last_commit_paths
+    change_paths = list(dict.fromkeys([*last_commit_paths, *status_paths]))
     staged = 0
     unstaged = 0
     untracked = 0
@@ -422,30 +469,45 @@ def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
     dashboard = source.get("dashboard_repo", {})
     deployment = source.get("deployment", {})
     aliases = ", ".join(deployment.get("aliases", []) or ["qadam.trade", "www.qadam.trade"])
-    deployment_text = deployment.get("deployment_url") or aliases
     action = "deployed" if source.get("source") == "production_deploy" else "recorded"
-    details = source.get("details", [])
-    benefits = source.get("benefits", [])
     change_lines = source.get("change_area_lines", [])
-    title = "Qadam Codebase Upgrade"
+    subjects = [
+        _clean_text(root.get("last_commit_subject"), "", limit=86),
+        _clean_text(dashboard.get("last_commit_subject"), "", limit=86),
+    ]
+    subjects = [
+        item
+        for item in dict.fromkeys(subjects)
+        if item and item != "latest commit unavailable"
+    ]
+    changed = "; ".join(subjects[:2]) or _clean_text(
+        source.get("summary"),
+        "Latest Qadam code and dashboard changes recorded.",
+        limit=150,
+    )
+    area_parts = [
+        *_compact_area_parts(root, "core"),
+        *_compact_area_parts(dashboard, "dashboard"),
+    ]
+    areas = "; ".join(area_parts[:4] or change_lines[:4]) or "core and dashboard commits recorded"
+    evidence_parts = []
+    root_file_count = _int(root.get("last_commit_file_count"))
+    dashboard_file_count = _int(dashboard.get("last_commit_file_count"))
+    if root_file_count:
+        evidence_parts.append(f"{root_file_count} core files")
+    if dashboard_file_count:
+        evidence_parts.append(f"{dashboard_file_count} dashboard files")
+    evidence_parts.append(f"aliases {aliases}")
+    title = "Qadam Update"
     body = "\n".join(
         [
-            f"Qadam: codebase upgrade {action}",
+            f"Qadam update {action}",
             f"Upgrade: core {_short(root.get('head_short'))} / dashboard {_short(dashboard.get('head_short'))}",
-            "What changed:",
-            f"- {_clean_text(source.get('summary'), 'Qadam codebase and dashboard were upgraded.')}",
-            *[f"- {detail}" for detail in details],
-            "Detected update areas:",
-            *[f"- {line}" for line in change_lines],
-            "Why it matters:",
-            *[f"- {benefit}" for benefit in benefits],
-            "What to check:",
-            "- Dashboard Communications now shows the latest codebase-upgrade send state.",
-            "- Telegram quality checks now reject safe-but-generic upgrade messages.",
-            "- Future production deploys notify the group after qadam.trade and www.qadam.trade are aliased.",
-            f"Deployment: {deployment_text}",
-            f"Aliases: {aliases}",
-            "Status: notification only. Trading logic, broker writes, paper orders, and live capital are unchanged by Telegram.",
+            f"What changed: {changed}",
+            f"Detected update areas: {areas}",
+            "Why it matters: Fund Managers can read the exact deployed change without Git or Vercel logs.",
+            f"Evidence: {'; '.join(evidence_parts)}",
+            "Status: notify-only. No broker writes, paper orders, or live capital changed.",
             "Dashboard: qadam.trade/dashboard/",
         ]
     )
@@ -460,11 +522,10 @@ def _safe_text(title: str, body: str) -> bool:
 def _delivery_key(source: dict[str, Any], *, force_send: bool, generated_at: str) -> str:
     deployment = source.get("deployment", {})
     raw = {
-        "dashboard": source.get("dashboard_repo", {}).get("fingerprint"),
-        "deployment_url": deployment.get("deployment_url"),
-        "root": source.get("root_repo", {}).get("fingerprint"),
+        "aliases": sorted(deployment.get("aliases", []) or []),
+        "dashboard": source.get("dashboard_repo", {}).get("head"),
+        "root": source.get("root_repo", {}).get("head"),
         "source": source.get("source"),
-        "summary": source.get("summary"),
     }
     if force_send:
         raw["force_generated_at"] = generated_at
@@ -535,7 +596,11 @@ def build_telegram_codebase_upgrade_notification(
     enabled = settings.telegram_codebase_upgrade_notifications_enabled
     dry_run = settings.telegram_codebase_upgrade_notifications_dry_run
     delivery_key = _delivery_key(source_context, force_send=force_send, generated_at=generated_at)
-    already_sent = delivery_key in _sent_delivery_keys(settings)
+    commit_pair = (
+        str(source_context["root_repo"].get("head_short") or "").strip(),
+        str(source_context["dashboard_repo"].get("head_short") or "").strip(),
+    )
+    already_sent = delivery_key in _sent_delivery_keys(settings) or commit_pair in _sent_commit_pairs(settings)
 
     blockers: list[str] = []
     if not message_safe:
@@ -601,6 +666,8 @@ def build_telegram_codebase_upgrade_notification(
                 "delivery_key": delivery_key,
                 "telegram_message_id": telegram_message_id,
                 "failure_category": failure_category,
+                "root_commit_short": source_context["root_repo"]["head_short"],
+                "dashboard_commit_short": source_context["dashboard_repo"]["head_short"],
                 "send_requested": send_requested,
                 "live_send_attempted": live_send_attempted,
             },
@@ -627,6 +694,12 @@ def build_telegram_codebase_upgrade_notification(
         "recipient_scope": "fund_manager_group",
         "message_class": "codebase_upgrade",
         "delivery_key": delivery_key,
+        "delivery_identity": {
+            "root_commit": source_context["root_repo"]["head"],
+            "dashboard_commit": source_context["dashboard_repo"]["head"],
+            "source": source_context["source"],
+            "aliases": source_context["deployment"]["aliases"],
+        },
         "source": source_context["source"],
         "summary": source_context["summary"],
         "details": source_context["details"],
@@ -702,6 +775,7 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
         "dashboard_commit_short",
         "delivery_key",
         "deployment_url",
+        "delivery_identity",
         "group_chat_configured",
         "live_send_attempted",
         "live_send_succeeded",
@@ -757,19 +831,24 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
         body = str(preview.get("body") or "")
         if not title.strip() or not body.strip():
             errors.append("telegram_codebase_upgrade_preview_empty")
-        for phrase in (
-            "Qadam: codebase upgrade",
+        required_phrases = (
+            "Qadam update",
             "Upgrade:",
             "What changed:",
             "Detected update areas:",
             "Why it matters:",
-            "What to check:",
-            "Deployment:",
-            "Status: notification only.",
+            "Evidence:",
+            "Status: notify-only.",
             "Dashboard: qadam.trade/dashboard/",
-        ):
+        )
+        for phrase in required_phrases:
             if phrase not in body:
                 errors.append("telegram_codebase_upgrade_message_missing:" + phrase)
+        for phrase in ("What to check:", "Deployment:", "Aliases:"):
+            if phrase in body:
+                errors.append("telegram_codebase_upgrade_message_too_verbose:" + phrase)
+        if len([line for line in body.splitlines() if line.strip()]) > 9:
+            errors.append("telegram_codebase_upgrade_message_too_long")
         if not _safe_text(title, body):
             errors.append("telegram_codebase_upgrade_forbidden_text")
     specificity = artifact.get("message_specificity", {})

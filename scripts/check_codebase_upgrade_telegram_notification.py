@@ -76,6 +76,23 @@ def main() -> int:
     )
     forced_validation_errors = validate_telegram_codebase_upgrade_notification(forced_preview)
 
+    same_commit_first = build_telegram_codebase_upgrade_notification(
+        settings=settings,
+        send_requested=False,
+        summary="Same commit notification idempotency check.",
+        source="contract_check",
+        deployment_url="https://qadam-contract-check-a.vercel.app",
+        aliases=["qadam.trade", "www.qadam.trade"],
+    )
+    same_commit_second = build_telegram_codebase_upgrade_notification(
+        settings=settings,
+        send_requested=False,
+        summary="Same commit notification idempotency check.",
+        source="contract_check",
+        deployment_url="https://qadam-contract-check-b.vercel.app",
+        aliases=["qadam.trade", "www.qadam.trade"],
+    )
+
     command_probe = deepcopy(forced_preview)
     command_probe["telegram_command_path_enabled"] = True
     command_errors = validate_telegram_codebase_upgrade_notification(command_probe)
@@ -171,6 +188,8 @@ def main() -> int:
         errors.append("telegram_codebase_upgrade_message_class_mismatch")
     if not written["delivery_key"]:
         errors.append("telegram_codebase_upgrade_delivery_key_missing")
+    if same_commit_first["delivery_key"] != same_commit_second["delivery_key"]:
+        errors.append("telegram_codebase_upgrade_delivery_key_deployment_url_sensitive")
     if len(written.get("details", [])) < 2:
         errors.append("telegram_codebase_upgrade_details_missing")
     if len(written.get("benefits", [])) < 2:
@@ -213,18 +232,22 @@ def main() -> int:
             errors.append(f"telegram_codebase_upgrade_probe_not_rejected:{marker}")
     preview_body = forced_preview.get("message_preview", {}).get("body", "")
     for marker in (
-        "Qadam: codebase upgrade",
+        "Qadam update",
         "Upgrade:",
         "What changed:",
         "Detected update areas:",
         "Why it matters:",
-        "What to check:",
-        "Deployment:",
-        "Status: notification only.",
+        "Evidence:",
+        "Status: notify-only.",
         "Dashboard: qadam.trade/dashboard/",
     ):
         if marker not in preview_body:
             errors.append(f"telegram_codebase_upgrade_preview_missing:{marker}")
+    for marker in ("What to check:", "Deployment:", "Aliases:"):
+        if marker in preview_body:
+            errors.append(f"telegram_codebase_upgrade_preview_too_verbose:{marker}")
+    if len([line for line in preview_body.splitlines() if line.strip()]) > 9:
+        errors.append("telegram_codebase_upgrade_preview_too_long")
     public_encoded = str(public_status)
     if "/Users/" in public_encoded or "chat_id" in public_encoded or "bot_token" in public_encoded:
         errors.append("telegram_codebase_upgrade_public_leak")

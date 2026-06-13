@@ -88,11 +88,21 @@ includesAll(deployScript, [
     "Contains no Vercel token, session cookie, broker credential, or dashboard secret.",
     "send_codebase_upgrade_telegram_notification.py",
     "Codebase upgrade Telegram notification",
-    "--detail",
-    "--benefit",
+    "--live",
+    "--source \"production_deploy\"",
+    "--summary \"Latest committed Qadam runtime and dashboard changes are live on qadam.trade.\"",
     "Production deployment:",
     "Aliased domains:"
 ], "D11O deploy script");
+
+[
+    "--detail",
+    "--benefit",
+    "Fund Managers can see what changed and why it matters without checking Git",
+    "The deploy hook now sends this group update after Vercel production aliases are updated"
+].forEach((needle) => {
+    assert(!deployScript.includes(needle), `D11O deploy script should not force verbose Telegram copy: ${needle}`);
+});
 
 const preflightIndex = indexOfOrThrow(deployScript, "bash \"${ROOT_DIR}/scripts/preflight_dashboard_deployment.sh\"", "D11O deploy order");
 const deployIndex = indexOfOrThrow(deployScript, "\"${vercel_cmd[@]}\" deploy", "D11O deploy order");
