@@ -148,6 +148,31 @@ The durable runtime writes:
 
 This runtime is deliberately replay-only. It can preserve the exact normalized evidence packets that the cockpit saw, but it cannot create source quorum, trade ideas, risk approval, orders, broker writes, quantum jobs, performance credit, or live capital. `scripts/check_evidence_packet_runtime.py` validates the snapshot, history append, event-log write, packet counts, authority flags, and raw-reference stripping. The production dashboard preflight now runs that check before exporting cockpit status.
 
+## Acceptance Tests
+
+As of 2026-06-14, the non-dashboard source/evidence/runtime work is covered by
+`scripts/check_source_evidence_acceptance.py`.
+
+The acceptance gate runs the source-registry cleanup, Phase 1 data spine,
+read-only source hardening, credential-bound adapter, provider-decision,
+TradingView MCP, Bookmap local bridge, evidence normalization, durable evidence
+runtime, and cockpit-status checks. It deliberately excludes Stage 7 dashboard
+simplification because that work is plan-only until explicitly implemented.
+
+The gate must report:
+
+- `source_evidence_acceptance_status=ok`;
+- zero legacy source-registry blockers;
+- no provider-decision credentials required now;
+- no more than the current selected optional credential gaps;
+- TradingView MCP and Bookmap evidence available as read-only supplemental
+  context;
+- zero evidence authority leaks and zero raw-reference leaks;
+- durable runtime replay ready;
+- no trade-blocking or silent source gaps in the paper-operation cockpit
+  export;
+- live capital disabled and no broker/order authority introduced.
+
 ## Conflicts To Carry Into Implementation
 
 - The documents say "35 sources", but the integration reference details fewer because some sources are combined. The registry resolves this by splitting Polymarket/Kalshi and SEC/STOCK Act.

@@ -33,6 +33,7 @@ ALLOWED_RUNTIME_STATUSES = {
     "intentionally_disabled",
     "live_optional",
     "local_bridge_required",
+    "local_bridge_sample_ready",
     "needs_adapter",
     "provider_decision_required",
     "ready_to_build",
@@ -108,6 +109,7 @@ def main() -> int:
                 "unavailable_missing_credentials",
                 "unavailable_provider_endpoint_unconfirmed",
                 "local_bridge_required",
+                "local_bridge_sample_ready",
             }:
                 errors.append(f"promoted_adapter_bad_runtime:{key}:{runtime_status}")
         if spec.selection_status in {"optional_disabled", "not_selected"} and source.get("missing_secrets"):
@@ -126,7 +128,10 @@ def main() -> int:
             errors.append(f"unresolved_source_not_deferred:{key}")
         if spec.status == "derived" and runtime_status != "derived":
             errors.append(f"derived_source_bad_runtime:{key}")
-        if spec.status == "local_bridge" and runtime_status != "local_bridge_required":
+        if spec.status == "local_bridge" and runtime_status not in {
+            "local_bridge_required",
+            "local_bridge_sample_ready",
+        }:
             errors.append(f"local_bridge_source_bad_runtime:{key}")
         if runtime_status == "unavailable_missing_credentials" and not source.get("missing_secrets"):
             errors.append(f"credential_block_without_missing_names:{key}")
