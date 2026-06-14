@@ -138,6 +138,9 @@ class Settings:
     tradingview_mcp_enabled: bool
     tradingview_mcp_live_calls_enabled: bool
     tradingview_mcp_symbol_allowlist: tuple[str, ...]
+    bookmap_local_bridge_enabled: bool
+    bookmap_local_bridge_live_probe_enabled: bool
+    bookmap_local_bridge_timeout_seconds: int
     pricing_gap_rollout_stage: str
     paper_operational_enabled: bool
     alpaca_paper_submit_enabled: bool
@@ -264,6 +267,14 @@ class Settings:
             ),
             tradingview_mcp_symbol_allowlist=_csv_tuple(
                 os.getenv("TRADINGVIEW_MCP_SYMBOL_ALLOWLIST", "USO,SLV,SMH,XLE,LMT,NVDA")
+            ),
+            bookmap_local_bridge_enabled=_bool_env("BOOKMAP_LOCAL_BRIDGE_ENABLED", True),
+            bookmap_local_bridge_live_probe_enabled=_bool_env(
+                "BOOKMAP_LOCAL_BRIDGE_LIVE_PROBE_ENABLED",
+                False,
+            ),
+            bookmap_local_bridge_timeout_seconds=int(
+                os.getenv("BOOKMAP_LOCAL_BRIDGE_TIMEOUT_SECONDS", "3")
             ),
             pricing_gap_rollout_stage=os.getenv(
                 "QADAM_PRICING_GAP_ROLLOUT_STAGE",

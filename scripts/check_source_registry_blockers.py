@@ -90,7 +90,7 @@ EXPECTED_PROVIDER_DECISION_STATUSES = {
     "coinglass": "provider_selected_pending_adapter",
     "chainlink": "provider_selected_pending_public_adapter",
     "github": "provider_selected_pending_public_adapter",
-    "bookmap": "local_bridge_selected",
+    "bookmap": "local_bridge_adapter_ready",
 }
 
 

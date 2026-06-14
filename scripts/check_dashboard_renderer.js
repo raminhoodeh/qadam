@@ -250,8 +250,8 @@ async function main() {
     assertIncludes(rendered, "[data-flow-map]", "Unsafe controls");
     assertIncludes(rendered, "[data-flow-map]", "Yahoo Finance supplemental market confirmation only");
     assertIncludes(rendered, "[data-flow-map]", "Preference/PREF MCP");
-    assertIncludes(rendered, "[data-flow-map]", "OK - live capital off");
-    assertIncludes(rendered, "[data-flow-map]", "paper submit path 1");
+    assertIncludes(rendered, "[data-flow-map]", "live capital disabled");
+    assertIncludes(rendered, "[data-flow-map]", "paper submit path 0");
     assertIncludes(rendered, "[data-flow-map]", "dashboard does not say trading");
     assertIncludes(rendered, "[data-flow-map]", "Approval Policy Router");
     assertIncludes(rendered, "[data-flow-map]", "Kill-Switch Ledger");

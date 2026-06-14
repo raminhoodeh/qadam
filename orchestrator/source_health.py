@@ -16,6 +16,7 @@ from orchestrator.adapters import (
     oref_adapter_status,
     rss_adapter_status,
 )
+from orchestrator.bookmap_local_bridge import bookmap_local_bridge_status
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTER_KEYS, phase1_live_adapter_status
@@ -128,6 +129,8 @@ class SourceHeartbeatStore:
 def _secret_state(source: SourceSpec, settings: Settings) -> tuple[tuple[str, ...], tuple[str, ...]]:
     if source.selection_status in {"optional_disabled", "not_selected"}:
         return (), ()
+    if source.status == "local_bridge":
+        return (), ()
     if source.status in {"intentionally_disabled", "needs_adapter", "provider_decision_required"}:
         return (), ()
     configured: list[str] = []
@@ -189,6 +192,11 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
         activation_state = None
         activation_ready = False
     runtime_status, degraded_reason = _runtime_status(source, missing, promoted)
+    if source.key == "bookmap":
+        bridge_status = bookmap_local_bridge_status(settings)
+        runtime_status = str(bridge_status.get("runtime_status") or runtime_status)
+        degraded_reason = bridge_status.get("degraded_reason")
+        missing = ()
     if source.key in PHASE1_LIVE_ADAPTER_KEYS and activation_state == "provider_endpoint_unconfirmed":
         runtime_status = "unavailable_provider_endpoint_unconfirmed"
         degraded_reason = "provider_endpoint_unconfirmed"
@@ -277,7 +285,9 @@ def _summarise(heartbeats: tuple[SourceHeartbeat, ...]) -> dict[str, Any]:
             if heartbeat.provider_decision_status == "marketplace_disabled_no_provider"
         ),
         "provider_decision_local_bridge_count": sum(
-            1 for heartbeat in heartbeats if heartbeat.provider_decision_status == "local_bridge_selected"
+            1
+            for heartbeat in heartbeats
+            if str(heartbeat.provider_decision_status or "").startswith("local_bridge")
         ),
         "provider_decision_credential_required_now_count": sum(
             1 for heartbeat in heartbeats if heartbeat.provider_decision_credential_required_now

@@ -12,6 +12,7 @@ const REQUIRED_NODE_KEYS = [
     "watching",
     "yahoo_finance",
     "tradingview_mcp",
+    "bookmap_local_bridge",
     "preference_mcp",
     "event_log",
     "live_bridge",
@@ -105,6 +106,7 @@ async function main() {
 
     assertNodeStatus(systemMap, "yahoo_finance", status.yahoo_finance.status);
     assertNodeStatus(systemMap, "tradingview_mcp", status.tradingview_mcp.status);
+    assertNodeStatus(systemMap, "bookmap_local_bridge", status.bookmap_local_bridge.status);
     assertNodeStatus(systemMap, "preference_mcp", status.preference_mcp.status);
     assertNodeStatus(systemMap, "live_bridge", status.live_bridge.status);
     assertNodeStatus(systemMap, "kill_switch_ledger", status.phase5_kill_switch_ledger.status);
@@ -122,6 +124,11 @@ async function main() {
     assert(systemMap.source_posture.tradingview_mcp.role === "supplemental_technical_confirmation_only", "TradingView MCP role mismatch");
     assert(systemMap.source_posture.tradingview_mcp.source_quorum_credit_allowed === false, "TradingView MCP source quorum enabled");
     assert(systemMap.source_posture.tradingview_mcp.trade_candidate_creation_allowed === false, "TradingView MCP candidate creation enabled");
+    assert(systemMap.source_posture.bookmap_local_bridge.role === "supplemental_orderflow_confirmation_only", "Bookmap role mismatch");
+    assert(systemMap.source_posture.bookmap_local_bridge.source_quorum_credit_allowed === false, "Bookmap source quorum enabled");
+    assert(systemMap.source_posture.bookmap_local_bridge.trade_candidate_creation_allowed === false, "Bookmap candidate creation enabled");
+    assert(systemMap.source_posture.bookmap_local_bridge.bookmap_order_injection_allowed === false, "Bookmap injection enabled");
+    assert(systemMap.source_posture.bookmap_local_bridge.bookmap_trading_mode_allowed === false, "Bookmap trading mode enabled");
     assert(systemMap.source_posture.preference_mcp.source_36 === false, "Preference MCP source 36 enabled");
     assert(systemMap.source_posture.preference_mcp.source_quorum_credit_allowed === false, "Preference MCP source quorum enabled");
 

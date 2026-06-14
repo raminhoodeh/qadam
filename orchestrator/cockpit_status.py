@@ -14,6 +14,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from orchestrator.bookmap_local_bridge import (
+    bookmap_local_bridge_context,
+    bookmap_local_bridge_packet_context,
+    bookmap_local_bridge_status,
+)
 from orchestrator.config import Settings
 from orchestrator.broker_reconciliation import BrokerReconciliationReviewStore, broker_reconciliation_summary
 from orchestrator.event_log import EventLog
@@ -395,6 +400,50 @@ TRADINGVIEW_MCP_PUBLIC_REQUIRED_FIELDS = {
     "technical_context_count",
     "technical_context_status",
     "technical_contexts",
+    "trade_candidate_creation_allowed",
+}
+
+BOOKMAP_LOCAL_BRIDGE_PUBLIC_REQUIRED_FIELDS = {
+    "active_required_challenges",
+    "bookmap_order_injection_allowed",
+    "bookmap_trading_mode_allowed",
+    "boundary",
+    "bridge_host_class",
+    "bridge_scheme",
+    "bridge_url_configured",
+    "bridge_url_local",
+    "broker_write_allowed",
+    "canonical_source_count",
+    "classification",
+    "connected",
+    "degraded_reason",
+    "enabled",
+    "execution_allowed",
+    "fill_confirmation_authority",
+    "live_capital_enabled",
+    "live_probe_enabled",
+    "local_path_exposed",
+    "obvious_orderflow_context_count",
+    "orderflow_confirmation_role",
+    "orderflow_context_count",
+    "orderflow_context_status",
+    "orderflow_contexts",
+    "paper_order_allowed",
+    "provider",
+    "public_safe",
+    "quantum_job_authority",
+    "raw_payload_exposed",
+    "receipt_evidence_authority",
+    "reconciliation_truth_authority",
+    "risk_approval_authority",
+    "sample_mode_available",
+    "sanitized_endpoint",
+    "schema_version",
+    "signal_authority",
+    "source",
+    "source_key",
+    "source_quorum_credit_allowed",
+    "status",
     "trade_candidate_creation_allowed",
 }
 
@@ -1493,6 +1542,9 @@ def _dashboard_status(raw_status: str) -> str:
         "live_optional",
         "read_only_ready",
         "ready_classical_fallback",
+        "local_bridge_connected",
+        "local_bridge_sample_ready",
+        "sample_ready",
         "oracle_ready",
         "ok",
         "dry_run",
@@ -1503,7 +1555,14 @@ def _dashboard_status(raw_status: str) -> str:
         return "pending"
     if raw_status in {"disabled", "live_blocked", "blocked_foundation_phase", "blocked_first_release"}:
         return "blocked"
-    if raw_status in {"jsonl_fallback", "local", "local_bridge_required", "foundational_prior"}:
+    if raw_status in {
+        "jsonl_fallback",
+        "local",
+        "local_bridge_required",
+        "local_bridge_configured_pending_probe",
+        "configured_pending_probe",
+        "foundational_prior",
+    }:
         return "local_only"
     if raw_status in {
         "credential_gated",
@@ -1677,6 +1736,12 @@ def _readiness_label(source: dict[str, Any], runtime_status: str) -> str:
     provider_decision_status = str(source.get("provider_decision_status") or "")
     if source.get("promoted_adapter") and runtime_status == "live_optional":
         return "adapter ready"
+    if runtime_status == "local_bridge_connected":
+        return "local bridge connected"
+    if runtime_status == "local_bridge_sample_ready":
+        return "sample context available"
+    if runtime_status == "local_bridge_configured_pending_probe":
+        return "local bridge configured"
     if runtime_status == "unavailable_missing_credentials":
         return "credential required"
     if runtime_status == "unavailable_provider_endpoint_unconfirmed":
@@ -1746,8 +1811,8 @@ def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> di
             influence_boundary = "optional_source_intentionally_disabled_not_used_for_research"
     elif provider_decision_status.startswith("provider_selected"):
         influence_boundary = "provider_selected_pending_readonly_adapter"
-    elif provider_decision_status == "local_bridge_selected":
-        influence_boundary = "local_bridge_selected_but_requires_local_readonly_process"
+    elif provider_decision_status.startswith("local_bridge"):
+        influence_boundary = "local_bridge_orderflow_context_only_no_order_authority"
     elif action_category in {"needs_adapter", "provider_decision_required"}:
         influence_boundary = "source_not_selected_until_adapter_or_provider_decision"
     elif runtime_status == "unavailable_provider_endpoint_unconfirmed":
@@ -1847,9 +1912,13 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
     watching: list[dict[str, Any]] = []
     for source in data_map.get("sources", []):
         runtime_status = str(source.get("runtime_status", "registered"))
+        bookmap_summary = (
+            bookmap_local_bridge_status(settings)
+            if source.get("source_key") == "bookmap"
+            else {}
+        )
         influence_profile = _source_influence_profile(source, runtime_status)
-        watching.append(
-            {
+        row = {
                 "source_key": source.get("source_key"),
                 "source_name": source.get("source_name"),
                 "pipeline": source.get("pipeline"),
@@ -1880,7 +1949,41 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                 "action_category": source.get("action_category", "no_user_action"),
                 **influence_profile,
             }
-        )
+        if source.get("source_key") == "bookmap":
+            row.update(
+                {
+                    "status": _dashboard_status(str(bookmap_summary.get("runtime_status") or runtime_status)),
+                    "raw_status": bookmap_summary.get("runtime_status") or runtime_status,
+                    "readiness": (
+                        "Bookmap local bridge connected"
+                        if bookmap_summary.get("connected")
+                        else (
+                            "Bookmap sample context available"
+                            if bookmap_summary.get("status") == "sample_ready"
+                            else "Bookmap local bridge required"
+                        )
+                    ),
+                    "credential_status": "not_required",
+                    "degraded_reason": bookmap_summary.get("degraded_reason"),
+                    "bookmap_local_bridge_status": bookmap_summary.get("status"),
+                    "bookmap_local_bridge_connected": bool(bookmap_summary.get("connected")),
+                    "bookmap_live_probe_enabled": bool(bookmap_summary.get("live_probe_enabled")),
+                    "bookmap_orderflow_context_count": int(
+                        bookmap_summary.get("orderflow_context_count", 0) or 0
+                    ),
+                    "bookmap_orderflow_confirmation_role": (
+                        "supplemental_orderflow_confirmation_only"
+                    ),
+                    "bookmap_order_injection_allowed": False,
+                    "bookmap_trading_mode_allowed": False,
+                    "can_influence_signals": False,
+                    "eligible_for_signal_review": False,
+                    "influence_boundary": (
+                        "supplemental_orderflow_confirmation_no_source_quorum_or_order_authority"
+                    ),
+                }
+            )
+        watching.append(row)
     watching.append(_tradingview_mcp_watching_row(settings))
     watching.append(_tradingview_watching_row(settings))
     return watching
@@ -2188,7 +2291,7 @@ def _build_source_pipeline_summary(watching: list[dict[str, Any]]) -> list[dict[
             current["provider_selected_pending_adapter_count"] += 1
         elif provider_decision_status == "marketplace_disabled_no_provider":
             current["provider_decision_marketplace_disabled_count"] += 1
-        elif provider_decision_status == "local_bridge_selected":
+        elif provider_decision_status.startswith("local_bridge"):
             current["provider_decision_local_bridge_count"] += 1
     return [pipelines[key] for key in sorted(pipelines)]
 
@@ -3258,6 +3361,94 @@ def _tradingview_mcp_status(settings: Settings) -> dict[str, Any]:
         "boundary": status.get(
             "boundary",
             "TradingView MCP is read-only supplemental technical analysis.",
+        ),
+    }
+
+
+def _safe_bookmap_orderflow_context_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "event_id": str(row.get("event_id") or "")[:160],
+        "symbol": str(row.get("symbol") or "unknown")[:40],
+        "instrument_name": str(row.get("instrument_name") or "unknown")[:120],
+        "venue": str(row.get("venue") or "local_bookmap")[:80],
+        "timeframe": str(row.get("timeframe") or "unknown")[:40],
+        "bridge_channel": str(row.get("bridge_channel") or "snapshot")[:80],
+        "setup_type": str(row.get("setup_type") or "orderflow_context")[:100],
+        "direction": str(row.get("direction") or "watch")[:80],
+        "orderflow_score": row.get("orderflow_score"),
+        "liquidity_state": str(row.get("liquidity_state") or "unknown")[:120],
+        "absorption_state": str(row.get("absorption_state") or "unknown")[:120],
+        "imbalance_state": str(row.get("imbalance_state") or "unknown")[:120],
+        "support_resistance": row.get("support_resistance")
+        if isinstance(row.get("support_resistance"), dict)
+        else {},
+        "candidate_watchlist_context": str(row.get("candidate_watchlist_context") or "")[:260],
+        "obvious_orderflow_context_flag": bool(row.get("obvious_orderflow_context_flag")),
+        "observed_at": row.get("observed_at"),
+        "trade_candidate_created": False,
+        "paper_order_allowed": False,
+        "execution_allowed": False,
+        "broker_write_allowed": False,
+        "bookmap_order_injection_allowed": False,
+        "bookmap_trading_mode_allowed": False,
+        "live_capital_enabled": False,
+        "boundary": str(row.get("boundary") or "Bookmap is orderflow context only.")[:700],
+    }
+
+
+def _bookmap_local_bridge_status(settings: Settings) -> dict[str, Any]:
+    status = bookmap_local_bridge_status(settings)
+    context = bookmap_local_bridge_context(settings)
+    packet_context = bookmap_local_bridge_packet_context(settings)
+    rows = context.get("orderflow_contexts", [])
+    if not isinstance(rows, list):
+        rows = []
+    return {
+        "schema_version": status.get("schema_version", 1),
+        "status": status.get("status", "local_bridge_required"),
+        "source": status.get("source", "market.bookmap"),
+        "source_key": status.get("source_key", "bookmap"),
+        "provider": status.get("provider", "bookmap_local_readonly_bridge"),
+        "classification": status.get("classification", "local_orderflow_confirmation_context"),
+        "canonical_source_count": int(status.get("canonical_source_count", 0) or 0),
+        "enabled": bool(status.get("enabled")),
+        "connected": bool(status.get("connected")),
+        "bridge_url_configured": bool(status.get("bridge_url_configured")),
+        "bridge_url_local": bool(status.get("bridge_url_local")),
+        "bridge_scheme": status.get("bridge_scheme", "missing"),
+        "bridge_host_class": status.get("bridge_host_class", "missing"),
+        "sanitized_endpoint": status.get("sanitized_endpoint"),
+        "live_probe_enabled": bool(status.get("live_probe_enabled")),
+        "sample_mode_available": bool(status.get("sample_mode_available", True)),
+        "orderflow_context_status": status.get("orderflow_context_status", "not_initialized"),
+        "orderflow_context_count": int(status.get("orderflow_context_count", 0) or 0),
+        "obvious_orderflow_context_count": int(
+            status.get("obvious_orderflow_context_count", 0) or 0
+        ),
+        "degraded_reason": status.get("degraded_reason"),
+        "orderflow_contexts": [_safe_bookmap_orderflow_context_row(row) for row in rows[:8]],
+        "active_required_challenges": packet_context.get("active_required_challenges", []),
+        "source_quorum_credit_allowed": False,
+        "orderflow_confirmation_role": "supplemental_orderflow_confirmation_only",
+        "signal_authority": False,
+        "risk_approval_authority": False,
+        "trade_candidate_creation_allowed": False,
+        "execution_allowed": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "fill_confirmation_authority": False,
+        "receipt_evidence_authority": False,
+        "reconciliation_truth_authority": False,
+        "quantum_job_authority": False,
+        "bookmap_order_injection_allowed": False,
+        "bookmap_trading_mode_allowed": False,
+        "live_capital_enabled": False,
+        "raw_payload_exposed": False,
+        "local_path_exposed": False,
+        "public_safe": True,
+        "boundary": status.get(
+            "boundary",
+            "Bookmap local bridge is read-only supplemental order-flow context.",
         ),
     }
 
@@ -8468,6 +8659,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "yahoo_finance": _safe_yahoo_finance_status(settings, generated_at),
         "preference_mcp": _safe_preference_mcp_status(settings, generated_at),
         "tradingview_mcp": _tradingview_mcp_status(settings),
+        "bookmap_local_bridge": _bookmap_local_bridge_status(settings),
         "modules": _build_modules(health, generated_at),
         "process_console": _build_process_console(settings, generated_at),
         "decision_philosophy": _decision_philosophy(),
@@ -8681,6 +8873,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "yahoo_finance",
         "preference_mcp",
         "tradingview_mcp",
+        "bookmap_local_bridge",
         "capital",
         "mission_control",
         "watching",
@@ -8904,6 +9097,59 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if phrase not in tradingview_mcp_boundary:
             raise ValueError(f"TradingView MCP public boundary missing: {phrase}")
+    bookmap_local_bridge = payload["bookmap_local_bridge"]
+    missing_bookmap = sorted(
+        BOOKMAP_LOCAL_BRIDGE_PUBLIC_REQUIRED_FIELDS - set(bookmap_local_bridge)
+    )
+    if missing_bookmap:
+        raise ValueError(f"Bookmap local bridge public status missing fields: {missing_bookmap}")
+    if bookmap_local_bridge.get("public_safe") is not True:
+        raise ValueError("Bookmap local bridge public status must be public-safe")
+    if bookmap_local_bridge.get("source_key") != "bookmap":
+        raise ValueError("Bookmap local bridge source key mismatch")
+    if bookmap_local_bridge.get("status") not in {
+        "connected",
+        "sample_ready",
+        "configured_pending_probe",
+        "local_bridge_required",
+        "disabled",
+        "degraded",
+    }:
+        raise ValueError("Bookmap local bridge public status is invalid")
+    if bookmap_local_bridge.get("orderflow_confirmation_role") != (
+        "supplemental_orderflow_confirmation_only"
+    ):
+        raise ValueError("Bookmap role must remain supplemental orderflow confirmation")
+    for key in (
+        "source_quorum_credit_allowed",
+        "signal_authority",
+        "risk_approval_authority",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "fill_confirmation_authority",
+        "receipt_evidence_authority",
+        "reconciliation_truth_authority",
+        "quantum_job_authority",
+        "bookmap_order_injection_allowed",
+        "bookmap_trading_mode_allowed",
+        "live_capital_enabled",
+        "raw_payload_exposed",
+        "local_path_exposed",
+    ):
+        if bookmap_local_bridge.get(key) is not False:
+            raise ValueError(f"Bookmap local bridge public status must keep {key}=False")
+    bookmap_boundary = str(bookmap_local_bridge.get("boundary") or "")
+    for phrase in (
+        "read-only supplemental order-flow context",
+        "cannot create source quorum",
+        "trade candidates",
+        "paper orders",
+        "broker writes",
+    ):
+        if phrase not in bookmap_boundary:
+            raise ValueError(f"Bookmap local bridge public boundary missing: {phrase}")
     cognition_status = payload["cognition"]
     market_context = cognition_status.get("market_context", {})
     if not isinstance(market_context, dict):

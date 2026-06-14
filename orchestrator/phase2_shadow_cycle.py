@@ -22,6 +22,12 @@ from orchestrator.adapters import (
     fetch_rss_live_sync,
     fetch_rss_sample,
 )
+from orchestrator.bookmap_local_bridge import (
+    bookmap_local_bridge_packet_context,
+    bookmap_local_bridge_status,
+    fetch_bookmap_local_bridge_live,
+    fetch_bookmap_local_bridge_sample,
+)
 from orchestrator.agent_runtime import create_shadow_triage_packet
 from orchestrator.broker_reconciliation import run_broker_reconciliation_contract
 from orchestrator.config import Settings
@@ -63,6 +69,7 @@ DEFAULT_PHASE2_SOURCES = ("nasa_firms", "fred", "rss", "polymarket", "alpaca", "
 SUPPLEMENTAL_PHASE2_SOURCES = {
     "yahoo_finance": "supplemental_market_confirmation",
     "tradingview_mcp": "supplemental_technical_confirmation",
+    "bookmap": "supplemental_orderflow_confirmation",
 }
 
 SECRET_LIKE_PATTERNS = (
@@ -97,6 +104,8 @@ def _sample_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
         return lambda: fetch_yahoo_finance_sample()
     if source_key == "tradingview_mcp":
         return lambda: fetch_tradingview_mcp_sample()
+    if source_key == "bookmap":
+        return lambda: fetch_bookmap_local_bridge_sample()
     fetchers: dict[str, Callable[[], dict[str, Any]]] = {
         "nasa_firms": lambda: fetch_nasa_firms_sample(days=1),
         "fred": lambda: fetch_fred_sample(series_ids=("DGS10", "DCOILWTICO", "VIXCLS")),
@@ -112,6 +121,8 @@ def _live_fetcher(source_key: str) -> Callable[[], dict[str, Any]]:
         return lambda: fetch_yahoo_finance_live()
     if source_key == "tradingview_mcp":
         return lambda: fetch_tradingview_mcp_live()
+    if source_key == "bookmap":
+        return lambda: fetch_bookmap_local_bridge_live()
     fetchers: dict[str, Callable[[], dict[str, Any]]] = {
         "nasa_firms": lambda: fetch_nasa_firms_live_sync(days=1),
         "fred": lambda: fetch_fred_live_sync(series_ids=("DGS10", "DCOILWTICO", "VIXCLS"), limit=20),
@@ -276,6 +287,7 @@ def run_phase2_shadow_cycle(
         "preference_mcp": preference_shadow_packet_context(preference_shadow_context)
     }
     tradingview_mcp_context = tradingview_mcp_packet_context(settings)
+    bookmap_context = bookmap_local_bridge_packet_context(settings)
     strategy_research_context = strategy_research_decision_context(settings)
 
     if durable_replay:
@@ -344,6 +356,8 @@ def run_phase2_shadow_cycle(
                 packet_context["research_goal"] = research_goal_context
                 if source_key == "tradingview_mcp":
                     packet_context["tradingview_mcp"] = tradingview_mcp_context
+                if source_key == "bookmap":
+                    packet_context["bookmap_local_bridge"] = bookmap_context
                 packet = create_shadow_triage_packet(
                     source_event_refs=(event_ref,),
                     summary=event_summary,
@@ -461,6 +475,26 @@ def run_phase2_shadow_cycle(
         "tradingview_mcp_execution_allowed": False,
         "tradingview_mcp_paper_order_allowed": False,
         "tradingview_mcp_broker_write_allowed": False,
+        "bookmap_local_bridge_orderflow_context": bookmap_context,
+        "bookmap_local_bridge_status": bookmap_context.get("status"),
+        "bookmap_local_bridge_context_role": bookmap_context.get("context_role"),
+        "bookmap_local_bridge_orderflow_context_count": bookmap_context.get(
+            "orderflow_context_count",
+            0,
+        ),
+        "bookmap_local_bridge_active_required_challenge_count": len(
+            bookmap_context.get("active_required_challenges", [])
+            if isinstance(bookmap_context.get("active_required_challenges"), list)
+            else []
+        ),
+        "bookmap_local_bridge_source_quorum_credit_allowed": False,
+        "bookmap_local_bridge_trade_candidate_creation_allowed": False,
+        "bookmap_local_bridge_risk_handoff_allowed": False,
+        "bookmap_local_bridge_execution_allowed": False,
+        "bookmap_local_bridge_paper_order_allowed": False,
+        "bookmap_local_bridge_broker_write_allowed": False,
+        "bookmap_order_injection_allowed": False,
+        "bookmap_trading_mode_allowed": False,
         "strategy_research_intake": strategy_research_context,
         "strategy_research_intake_status": strategy_research_context.get("status"),
         "strategy_research_candidate_count": strategy_research_context.get("candidate_count", 0),
@@ -509,6 +543,9 @@ def run_phase2_shadow_cycle(
         "market_context_average_trust_score": market_context.get("average_trust_score", 0.0),
         "market_context_yahoo_finance_status": market_context.get("yahoo_finance_status"),
         "market_context_tradingview_mcp_status": market_context.get("tradingview_mcp_status"),
+        "market_context_bookmap_local_bridge_status": market_context.get(
+            "bookmap_local_bridge_status"
+        ),
         "market_context_paper_account_context_status": market_context.get("paper_account_context_status"),
         "market_context_execution_allowed_count": market_context_authority_counts.get("execution_allowed", 0),
         "market_context_paper_order_allowed_count": market_context_authority_counts.get("paper_order_allowed", 0),
@@ -628,6 +665,40 @@ def run_phase2_shadow_cycle(
             "tradingview_mcp_broker_write_allowed"
         ],
         "tradingview_mcp_technical_context": tradingview_mcp_context,
+        "bookmap_local_bridge_adapter_status": bookmap_local_bridge_status(settings).get("status"),
+        "bookmap_local_bridge_status": strategy_source_context["bookmap_local_bridge_status"],
+        "bookmap_local_bridge_context_role": strategy_source_context[
+            "bookmap_local_bridge_context_role"
+        ],
+        "bookmap_local_bridge_orderflow_context_count": strategy_source_context[
+            "bookmap_local_bridge_orderflow_context_count"
+        ],
+        "bookmap_local_bridge_active_required_challenge_count": strategy_source_context[
+            "bookmap_local_bridge_active_required_challenge_count"
+        ],
+        "bookmap_local_bridge_source_quorum_credit_allowed": strategy_source_context[
+            "bookmap_local_bridge_source_quorum_credit_allowed"
+        ],
+        "bookmap_local_bridge_trade_candidate_creation_allowed": strategy_source_context[
+            "bookmap_local_bridge_trade_candidate_creation_allowed"
+        ],
+        "bookmap_local_bridge_risk_handoff_allowed": strategy_source_context[
+            "bookmap_local_bridge_risk_handoff_allowed"
+        ],
+        "bookmap_local_bridge_execution_allowed": strategy_source_context[
+            "bookmap_local_bridge_execution_allowed"
+        ],
+        "bookmap_local_bridge_paper_order_allowed": strategy_source_context[
+            "bookmap_local_bridge_paper_order_allowed"
+        ],
+        "bookmap_local_bridge_broker_write_allowed": strategy_source_context[
+            "bookmap_local_bridge_broker_write_allowed"
+        ],
+        "bookmap_order_injection_allowed": strategy_source_context[
+            "bookmap_order_injection_allowed"
+        ],
+        "bookmap_trading_mode_allowed": strategy_source_context["bookmap_trading_mode_allowed"],
+        "bookmap_local_bridge_orderflow_context": bookmap_context,
         "strategy_research_intake_status": strategy_source_context[
             "strategy_research_intake_status"
         ],
@@ -701,6 +772,9 @@ def run_phase2_shadow_cycle(
         "market_context_average_trust_score": strategy_source_context["market_context_average_trust_score"],
         "market_context_yahoo_finance_status": strategy_source_context["market_context_yahoo_finance_status"],
         "market_context_tradingview_mcp_status": strategy_source_context["market_context_tradingview_mcp_status"],
+        "market_context_bookmap_local_bridge_status": strategy_source_context[
+            "market_context_bookmap_local_bridge_status"
+        ],
         "market_context_paper_account_context_status": strategy_source_context[
             "market_context_paper_account_context_status"
         ],

@@ -67,7 +67,7 @@ EXPECTED_PROVIDER_DECISIONS = {
         "source_status": "local_bridge",
         "selection_status": "selected",
         "action_category": "local_bridge_required",
-        "decision_status": "local_bridge_selected",
+        "decision_status": "local_bridge_adapter_ready",
         "selected_provider": "Bookmap local API bridge",
         "promoted": True,
     },

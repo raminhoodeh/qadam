@@ -694,6 +694,15 @@ class Phase1ReadOnlyAdapter:
         return self.config.primary_endpoint
 
     async def fetch_live(self, *, timeout_seconds: float = 12.0) -> SourceEnvelope:
+        if self.config.key == "bookmap":
+            from orchestrator.bookmap_local_bridge import fetch_bookmap_local_bridge_live_envelope_async
+
+            return await fetch_bookmap_local_bridge_live_envelope_async(
+                settings=self.settings,
+                archive=self.archive,
+                event_log=self.event_log,
+            )
+
         credential_state = _secret_groups_status(self.config, self.settings)
         binding_state = _credential_binding_state(self.config, self.settings)
         if binding_state and not binding_state["can_fetch_live_readonly"] and not self.config.public_live:
@@ -754,22 +763,6 @@ class Phase1ReadOnlyAdapter:
                     },
                 }
             )
-        if self.config.key == "bookmap" and self._live_url().startswith("ws://"):
-            return self.envelope_from_payload(
-                {
-                    "records": [],
-                    "_qadam_request": {
-                        "url": _safe_endpoint(self._live_url()),
-                        "method": "WEBSOCKET_LOCAL_BRIDGE",
-                        "credential_configured": credential_state["credential_configured"],
-                    },
-                    "_qadam_error_type": "local_bridge_probe_required",
-                    "_qadam_error": "Bookmap uses a local WebSocket bridge; run a dedicated bridge probe before marking it connected.",
-                },
-                degraded=True,
-                degraded_reason="local_bridge_probe_required",
-            )
-
         try:
             import httpx
         except ImportError:
@@ -881,6 +874,31 @@ def phase1_live_adapter_status(source_key: str, settings: Settings | None = None
     credential_state = _secret_groups_status(config, settings)
     binding_state = _credential_binding_state(config, settings)
     archive_root = Path(settings.raw_payload_dir) / config.key
+    if source_key == "bookmap":
+        from orchestrator.bookmap_local_bridge import bookmap_local_bridge_status
+
+        bridge_status = bookmap_local_bridge_status(settings)
+        return {
+            "key": config.key,
+            "source": config.source_label,
+            "mode": "local_bridge_readonly",
+            "auth": get_source(source_key).auth,
+            "credential_configured": bool(bridge_status.get("bridge_url_configured")),
+            "activation_ready": bridge_status.get("status") in {"connected", "sample_ready"},
+            "credential_bound": False,
+            "credential_binding": None,
+            "configured_secret_group_count": 1 if bridge_status.get("bridge_url_configured") else 0,
+            "required_group_count": 0,
+            "trust_score": config.trust_score,
+            "raw_archive_root": str(archive_root),
+            "raw_archive_exists": archive_root.exists(),
+            "live_boundary": "Read-only local bridge. Bookmap output cannot create orders or broker writes.",
+            "notes": config.notes,
+            "local_bridge_status": bridge_status.get("status"),
+            "local_bridge_runtime_status": bridge_status.get("runtime_status"),
+            "local_bridge_connected": bool(bridge_status.get("connected")),
+            "local_bridge_live_probe_enabled": bool(bridge_status.get("live_probe_enabled")),
+        }
     return {
         "key": config.key,
         "source": config.source_label,

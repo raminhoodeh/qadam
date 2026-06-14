@@ -141,6 +141,45 @@ Qadam also checks the local `tradingview-mcp-main/` checkout directly:
 
 The adapter must remain read-only. It can produce technical context and evidence packets, but it cannot create trade candidates, submit Alpaca orders, or bypass Qadam risk/quantum gates.
 
+## Bookmap Local Bridge
+
+Bookmap is not a hosted API-key source for Qadam. It is a local-only, read-only order-flow bridge that can provide supplemental microstructure context when Bookmap is running on the Mac.
+
+Use it only in this shape:
+
+| Variable | Purpose |
+| --- | --- |
+| `BOOKMAP_LOCAL_BRIDGE_ENABLED=true` | Allows Qadam to expose the Bookmap adapter contract. Defaults enabled. |
+| `BOOKMAP_LOCAL_BRIDGE_LIVE_PROBE_ENABLED=false` | Keeps live local probing off until the bridge process is running. |
+| `BOOKMAP_LOCAL_BRIDGE_TIMEOUT_SECONDS=3` | Short localhost probe timeout. |
+| `BOOKMAP_BRIDGE_URL=http://127.0.0.1:8765/bookmap` | Local read-only HTTP JSON snapshot endpoint. `ws://127.0.0.1:8765/bookmap` is also supported when the Python `websockets` package is available. |
+
+Expected bridge response shape:
+
+```json
+{
+  "records": [
+    {
+      "symbol": "CL",
+      "setup_type": "absorption_range_watch",
+      "direction": "watch_breakout_or_reversal",
+      "orderflow_score": 0.68,
+      "liquidity_state": "resting_liquidity_near_range_edges",
+      "absorption_state": "possible_absorption",
+      "imbalance_state": "mixed"
+    }
+  ]
+}
+```
+
+Validation:
+
+```bash
+.venv/bin/python scripts/check_bookmap_local_bridge.py
+```
+
+Boundary: Bookmap observes local orderflow only. It cannot inject orders, place trades in Bookmap, create Qadam trade candidates, submit Alpaca Paper orders, call brokers, satisfy source quorum by itself, run quantum jobs, or enable live capital.
+
 ## Telegram Bot
 
 Telegram is Qadam's founding-member communications rail. It is not a trading interface.

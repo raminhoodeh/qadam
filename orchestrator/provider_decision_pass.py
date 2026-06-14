@@ -113,22 +113,22 @@ PROVIDER_DECISIONS: dict[str, ProviderDecision] = {
     ),
     "bookmap": ProviderDecision(
         source_key="bookmap",
-        decision_status="local_bridge_selected",
+        decision_status="local_bridge_adapter_ready",
         selected_provider="Bookmap local API bridge",
         provider_class="local_desktop_bridge",
-        activation_state="local_bridge_required",
-        access_pattern="local_websocket_from_bookmap_addon_or_brapi_consumer",
-        endpoint_policy="Use a local read-only bridge such as ws://localhost:8765/bookmap; do not expose Bookmap data through hosted public endpoints.",
+        activation_state="local_bridge_process_required",
+        access_pattern="local_http_or_websocket_from_bookmap_addon_or_brapi_consumer",
+        endpoint_policy="Use a local read-only bridge such as http://127.0.0.1:8765/bookmap or ws://127.0.0.1:8765/bookmap; do not expose Bookmap data through hosted public endpoints.",
         credential_policy="No hosted API key. Requires the user's local Bookmap install, market-data entitlements, and an explicitly read-only local bridge.",
         evidence_packet_types=("orderflow_context", "absorption_context", "sweep_context", "microstructure_confirmation"),
         qadam_role="optional_local_orderflow_confirmation",
         selected_for_current_paper_core=False,
         credential_required_now=False,
-        adapter_work_required=True,
+        adapter_work_required=False,
         local_bridge_required=True,
         setup_url="https://bookmap.com/knowledgebase/docs/API",
-        next_action="Build/run the local read-only bridge on the Mac only when the operator wants Bookmap order-flow context.",
-        notes="Bookmap remains local-only; Qadam must not use its inject/order-management capabilities.",
+        next_action="Run the local read-only bridge on the Mac only when the operator wants Bookmap order-flow context.",
+        notes="The adapter contract exists. Bookmap remains local-only; Qadam must not use its inject/order-management capabilities.",
     ),
 }
 
@@ -172,7 +172,7 @@ def provider_decision_registry() -> dict[str, Any]:
             1 for state in safe_states if state["decision_status"] == "marketplace_disabled_no_provider"
         ),
         "local_bridge_selected_count": sum(
-            1 for state in safe_states if state["decision_status"] == "local_bridge_selected"
+            1 for state in safe_states if state["decision_status"].startswith("local_bridge")
         ),
         "credential_required_now_count": sum(1 for state in safe_states if state["credential_required_now"]),
         "adapter_work_required_count": sum(1 for state in safe_states if state["adapter_work_required"]),

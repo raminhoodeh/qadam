@@ -101,6 +101,8 @@ def _spec_by_key() -> dict[str, Any]:
 
 def _secret_names(source_key: str, settings: Settings) -> tuple[tuple[str, ...], tuple[str, ...]]:
     spec = _spec_by_key()[source_key]
+    if spec.status == "local_bridge":
+        return (), ()
     configured: list[str] = []
     missing: list[str] = []
     optional = OPTIONAL_SECRET_KEYS.get(source_key, set())

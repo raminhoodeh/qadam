@@ -53,6 +53,7 @@ def main() -> int:
     print(f"market_context_average_trust_score={report.get('average_trust_score')}")
     print(f"market_context_yahoo_finance_status={report.get('yahoo_finance_status')}")
     print(f"market_context_tradingview_mcp_status={report.get('tradingview_mcp_status')}")
+    print(f"market_context_bookmap_local_bridge_status={report.get('bookmap_local_bridge_status')}")
     print(f"market_context_paper_account_context_status={report.get('paper_account_context_status')}")
     print(f"market_context_seed_status={seed.get('status')}")
 
@@ -97,6 +98,8 @@ def main() -> int:
                 errors.append("packet_yahoo_role_missing")
             if "supplemental_technical_confirmation" not in roles:
                 errors.append("packet_tradingview_role_missing")
+            if "supplemental_orderflow_confirmation" not in roles:
+                errors.append("packet_bookmap_role_missing")
             if "paper_account_context" not in roles:
                 errors.append("packet_paper_context_role_missing")
         quality = packet.get("source_quality", {})
@@ -108,6 +111,18 @@ def main() -> int:
             errors.append("packet_yahoo_role_not_supplemental")
         if packet.get("technical_context", {}).get("role") != "supplemental_technical_confirmation_only":
             errors.append("packet_tradingview_role_not_supplemental")
+        orderflow_context = packet.get("orderflow_context", {})
+        if orderflow_context.get("role") != "supplemental_orderflow_confirmation_only":
+            errors.append("packet_bookmap_role_not_supplemental")
+        for field in (
+            "source_quorum_credit_allowed",
+            "trade_candidate_creation_allowed",
+            "execution_allowed",
+            "paper_order_allowed",
+            "broker_write_allowed",
+        ):
+            if orderflow_context.get(field) is not False:
+                errors.append(f"packet_bookmap_authority_enabled:{field}")
         if packet.get("paper_account_context", {}).get("authority") != "read_only_paper_account_context_only":
             errors.append("packet_paper_context_not_read_only")
         for field in (

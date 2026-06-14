@@ -112,9 +112,9 @@ As of 2026-06-14, Qadam has explicit provider decisions for the remaining option
 | `coinglass` | CoinGlass API selected for a possible future crypto/perps derivatives context. | Provider selected, adapter not built. | No `COINGLASS_API_KEY` request now; no source quorum credit. |
 | `chainlink` | Chainlink Data Feeds selected for possible future price-integrity cross-checking. | Provider selected, public adapter not built. | No RPC credential request now; read-only adapter comes first. |
 | `github` | GitHub REST API selected for possible future technology and supply-chain context. | Provider selected, public adapter not built. | No `GITHUB_TOKEN` request now; a narrow watchlist must exist first. |
-| `bookmap` | Local Bookmap API bridge selected for possible order-flow confirmation. | Local bridge required. | No hosted API key; must run locally and remain read-only. |
+| `bookmap` | Local Bookmap API bridge selected for possible order-flow confirmation. | Adapter ready; local bridge process required. | No hosted API key; must run locally and remain read-only. |
 
-These decisions are planning/readiness metadata only. They do not fetch data, create evidence packets, influence signals, submit orders, call brokers, or enable live capital.
+These decisions are planning/readiness metadata only. Bookmap now has a read-only local bridge adapter, but it still cannot create evidence from a live Bookmap session until the local bridge process is running. None of these decisions can submit orders, call brokers, or enable live capital.
 
 ## Conflicts To Carry Into Implementation
 

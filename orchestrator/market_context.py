@@ -16,6 +16,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from orchestrator.bookmap_local_bridge import (
+    BOOKMAP_LOCAL_BRIDGE_TRUST_SCORE,
+    bookmap_local_bridge_packet_context,
+    bookmap_local_bridge_status,
+)
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.paper_account import paper_account_shadow_context
@@ -39,8 +44,9 @@ MARKET_CONTEXT_BOUNDARY = (
     "Market Context Packet is read-only context for Research Analyst, Strategy "
     "Lead, Signal Integrity, Risk Agent, and Head of Quant review. It can score "
     "source quality, freshness, corroboration, Yahoo Finance supplemental market "
-    "confirmation, TradingView MCP supplemental technical confirmation, and "
-    "paper-account state, but it cannot create trade candidates, approve risk, "
+    "confirmation, TradingView MCP supplemental technical confirmation, "
+    "Bookmap local supplemental order-flow confirmation, and paper-account "
+    "state, but it cannot create trade candidates, approve risk, "
     "stage or submit paper orders, write to brokers, submit quantum hardware "
     "jobs, or enable live capital."
 )
@@ -69,6 +75,7 @@ DEFAULT_SOURCE_TRUST: dict[str, float] = {
     "ais_or_shipping": 0.66,
     "alpaca": 0.76,
     "bls": 0.82,
+    "bookmap": BOOKMAP_LOCAL_BRIDGE_TRUST_SCORE,
     "ecb": 0.84,
     "fred": 0.83,
     "gdelt": 0.62,
@@ -175,6 +182,8 @@ def _source_role(source_key: str) -> str:
         return "supplemental_market_confirmation"
     if source_key == "tradingview_mcp":
         return "supplemental_technical_confirmation"
+    if source_key == "bookmap":
+        return "supplemental_orderflow_confirmation"
     if source_key == "alpaca":
         return "paper_account_context"
     if source_key == "kalshi":
@@ -204,7 +213,11 @@ def _source_taxonomy(goal: dict[str, Any], source_results: list[dict[str, Any]])
     statuses = _status_by_source(source_results)
     required_sources = [_normalise_source_key(source) for source in _safe_list(goal.get("required_sources"), limit=16)]
     observed_sources = [_source_key_from_ref(ref) for ref in _safe_list(goal.get("source_event_refs"), limit=16)]
-    source_keys = list(dict.fromkeys([*observed_sources, *required_sources, "yahoo_finance", "tradingview_mcp", "alpaca"]))
+    source_keys = list(
+        dict.fromkeys(
+            [*observed_sources, *required_sources, "yahoo_finance", "tradingview_mcp", "bookmap", "alpaca"]
+        )
+    )
     rows: list[dict[str, Any]] = []
     for source_key in source_keys:
         role = _source_role(source_key)
@@ -328,6 +341,44 @@ def _tradingview_records(context: dict[str, Any], goal: dict[str, Any]) -> list[
     return rows[:4]
 
 
+def _bookmap_records(context: dict[str, Any], goal: dict[str, Any]) -> list[dict[str, Any]]:
+    symbols = _symbols_from_goal(goal)
+    refs = context.get("orderflow_context_refs")
+    if not isinstance(refs, list):
+        refs = []
+    rows: list[dict[str, Any]] = []
+    for ref in refs:
+        if not isinstance(ref, dict):
+            continue
+        symbol = _safe_text(ref.get("symbol"), limit=40, fallback="UNKNOWN").upper()
+        if symbols and symbol not in symbols:
+            continue
+        rows.append(
+            {
+                "source": "bookmap",
+                "symbol": symbol,
+                "setup_type": _safe_text(ref.get("setup_type"), limit=100, fallback="orderflow_context"),
+                "orderflow_score": _clamp_score(ref.get("orderflow_score")),
+                "obvious_orderflow_context_flag": bool(ref.get("obvious_orderflow_context_flag")),
+                "authority": "supplemental_orderflow_confirmation_only",
+            }
+        )
+    if not rows:
+        for ref in refs[:2]:
+            if isinstance(ref, dict):
+                rows.append(
+                    {
+                        "source": "bookmap",
+                        "symbol": _safe_text(ref.get("symbol"), limit=40, fallback="UNKNOWN").upper(),
+                        "setup_type": _safe_text(ref.get("setup_type"), limit=100, fallback="orderflow_context"),
+                        "orderflow_score": _clamp_score(ref.get("orderflow_score")),
+                        "obvious_orderflow_context_flag": bool(ref.get("obvious_orderflow_context_flag")),
+                        "authority": "supplemental_orderflow_confirmation_only",
+                    }
+                )
+    return rows[:4]
+
+
 def _paper_account_context(paper_context: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": _safe_text(paper_context.get("status"), limit=80, fallback="not_initialized"),
@@ -349,13 +400,25 @@ def _paper_account_context(paper_context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _source_quality(goal: dict[str, Any], taxonomy: list[dict[str, Any]], yahoo_rows: list[dict[str, Any]], tradingview_rows: list[dict[str, Any]], paper_context: dict[str, Any]) -> dict[str, Any]:
+def _source_quality(
+    goal: dict[str, Any],
+    taxonomy: list[dict[str, Any]],
+    yahoo_rows: list[dict[str, Any]],
+    tradingview_rows: list[dict[str, Any]],
+    bookmap_rows: list[dict[str, Any]],
+    paper_context: dict[str, Any],
+) -> dict[str, Any]:
     source_quorum_score = _clamp_score(goal.get("source_quorum_score"))
     latency_freshness_score = _clamp_score(goal.get("latency_freshness_score"))
     market_confirmation_score = _clamp_score(goal.get("market_confirmation_score"))
     technical_confirmation_score = (
         round(sum(_clamp_score(row.get("technical_score")) for row in tradingview_rows) / len(tradingview_rows), 3)
         if tradingview_rows
+        else 0.0
+    )
+    orderflow_confirmation_score = (
+        round(sum(_clamp_score(row.get("orderflow_score")) for row in bookmap_rows) / len(bookmap_rows), 3)
+        if bookmap_rows
         else 0.0
     )
     trust_scores = [
@@ -366,11 +429,12 @@ def _source_quality(goal: dict[str, Any], taxonomy: list[dict[str, Any]], yahoo_
     trust_average = round(sum(trust_scores) / len(trust_scores), 3) if trust_scores else 0.0
     paper_context_score = 1.0 if paper_context.get("status") in {"ok", "paper_mirror_synced"} else 0.45
     quality_score = _clamp_score(
-        (source_quorum_score * 0.25)
-        + (trust_average * 0.2)
-        + (latency_freshness_score * 0.2)
+        (source_quorum_score * 0.23)
+        + (trust_average * 0.18)
+        + (latency_freshness_score * 0.18)
         + ((1.0 if yahoo_rows else market_confirmation_score) * 0.15)
         + (technical_confirmation_score * 0.1)
+        + (orderflow_confirmation_score * 0.06)
         + (paper_context_score * 0.1)
     )
     return {
@@ -378,6 +442,7 @@ def _source_quality(goal: dict[str, Any], taxonomy: list[dict[str, Any]], yahoo_
         "latency_freshness_score": latency_freshness_score,
         "market_confirmation_score": market_confirmation_score,
         "technical_confirmation_score": technical_confirmation_score,
+        "orderflow_confirmation_score": orderflow_confirmation_score,
         "trust_score_average": trust_average,
         "source_quality_score": quality_score,
         "observed_source_count": sum(1 for row in taxonomy if row.get("observed_in_goal")),
@@ -400,6 +465,8 @@ def build_market_context_packet(
     yahoo_status: dict[str, Any] | None = None,
     tradingview_context: dict[str, Any] | None = None,
     tradingview_status: dict[str, Any] | None = None,
+    bookmap_context: dict[str, Any] | None = None,
+    bookmap_status: dict[str, Any] | None = None,
     paper_context: dict[str, Any] | None = None,
     durable_replay_summary: dict[str, Any] | None = None,
     generated_at: str | None = None,
@@ -410,14 +477,24 @@ def build_market_context_packet(
     yahoo_status = yahoo_status or yahoo_finance_adapter_status()
     tradingview_context = tradingview_context or tradingview_mcp_packet_context()
     tradingview_status = tradingview_status or tradingview_mcp_adapter_status()
+    bookmap_context = bookmap_context or bookmap_local_bridge_packet_context()
+    bookmap_status = bookmap_status or bookmap_local_bridge_status()
     paper_context = paper_context or paper_account_shadow_context()
     durable_replay_summary = durable_replay_summary or {}
 
     taxonomy = _source_taxonomy(goal, source_results)
     yahoo_rows = _yahoo_records(yahoo_envelope, goal)
     tradingview_rows = _tradingview_records(tradingview_context, goal)
+    bookmap_rows = _bookmap_records(bookmap_context, goal)
     paper_safe = _paper_account_context(paper_context)
-    source_quality = _source_quality(goal, taxonomy, yahoo_rows, tradingview_rows, paper_safe)
+    source_quality = _source_quality(
+        goal,
+        taxonomy,
+        yahoo_rows,
+        tradingview_rows,
+        bookmap_rows,
+        paper_safe,
+    )
     missing_context = list(
         dict.fromkeys(
             [
@@ -471,6 +548,19 @@ def build_market_context_packet(
             "canonical_source": False,
             "source_quorum_credit_allowed": False,
         },
+        "orderflow_context": {
+            "provider": "bookmap_local_bridge",
+            "status": _safe_text(bookmap_status.get("status"), limit=80, fallback="local_bridge_required"),
+            "role": "supplemental_orderflow_confirmation_only",
+            "record_count": len(bookmap_rows),
+            "records": bookmap_rows,
+            "canonical_source": False,
+            "source_quorum_credit_allowed": False,
+            "trade_candidate_creation_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+        },
         "paper_account_context": paper_safe,
         "contradictory_evidence": [str(item)[:220] for item in contradictory],
         "missing_context": [str(item)[:180] for item in missing_context],
@@ -521,6 +611,7 @@ def validate_market_context_packet(packet: dict[str, Any]) -> None:
         "source_quality",
         "price_volume_context",
         "technical_context",
+        "orderflow_context",
         "paper_account_context",
         "source_quorum_result",
         "market_context_status",
@@ -542,6 +633,7 @@ def validate_market_context_packet(packet: dict[str, Any]) -> None:
         "latency_freshness_score",
         "market_confirmation_score",
         "technical_confirmation_score",
+        "orderflow_confirmation_score",
         "trust_score_average",
         "source_quality_score",
     ):
@@ -557,6 +649,17 @@ def validate_market_context_packet(packet: dict[str, Any]) -> None:
         raise ValueError("TradingView MCP role must remain supplemental technical confirmation only")
     if packet["technical_context"].get("source_quorum_credit_allowed") is not False:
         raise ValueError("TradingView MCP cannot grant source quorum credit from market context")
+    if packet["orderflow_context"].get("role") != "supplemental_orderflow_confirmation_only":
+        raise ValueError("Bookmap role must remain supplemental orderflow confirmation only")
+    for field in (
+        "source_quorum_credit_allowed",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+    ):
+        if packet["orderflow_context"].get(field) is not False:
+            raise ValueError(f"Bookmap orderflow context authority must remain false: {field}")
     for field in ("write_authority", "execution_allowed", "paper_order_allowed", "live_capital_enabled"):
         if packet["paper_account_context"].get(field) is not False:
             raise ValueError(f"paper account context authority must remain false: {field}")
@@ -585,6 +688,8 @@ def run_market_context_packet_cycle(
     yahoo_status = yahoo_finance_adapter_status(settings)
     tradingview_context = tradingview_mcp_packet_context(settings)
     tradingview_status = tradingview_mcp_adapter_status(settings)
+    bookmap_context = bookmap_local_bridge_packet_context(settings)
+    bookmap_status = bookmap_local_bridge_status(settings)
     paper_context = paper_account_shadow_context(settings)
     packets = [
         build_market_context_packet(
@@ -594,6 +699,8 @@ def run_market_context_packet_cycle(
             yahoo_status=yahoo_status,
             tradingview_context=tradingview_context,
             tradingview_status=tradingview_status,
+            bookmap_context=bookmap_context,
+            bookmap_status=bookmap_status,
             paper_context=paper_context,
             durable_replay_summary=durable_replay_summary,
             generated_at=generated_at,
@@ -628,6 +735,7 @@ def run_market_context_packet_cycle(
         ),
         "yahoo_finance_status": yahoo_status.get("status"),
         "tradingview_mcp_status": tradingview_status.get("status"),
+        "bookmap_local_bridge_status": bookmap_status.get("status"),
         "paper_account_context_status": paper_context.get("status"),
         "authority_counts": authority_counts,
         "recent_packets": packets[:limit],

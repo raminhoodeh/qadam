@@ -307,6 +307,50 @@ TRADINGVIEW_MCP_REQUIRED_FIELDS = {
     "trade_candidate_creation_allowed",
 }
 
+BOOKMAP_LOCAL_BRIDGE_REQUIRED_FIELDS = {
+    "active_required_challenges",
+    "bookmap_order_injection_allowed",
+    "bookmap_trading_mode_allowed",
+    "boundary",
+    "bridge_host_class",
+    "bridge_scheme",
+    "bridge_url_configured",
+    "bridge_url_local",
+    "broker_write_allowed",
+    "canonical_source_count",
+    "classification",
+    "connected",
+    "degraded_reason",
+    "enabled",
+    "execution_allowed",
+    "fill_confirmation_authority",
+    "live_capital_enabled",
+    "live_probe_enabled",
+    "local_path_exposed",
+    "obvious_orderflow_context_count",
+    "orderflow_confirmation_role",
+    "orderflow_context_count",
+    "orderflow_context_status",
+    "orderflow_contexts",
+    "paper_order_allowed",
+    "provider",
+    "public_safe",
+    "quantum_job_authority",
+    "raw_payload_exposed",
+    "receipt_evidence_authority",
+    "reconciliation_truth_authority",
+    "risk_approval_authority",
+    "sample_mode_available",
+    "sanitized_endpoint",
+    "schema_version",
+    "signal_authority",
+    "source",
+    "source_key",
+    "source_quorum_credit_allowed",
+    "status",
+    "trade_candidate_creation_allowed",
+}
+
 PREFERENCE_MCP_REQUIRED_FIELDS = {
     "active_required_challenge_count",
     "approved_domain_pack_count",
@@ -3424,6 +3468,15 @@ def main() -> int:
     print(
         "cockpit_status_tradingview_mcp_context_count="
         f"{payload['tradingview_mcp'].get('technical_context_count')}"
+    )
+    print(f"cockpit_status_bookmap_local_bridge_status={payload['bookmap_local_bridge'].get('status')}")
+    print(
+        "cockpit_status_bookmap_local_bridge_connected="
+        f"{payload['bookmap_local_bridge'].get('connected')}"
+    )
+    print(
+        "cockpit_status_bookmap_orderflow_context_count="
+        f"{payload['bookmap_local_bridge'].get('orderflow_context_count')}"
     )
     print(f"cockpit_status_tradingview_alert_status={payload['tradingview_alerts'].get('status')}")
     print(f"cockpit_status_tradingview_alert_count={payload['tradingview_alerts'].get('alert_count')}")
@@ -12109,6 +12162,71 @@ def main() -> int:
             return 1
         if row.get("broker_write_allowed") is not False:
             print("cockpit_status_tradingview_mcp_row_broker_write_allowed=true")
+            return 1
+
+    bookmap_local_bridge = payload["bookmap_local_bridge"]
+    missing_bookmap_fields = sorted(BOOKMAP_LOCAL_BRIDGE_REQUIRED_FIELDS - set(bookmap_local_bridge))
+    if missing_bookmap_fields:
+        print("cockpit_status_bookmap_local_bridge_fields_missing=" + ",".join(missing_bookmap_fields))
+        return 1
+    if bookmap_local_bridge.get("status") not in {
+        "connected",
+        "sample_ready",
+        "configured_pending_probe",
+        "local_bridge_required",
+        "disabled",
+        "degraded",
+    }:
+        print("cockpit_status_bookmap_local_bridge_status_invalid=true")
+        return 1
+    if bookmap_local_bridge.get("public_safe") is not True:
+        print("cockpit_status_bookmap_local_bridge_not_public_safe=true")
+        return 1
+    if bookmap_local_bridge.get("source_key") != "bookmap":
+        print("cockpit_status_bookmap_local_bridge_source_key_mismatch=true")
+        return 1
+    if bookmap_local_bridge.get("orderflow_confirmation_role") != "supplemental_orderflow_confirmation_only":
+        print("cockpit_status_bookmap_local_bridge_role_mismatch=true")
+        return 1
+    for key in (
+        "source_quorum_credit_allowed",
+        "signal_authority",
+        "risk_approval_authority",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "fill_confirmation_authority",
+        "receipt_evidence_authority",
+        "reconciliation_truth_authority",
+        "quantum_job_authority",
+        "bookmap_order_injection_allowed",
+        "bookmap_trading_mode_allowed",
+        "live_capital_enabled",
+        "raw_payload_exposed",
+        "local_path_exposed",
+    ):
+        if bookmap_local_bridge.get(key) is not False:
+            print(f"cockpit_status_bookmap_local_bridge_authority_enabled={key}")
+            return 1
+    if "read-only supplemental order-flow context" not in bookmap_local_bridge.get("boundary", ""):
+        print("cockpit_status_bookmap_local_bridge_boundary_weak=true")
+        return 1
+    for row in bookmap_local_bridge.get("orderflow_contexts", []):
+        if row.get("execution_allowed") is not False:
+            print("cockpit_status_bookmap_local_bridge_row_execution_allowed=true")
+            return 1
+        if row.get("paper_order_allowed") is not False:
+            print("cockpit_status_bookmap_local_bridge_row_paper_order_allowed=true")
+            return 1
+        if row.get("trade_candidate_created") is not False:
+            print("cockpit_status_bookmap_local_bridge_row_trade_candidate_created=true")
+            return 1
+        if row.get("broker_write_allowed") is not False:
+            print("cockpit_status_bookmap_local_bridge_row_broker_write_allowed=true")
+            return 1
+        if row.get("bookmap_order_injection_allowed") is not False:
+            print("cockpit_status_bookmap_local_bridge_row_injection_allowed=true")
             return 1
 
     tradingview = payload["tradingview_alerts"]

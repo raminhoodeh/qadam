@@ -87,6 +87,19 @@ def main() -> int:
     print(f"phase2_shadow_cycle_tradingview_mcp_execution_allowed={report['tradingview_mcp_execution_allowed']}")
     print(f"phase2_shadow_cycle_tradingview_mcp_paper_order_allowed={report['tradingview_mcp_paper_order_allowed']}")
     print(f"phase2_shadow_cycle_tradingview_mcp_broker_write_allowed={report['tradingview_mcp_broker_write_allowed']}")
+    print(f"phase2_shadow_cycle_bookmap_status={report['bookmap_local_bridge_status']}")
+    print(f"phase2_shadow_cycle_bookmap_role={report['bookmap_local_bridge_context_role']}")
+    print(
+        "phase2_shadow_cycle_bookmap_context_count="
+        f"{report['bookmap_local_bridge_orderflow_context_count']}"
+    )
+    print(
+        "phase2_shadow_cycle_bookmap_trade_candidate_creation_allowed="
+        f"{report['bookmap_local_bridge_trade_candidate_creation_allowed']}"
+    )
+    print(f"phase2_shadow_cycle_bookmap_execution_allowed={report['bookmap_local_bridge_execution_allowed']}")
+    print(f"phase2_shadow_cycle_bookmap_paper_order_allowed={report['bookmap_local_bridge_paper_order_allowed']}")
+    print(f"phase2_shadow_cycle_bookmap_broker_write_allowed={report['bookmap_local_bridge_broker_write_allowed']}")
     print(f"phase2_shadow_cycle_strategy_research_intake_status={report['strategy_research_intake_status']}")
     print(f"phase2_shadow_cycle_strategy_research_candidate_count={report['strategy_research_candidate_count']}")
     print(f"phase2_shadow_cycle_strategy_research_challenge_count={report['strategy_research_challenge_count']}")
@@ -120,6 +133,10 @@ def main() -> int:
     print(
         "phase2_shadow_cycle_market_context_tradingview_mcp_status="
         f"{report['market_context_tradingview_mcp_status']}"
+    )
+    print(
+        "phase2_shadow_cycle_market_context_bookmap_local_bridge_status="
+        f"{report['market_context_bookmap_local_bridge_status']}"
     )
     print(
         "phase2_shadow_cycle_market_context_paper_account_context_status="
@@ -381,6 +398,20 @@ def main() -> int:
     if report["tradingview_mcp_execution_allowed"]:
         return 1
     if report["tradingview_mcp_paper_order_allowed"] or report["tradingview_mcp_broker_write_allowed"]:
+        return 1
+    if report["bookmap_local_bridge_context_role"] != "read_only_supplemental_orderflow_confirmation":
+        return 1
+    if report["bookmap_local_bridge_source_quorum_credit_allowed"]:
+        return 1
+    if report["bookmap_local_bridge_trade_candidate_creation_allowed"]:
+        return 1
+    if report["bookmap_local_bridge_risk_handoff_allowed"]:
+        return 1
+    if report["bookmap_local_bridge_execution_allowed"]:
+        return 1
+    if report["bookmap_local_bridge_paper_order_allowed"] or report["bookmap_local_bridge_broker_write_allowed"]:
+        return 1
+    if report["bookmap_order_injection_allowed"] or report["bookmap_trading_mode_allowed"]:
         return 1
     if report["strategy_research_intake_status"] != "ready_for_strategy_review":
         return 1
