@@ -231,7 +231,7 @@ const CANONICAL_STATUS_LANGUAGE = {
         label: "Optional",
         tone: "pending",
         description: "Useful if configured, but not required for the current paper-trading core.",
-        tokens: ["optional", "not required", "supplemental only", "ready to build", "fallback only", "receiver pending", "live read deferred", "disabled live mode", "live mcp disabled"]
+        tokens: ["optional", "not required", "supplemental only", "ready to build", "fallback only", "receiver pending", "live read deferred", "disabled live mode", "live mcp disabled", "optional disabled", "adapter not built", "not selected", "provider decision required"]
     },
     "waiting-for-evidence": {
         label: "Waiting",
@@ -736,8 +736,14 @@ function sourceDisplayStatus(source = {}) {
     const rawStatus = normalizeCanonicalStatusToken(source.status || "");
     const readiness = normalizeCanonicalStatusToken(source.readiness || "");
     const credentialStatus = normalizeCanonicalStatusToken(source.credential_status || "");
+    const actionCategory = normalizeCanonicalStatusToken(source.action_category || "");
     if (rawStatus === "online") return "ok";
     if (rawStatus === "local only") return "local only";
+    if (actionCategory === "intentionally disabled" || actionCategory === "needs adapter" || actionCategory === "provider decision required") {
+        return "optional";
+    }
+    if (actionCategory === "local bridge required") return "local only";
+    if (actionCategory === "needs credentials") return "not configured";
     if (!sourceIsCore(source)) {
         return "optional";
     }
@@ -3923,6 +3929,9 @@ function normalizeContractSource(source = {}) {
         cadence: source.cadence || "snapshot",
         heartbeat: source.heartbeat || source.last_seen_at || source.updated_at,
         degraded_reason: source.degraded_reason || source.reason || "",
+        selection_status: source.selection_status || "selected",
+        operator_action: source.operator_action || "none",
+        action_category: source.action_category || "no_user_action",
         usable_for_research_context: Boolean(source.usable_for_research_context),
         eligible_for_signal_review: Boolean(source.eligible_for_signal_review),
         can_authorize_orders: Boolean(source.can_authorize_orders),
@@ -4718,7 +4727,8 @@ function renderOperationsWorkspace(model = {}, status = {}) {
     const yahoo = sourcePosture.yahoo_finance || {};
     const preference = sourcePosture.preference_mcp || {};
     const guardrails = backendMap.guardrails || {};
-    const paperSubmitPathCount = status.phase5_paper_trade_drill?.paper_submit_path_available_count || guardrails.paper_submit_path_available_count || 0;
+    const paperSubmitPathCount = guardrails.paper_submit_path_available_count || 0;
+    const paperTradeDrillSubmitPathCount = status.phase5_paper_trade_drill?.paper_submit_path_available_count || 0;
     const communications = model.communications_audit || {};
     const governance = model.governance_audit || {};
     const bridgeTone = runtime.live_bridge_read_only && !safety.live_capital_enabled ? "online" : "blocked";
@@ -4875,14 +4885,15 @@ function renderOperationsWorkspace(model = {}, status = {}) {
                             ${renderInlineBadge(`canonical sources ${canonical.replayed_source_count || 0}/${canonical.expected_source_count || 0}`, (canonical.missing_source_count || 0) ? "degraded" : "online")}
                             ${renderInlineBadge(`Yahoo Finance ${dashboardText(yahoo.role || "supplemental market confirmation only")}`, "pending")}
                             ${renderInlineBadge(`Preference/PREF MCP ${dashboardText(preference.status || "not exported")}`, preference.source_36 ? "blocked" : "pending")}
-                            ${renderInlineBadge(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled", guardrails.live_capital_enabled ? "blocked" : "online")}
-                            ${renderInlineBadge(`paper submit path ${paperSubmitPathCount}`, paperSubmitPathCount ? "online" : "blocked")}
+                            <span class="inline-badge ${statusClass(guardrails.live_capital_enabled ? "blocked" : "online")}">${htmlText(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled")}</span>
+                            <span class="inline-badge ${statusClass(paperSubmitPathCount ? "online" : "blocked")}">${htmlText(`paper submit path ${paperSubmitPathCount}`)}</span>
                             ${renderInlineBadge(guardrails.dashboard_claims_trading_now ? "dashboard says trading" : "dashboard does not say trading", guardrails.dashboard_claims_trading_now ? "blocked" : "online")}
                         </div>
                         <div class="operations-edge-legend">
                             <span>Edge state</span>
                             ${["active", "shadow/context-only", "degraded", "locked", "blocked"].map((state) => renderInlineBadge(state, state)).join("")}
                         </div>
+                        <p class="mini">Paper trade drill diagnostic: paper submit path ${htmlText(paperTradeDrillSubmitPathCount)}. System-map guardrail: paper submit path ${htmlText(paperSubmitPathCount)}.</p>
 	                        <ul class="operations-edge-list">
 	                            ${asArray(connectivity.edges).map((edge) => renderOperationsEdge(edge, connectivity)).join("")}
 	                        </ul>
@@ -5019,8 +5030,8 @@ function renderFlowMap(status, source, viewModels) {
                     ${renderInlineBadge(`canonical sources ${canonical.replayed_source_count || 0}/${canonical.expected_source_count || 0}`, (canonical.missing_source_count || 0) ? "degraded" : "online")}
                     ${renderInlineBadge(`Yahoo Finance ${dashboardText(yahoo.role || "supplemental")}`, "pending")}
                     ${renderInlineBadge(`Preference/PREF MCP ${dashboardText(preference.status || "not_exported")}`, preference.source_36 ? "blocked" : "pending")}
-                    ${renderInlineBadge(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled", guardrails.live_capital_enabled ? "blocked" : "online")}
-                    ${renderInlineBadge(`paper submit path ${guardrails.paper_submit_path_available_count || 0}`, guardrails.paper_submit_path_available_count ? "online" : "blocked")}
+                    <span class="inline-badge ${statusClass(guardrails.live_capital_enabled ? "blocked" : "online")}">${htmlText(guardrails.live_capital_enabled ? "live capital enabled" : "live capital disabled")}</span>
+                    <span class="inline-badge ${statusClass(guardrails.paper_submit_path_available_count ? "online" : "blocked")}">${htmlText(`paper submit path ${guardrails.paper_submit_path_available_count || 0}`)}</span>
                     ${renderInlineBadge(guardrails.dashboard_claims_trading_now ? "dashboard says trading" : "dashboard does not say trading", guardrails.dashboard_claims_trading_now ? "blocked" : "online")}
                 </div>
                 <p class="mini">${htmlText(backendMap.boundary, "The system map is read-only and sanitized for the dashboard.")}</p>
@@ -9668,6 +9679,7 @@ function renderTrades(status, viewModels = {}) {
     const tradeLayer = status.trade_layer || {};
     const tradingView = status.tradingview_alerts || {};
     const tradingViewMcp = status.tradingview_mcp || {};
+    const bookmapLocalBridge = status.bookmap_local_bridge || {};
     const riskAgent = tradeLayer.risk_agent || status.risk_agent || {};
     const riskReviews = asArray(riskAgent.reviews);
     const executionPolicy = tradeLayer.execution_policy || status.execution_policy || {};
@@ -10867,6 +10879,26 @@ function renderTrades(status, viewModels = {}) {
                 ${renderInlineBadge("no direct trade authority", "online")}
             </div>
             <p class="mini">${htmlText(tradingViewMcp.boundary, "TradingView MCP is read-only technical analysis.")}</p>
+        </section>
+        <section class="trade-intent-section">
+            <p class="label">Bookmap local orderflow bridge</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Connection", bookmapLocalBridge.connected ? "connected" : "not connected")}
+                ${renderMetric("Adapter", bookmapLocalBridge.status || "local bridge required")}
+                ${renderMetric("Probe", bookmapLocalBridge.live_probe_enabled ? "enabled" : "disabled")}
+                ${renderMetric("Contexts", bookmapLocalBridge.orderflow_context_count || 0)}
+                ${renderMetric("Orderflow flags", bookmapLocalBridge.obvious_orderflow_context_count || 0)}
+                ${renderMetric("Candidates", `${bookmapLocalBridge.trade_candidate_creation_allowed ? 1 : 0} created`)}
+                ${renderMetric("Paper orders", `${bookmapLocalBridge.paper_order_allowed ? 1 : 0} allowed`)}
+                ${renderMetric("Bookmap trading", bookmapLocalBridge.bookmap_trading_mode_allowed ? "allowed" : "blocked")}
+            </div>
+            <div class="tag-row">
+                ${renderInlineBadge("local only", bookmapLocalBridge.connected ? "online" : "pending")}
+                ${renderInlineBadge("orderflow context", "online")}
+                ${renderInlineBadge("Qadam governs", "online")}
+                ${renderInlineBadge("no direct trade authority", "online")}
+            </div>
+            <p class="mini">${htmlText(bookmapLocalBridge.boundary, "Bookmap is read-only orderflow context.")}</p>
         </section>
         <section class="trade-intent-section">
             <p class="label">TradingView alert source</p>
