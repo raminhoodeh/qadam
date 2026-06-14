@@ -27,6 +27,8 @@ class SourceSpec:
     env_vars: tuple[str, ...] = ()
     status: str = "ready_to_build"
     notes: str = ""
+    selection_status: str = "selected"
+    operator_action: str = "none"
 
 
 SOURCE_SPECS: tuple[SourceSpec, ...] = (
@@ -301,9 +303,14 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://api.unusualwhales.com/api/option-trades/flow-alerts",),
         "5 minutes during market hours",
         "plan dependent; budget 200/day",
-        ("UNUSUAL_WHALES_API_KEY",),
-        "adapter_live_requires_key",
-        "Read-only adapter scaffolded for options flow/dark pool context; provider-specific enrichment waits for the API key.",
+        (),
+        "intentionally_disabled",
+        (
+            "Optional options-flow/dark-pool source demoted after provider direction changed. "
+            "Capitol Trades is now the selected politician-trading path."
+        ),
+        "optional_disabled",
+        "reselect_unusual_whales_before_requesting_credentials",
     ),
     SourceSpec(
         "polymarket",
@@ -331,6 +338,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("KALSHI_API_KEY", "KALSHI_API_SECRET"),
         "adapter_live_region_deferred",
         "Read-only market adapter is scaffolded; live usefulness depends on region/account eligibility and credentials.",
+        operator_action="add_kalshi_credentials_when_region_account_allows",
     ),
     SourceSpec(
         "hyperliquid",
@@ -373,8 +381,14 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://rapidapi.com/hub",),
         "varies",
         "per-source plan limits",
-        ("RAPIDAPI_KEY",),
-        "fallback",
+        (),
+        "intentionally_disabled",
+        (
+            "RapidAPI is a marketplace, not a canonical source. Keep disabled until a specific "
+            "RapidAPI-backed provider is selected."
+        ),
+        "optional_disabled",
+        "select_specific_rapidapi_provider_before_activation",
     ),
     SourceSpec(
         "coinglass",
@@ -386,7 +400,14 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://open-api.coinglass.com/public/v2/",),
         "15 minutes",
         "30 requests/min free; 300/min pro",
-        ("COINGLASS_API_KEY",),
+        (),
+        status="needs_adapter",
+        notes=(
+            "Provider candidate for crypto/perps context only. It is not selected for the current "
+            "paper-trading core and should not appear as a missing credential."
+        ),
+        selection_status="not_selected",
+        operator_action="decide_crypto_perps_role_before_requesting_credentials",
     ),
     SourceSpec(
         "chainlink",
@@ -398,7 +419,14 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://eth-mainnet.g.alchemy.com/v2/{KEY}",),
         "10 minutes",
         "Alchemy free tier budget about 50/day",
-        ("ETH_RPC_URL",),
+        (),
+        status="needs_adapter",
+        notes=(
+            "Public oracle/price-feed context candidate. Needs a read-only adapter decision before "
+            "any RPC credential is requested."
+        ),
+        selection_status="not_selected",
+        operator_action="build_public_price_feed_adapter_before_requesting_rpc",
     ),
     SourceSpec(
         "bookmap",
@@ -413,6 +441,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("BOOKMAP_BRIDGE_URL",),
         status="local_bridge",
         notes="Read-only local bridge contract; Qadam shows it connected only when the local bridge is configured/running.",
+        operator_action="configure_bookmap_readonly_local_bridge",
     ),
     SourceSpec(
         "rss",
@@ -467,6 +496,9 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "30 minutes",
         "100 requests/min authenticated",
         ("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),
+        status="adapter_live_requires_key",
+        notes="Selected narrative source. Needs Reddit OAuth credentials before live read-only activation.",
+        operator_action="add_reddit_oauth_credentials",
     ),
     SourceSpec(
         "sec_edgar",
@@ -482,7 +514,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
     ),
     SourceSpec(
         "stock_act",
-        "STOCK Act Filings",
+        "Capitol Trades / STOCK Act Filings",
         "social",
         3,
         "world_monitor_social_stock_act",
@@ -496,6 +528,7 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
             "Provider direction updated: use Capitol Trades or its selected API path for v1, not UnusualWhales. "
             "The adapter remains read-only and provider-doc gated until the credential/API contract is supplied."
         ),
+        operator_action="add_capitol_trades_credentials",
     ),
     SourceSpec(
         "patents",
@@ -520,7 +553,14 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         ("https://api.github.com/",),
         "daily",
         "5,000 requests/hour authenticated",
-        ("GITHUB_TOKEN",),
+        (),
+        status="needs_adapter",
+        notes=(
+            "Optional technology/supply-chain context candidate. Needs a specific signal role and "
+            "read-only adapter before any GitHub token is requested."
+        ),
+        selection_status="not_selected",
+        operator_action="decide_github_signal_role_before_requesting_credentials",
     ),
 )
 
@@ -546,6 +586,20 @@ def unresolved_sources() -> tuple[SourceSpec, ...]:
         for source in SOURCE_SPECS
         if source.status in {"needs_clarity", "needs_choice", "needs_new_adapter"}
     )
+
+
+def source_registry_action_category(source: SourceSpec) -> str:
+    if source.status == "local_bridge":
+        return "local_bridge_required"
+    if source.status == "intentionally_disabled":
+        return "intentionally_disabled"
+    if source.status in {"needs_adapter", "needs_new_adapter"}:
+        return "needs_adapter"
+    if source.status in {"needs_clarity", "needs_choice"}:
+        return "provider_decision_required"
+    if source.env_vars:
+        return "needs_credentials"
+    return "no_user_action"
 
 
 def missing_environment_variables(environ: dict[str, str]) -> dict[str, tuple[str, ...]]:

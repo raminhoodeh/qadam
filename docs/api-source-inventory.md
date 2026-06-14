@@ -18,6 +18,7 @@ Key split decisions:
 - Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
+- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act. UnusualWhales and RapidAPI are intentionally disabled; Coinglass, Chainlink, and GitHub need adapter/provider decisions before any key is requested.
 
 ## Tier 1 - Wire First
 
@@ -26,7 +27,7 @@ Key split decisions:
 | ACLED | OAuth, `https://acleddata.com/api/acled/read` | World Monitor has reusable OAuth/token-cache logic; current live validation is degraded until token refresh, entitlement, or account scope is confirmed. |
 | Oref | Public, `https://www.oref.org.il/WarningMessages/alert/alerts.json` | Spec says 5s cadence, but practical relay code uses a slower protected path. |
 | NASA FIRMS | API key, FIRMS area CSV endpoint | Promoted as the first physical adapter; bbox-first, read-only, credential-gated, and paced conservatively. |
-| UnusualWhales | API key, `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Read-only adapter scaffolded; provider-specific enrichment waits for the API key. |
+| UnusualWhales | Intentionally disabled | Optional options-flow source; not a current credential request because Capitol Trades is the selected politician-trading path. |
 | Polymarket | Public CLOB plus wallet/execution later | Read-only CLOB adapter scaffolded; execution remains disabled. |
 | Kalshi | API key, trading API | Read-only adapter scaffolded; region/account eligibility remains the practical gate. |
 | Alpaca | API key + secret, data/trading APIs | Paper execution exists separately; registry row is the read-only account/market-data mirror contract. |
@@ -65,13 +66,13 @@ Key split decisions:
 | Space-Track / CelesTrak | Space-Track account; CelesTrak GP JSON public fallback | Satellite/TLE context. |
 | GPS Jamming | Public `gpsjam.org` API | Electronic-warfare context. |
 | IODA Internet Outage | Public Georgia Tech API | Regional connectivity/cyber disruption context. |
-| Coinglass | API key | Crypto derivatives context. |
+| Coinglass | Not selected; adapter decision required | Crypto derivatives context only if crypto/perps becomes relevant. |
 | Bookmap | Local WebSocket bridge | Local process dependency. |
-| Chainlink | Ethereum RPC endpoint | Price-feed cross-checking. |
+| Chainlink | Not selected; adapter decision required | Prefer a public read-only price-feed adapter before requesting RPC credentials. |
 | Hyperliquid | Public info API | Crypto/perp sentiment and liquidity context. |
-| GitHub | Read-only PAT | Weak tech-sector precursor signal. |
+| GitHub | Not selected; adapter decision required | Optional tech/supply-chain context; no token requested until a signal role is selected. |
 | Patents | Public USPTO/EPO APIs | Long-cycle R&D signal. |
-| RapidAPI | RapidAPI key | Catch-all fallback for niche sources. |
+| RapidAPI | Intentionally disabled | Marketplace only; activate only after selecting a specific RapidAPI-backed provider. |
 
 ## Supplemental Market Confirmation - Accepted Pending Live Dependencies
 
@@ -96,7 +97,7 @@ The May 2026 source-registry blocker pass resolved the eight stale blockers into
 | `space_track_celestrak` | Keep Space-Track as authenticated primary and CelesTrak GP JSON as public fallback. | Space-Track credentials only needed for the fuller authenticated path. |
 | `ais_maritime` | Use AISStream as the v1 read-only MVP; keep Spire/MarineTraffic as paid fallbacks. | Needs one AIS credential before live vessel data is available. |
 | `aviationstack` | Use Aviationstack as the v1 flight-data provider instead of Wingbits. | Needs `AVIATIONSTACK_API_KEY`; live adapter stays read-only and quota-aware. |
-| `unusual_whales` | Keep the read-only options-flow adapter contract. | Needs `UNUSUAL_WHALES_API_KEY`. |
+| `unusual_whales` | Intentionally disabled until re-selected. | No key requested in the current source plan. |
 | `polymarket` | Use public CLOB/orderbook path, not Gamma-only discovery. | Execution remains separately disabled. |
 | `kalshi` | Keep read-only market adapter; classify region/account as the gate. | Needs account eligibility and credentials. |
 | `alpaca` | Separate read-only market/account mirror from Alpaca paper execution. | Broader market-data scope depends on account/data entitlements. |

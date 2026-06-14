@@ -32,8 +32,8 @@ If any real credential appears in chat, Git, a screenshot, or a public dashboard
 Implemented locally:
 
 - Dedicated read-only adapters: GDELT, Oref, NASA FIRMS, FRED, RSS.
-- Generic Phase 1 read-only adapters: ACLED, UCDP, Conflict Tracker, UnusualWhales, STOCK Act via Capitol Trades/provider-selected feed, Polymarket, Kalshi, Hyperliquid, Alpaca, Bookmap local bridge, AIS Maritime, ArcGIS/USACE, Space-Track/CelesTrak, GPS jamming, IODA internet outages, Aviationstack, BLS, BIS, ECB, USGS, UN Comtrade, SEC EDGAR, patents, Reddit, X, Telegram.
-- Adapter coverage: 31 promoted source contracts out of the 35-source registry. Bookmap remains local-bridge-only until the local read-only bridge is running.
+- Generic Phase 1 read-only adapters: ACLED, UCDP, Conflict Tracker, STOCK Act via Capitol Trades/provider-selected feed, Polymarket, Kalshi, Hyperliquid, Alpaca, Bookmap local bridge, AIS Maritime, ArcGIS/USACE, Space-Track/CelesTrak, GPS jamming, IODA internet outages, Aviationstack, BLS, BIS, ECB, USGS, UN Comtrade, SEC EDGAR, patents, Reddit, X, Telegram.
+- Adapter coverage: 30 promoted source contracts out of the 35-source registry. Bookmap remains local-bridge-only until the local read-only bridge is running. UnusualWhales is now intentionally disabled unless re-selected.
 - Every promoted adapter has sample mode, masked credential status, raw payload archival, normalized event output, degraded-state handling, and no signal/order authority.
 - `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
 - `scripts/check_supplied_credentials.py` validates the currently supplied Batch A credentials and local model settings in one read-only pass, writing the ignored local report `data/runtime/supplied_credential_validation.json`.
@@ -50,14 +50,14 @@ Not yet proven live:
 - Any credential-gated source without a configured local secret remains blocked as `missing_credentials`.
 - Any public or configured source that fails a read-only live check is kept as `degraded` with the provider error class preserved locally.
 - No adapter may promote signal confidence or create paper/live orders by itself.
-- The former source-registry blockers have been resolved into explicit v1 decisions: STOCK Act now uses the Capitol Trades/provider-selected path, USGS uses minerals/supply-chain context plus the public earthquake API for event-driven physical-risk reads, CelesTrak GP JSON is the public fallback for Space-Track, AISStream is the v1 AIS MVP, Aviationstack replaces Wingbits for flight data, and UnusualWhales/Polymarket/Kalshi/Alpaca are registered read-only adapters with credential or region gates where applicable.
+- The former source-registry blockers have been resolved into explicit v1 decisions: STOCK Act now uses the Capitol Trades/provider-selected path, USGS uses minerals/supply-chain context plus the public earthquake API for event-driven physical-risk reads, CelesTrak GP JSON is the public fallback for Space-Track, AISStream is the v1 AIS MVP, Aviationstack replaces Wingbits for flight data, Polymarket/Kalshi/Alpaca are registered read-only adapters with credential or region gates where applicable, and UnusualWhales is intentionally disabled until re-selected.
 
 Current supplied-credential snapshot as of 2026-05-19:
 
 - Live in read-only credential validation: NASA FIRMS, FRED, Alpaca paper account mirror, Telegram bot status, Gemini model-list access, and LM Studio Gemma 4 E4B model-list access.
 - Alpaca paper mirror status: `scripts/check_alpaca_paper_mirror.py --live` uses only GET endpoints for `/account`, `/positions`, `/orders`, and `/account/portfolio/history`; it writes sanitized mirror state locally and exposes no broker-write route.
 - Degraded in read-only credential validation: ACLED. ACLED is locally configured and refresh automation succeeded on 2026-05-19, but the post-refresh read endpoint still returned HTTP 403, so ACLED needs entitlement/account-scope confirmation before it can count as durable live.
-- Missing or deferred from this credential batch: UnusualWhales remains a useful missing Batch A key; Kalshi remains deferred due to current location/account eligibility.
+- Missing or deferred from this credential batch: Reddit OAuth, Kalshi credentials/account eligibility, and Capitol Trades/STOCK Act credentials remain the selected optional source gaps. UnusualWhales is no longer a missing-key blocker.
 - Configured in the local ignored secret file: NASA FIRMS, Alpaca paper, ACLED email/password/access token/refresh token, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings.
 - ACLED refresh-token automation exists, but ACLED remains degraded until the refreshed token is accepted by the data-read endpoint or entitlement/account-scope is confirmed.
 - Telegram remains outbound-only and cannot trigger execution.
@@ -74,7 +74,7 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | --- | --- | --- |
 | NASA FIRMS | `NASA_FIRMS_API_KEY` | Thermal anomalies near refineries, ports, logistics corridors, military zones, and commodity infrastructure. |
 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | Conflict and protest event data for escalation monitoring. |
-| UnusualWhales | `UNUSUAL_WHALES_API_KEY` | Options flow, dark pool, gamma, congressional trading, and institutional confirmation. |
+| UnusualWhales | intentionally disabled | Optional options-flow/dark-pool context. Not a current credential request because Capitol Trades is the selected politician-trading route. |
 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Prediction-market monitoring and later guarded paper/live venue path. |
 | Alpaca paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Paper account mirror and guarded £100,000 paper proof execution. |
 | Gemini | `GEMINI_API_KEY` | Frontier LLM Strategy Lead / deep research packets. |
@@ -101,10 +101,10 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Provider | Placeholders | Why It Matters |
 | --- | --- | --- |
 | Space-Track | `SPACE_TRACK_USERNAME`, `SPACE_TRACK_PASSWORD` | Satellite/TLE monitoring; CelesTrak GP JSON is the public fallback. |
-| Coinglass | `COINGLASS_API_KEY` | Funding, liquidation, open-interest, and crypto derivatives context. |
-| Chainlink / RPC | `ETH_RPC_URL` | On-chain price-feed cross-checking. |
-| RapidAPI | `RAPIDAPI_KEY` | Fallback marketplace for niche sources not covered by direct integrations. |
-| GitHub | `GITHUB_TOKEN` | Developer/release-cycle signal for semiconductors and software-linked equities. |
+| Coinglass | not selected; adapter decision required | Funding, liquidation, open-interest, and crypto derivatives context only if crypto/perps becomes relevant. |
+| Chainlink / RPC | not selected; adapter decision required | Public/on-chain price-feed cross-checking only after a read-only adapter decision. |
+| RapidAPI | intentionally disabled | Marketplace only; activate only after selecting a specific RapidAPI-backed provider. |
+| GitHub | not selected; adapter decision required | Developer/release-cycle signal only after a specific semiconductor/software signal role is selected. |
 | EPO OPS | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` | Patent filings where public USPTO/PatentsView is not enough. |
 | ArcGIS | `ARCGIS_API_TOKEN` | Optional token for non-public ArcGIS layers. |
 | SEC EDGAR | `SEC_USER_AGENT` | Required identity string for responsible SEC data access. |
@@ -147,23 +147,23 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 16 | ECB Data Portal | Macro | 3 | none | `https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A` | FX, rates, European policy, and USD/EUR-sensitive catalyst calibration. |
 | 17 | UN Comtrade API | Macro | 3 | `COMTRADE_API_KEY` | `https://comtradeapi.un.org/data/v1/get/` | Trade flows, tariff trends, supply-chain rerouting, commodity demand. |
 | 18 | USGS | Macro / Physical conflict | 3 | none currently | USGS minerals data plus `https://earthquake.usgs.gov/fdsnws/event/1/query` | Mineral/supply-chain context for commodities and defence, with event-driven geophysical disruption monitoring through the public earthquake API. |
-| 19 | UnusualWhales | Market | 1 | `UNUSUAL_WHALES_API_KEY` | `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Options flow, dark pool, gamma, and institutional confirmation. Congressional disclosures are normalized through the separate STOCK Act source row. |
+| 19 | UnusualWhales | Market | 1 | intentionally disabled | `https://api.unusualwhales.com/api/option-trades/flow-alerts` | Optional options-flow/dark-pool source. Not selected for the current source quorum; Capitol Trades is the selected politician-trading route. |
 | 20 | Polymarket | Market | 1 | none for public data; later `POLYMARKET_PRIVATE_KEY`, `POLYMARKET_FUNDER_ADDRESS` | `https://clob.polymarket.com/markets` | Prediction-market prices, probability gaps, and later guarded execution. |
 | 21 | Kalshi | Market | 1 | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | `https://trading-api.kalshi.com/trade-api/v2/markets` | Regulated prediction-market monitoring and later guarded venue path. |
 | 22 | Hyperliquid Perps | Market | 4 | none for public info; later `HYPERLIQUID_PRIVATE_KEY`, `HYPERLIQUID_WALLET_ADDRESS` | `https://api.hyperliquid.xyz/info` | Crypto/perps liquidity, funding context, optional later sandbox execution. |
 | 23 | Alpaca Markets API | Market | 1 | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Alpaca market data and trading APIs | US equities/options data and £100,000 paper account rail. |
-| 24 | RapidAPI Hub | Market | 3 | `RAPIDAPI_KEY` | `https://rapidapi.com/hub` | Fallback marketplace for niche finance, sentiment, and alternative data APIs. |
-| 25 | Coinglass | Market | 4 | `COINGLASS_API_KEY` | `https://open-api.coinglass.com/public/v2/` | Crypto derivatives, liquidations, funding rates, open interest. |
-| 26 | Chainlink Price Feeds | Market | 4 | `ETH_RPC_URL` | Ethereum RPC endpoint | On-chain price-feed cross-checking. |
+| 24 | RapidAPI Hub | Market | 3 | intentionally disabled | `https://rapidapi.com/hub` | Marketplace only. Not a canonical source until a specific provider is selected. |
+| 25 | Coinglass | Market | 4 | not selected; adapter decision required | `https://open-api.coinglass.com/public/v2/` | Crypto derivatives context candidate only. No key requested until Qadam chooses this source. |
+| 26 | Chainlink Price Feeds | Market | 4 | not selected; adapter decision required | Ethereum RPC endpoint | Price-feed cross-checking candidate. Prefer a public read-only adapter before requesting RPC credentials. |
 | 27 | Bookmap / Order Flow | Market | 4 | `BOOKMAP_BRIDGE_URL`, local Bookmap account | Local WebSocket bridge | Local order-flow confirmation and technical microstructure context. |
 | 28 | RSS / Atom Feeds | Social | 2 | none or publisher subscription | Reuters, AP, Bloomberg, RSSHub, and curated feeds | Narrative velocity, consensus timing, and news catalyst triage. |
 | 29 | Telegram APIs / Scrapers | Social | 3 | `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_SESSION`, plus `TELEGRAM_BOT_TOKEN` for bot route | MTProto and Bot API | OSINT channels, pre-news reports, and outbound member alerts. |
 | 30 | Twitter / X API v2 | Social | 2 | `X_BEARER_TOKEN` | `https://api.twitter.com/2/tweets/search/recent` | High-velocity sentiment, breaking news, and social narrative acceleration. |
 | 31 | Reddit API | Social | 3 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | `https://oauth.reddit.com/r/{subreddit}/new` | Retail attention, options chatter, and saturation / edge-decay checks. |
 | 32 | SEC EDGAR API | Social | 3 | `SEC_USER_AGENT` | SEC search and submissions APIs | Corporate filings, 10-K/10-Q/8-K context, high-trust slow data. |
-| 33 | STOCK Act Filings | Social | 3 | `CAPITOL_TRADES_API_KEY` | `https://www.capitoltrades.com/trades` or provider-confirmed API path | Politician trade disclosures; must be cross-validated with price action, options flow where available, and SEC context. |
+| 33 | Capitol Trades / STOCK Act Filings | Social | 3 | `CAPITOL_TRADES_API_KEY` | `https://www.capitoltrades.com/trades` or provider-confirmed API path | Selected politician-trading source; must be cross-validated with price action and SEC context. |
 | 34 | Patent Filings | Social | 4 | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` optional | PatentsView and EPO OPS | Long-cycle R&D, semiconductor, defence, and technology inflection signals. |
-| 35 | GitHub API | Social | 4 | `GITHUB_TOKEN` | `https://api.github.com/` | Developer activity, release-cycle changes, and weak tech-sector precursor signals. |
+| 35 | GitHub API | Social | 4 | not selected; adapter decision required | `https://api.github.com/` | Optional technology/supply-chain context candidate. No token requested until a specific signal role is selected. |
 
 Supplemental market-confirmation capability, not counted in the 35-source registry until explicitly promoted:
 
@@ -308,11 +308,12 @@ COMTRADE_API_KEY=
 USGS_API_MODE=
 
 # Market pipeline
-UNUSUAL_WHALES_API_KEY=
 CAPITOL_TRADES_API_KEY=
-RAPIDAPI_KEY=
-COINGLASS_API_KEY=
-ETH_RPC_URL=
+# Optional disabled/not-selected candidates, not current credential requests:
+# UNUSUAL_WHALES_API_KEY=
+# RAPIDAPI_KEY=
+# COINGLASS_API_KEY=
+# ETH_RPC_URL=
 YFINANCE_ENABLED=false
 YFINANCE_CACHE_DIR=data/runtime/yfinance-cache
 YFINANCE_REQUEST_BUDGET_PER_RUN=25

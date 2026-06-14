@@ -73,15 +73,6 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         public_live=True,
         notes="Internal read-only derived context. It cannot create orders or bypass source quorum.",
     ),
-    "unusual_whales": Phase1AdapterConfig(
-        key="unusual_whales",
-        source_label="market.unusual_whales",
-        event_type="options_flow",
-        trust_score=0.71,
-        sample_summary="Unusual options flow alert for an energy, defence, silver, or semiconductor instrument.",
-        primary_endpoint="https://api.unusualwhales.com/api/option-trades/flow-alerts",
-        required_any_secret_groups=(("UNUSUAL_WHALES_API_KEY",),),
-    ),
     "stock_act": Phase1AdapterConfig(
         key="stock_act",
         source_label="social.stock_act",
@@ -518,11 +509,7 @@ class Phase1ReadOnlyAdapter:
     def _request_headers(self) -> dict[str, str]:
         key = self.config.key
         headers = {"User-Agent": "Qadam/0.1 read-only source adapter"}
-        if key == "unusual_whales":
-            token = secret_value("UNUSUAL_WHALES_API_KEY", self.settings)
-            if token:
-                headers["Authorization"] = f"Bearer {token}"
-        elif key == "stock_act":
+        if key == "stock_act":
             token = secret_value("CAPITOL_TRADES_API_KEY", self.settings)
             if token:
                 headers["Authorization"] = f"Bearer {token}"

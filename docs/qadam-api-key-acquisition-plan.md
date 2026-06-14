@@ -59,7 +59,7 @@ Still pending:
 - Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
 - Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
 - ACLED token refresh automation now exists in `scripts/refresh_acled_token.py`. A 2026-05-19 refresh run succeeded with the refresh-token grant, but the ACLED read endpoint still returned HTTP 403, so ACLED still needs provider entitlement/account-scope confirmation before it counts as durable live.
-- UnusualWhales, BLS, Reddit, Kalshi, Capitol Trades/STOCK Act, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied.
+- BLS, Reddit, Kalshi, Capitol Trades/STOCK Act, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
 
 ## 3. Batch A - Get These First
 
@@ -83,7 +83,7 @@ Minimum useful outcome after Batch A:
 - Telegram can be dry-run without sending.
 - All credentials remain local.
 
-Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, and Telegram bot private/group delivery targets are locally configured. Kalshi remains unavailable in Ramin's current regions; UnusualWhales remains the main practical Batch A credential gap.
+Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, and Telegram bot private/group delivery targets are locally configured. Kalshi remains unavailable in Ramin's current regions. The selected remaining data-source credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act; UnusualWhales is no longer a Batch A credential gap.
 
 ## 4. Batch B - Add Confirmation Feeds
 
@@ -110,12 +110,12 @@ Only buy these after Qadam shows that a source category genuinely improves trade
 
 | Provider | Cost posture | Variables | Decision rule |
 | --- | --- | --- | --- |
-| UnusualWhales | Paid | `UNUSUAL_WHALES_API_KEY` | Buy only if options flow is central to the first demo strategy. |
+| UnusualWhales | Paid | intentionally disabled | Re-select only if options flow becomes central to the strategy; do not buy as part of the current cleanup. |
 | AISStream / Spire / MarineTraffic | Free/cheap to expensive depending provider | `AISSTREAM_API_KEY`, `SPIRE_API_KEY`, `MARINETRAFFIC_API_KEY` | Start with AISStream if available. Upgrade to Spire/MarineTraffic only if vessel data becomes core to oil/logistics signals. |
 | Aviationstack | Free/freemium to paid depending usage | `AVIATIONSTACK_API_KEY` | Use as the v1 flight-data source instead of Wingbits. Keep it read-only and quota-aware. |
 | Capitol Trades / STOCK Act provider | Provider/account dependent | `CAPITOL_TRADES_API_KEY` | Use for congressional trade disclosures instead of routing STOCK Act through UnusualWhales. |
-| Coinglass | Paid/freemium | `COINGLASS_API_KEY` | Later crypto/liquidity context only. |
-| RapidAPI | Per-source paid | `RAPIDAPI_KEY` | Use only when a direct provider is unavailable. |
+| Coinglass | Paid/freemium | not selected | Decide crypto/perps relevance and build an adapter before requesting a key. |
+| RapidAPI | Per-source paid | intentionally disabled | Use only when a specific direct provider is unavailable and chosen. |
 
 Minimum useful outcome after Batch C:
 
@@ -130,7 +130,7 @@ These are not required for Phase 1 Data Spine.
 | Provider | Variables | Timing |
 | --- | --- | --- |
 | Space-Track | `SPACE_TRACK_USERNAME`, `SPACE_TRACK_PASSWORD` | Later physical/satellite context. |
-| GitHub | `GITHUB_TOKEN` | Later semiconductor/software release-cycle monitoring. |
+| GitHub | not selected | Decide the semiconductor/software signal role and build a read-only adapter before requesting `GITHUB_TOKEN`. |
 | EPO OPS | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` | Later patent signal work. |
 | ArcGIS | `ARCGIS_API_TOKEN` | Later non-public geospatial layers. |
 | IBM Quantum | `IBM_QUANTUM_TOKEN` | Phase 3 quantum backend. |

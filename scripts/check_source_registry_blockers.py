@@ -16,7 +16,13 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTER_KEYS  # noqa: E402
 from orchestrator.source_health import PROMOTED_ADAPTER_STATUS  # noqa: E402
-from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, get_source, unresolved_sources  # noqa: E402
+from world_monitor.source_registry import (  # noqa: E402
+    EXPECTED_SOURCE_COUNT,
+    SOURCE_SPECS,
+    get_source,
+    source_registry_action_category,
+    unresolved_sources,
+)
 
 
 EXPECTED_DECISIONS = {
@@ -41,9 +47,11 @@ EXPECTED_DECISIONS = {
         "promoted": True,
     },
     "unusual_whales": {
-        "status": "adapter_live_requires_key",
+        "status": "intentionally_disabled",
         "endpoint_contains": "api.unusualwhales.com/api/option-trades/flow-alerts",
-        "promoted": True,
+        "promoted": False,
+        "selection_status": "optional_disabled",
+        "action_category": "intentionally_disabled",
     },
     "polymarket": {
         "status": "adapter_live_optional",
@@ -60,6 +68,17 @@ EXPECTED_DECISIONS = {
         "endpoint_contains": "paper-api.alpaca.markets/v2/account",
         "promoted": True,
     },
+}
+
+EXPECTED_CLEANUP_CATEGORIES = {
+    "rapidapi": ("intentionally_disabled", "optional_disabled", "intentionally_disabled"),
+    "coinglass": ("needs_adapter", "not_selected", "needs_adapter"),
+    "chainlink": ("needs_adapter", "not_selected", "needs_adapter"),
+    "github": ("needs_adapter", "not_selected", "needs_adapter"),
+    "bookmap": ("local_bridge", "selected", "local_bridge_required"),
+    "reddit": ("adapter_live_requires_key", "selected", "needs_credentials"),
+    "stock_act": ("adapter_live_requires_key", "selected", "needs_credentials"),
+    "kalshi": ("adapter_live_region_deferred", "selected", "needs_credentials"),
 }
 
 
@@ -87,6 +106,27 @@ def main() -> int:
             errors.append(f"decision_endpoint_missing:{key}:{expected_endpoint}")
         if bool(expectation["promoted"]) and key not in promoted_keys:
             errors.append(f"decision_adapter_not_promoted:{key}")
+        if not bool(expectation["promoted"]) and key in promoted_keys:
+            errors.append(f"decision_adapter_unexpectedly_promoted:{key}")
+        expected_selection = expectation.get("selection_status")
+        if expected_selection and source.selection_status != expected_selection:
+            errors.append(f"decision_selection_mismatch:{key}:{source.selection_status}:{expected_selection}")
+        expected_action = expectation.get("action_category")
+        if expected_action and source_registry_action_category(source) != expected_action:
+            errors.append(
+                f"decision_action_category_mismatch:{key}:{source_registry_action_category(source)}:{expected_action}"
+            )
+
+    for key, (expected_status, expected_selection, expected_action) in EXPECTED_CLEANUP_CATEGORIES.items():
+        source = get_source(key)
+        if source.status != expected_status:
+            errors.append(f"cleanup_status_mismatch:{key}:{source.status}:{expected_status}")
+        if source.selection_status != expected_selection:
+            errors.append(f"cleanup_selection_mismatch:{key}:{source.selection_status}:{expected_selection}")
+        if source_registry_action_category(source) != expected_action:
+            errors.append(
+                f"cleanup_action_category_mismatch:{key}:{source_registry_action_category(source)}:{expected_action}"
+            )
 
     print("source_registry_blocker_status=" + ("ok" if not errors else "error"))
     print(f"source_registry_blocker_source_count={len(SOURCE_SPECS)}")
@@ -95,6 +135,7 @@ def main() -> int:
     print(f"source_registry_blocker_generic_adapter_count={len(promoted_keys)}")
     print(f"source_registry_blocker_total_promoted_adapter_count={len(PROMOTED_ADAPTER_STATUS)}")
     print("source_registry_blocker_decision_count=" + str(len(EXPECTED_DECISIONS)))
+    print("source_registry_cleanup_category_count=" + str(len(EXPECTED_CLEANUP_CATEGORIES)))
     print(
         "source_registry_blocker_boundary="
         "Read-only source registry decisions only; this check does not authorize signals, risk, or orders."

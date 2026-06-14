@@ -1507,7 +1507,16 @@ def _dashboard_status(raw_status: str) -> str:
         return "local_only"
     if raw_status in {"credential_gated", "unavailable_missing_credentials", "not_running", "degraded"}:
         return "degraded"
-    if raw_status in {"deferred", "ready_to_build", "ready_to_port", "fallback_only", "derived"}:
+    if raw_status in {
+        "deferred",
+        "ready_to_build",
+        "ready_to_port",
+        "fallback_only",
+        "derived",
+        "intentionally_disabled",
+        "needs_adapter",
+        "provider_decision_required",
+    }:
         return "pending"
     return "pending"
 
@@ -1628,6 +1637,14 @@ def _d1_snapshot_contract(generated_at: str) -> dict[str, Any]:
 
 
 def _credential_status(source: dict[str, Any]) -> str:
+    if source.get("selection_status") in {"optional_disabled", "not_selected"}:
+        return "not_required"
+    if source.get("action_category") in {
+        "intentionally_disabled",
+        "needs_adapter",
+        "provider_decision_required",
+    }:
+        return "not_required"
     if source.get("auth") in {"none", "public"}:
         return "not_required"
     if source.get("missing_secrets"):
@@ -1661,6 +1678,12 @@ def _readiness_label(source: dict[str, Any], runtime_status: str) -> str:
         return "local bridge required"
     if runtime_status == "fallback_only":
         return "fallback only"
+    if runtime_status == "intentionally_disabled":
+        return "optional disabled"
+    if runtime_status == "needs_adapter":
+        return "adapter not built"
+    if runtime_status == "provider_decision_required":
+        return "provider decision required"
     if runtime_status == "derived":
         return "derived signal"
     if runtime_status in {"ready_to_build", "ready_to_port"}:
@@ -1683,7 +1706,11 @@ def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> di
     promoted_adapter = bool(source.get("promoted_adapter"))
     trust_score = _float_or_none(source.get("trust_score"))
     credential_ready = credential_status != "missing"
+    action_category = str(source.get("action_category") or "")
+    selected = source.get("selection_status") not in {"optional_disabled", "not_selected"}
     usable_for_research = (
+        selected
+        and
         promoted_adapter
         and credential_ready
         and status in {"online", "local_only"}
@@ -1698,6 +1725,10 @@ def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> di
         influence_boundary = "research_context_and_signal_review_only_no_order_authority"
     elif usable_for_research:
         influence_boundary = "research_context_only_until_signal_integrity_quality_threshold"
+    elif action_category == "intentionally_disabled":
+        influence_boundary = "optional_source_intentionally_disabled_not_used_for_research"
+    elif action_category in {"needs_adapter", "provider_decision_required"}:
+        influence_boundary = "source_not_selected_until_adapter_or_provider_decision"
     elif not credential_ready:
         influence_boundary = "blocked_missing_credentials"
     elif not promoted_adapter:
@@ -1737,6 +1768,9 @@ def _tradingview_watching_row(settings: Settings) -> dict[str, Any]:
         "last_payload_time": summary.get("latest_observed_at"),
         "credential_status": "receiver_pending",
         "latency_ms": None,
+        "selection_status": "selected",
+        "operator_action": "connect_paid_tradingview_alert_snapshot",
+        "action_category": "needs_credentials",
         "usable_for_research_context": bool(alert_count),
         "eligible_for_signal_review": False,
         "can_influence_signals": False,
@@ -1771,6 +1805,9 @@ def _tradingview_mcp_watching_row(settings: Settings) -> dict[str, Any]:
         "last_payload_time": None,
         "credential_status": "not_required",
         "latency_ms": None,
+        "selection_status": "selected",
+        "operator_action": "none",
+        "action_category": "no_user_action",
         "usable_for_research_context": connected,
         "eligible_for_signal_review": False,
         "can_influence_signals": False,
@@ -1808,6 +1845,9 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                 "last_payload_time": None,
                 "credential_status": _credential_status(source),
                 "latency_ms": None,
+                "selection_status": source.get("selection_status", "selected"),
+                "operator_action": source.get("operator_action", "none"),
+                "action_category": source.get("action_category", "no_user_action"),
                 **influence_profile,
             }
         )
@@ -2079,6 +2119,10 @@ def _build_source_pipeline_summary(watching: list[dict[str, Any]]) -> list[dict[
                 "local_only_count": 0,
                 "missing_credential_count": 0,
                 "adapter_ready_count": 0,
+                "intentionally_disabled_count": 0,
+                "needs_adapter_count": 0,
+                "provider_decision_required_count": 0,
+                "local_bridge_required_count": 0,
             },
         )
         current["source_count"] += 1
@@ -2094,6 +2138,15 @@ def _build_source_pipeline_summary(watching: list[dict[str, Any]]) -> list[dict[
             current["missing_credential_count"] += 1
         if source.get("promoted_adapter"):
             current["adapter_ready_count"] += 1
+        action_category = source.get("action_category")
+        if action_category == "intentionally_disabled":
+            current["intentionally_disabled_count"] += 1
+        elif action_category == "needs_adapter":
+            current["needs_adapter_count"] += 1
+        elif action_category == "provider_decision_required":
+            current["provider_decision_required_count"] += 1
+        elif action_category == "local_bridge_required":
+            current["local_bridge_required_count"] += 1
     return [pipelines[key] for key in sorted(pipelines)]
 
 
@@ -5414,6 +5467,9 @@ def _mission_source_ledger(watching: list[dict[str, Any]]) -> list[dict[str, Any
             "latency_ms": source.get("latency_ms"),
             "usable_for_research_context": source.get("usable_for_research_context"),
             "eligible_for_signal_review": source.get("eligible_for_signal_review"),
+            "selection_status": source.get("selection_status"),
+            "operator_action": source.get("operator_action"),
+            "action_category": source.get("action_category"),
         }
         for source in watching
     ]

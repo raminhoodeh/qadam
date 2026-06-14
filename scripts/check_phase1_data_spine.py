@@ -30,8 +30,11 @@ ALLOWED_RUNTIME_STATUSES = {
     "deferred",
     "derived",
     "fallback_only",
+    "intentionally_disabled",
     "live_optional",
     "local_bridge_required",
+    "needs_adapter",
+    "provider_decision_required",
     "ready_to_build",
     "ready_to_port",
     "registered",
@@ -101,6 +104,14 @@ def main() -> int:
                 errors.append(f"promoted_adapter_trust_score_missing:{key}")
             if runtime_status not in {"live_optional", "unavailable_missing_credentials", "local_bridge_required"}:
                 errors.append(f"promoted_adapter_bad_runtime:{key}:{runtime_status}")
+        if spec.selection_status in {"optional_disabled", "not_selected"} and source.get("missing_secrets"):
+            errors.append(f"not_selected_source_has_missing_credentials:{key}")
+        if spec.status == "intentionally_disabled" and runtime_status != "intentionally_disabled":
+            errors.append(f"intentionally_disabled_source_bad_runtime:{key}")
+        if spec.status == "needs_adapter" and runtime_status != "needs_adapter":
+            errors.append(f"needs_adapter_source_bad_runtime:{key}")
+        if spec.status == "provider_decision_required" and runtime_status != "provider_decision_required":
+            errors.append(f"provider_decision_source_bad_runtime:{key}")
         if (
             spec.status in {"needs_clarity", "needs_choice", "needs_new_adapter"}
             and not source.get("promoted_adapter")

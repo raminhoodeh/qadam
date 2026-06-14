@@ -20,7 +20,12 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTER_KEYS, phase1_live_adapter_status
 from orchestrator.secrets import secret_status
-from world_monitor.source_registry import EXPECTED_SOURCE_COUNT, SOURCE_SPECS, SourceSpec
+from world_monitor.source_registry import (
+    EXPECTED_SOURCE_COUNT,
+    SOURCE_SPECS,
+    SourceSpec,
+    source_registry_action_category,
+)
 
 SOURCE_HEARTBEAT_SCHEMA_VERSION = 1
 DATA_ENVIRONMENT_MAP_SCHEMA_VERSION = 1
@@ -61,6 +66,9 @@ class SourceHeartbeat:
     configured_secrets: tuple[str, ...]
     missing_secrets: tuple[str, ...]
     notes: str
+    selection_status: str
+    operator_action: str
+    action_category: str
     degraded_reason: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -109,6 +117,10 @@ class SourceHeartbeatStore:
 
 
 def _secret_state(source: SourceSpec, settings: Settings) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    if source.selection_status in {"optional_disabled", "not_selected"}:
+        return (), ()
+    if source.status in {"intentionally_disabled", "needs_adapter", "provider_decision_required"}:
+        return (), ()
     configured: list[str] = []
     missing: list[str] = []
     optional = OPTIONAL_SECRET_KEYS.get(source.key, set())
@@ -126,6 +138,12 @@ def _runtime_status(source: SourceSpec, missing_secrets: tuple[str, ...], promot
         return "derived", None
     if source.status == "local_bridge":
         return "local_bridge_required", None
+    if source.status == "intentionally_disabled":
+        return "intentionally_disabled", None
+    if source.status == "needs_adapter":
+        return "needs_adapter", None
+    if source.status == "provider_decision_required":
+        return "provider_decision_required", None
     if promoted and missing_secrets:
         return "unavailable_missing_credentials", "missing_credentials"
     if promoted:
@@ -166,6 +184,9 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
         configured_secrets=configured,
         missing_secrets=missing,
         notes=source.notes,
+        selection_status=source.selection_status,
+        operator_action=source.operator_action,
+        action_category=source_registry_action_category(source),
         degraded_reason=degraded_reason,
     )
 
@@ -173,6 +194,8 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
 def _summarise(heartbeats: tuple[SourceHeartbeat, ...]) -> dict[str, Any]:
     by_status = Counter(heartbeat.runtime_status for heartbeat in heartbeats)
     by_pipeline = Counter(heartbeat.pipeline for heartbeat in heartbeats)
+    by_selection = Counter(heartbeat.selection_status for heartbeat in heartbeats)
+    by_action = Counter(heartbeat.action_category for heartbeat in heartbeats)
     missing_credentials = {
         heartbeat.source_key: list(heartbeat.missing_secrets)
         for heartbeat in heartbeats
@@ -188,7 +211,13 @@ def _summarise(heartbeats: tuple[SourceHeartbeat, ...]) -> dict[str, Any]:
         "missing_credential_source_count": len(missing_credentials),
         "by_runtime_status": dict(sorted(by_status.items())),
         "by_pipeline": dict(sorted(by_pipeline.items())),
+        "by_selection_status": dict(sorted(by_selection.items())),
+        "by_action_category": dict(sorted(by_action.items())),
         "missing_credentials": missing_credentials,
+        "intentionally_disabled_count": by_status.get("intentionally_disabled", 0),
+        "needs_adapter_count": by_status.get("needs_adapter", 0),
+        "provider_decision_required_count": by_status.get("provider_decision_required", 0),
+        "local_bridge_required_count": by_status.get("local_bridge_required", 0),
     }
 
 
