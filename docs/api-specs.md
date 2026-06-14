@@ -37,6 +37,8 @@ Implemented locally:
 - Every promoted adapter has sample mode, masked credential status, raw payload archival, normalized event output, degraded-state handling, and no signal/order authority.
 - Credential-bound read-only adapters now exist for Reddit, Kalshi, and Capitol Trades/STOCK Act. They activate automatically after the required local credentials are supplied, while missing credentials or missing provider endpoint contracts stay visible as non-blocking source gaps.
 - `scripts/check_credential_bound_adapters.py` validates those three credential-bound contracts in isolated temporary secret files, without using or mutating real local secrets.
+- Provider-decision metadata now exists for RapidAPI, Coinglass, Chainlink, GitHub, and Bookmap. This records the selected/disabled provider posture without marking those sources connected, requesting new keys, granting source-quorum credit, or changing any trading authority.
+- `scripts/check_provider_decision_pass.py` validates that those provider decisions remain public-safe, read-only, non-blocking, and unable to authorize signals, broker writes, paper orders, or live capital.
 - `scripts/check_phase1_live_source_hardening.py` now validates all promoted sources one by one and records the result in the ignored local report `data/runtime/phase1_live_source_validation.json`.
 - `scripts/check_supplied_credentials.py` validates the currently supplied Batch A credentials and local model settings in one read-only pass, writing the ignored local report `data/runtime/supplied_credential_validation.json`.
 - `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file, appends the ignored local report `data/runtime/acled_token_refresh.jsonl`, and keeps token values out of stdout, docs, Event Log payloads, and Git.
@@ -53,6 +55,7 @@ Not yet proven live:
 - Any public or configured source that fails a read-only live check is kept as `degraded` with the provider error class preserved locally.
 - No adapter may promote signal confidence or create paper/live orders by itself.
 - The former source-registry blockers have been resolved into explicit v1 decisions: STOCK Act now uses the Capitol Trades/provider-selected path, USGS uses minerals/supply-chain context plus the public earthquake API for event-driven physical-risk reads, CelesTrak GP JSON is the public fallback for Space-Track, AISStream is the v1 AIS MVP, Aviationstack replaces Wingbits for flight data, Polymarket/Kalshi/Alpaca are registered read-only adapters with credential or region gates where applicable, and UnusualWhales is intentionally disabled until re-selected.
+- The provider-decision sources are not live: RapidAPI is disabled, Coinglass/GitHub/Chainlink are selected-provider metadata with adapters pending, and Bookmap is local-bridge-only until a read-only local process is running.
 
 Current supplied-credential snapshot as of 2026-05-19:
 
@@ -103,10 +106,10 @@ These unlock the most important Phase 1 read-only data adapters and first paper-
 | Provider | Placeholders | Why It Matters |
 | --- | --- | --- |
 | Space-Track | `SPACE_TRACK_USERNAME`, `SPACE_TRACK_PASSWORD` | Satellite/TLE monitoring; CelesTrak GP JSON is the public fallback. |
-| Coinglass | not selected; adapter decision required | Funding, liquidation, open-interest, and crypto derivatives context only if crypto/perps becomes relevant. |
-| Chainlink / RPC | not selected; adapter decision required | Public/on-chain price-feed cross-checking only after a read-only adapter decision. |
+| Coinglass | provider selected; adapter pending; no key requested now | Funding, liquidation, open-interest, and crypto derivatives context only if crypto/perps becomes relevant. |
+| Chainlink / RPC | Chainlink Data Feeds selected; public adapter pending; `ETH_RPC_URL` optional later | Public/on-chain price-feed cross-checking only after a read-only adapter is built. |
 | RapidAPI | intentionally disabled | Marketplace only; activate only after selecting a specific RapidAPI-backed provider. |
-| GitHub | not selected; adapter decision required | Developer/release-cycle signal only after a specific semiconductor/software signal role is selected. |
+| GitHub | GitHub REST API selected; public adapter pending; token optional later | Developer/release-cycle signal only after a specific semiconductor/software signal role is selected. |
 | EPO OPS | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` | Patent filings where public USPTO/PatentsView is not enough. |
 | ArcGIS | `ARCGIS_API_TOKEN` | Optional token for non-public ArcGIS layers. |
 | SEC EDGAR | `SEC_USER_AGENT` | Required identity string for responsible SEC data access. |
@@ -155,8 +158,8 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 22 | Hyperliquid Perps | Market | 4 | none for public info; later `HYPERLIQUID_PRIVATE_KEY`, `HYPERLIQUID_WALLET_ADDRESS` | `https://api.hyperliquid.xyz/info` | Crypto/perps liquidity, funding context, optional later sandbox execution. |
 | 23 | Alpaca Markets API | Market | 1 | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Alpaca market data and trading APIs | US equities/options data and £100,000 paper account rail. |
 | 24 | RapidAPI Hub | Market | 3 | intentionally disabled | `https://rapidapi.com/hub` | Marketplace only. Not a canonical source until a specific provider is selected. |
-| 25 | Coinglass | Market | 4 | not selected; adapter decision required | `https://open-api.coinglass.com/public/v2/` | Crypto derivatives context candidate only. No key requested until Qadam chooses this source. |
-| 26 | Chainlink Price Feeds | Market | 4 | not selected; adapter decision required | Ethereum RPC endpoint | Price-feed cross-checking candidate. Prefer a public read-only adapter before requesting RPC credentials. |
+| 25 | Coinglass | Market | 4 | provider selected; adapter pending; no key requested now | `https://open-api.coinglass.com/public/v2/` | Optional crypto derivatives context candidate only. No source-quorum credit until a read-only adapter is built and approved. |
+| 26 | Chainlink Price Feeds | Market | 4 | Chainlink Data Feeds selected; public adapter pending; `ETH_RPC_URL` optional later | Ethereum RPC endpoint | Price-feed cross-checking candidate. Prefer a public read-only adapter before requesting RPC credentials. |
 | 27 | Bookmap / Order Flow | Market | 4 | `BOOKMAP_BRIDGE_URL`, local Bookmap account | Local WebSocket bridge | Local order-flow confirmation and technical microstructure context. |
 | 28 | RSS / Atom Feeds | Social | 2 | none or publisher subscription | Reuters, AP, Bloomberg, RSSHub, and curated feeds | Narrative velocity, consensus timing, and news catalyst triage. |
 | 29 | Telegram APIs / Scrapers | Social | 3 | `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_SESSION`, plus `TELEGRAM_BOT_TOKEN` for bot route | MTProto and Bot API | OSINT channels, pre-news reports, and outbound member alerts. |
@@ -165,7 +168,7 @@ These are Qadam's active or planned live/live-adjacent data sources. Some requir
 | 32 | SEC EDGAR API | Social | 3 | `SEC_USER_AGENT` | SEC search and submissions APIs | Corporate filings, 10-K/10-Q/8-K context, high-trust slow data. |
 | 33 | Capitol Trades / STOCK Act Filings | Social | 3 | `CAPITOL_TRADES_API_KEY`, `CAPITOL_TRADES_API_URL` | Provider-confirmed API path required | Credential-bound politician-trading source; must be cross-validated with price action and SEC context. |
 | 34 | Patent Filings | Social | 4 | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` optional | PatentsView and EPO OPS | Long-cycle R&D, semiconductor, defence, and technology inflection signals. |
-| 35 | GitHub API | Social | 4 | not selected; adapter decision required | `https://api.github.com/` | Optional technology/supply-chain context candidate. No token requested until a specific signal role is selected. |
+| 35 | GitHub API | Social | 4 | GitHub REST API selected; public adapter pending; token optional later | `https://api.github.com/` | Optional technology/supply-chain context candidate. No token requested until a specific watchlist and signal role are selected. |
 
 Supplemental market-confirmation capability, not counted in the 35-source registry until explicitly promoted:
 
@@ -338,7 +341,8 @@ SEC_USER_AGENT=
 CAPITOL_TRADES_API_KEY=
 EPO_OPS_CONSUMER_KEY=
 EPO_OPS_CONSUMER_SECRET=
-GITHUB_TOKEN=
+# Optional provider-decision source; do not request until a GitHub adapter/watchlist is approved.
+# GITHUB_TOKEN=
 
 # TradingView observed-signal intake
 TRADINGVIEW_WEBHOOK_SECRET=

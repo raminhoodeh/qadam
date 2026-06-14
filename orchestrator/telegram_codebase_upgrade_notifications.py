@@ -145,6 +145,15 @@ def _git_file_list(repo: Path, *args: str) -> list[str]:
 
 
 def _change_area_for_path(path: str) -> str:
+    if path == "orchestrator/provider_decision_pass.py" or path == "orchestrator/source_health.py":
+        return "source provider decisions"
+    if path in {
+        "scripts/check_provider_decision_pass.py",
+        "scripts/check_source_registry_blockers.py",
+    }:
+        return "source provider regression checks"
+    if path == "world_monitor/source_registry.py":
+        return "source registry"
     if path.startswith("orchestrator/telegram") or path.startswith("scripts/send_telegram"):
         return "Telegram communication runtime"
     if path.startswith("scripts/check_telegram") or "telegram" in path and path.startswith("scripts/"):
@@ -247,8 +256,16 @@ def _derived_benefits(root_repo: dict[str, Any], dashboard_repo: dict[str, Any])
         benefits.append("Production deploys can carry richer context automatically after aliases are updated.")
     if "PaperOps trading control plane" in areas:
         benefits.append("Paper-trading status messages can explain the actual lifecycle event and portfolio impact.")
+    if "source provider decisions" in areas or "source registry" in areas:
+        benefits.append("Optional source providers are now described without turning them into missing credentials.")
+    if "source provider regression checks" in areas:
+        benefits.append("Provider decisions are checked for read-only boundaries before dashboard deployment.")
+    if "operator documentation" in areas:
+        benefits.append("Operator docs now separate current key setup from optional provider work.")
     if not benefits:
         benefits.append("Fund Managers get a human-readable explanation of the update without checking local logs.")
+    if len(benefits) < 2:
+        benefits.append("The update keeps deployment notes specific enough for review without exposing secrets.")
     return benefits[:5]
 
 
@@ -1048,6 +1065,17 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
         root_change_areas = root_change_areas or root_repo.get("change_areas", [])
         dashboard_change_areas = dashboard_change_areas or dashboard_repo.get("change_areas", [])
         change_area_lines = _area_lines(root_repo) + _area_lines(dashboard_repo)
+    benefits = [str(item) for item in artifact.get("benefits", []) if str(item).strip()]
+    if len(benefits) < 2:
+        fallback_benefits = _derived_benefits(
+            {"change_areas": root_change_areas},
+            {"change_areas": dashboard_change_areas},
+        )
+        for benefit in fallback_benefits:
+            if benefit not in benefits:
+                benefits.append(benefit)
+            if len(benefits) >= 2:
+                break
     return {
         "schema_version": TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION,
         "status": artifact.get("status", "unknown"),
@@ -1057,7 +1085,7 @@ def telegram_codebase_upgrade_public_status(settings: Settings | None = None) ->
         "source": artifact.get("source"),
         "summary": artifact.get("summary"),
         "details": [str(item) for item in artifact.get("details", [])],
-        "benefits": [str(item) for item in artifact.get("benefits", [])],
+        "benefits": benefits,
         "change_area_lines": change_area_lines,
         "root_commit_short": artifact.get("root_commit_short"),
         "root_last_commit_subject": artifact.get("root_last_commit_subject"),

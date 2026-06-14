@@ -19,6 +19,7 @@ from orchestrator.adapters import (
 from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTER_KEYS, phase1_live_adapter_status
+from orchestrator.provider_decision_pass import provider_decision_state
 from orchestrator.secrets import secret_status
 from world_monitor.source_registry import (
     EXPECTED_SOURCE_COUNT,
@@ -73,6 +74,11 @@ class SourceHeartbeat:
     operator_action: str
     action_category: str
     degraded_reason: str | None = None
+    provider_decision_status: str | None = None
+    provider_selected_provider: str | None = None
+    provider_activation_state: str | None = None
+    provider_decision_boundary: str | None = None
+    provider_decision_credential_required_now: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -186,6 +192,7 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
     if source.key in PHASE1_LIVE_ADAPTER_KEYS and activation_state == "provider_endpoint_unconfirmed":
         runtime_status = "unavailable_provider_endpoint_unconfirmed"
         degraded_reason = "provider_endpoint_unconfirmed"
+    provider_decision = provider_decision_state(source.key) or {}
     return SourceHeartbeat(
         schema_version=SOURCE_HEARTBEAT_SCHEMA_VERSION,
         source_key=source.key,
@@ -210,6 +217,13 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
         operator_action=source.operator_action,
         action_category=source_registry_action_category(source),
         degraded_reason=degraded_reason,
+        provider_decision_status=provider_decision.get("decision_status"),
+        provider_selected_provider=provider_decision.get("selected_provider"),
+        provider_activation_state=provider_decision.get("activation_state"),
+        provider_decision_boundary=provider_decision.get("boundary"),
+        provider_decision_credential_required_now=bool(
+            provider_decision.get("credential_required_now")
+        ),
     )
 
 
@@ -249,6 +263,25 @@ def _summarise(heartbeats: tuple[SourceHeartbeat, ...]) -> dict[str, Any]:
         "needs_adapter_count": by_status.get("needs_adapter", 0),
         "provider_decision_required_count": by_status.get("provider_decision_required", 0),
         "local_bridge_required_count": by_status.get("local_bridge_required", 0),
+        "provider_decision_source_count": sum(
+            1 for heartbeat in heartbeats if heartbeat.provider_decision_status
+        ),
+        "provider_selected_pending_adapter_count": sum(
+            1
+            for heartbeat in heartbeats
+            if (heartbeat.provider_decision_status or "").startswith("provider_selected")
+        ),
+        "provider_decision_marketplace_disabled_count": sum(
+            1
+            for heartbeat in heartbeats
+            if heartbeat.provider_decision_status == "marketplace_disabled_no_provider"
+        ),
+        "provider_decision_local_bridge_count": sum(
+            1 for heartbeat in heartbeats if heartbeat.provider_decision_status == "local_bridge_selected"
+        ),
+        "provider_decision_credential_required_now_count": sum(
+            1 for heartbeat in heartbeats if heartbeat.provider_decision_credential_required_now
+        ),
     }
 
 

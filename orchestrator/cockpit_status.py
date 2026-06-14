@@ -1674,6 +1674,7 @@ def _public_auth_class(source: dict[str, Any]) -> str:
 
 
 def _readiness_label(source: dict[str, Any], runtime_status: str) -> str:
+    provider_decision_status = str(source.get("provider_decision_status") or "")
     if source.get("promoted_adapter") and runtime_status == "live_optional":
         return "adapter ready"
     if runtime_status == "unavailable_missing_credentials":
@@ -1687,8 +1688,12 @@ def _readiness_label(source: dict[str, Any], runtime_status: str) -> str:
     if runtime_status == "fallback_only":
         return "fallback only"
     if runtime_status == "intentionally_disabled":
+        if provider_decision_status == "marketplace_disabled_no_provider":
+            return "marketplace disabled"
         return "optional disabled"
     if runtime_status == "needs_adapter":
+        if provider_decision_status.startswith("provider_selected"):
+            return "provider selected, adapter not built"
         return "adapter not built"
     if runtime_status == "provider_decision_required":
         return "provider decision required"
@@ -1715,6 +1720,7 @@ def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> di
     trust_score = _float_or_none(source.get("trust_score"))
     credential_ready = credential_status != "missing"
     action_category = str(source.get("action_category") or "")
+    provider_decision_status = str(source.get("provider_decision_status") or "")
     selected = source.get("selection_status") not in {"optional_disabled", "not_selected"}
     usable_for_research = (
         selected
@@ -1734,7 +1740,14 @@ def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> di
     elif usable_for_research:
         influence_boundary = "research_context_only_until_signal_integrity_quality_threshold"
     elif action_category == "intentionally_disabled":
-        influence_boundary = "optional_source_intentionally_disabled_not_used_for_research"
+        if provider_decision_status == "marketplace_disabled_no_provider":
+            influence_boundary = "marketplace_disabled_no_source_quorum_role"
+        else:
+            influence_boundary = "optional_source_intentionally_disabled_not_used_for_research"
+    elif provider_decision_status.startswith("provider_selected"):
+        influence_boundary = "provider_selected_pending_readonly_adapter"
+    elif provider_decision_status == "local_bridge_selected":
+        influence_boundary = "local_bridge_selected_but_requires_local_readonly_process"
     elif action_category in {"needs_adapter", "provider_decision_required"}:
         influence_boundary = "source_not_selected_until_adapter_or_provider_decision"
     elif runtime_status == "unavailable_provider_endpoint_unconfirmed":
@@ -1857,6 +1870,10 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                 "credential_bound": bool(source.get("credential_bound")),
                 "credential_activation_state": source.get("credential_activation_state"),
                 "credential_activation_ready": bool(source.get("credential_activation_ready")),
+                "provider_decision_status": source.get("provider_decision_status"),
+                "provider_selected_provider": source.get("provider_selected_provider"),
+                "provider_activation_state": source.get("provider_activation_state"),
+                "provider_decision_boundary": source.get("provider_decision_boundary"),
                 "latency_ms": None,
                 "selection_status": source.get("selection_status", "selected"),
                 "operator_action": source.get("operator_action", "none"),
@@ -2136,6 +2153,10 @@ def _build_source_pipeline_summary(watching: list[dict[str, Any]]) -> list[dict[
                 "needs_adapter_count": 0,
                 "provider_decision_required_count": 0,
                 "local_bridge_required_count": 0,
+                "provider_decision_count": 0,
+                "provider_selected_pending_adapter_count": 0,
+                "provider_decision_marketplace_disabled_count": 0,
+                "provider_decision_local_bridge_count": 0,
             },
         )
         current["source_count"] += 1
@@ -2160,6 +2181,15 @@ def _build_source_pipeline_summary(watching: list[dict[str, Any]]) -> list[dict[
             current["provider_decision_required_count"] += 1
         elif action_category == "local_bridge_required":
             current["local_bridge_required_count"] += 1
+        provider_decision_status = str(source.get("provider_decision_status") or "")
+        if provider_decision_status:
+            current["provider_decision_count"] += 1
+        if provider_decision_status.startswith("provider_selected"):
+            current["provider_selected_pending_adapter_count"] += 1
+        elif provider_decision_status == "marketplace_disabled_no_provider":
+            current["provider_decision_marketplace_disabled_count"] += 1
+        elif provider_decision_status == "local_bridge_selected":
+            current["provider_decision_local_bridge_count"] += 1
     return [pipelines[key] for key in sorted(pipelines)]
 
 
@@ -6393,6 +6423,26 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 len(PROMOTED_ADAPTER_STATUS),
             ),
             "expected_promoted_adapter_count": len(PROMOTED_ADAPTER_STATUS),
+            "provider_decision_source_count": phase1_data_spine.get(
+                "provider_decision_source_count",
+                0,
+            ),
+            "provider_selected_pending_adapter_count": phase1_data_spine.get(
+                "provider_selected_pending_adapter_count",
+                0,
+            ),
+            "provider_decision_marketplace_disabled_count": phase1_data_spine.get(
+                "provider_decision_marketplace_disabled_count",
+                0,
+            ),
+            "provider_decision_local_bridge_count": phase1_data_spine.get(
+                "provider_decision_local_bridge_count",
+                0,
+            ),
+            "provider_decision_credential_required_now_count": phase1_data_spine.get(
+                "provider_decision_credential_required_now_count",
+                0,
+            ),
             "optional_missing_credential_source_count": phase1_data_spine.get(
                 "optional_missing_credential_source_count",
                 missing_credentials,
@@ -8366,6 +8416,21 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "expected_promoted_adapter_count": len(PROMOTED_ADAPTER_STATUS),
         "optional_missing_credential_source_count": int(
             data_summary.get("missing_credential_source_count", 0) or 0
+        ),
+        "provider_decision_source_count": int(
+            data_summary.get("provider_decision_source_count", 0) or 0
+        ),
+        "provider_selected_pending_adapter_count": int(
+            data_summary.get("provider_selected_pending_adapter_count", 0) or 0
+        ),
+        "provider_decision_marketplace_disabled_count": int(
+            data_summary.get("provider_decision_marketplace_disabled_count", 0) or 0
+        ),
+        "provider_decision_local_bridge_count": int(
+            data_summary.get("provider_decision_local_bridge_count", 0) or 0
+        ),
+        "provider_decision_credential_required_now_count": int(
+            data_summary.get("provider_decision_credential_required_now_count", 0) or 0
         ),
         "public_safe": True,
         "boundary": (

@@ -15,6 +15,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from orchestrator.phase1_live_adapters import PHASE1_LIVE_ADAPTER_KEYS  # noqa: E402
+from orchestrator.provider_decision_pass import (  # noqa: E402
+    provider_decision_registry,
+    provider_decision_state,
+)
 from orchestrator.source_health import PROMOTED_ADAPTER_STATUS  # noqa: E402
 from world_monitor.source_registry import (  # noqa: E402
     EXPECTED_SOURCE_COUNT,
@@ -81,12 +85,21 @@ EXPECTED_CLEANUP_CATEGORIES = {
     "kalshi": ("adapter_live_region_deferred", "selected", "needs_credentials"),
 }
 
+EXPECTED_PROVIDER_DECISION_STATUSES = {
+    "rapidapi": "marketplace_disabled_no_provider",
+    "coinglass": "provider_selected_pending_adapter",
+    "chainlink": "provider_selected_pending_public_adapter",
+    "github": "provider_selected_pending_public_adapter",
+    "bookmap": "local_bridge_selected",
+}
+
 
 def main() -> int:
     errors: list[str] = []
     registry_keys = {source.key for source in SOURCE_SPECS}
     promoted_keys = set(PHASE1_LIVE_ADAPTER_KEYS)
     unresolved = tuple(unresolved_sources())
+    provider_decision_registry_state = provider_decision_registry()
 
     if len(SOURCE_SPECS) != EXPECTED_SOURCE_COUNT:
         errors.append("source_count_mismatch")
@@ -128,6 +141,29 @@ def main() -> int:
                 f"cleanup_action_category_mismatch:{key}:{source_registry_action_category(source)}:{expected_action}"
             )
 
+    if provider_decision_registry_state.get("decision_count") != len(EXPECTED_PROVIDER_DECISION_STATUSES):
+        errors.append("provider_decision_count_mismatch")
+    if provider_decision_registry_state.get("credential_required_now_count") != 0:
+        errors.append("provider_decision_requires_credentials_unexpectedly")
+
+    for key, expected_decision_status in EXPECTED_PROVIDER_DECISION_STATUSES.items():
+        decision = provider_decision_state(key)
+        if not decision:
+            errors.append(f"provider_decision_missing:{key}")
+            continue
+        if decision.get("decision_status") != expected_decision_status:
+            errors.append(
+                f"provider_decision_status_mismatch:{key}:{decision.get('decision_status')}:{expected_decision_status}"
+            )
+        if decision.get("order_authority") != "none":
+            errors.append(f"provider_decision_order_authority_leaked:{key}")
+        if decision.get("broker_write_authority") is not False:
+            errors.append(f"provider_decision_broker_write_leaked:{key}")
+        if decision.get("live_capital_authority") is not False:
+            errors.append(f"provider_decision_live_capital_leaked:{key}")
+        if decision.get("credential_required_now") is not False:
+            errors.append(f"provider_decision_credential_required_now:{key}")
+
     print("source_registry_blocker_status=" + ("ok" if not errors else "error"))
     print(f"source_registry_blocker_source_count={len(SOURCE_SPECS)}")
     print(f"source_registry_blocker_expected_source_count={EXPECTED_SOURCE_COUNT}")
@@ -136,6 +172,14 @@ def main() -> int:
     print(f"source_registry_blocker_total_promoted_adapter_count={len(PROMOTED_ADAPTER_STATUS)}")
     print("source_registry_blocker_decision_count=" + str(len(EXPECTED_DECISIONS)))
     print("source_registry_cleanup_category_count=" + str(len(EXPECTED_CLEANUP_CATEGORIES)))
+    print(
+        "source_registry_provider_decision_count="
+        + str(provider_decision_registry_state.get("decision_count", 0))
+    )
+    print(
+        "source_registry_provider_decision_credential_required_now_count="
+        + str(provider_decision_registry_state.get("credential_required_now_count", 0))
+    )
     print(
         "source_registry_blocker_boundary="
         "Read-only source registry decisions only; this check does not authorize signals, risk, or orders."

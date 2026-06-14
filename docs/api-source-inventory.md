@@ -18,7 +18,7 @@ Key split decisions:
 - Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
-- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act. Their credential-bound read-only adapter contracts exist, but they stay disconnected until credentials are supplied. UnusualWhales and RapidAPI are intentionally disabled; Coinglass, Chainlink, and GitHub need adapter/provider decisions before any key is requested.
+- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act. Their credential-bound read-only adapter contracts exist, but they stay disconnected until credentials are supplied. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
 
 ## Tier 1 - Wire First
 
@@ -66,11 +66,11 @@ Key split decisions:
 | Space-Track / CelesTrak | Space-Track account; CelesTrak GP JSON public fallback | Satellite/TLE context. |
 | GPS Jamming | Public `gpsjam.org` API | Electronic-warfare context. |
 | IODA Internet Outage | Public Georgia Tech API | Regional connectivity/cyber disruption context. |
-| Coinglass | Not selected; adapter decision required | Crypto derivatives context only if crypto/perps becomes relevant. |
+| Coinglass | CoinGlass API selected; adapter pending | Optional crypto derivatives context only if crypto/perps becomes relevant. No key requested now. |
 | Bookmap | Local WebSocket bridge | Local process dependency. |
-| Chainlink | Not selected; adapter decision required | Prefer a public read-only price-feed adapter before requesting RPC credentials. |
+| Chainlink | Chainlink Data Feeds selected; public adapter pending | Prefer a public read-only price-feed adapter before requesting RPC credentials. |
 | Hyperliquid | Public info API | Crypto/perp sentiment and liquidity context. |
-| GitHub | Not selected; adapter decision required | Optional tech/supply-chain context; no token requested until a signal role is selected. |
+| GitHub | GitHub REST API selected; public adapter pending | Optional tech/supply-chain context; no token requested until a narrow watchlist and signal role are selected. |
 | Patents | Public USPTO/EPO APIs | Long-cycle R&D signal. |
 | RapidAPI | Intentionally disabled | Marketplace only; activate only after selecting a specific RapidAPI-backed provider. |
 
@@ -101,6 +101,20 @@ The May 2026 source-registry blocker pass resolved the eight stale blockers into
 | `polymarket` | Use public CLOB/orderbook path, not Gamma-only discovery. | Execution remains separately disabled. |
 | `kalshi` | Keep credential-bound read-only market adapter; classify region/account as the gate. | Needs account eligibility and credentials. |
 | `alpaca` | Separate read-only market/account mirror from Alpaca paper execution. | Broader market-data scope depends on account/data entitlements. |
+
+## Provider Decision Pass
+
+As of 2026-06-14, Qadam has explicit provider decisions for the remaining optional/provider-choice entries that are not selected credential gaps:
+
+| Source | Provider Decision | Current State | Boundary |
+| --- | --- | --- | --- |
+| `rapidapi` | No provider selected; marketplace disabled. | Intentionally disabled. | Do not request `RAPIDAPI_KEY` unless a specific RapidAPI-backed source is chosen. |
+| `coinglass` | CoinGlass API selected for a possible future crypto/perps derivatives context. | Provider selected, adapter not built. | No `COINGLASS_API_KEY` request now; no source quorum credit. |
+| `chainlink` | Chainlink Data Feeds selected for possible future price-integrity cross-checking. | Provider selected, public adapter not built. | No RPC credential request now; read-only adapter comes first. |
+| `github` | GitHub REST API selected for possible future technology and supply-chain context. | Provider selected, public adapter not built. | No `GITHUB_TOKEN` request now; a narrow watchlist must exist first. |
+| `bookmap` | Local Bookmap API bridge selected for possible order-flow confirmation. | Local bridge required. | No hosted API key; must run locally and remain read-only. |
+
+These decisions are planning/readiness metadata only. They do not fetch data, create evidence packets, influence signals, submit orders, call brokers, or enable live capital.
 
 ## Conflicts To Carry Into Implementation
 

@@ -114,7 +114,9 @@ Only buy these after Qadam shows that a source category genuinely improves trade
 | AISStream / Spire / MarineTraffic | Free/cheap to expensive depending provider | `AISSTREAM_API_KEY`, `SPIRE_API_KEY`, `MARINETRAFFIC_API_KEY` | Start with AISStream if available. Upgrade to Spire/MarineTraffic only if vessel data becomes core to oil/logistics signals. |
 | Aviationstack | Free/freemium to paid depending usage | `AVIATIONSTACK_API_KEY` | Use as the v1 flight-data source instead of Wingbits. Keep it read-only and quota-aware. |
 | Capitol Trades / STOCK Act provider | Provider/account dependent | `CAPITOL_TRADES_API_KEY` | Use for congressional trade disclosures instead of routing STOCK Act through UnusualWhales. |
-| Coinglass | Paid/freemium | not selected | Decide crypto/perps relevance and build an adapter before requesting a key. |
+| Coinglass | Paid/freemium | provider selected; no key request now | CoinGlass API is the selected provider if crypto/perps derivatives context is promoted later. Build the read-only adapter before requesting a key. |
+| Chainlink | Public feed plus optional RPC | provider selected; no key request now | Chainlink Data Feeds are the selected provider if price-integrity cross-checking is promoted later. Build the public read-only adapter before requesting `ETH_RPC_URL`. |
+| Bookmap | Local paid desktop/tooling dependency | local bridge selected; no hosted key | Use only when you want local order-flow confirmation from a read-only bridge running on the Mac. |
 | RapidAPI | Per-source paid | intentionally disabled | Use only when a specific direct provider is unavailable and chosen. |
 
 Minimum useful outcome after Batch C:
@@ -130,7 +132,7 @@ These are not required for Phase 1 Data Spine.
 | Provider | Variables | Timing |
 | --- | --- | --- |
 | Space-Track | `SPACE_TRACK_USERNAME`, `SPACE_TRACK_PASSWORD` | Later physical/satellite context. |
-| GitHub | not selected | Decide the semiconductor/software signal role and build a read-only adapter before requesting `GITHUB_TOKEN`. |
+| GitHub | provider selected; no key request now | GitHub REST API is the selected provider if semiconductor/software supply-chain context is promoted later. Define the watchlist and build the public read-only adapter before requesting `GITHUB_TOKEN`. |
 | EPO OPS | `EPO_OPS_CONSUMER_KEY`, `EPO_OPS_CONSUMER_SECRET` | Later patent signal work. |
 | ArcGIS | `ARCGIS_API_TOKEN` | Later non-public geospatial layers. |
 | IBM Quantum | `IBM_QUANTUM_TOKEN` | Phase 3 quantum backend. |

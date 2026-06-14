@@ -85,6 +85,26 @@ Validate the credential-bound contract without using real secrets:
 
 The check must show these adapters as read-only. They cannot approve signals, create trade candidates, submit Alpaca paper orders, call broker write endpoints, or enable live capital.
 
+## Provider Decisions That Do Not Need Keys Yet
+
+As of 2026-06-14, Qadam has resolved the remaining provider-choice/local-only sources as metadata, not as connected sources. Do not add these keys to `data/runtime/qadam-secrets.env` unless their read-only adapter or local bridge is explicitly promoted later.
+
+| Source | Current decision | What you do now |
+| --- | --- | --- |
+| RapidAPI | Disabled because RapidAPI is a marketplace, not a canonical source. | Nothing. Do not add `RAPIDAPI_KEY` unless a specific RapidAPI-backed provider is selected. |
+| Coinglass | CoinGlass API selected for optional future crypto/perps context; adapter not built. | Nothing. Do not add `COINGLASS_API_KEY` yet. |
+| Chainlink | Chainlink Data Feeds selected for optional future price-integrity checks; public adapter not built. | Nothing. Do not add `ETH_RPC_URL` yet. |
+| GitHub | GitHub REST API selected for optional future technology/supply-chain context; public adapter not built. | Nothing. Do not add `GITHUB_TOKEN` until Qadam has a narrow watchlist and adapter. |
+| Bookmap | Local Bookmap bridge selected for optional future order-flow confirmation. | Nothing unless you want to run Bookmap locally; if promoted later, use `BOOKMAP_BRIDGE_URL` and keep the bridge read-only. |
+
+Validate this provider-decision contract:
+
+```bash
+.venv/bin/python scripts/check_provider_decision_pass.py
+```
+
+This check must show zero credentials required now and zero order, broker-write, or live-capital authority.
+
 ## First Keys To Get
 
 | Priority | Provider | Qadam variable | Why it matters | How to get it |
