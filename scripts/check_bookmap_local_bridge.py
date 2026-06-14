@@ -23,6 +23,10 @@ from orchestrator.bookmap_local_bridge import (  # noqa: E402
     fetch_bookmap_local_bridge_sample,
 )
 from orchestrator.config import Settings  # noqa: E402
+from orchestrator.evidence_packet_normalization import (  # noqa: E402
+    normalize_adapter_evidence_packet,
+    validate_normalized_evidence_packet,
+)
 from orchestrator.phase2_shadow_cycle import run_phase2_shadow_cycle  # noqa: E402
 
 SECRET_LIKE_PATTERNS = (
@@ -128,6 +132,14 @@ def main() -> int:
     settings = Settings.from_env()
     sample_envelope = fetch_bookmap_local_bridge_sample()
     sample_evidence = bookmap_local_bridge_evidence_items(sample_envelope)
+    normalized_packet = normalize_adapter_evidence_packet(
+        source_key="bookmap",
+        evidence_items=sample_evidence,
+        packet_type="orderflow_confirmation_packet",
+        context_role="supplemental_orderflow_confirmation_only",
+        summary="Bookmap local order-flow context normalized for review only.",
+    )
+    normalized_packet_errors = validate_normalized_evidence_packet(normalized_packet)
     live_envelope, live_status, live_context = _live_fixture_check()
     nonlocal_envelope = _nonlocal_block_check()
     phase2_report = run_phase2_shadow_cycle(
@@ -192,6 +204,8 @@ def main() -> int:
         errors.append("sample_event_count_empty")
     if not sample_evidence:
         errors.append("sample_evidence_empty")
+    if normalized_packet_errors:
+        errors.append("normalized_packet_invalid:" + ",".join(normalized_packet_errors[:5]))
     if live_status.get("status") != "connected":
         errors.append("fixture_live_not_connected")
     if live_event_count < 1:
@@ -233,6 +247,8 @@ def main() -> int:
     print("bookmap_local_bridge_status=" + ("ok" if not errors else "error"))
     print(f"bookmap_local_bridge_sample_event_count={sample_event_count}")
     print(f"bookmap_local_bridge_sample_evidence_count={len(sample_evidence)}")
+    print(f"bookmap_local_bridge_normalized_packet_status={normalized_packet.get('status')}")
+    print(f"bookmap_local_bridge_normalized_packet_item_count={normalized_packet.get('item_count')}")
     print(f"bookmap_local_bridge_fixture_connected={live_status.get('connected')}")
     print(f"bookmap_local_bridge_fixture_event_count={live_event_count}")
     print(f"bookmap_local_bridge_context_count={live_context.get('orderflow_context_count')}")

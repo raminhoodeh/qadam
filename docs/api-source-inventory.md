@@ -116,6 +116,26 @@ As of 2026-06-14, Qadam has explicit provider decisions for the remaining option
 
 These decisions are planning/readiness metadata only. Bookmap now has a read-only local bridge adapter, but it still cannot create evidence from a live Bookmap session until the local bridge process is running. None of these decisions can submit orders, call brokers, or enable live capital.
 
+## Evidence Packet Normalization
+
+As of 2026-06-14, Qadam normalizes source evidence through `orchestrator/evidence_packet_normalization.py`.
+
+The normalizer accepts:
+
+- shadow-signal evidence trails from the research pipeline;
+- TradingView MCP technical-analysis evidence items;
+- Bookmap local bridge order-flow evidence items;
+- provider-decision and credential-bound evidence packet type declarations for future adapters.
+
+Every normalized packet must expose:
+
+- `schema_version`, `normalization_version`, `packet_id`, `packet_type`, and `packet_role`;
+- `signal_id`, `trail_id`, `sources`, `source_count`, `item_count`, and normalized `items`;
+- trust scores, missing correlations, summary, created time, and a public-safe boundary;
+- false authority flags for source quorum credit, risk handoff, trade-candidate creation, execution, paper orders, broker writes, quantum jobs, performance credit, and live capital.
+
+The normalizer strips `raw_ref` from public evidence items and rejects authority leakage in `scripts/check_evidence_packet_normalization.py` and `scripts/check_cockpit_status.py`.
+
 ## Conflicts To Carry Into Implementation
 
 - The documents say "35 sources", but the integration reference details fewer because some sources are combined. The registry resolves this by splitting Polymarket/Kalshi and SEC/STOCK Act.

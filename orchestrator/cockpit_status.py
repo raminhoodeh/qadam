@@ -24,6 +24,10 @@ from orchestrator.broker_reconciliation import BrokerReconciliationReviewStore, 
 from orchestrator.event_log import EventLog
 from orchestrator.execution import execution_registry
 from orchestrator.execution_policy import ExecutionPolicyReviewStore, execution_policy_summary
+from orchestrator.evidence_packet_normalization import (
+    evidence_packet_normalization_summary,
+    normalize_signal_evidence_packet,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -2465,37 +2469,7 @@ def _build_process_console(settings: Settings, generated_at: str) -> list[dict[s
 
 
 def _safe_evidence_packet(signal: dict[str, Any]) -> dict[str, Any]:
-    trail = signal.get("evidence_trail", {})
-    items = trail.get("evidence_items", []) if isinstance(trail, dict) else []
-    safe_items: list[dict[str, Any]] = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        safe_items.append(
-            {
-                "evidence_id": item.get("evidence_id"),
-                "source": item.get("source"),
-                "event_type": item.get("event_type"),
-                "summary": item.get("summary"),
-                "trust_score": item.get("trust_score"),
-                "observed_at": item.get("observed_at"),
-            }
-        )
-    return {
-        "signal_id": signal.get("signal_id"),
-        "trail_id": trail.get("trail_id") if isinstance(trail, dict) else None,
-        "source_count": trail.get("source_count") if isinstance(trail, dict) else 0,
-        "sources": [
-            str(item.get("source"))
-            for item in safe_items
-            if isinstance(item.get("source"), str)
-        ],
-        "items": safe_items,
-        "min_trust_score": trail.get("min_trust_score") if isinstance(trail, dict) else None,
-        "average_trust_score": trail.get("average_trust_score") if isinstance(trail, dict) else None,
-        "missing_correlations": trail.get("missing_correlations", []) if isinstance(trail, dict) else [],
-        "created_at": trail.get("created_at") if isinstance(trail, dict) else None,
-    }
+    return normalize_signal_evidence_packet(signal)
 
 
 def _safe_shadow_packets(settings: Settings) -> list[dict[str, Any]]:
@@ -2887,6 +2861,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         strategy_packets = []
 
     evidence_packets = [_safe_evidence_packet(signal) for signal in signals]
+    evidence_normalization = evidence_packet_normalization_summary(evidence_packets)
     latest_review_by_signal = {
         str(review.get("source_signal_id")): review
         for review in signal_reviews
@@ -3125,6 +3100,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         ],
         "hypotheses": hypotheses,
         "evidence_packets": evidence_packets,
+        "evidence_packet_normalization": evidence_normalization,
         "model_activity": model_activity,
         "analysis_timeline": [
             "source observation",

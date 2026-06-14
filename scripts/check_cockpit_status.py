@@ -185,14 +185,54 @@ RESEARCH_GOAL_REQUIRED_FIELDS = {
 
 EVIDENCE_PACKET_REQUIRED_FIELDS = {
     "average_trust_score",
+    "boundary",
+    "broker_write_allowed",
     "created_at",
+    "execution_allowed",
     "items",
+    "item_count",
+    "live_capital_enabled",
     "min_trust_score",
     "missing_correlations",
+    "normalization_version",
+    "packet_id",
+    "packet_role",
+    "packet_type",
+    "paper_order_allowed",
+    "performance_credit_allowed",
+    "public_safe",
+    "quantum_job_authority",
+    "risk_handoff_allowed",
+    "schema_version",
     "signal_id",
     "source_count",
+    "source_key",
+    "source_quorum_credit_allowed",
     "sources",
+    "status",
+    "summary",
     "trail_id",
+    "trade_candidate_creation_allowed",
+}
+
+EVIDENCE_ITEM_REQUIRED_FIELDS = {
+    "boundary",
+    "broker_write_allowed",
+    "evidence_id",
+    "evidence_role",
+    "event_type",
+    "execution_allowed",
+    "live_capital_enabled",
+    "observed_at",
+    "paper_order_allowed",
+    "public_safe",
+    "schema_version",
+    "source",
+    "source_key",
+    "source_quorum_credit_allowed",
+    "summary",
+    "trade_candidate_creation_allowed",
+    "trust_score",
 }
 
 SIGNAL_INTEGRITY_REQUIRED_FIELDS = {
@@ -3396,6 +3436,14 @@ def main() -> int:
     )
     print(f"cockpit_status_hypothesis_count={len(payload['cognition'].get('hypotheses', []))}")
     print(f"cockpit_status_evidence_packet_count={len(payload['cognition'].get('evidence_packets', []))}")
+    print(
+        "cockpit_status_evidence_packet_normalization_status="
+        f"{payload['cognition'].get('evidence_packet_normalization', {}).get('status')}"
+    )
+    print(
+        "cockpit_status_evidence_packet_normalized_item_count="
+        f"{payload['cognition'].get('evidence_packet_normalization', {}).get('normalized_item_count', 0)}"
+    )
     print(f"cockpit_status_paper_context_status={payload['cognition'].get('paper_account_context', {}).get('status')}")
     print(
         "cockpit_status_paper_context_connection_status="
@@ -12290,16 +12338,77 @@ def main() -> int:
         if missing_fields:
             print(f"cockpit_status_evidence_packet_fields_missing={packet.get('trail_id', 'unknown')}:{','.join(missing_fields)}")
             return 1
+        for field in (
+            "source_quorum_credit_allowed",
+            "risk_handoff_allowed",
+            "trade_candidate_creation_allowed",
+            "execution_allowed",
+            "paper_order_allowed",
+            "broker_write_allowed",
+            "performance_credit_allowed",
+            "quantum_job_authority",
+            "live_capital_enabled",
+        ):
+            if packet.get(field) is not False:
+                print(f"cockpit_status_evidence_packet_authority_enabled={packet.get('packet_id', 'unknown')}:{field}")
+                return 1
+        if packet.get("public_safe") is not True:
+            print(f"cockpit_status_evidence_packet_not_public_safe={packet.get('packet_id', 'unknown')}")
+            return 1
+        if "cannot create trade ideas, orders, broker writes, or performance credit" not in packet.get("boundary", ""):
+            print(f"cockpit_status_evidence_packet_boundary_weak={packet.get('packet_id', 'unknown')}")
+            return 1
+        if "cannot create a trade idea or order" not in packet.get("boundary", ""):
+            print(f"cockpit_status_evidence_packet_trade_boundary_weak={packet.get('packet_id', 'unknown')}")
+            return 1
         if "items" not in packet:
             print("cockpit_status_evidence_items_missing=true")
             return 1
         if not packet.get("items"):
             print("cockpit_status_evidence_items_empty=true")
             return 1
+        if packet.get("item_count") != len(packet.get("items", [])):
+            print(f"cockpit_status_evidence_item_count_mismatch={packet.get('packet_id', 'unknown')}")
+            return 1
         for item in packet.get("items", []):
+            item_missing_fields = sorted(EVIDENCE_ITEM_REQUIRED_FIELDS - set(item))
+            if item_missing_fields:
+                print(
+                    "cockpit_status_evidence_item_fields_missing="
+                    f"{item.get('evidence_id', 'unknown')}:{','.join(item_missing_fields)}"
+                )
+                return 1
             if "raw_ref" in item:
                 print("cockpit_status_evidence_raw_ref_leaked=true")
                 return 1
+            if item.get("public_safe") is not True:
+                print(f"cockpit_status_evidence_item_not_public_safe={item.get('evidence_id', 'unknown')}")
+                return 1
+            for field in (
+                "source_quorum_credit_allowed",
+                "trade_candidate_creation_allowed",
+                "execution_allowed",
+                "paper_order_allowed",
+                "broker_write_allowed",
+                "live_capital_enabled",
+            ):
+                if item.get(field) is not False:
+                    print(f"cockpit_status_evidence_item_authority_enabled={item.get('evidence_id', 'unknown')}:{field}")
+                    return 1
+
+    normalization = cognition.get("evidence_packet_normalization", {})
+    if normalization.get("status") != "ok":
+        print(f"cockpit_status_evidence_packet_normalization_status={normalization.get('status')}")
+        return 1
+    if normalization.get("normalized_packet_count") != len(cognition.get("evidence_packets", [])):
+        print("cockpit_status_evidence_packet_normalization_count_mismatch=true")
+        return 1
+    if normalization.get("authority_leak_count") != 0:
+        print("cockpit_status_evidence_packet_normalization_authority_leak=true")
+        return 1
+    if normalization.get("raw_ref_leak_count") != 0:
+        print("cockpit_status_evidence_packet_normalization_raw_ref_leak=true")
+        return 1
 
     for hypothesis in cognition.get("hypotheses", []):
         missing_fields = sorted(HYPOTHESIS_REQUIRED_FIELDS - set(hypothesis))

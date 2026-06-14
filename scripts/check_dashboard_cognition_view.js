@@ -58,13 +58,32 @@ const REQUIRED_HYPOTHESIS_FIELDS = [
 
 const REQUIRED_EVIDENCE_PACKET_FIELDS = [
     "average_trust_score",
+    "boundary",
+    "broker_write_allowed",
     "created_at",
+    "execution_allowed",
     "items",
+    "item_count",
+    "live_capital_enabled",
     "min_trust_score",
     "missing_correlations",
+    "normalization_version",
+    "packet_id",
+    "packet_role",
+    "packet_type",
+    "paper_order_allowed",
+    "performance_credit_allowed",
+    "public_safe",
+    "quantum_job_authority",
+    "risk_handoff_allowed",
+    "schema_version",
     "signal_id",
     "source_count",
+    "source_key",
+    "source_quorum_credit_allowed",
     "sources",
+    "status",
+    "summary",
     "trail_id"
 ];
 
@@ -285,8 +304,28 @@ async function main() {
         const missing = missingFields(packet, REQUIRED_EVIDENCE_PACKET_FIELDS);
         assert(!missing.length, `${packet.trail_id || "evidence packet"} missing fields: ${missing.join(", ")}`);
         assert(Array.isArray(packet.items) && packet.items.length, `${packet.trail_id} has no evidence items`);
+        assert(packet.item_count === packet.items.length, `${packet.trail_id} item count mismatch`);
+        assert(packet.public_safe === true, `${packet.trail_id} is not public safe`);
+        [
+            "source_quorum_credit_allowed",
+            "risk_handoff_allowed",
+            "trade_candidate_creation_allowed",
+            "execution_allowed",
+            "paper_order_allowed",
+            "broker_write_allowed",
+            "performance_credit_allowed",
+            "quantum_job_authority",
+            "live_capital_enabled"
+        ].forEach((field) => {
+            assert(packet[field] === false, `${packet.trail_id} authority enabled: ${field}`);
+        });
+        assert(
+            /cannot create trade ideas, orders, broker writes, or performance credit/i.test(packet.boundary || ""),
+            `${packet.trail_id} normalized boundary is weak`
+        );
         for (const item of packet.items) {
             assert(!hasOwn(item, "raw_ref"), `${packet.trail_id} leaked a raw evidence reference`);
+            assert(item.public_safe === true, `${packet.trail_id} item is not public safe`);
             assert(item.source && item.summary && item.event_type, `${packet.trail_id} has an incomplete evidence item`);
         }
     }

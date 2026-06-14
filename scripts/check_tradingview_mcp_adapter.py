@@ -14,6 +14,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from orchestrator.config import Settings  # noqa: E402
+from orchestrator.evidence_packet_normalization import (  # noqa: E402
+    normalize_adapter_evidence_packet,
+    validate_normalized_evidence_packet,
+)
 from orchestrator.phase2_shadow_cycle import run_phase2_shadow_cycle  # noqa: E402
 from orchestrator.tradingview_mcp_adapter import (  # noqa: E402
     fetch_tradingview_mcp_live,
@@ -45,6 +49,14 @@ def main() -> int:
     status = tradingview_mcp_adapter_status(settings)
     context = tradingview_mcp_packet_context(settings)
     evidence_items = tradingview_mcp_evidence_items(envelope)
+    normalized_packet = normalize_adapter_evidence_packet(
+        source_key="tradingview_mcp",
+        evidence_items=evidence_items,
+        packet_type="technical_confirmation_packet",
+        context_role="supplemental_technical_confirmation_only",
+        summary="TradingView MCP technical-analysis context normalized for review only.",
+    )
+    normalized_packet_errors = validate_normalized_evidence_packet(normalized_packet)
     events = envelope.get("events", [])
     event_count = len(events) if isinstance(events, list) else 0
     phase2_report = run_phase2_shadow_cycle(
@@ -107,6 +119,8 @@ def main() -> int:
         errors.append("event_count_empty")
     if not evidence_items:
         errors.append("evidence_items_empty")
+    if normalized_packet_errors:
+        errors.append("normalized_packet_invalid:" + ",".join(normalized_packet_errors[:5]))
     if context.get("context_role") != "read_only_supplemental_technical_confirmation":
         errors.append("context_role_mismatch")
     if int(context.get("technical_context_count", 0) or 0) < 1:
@@ -136,6 +150,8 @@ def main() -> int:
     print(f"tradingview_mcp_adapter_live_calls_enabled={status.get('live_calls_enabled')}")
     print(f"tradingview_mcp_adapter_event_count={event_count}")
     print(f"tradingview_mcp_adapter_evidence_item_count={len(evidence_items)}")
+    print(f"tradingview_mcp_adapter_normalized_packet_status={normalized_packet.get('status')}")
+    print(f"tradingview_mcp_adapter_normalized_packet_item_count={normalized_packet.get('item_count')}")
     print(f"tradingview_mcp_adapter_context_count={context.get('technical_context_count')}")
     print(
         "tradingview_mcp_adapter_phase2_queued_packet_count="

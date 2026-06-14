@@ -141,6 +141,15 @@ Qadam also checks the local `tradingview-mcp-main/` checkout directly:
 
 The adapter must remain read-only. It can produce technical context and evidence packets, but it cannot create trade candidates, submit Alpaca orders, or bypass Qadam risk/quantum gates.
 
+### Evidence Packet Normalization
+
+All new source adapters should emit `EvidenceItem` records and let
+`orchestrator/evidence_packet_normalization.py` build public-safe packets.
+Do not expose raw provider references, local paths, secrets, broker identifiers,
+or execution hints in dashboard packets. The normalized packet must keep source
+quorum, trade-candidate creation, risk handoff, paper orders, broker writes,
+quantum jobs, performance credit, and live capital set to `false`.
+
 ## Bookmap Local Bridge
 
 Bookmap is not a hosted API-key source for Qadam. It is a local-only, read-only order-flow bridge that can provide supplemental microstructure context when Bookmap is running on the Mac.

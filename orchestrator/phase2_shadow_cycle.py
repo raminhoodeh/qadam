@@ -9,6 +9,7 @@ authority.
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -251,7 +252,9 @@ def _write_report(settings: Settings, report: dict[str, Any]) -> Path:
         raise ValueError("Phase 2 shadow-cycle report contains a secret-like value")
     output_path = Path(settings.runtime_dir) / "phase2_shadow_cycle.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    temp_path = output_path.with_name(f".{output_path.name}.{os.getpid()}.tmp")
+    temp_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    temp_path.replace(output_path)
     history_path = Path(settings.runtime_dir) / "phase2_shadow_cycle.jsonl"
     with history_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(report, sort_keys=True) + "\n")
