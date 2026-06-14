@@ -6,6 +6,14 @@ This document defines the master implementation plan for overhauling
 `/dashboard/` from a long cockpit page into a segmented, intuitive operating
 surface for first-release founding Fund Managers.
 
+Update on 2026-06-14: Stage 7 dashboard simplification is captured as a
+separate plan-only appendix in
+`docs/qadam-dashboard-stage-7-simplification-implementation-plan.md`. It has
+not been implemented. The plan exists because the current simplification
+reduced clutter but still needs a richer Fund Manager cockpit: system map,
+system status, connected data sources, strategy posture, public-safe activity
+feed, trade consideration board, and paper portfolio capacity.
+
 The goal is not to remove Qadam's complexity. The goal is to stop forcing a new
 user to understand the implementation graph before they can answer the basic
 operating questions:
