@@ -338,6 +338,9 @@ def build_paperops_close_to_ledger(
     receipt_verified = bool(close_record and _is_successful_close(close_record))
     lineage = _lineage(close_record or {})
     freshness_ready = freshness.get("fresh_after_latest_close") is True
+    latest_close_proof_eligible = receipt_verified and freshness_ready and lineage[
+        "research_goal_lineage_present"
+    ]
     postmortem_marker_allowed = receipt_verified and freshness_ready and lineage[
         "research_goal_lineage_present"
     ]
@@ -360,8 +363,9 @@ def build_paperops_close_to_ledger(
         blockers.append("guarded_close_receipt_not_verified")
     if receipt_present and not freshness_ready:
         blockers.append("lifecycle_mirror_refresh_required_after_close")
+    non_proof_close_reasons: list[str] = []
     if receipt_present and freshness_ready and not lineage["research_goal_lineage_present"]:
-        blockers.append("research_goal_lineage_missing")
+        non_proof_close_reasons.append("research_goal_lineage_missing")
     if receipt_present and freshness_ready and lineage[
         "research_goal_lineage_present"
     ] and not verified_records:
@@ -372,8 +376,8 @@ def build_paperops_close_to_ledger(
         status = "waiting_guarded_close_receipt"
     elif "lifecycle_mirror_refresh_required_after_close" in blockers:
         status = "waiting_lifecycle_mirror_refresh"
-    elif "research_goal_lineage_missing" in blockers:
-        status = "blocked_research_goal_lineage_missing"
+    elif receipt_present and freshness_ready and not lineage["research_goal_lineage_present"]:
+        status = "waiting_lineaged_guarded_close"
     elif "postmortem_due_marker_missing" in blockers:
         status = "ready_pending_postmortem_due_marker"
     else:
@@ -403,6 +407,9 @@ def build_paperops_close_to_ledger(
         ),
         "paper_mirror_observed_at": freshness.get("paper_mirror_observed_at"),
         "research_goal_lineage_present": lineage["research_goal_lineage_present"],
+        "latest_close_proof_eligible": latest_close_proof_eligible,
+        "latest_close_non_proof_reason_count": len(non_proof_close_reasons),
+        "latest_close_non_proof_reasons": non_proof_close_reasons,
         "source_setup_record_id": lineage["source_setup_record_id"],
         "source_submit_record_artifact_id": lineage["source_submit_record_artifact_id"],
         "source_proof_order_id": lineage["source_proof_order_id"],

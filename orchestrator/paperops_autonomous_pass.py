@@ -45,6 +45,12 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
         "active_automation_execute",
         ("scripts/run_active_paper_trading_automation.py", "--execute-paper-automation"),
     ),
+    (
+        "paper_lifecycle_refresh",
+        ("scripts/check_paperops_paper_lifecycle_poller.py", "--poll-paper-orders"),
+    ),
+    ("paper_account_mirror_refresh", ("scripts/check_alpaca_paper_mirror.py", "--live")),
+    ("paper_exit_refresh", ("scripts/check_paperops_paper_exit_path.py",)),
     ("cockpit_notification", ("scripts/check_paperops_cockpit_notification_upgrade.py",)),
     ("paperops_30_day_operations", ("scripts/check_paperops_30_day_operations.py",)),
     ("cockpit_status_pre_certification", ("scripts/check_cockpit_status.py",)),

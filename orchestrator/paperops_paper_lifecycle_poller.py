@@ -24,6 +24,7 @@ from orchestrator.paperops_alpaca_paper_post import (
     _endpoint_context,
     _headers,
     _orders_url,
+    paperops_alpaca_paper_post_submission_ledger_path,
     read_latest_paperops_alpaca_paper_post,
     validate_paperops_alpaca_paper_post,
 )
@@ -176,33 +177,95 @@ def _positions_url(settings: Settings, symbol: str) -> str:
     return f"{base}/positions/{symbol.upper()}"
 
 
+def _submission_ledger(settings: Settings) -> dict[str, Any]:
+    return _read_json(paperops_alpaca_paper_post_submission_ledger_path(settings))
+
+
+def _record_request_preview(record: dict[str, Any]) -> dict[str, Any]:
+    request_preview = record.get("request_preview")
+    return request_preview if isinstance(request_preview, dict) else {}
+
+
+def _record_receipt(record: dict[str, Any]) -> dict[str, Any]:
+    receipt = record.get("broker_receipt")
+    return receipt if isinstance(receipt, dict) else {}
+
+
+def _record_client_order_id(record: dict[str, Any]) -> str:
+    request_preview = _record_request_preview(record)
+    receipt = _record_receipt(record)
+    return str(
+        receipt.get("broker_client_order_id")
+        or request_preview.get("client_order_id")
+        or record.get("idempotency_key")
+        or ""
+    ).strip()
+
+
+def _record_source_idempotency_key(record: dict[str, Any]) -> str:
+    request_preview = _record_request_preview(record)
+    return str(
+        record.get("source_idempotency_key")
+        or request_preview.get("source_idempotency_key")
+        or ""
+    ).strip()
+
+
+def _ledger_confirms_submitted_record(
+    record: dict[str, Any],
+    *,
+    submitted_client_order_ids: set[str],
+    submitted_source_idempotency_keys: set[str],
+) -> bool:
+    client_order_id = _record_client_order_id(record)
+    source_key = _record_source_idempotency_key(record)
+    return (
+        client_order_id.startswith("q7-6-stage-")
+        and source_key.startswith("q7-6-stage-")
+        and client_order_id in submitted_client_order_ids
+        and source_key in submitted_source_idempotency_keys
+        and record.get("previously_submitted_to_alpaca_paper") is True
+    )
+
+
 def _source_record_errors(record: dict[str, Any]) -> list[str]:
     errors: list[str] = []
+    ledger_confirmed = record.get("ledger_confirmed_submitted_paper_order") is True
     receipt = record.get("broker_receipt")
+    receipt_present = isinstance(receipt, dict)
     if not isinstance(receipt, dict):
         receipt = {}
-        errors.append("source_broker_receipt_missing")
+        if not ledger_confirmed:
+            errors.append("source_broker_receipt_missing")
     request_preview = record.get("request_preview")
     if not isinstance(request_preview, dict):
         request_preview = {}
         errors.append("source_request_preview_missing")
-    client_order_id = str(
-        receipt.get("broker_client_order_id") or record.get("idempotency_key") or ""
-    ).strip()
-    if record.get("status") != "submitted_to_alpaca_paper":
+    client_order_id = _record_client_order_id(record)
+    source_idempotency_key = _record_source_idempotency_key(record)
+    status = record.get("status")
+    if status != "submitted_to_alpaca_paper" and not (
+        ledger_confirmed and status == "blocked_duplicate_paper_submit"
+    ):
         errors.append("source_status_not_submitted_to_alpaca_paper")
-    if record.get("alpaca_paper_post_succeeded") is not True:
+    if record.get("alpaca_paper_post_succeeded") is not True and not ledger_confirmed:
         errors.append("source_alpaca_paper_post_not_successful")
     if record.get("idempotency_namespace") != "phase7_demo_proof":
         errors.append("source_idempotency_namespace_not_phase7")
     if not client_order_id.startswith("q7-6-stage-"):
         errors.append("source_client_order_id_not_phase7")
-    if not str(record.get("source_idempotency_key") or "").startswith("q7-6-stage-"):
+    if str(request_preview.get("client_order_id") or client_order_id) != client_order_id:
+        errors.append("source_client_order_id_mismatch")
+    if not source_idempotency_key.startswith("q7-6-stage-"):
         errors.append("source_idempotency_key_not_phase7")
-    if not str(receipt.get("broker_order_id_hash") or "").strip():
+    if not str(receipt.get("broker_order_id_hash") or "").strip() and not ledger_confirmed:
         errors.append("source_broker_order_hash_missing")
     if not str(request_preview.get("symbol") or "").strip():
         errors.append("source_symbol_missing")
+    if request_preview.get("method") != "POST":
+        errors.append("source_request_preview_method_not_post")
+    if request_preview.get("path") != "/v2/orders":
+        errors.append("source_request_preview_path_not_orders")
     for key in (
         "raw_broker_payload_stored",
         "raw_broker_payload_exposed",
@@ -216,16 +279,17 @@ def _source_record_errors(record: dict[str, Any]) -> list[str]:
     ):
         if record.get(key) is not False:
             errors.append(f"source_record_forbidden:{key}")
-    for key in (
-        "broker_order_identifier_exposed",
-        "raw_broker_payload_stored",
-        "raw_broker_payload_exposed",
-        "authorization_header_exposed",
-        "base_url_exposed",
-        "secret_value_exposed",
-    ):
-        if receipt.get(key) is not False:
-            errors.append(f"source_receipt_forbidden:{key}")
+    if receipt_present or not ledger_confirmed:
+        for key in (
+            "broker_order_identifier_exposed",
+            "raw_broker_payload_stored",
+            "raw_broker_payload_exposed",
+            "authorization_header_exposed",
+            "base_url_exposed",
+            "secret_value_exposed",
+        ):
+            if receipt.get(key) is not False:
+                errors.append(f"source_receipt_forbidden:{key}")
     for key in (
         "base_url_exposed",
         "authorization_header_included",
@@ -241,19 +305,17 @@ def _source_record_errors(record: dict[str, Any]) -> list[str]:
 
 def _source_record_to_poll_candidate(record: dict[str, Any]) -> dict[str, Any]:
     source_errors = _source_record_errors(record)
-    receipt = record.get("broker_receipt")
-    if not isinstance(receipt, dict):
-        receipt = {}
-    request_preview = record.get("request_preview")
-    if not isinstance(request_preview, dict):
-        request_preview = {}
-    client_order_id = str(
-        receipt.get("broker_client_order_id") or record.get("idempotency_key") or ""
-    ).strip()
+    receipt = _record_receipt(record)
+    request_preview = _record_request_preview(record)
+    client_order_id = _record_client_order_id(record)
     symbol = str(request_preview.get("symbol") or "").upper()
     return {
         "schema_version": PAPEROPS_LIFECYCLE_POLLER_SCHEMA_VERSION,
         "record_type": "paperops_paper_lifecycle_poll_candidate",
+        "source_record_origin": record.get("source_record_origin"),
+        "ledger_confirmed_submitted_paper_order": (
+            record.get("ledger_confirmed_submitted_paper_order") is True
+        ),
         "source_submit_record_artifact_id": record.get("source_submit_record_artifact_id"),
         "source_staged_order_artifact_id": record.get("source_staged_order_artifact_id"),
         "source_proof_order_id": record.get("source_proof_order_id"),
@@ -289,15 +351,68 @@ def _source_record_to_poll_candidate(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _source_poll_candidates(source: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    records = [
+def _source_poll_records(
+    source: dict[str, Any],
+    *,
+    settings: Settings,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    ledger = _submission_ledger(settings)
+    submitted_client_order_ids = set(ledger.get("submitted_client_order_ids", []) or [])
+    submitted_source_idempotency_keys = set(
+        ledger.get("submitted_source_idempotency_keys", []) or []
+    )
+    records: list[dict[str, Any]] = []
+    seen_client_order_ids: set[str] = set()
+    selected_records = [
         record
         for record in source.get("selected_post_records", []) or []
         if isinstance(record, dict)
     ]
+    for record in selected_records:
+        enriched = deepcopy(record)
+        enriched["source_record_origin"] = "paperops_2_selected_post_records"
+        client_order_id = _record_client_order_id(enriched)
+        if client_order_id and client_order_id in seen_client_order_ids:
+            continue
+        if client_order_id:
+            seen_client_order_ids.add(client_order_id)
+        records.append(enriched)
+    recovered_count = 0
+    for record in source.get("post_candidates", []) or []:
+        if not isinstance(record, dict):
+            continue
+        if not _ledger_confirms_submitted_record(
+            record,
+            submitted_client_order_ids=submitted_client_order_ids,
+            submitted_source_idempotency_keys=submitted_source_idempotency_keys,
+        ):
+            continue
+        client_order_id = _record_client_order_id(record)
+        if not client_order_id or client_order_id in seen_client_order_ids:
+            continue
+        seen_client_order_ids.add(client_order_id)
+        enriched = deepcopy(record)
+        enriched["source_record_origin"] = "paperops_2_submission_ledger_recovery"
+        enriched["ledger_confirmed_submitted_paper_order"] = True
+        records.append(enriched)
+        recovered_count += 1
+    return records, {
+        "source_selected_post_record_count": len(selected_records),
+        "source_submission_ledger_client_order_id_count": len(submitted_client_order_ids),
+        "source_submission_ledger_source_key_count": len(submitted_source_idempotency_keys),
+        "source_submission_ledger_recovered_record_count": recovered_count,
+    }
+
+
+def _source_poll_candidates(
+    source: dict[str, Any],
+    *,
+    settings: Settings,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
+    records, stats = _source_poll_records(source, settings=settings)
     candidates = [_source_record_to_poll_candidate(record) for record in records]
     eligible = [candidate for candidate in candidates if candidate["eligible_for_lifecycle_poll"]]
-    return candidates, eligible
+    return candidates, eligible, stats
 
 
 def _lifecycle_polling_enablement_ready(enablement: dict[str, Any]) -> bool:
@@ -562,7 +677,10 @@ def build_paperops_paper_lifecycle_poller(
         validate_paperops_alpaca_paper_post(source) if source_present else []
     )
     source_valid = source_present and not source_validation_errors
-    all_candidates, eligible_candidates = _source_poll_candidates(source)
+    all_candidates, eligible_candidates, source_poll_stats = _source_poll_candidates(
+        source,
+        settings=settings,
+    )
     lifecycle_polling_enablement = read_latest_paperops_paper_lifecycle_polling_enablement(
         settings
     )
@@ -687,9 +805,24 @@ def build_paperops_paper_lifecycle_poller(
         "source_paperops_2_stage": source.get("stage"),
         "source_paperops_2_validation_error_count": len(source_validation_errors),
         "source_paperops_2_validation_errors": source_validation_errors[:12],
-        "source_selected_post_record_count": len(
-            [record for record in source.get("selected_post_records", []) or [] if isinstance(record, dict)]
-        )
+        "source_selected_post_record_count": source_poll_stats[
+            "source_selected_post_record_count"
+        ]
+        if source_present
+        else 0,
+        "source_submission_ledger_client_order_id_count": source_poll_stats[
+            "source_submission_ledger_client_order_id_count"
+        ]
+        if source_present
+        else 0,
+        "source_submission_ledger_source_key_count": source_poll_stats[
+            "source_submission_ledger_source_key_count"
+        ]
+        if source_present
+        else 0,
+        "source_submission_ledger_recovered_record_count": source_poll_stats[
+            "source_submission_ledger_recovered_record_count"
+        ]
         if source_present
         else 0,
         "source_submitted_paper_order_count": len(eligible_candidates),
@@ -788,8 +921,15 @@ def _candidate_errors(record: dict[str, Any]) -> list[str]:
             errors.append("paperops_lifecycle_candidate_namespace_invalid")
         if not str(record.get("client_order_id") or "").startswith("q7-6-stage-"):
             errors.append("paperops_lifecycle_candidate_client_id_invalid")
-        if not str(record.get("broker_order_id_hash") or "").strip():
+        if (
+            not str(record.get("broker_order_id_hash") or "").strip()
+            and record.get("ledger_confirmed_submitted_paper_order") is not True
+        ):
             errors.append("paperops_lifecycle_candidate_broker_hash_missing")
+        if record.get("ledger_confirmed_submitted_paper_order") is True and (
+            record.get("source_record_origin") != "paperops_2_submission_ledger_recovery"
+        ):
+            errors.append("paperops_lifecycle_candidate_ledger_origin_invalid")
     else:
         if record.get("status") != "blocked_source_contract":
             errors.append("paperops_lifecycle_blocked_candidate_status_invalid")

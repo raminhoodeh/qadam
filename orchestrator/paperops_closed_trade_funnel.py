@@ -49,6 +49,67 @@ def _int(value: Any) -> int:
         return 0
 
 
+def _has_research_goal_lineage(record: dict[str, Any]) -> bool:
+    source_setup = str(record.get("source_setup_record_id") or "").strip()
+    return bool(
+        source_setup
+        and (
+            str(record.get("source_submit_record_artifact_id") or "").strip()
+            or str(record.get("source_proof_order_id") or "").strip()
+            or str(record.get("source_staged_order_artifact_id") or "").strip()
+            or str(record.get("source_auto_approval_decision_id") or "").strip()
+        )
+    )
+
+
+def _proof_lifecycle_records(paperops_3: dict[str, Any]) -> list[dict[str, Any]]:
+    records = paperops_3.get("lifecycle_mirror_records", [])
+    if not isinstance(records, list):
+        return []
+    return [
+        record
+        for record in records
+        if isinstance(record, dict) and _has_research_goal_lineage(record)
+    ]
+
+
+def _proof_lifecycle_filled(record: dict[str, Any]) -> bool:
+    lifecycle_state = str(record.get("lifecycle_state") or "").lower()
+    broker_status = str(record.get("broker_order_status") or "").lower()
+    return lifecycle_state in {
+        "open_position",
+        "filled_without_open_position_echo",
+        "closed_trade",
+    } or broker_status == "filled"
+
+
+def _proof_exit_candidate_count(paperops_4: dict[str, Any]) -> int:
+    records: list[Any] = []
+    for key in ("exit_candidates", "selected_exit_records"):
+        source = paperops_4.get(key)
+        if isinstance(source, list):
+            records.extend(source)
+    seen: set[str] = set()
+    count = 0
+    for record in records:
+        if not isinstance(record, dict) or not _has_research_goal_lineage(record):
+            continue
+        if record.get("eligible_for_paper_exit") is not True and record.get("status") != "eligible":
+            continue
+        identity = str(
+            record.get("request_fingerprint")
+            or record.get("client_order_id_hash")
+            or record.get("source_proof_order_id")
+            or record.get("symbol")
+            or ""
+        )
+        if identity in seen:
+            continue
+        seen.add(identity)
+        count += 1
+    return count
+
+
 def _paper_mirror_counts(settings: Settings) -> dict[str, Any]:
     try:
         store = PaperAccountMirrorStore(settings=settings)
@@ -144,6 +205,8 @@ def _next_required_action(
     if blocked_stage == "close_attempt":
         return "Run guarded PaperOps-4 paper close execution when explicitly enabled."
     if blocked_stage == "close_receipt":
+        if close_to_ledger.get("status") == "waiting_lineaged_guarded_close":
+            return "Wait for a guarded close from a Research Goal-lineage paper setup; non-lineaged mirror closes do not count in the paper proof ledger."
         failure = _last_close_failure(exit_path)
         if failure:
             return f"Resolve guarded PaperOps-4 close failure before ledger credit: {failure}."
@@ -151,7 +214,10 @@ def _next_required_action(
     if blocked_stage == "lifecycle_mirror_freshness":
         return "Refresh PaperOps-3 lifecycle polling and the paper-account mirror after the guarded close receipt."
     if blocked_stage == "postmortem_marker":
-        if close_to_ledger.get("status") == "blocked_research_goal_lineage_missing":
+        if close_to_ledger.get("status") in {
+            "blocked_research_goal_lineage_missing",
+            "waiting_lineaged_guarded_close",
+        }:
             return "Attach distinct Research Goal lineage before creating the latest guarded-close postmortem marker."
         if close_to_ledger.get("status") == "waiting_lifecycle_mirror_refresh":
             return "Refresh PaperOps-3 lifecycle polling and the paper-account mirror before creating the latest guarded-close postmortem marker."
@@ -224,6 +290,16 @@ def build_paperops_closed_trade_funnel(
         lifecycle_poller=paperops_3,
         generated_at=generated,
     )
+    proof_lifecycle_records = _proof_lifecycle_records(paperops_3)
+    proof_lifecycle_filled_records = [
+        record for record in proof_lifecycle_records if _proof_lifecycle_filled(record)
+    ]
+    proof_lifecycle_open_position_records = [
+        record
+        for record in proof_lifecycle_records
+        if str(record.get("lifecycle_state") or "").lower() == "open_position"
+    ]
+    closed_proof_trade_count = _int(close_to_ledger.get("closed_proof_trade_count"))
 
     qualified_setup_count = max(
         _int(proof.get("qualified_setup_count")),
@@ -234,33 +310,38 @@ def build_paperops_closed_trade_funnel(
         _int(proof.get("submitted_paper_order_count")),
         _int(paperops_30_day.get("submitted_paper_order_count")),
         _int(paperops_2.get("alpaca_paper_post_succeeded_count")),
+        len(proof_lifecycle_records),
     )
     filled_order_count = max(
-        _int(mirror.get("filled_order_count")),
-        _int((runtime.get("order_status_counts") or {}).get("filled"))
-        if isinstance(runtime.get("order_status_counts"), dict)
-        else 0,
-        _int(paperops_3.get("paper_order_poll_succeeded_count")),
+        len(proof_lifecycle_filled_records),
+        closed_proof_trade_count,
     )
     open_position_readback_count = max(
-        _int(runtime.get("open_position_count")),
-        _int(mirror.get("open_position_count")),
-        _int(paperops_3.get("open_position_count")),
+        len(proof_lifecycle_open_position_records),
         _int(paperops_7.get("paperops_3_open_position_count")),
-        _int(paperops_4.get("open_position_readback_count")),
     )
-    eligible_exit_record_count = _int(paperops_4.get("eligible_exit_record_count"))
+    eligible_exit_record_count = max(
+        _proof_exit_candidate_count(paperops_4),
+        closed_proof_trade_count,
+    )
     latest_close_receipt_present = bool(
         freshness.get("latest_successful_close_requested_at")
     )
+    latest_close_proof_eligible = close_to_ledger.get("latest_close_proof_eligible") is True
     close_attempt_count = max(
-        _int(paperops_4.get("paper_position_close_called_count")),
-        1 if latest_close_receipt_present else 0,
+        _int(paperops_4.get("paper_position_close_called_count"))
+        if latest_close_proof_eligible
+        else 0,
+        1 if latest_close_proof_eligible else 0,
     )
     close_receipt_count = max(
-        _int(paperops_4.get("paper_position_close_succeeded_count")),
-        _int(paperops_4.get("broker_close_receipt_created_count")),
-        1 if latest_close_receipt_present else 0,
+        _int(paperops_4.get("paper_position_close_succeeded_count"))
+        if latest_close_proof_eligible
+        else 0,
+        _int(paperops_4.get("broker_close_receipt_created_count"))
+        if latest_close_proof_eligible
+        else 0,
+        1 if latest_close_proof_eligible else 0,
     )
     lifecycle_mirror_freshness_count = (
         1
@@ -271,7 +352,6 @@ def build_paperops_closed_trade_funnel(
     postmortem_marker_count = _int(
         close_to_ledger.get("postmortem_due_marker_created_count")
     )
-    closed_proof_trade_count = _int(close_to_ledger.get("closed_proof_trade_count"))
 
     stage_records = [
         _stage(
@@ -375,6 +455,11 @@ def build_paperops_closed_trade_funnel(
             "lifecycle_mirror_freshness_count": lifecycle_mirror_freshness_count,
             "postmortem_marker_count": postmortem_marker_count,
             "closed_proof_trade_count": closed_proof_trade_count,
+            "proof_lineage_lifecycle_order_count": len(proof_lifecycle_records),
+            "proof_lineage_filled_order_count": len(proof_lifecycle_filled_records),
+            "proof_lineage_open_position_count": len(
+                proof_lifecycle_open_position_records
+            ),
             "mirror_closed_paper_trade_count": max(
                 _int(runtime.get("closed_paper_trade_count")),
                 _int(mirror.get("closed_paper_trade_count")),
