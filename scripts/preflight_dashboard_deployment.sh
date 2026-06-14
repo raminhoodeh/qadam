@@ -22,7 +22,9 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paper_operational_cycle.py
 "$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
+"$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
+"$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 
 say "Checking dashboard acceptance gate"
 node --check scripts/check_dashboard_acceptance.js

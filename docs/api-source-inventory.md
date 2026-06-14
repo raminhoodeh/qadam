@@ -173,6 +173,33 @@ The gate must report:
   export;
 - live capital disabled and no broker/order authority introduced.
 
+## Deployment Discipline
+
+As of 2026-06-14, source/evidence/runtime acceptance is part of the production
+dashboard deploy preflight in `scripts/preflight_dashboard_deployment.sh`.
+
+The deploy discipline is enforced by
+`scripts/check_source_evidence_deployment_discipline.py`. The checker validates
+that:
+
+- `scripts/check_source_evidence_acceptance.py` has already produced an `ok`
+  source/evidence/runtime acceptance report;
+- the production deploy script still routes through local preflight before
+  Vercel deploy and before aliasing `qadam.trade` / `www.qadam.trade`;
+- the public cockpit status mirror exposes the durable evidence runtime,
+  TradingView MCP, Bookmap local bridge, and optional source-gap visibility
+  without secrets or write authority;
+- the detached cockpit-status digest remains read-only and aligned to the
+  exported payload;
+- the deployment receipt, when present, records the Vercel URL, aliases, and
+  preflight status without exposing tokens, broker credentials, dashboard
+  secrets, provider keys, or session material.
+
+This deployment discipline is deliberately narrower than dashboard UX work. It
+does not implement Stage 7 dashboard simplification, and it cannot approve
+trades, submit paper orders, call brokers, call providers, run quantum jobs,
+grant proof credit, or enable live capital.
+
 ## Conflicts To Carry Into Implementation
 
 - The documents say "35 sources", but the integration reference details fewer because some sources are combined. The registry resolves this by splitting Polymarket/Kalshi and SEC/STOCK Act.
