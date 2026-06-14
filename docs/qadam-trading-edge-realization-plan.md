@@ -29,6 +29,25 @@ The remaining edge problem is quality and throughput:
 
 Full potential means Qadam is not blocked by stale contradictions when a valid paper setup exists. It does not mean forced trading, live capital, dashboard execution, Telegram execution, LLM risk approval, or quantum-originated orders.
 
+## 1A. The 10 Improvement Tracks
+
+This plan is the implementation version of the earlier "improvements I would make" list. The 10 core tracks are:
+
+| Improvement | Purpose | Implementation Stage |
+| --- | --- | --- |
+| Fresh Setup Identity v2 | Stop broad idempotency holds from suppressing genuinely distinct setups while still blocking true duplicates. | TE-1 |
+| Trade Candidate Factory | Turn Research Goals and evidence into structured candidate proposals without creating orders. | TE-2 |
+| Second-Order AI Infrastructure Universe | Make the AI infrastructure beneficiary thesis tradable through specific bottlenecks, instruments, and confirmation rules. | TE-4 |
+| Strategy Router | Route each candidate into the right strategy family rather than scoring every setup the same way. | TE-3 |
+| Market Confirmation Layer | Confirm price, volume, volatility, trend, liquidity, options/flow, and catalyst timing before risk. | TE-5 |
+| Dynamic Risk Sizing | Size paper trades according to evidence quality, market regime, volatility, drawdown, and portfolio exposure. | TE-6 |
+| Exit Intelligence | Give every open position explicit invalidation, target, time-stop, contradiction, and close-review logic. | TE-7 |
+| Postmortem-Driven Weight Updates | Feed closed-trade lessons into trust, strategy, sizing, and source-priority proposals without silent policy mutation. | TE-8 |
+| Durable Replay Watchdog | Keep the replay spine visible and prevent stale/offline replay from silently degrading signal quality. | TE-9 |
+| Idle-State Diagnosis | Explain exactly why Qadam is trading, waiting, or blocked in plain language. | TE-10 |
+
+TE-0 and TE-11 are wrapper stages: TE-0 defines the baseline contract before implementation, and TE-11 certifies the complete loop after the 10 tracks are implemented.
+
 ## 2. Non-Negotiable Boundary
 
 This plan must preserve the first-release operating boundary:
@@ -81,6 +100,29 @@ The design target is not basic connectivity. The current bottleneck class is dow
 - learning-loop proposals that do not yet feed back into candidate quality quickly enough.
 
 This plan fixes that without weakening the safety chain.
+
+## 4A. Current Runtime Checkpoint - 2026-06-14
+
+Latest validated state from the local cockpit and PaperOps checks:
+
+- `29/37` sources online.
+- `99` Research Goals.
+- `5` hypotheses.
+- `1` current candidate.
+- `5` open paper positions.
+- `25` closed paper trades.
+- Paper balance is `GBP 99,442.12` from the Alpaca paper account mirror.
+- Live capital remains disabled.
+- RS-10 final paper autonomy is certified, but currently waiting for a qualified setup / lifecycle readiness rather than submitting.
+- Current visible blocker class is `paper_poll_gate_not_ready` / no fresh actionable setup, not a global safety contradiction.
+- PaperOps-4 exit path validation passes with `ready_no_exit_candidate`.
+- Closed-trade postmortem coverage is complete for the current mirror-derived closed trade set.
+
+Implementation implication:
+
+- The next edge work should not reopen basic paper-authority questions.
+- The practical work is candidate quality, fresh setup identity, market confirmation, and clearer lifecycle/exit readiness.
+- The PaperOps exit path must keep proof-ledger discipline: lineaged PaperOps-3 source candidates are authoritative when present; mirror-only fallback cannot manufacture non-lineaged close attempts.
 
 ## 5. Stage TE-0 - Edge Contract And Baseline
 
@@ -439,6 +481,10 @@ Exit triggers:
 Build:
 
 - Exit review packet per open position.
+- Preserve source lineage in the paper close path:
+  - if PaperOps-3 has source lifecycle candidates, PaperOps-4 must stay anchored to that lineaged source set;
+  - mirror-only positions may be used as visibility context only when there is no source lifecycle candidate set;
+  - mirror-only positions cannot manufacture proof-ledger close attempts.
 - Link exits to:
   - original Research Goal;
   - original candidate;
@@ -460,6 +506,7 @@ Acceptance:
 - Every open position has an exit state.
 - Exit reviews are visible even when no close is allowed.
 - Paper closes remain gated and idempotent.
+- Proof-ledger exits are source-lineaged; mirror-only fallback cannot create non-lineaged proof closes.
 
 ## 13. Stage TE-8 - Postmortem-Driven Weight Updates
 
@@ -661,4 +708,3 @@ Qadam is using its full first-release trading edge when:
 - idle states are precise and actionable;
 - multiple paper trades per day are allowed when distinct qualified setups pass all gates;
 - no module can bypass the paper-only boundary.
-

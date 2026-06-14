@@ -807,7 +807,15 @@ def build_paperops_paper_exit_path(
     mirror_eligible_candidates = [
         candidate for candidate in mirror_candidates if candidate["eligible_for_paper_exit"]
     ]
-    eligible_candidates = source_eligible_candidates or mirror_eligible_candidates
+    # If PaperOps-3 has any guarded source candidates at all, keep PaperOps-4
+    # anchored to that lineaged source set. Falling back to mirror-only
+    # positions in this state can manufacture non-lineaged close attempts that
+    # cannot count in the paper proof ledger.
+    eligible_candidates = (
+        source_eligible_candidates
+        if source_candidates
+        else mirror_eligible_candidates
+    )
     all_candidates = source_candidates + mirror_candidates
     selected_candidate = eligible_candidates[0] if eligible_candidates else None
     source_or_mirror_present = source_present or bool(mirror_candidates)
@@ -1414,11 +1422,27 @@ def validate_paperops_paper_exit_path(artifact: dict[str, Any]) -> list[str]:
     if not isinstance(selected, list):
         errors.append("paperops_exit_selected_records_not_list")
         selected = []
-    eligible_candidates = [
+    source_candidates = [
         record
         for record in candidates
-        if isinstance(record, dict) and record.get("eligible_for_paper_exit") is True
+        if isinstance(record, dict)
+        and str(record.get("source_lifecycle_record_type") or "")
+        == "paperops_q7_lifecycle_readback_record"
     ]
+    source_eligible_candidates = [
+        record for record in source_candidates if record.get("eligible_for_paper_exit") is True
+    ]
+    mirror_eligible_candidates = [
+        record
+        for record in candidates
+        if isinstance(record, dict)
+        and str(record.get("source_lifecycle_record_type") or "")
+        != "paperops_q7_lifecycle_readback_record"
+        and record.get("eligible_for_paper_exit") is True
+    ]
+    eligible_candidates = (
+        source_eligible_candidates if source_candidates else mirror_eligible_candidates
+    )
     if _int(artifact.get("eligible_exit_record_count")) != len(eligible_candidates):
         errors.append("paperops_exit_eligible_count_mismatch")
     for record in candidates + selected:
