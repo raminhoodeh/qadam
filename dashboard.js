@@ -1324,13 +1324,22 @@ function buildSourcesModel(status = {}) {
             trail_id: dashboardText(packet.trail_id, packet.signal_id || "evidence_packet"),
             signal_id: dashboardText(packet.signal_id, "signal not linked"),
             status: dashboardText(packet.status, items.length ? "evidence_recorded" : "pending"),
+            packet_type: dashboardText(packet.packet_type, "factual_evidence_packet"),
+            packet_role: dashboardText(packet.packet_role, "research_review_evidence"),
+            normalization_version: dashboardText(packet.normalization_version, "not exported"),
             item_count: items.length,
             summary: dashboardText(
                 packet.summary || items[0]?.summary,
                 "Factual evidence packet exported from the research queue."
             ),
             sources: itemSources.length ? itemSources.join(", ") : "sources not exported",
-            boundary: "Factual evidence can support review, but cannot create trade ideas, orders, broker writes, or performance credit."
+            authority: packet.trade_candidate_creation_allowed || packet.paper_order_allowed || packet.broker_write_allowed
+                ? "authority leak"
+                : "no trade/order authority",
+            boundary: dashboardText(
+                packet.boundary,
+                "Factual evidence can support review, but cannot create trade ideas, orders, broker writes, or performance credit."
+            )
         };
     });
     const reviewGroups = [
@@ -1864,6 +1873,9 @@ function buildReasoningModel(status = {}) {
     const evidenceIndex = evidencePackets.slice(0, 5).map((packet) => ({
         trail_id: dashboardText(packet.trail_id, "evidence_packet"),
         signal_id: dashboardText(packet.signal_id, "unlinked_signal"),
+        packet_type: dashboardText(packet.packet_type, "factual_evidence_packet"),
+        packet_role: dashboardText(packet.packet_role, "research_review_evidence"),
+        normalization_version: dashboardText(packet.normalization_version, "not exported"),
         source_count: modelNumber(packet.source_count, 0),
         sources: asArray(packet.sources).slice(0, 6),
         item_count: asArray(packet.items).length,
@@ -1876,9 +1888,15 @@ function buildReasoningModel(status = {}) {
             event_type: dashboardText(item.event_type, "event"),
             summary: dashboardText(item.summary, "No summary."),
             trust_score: item.trust_score,
-            evidence_role: "factual_evidence_item"
+            evidence_role: dashboardText(item.evidence_role, "factual_evidence_item")
         })),
-        boundary: "Evidence packet only. It can support review but cannot create a trade idea or order."
+        authority: packet.trade_candidate_creation_allowed || packet.paper_order_allowed || packet.broker_write_allowed
+            ? "authority leak"
+            : "no trade/order authority",
+        boundary: dashboardText(
+            packet.boundary,
+            "Evidence packet only. It can support review but cannot create a trade idea or order."
+        )
     }));
     const missingCorroboration = compactUnique([
         ...researchGoals.flatMap((goal) => asArray(goal.missing_corroboration)),
@@ -4431,7 +4449,10 @@ function renderEvidencePacketMiniCard(packet) {
             <div class="summary-strip compact">
                 ${renderMetric("Items", packet.item_count)}
                 ${renderMetric("Sources", packet.sources)}
+                ${renderMetric("Type", packet.packet_type)}
+                ${renderMetric("Authority", packet.authority)}
             </div>
+            <small>${htmlText(packet.packet_role)} · ${htmlText(packet.normalization_version)}</small>
             <p class="mini">${htmlText(packet.boundary)}</p>
         </article>
     `;
@@ -8472,11 +8493,17 @@ function renderReasoningEvidenceSummary(packet) {
                 ${renderMetric("Items", packet.item_count || 0)}
                 ${renderMetric("Avg trust", dashboardText(packet.average_trust_score, "n/a"))}
                 ${renderMetric("Min trust", dashboardText(packet.min_trust_score, "n/a"))}
+                ${renderMetric("Type", packet.packet_type || "factual evidence packet")}
+                ${renderMetric("Authority", packet.authority || "no trade/order authority")}
             </div>
             <dl class="cognition-facts">
                 <div>
                     <dt>Sources</dt>
                     <dd>${htmlText(asArray(packet.sources).join(", "), "No sources recorded")}</dd>
+                </div>
+                <div>
+                    <dt>Normalized</dt>
+                    <dd>${htmlText(packet.normalization_version, "Not exported")}</dd>
                 </div>
                 <div>
                     <dt>Boundary</dt>
