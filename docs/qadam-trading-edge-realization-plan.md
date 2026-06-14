@@ -113,9 +113,11 @@ Latest validated state from the local cockpit and PaperOps checks:
 - `25` closed paper trades.
 - Paper balance is `GBP 99,442.12` from the Alpaca paper account mirror.
 - Live capital remains disabled.
-- RS-10 final paper autonomy is certified, but currently waiting for a qualified setup / lifecycle readiness rather than submitting.
-- Current visible blocker class is `paper_poll_gate_not_ready` / no fresh actionable setup, not a global safety contradiction.
-- PaperOps-4 exit path validation passes with `ready_no_exit_candidate`.
+- RS-10 final paper autonomy is certified and currently actionable for the next guarded lifecycle poll.
+- Current visible blocker count is `0`; this is not a global safety contradiction.
+- PaperOps active automation is `active_automation_ready_to_poll`.
+- Paper submit remains gated by fresh eligible setup/idempotency state; the latest submit state is still `ready_no_fresh_eligible_order`.
+- PaperOps-4 exit path is now past the stale mirror-only fallback problem and is waiting on lifecycle mirror refresh before any guarded close can count.
 - Closed-trade postmortem coverage is complete for the current mirror-derived closed trade set.
 
 Implementation implication:
