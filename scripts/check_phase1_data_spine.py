@@ -39,6 +39,7 @@ ALLOWED_RUNTIME_STATUSES = {
     "ready_to_port",
     "registered",
     "unavailable_missing_credentials",
+    "unavailable_provider_endpoint_unconfirmed",
 }
 SECRET_VALUE_PREFIXES = ("ghp_", "vcp_", "sk-", "AIza", "sb_secret_", "PVZ")
 
@@ -102,7 +103,12 @@ def main() -> int:
             trust_score = source.get("trust_score")
             if not isinstance(trust_score, (int, float)) or not 0 <= float(trust_score) <= 1:
                 errors.append(f"promoted_adapter_trust_score_missing:{key}")
-            if runtime_status not in {"live_optional", "unavailable_missing_credentials", "local_bridge_required"}:
+            if runtime_status not in {
+                "live_optional",
+                "unavailable_missing_credentials",
+                "unavailable_provider_endpoint_unconfirmed",
+                "local_bridge_required",
+            }:
                 errors.append(f"promoted_adapter_bad_runtime:{key}:{runtime_status}")
         if spec.selection_status in {"optional_disabled", "not_selected"} and source.get("missing_secrets"):
             errors.append(f"not_selected_source_has_missing_credentials:{key}")
@@ -124,6 +130,8 @@ def main() -> int:
             errors.append(f"local_bridge_source_bad_runtime:{key}")
         if runtime_status == "unavailable_missing_credentials" and not source.get("missing_secrets"):
             errors.append(f"credential_block_without_missing_names:{key}")
+        if runtime_status == "unavailable_provider_endpoint_unconfirmed" and source.get("credential_activation_state") != "provider_endpoint_unconfirmed":
+            errors.append(f"provider_endpoint_block_without_activation_state:{key}")
         secret_names = list(source.get("configured_secrets") or []) + list(source.get("missing_secrets") or [])
         if any(not isinstance(name, str) or not _secret_name_is_safe(name) for name in secret_names):
             errors.append(f"unsafe_secret_name_shape:{key}")

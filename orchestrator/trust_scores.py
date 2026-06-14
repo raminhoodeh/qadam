@@ -51,6 +51,7 @@ def build_trust_score_seed(settings: Settings | None = None) -> dict[str, Any]:
         latency_threshold = source.pipeline in {"physical", "market"} and score >= 0.7 and heartbeat.get("runtime_status") in {
             "live_optional",
             "unavailable_missing_credentials",
+            "unavailable_provider_endpoint_unconfirmed",
         }
         seeds.append(
             TrustScoreSeed(

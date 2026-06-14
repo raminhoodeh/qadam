@@ -13,6 +13,7 @@ const status = JSON.parse(fs.readFileSync(statusPath, "utf8"));
 
 const selectors = [
     "[data-mission-control]",
+    "[data-mission-primary]",
     "[data-mission-sources]",
     "[data-mission-philosophy]",
     "[data-mission-stack]",

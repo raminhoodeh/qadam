@@ -18,7 +18,7 @@ Key split decisions:
 - Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
-- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act. UnusualWhales and RapidAPI are intentionally disabled; Coinglass, Chainlink, and GitHub need adapter/provider decisions before any key is requested.
+- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act. Their credential-bound read-only adapter contracts exist, but they stay disconnected until credentials are supplied. UnusualWhales and RapidAPI are intentionally disabled; Coinglass, Chainlink, and GitHub need adapter/provider decisions before any key is requested.
 
 ## Tier 1 - Wire First
 
@@ -29,7 +29,7 @@ Key split decisions:
 | NASA FIRMS | API key, FIRMS area CSV endpoint | Promoted as the first physical adapter; bbox-first, read-only, credential-gated, and paced conservatively. |
 | UnusualWhales | Intentionally disabled | Optional options-flow source; not a current credential request because Capitol Trades is the selected politician-trading path. |
 | Polymarket | Public CLOB plus wallet/execution later | Read-only CLOB adapter scaffolded; execution remains disabled. |
-| Kalshi | API key, trading API | Read-only adapter scaffolded; region/account eligibility remains the practical gate. |
+| Kalshi | API key, RSA private key, trading API | Credential-bound read-only adapter scaffolded; region/account eligibility remains the practical gate. |
 | Alpaca | API key + secret, data/trading APIs | Paper execution exists separately; registry row is the read-only account/market-data mirror contract. |
 
 ## Tier 2 - Wire Second
@@ -52,10 +52,10 @@ Key split decisions:
 | UN Comtrade | API key | Weekly/monthly context source. |
 | BIS | Public stats API | Weekly systemic-risk context. |
 | USGS | Public minerals data and earthquake API | Scope decision recorded: minerals/supply-chain context is the strategic role; the public earthquake API is the event-driven physical-risk adapter path. |
-| Reddit | OAuth app | Confirmation source, not primary. |
+| Reddit | OAuth app | Credential-bound confirmation source, not primary. |
 | Telegram | Bot API plus Telethon/MTProto user session | World Monitor has strong channel polling logic. |
 | SEC EDGAR | Public API, User-Agent required | High-trust corporate filing source. |
-| STOCK Act filings | Capitol Trades/provider-selected congressional trades path | V1 provider direction recorded; needed for politician trade disclosures and cross-validation. |
+| STOCK Act filings | Capitol Trades/provider-selected congressional trades path | Credential-bound v1 provider direction recorded; needed for politician trade disclosures and cross-validation. |
 
 ## Tier 4 - Wire Last Or Phase 2
 
@@ -92,14 +92,14 @@ The May 2026 source-registry blocker pass resolved the eight stale blockers into
 
 | Source | Decision | Remaining Gate |
 | --- | --- | --- |
-| `stock_act` | Use Capitol Trades or the selected STOCK Act provider path for v1 congressional trade disclosures. | Needs `CAPITOL_TRADES_API_KEY` and provider endpoint confirmation. |
+| `stock_act` | Use Capitol Trades or the selected STOCK Act provider path for v1 congressional trade disclosures. | Needs `CAPITOL_TRADES_API_KEY` and provider-confirmed `CAPITOL_TRADES_API_URL`; key-only setup stays endpoint-unconfirmed. |
 | `usgs` | Treat USGS as mineral/supply-chain context first, with the public earthquake API as event-driven physical-risk input. | Provider-specific minerals parsing still needs deeper research normalization. |
 | `space_track_celestrak` | Keep Space-Track as authenticated primary and CelesTrak GP JSON as public fallback. | Space-Track credentials only needed for the fuller authenticated path. |
 | `ais_maritime` | Use AISStream as the v1 read-only MVP; keep Spire/MarineTraffic as paid fallbacks. | Needs one AIS credential before live vessel data is available. |
 | `aviationstack` | Use Aviationstack as the v1 flight-data provider instead of Wingbits. | Needs `AVIATIONSTACK_API_KEY`; live adapter stays read-only and quota-aware. |
 | `unusual_whales` | Intentionally disabled until re-selected. | No key requested in the current source plan. |
 | `polymarket` | Use public CLOB/orderbook path, not Gamma-only discovery. | Execution remains separately disabled. |
-| `kalshi` | Keep read-only market adapter; classify region/account as the gate. | Needs account eligibility and credentials. |
+| `kalshi` | Keep credential-bound read-only market adapter; classify region/account as the gate. | Needs account eligibility and credentials. |
 | `alpaca` | Separate read-only market/account mirror from Alpaca paper execution. | Broader market-data scope depends on account/data entitlements. |
 
 ## Conflicts To Carry Into Implementation

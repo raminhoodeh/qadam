@@ -58,6 +58,9 @@ class SourceHeartbeat:
     runtime_status: str
     registry_status: str
     promoted_adapter: bool
+    credential_bound: bool
+    credential_activation_state: str | None
+    credential_activation_ready: bool
     trust_score: float | None
     checked_at: str
     cadence: str
@@ -164,9 +167,25 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
     configured, missing = _secret_state(source, settings)
     adapter_status = PROMOTED_ADAPTER_STATUS[source.key](settings) if promoted else {}
     if source.key in PHASE1_LIVE_ADAPTER_KEYS:
-        if adapter_status.get("credential_configured") or adapter_status.get("mode") == "sample_ready_live_optional":
+        binding_state = adapter_status.get("credential_binding") or {}
+        activation_state = binding_state.get("activation_state")
+        activation_ready = bool(adapter_status.get("activation_ready"))
+        if activation_state == "ready_for_live_readonly":
             missing = ()
+        elif activation_state == "provider_endpoint_unconfirmed":
+            missing = ()
+        elif not activation_state and (
+            adapter_status.get("credential_configured") or adapter_status.get("mode") == "sample_ready_live_optional"
+        ):
+            missing = ()
+    else:
+        binding_state = {}
+        activation_state = None
+        activation_ready = False
     runtime_status, degraded_reason = _runtime_status(source, missing, promoted)
+    if source.key in PHASE1_LIVE_ADAPTER_KEYS and activation_state == "provider_endpoint_unconfirmed":
+        runtime_status = "unavailable_provider_endpoint_unconfirmed"
+        degraded_reason = "provider_endpoint_unconfirmed"
     return SourceHeartbeat(
         schema_version=SOURCE_HEARTBEAT_SCHEMA_VERSION,
         source_key=source.key,
@@ -176,6 +195,9 @@ def build_source_heartbeat(source: SourceSpec, checked_at: str, settings: Settin
         runtime_status=runtime_status,
         registry_status=source.status,
         promoted_adapter=promoted,
+        credential_bound=bool(binding_state),
+        credential_activation_state=str(activation_state) if activation_state else None,
+        credential_activation_ready=activation_ready,
         trust_score=adapter_status.get("trust_score") if promoted else None,
         checked_at=checked_at,
         cadence=source.cadence,
@@ -207,6 +229,15 @@ def _summarise(heartbeats: tuple[SourceHeartbeat, ...]) -> dict[str, Any]:
         "source_count": len(heartbeats),
         "expected_source_count": EXPECTED_SOURCE_COUNT,
         "promoted_adapter_count": sum(1 for heartbeat in heartbeats if heartbeat.promoted_adapter),
+        "credential_bound_source_count": sum(1 for heartbeat in heartbeats if heartbeat.credential_bound),
+        "credential_bound_activation_ready_count": sum(
+            1 for heartbeat in heartbeats if heartbeat.credential_bound and heartbeat.credential_activation_ready
+        ),
+        "provider_endpoint_unconfirmed_count": sum(
+            1
+            for heartbeat in heartbeats
+            if heartbeat.credential_activation_state == "provider_endpoint_unconfirmed"
+        ),
         "deferred_count": sum(1 for heartbeat in heartbeats if heartbeat.runtime_status == "deferred"),
         "missing_credential_source_count": len(missing_credentials),
         "by_runtime_status": dict(sorted(by_status.items())),

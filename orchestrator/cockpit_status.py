@@ -1505,7 +1505,13 @@ def _dashboard_status(raw_status: str) -> str:
         return "blocked"
     if raw_status in {"jsonl_fallback", "local", "local_bridge_required", "foundational_prior"}:
         return "local_only"
-    if raw_status in {"credential_gated", "unavailable_missing_credentials", "not_running", "degraded"}:
+    if raw_status in {
+        "credential_gated",
+        "unavailable_missing_credentials",
+        "unavailable_provider_endpoint_unconfirmed",
+        "not_running",
+        "degraded",
+    }:
         return "degraded"
     if raw_status in {
         "deferred",
@@ -1672,6 +1678,8 @@ def _readiness_label(source: dict[str, Any], runtime_status: str) -> str:
         return "adapter ready"
     if runtime_status == "unavailable_missing_credentials":
         return "credential required"
+    if runtime_status == "unavailable_provider_endpoint_unconfirmed":
+        return "provider endpoint required"
     if runtime_status == "deferred":
         return "deferred"
     if runtime_status == "local_bridge_required":
@@ -1729,6 +1737,8 @@ def _source_influence_profile(source: dict[str, Any], runtime_status: str) -> di
         influence_boundary = "optional_source_intentionally_disabled_not_used_for_research"
     elif action_category in {"needs_adapter", "provider_decision_required"}:
         influence_boundary = "source_not_selected_until_adapter_or_provider_decision"
+    elif runtime_status == "unavailable_provider_endpoint_unconfirmed":
+        influence_boundary = "blocked_until_provider_endpoint_confirmed"
     elif not credential_ready:
         influence_boundary = "blocked_missing_credentials"
     elif not promoted_adapter:
@@ -1844,6 +1854,9 @@ def _build_watching(data_map: dict[str, Any], settings: Settings) -> list[dict[s
                 "last_heartbeat": source.get("checked_at"),
                 "last_payload_time": None,
                 "credential_status": _credential_status(source),
+                "credential_bound": bool(source.get("credential_bound")),
+                "credential_activation_state": source.get("credential_activation_state"),
+                "credential_activation_ready": bool(source.get("credential_activation_ready")),
                 "latency_ms": None,
                 "selection_status": source.get("selection_status", "selected"),
                 "operator_action": source.get("operator_action", "none"),

@@ -144,7 +144,11 @@ def _degradation_status(source: dict[str, Any], coverage_status: str) -> str:
     status = str(source.get("status") or "")
     if degraded_reason:
         return f"degraded:{degraded_reason}"
-    if runtime_status in {"unavailable_missing_credentials", "deferred"}:
+    if runtime_status in {
+        "unavailable_missing_credentials",
+        "unavailable_provider_endpoint_unconfirmed",
+        "deferred",
+    }:
         return f"degraded:{runtime_status}"
     if status in {"degraded", "offline"}:
         return f"degraded:{status}"

@@ -9,6 +9,7 @@ fails closed when credentials or provider details are missing.
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ from uuid import uuid4
 
 from orchestrator.adapters import RawPayloadArchive, SourceEnvelope, UnifiedEvent, UNIFIED_EVENT_SCHEMA_VERSION
 from orchestrator.config import Settings
+from orchestrator.credential_bound_adapters import credential_bound_adapter_state, credential_bound_adapter_keys
 from orchestrator.event_log import EventLog
 from orchestrator.secrets import secret_status, secret_value
 from world_monitor.source_registry import get_source
@@ -303,6 +305,7 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
 }
 
 PHASE1_LIVE_ADAPTER_KEYS: tuple[str, ...] = tuple(PHASE1_LIVE_ADAPTERS)
+CREDENTIAL_BOUND_PHASE1_ADAPTER_KEYS: tuple[str, ...] = credential_bound_adapter_keys()
 
 
 def _now() -> str:
@@ -328,6 +331,12 @@ def _secret_groups_status(config: Phase1AdapterConfig, settings: Settings) -> di
         "required_group_count": len(groups),
         "missing_secret_groups": missing_groups,
     }
+
+
+def _credential_binding_state(config: Phase1AdapterConfig, settings: Settings) -> dict[str, Any] | None:
+    if config.key not in CREDENTIAL_BOUND_PHASE1_ADAPTER_KEYS:
+        return None
+    return credential_bound_adapter_state(config.key, settings)
 
 
 def _safe_endpoint(endpoint: str) -> str:
@@ -443,7 +452,8 @@ class Phase1ReadOnlyAdapter:
         }
 
     def normalize_payload(self, payload: dict[str, Any]) -> tuple[UnifiedEvent, ...]:
-        records = _records_from_payload(payload.get("records") if payload.get("sample") else payload)
+        records_payload = payload.get("records") if isinstance(payload.get("records"), list) else payload
+        records = _records_from_payload(records_payload)
         events: list[UnifiedEvent] = []
         for record in records[:25]:
             summary = _event_summary(self.config, record)
@@ -539,6 +549,80 @@ class Phase1ReadOnlyAdapter:
                 headers["X-Qadam-Auth-Mode"] = "telegram_bot_token_configured"
         return headers
 
+    def _reddit_user_agent(self) -> str:
+        return secret_value("REDDIT_USER_AGENT", self.settings) or "Qadam/0.1 read-only reddit adapter"
+
+    async def _reddit_headers(self, client: Any) -> tuple[dict[str, str] | None, dict[str, Any] | None]:
+        client_id = secret_value("REDDIT_CLIENT_ID", self.settings)
+        client_secret = secret_value("REDDIT_CLIENT_SECRET", self.settings)
+        if not client_id or not client_secret:
+            return None, {"error_type": "missing_credentials", "error": "Reddit client credentials are not configured."}
+
+        auth_header = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
+        try:
+            response = await client.post(
+                "https://www.reddit.com/api/v1/access_token",
+                headers={
+                    "Authorization": f"Basic {auth_header}",
+                    "User-Agent": self._reddit_user_agent(),
+                },
+                data={"grant_type": "client_credentials"},
+            )
+            response.raise_for_status()
+            token_payload = response.json()
+        except Exception as exc:  # noqa: BLE001 - fail closed with sanitized provider status
+            return None, {"error_type": f"reddit_oauth_error:{exc.__class__.__name__}", "error": repr(exc)}
+
+        access_token = token_payload.get("access_token") if isinstance(token_payload, dict) else None
+        if not isinstance(access_token, str) or not access_token.strip():
+            return None, {"error_type": "reddit_oauth_error:missing_access_token", "error": "Provider did not return an access token."}
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "User-Agent": self._reddit_user_agent(),
+        }, None
+
+    def _kalshi_headers(self, *, method: str, url: str) -> tuple[dict[str, str] | None, dict[str, Any] | None]:
+        key_id = secret_value("KALSHI_API_KEY", self.settings)
+        private_key_pem = secret_value("KALSHI_API_SECRET", self.settings)
+        if not key_id or not private_key_pem:
+            return None, {"error_type": "missing_credentials", "error": "Kalshi key id or RSA private key is not configured."}
+
+        try:
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes, serialization
+            from cryptography.hazmat.primitives.asymmetric import padding
+        except ImportError:
+            return None, {"error_type": "missing_dependency:cryptography", "error": "cryptography is required for Kalshi RSA signing."}
+
+        normalized_key = private_key_pem.replace("\\n", "\n").encode("utf-8")
+        parsed = urlparse(url)
+        path_without_query = parsed.path or "/"
+        timestamp_ms = str(int(datetime.now(timezone.utc).timestamp() * 1000))
+        message = f"{timestamp_ms}{method}{path_without_query}".encode("utf-8")
+        try:
+            private_key = serialization.load_pem_private_key(
+                normalized_key,
+                password=None,
+                backend=default_backend(),
+            )
+            signature = private_key.sign(
+                message,
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.DIGEST_LENGTH,
+                ),
+                hashes.SHA256(),
+            )
+        except Exception as exc:  # noqa: BLE001 - sanitized local signing failure
+            return None, {"error_type": f"kalshi_signing_error:{exc.__class__.__name__}", "error": repr(exc)}
+
+        return {
+            "KALSHI-ACCESS-KEY": key_id,
+            "KALSHI-ACCESS-TIMESTAMP": timestamp_ms,
+            "KALSHI-ACCESS-SIGNATURE": base64.b64encode(signature).decode("ascii"),
+            "User-Agent": "Qadam/0.1 read-only kalshi adapter",
+        }, None
+
     def _request_params(self) -> dict[str, Any]:
         key = self.config.key
         if key == "ucdp":
@@ -601,10 +685,41 @@ class Phase1ReadOnlyAdapter:
                 return f"https://api.telegram.org/bot{token}/getUpdates"
         if self.config.key == "bookmap":
             return secret_value("BOOKMAP_BRIDGE_URL", self.settings) or self.config.primary_endpoint
+        if self.config.key == "kalshi":
+            base_url = (secret_value("KALSHI_API_BASE_URL", self.settings) or "").rstrip("/")
+            if base_url:
+                return f"{base_url}/trade-api/v2/markets"
+        if self.config.key == "stock_act":
+            return secret_value("CAPITOL_TRADES_API_URL", self.settings) or self.config.primary_endpoint
         return self.config.primary_endpoint
 
     async def fetch_live(self, *, timeout_seconds: float = 12.0) -> SourceEnvelope:
         credential_state = _secret_groups_status(self.config, self.settings)
+        binding_state = _credential_binding_state(self.config, self.settings)
+        if binding_state and not binding_state["can_fetch_live_readonly"] and not self.config.public_live:
+            return self.envelope_from_payload(
+                {
+                    "records": [],
+                    "_qadam_request": {
+                        "url": _safe_endpoint(self._live_url()),
+                        "method": self.config.method,
+                    },
+                    "_qadam_credential_status": binding_state["activation_state"],
+                    "_qadam_credential_binding": {
+                        "source_key": binding_state["source_key"],
+                        "provider_name": binding_state["provider_name"],
+                        "activation_state": binding_state["activation_state"],
+                        "credential_status": binding_state["credential_status"],
+                        "missing_required_env_vars": list(binding_state["missing_required_env_vars"]),
+                        "endpoint_status": binding_state["endpoint_status"],
+                        "evidence_authority": binding_state["evidence_authority"],
+                        "order_authority": binding_state["order_authority"],
+                    },
+                },
+                degraded=True,
+                degraded_reason=binding_state["activation_state"],
+            )
+
         if not credential_state["credential_configured"] and not self.config.public_live:
             return self.envelope_from_payload(
                 {
@@ -673,11 +788,44 @@ class Phase1ReadOnlyAdapter:
             )
 
         url = self._live_url()
-        headers = self._request_headers()
         params = self._request_params()
         body = self._request_body()
         try:
             async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=True) as client:
+                if self.config.key == "reddit":
+                    headers, auth_error = await self._reddit_headers(client)
+                    if auth_error:
+                        return self.envelope_from_payload(
+                            {
+                                "records": [],
+                                "_qadam_request": {
+                                    "url": _safe_endpoint(url),
+                                    "method": self.config.method,
+                                },
+                                "_qadam_error_type": auth_error["error_type"],
+                                "_qadam_error": auth_error["error"],
+                            },
+                            degraded=True,
+                            degraded_reason=auth_error["error_type"],
+                        )
+                elif self.config.key == "kalshi":
+                    headers, auth_error = self._kalshi_headers(method=self.config.method, url=url)
+                    if auth_error:
+                        return self.envelope_from_payload(
+                            {
+                                "records": [],
+                                "_qadam_request": {
+                                    "url": _safe_endpoint(url),
+                                    "method": self.config.method,
+                                },
+                                "_qadam_error_type": auth_error["error_type"],
+                                "_qadam_error": auth_error["error"],
+                            },
+                            degraded=True,
+                            degraded_reason=auth_error["error_type"],
+                        )
+                else:
+                    headers = self._request_headers()
                 if self.config.method == "POST":
                     response = await client.post(url, headers=headers, json=body or params)
                 else:
@@ -731,6 +879,7 @@ def phase1_live_adapter_status(source_key: str, settings: Settings | None = None
     settings = settings or Settings.from_env()
     config = PHASE1_LIVE_ADAPTERS[source_key]
     credential_state = _secret_groups_status(config, settings)
+    binding_state = _credential_binding_state(config, settings)
     archive_root = Path(settings.raw_payload_dir) / config.key
     return {
         "key": config.key,
@@ -738,6 +887,13 @@ def phase1_live_adapter_status(source_key: str, settings: Settings | None = None
         "mode": "sample_ready_live_optional" if config.public_live else "sample_ready_credential_gated",
         "auth": get_source(source_key).auth,
         "credential_configured": credential_state["credential_configured"],
+        "activation_ready": (
+            binding_state["activation_ready"]
+            if binding_state
+            else credential_state["credential_configured"] or config.public_live
+        ),
+        "credential_bound": bool(binding_state),
+        "credential_binding": binding_state,
         "configured_secret_group_count": credential_state["configured_secret_group_count"],
         "required_group_count": credential_state["required_group_count"],
         "trust_score": config.trust_score,

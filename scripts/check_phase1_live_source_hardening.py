@@ -73,6 +73,9 @@ class LiveSourceValidation:
     tier: int
     adapter_family: str
     credential_state: str
+    credential_bound: bool
+    credential_activation_state: str | None
+    credential_activation_ready: bool
     validation_status: str
     mode: str
     event_count: int
@@ -110,12 +113,25 @@ def _secret_names(source_key: str, settings: Settings) -> tuple[tuple[str, ...],
     return tuple(configured), tuple(missing)
 
 
-def _credential_state(source_key: str, configured: tuple[str, ...], missing: tuple[str, ...]) -> str:
+def _credential_state(
+    source_key: str,
+    configured: tuple[str, ...],
+    missing: tuple[str, ...],
+    adapter_status: dict[str, Any] | None = None,
+) -> str:
     if source_key in PHASE1_LIVE_ADAPTERS:
         config = PHASE1_LIVE_ADAPTERS[source_key]
         if config.public_live and not missing:
             return "public"
-        status = phase1_live_adapter_status(source_key)
+        status = adapter_status or phase1_live_adapter_status(source_key)
+        binding_state = status.get("credential_binding") or {}
+        activation_state = binding_state.get("activation_state")
+        if activation_state == "ready_for_live_readonly":
+            return "configured"
+        if activation_state == "provider_endpoint_unconfirmed":
+            return "provider_endpoint_unconfirmed"
+        if activation_state == "missing_credentials":
+            return "missing"
         if status["credential_configured"]:
             return "configured"
         if config.public_live:
@@ -196,15 +212,31 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
     spec = _spec_by_key()[source_key]
     adapter_family = "dedicated" if source_key in DEDICATED_SOURCE_KEYS else "phase1_promoted"
     configured, missing = _secret_names(source_key, settings)
+    adapter_status = phase1_live_adapter_status(source_key, settings) if source_key in PHASE1_LIVE_ADAPTERS else {}
+    binding_state = adapter_status.get("credential_binding") or {}
+    credential_bound = bool(binding_state)
+    credential_activation_state = binding_state.get("activation_state")
+    credential_activation_ready = bool(binding_state.get("activation_ready"))
     if source_key in PHASE1_LIVE_ADAPTERS:
-        status = phase1_live_adapter_status(source_key, settings)
-        if status.get("credential_configured"):
+        if credential_activation_state in {"ready_for_live_readonly", "provider_endpoint_unconfirmed"}:
             missing = ()
-    credential_state = _credential_state(source_key, configured, missing)
+        elif not credential_activation_state and adapter_status.get("credential_configured"):
+            missing = ()
+    credential_state = _credential_state(source_key, configured, missing, adapter_status)
     runnable = _is_runnable(source_key, credential_state)
     mode = "live_read_only" if live and runnable else "sample_or_status"
 
     if not runnable:
+        validation_status = (
+            "provider_endpoint_unconfirmed"
+            if credential_state == "provider_endpoint_unconfirmed"
+            else "missing_credentials"
+        )
+        degraded_reason = (
+            "provider_endpoint_unconfirmed"
+            if credential_state == "provider_endpoint_unconfirmed"
+            else "missing_credentials"
+        )
         return LiveSourceValidation(
             source_key=source_key,
             source_name=spec.name,
@@ -212,11 +244,14 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
             tier=spec.tier,
             adapter_family=adapter_family,
             credential_state=credential_state,
-            validation_status="missing_credentials",
+            credential_bound=credential_bound,
+            credential_activation_state=str(credential_activation_state) if credential_activation_state else None,
+            credential_activation_ready=credential_activation_ready,
+            validation_status=validation_status,
             mode=mode,
             event_count=0,
             degraded=True,
-            degraded_reason="missing_credentials",
+            degraded_reason=degraded_reason,
             configured_secrets=configured,
             missing_secrets=missing,
             raw_archive_written=False,
@@ -234,6 +269,9 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
             tier=spec.tier,
             adapter_family=adapter_family,
             credential_state=credential_state,
+            credential_bound=credential_bound,
+            credential_activation_state=str(credential_activation_state) if credential_activation_state else None,
+            credential_activation_ready=credential_activation_ready,
             validation_status="degraded",
             mode=mode,
             event_count=0,
@@ -257,6 +295,9 @@ def validate_source(source_key: str, *, settings: Settings, live: bool, checked_
         tier=spec.tier,
         adapter_family=adapter_family,
         credential_state=credential_state,
+        credential_bound=credential_bound,
+        credential_activation_state=str(credential_activation_state) if credential_activation_state else None,
+        credential_activation_ready=credential_activation_ready,
         validation_status=validation_status,
         mode=mode,
         event_count=event_count,
@@ -285,9 +326,12 @@ def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
     validations = tuple(validate_source(key, settings=settings, live=live, checked_at=checked_at) for key in PROMOTED_SOURCE_KEYS)
     by_status: dict[str, int] = {}
     by_credential_state: dict[str, int] = {}
+    by_credential_activation_state: dict[str, int] = {}
     for validation in validations:
         by_status[validation.validation_status] = by_status.get(validation.validation_status, 0) + 1
         by_credential_state[validation.credential_state] = by_credential_state.get(validation.credential_state, 0) + 1
+        activation_key = validation.credential_activation_state or "not_credential_bound"
+        by_credential_activation_state[activation_key] = by_credential_activation_state.get(activation_key, 0) + 1
 
     report = {
         "schema_version": 1,
@@ -299,6 +343,21 @@ def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
         ),
         "degraded_count": sum(1 for validation in validations if validation.validation_status in {"degraded", "sample_degraded"}),
         "missing_credentials_count": sum(1 for validation in validations if validation.validation_status == "missing_credentials"),
+        "provider_endpoint_unconfirmed_count": sum(
+            1 for validation in validations if validation.validation_status == "provider_endpoint_unconfirmed"
+        ),
+        "credential_bound_source_count": sum(1 for validation in validations if validation.credential_bound),
+        "credential_bound_activation_ready_count": sum(
+            1 for validation in validations if validation.credential_bound and validation.credential_activation_ready
+        ),
+        "credential_bound_missing_count": sum(
+            1 for validation in validations if validation.credential_activation_state == "missing_credentials"
+        ),
+        "credential_bound_provider_endpoint_unconfirmed_count": sum(
+            1
+            for validation in validations
+            if validation.credential_activation_state == "provider_endpoint_unconfirmed"
+        ),
         "configured_or_public_count": sum(
             1
             for validation in validations
@@ -306,6 +365,7 @@ def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
         ),
         "by_status": dict(sorted(by_status.items())),
         "by_credential_state": dict(sorted(by_credential_state.items())),
+        "by_credential_activation_state": dict(sorted(by_credential_activation_state.items())),
         "validations": [validation.to_dict() for validation in validations],
         "boundary": "Phase 1 live source validation is read-only. It cannot change signal confidence, create trade candidates, or send broker orders.",
     }
@@ -318,6 +378,7 @@ def build_report(settings: Settings, *, live: bool) -> dict[str, Any]:
             "live_or_sample_count": report["live_or_sample_count"],
             "degraded_count": report["degraded_count"],
             "missing_credentials_count": report["missing_credentials_count"],
+            "provider_endpoint_unconfirmed_count": report["provider_endpoint_unconfirmed_count"],
             "execution_allowed": False,
         },
     )
@@ -346,7 +407,19 @@ def main() -> int:
     print(f"phase1_live_source_hardening_configured_or_public_count={report['configured_or_public_count']}")
     print(f"phase1_live_source_hardening_degraded_count={report['degraded_count']}")
     print(f"phase1_live_source_hardening_missing_credentials_count={report['missing_credentials_count']}")
+    print(f"phase1_live_source_hardening_provider_endpoint_unconfirmed_count={report['provider_endpoint_unconfirmed_count']}")
+    print(f"phase1_live_source_hardening_credential_bound_source_count={report['credential_bound_source_count']}")
+    print(f"phase1_live_source_hardening_credential_bound_activation_ready_count={report['credential_bound_activation_ready_count']}")
+    print(f"phase1_live_source_hardening_credential_bound_missing_count={report['credential_bound_missing_count']}")
+    print(
+        "phase1_live_source_hardening_credential_bound_provider_endpoint_unconfirmed_count="
+        + str(report["credential_bound_provider_endpoint_unconfirmed_count"])
+    )
     print("phase1_live_source_hardening_by_status=" + json.dumps(report["by_status"], sort_keys=True))
+    print(
+        "phase1_live_source_hardening_by_credential_activation_state="
+        + json.dumps(report["by_credential_activation_state"], sort_keys=True)
+    )
     print("phase1_live_source_hardening_report_path=" + str(output_path))
     print("phase1_live_source_hardening_boundary=" + report["boundary"])
 

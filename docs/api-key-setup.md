@@ -25,6 +25,7 @@ ALPACA_API_SECRET=
 ALPACA_PAPER=true
 KALSHI_API_KEY=
 KALSHI_API_SECRET=
+KALSHI_API_BASE_URL=https://trading-api.kalshi.com
 AISSTREAM_API_KEY=
 AVIATIONSTACK_API_KEY=
 COMTRADE_API_KEY=
@@ -37,7 +38,9 @@ COMTRADE_PUBLIC_V1_SECONDARY_KEY=
 X_BEARER_TOKEN=
 REDDIT_CLIENT_ID=
 REDDIT_CLIENT_SECRET=
+REDDIT_USER_AGENT=Qadam/0.1 by u/<reddit_username>
 CAPITOL_TRADES_API_KEY=
+CAPITOL_TRADES_API_URL=
 ACLED_EMAIL=
 ACLED_PASSWORD=
 ACLED_ACCESS_TOKEN=
@@ -64,15 +67,33 @@ The larger placeholder ledger is in `docs/api-specs.md`. Do not copy unused keys
 
 If a key is ever pasted into a chat, committed, or shown publicly, rotate it at the provider before using it for production or live trading.
 
+## Credential-Bound Adapter Pass
+
+As of 2026-06-14, Reddit, Kalshi, and Capitol Trades/STOCK Act have explicit credential-bound read-only adapter contracts. They are not counted as connected until their required credentials are present locally and, for Capitol Trades, a provider-confirmed API endpoint is supplied.
+
+| Source | Adapter state without credentials | Required local values | Activation behavior |
+| --- | --- | --- | --- |
+| Reddit | `missing_credentials` | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`; optional `REDDIT_USER_AGENT` | Exchanges client credentials for a read-only OAuth bearer token and reads Reddit context only. |
+| Kalshi | `missing_credentials` | `KALSHI_API_KEY`, `KALSHI_API_SECRET`; optional `KALSHI_API_BASE_URL` | Builds RSA-signed read-only request headers for Kalshi market metadata. |
+| Capitol Trades / STOCK Act | `missing_credentials`, or `provider_endpoint_unconfirmed` if only the key is present | `CAPITOL_TRADES_API_KEY` and provider-confirmed `CAPITOL_TRADES_API_URL` | Reads congressional trading disclosures only after the provider endpoint contract is known. |
+
+Validate the credential-bound contract without using real secrets:
+
+```bash
+.venv/bin/python scripts/check_credential_bound_adapters.py
+```
+
+The check must show these adapters as read-only. They cannot approve signals, create trade candidates, submit Alpaca paper orders, call broker write endpoints, or enable live capital.
+
 ## First Keys To Get
 
 | Priority | Provider | Qadam variable | Why it matters | How to get it |
 | --- | --- | --- | --- | --- |
 | 1 | NASA FIRMS | `NASA_FIRMS_API_KEY` | Enables Phase 1D physical anomaly monitoring for ports, oil corridors, and chokepoints. | Request a free FIRMS MAP_KEY from the official FIRMS API page. |
 | 2 | Alpaca Paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Required for the £100,000 paper-account proof rail once the execution adapter is built. | Create/sign in to Alpaca, open Paper Trading, generate paper API keys, and use the paper endpoint. |
-| 3 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Required for prediction-market monitoring and later guarded execution. | Create an API key from Kalshi account settings when the account and region are eligible. Store the private key immediately because it cannot be retrieved later. |
+| 3 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET`, optional `KALSHI_API_BASE_URL` | Required for prediction-market monitoring and later guarded execution. | Create an API key from Kalshi account settings when the account and region are eligible. Store the private key immediately because it cannot be retrieved later. |
 | 4 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | High-value conflict and geopolitical event source. | Create a myACLED account, then request API auth and refresh tokens for `https://acleddata.com/api/acled/read`. Prefer token refresh automation over repeated password use. |
-| 5 | Capitol Trades / STOCK Act provider | `CAPITOL_TRADES_API_KEY` | Congressional trading context for the STOCK Act source. | Use the provider/API path selected for Qadam and store the key locally. |
+| 5 | Capitol Trades / STOCK Act provider | `CAPITOL_TRADES_API_KEY`, `CAPITOL_TRADES_API_URL` | Congressional trading context for the STOCK Act source. | Use the provider/API path selected for Qadam and store the key plus the provider-confirmed endpoint locally. |
 | 6 | FRED | `FRED_API_KEY` | Better official macro API access. | Log into a FRED account and request a distinct API key for Qadam. Qadam can still use public CSV fallback without it. |
 
 ## TradingView
@@ -145,7 +166,7 @@ Qadam does not need quantum hardware to complete Phase 1D. Keep these as readine
 
 NASA FIRMS is now the first physical pipeline adapter promoted into Qadam. Without `NASA_FIRMS_API_KEY`, the adapter is healthy in sample mode and marked `unavailable_missing_credentials` for live mode. With the key configured, `scripts/check_nasa_firms_adapter.py --live` can make a read-only FIRMS area CSV request and archive the sanitized result locally.
 
-As of 2026-05-18, NASA FIRMS, Alpaca paper, ACLED, FRED, Q-CTRL, Telegram bot token/username/private target/group target, Gemini/Google model keys, and LM Studio settings are configured in the local ignored secret file. Kalshi remains region-unavailable.
+As of 2026-06-14, the remaining selected credential-bound gaps are Reddit OAuth, Kalshi account credentials, and Capitol Trades/STOCK Act provider access. Their adapter contracts are implemented, but they remain disconnected until the local values above are supplied. Capitol Trades also requires a real API endpoint, not only the public website URL.
 
 Official references:
 
