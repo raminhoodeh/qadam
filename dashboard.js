@@ -1280,6 +1280,7 @@ function buildSourcesModel(status = {}) {
     const observedSignals = asArray(status.trade_layer?.watching);
     const candidates = asArray(status.trade_layer?.candidates);
     const evidencePackets = asArray(cognition.evidence_packets);
+    const evidenceRuntime = cognition.evidence_packet_runtime || {};
     const phase7 = status.phase7_demo_proof || {};
     const sourceSetupLinks = [
         ...observedSignals.map((signal) => ({
@@ -1377,7 +1378,7 @@ function buildSourcesModel(status = {}) {
         label: "Evidence",
         question: "Are Qadam's inputs fresh, trustworthy, and sufficient?",
         tone,
-        summary: `${coreOkCount}/${coreSourceCount} core sources OK; ${missing} canonical sources missing; ${missingCredentialCount} required credentials missing; ${optionalCredentialSources.length} optional credentials not configured; ${evidencePacketCards.length} factual evidence packets visible.`,
+        summary: `${coreOkCount}/${coreSourceCount} core sources OK; ${missing} canonical sources missing; ${missingCredentialCount} required credentials missing; ${optionalCredentialSources.length} optional credentials not configured; ${evidencePacketCards.length} factual evidence packets visible; packet runtime ${dashboardText(evidenceRuntime.status, "not exported")}.`,
         counts: {
             total: watching.length,
             online,
@@ -1396,7 +1397,9 @@ function buildSourcesModel(status = {}) {
             pipelines: pipelineSummary.length,
             supplemental: supplemental.length,
             source_setup_links: sourceSetupLinks.length,
-            evidence_packets: evidencePacketCards.length
+            evidence_packets: evidencePacketCards.length,
+            evidence_runtime_packets: modelNumber(evidenceRuntime.packet_count, evidencePacketCards.length),
+            evidence_runtime_history: modelNumber(evidenceRuntime.history_record_count, 0)
         },
         reliability: [
             { key: "core_ok", label: "Core OK", count: `${coreOkCount}/${coreSourceCount}`, tone: coreOkCount === coreSourceCount ? "online" : "pending", detail: "Required paper-trading source feeds reporting healthy status." },
@@ -1444,6 +1447,23 @@ function buildSourcesModel(status = {}) {
                 order_authority_boundary: source.order_authority_boundary || "no source can authorize orders"
             })),
         supplemental,
+        evidence_packet_runtime: {
+            status: dashboardText(evidenceRuntime.status, "not exported"),
+            replay_status: dashboardText(evidenceRuntime.replay_status, "not exported"),
+            contract_status: dashboardText(evidenceRuntime.contract_status, "not exported"),
+            storage_backend: dashboardText(evidenceRuntime.storage_backend, "local_jsonl"),
+            packet_count: modelNumber(evidenceRuntime.packet_count, evidencePacketCards.length),
+            item_count: modelNumber(evidenceRuntime.item_count, 0),
+            history_record_count: modelNumber(evidenceRuntime.history_record_count, 0),
+            event_log_written: Boolean(evidenceRuntime.event_log_written),
+            authority: evidenceRuntime.trade_candidate_creation_allowed || evidenceRuntime.paper_order_allowed || evidenceRuntime.broker_write_allowed
+                ? "authority leak"
+                : "replay only",
+            boundary: dashboardText(
+                evidenceRuntime.boundary,
+                "Durable evidence runtime can replay packets but cannot create source quorum, trades, orders, broker writes, or live capital."
+            )
+        },
         evidence_packets: evidencePacketCards,
         evidence_review_groups: reviewGroups,
         source_setup_links: sourceSetupLinks,
@@ -1743,6 +1763,7 @@ function buildReasoningModel(status = {}) {
     const marketContextState = cognition.market_context || {};
     const marketContextPackets = asArray(cognition.market_context_packets || marketContextState.recent_packets);
     const evidencePackets = asArray(cognition.evidence_packets);
+    const evidenceRuntime = cognition.evidence_packet_runtime || {};
     const shadowPackets = asArray(cognition.shadow_packets);
     const localResearch = asArray(cognition.local_research_assessments);
     const strategyPackets = asArray(cognition.strategy_lead_packets);
@@ -2066,13 +2087,15 @@ function buildReasoningModel(status = {}) {
         label: "Reasoning",
         question: "Why does Qadam care, and what is still missing?",
         tone: executableHypotheses.length ? "blocked" : (hypotheses.length ? "pending" : "neutral"),
-        summary: `${researchGoals.length} research goals, ${marketContextPackets.length} market context packets, ${hypotheses.length} hypotheses, ${evidencePackets.length} evidence packets, ${shadowPackets.length} research packets, ${executableHypotheses.length} executable hypotheses.`,
+        summary: `${researchGoals.length} research goals, ${marketContextPackets.length} market context packets, ${hypotheses.length} hypotheses, ${evidencePackets.length} evidence packets, ${shadowPackets.length} research packets, ${executableHypotheses.length} executable hypotheses. Evidence runtime is ${dashboardText(evidenceRuntime.status, "not exported")}.`,
         counts: {
             research_goals: researchGoals.length,
             market_context_packets: marketContextPackets.length,
             hypotheses: hypotheses.length,
             evidence_packets: evidencePackets.length,
             evidence_items: sumNestedItems(evidencePackets, "items"),
+            evidence_runtime_packets: modelNumber(evidenceRuntime.packet_count, evidencePackets.length),
+            evidence_runtime_history: modelNumber(evidenceRuntime.history_record_count, 0),
             shadow_packets: shadowPackets.length,
             local_research_assessments: localResearch.length,
             strategy_packets: strategyPackets.length,
@@ -2124,6 +2147,23 @@ function buildReasoningModel(status = {}) {
         },
         market_context_packets: marketContextQueue,
         hypothesis_queue: hypothesisQueue,
+        evidence_packet_runtime: {
+            status: dashboardText(evidenceRuntime.status, "not exported"),
+            replay_status: dashboardText(evidenceRuntime.replay_status, "not exported"),
+            contract_status: dashboardText(evidenceRuntime.contract_status, "not exported"),
+            storage_backend: dashboardText(evidenceRuntime.storage_backend, "local_jsonl"),
+            packet_count: modelNumber(evidenceRuntime.packet_count, evidencePackets.length),
+            item_count: modelNumber(evidenceRuntime.item_count, 0),
+            history_record_count: modelNumber(evidenceRuntime.history_record_count, 0),
+            event_log_written: Boolean(evidenceRuntime.event_log_written),
+            authority: evidenceRuntime.trade_candidate_creation_allowed || evidenceRuntime.paper_order_allowed || evidenceRuntime.broker_write_allowed
+                ? "authority leak"
+                : "replay only",
+            boundary: dashboardText(
+                evidenceRuntime.boundary,
+                "Durable evidence runtime can replay packets but cannot create source quorum, trades, orders, broker writes, or live capital."
+            )
+        },
         evidence_packets: evidenceIndex,
         missing_corroboration: missingCorroboration,
         blocker_records: blockerRecords,
@@ -4506,11 +4546,14 @@ function renderSourcesWorkspace(model) {
                     ${renderMetric("Research usable", model.counts.research_context_usable)}
                     ${renderMetric("Signal review eligible", model.counts.signal_review_eligible)}
                     ${renderMetric("Order authority", model.counts.order_authority)}
+                    ${renderMetric("Packet runtime", model.evidence_packet_runtime?.status || "not exported")}
+                    ${renderMetric("Runtime history", model.evidence_packet_runtime?.history_record_count || 0)}
                     ${renderMetric("Yahoo Finance", asArray(model.supplemental).find((source) => source.key === "yahoo_finance")?.status || "not exported")}
                     ${renderMetric("Preference MCP", asArray(model.supplemental).find((source) => source.key === "preference_mcp")?.status || "not exported")}
                 </div>
                 <div class="tag-row">
                     ${renderInlineBadge(`${model.counts.evidence_packets} factual packets`, model.counts.evidence_packets ? "online" : "pending")}
+                    ${renderInlineBadge(`runtime ${model.evidence_packet_runtime?.replay_status || "not exported"}`, model.evidence_packet_runtime?.status || "pending")}
                     ${renderInlineBadge(`${model.counts.source_setup_links} setup links`, model.counts.source_setup_links ? "pending" : "online")}
                     ${renderInlineBadge(`${model.counts.supplemental} supplemental inputs`, "pending")}
                     ${renderInlineBadge("sources cannot create orders", "online")}
@@ -8647,6 +8690,8 @@ function renderReasoningWorkspace(model) {
                     ${renderMetric("Market context", model.counts?.market_context_packets || 0)}
                     ${renderMetric("Evidence packets", model.counts?.evidence_packets || 0)}
                     ${renderMetric("Evidence items", model.counts?.evidence_items || 0)}
+                    ${renderMetric("Evidence runtime", model.evidence_packet_runtime?.status || "not exported")}
+                    ${renderMetric("Runtime history", model.evidence_packet_runtime?.history_record_count || 0)}
                     ${renderMetric("Research packets", model.counts?.shadow_packets || 0)}
                     ${renderMetric("Strategy packets", model.counts?.strategy_packets || 0)}
                     ${renderMetric("Executable", model.counts?.executable_hypotheses || 0)}
@@ -8654,6 +8699,7 @@ function renderReasoningWorkspace(model) {
                 <div class="tag-row">
                     ${renderInlineBadge("Prior is not evidence", "blocked")}
                     ${renderInlineBadge("Hypothesis is not trade idea", "blocked")}
+                    ${renderInlineBadge(`runtime ${model.evidence_packet_runtime?.replay_status || "not exported"}`, model.evidence_packet_runtime?.status || "pending")}
                     ${renderInlineBadge("Model output cannot create orders", "online")}
                     ${renderInlineBadge("Review chain is challenge-only", "pending")}
                 </div>
