@@ -28,6 +28,10 @@ from orchestrator.evidence_packet_normalization import (
     evidence_packet_normalization_summary,
     normalize_signal_evidence_packet,
 )
+from orchestrator.evidence_packet_runtime import (
+    evidence_packet_runtime_public_status,
+    write_evidence_packet_runtime,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -2862,6 +2866,48 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
 
     evidence_packets = [_safe_evidence_packet(signal) for signal in signals]
     evidence_normalization = evidence_packet_normalization_summary(evidence_packets)
+    try:
+        evidence_runtime = evidence_packet_runtime_public_status(
+            write_evidence_packet_runtime(evidence_packets, settings=settings)
+        )
+    except Exception as exc:  # noqa: BLE001 - cockpit must degrade safely.
+        evidence_runtime = {
+            "schema_version": 1,
+            "runtime_version": "epr_2026_06_14",
+            "normalization_version": evidence_normalization.get("normalization_version"),
+            "status": "degraded",
+            "replay_status": "local_jsonl_replay_failed",
+            "contract_status": "durable_evidence_packet_runtime_failed",
+            "storage_backend": "local_jsonl",
+            "packet_count": len(evidence_packets),
+            "item_count": sum(len(packet.get("items", [])) for packet in evidence_packets),
+            "source_count": len({source for packet in evidence_packets for source in packet.get("sources", [])}),
+            "validation_error_count": 1,
+            "authority_leak_count": 0,
+            "raw_ref_leak_count": 0,
+            "snapshot_written": False,
+            "history_appended": False,
+            "history_record_count": 0,
+            "event_log_written": False,
+            "event_log_event_count": 0,
+            "write_authority": False,
+            "signal_authority": False,
+            "risk_handoff_allowed": False,
+            "trade_candidate_creation_allowed": False,
+            "execution_allowed": False,
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+            "quantum_job_authority": False,
+            "performance_credit_allowed": False,
+            "live_capital_enabled": False,
+            "public_safe": True,
+            "boundary": (
+                "Durable evidence packet runtime degraded closed. It cannot create source quorum, "
+                "trade ideas, risk approval, orders, broker writes, quantum jobs, performance credit, "
+                "or live capital."
+            ),
+            "error_type": exc.__class__.__name__,
+        }
     latest_review_by_signal = {
         str(review.get("source_signal_id")): review
         for review in signal_reviews
@@ -3101,6 +3147,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "hypotheses": hypotheses,
         "evidence_packets": evidence_packets,
         "evidence_packet_normalization": evidence_normalization,
+        "evidence_packet_runtime": evidence_runtime,
         "model_activity": model_activity,
         "analysis_timeline": [
             "source observation",

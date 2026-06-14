@@ -150,6 +150,13 @@ or execution hints in dashboard packets. The normalized packet must keep source
 quorum, trade-candidate creation, risk handoff, paper orders, broker writes,
 quantum jobs, performance credit, and live capital set to `false`.
 
+After normalization, Qadam persists the public-safe packet surface through
+`orchestrator/evidence_packet_runtime.py`. The runtime writes a latest snapshot,
+append-only JSONL history, and local event-log audit trail under
+`data/runtime/`. This is replay-only storage: it lets Qadam prove what evidence
+was visible to the cockpit, but it cannot create a signal, source quorum, trade
+idea, order, broker write, quantum job, proof credit, or live-capital state.
+
 ## Bookmap Local Bridge
 
 Bookmap is not a hosted API-key source for Qadam. It is a local-only, read-only order-flow bridge that can provide supplemental microstructure context when Bookmap is running on the Mac.

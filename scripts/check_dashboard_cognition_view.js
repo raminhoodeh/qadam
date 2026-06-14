@@ -87,6 +87,39 @@ const REQUIRED_EVIDENCE_PACKET_FIELDS = [
     "trail_id"
 ];
 
+const REQUIRED_EVIDENCE_PACKET_RUNTIME_FIELDS = [
+    "authority_leak_count",
+    "boundary",
+    "broker_write_allowed",
+    "contract_status",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed",
+    "history_appended",
+    "history_record_count",
+    "item_count",
+    "live_capital_enabled",
+    "normalization_version",
+    "packet_count",
+    "paper_order_allowed",
+    "performance_credit_allowed",
+    "public_safe",
+    "quantum_job_authority",
+    "raw_ref_leak_count",
+    "replay_status",
+    "risk_handoff_allowed",
+    "runtime_version",
+    "schema_version",
+    "signal_authority",
+    "snapshot_written",
+    "source_count",
+    "status",
+    "storage_backend",
+    "trade_candidate_creation_allowed",
+    "validation_error_count",
+    "write_authority"
+];
+
 const REQUIRED_PAPER_CONTEXT_FIELDS = [
     "account_scope",
     "boundary",
@@ -173,6 +206,7 @@ async function main() {
         : [];
     const hypotheses = Array.isArray(cognition.hypotheses) ? cognition.hypotheses : [];
     const evidencePackets = Array.isArray(cognition.evidence_packets) ? cognition.evidence_packets : [];
+    const evidencePacketRuntime = cognition.evidence_packet_runtime || {};
     const modelActivity = Array.isArray(cognition.model_activity) ? cognition.model_activity : [];
     const timeline = Array.isArray(cognition.analysis_timeline) ? cognition.analysis_timeline : [];
     const blockedReasons = Array.isArray(cognition.blocked_reasons) ? cognition.blocked_reasons : [];
@@ -329,6 +363,38 @@ async function main() {
             assert(item.source && item.summary && item.event_type, `${packet.trail_id} has an incomplete evidence item`);
         }
     }
+
+    const runtimeMissing = missingFields(evidencePacketRuntime, REQUIRED_EVIDENCE_PACKET_RUNTIME_FIELDS);
+    assert(!runtimeMissing.length, `evidence packet runtime missing fields: ${runtimeMissing.join(", ")}`);
+    assert(evidencePacketRuntime.status === "ok", "evidence packet runtime is not ok");
+    assert(evidencePacketRuntime.packet_count === evidencePackets.length, "evidence packet runtime packet count mismatch");
+    assert(
+        evidencePacketRuntime.item_count === evidencePackets.reduce((sum, packet) => sum + packet.items.length, 0),
+        "evidence packet runtime item count mismatch"
+    );
+    assert(evidencePacketRuntime.authority_leak_count === 0, "evidence packet runtime authority leak");
+    assert(evidencePacketRuntime.raw_ref_leak_count === 0, "evidence packet runtime raw ref leak");
+    assert(evidencePacketRuntime.snapshot_written === true, "evidence packet runtime snapshot was not written");
+    assert(evidencePacketRuntime.history_appended === true, "evidence packet runtime history was not appended");
+    assert(evidencePacketRuntime.event_log_written === true, "evidence packet runtime event log was not written");
+    [
+        "write_authority",
+        "signal_authority",
+        "risk_handoff_allowed",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "quantum_job_authority",
+        "performance_credit_allowed",
+        "live_capital_enabled"
+    ].forEach((field) => {
+        assert(evidencePacketRuntime[field] === false, `evidence packet runtime authority enabled: ${field}`);
+    });
+    assert(
+        /cannot create source quorum/i.test(evidencePacketRuntime.boundary || ""),
+        "evidence packet runtime boundary is weak"
+    );
 
     for (const hypothesis of hypotheses) {
         const missing = missingFields(hypothesis, REQUIRED_HYPOTHESIS_FIELDS);

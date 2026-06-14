@@ -235,6 +235,39 @@ EVIDENCE_ITEM_REQUIRED_FIELDS = {
     "trust_score",
 }
 
+EVIDENCE_PACKET_RUNTIME_REQUIRED_FIELDS = {
+    "authority_leak_count",
+    "boundary",
+    "broker_write_allowed",
+    "contract_status",
+    "event_log_event_count",
+    "event_log_written",
+    "execution_allowed",
+    "history_appended",
+    "history_record_count",
+    "item_count",
+    "live_capital_enabled",
+    "normalization_version",
+    "packet_count",
+    "paper_order_allowed",
+    "performance_credit_allowed",
+    "public_safe",
+    "quantum_job_authority",
+    "raw_ref_leak_count",
+    "replay_status",
+    "risk_handoff_allowed",
+    "runtime_version",
+    "schema_version",
+    "signal_authority",
+    "snapshot_written",
+    "source_count",
+    "status",
+    "storage_backend",
+    "trade_candidate_creation_allowed",
+    "validation_error_count",
+    "write_authority",
+}
+
 SIGNAL_INTEGRITY_REQUIRED_FIELDS = {
     "boundary",
     "by_status",
@@ -3443,6 +3476,18 @@ def main() -> int:
     print(
         "cockpit_status_evidence_packet_normalized_item_count="
         f"{payload['cognition'].get('evidence_packet_normalization', {}).get('normalized_item_count', 0)}"
+    )
+    print(
+        "cockpit_status_evidence_packet_runtime_status="
+        f"{payload['cognition'].get('evidence_packet_runtime', {}).get('status')}"
+    )
+    print(
+        "cockpit_status_evidence_packet_runtime_replay_status="
+        f"{payload['cognition'].get('evidence_packet_runtime', {}).get('replay_status')}"
+    )
+    print(
+        "cockpit_status_evidence_packet_runtime_history_record_count="
+        f"{payload['cognition'].get('evidence_packet_runtime', {}).get('history_record_count', 0)}"
     )
     print(f"cockpit_status_paper_context_status={payload['cognition'].get('paper_account_context', {}).get('status')}")
     print(
@@ -12408,6 +12453,54 @@ def main() -> int:
         return 1
     if normalization.get("raw_ref_leak_count") != 0:
         print("cockpit_status_evidence_packet_normalization_raw_ref_leak=true")
+        return 1
+
+    runtime = cognition.get("evidence_packet_runtime", {})
+    runtime_missing = sorted(EVIDENCE_PACKET_RUNTIME_REQUIRED_FIELDS - set(runtime))
+    if runtime_missing:
+        print("cockpit_status_evidence_packet_runtime_fields_missing=" + ",".join(runtime_missing))
+        return 1
+    if runtime.get("status") != "ok":
+        print(f"cockpit_status_evidence_packet_runtime_status={runtime.get('status')}")
+        return 1
+    if runtime.get("packet_count") != len(cognition.get("evidence_packets", [])):
+        print("cockpit_status_evidence_packet_runtime_packet_count_mismatch=true")
+        return 1
+    if runtime.get("item_count") != normalization.get("normalized_item_count"):
+        print("cockpit_status_evidence_packet_runtime_item_count_mismatch=true")
+        return 1
+    if runtime.get("normalization_version") != normalization.get("normalization_version"):
+        print("cockpit_status_evidence_packet_runtime_normalization_mismatch=true")
+        return 1
+    for field in (
+        "write_authority",
+        "signal_authority",
+        "risk_handoff_allowed",
+        "trade_candidate_creation_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "quantum_job_authority",
+        "performance_credit_allowed",
+        "live_capital_enabled",
+    ):
+        if runtime.get(field) is not False:
+            print(f"cockpit_status_evidence_packet_runtime_authority_enabled={field}")
+            return 1
+    if runtime.get("public_safe") is not True:
+        print("cockpit_status_evidence_packet_runtime_not_public_safe=true")
+        return 1
+    if runtime.get("snapshot_written") is not True or runtime.get("history_appended") is not True:
+        print("cockpit_status_evidence_packet_runtime_not_durable=true")
+        return 1
+    if runtime.get("event_log_written") is not True or int(runtime.get("event_log_event_count", 0) or 0) < 1:
+        print("cockpit_status_evidence_packet_runtime_event_log_missing=true")
+        return 1
+    if runtime.get("authority_leak_count") != 0 or runtime.get("raw_ref_leak_count") != 0:
+        print("cockpit_status_evidence_packet_runtime_leak=true")
+        return 1
+    if "cannot create source quorum" not in runtime.get("boundary", ""):
+        print("cockpit_status_evidence_packet_runtime_boundary_weak=true")
         return 1
 
     for hypothesis in cognition.get("hypotheses", []):

@@ -21,6 +21,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paperops_paper_exit_path.py
 "$PYTHON_BIN" scripts/check_paper_operational_cycle.py
 "$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
+"$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 
 say "Checking dashboard acceptance gate"

@@ -136,6 +136,18 @@ Every normalized packet must expose:
 
 The normalizer strips `raw_ref` from public evidence items and rejects authority leakage in `scripts/check_evidence_packet_normalization.py` and `scripts/check_cockpit_status.py`.
 
+## Durable Evidence Packet Runtime
+
+As of 2026-06-14, normalized evidence packets are also persisted through `orchestrator/evidence_packet_runtime.py`.
+
+The durable runtime writes:
+
+- `data/runtime/evidence_packet_runtime.json` as the latest replayable snapshot;
+- `data/runtime/evidence_packet_runtime_history.jsonl` as append-only packet-runtime history;
+- `data/runtime/evidence_packet_runtime_events.jsonl` as the local event-log audit trail.
+
+This runtime is deliberately replay-only. It can preserve the exact normalized evidence packets that the cockpit saw, but it cannot create source quorum, trade ideas, risk approval, orders, broker writes, quantum jobs, performance credit, or live capital. `scripts/check_evidence_packet_runtime.py` validates the snapshot, history append, event-log write, packet counts, authority flags, and raw-reference stripping. The production dashboard preflight now runs that check before exporting cockpit status.
+
 ## Conflicts To Carry Into Implementation
 
 - The documents say "35 sources", but the integration reference details fewer because some sources are combined. The registry resolves this by splitting Polymarket/Kalshi and SEC/STOCK Act.
