@@ -8057,6 +8057,82 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     margin-top: 4px;
 }
 
+.source-universe-ledger {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.source-universe-ledger > summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.source-universe-ledger > summary strong {
+    color: var(--text);
+    font-size: 14px;
+}
+
+.source-universe-ledger > summary span,
+.source-universe-ledger p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.source-universe-ledger p {
+    margin-top: 8px;
+}
+
+.source-universe-ledger ul {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+}
+
+.edge-source-universe-row {
+    align-items: center;
+    background: var(--surface-panel-quiet);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 4px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
+    padding: 8px;
+}
+
+.edge-source-universe-row span {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 800;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edge-source-universe-row strong {
+    color: var(--cyan);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.edge-source-universe-row em {
+    color: var(--muted-soft);
+    font-size: 11px;
+    font-style: normal;
+    grid-column: 1 / -1;
+}
+
 @media (max-width: 1100px) {
     .overview-portfolio-hero .overview-capacity-summary {
         grid-template-columns: repeat(3, minmax(0, 1fr));

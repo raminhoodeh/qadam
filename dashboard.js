@@ -4236,21 +4236,41 @@ function buildEdgeTrackerModel(status = {}) {
             eligible_for_signal_review: Boolean(source.eligible_for_signal_review),
             usable_for_research_context: Boolean(source.usable_for_research_context)
         })),
+        source_application: dashboardText(sleeve.source_application, "all_qadam_sources_cross_scanned_for_this_sleeve"),
         online_source_count: modelNumber(sleeve.online_source_count, 0),
         source_count: modelNumber(sleeve.source_count, 0),
         research_usable_source_count: modelNumber(sleeve.research_usable_source_count, 0),
         signal_review_eligible_source_count: modelNumber(sleeve.signal_review_eligible_source_count, 0),
         order_authority_source_count: modelNumber(sleeve.order_authority_source_count, 0),
         missing_source_keys: asArray(sleeve.missing_source_keys),
+        primary_lens_source_keys: asArray(sleeve.primary_lens_source_keys),
+        primary_lens_note: dashboardText(sleeve.primary_lens_note, "Primary lenses explain relevance only."),
         llm_role: dashboardText(sleeve.llm_role, "LLM role not exported."),
         quantum_role: dashboardText(sleeve.quantum_role, "Quantum role not exported."),
         paper_route: dashboardText(sleeve.paper_route, "Paper route not exported.")
     }));
+    const sourceUniverse = raw.source_universe || {};
     return {
         id: "edge_tracker_model",
         status: raw.status || "pending",
         purpose: dashboardText(raw.purpose, "Qadam scans sources against watched markets for edge."),
         source_scan: raw.source_scan || {},
+        source_universe: {
+            status: sourceUniverse.status || raw.source_scan?.status || "pending",
+            mode: sourceUniverse.mode || raw.source_scan?.mode || "not exported",
+            source_count: modelNumber(sourceUniverse.source_count, raw.source_scan?.total_source_count || 0),
+            sources: asArray(sourceUniverse.sources).map((source) => ({
+                source_key: source.source_key || "unknown",
+                source_name: dashboardText(source.source_name, source.source_key || "Source"),
+                pipeline: dashboardText(source.pipeline, "unknown"),
+                status: source.status || "pending",
+                readiness: dashboardText(source.readiness, "not exported"),
+                credential_status: dashboardText(source.credential_status, "not exported"),
+                eligible_for_signal_review: Boolean(source.eligible_for_signal_review),
+                usable_for_research_context: Boolean(source.usable_for_research_context)
+            })),
+            boundary: dashboardText(sourceUniverse.boundary, "Source universe is read-only evidence context.")
+        },
         market_price_watch: raw.market_price_watch || {},
         llm_pattern_review: raw.llm_pattern_review || {},
         quantum_pattern_review: raw.quantum_pattern_review || {},
@@ -7079,15 +7099,41 @@ function renderEdgeSourceDot(source = {}) {
     `;
 }
 
+function renderEdgeSourceUniverseLedger(edge = {}) {
+    const sourceUniverse = edge.source_universe || {};
+    const sources = asArray(sourceUniverse.sources);
+    const sourceRows = sources
+        .slice()
+        .sort((a, b) => String(a.source_name || a.source_key).localeCompare(String(b.source_name || b.source_key)))
+        .map((source) => `
+            <li class="edge-source-universe-row ${statusClass(source.status)}">
+                <span>${htmlText(source.source_name, source.source_key || "Source")}</span>
+                <strong>${htmlText(source.status, "pending")}</strong>
+                <em>${htmlText(source.pipeline, "unknown")}</em>
+            </li>
+        `)
+        .join("");
+    return `
+        <details class="source-universe-ledger">
+            <summary>
+                <strong>Shared source universe</strong>
+                <span>${htmlText(sourceUniverse.source_count || sources.length, "0")} sources cross-scanned for every watched market</span>
+            </summary>
+            <p>${htmlText(sourceUniverse.boundary, "Source universe is read-only evidence context.")}</p>
+            <ul>${sourceRows || `<li class="edge-source-universe-row pending"><span>No source universe exported</span><strong>pending</strong><em>not exported</em></li>`}</ul>
+        </details>
+    `;
+}
+
 function renderEdgeSleeveCard(sleeve = {}) {
     const instruments = asArray(sleeve.watched_instruments).slice(0, 7);
-    const sources = asArray(sleeve.source_activity).filter((source) => source.usable_for_research_context || source.eligible_for_signal_review).slice(0, 7);
+    const primaryLenses = asArray(sleeve.primary_lens_source_keys).slice(0, 8);
     return `
         <article class="edge-sleeve-card ${statusClass(sleeve.status)}" data-edge-sleeve="${htmlText(sleeve.key, "sleeve")}">
             <div class="edge-sleeve-head">
                 <div>
                     <span>${htmlText(sleeve.label, "Watched market")}</span>
-                    <strong>${htmlText(sleeve.online_source_count, "0")}/${htmlText(sleeve.source_count, "0")} sources active</strong>
+                    <strong>${htmlText(sleeve.source_count, "0")} sources cross-scanned</strong>
                 </div>
                 ${renderStatusPill(sleeve.status || "pending")}
             </div>
@@ -7095,8 +7141,15 @@ function renderEdgeSleeveCard(sleeve = {}) {
             <div class="edge-instrument-row">
                 ${instruments.map(renderEdgeInstrumentChip).join("")}
             </div>
-            <div class="edge-source-row">
-                ${sources.length ? sources.map(renderEdgeSourceDot).join("") : `<span class="edge-source-dot pending">No research source exported</span>`}
+            <div class="edge-source-row" aria-label="Source scan contract">
+                ${renderInlineBadge(`${htmlText(sleeve.online_source_count, "0")} online`, "online")}
+                ${renderInlineBadge(`${htmlText(sleeve.research_usable_source_count, "0")} research usable`, "online")}
+                ${renderInlineBadge(`${htmlText(sleeve.signal_review_eligible_source_count, "0")} signal eligible`, "pending")}
+                ${renderInlineBadge("all sources", "online")}
+            </div>
+            <p class="mini">${htmlText(sleeve.primary_lens_note, "Primary lenses explain relevance only.")}</p>
+            <div class="edge-source-row edge-lens-row">
+                ${primaryLenses.map((key) => `<span class="edge-source-dot pending">${htmlText(key)}</span>`).join("")}
             </div>
             <div class="edge-sleeve-footer">
                 <span>${htmlText(sleeve.strategy_use, "Strategy use not exported.")}</span>
@@ -7122,6 +7175,7 @@ function renderOverviewEdgeTracker(edge = {}) {
             </div>
             <div class="edge-tracker-summary-grid">
                 ${renderMetric("Sources", `${modelNumber(sourceScan.online_source_count, 0)}/${modelNumber(sourceScan.total_source_count, 0)}`)}
+                ${renderMetric("Scan mode", dashboardText(sourceScan.mode, "not exported"))}
                 ${renderMetric("Signal sources", modelNumber(sourceScan.signal_review_eligible_source_count, 0))}
                 ${renderMetric("Watched prices", modelNumber(priceWatch.instrument_count, edge.watched_instrument_count || 0))}
                 ${renderMetric("LLM review", dashboardText(llm.status, "waiting"))}
@@ -7145,6 +7199,7 @@ function renderOverviewEdgeTracker(edge = {}) {
             <div class="edge-sleeve-grid">
                 ${sleeves.map(renderEdgeSleeveCard).join("") || `<p class="mini">No watched market sleeves exported.</p>`}
             </div>
+            ${renderEdgeSourceUniverseLedger(edge)}
             <p class="mini">${htmlText(edge.boundary, "Read-only research visibility.")}</p>
         </div>
     `;
