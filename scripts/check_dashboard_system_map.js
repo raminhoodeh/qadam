@@ -25,8 +25,7 @@ async function main() {
 	    [
 	        "data-overview-control-plane",
 	        "Control Plane",
-        "Loading operating map and oversight",
-        "Loading roles, handoffs, oversight route, and dashboard boundary."
+        "Loading operating map and oversight"
     ].forEach((needle) => assert(html.includes(needle), `static Control Plane shell missing ${needle}`));
 
 	    [
@@ -50,11 +49,16 @@ async function main() {
         ".flow-lane-track",
         ".flow-connector",
         ".lane-handoff",
-        ".flow-return-loop"
+        ".flow-return-loop",
+        ".overview-operating-flow-head",
+        ".overview-operating-node-grid"
     ].forEach((needle) => assert(css.includes(needle), `system map CSS missing ${needle}`));
 
     assert(!css.includes("grid-template-columns: repeat(11, minmax(176px, 1fr))"), "system map regressed to horizontal strip grid");
     assert(!css.includes("grid-auto-flow: column"), "system map regressed to forced column flow");
+    assert(css.includes(".overview-operating-flow {\n    display: grid;\n    grid-template-columns: 1fr;"), "Qadam operating team must not inherit multi-column system-flow layout");
+    assert(css.includes(".overview-operating-node-grid {\n    align-items: start;\n    grid-template-columns: repeat(2, minmax(0, 1fr));"), "Qadam operating team nodes must render as broad desktop cards");
+    assert(css.includes(".overview-operating-flow .overview-mini-connector"), "Qadam operating team should hide connector spans that squeeze node cards");
 
 	    const rendered = await renderWithStatus(status);
 	    const controlPlaneHtml = renderedHtmlFor(rendered, "[data-overview-control-plane]");

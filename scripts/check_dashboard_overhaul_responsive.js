@@ -33,16 +33,21 @@ function countOccurrences(text, needle) {
 async function main() {
     includesAll(dashboardHtml, [
         "<a class=\"skip-link\" href=\"#dashboard-main\">Skip to dashboard views</a>",
-        "/auth.css?v=20260607-cc11-final-dashboard-structure",
+        "/auth.css?v=20260615-dashboard-portfolio-first",
         "id=\"dashboard-main\"",
         "tabindex=\"-1\"",
-        "aria-label=\"Dashboard views\"",
-        "aria-current=\"page\"",
-        "data-dashboard-view-link",
         "data-overview-control-plane",
         "Control Plane",
         "role=\"tooltip\""
     ], "Responsive/accessibility static shell");
+    [
+        "dashboard-view-switcher",
+        "data-dashboard-view-link",
+        "aria-label=\"Dashboard views\"",
+        "Hide diagnostics"
+    ].forEach((needle) => {
+        assert(!dashboardHtml.includes(needle), `removed dashboard navigation/control returned: ${needle}`);
+    });
 
     assert(
         dashboardHtml.indexOf("skip-link") < dashboardHtml.indexOf("topbar"),
@@ -86,6 +91,8 @@ async function main() {
 
     [
         ".control-plane-grid",
+        ".overview-operating-flow-head",
+        ".overview-operating-node-grid",
         ".overview-mini-map",
         ".overview-readout-list",
         ".overview-system-grid",
@@ -102,6 +109,18 @@ async function main() {
     ].forEach((selector) => {
         assert(css.includes(selector), `responsive selector missing ${selector}`);
     });
+    assert(
+        css.includes(".control-plane-grid {\n    grid-template-columns: 1fr;"),
+        "Control Plane must render as a full-width section"
+    );
+    assert(
+        css.includes(".overview-operating-node-grid {\n    align-items: start;\n    grid-template-columns: repeat(2, minmax(0, 1fr));"),
+        "operating team nodes must use two broad columns on desktop"
+    );
+    assert(
+        css.includes(".overview-operating-node-grid {\n        grid-template-columns: 1fr;"),
+        "operating team nodes must collapse to one column on narrower screens"
+    );
 
     assert(!/font-size:\s*[^;]*(vw|vmin|vmax|clamp\()/i.test(css), "viewport-scaled font size found");
     assert(!/letter-spacing:\s*-/i.test(css), "negative letter-spacing found");
