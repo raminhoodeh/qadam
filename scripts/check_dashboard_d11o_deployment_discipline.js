@@ -86,7 +86,7 @@ includesAll(deployScript, [
     "Codebase upgrade Telegram notification",
     "--live",
     "--source \"production_deploy\"",
-    "--summary \"Latest committed Qadam runtime and dashboard changes are live on qadam.trade.\"",
+    "--summary \"Qadam has been updated and the live dashboard is ready for review.\"",
     "Production deployment:",
     "Aliased domains:"
 ], "D11O deploy script");

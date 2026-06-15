@@ -108,7 +108,7 @@ const deployScript = readText(deployScriptPath);
     "Codebase upgrade Telegram notification",
     "--live",
     "--source \"production_deploy\"",
-    "--summary \"Latest committed Qadam runtime and dashboard changes are live on qadam.trade.\"",
+    "--summary \"Qadam has been updated and the live dashboard is ready for review.\"",
     "No production aliases were changed",
     "Production deployment:"
 ].forEach((needle) => assertIncludes(deployScript, needle, "production deploy script"));
