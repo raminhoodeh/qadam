@@ -7635,3 +7635,265 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
         grid-template-columns: 1fr;
     }
 }
+
+/* Dashboard UX overhaul: portfolio first, fewer controls, clearer drill-down. */
+.overview-portfolio-hero,
+.portfolio-hero-shell,
+.paper-account-state-card {
+    min-width: 0;
+}
+
+.overview-portfolio-hero {
+    border: 1px solid rgba(var(--cyan-rgb), 0.24);
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.055), rgba(255, 255, 255, 0.018)),
+        var(--surface-section);
+    display: grid;
+    gap: 14px;
+    padding: clamp(14px, 2vw, 24px);
+}
+
+.portfolio-hero-shell {
+    display: grid;
+    gap: 14px;
+}
+
+.overview-portfolio-hero .overview-capacity-chart-card {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+.overview-portfolio-hero .overview-capacity-line {
+    aspect-ratio: 16 / 5;
+    min-height: clamp(260px, 42vh, 520px);
+}
+
+.overview-portfolio-hero .overview-capacity-summary {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.portfolio-trade-timeline {
+    border: 1px solid rgba(var(--cyan-rgb), 0.22);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+}
+
+.portfolio-trade-timeline > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    list-style: none;
+    padding: 13px 14px;
+}
+
+.portfolio-trade-timeline > summary::-webkit-details-marker {
+    display: none;
+}
+
+.portfolio-trade-timeline > summary::before {
+    align-items: center;
+    border: 1px solid rgba(var(--cyan-rgb), 0.45);
+    border-radius: 999px;
+    color: var(--cyan);
+    content: "+";
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    height: 28px;
+    justify-content: center;
+    width: 28px;
+}
+
+.portfolio-trade-timeline[open] > summary::before {
+    content: "-";
+}
+
+.portfolio-trade-timeline > summary span,
+.portfolio-trade-timeline > summary em,
+.portfolio-trade-row span,
+.portfolio-trade-row dt {
+    color: var(--muted);
+}
+
+.portfolio-trade-timeline > summary span,
+.portfolio-trade-row dt {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.portfolio-trade-timeline > summary strong {
+    color: var(--text);
+    font-size: 15px;
+}
+
+.portfolio-trade-timeline > summary em {
+    font-style: normal;
+}
+
+.portfolio-trade-timeline-grid {
+    border-top: 1px solid var(--line-quiet);
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 14px;
+}
+
+.portfolio-trade-timeline-grid h4 {
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.2;
+    margin: 0 0 10px;
+}
+
+.portfolio-trade-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    max-height: min(46vh, 520px);
+    overflow: auto;
+    padding: 0 3px 0 0;
+}
+
+.portfolio-trade-row {
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+}
+
+.portfolio-trade-row.online {
+    border-color: rgba(var(--green-rgb), 0.28);
+}
+
+.portfolio-trade-row.pending,
+.portfolio-trade-row.degraded {
+    border-color: rgba(var(--amber-rgb), 0.26);
+}
+
+.portfolio-trade-row strong {
+    color: var(--text);
+}
+
+.portfolio-trade-row dl {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 80px 90px minmax(0, 1fr);
+    margin: 0;
+}
+
+.portfolio-trade-row dd {
+    color: var(--text);
+    line-height: 1.35;
+    margin: 0;
+}
+
+.portfolio-trade-row.empty {
+    color: var(--muted);
+}
+
+.overview-command-grid {
+    grid-template-areas:
+        "brief"
+        "account";
+    grid-template-columns: 1fr;
+}
+
+.overview-command-grid .overview-capacity-line {
+    min-height: 160px;
+}
+
+.paper-trade-state-grid {
+    grid-template-columns: 1fr;
+}
+
+.paper-account-state-card {
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+}
+
+.strategy-universe-ledger[open] {
+    min-height: 0;
+}
+
+.strategy-universe-ledger[open] > summary {
+    border-bottom: 1px solid var(--line-quiet);
+}
+
+.control-plane-grid {
+    grid-template-columns: minmax(50%, 1fr) minmax(300px, 0.55fr);
+}
+
+.control-plane-map {
+    min-width: min(100%, 50vw);
+}
+
+.overview-operating-node-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+
+.overview-operating-node-grid .overview-mini-node {
+    min-height: 150px;
+}
+
+.overview-operating-node-grid .overview-mini-node[open] {
+    grid-column: span 2;
+}
+
+.overview-mini-guide dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.source-universe-ledger {
+    margin-top: 4px;
+}
+
+@media (max-width: 1100px) {
+    .overview-portfolio-hero .overview-capacity-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .control-plane-grid,
+    .portfolio-trade-timeline-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .control-plane-map {
+        min-width: 0;
+    }
+
+    .overview-operating-node-grid .overview-mini-node[open] {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .portfolio-trade-timeline > summary {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .portfolio-trade-timeline > summary em {
+        grid-column: 2;
+    }
+
+    .portfolio-trade-row dl,
+    .overview-portfolio-hero .overview-capacity-summary,
+    .overview-mini-guide dl {
+        grid-template-columns: 1fr;
+    }
+
+    .overview-portfolio-hero .overview-capacity-line {
+        min-height: 260px;
+    }
+}

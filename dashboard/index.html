@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260607-cc11-final-dashboard-structure">
+    <link rel="stylesheet" href="/auth.css?v=20260615-dashboard-portfolio-first">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -39,78 +39,28 @@
                 <div>
                     <p class="eyebrow">Qadam paper trading dashboard</p>
                     <h1>Qadam Mission Control</h1>
-                    <p class="copy">Logged in as <span data-user-email></span>. Start here to see source health, current reasoning, trade candidates, paper-account state, and active safety blocks.</p>
+                    <p class="copy">Logged in as <span data-user-email></span>. Start with portfolio value, trade history, mission state, strategy posture, and the operating flow behind Qadam.</p>
                 </div>
                 <div class="mode-stack" aria-label="Dashboard status">
                     <span>Paper trading mode</span>
-                    <span>Read-only dashboard</span>
-                </div>
-            </section>
-
-            <nav class="cockpit-nav dashboard-view-switcher" aria-label="Dashboard views" data-cockpit-nav data-dashboard-view-switcher>
-                <span class="sr-only" data-cockpit-nav-current data-dashboard-view-current>Overview</span>
-                <div class="cockpit-nav-links">
-                    <a href="#overview" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
-                    <a href="#trades" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
-                    <a href="#evidence" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
-                    <a href="#reasoning" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
-                    <a href="#operations" data-cockpit-nav-link data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
-                    <button class="dashboard-debug-toggle" type="button" data-dashboard-debug-toggle aria-pressed="false" aria-expanded="false" aria-controls="dashboard-debug-tabs">
-                        Diagnostics
-                    </button>
-                    <span id="dashboard-debug-tabs" class="dashboard-debug-links" data-dashboard-advanced-links hidden role="region" aria-label="Diagnostics navigation"></span>
-                </div>
-            </nav>
-
-            <section class="dashboard-safety-strip online" aria-label="Single dashboard safety strip" data-dashboard-safety-strip>
-                <div class="dashboard-safety-strip-main">
-                    <p class="label">Safety status</p>
-                    <h2>Paper trading authorized; live capital off</h2>
-                    <p>Dashboard cannot place orders; model outputs cannot bypass risk checks. This page shows status, evidence, trade ideas, paper-account mirror, and safety blocks.</p>
-                </div>
-                <div class="dashboard-safety-strip-badges">
-                    <span class="inline-badge online" data-safety-label><span class="dot"></span>Paper-only readout · live capital off</span>
-                </div>
-                <div class="info-hover safety-strip-info">
-                    <button class="info-button" type="button" aria-label="About Safety Status">i</button>
-                    <div class="info-card section-explainer" role="tooltip" data-section-explainer="status_safety" data-tooltip-contract="compact">
-                        <strong>Safety Status</strong>
-                        <p>One place for paper mode, capital, and order authority.</p>
-                        <dl class="explainer-grid compact">
-                            <div><dt>Shows</dt><dd>Paper mode, live-capital state, order safety.</dd></div>
-                            <div><dt>Watch</dt><dd>Any change from read-only paper trading.</dd></div>
-                            <div><dt>Scope</dt><dd>Status display, evidence, paper account, safety blocks.</dd></div>
-                        </dl>
-                    </div>
                 </div>
             </section>
 
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
-                <p class="sr-only">Readable summary first; Diagnostics keeps raw evidence.</p>
-                <div class="mission-control-help info-hover">
-                    <button class="info-button" type="button" aria-label="About Mission Control">i</button>
-                    <div class="info-card section-explainer" role="tooltip" data-section-explainer="mission_control" data-tooltip-contract="compact">
-                        <strong>Mission Control</strong>
-                        <p>Readable summary first; Diagnostics keeps raw evidence.</p>
-                        <dl class="explainer-grid compact">
-                            <div><dt>Shows</dt><dd>Status, data, strategy, thoughts, trades, capacity.</dd></div>
-                            <div><dt>Watch</dt><dd>Weak evidence, risk blocks, stale account data.</dd></div>
-                            <div><dt>Scope</dt><dd>Six blocks: sources, strategy, portfolio, trades, reasoning, and flow.</dd></div>
-                        </dl>
+                <p class="sr-only">Portfolio timeline first, then mission state, paper account, strategy, operating flow, and source detail.</p>
+                <section class="overview-portfolio-hero" aria-label="Real portfolio timeline" data-overview-portfolio-hero>
+                    <div class="overview-section-head">
+                        <span>Real portfolio timeline</span>
+                        <strong>Loading portfolio value, trade timeline, and paper-account state.</strong>
                     </div>
-                </div>
+                </section>
+
                 <section class="overview-command-grid" aria-label="Current mission state">
                     <section class="overview-mission-brief" aria-label="Mission Snapshot" data-overview-mission-brief>
                         <div class="overview-section-head">
                             <span>Mission Snapshot</span>
                             <strong>Loading current mission state</strong>
                         </div>
-                        <dl class="overview-decision-records">
-                            <div>
-                                <dt>Decision</dt>
-                                <dd><strong>Default to Mission Snapshot</strong><span>Loading status, sources, paper account, trade lifecycle, and boundary.</span></dd>
-                            </div>
-                        </dl>
                     </section>
 
                     <article class="overview-paper-trade-state-panel" data-overview-paper-trade-state>
@@ -118,12 +68,6 @@
                             <span>Paper Account &amp; Trade State</span>
                             <strong>Loading account and trade lifecycle</strong>
                         </div>
-                        <dl class="overview-decision-records compact">
-                            <div>
-                                <dt>Decision</dt>
-                                <dd><strong>Read paper mirror and lifecycle counts</strong><span>Loading portfolio timeline and lifecycle counts. Detailed rows stay in Trades.</span></dd>
-                            </div>
-                        </dl>
                     </article>
                 </section>
 
@@ -132,12 +76,6 @@
                         <span>Strategy Universe</span>
                         <strong>Loading strategy families</strong>
                     </div>
-                    <dl class="overview-decision-records">
-                        <div>
-                            <dt>Decision</dt>
-                            <dd><strong>Use Strategy Universe for strategy posture</strong><span>Loading active thesis, family counts, filter state, and paper-route boundary.</span></dd>
-                        </div>
-                    </dl>
                 </section>
 
                 <section class="overview-system-summary overview-control-plane" aria-label="Control Plane" data-overview-control-plane>
@@ -145,26 +83,14 @@
                         <span>Control Plane</span>
                         <strong>Loading operating map and oversight</strong>
                     </div>
-                    <dl class="overview-decision-records">
-                        <div>
-                            <dt>Decision</dt>
-                            <dd><strong>Control Plane owns operating flow</strong><span>Loading roles, handoffs, oversight route, and dashboard boundary.</span></dd>
-                        </div>
-                    </dl>
                 </section>
 
                 <section class="overview-plain-grid" aria-label="Connected sources" data-overview-plain-grid>
                     <article class="overview-source-summary-panel" data-overview-source-summary>
                         <div class="overview-section-head">
-                            <span>Evidence summary</span>
+                            <span>Data source tracker</span>
                             <strong>Loading source posture</strong>
                         </div>
-                        <dl class="overview-decision-records compact">
-                            <div>
-                                <dt>Decision</dt>
-                                <dd><strong>Show source posture only</strong><span>Loading source counts. Detailed rows stay in Evidence.</span></dd>
-                            </div>
-                        </dl>
                     </article>
                 </section>
             </section>
@@ -613,7 +539,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260607-cc11-final-dashboard-structure"></script>
+    <script src="/dashboard.js?v=20260615-dashboard-portfolio-first"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

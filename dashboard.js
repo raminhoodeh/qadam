@@ -380,9 +380,9 @@ function setDashboardDebugControls(enabled) {
     document.querySelectorAll("[data-dashboard-debug-toggle]").forEach((button) => {
         button.setAttribute("aria-pressed", enabled ? "true" : "false");
         button.setAttribute("aria-expanded", enabled ? "true" : "false");
-        button.setAttribute("aria-label", enabled ? "Hide diagnostics navigation" : "Show diagnostics navigation");
+        button.setAttribute("aria-label", enabled ? "Hide advanced sections" : "Show advanced sections");
         button.classList.toggle("active", enabled);
-        button.textContent = enabled ? "Hide diagnostics" : "Diagnostics";
+        button.textContent = enabled ? "Hide advanced" : "Advanced";
     });
     document.querySelectorAll("[data-dashboard-advanced-links]").forEach((links) => {
         links.hidden = !enabled;
@@ -3608,7 +3608,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         ? missionStrategyFamilies.map((strategy) => ({
             key: strategy.key,
             label: dashboardText(strategy.label, strategy.key || "Strategy family"),
-            value: strategy.qualified_setup ? "Qualified paper setup" : "Waiting on gates",
+            value: strategy.qualified_setup ? "Qualified paper setup" : "Waiting",
             tone: strategy.qualified_setup ? "online" : "pending",
             rank: modelNumber(strategy.rank, 99),
             fit: strategy.fit || "review",
@@ -5614,7 +5614,7 @@ function renderSnapshotMeta(status, source) {
             <span>${status.d0_shell?.status === "frozen" ? "D0 shell frozen" : "D0 shell unknown"}</span>
             <span>${d1Snapshot.public_safe ? "Dashboard status loaded" : "Dashboard metadata missing"}</span>
             <span>${liveBridge.status === "read_only_ready" ? bridgeSourceLabel : "Live status pending"}</span>
-            <span>${status.boundary || "Read-only dashboard snapshot."}</span>
+            <span>${status.boundary || "Dashboard status snapshot."}</span>
         `;
     }
 }
@@ -6597,14 +6597,14 @@ function renderOperatingSummary(status, source) {
             "Trade layer",
             `${candidates.length} candidates`,
             `${observedSignals.length} observed · ${blockedTrades.length} blocked · ${paperOrders} staged/submitted paper orders`,
-            "Candidate is not order",
+            "Paper orders require source, risk, and broker-route gates",
             paperOrders ? "pending" : "online"
         ),
         renderPriorityCard(
-            "Safety strip",
-            liveCapital ? "Authority review" : "Single strip clear",
-            `${forbiddenActions.length} safety stops · broker writes ${brokerWriteBlocked ? "stopped" : "not recorded"} · use the single strip for dashboard authority`,
-            "One authority readout for every view",
+            "Safety boundary",
+            liveCapital ? "Authority review" : "Live capital off",
+            `${forbiddenActions.length} safety stops · broker writes ${brokerWriteBlocked ? "stopped" : "not recorded"} · paper-only dashboard authority`,
+            "No dashboard control can place or approve an order",
             liveCapital ? "blocked" : "online"
         ),
         renderPriorityCard(
@@ -6686,7 +6686,7 @@ function overviewNodeGuide(node = {}, role = "", label = "") {
     const guide = OVERVIEW_NODE_GUIDES[node.key] || {};
     const expanded = node.expanded || {};
     const current = overviewPlainText(expanded.current_process || node.purpose || node.status, "No current process exported.");
-    const boundary = overviewPlainText(node.authority || expanded.current_status, "Read-only dashboard status.");
+    const boundary = overviewPlainText(node.authority || expanded.current_status, "Dashboard status.");
     return {
         label: overviewPlainText(label || node.label, "System node"),
         role: overviewPlainText(role || node.role, "Qadam node"),
@@ -6890,33 +6890,15 @@ function renderContractMissionSnapshot(contract = {}) {
     return `
         <div class="overview-section-head">
             <span>Mission Snapshot</span>
-            <strong>${htmlText(contract.headline)}</strong>
+            <strong>${htmlText(contract.status || "Current operating state")}</strong>
         </div>
-        ${renderOverviewDecisionRecords([
-            {
-                label: "Decision",
-                value: "Default to Mission Snapshot",
-                detail: "Status, source posture, paper account, trade lifecycle, and authority boundary are read here first.",
-                tone: contract.status || "online"
-            },
-            {
-                label: "Basis",
-                value: `${sources.online || 0}/${sources.total || 0} sources · ${formatMoney(portfolio.balance_gbp)}`,
-                detail: `${durable.replayed_source_count || 0}/${durable.expected_source_count || sources.total || 0} sources replayed; ${trades.lifecycle_counts?.candidate || 0} candidates; ${thinking.hypothesis_count || 0} hypotheses.`,
-                tone: sources.status || durable.status || "online"
-            },
-            {
-                label: "Safety boundary",
-                value: safety.live_capital_enabled ? "Live capital enabled" : "Paper-only, read-only",
-                detail: safety.boundary || "Mission Control cannot approve trades or broker writes.",
-                tone: safety.live_capital_enabled ? "blocked" : "online"
-            }
-        ])}
         <div class="overview-mission-metrics">
-            ${renderOverviewMissionMetric({ label: "Contract", value: contract.source })}
+            ${renderOverviewMissionMetric({ label: "Sources", value: `${sources.online || 0}/${sources.total || 0}` })}
+            ${renderOverviewMissionMetric({ label: "Replay", value: `${durable.replayed_source_count || 0}/${durable.expected_source_count || sources.total || 0}` })}
+            ${renderOverviewMissionMetric({ label: "Candidates", value: trades.lifecycle_counts?.candidate || 0 })}
+            ${renderOverviewMissionMetric({ label: "Hypotheses", value: thinking.hypothesis_count || 0 })}
+            ${renderOverviewMissionMetric({ label: "Paper account", value: formatMoney(portfolio.balance_gbp) })}
             ${renderOverviewMissionMetric({ label: "Generated", value: formatTime(contract.generated_at) })}
-            ${renderOverviewMissionMetric({ label: "Mode", value: safety.mode || "paper" })}
-            ${renderOverviewMissionMetric({ label: "Live capital", value: safety.live_capital_enabled ? "on" : "off" })}
         </div>
         <div class="overview-mission-snapshot-grid">
             ${snapshotCards.map(renderOverviewPlainCard).join("")}
@@ -7084,6 +7066,112 @@ function renderOverviewCapacityChart(capacity = {}) {
     `;
 }
 
+function portfolioTradeRecordReason(record = {}, type = "order") {
+    const explicitReason = record.why || record.reason || record.summary || record.evidence_summary || record.catalyst || record.close_reason;
+    if (explicitReason) return overviewPlainText(explicitReason);
+    const status = String(record.status || record.order_status || "").toLowerCase();
+    const direction = String(record.direction || record.side || "").toLowerCase();
+    if (type === "position") {
+        return "Open paper position mirrored from Alpaca and tracked against current account value.";
+    }
+    if (direction === "sell") {
+        return status.includes("fill")
+            ? "Sell or close order filled in the paper account."
+            : "Sell or close order is visible in the paper-account order history.";
+    }
+    if (status.includes("fill")) {
+        return "Buy order filled in the paper account and added to the paper ledger.";
+    }
+    if (status === "new" || status === "accepted" || status === "pending_new") {
+        return "Paper order is waiting for broker fill or cancellation.";
+    }
+    if (record.source_intent_id || record.intent_id) {
+        return `Linked to ${record.source_intent_id || record.intent_id}.`;
+    }
+    return "Mirrored from the Alpaca paper account; no separate strategy note was exported for this row.";
+}
+
+function portfolioTradeTime(record = {}) {
+    return record.filled_at || record.submitted_at || record.created_at || record.opened_at || record.observed_at || record.updated_at;
+}
+
+function portfolioTradePrice(record = {}) {
+    const value = firstPresent(record.filled_avg_price, record.current_price, record.entry_price, record.limit_price, record.stop_price);
+    if (value === null || value === undefined || value === "") return "market";
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toLocaleString("en-GB", { maximumFractionDigits: 2 }) : dashboardText(value);
+}
+
+function renderPortfolioTradeTimelineRow(record = {}, type = "order") {
+    const symbol = record.symbol || record.instrument || record.asset || record.ticker || "Instrument";
+    const direction = dashboardText(record.direction || record.side || (type === "position" ? "long" : "order"));
+    const status = dashboardText(record.status || record.order_status || (type === "position" ? "open position" : "recorded"));
+    const quantity = firstPresent(record.quantity, record.qty, record.filled_quantity, record.shares, record.position_qty, "n/a");
+    return `
+        <li class="portfolio-trade-row ${statusClass(status)}">
+            <div>
+                <strong>${htmlText(symbol)}</strong>
+                <span>${htmlText(direction)} · ${htmlText(status)} · ${htmlText(formatTime(portfolioTradeTime(record)))}</span>
+            </div>
+            <dl>
+                <div><dt>Qty</dt><dd>${htmlText(quantity)}</dd></div>
+                <div><dt>Price</dt><dd>${htmlText(portfolioTradePrice(record))}</dd></div>
+                <div><dt>Why</dt><dd>${htmlText(portfolioTradeRecordReason(record, type))}</dd></div>
+            </dl>
+        </li>
+    `;
+}
+
+function renderPortfolioTradeTimeline(portfolio = {}) {
+    const orders = asArray(portfolio.orders);
+    const positions = asArray(portfolio.open_positions).map((position) => ({
+        ...position,
+        direction: position.direction || position.side || "long",
+        status: position.status || "open position"
+    }));
+    const buyRecords = [
+        ...orders.filter((order) => /buy|long/i.test(String(order.direction || order.side || ""))),
+        ...positions.filter((position) => !/short|sell/i.test(String(position.direction || position.side || "")))
+    ].slice(0, 80);
+    const sellRecords = orders
+        .filter((order) => /sell|close|short/i.test(String(order.direction || order.side || "")))
+        .slice(0, 80);
+    const renderEmpty = (message) => `<li class="portfolio-trade-row empty"><span>${htmlText(message)}</span></li>`;
+    return `
+        <details class="portfolio-trade-timeline" data-portfolio-trade-timeline>
+            <summary>
+                <span>Trade timeline</span>
+                <strong>${buyRecords.length} bought or held · ${sellRecords.length} sold or closed</strong>
+                <em>Expand trade history</em>
+            </summary>
+            <div class="portfolio-trade-timeline-grid">
+                <section>
+                    <h4>Bought and held</h4>
+                    <ul class="portfolio-trade-list">
+                        ${buyRecords.length ? buyRecords.map((record) => renderPortfolioTradeTimelineRow(record, positions.includes(record) ? "position" : "order")).join("") : renderEmpty("No buy or open-position rows exported in this snapshot.")}
+                    </ul>
+                </section>
+                <section>
+                    <h4>Sold and closed</h4>
+                    <ul class="portfolio-trade-list">
+                        ${sellRecords.length ? sellRecords.map((record) => renderPortfolioTradeTimelineRow(record, "order")).join("") : renderEmpty("No sell or close rows exported in this snapshot.")}
+                    </ul>
+                </section>
+            </div>
+        </details>
+    `;
+}
+
+function renderContractPortfolioHero(portfolio = {}) {
+    const block = renderContractPortfolioBlock(portfolio);
+    return `
+        <div class="portfolio-hero-shell" data-portfolio-hero-shell>
+            ${block}
+            ${renderPortfolioTradeTimeline(portfolio)}
+        </div>
+    `;
+}
+
 function renderOverviewStrategyNarrative(viewModels = {}, overview = {}) {
     const sourceModel = viewModels.sources_model || {};
     const tradesModel = viewModels.trades_model || {};
@@ -7190,26 +7278,37 @@ function renderStrategySummaryStrip(strategy = {}, strategyFamilies = []) {
     const families = asArray(strategyFamilies);
     const qualifiedCount = families.filter((family) => family.qualified_setup).length;
     const waitingCount = Math.max(families.length - qualifiedCount, 0);
-    return renderOverviewDecisionRecords([
+    const rows = [
         {
             label: "Universe",
             value: `${families.length || strategy.strategy_family_count || 0} families`,
-            detail: "Fit, route, family, and gate state are recorded inside Strategy Universe.",
+            detail: "Strategy families Qadam can compare before paper gates.",
             tone: strategy.posture || "online"
         },
         {
-            label: "Currently qualified",
+            label: "Qualified now",
             value: qualifiedCount || strategy.qualified_strategy_family_count || 0,
-            detail: "Qualified families can continue only through guarded paper review after downstream checks pass.",
+            detail: "Can continue only through source, risk, and PaperOps checks.",
             tone: qualifiedCount || strategy.qualified_strategy_family_count ? "online" : "pending"
         },
         {
-            label: "Waiting on gates",
+            label: "Waiting",
             value: waitingCount,
-            detail: "Unqualified families remain watchlist context, not paper-order intent.",
+            detail: "Still watchlist context.",
             tone: waitingCount ? "pending" : "online"
         }
-    ], "strategy-summary-strip");
+    ];
+    return `
+        <div class="strategy-summary-strip">
+            ${rows.map((row) => `
+                <article class="${statusClass(row.tone)}">
+                    <span>${htmlText(row.label)}</span>
+                    <strong>${htmlText(row.value)}</strong>
+                    <p>${htmlText(row.detail)}</p>
+                </article>
+            `).join("")}
+        </div>
+    `;
 }
 
 function renderContractTeamMap(team = []) {
@@ -7233,12 +7332,7 @@ function renderContractTeamMap(team = []) {
             <div class="overview-operating-flow-head">
                 <span>Qadam operating team</span>
                 <strong>Data -> evidence -> strategy review -> guarded paper lifecycle</strong>
-                ${renderOverviewDecisionRecords([{
-                    label: "Node record",
-                    value: "Purpose, current work, authority",
-                    detail: "Each node opens to show what it does, what it is doing now, and where its authority stops.",
-                    tone: "online"
-                }], "compact")}
+                <p>Open any node to see what it does, what it is doing now, and where its authority stops.</p>
             </div>
             <div class="flow-lane-track overview-canonical-lane-track overview-operating-node-grid">${nodeHtml}</div>
             <div class="lane-handoff"><span>Data becomes evidence, evidence becomes strategy review, and only guarded paper checks can move toward paper trading.</span></div>
@@ -7258,26 +7352,6 @@ function renderContractControlPlane(contract = {}) {
                 <span>Control Plane</span>
                 <strong>Data -> evidence -> strategy review -> guarded paper lifecycle</strong>
             </div>
-            ${renderOverviewDecisionRecords([
-                {
-                    label: "Decision",
-                    value: "Control Plane owns operating flow",
-                    detail: "Oversight route, handoff state, source posture, and authority boundary are recorded in one module.",
-                    tone: "online"
-                },
-                {
-                    label: "Route",
-                    value: "Evidence -> strategy -> risk -> paper lifecycle",
-                    detail: "Qadam reads evidence, proposes paper actions, records outcomes, and returns learning to the Event Log.",
-                    tone: "online"
-                },
-                {
-                    label: "Boundary",
-                    value: "No dashboard command authority",
-                    detail: "Control Plane exposes status and handoffs; it cannot approve trades, write brokers, fund accounts, or enable live capital.",
-                    tone: "online"
-                }
-            ])}
             <div class="control-plane-grid">
                 <section class="control-plane-map" aria-label="Control Plane operating map">
                     ${renderContractTeamMap(contract.team)}
@@ -7285,12 +7359,8 @@ function renderContractControlPlane(contract = {}) {
                 <aside class="control-plane-oversight">
                     <span>Oversight route</span>
                     <strong>Human oversight</strong>
-                    ${renderOverviewDecisionRecords([{
-                        label: "Oversight route",
-                        value: "Live data -> Python COO -> Local LLM -> Strategy Lead -> Head of Quant",
-                        detail: "Risk gate, paper lifecycle, and learning loop remain downstream records, not dashboard commands.",
-                        tone: "online"
-                    }], "compact")}
+                    <p>Live data moves through the Python COO, Local LLM, Strategy Lead, Head of Quant, risk gate, paper lifecycle, and learning loop.</p>
+                    <p>The dashboard shows status only. It does not approve trades, write to brokers, fund accounts, or enable live capital.</p>
                 </aside>
             </div>
             <div class="overview-feed-strip control-plane-feed">
@@ -7303,12 +7373,7 @@ function renderContractControlPlane(contract = {}) {
             </div>
             <div class="overview-boundary-rail control-plane-boundary">
                 <span>How to read this</span>
-                ${renderOverviewDecisionRecords([{
-                    label: "Readout rule",
-                    value: "Mission Snapshot owns authority state",
-                    detail: "This is read-only mission control, it cannot approve trades, broker writes, position changes, funding, or live capital changes. Trade ideas stay candidates until gated paper-order records exist.",
-                    tone: "online"
-                }], "compact")}
+                <p>Trade ideas stay candidates until source, risk, and PaperOps checks create a valid paper-order route.</p>
             </div>
         </div>
     `;
@@ -7361,7 +7426,7 @@ function renderContractStrategyBlock(contract = {}) {
     const nativeEdge = strategy.native_edge || {};
     const strategyFamilies = asArray(strategy.fit_matrix).length ? asArray(strategy.fit_matrix) : asArray(strategy.strategy_families);
     return `
-        <details class="overview-expandable-ledger strategy-universe-ledger" data-overview-strategy-ledger data-cc5-contract-source="mission_control">
+        <details class="overview-expandable-ledger strategy-universe-ledger" data-overview-strategy-ledger data-cc5-contract-source="mission_control" open>
             <summary>
                 <span>Strategy family ledger</span>
                 <strong>${htmlText(strategy.strategy_family_count || strategyFamilies.length || universe.length, "0")} strategy families · ${htmlText(strategy.qualified_strategy_family_count || strategyFamilies.filter((family) => family.qualified_setup).length || 0)} qualified now</strong>
@@ -7428,31 +7493,13 @@ function renderContractStrategyNarrative(contract = {}) {
             <article class="strategy-narrative-lead">
                 <span>What Qadam is choosing now</span>
                 <h3>${htmlText(nativeEdge.name || activeLens.name || strategy.posture || "Evidence-gated paper strategy")}</h3>
-                ${renderOverviewDecisionRecords([
-                    {
-                        label: "Decision",
-                        value: nativeEdge.name || activeLens.name || "Evidence-gated paper strategy",
-                        detail: nativeEdge.thesis || strategy.why || "Qadam reviews catalyst setups through source, model, risk, and paper-route checks.",
-                        tone: strategy.posture || activeLens.status || "online"
-                    },
-                    {
-                        label: "Basis",
-                        value: `${modelNumber(sources.online, 0)}/${modelNumber(sources.total, 0)} sources · ${modelNumber(thinking.hypothesis_count, 0)} hypotheses`,
-                        detail: `${sourceSentence} ${thinkingSentence}`,
-                        tone: sources.status || thinking.status || "online"
-                    },
-                    {
-                        label: "Trade route",
-                        value: hasGatedCandidate ? "Gated candidate under review" : "No imminent paper order",
-                        detail: tradeSentence,
-                        tone: hasGatedCandidate ? "pending" : "online"
-                    }
-                ], "compact")}
+                <p>${htmlText(nativeEdge.thesis || strategy.why || "Qadam reviews catalyst setups through source, model, risk, and paper-route checks.")}</p>
+                <p>${htmlText(sourceSentence)} ${htmlText(thinkingSentence)} ${htmlText(tradeSentence)}</p>
             </article>
             ${renderStrategySummaryStrip(strategy, strategyFamilies)}
             <div class="strategy-narrative-grid">
                 <article>
-                    <span>Decision route</span>
+                    <span>Current route</span>
                     <strong>${htmlText((nativeEdge.decision_spine || strategy.decision_chain || []).slice(0, 7).join(" -> ") || "Catalyst -> source quorum -> paper risk -> guarded paper route.")}</strong>
                 </article>
                 <article>
@@ -7482,12 +7529,6 @@ function renderContractStrategyUniverse(contract = {}) {
                 <span>Strategy Universe</span>
                 <strong>${htmlText(familyCount)} families · ${htmlText(qualifiedCount)} qualified now</strong>
             </div>
-            ${renderOverviewDecisionRecords([{
-                label: "Decision",
-                value: "Use Strategy Universe for strategy posture",
-                detail: "Active thesis, strategy families, Akber filter, fit matrix, and guarded paper-route boundary are recorded here.",
-                tone: posture
-            }])}
             ${renderContractStrategyNarrative(contract)}
             ${renderContractStrategyBlock(contract)}
         </div>
@@ -7597,20 +7638,6 @@ function renderContractTradeStateSummary(trades = {}) {
                 ${renderMetric("Closed", modelNumber(counts.closed, 0))}
                 ${renderMetric("Postmortems", modelNumber(counts.postmortem_due, 0))}
             </div>
-            ${renderOverviewDecisionRecords([
-                {
-                    label: "Decision",
-                    value: "Show lifecycle counts only",
-                    detail: `${overviewPlainText(trades.summary || "Trade lifecycle counts are loaded.")} Full signal rows, candidate lineage, guarded paper-order records, and postmortems live in Trades.`,
-                    tone: trades.state || "pending"
-                },
-                {
-                    label: "Boundary",
-                    value: "Candidate does not mean order",
-                    detail: overviewPlainText(trades.boundary || "Candidate does not mean order."),
-                    tone: "online"
-                }
-            ], "compact")}
         </section>
     `;
 }
@@ -7634,14 +7661,18 @@ function renderContractPaperTradeState(contract = {}) {
                 <strong>${formatMoney(portfolio.balance_gbp)} · ${htmlText(tradeSummary)}</strong>
                 ${renderInlineBadge(`${mirrorStatus} mirror`, mirrorTone)}
             </div>
-            ${renderOverviewDecisionRecords([{
-                label: "Decision",
-                value: "Read paper mirror and lifecycle counts",
-                detail: `${dashboardText(portfolio.portfolio_value_source, "Portfolio value is read from the paper-account mirror.")}; trade rows stay in Trades; candidate does not mean order.`,
-                tone: mirrorTone
-            }])}
             <div class="paper-trade-state-grid">
-                ${renderContractPortfolioBlock(portfolio)}
+                <section class="paper-account-state-card">
+                    <div class="overview-capacity-summary">
+                        ${renderMetric("Balance", formatMoney(portfolio.balance_gbp))}
+                        ${renderMetric("Current value", formatMoney(portfolio.current_balance_gbp || portfolio.balance_gbp))}
+                        ${renderMetric("Realized P&L", formatMoney(portfolio.realized_pnl_gbp))}
+                        ${renderMetric("Unrealized P&L", formatMoney(portfolio.unrealized_pnl_gbp))}
+                        ${renderMetric("Total P&L", formatMoney(portfolio.total_pnl_gbp))}
+                        ${renderMetric("Drawdown", formatPercent(portfolio.drawdown_pct))}
+                    </div>
+                    <p class="mini">${htmlText(dashboardText(portfolio.portfolio_value_source, "Paper values come from the Alpaca paper-account mirror."))}</p>
+                </section>
                 ${renderContractTradeStateSummary(trades)}
             </div>
         </div>
@@ -7649,28 +7680,14 @@ function renderContractPaperTradeState(contract = {}) {
 }
 
 function renderContractSourceSummary(sources = {}) {
-    const pipelines = asArray(sources.pipelines).slice(0, 4);
+    const pipelines = asArray(sources.pipelines);
     const sourceTone = sources.degraded || sources.missing_credentials ? "degraded" : "online";
     return `
         <div class="overview-source-summary-card ${statusClass(sourceTone)}" data-cc5-contract-source="mission_control">
             <div class="overview-section-head">
-                <span>Evidence summary</span>
+                <span>Data source tracker</span>
                 <strong>${htmlText(sources.online, "0")}/${htmlText(sources.total, "0")} sources online</strong>
             </div>
-            ${renderOverviewDecisionRecords([
-                {
-                    label: "Decision",
-                    value: "Show source posture only",
-                    detail: "Full source rows and connection ledgers live in Evidence.",
-                    tone: sourceTone
-                },
-                {
-                    label: "Basis",
-                    value: `${sources.research_usable || 0} research · ${sources.signal_review_eligible || 0} signal-review`,
-                    detail: `${sources.order_authority || 0} order authority; ${sources.missing_credentials || 0} missing credentials.`,
-                    tone: sourceTone
-                }
-            ])}
             <div class="overview-capacity-summary">
                 ${renderMetric("Online", `${sources.online || 0}/${sources.total || 0}`)}
                 ${renderMetric("Research", sources.research_usable || 0)}
@@ -7678,17 +7695,16 @@ function renderContractSourceSummary(sources = {}) {
                 ${renderMetric("Order auth", sources.order_authority || 0)}
                 ${renderMetric("Missing creds", sources.missing_credentials || 0)}
             </div>
-            <div class="overview-ledger-routing" aria-label="Detailed ledger locations">
-                <a href="#evidence"><strong>Sources</strong><span>Evidence owns rows and pipeline detail.</span></a>
-                <a href="#reasoning"><strong>Reasoning</strong><span>Reasoning owns hypotheses, priors, evidence packets, and reviews.</span></a>
-                <a href="#trades"><strong>Trades</strong><span>Trades owns signal rows, candidate lineage, orders, and postmortems.</span></a>
-            </div>
-            ${pipelines.length ? renderOverviewDecisionRecords([{
-                label: "Pipeline posture",
-                value: `${pipelines.length} visible pipelines`,
-                detail: pipelines.map((pipeline) => `${pipeline.label}: ${pipeline.online_count}/${pipeline.source_count} online`).join("; "),
-                tone: sourceTone
-            }], "compact") : ""}
+            <details class="overview-expandable-ledger source-universe-ledger">
+                <summary>
+                    <span>Source list</span>
+                    <strong>${htmlText(sources.total || 0)} sources across ${htmlText(pipelines.length || 0)} visible pipelines</strong>
+                    <em>Expand source health</em>
+                </summary>
+                <div class="overview-ledger-body">
+                    ${pipelines.map(renderContractSourcePipeline).join("")}
+                </div>
+            </details>
         </div>
     `;
 }
@@ -7707,6 +7723,11 @@ function renderOverviewFirstScreen(viewModels) {
             { label: "Paper value", value: formatMoney(portfolio.balance_gbp), tone: portfolio.mirror_freshness_status === "stale" ? "degraded" : "online" },
             { label: "Trade candidates", value: contract.trades?.lifecycle_counts?.candidate || 0, tone: contract.trades?.state || "pending" }
         ].map(renderOverviewChip).join("");
+    }
+
+    const portfolioHeroTarget = dashboardQuery("[data-overview-portfolio-hero]");
+    if (portfolioHeroTarget) {
+        portfolioHeroTarget.innerHTML = renderContractPortfolioHero(contract.portfolio || {});
     }
 
     const missionBriefTarget = dashboardQuery("[data-overview-mission-brief]");
