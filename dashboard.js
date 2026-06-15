@@ -6734,12 +6734,12 @@ function renderOverviewLifecycleItem(item, index) {
     `;
 }
 
-function renderOverviewMiniNode(node, index, total) {
+function renderOverviewMiniNode(node, index, total, options = {}) {
     const label = OVERVIEW_NODE_LABELS[node.key] || node.label;
     const role = OVERVIEW_NODE_ROLES[node.key] || node.role;
     const guide = overviewNodeGuide(node, role, label);
     const guideId = `overview-node-guide-${String(node.key || index).replace(/[^a-z0-9_-]/gi, "-")}`;
-    const connector = index < total - 1 ? `<span class="overview-mini-connector" aria-hidden="true">&rarr;</span>` : "";
+    const connector = !options.hideConnector && index < total - 1 ? `<span class="overview-mini-connector" aria-hidden="true">&rarr;</span>` : "";
     return `
         <details class="overview-mini-node ${statusClass(node.health || node.status)}">
             <summary aria-controls="${guideId}" aria-describedby="${guideId}">
@@ -7326,16 +7326,17 @@ function renderContractTeamMap(team = []) {
             current_process: member.current_process,
             handoff: `${member.label || "This node"} passes its status to the next operating check.`
         }
-    }, index, nodes.length)).join("");
+    }, index, nodes.length, { hideConnector: true })).join("");
     return `
         <div class="system-flow-diagram overview-system-flow-diagram cc5-contract-map overview-operating-flow" data-cc5-contract-source="mission_control">
             <div class="overview-operating-flow-head">
-                <span>Qadam operating team</span>
-                <strong>Data -> evidence -> strategy review -> guarded paper lifecycle</strong>
-                <p>Open any node to see what it does, what it is doing now, and where its authority stops.</p>
+                <div>
+                    <span>Qadam operating team</span>
+                    <strong>Data -> evidence -> strategy review -> guarded paper lifecycle</strong>
+                </div>
+                <p>Open any node to see what it does, what it is doing now, and where its authority stops. Data becomes evidence, evidence becomes strategy review, and only guarded paper checks can move toward paper trading.</p>
             </div>
             <div class="flow-lane-track overview-canonical-lane-track overview-operating-node-grid">${nodeHtml}</div>
-            <div class="lane-handoff"><span>Data becomes evidence, evidence becomes strategy review, and only guarded paper checks can move toward paper trading.</span></div>
             <div class="flow-return-loop">
                 <strong>Closed-loop rule</strong>
                 <span>Observations, hypotheses, paper trades, comments, and postmortems return to the Event Log before they can change Qadam.</span>

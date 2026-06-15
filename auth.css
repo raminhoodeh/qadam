@@ -7832,15 +7832,33 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
 }
 
 .control-plane-grid {
-    grid-template-columns: minmax(50%, 1fr) minmax(300px, 0.55fr);
+    grid-template-columns: 1fr;
 }
 
 .control-plane-map {
-    min-width: min(100%, 50vw);
+    min-width: 0;
+}
+
+.overview-operating-flow {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.overview-operating-flow-head {
+    align-items: start;
+    background: rgba(255, 255, 255, 0.025);
+    grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+}
+
+.overview-operating-flow-head > div {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
 }
 
 .overview-operating-node-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+    align-items: start;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .overview-operating-node-grid .overview-mini-node {
@@ -7848,11 +7866,31 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
 }
 
 .overview-operating-node-grid .overview-mini-node[open] {
-    grid-column: span 2;
+    grid-column: auto;
+    min-height: 0;
 }
 
 .overview-mini-guide dl {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overview-operating-flow .overview-mini-connector,
+.overview-operating-flow .lane-handoff {
+    display: none;
+}
+
+.control-plane-oversight {
+    align-items: start;
+    grid-template-columns: minmax(190px, 0.28fr) repeat(2, minmax(0, 1fr));
+}
+
+.control-plane-oversight span,
+.control-plane-oversight strong {
+    align-self: start;
+}
+
+.control-plane-oversight p {
+    margin: 0;
 }
 
 .source-universe-ledger {
@@ -7864,7 +7902,6 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .control-plane-grid,
     .portfolio-trade-timeline-grid {
         grid-template-columns: 1fr;
     }
@@ -7873,8 +7910,13 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
         min-width: 0;
     }
 
-    .overview-operating-node-grid .overview-mini-node[open] {
-        grid-column: auto;
+    .overview-operating-flow-head,
+    .control-plane-oversight {
+        grid-template-columns: 1fr;
+    }
+
+    .overview-operating-node-grid {
+        grid-template-columns: 1fr;
     }
 }
 
