@@ -23,6 +23,7 @@ from orchestrator.telegram_comms import (
     TelegramCommunicationsStore,
     render_telegram_message,
 )
+from orchestrator.telegram_message_quality import telegram_human_message_style
 
 
 PAPEROPS_NOTIFICATION_REVIEW_SCHEMA_VERSION = 1
@@ -832,8 +833,12 @@ def validate_paperops_notification_record(record: dict[str, Any]) -> list[str]:
         body = str(preview.get("body") or "")
         if not title.strip() or not body.strip():
             errors.append("paperops_notification_preview_empty")
-        if "Dashboard: qadam.trade/dashboard/" not in body:
-            errors.append("paperops_notification_preview_dashboard_missing")
+        style = telegram_human_message_style(title, body)
+        if style["status"] != "human":
+            errors.append("paperops_notification_preview_not_human:" + ",".join(style["errors"]))
+        for phrase in ("Dashboard:", "Evidence:", "Status:", "Mode:", "What changed:"):
+            if phrase in body:
+                errors.append("paperops_notification_preview_too_verbose:" + phrase)
         if not _safe_preview(title, body):
             errors.append("paperops_notification_preview_forbidden_text")
     if record.get("message_preview_redacted") is not True:

@@ -231,23 +231,31 @@ def main() -> int:
         if marker not in probe_errors:
             errors.append(f"telegram_codebase_upgrade_probe_not_rejected:{marker}")
     preview_body = forced_preview.get("message_preview", {}).get("body", "")
+    if "Qadam" not in preview_body:
+        errors.append("telegram_codebase_upgrade_preview_missing:Qadam")
+    if "non-technical person" not in preview_body:
+        errors.append("telegram_codebase_upgrade_preview_missing:non_technical_explanation")
+    if "trading power" not in preview_body or "live capital" not in preview_body:
+        errors.append("telegram_codebase_upgrade_preview_missing:safety_boundary")
     for marker in (
-        "Qadam update",
         "Upgrade:",
         "What changed:",
         "Detected update areas:",
         "Why it matters:",
         "Evidence:",
-        "Status: notify-only.",
-        "Dashboard: qadam.trade/dashboard/",
+        "Status:",
+        "Dashboard:",
+        "What to check:",
+        "Deployment:",
+        "Aliases:",
+        "commit",
+        "version control",
+        "Vercel",
     ):
-        if marker not in preview_body:
-            errors.append(f"telegram_codebase_upgrade_preview_missing:{marker}")
-    for marker in ("What to check:", "Deployment:", "Aliases:"):
         if marker in preview_body:
             errors.append(f"telegram_codebase_upgrade_preview_too_verbose:{marker}")
-    if len([line for line in preview_body.splitlines() if line.strip()]) > 9:
-        errors.append("telegram_codebase_upgrade_preview_too_long")
+    if len([line for line in preview_body.splitlines() if line.strip()]) > 3:
+        errors.append("telegram_codebase_upgrade_preview_too_many_lines")
     public_encoded = str(public_status)
     if "/Users/" in public_encoded or "chat_id" in public_encoded or "bot_token" in public_encoded:
         errors.append("telegram_codebase_upgrade_public_leak")

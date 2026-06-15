@@ -19,7 +19,10 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.intelligence import shadow_intelligence_summary
 from orchestrator.secrets import secret_status
-from orchestrator.telegram_message_quality import assert_specific_telegram_message
+from orchestrator.telegram_message_quality import (
+    assert_specific_telegram_message,
+    telegram_human_message_style,
+)
 from orchestrator.trade_intent import TradeIntentStore, ensure_d5_sample_trade_intents
 
 TELEGRAM_COMMUNICATIONS_SCHEMA_VERSION = 1
@@ -131,97 +134,75 @@ def render_telegram_message(message_class: str, context: dict[str, Any]) -> tupl
     if message_class not in TELEGRAM_MESSAGE_CLASSES:
         raise ValueError(f"invalid Telegram message class: {message_class}")
 
-    dashboard = "qadam.trade/dashboard/"
     if message_class == "trade_candidate":
         title = f"Candidate: {_display_ref(context.get('instrument'), 'trade candidate')}"
-        body = "\n".join(
-            [
-                "Qadam: considered trade candidate",
-                _display_ref(context.get("instrument"), "instrument watch"),
-                f"Why it matters: {_display_ref(context.get('catalyst'), 'structured candidate created')}",
-                f"Evidence: {_display_ref(context.get('evidence_summary'), 'evidence summary pending')}",
-                f"Current impact: {_display_ref(context.get('current_impact'), 'candidate is visible for review but cannot place an order')}",
-                "Block/risk: candidate only; Risk Agent and broker route are not reached.",
-                "Status: candidate, not an order.",
-                f"Dashboard: {dashboard}",
-            ]
+        body = (
+            f"Qadam is looking at {_display_ref(context.get('instrument'), 'a paper trade idea')} as a possible paper-trade candidate. "
+            f"The reason is {_display_ref(context.get('catalyst'), 'a structured market signal changed')}, and the supporting context is "
+            f"{_display_ref(context.get('evidence_summary'), 'still being gathered')}."
+            "\n\n"
+            f"For now, this is only something to watch. {_display_ref(context.get('current_impact'), 'No paper order exists yet')}, "
+            "and Telegram cannot approve it or move it into the broker route."
         )
     elif message_class == "blocked_trade":
         title = f"Blocked: {_display_ref(context.get('instrument'), 'trade idea')}"
-        body = "\n".join(
-            [
-                "Qadam: blocked trade candidate",
-                _display_ref(context.get("instrument"), "instrument watch"),
-                f"Why it matters: {_display_ref(context.get('catalyst'), 'candidate failed a gate')}",
-                f"Evidence: {_display_ref(context.get('evidence_summary'), 'insufficient corroboration')}",
-                f"Current impact: {_display_ref(context.get('current_impact'), 'the idea remains out of the paper-order path')}",
-                f"Block/risk: {_display_ref(context.get('blocked_reason'), 'blocked before risk approval')}",
-                "Status: blocked. No paper order and no broker action.",
-                f"Dashboard: {dashboard}",
-            ]
+        body = (
+            f"Qadam considered {_display_ref(context.get('instrument'), 'a paper trade idea')} but decided not to let it move forward. "
+            f"The setup mattered because {_display_ref(context.get('catalyst'), 'a market signal changed')}, but the evidence was "
+            f"{_display_ref(context.get('evidence_summary'), 'not strong enough')}."
+            "\n\n"
+            f"The block is {_display_ref(context.get('blocked_reason'), 'it did not clear the safety gates')}. "
+            f"{_display_ref(context.get('current_impact'), 'The idea remains research only')}, with no paper order and no broker action."
         )
     elif message_class in TELEGRAM_ALLOWED_PAPER_ORDER_STATES:
         title = f"{message_class.replace('_', ' ').title()}: {_display_ref(context.get('instrument'), 'paper order')}"
-        body = "\n".join(
-            [
-                f"Qadam: {message_class.replace('_', ' ')}",
-                _display_ref(context.get("instrument"), "paper instrument"),
-                f"Why it matters: {_display_ref(context.get('catalyst'), 'backend state reached a paper-order state')}",
-                f"Evidence: {_display_ref(context.get('evidence_summary'), 'backend state allows this wording')}",
-                f"Current impact: {_display_ref(context.get('current_impact'), 'members can see the paper lifecycle state without Telegram authority')}",
-                "Block/risk: paper mode only; live capital remains blocked.",
-                f"Status: {message_class}.",
-                f"Dashboard: {dashboard}",
-            ]
+        body = (
+            f"Qadam has reached a paper-order lifecycle step for {_display_ref(context.get('instrument'), 'a paper instrument')}. "
+            f"This happened because {_display_ref(context.get('catalyst'), 'the guarded paper workflow reached the next state')}, "
+            f"with supporting context of {_display_ref(context.get('evidence_summary'), 'the paper ledger state')}."
+            "\n\n"
+            f"{_display_ref(context.get('current_impact'), 'Members can review the state, but cannot act through Telegram')}. "
+            "This is still paper mode only, and live capital remains off."
         )
     elif message_class == "insight_digest":
         title = _display_ref(context.get("title"), "Insight digest")
-        body = "\n".join(
-            [
-                "Qadam: insight digest",
-                _display_ref(context.get("theme"), "current research focus"),
-                f"Why it matters: {_display_ref(context.get('why_it_matters'), 'focus updated from structured status')}",
-                f"Evidence: {_display_ref(context.get('evidence'), 'evidence packet count available in dashboard')}",
-                f"Current impact: {_display_ref(context.get('current_impact'), 'research context changed but no trade signal is created')}",
-                f"Block/risk: {_display_ref(context.get('block'), 'hypothesis remains non-executable')}",
-                "Status: research update, not a trade signal.",
-                f"Dashboard: {dashboard}",
-            ]
+        body = (
+            f"Qadam's current research focus is {_display_ref(context.get('theme'), 'the latest market evidence')}. "
+            f"This matters because {_display_ref(context.get('why_it_matters'), 'the research picture changed')}, "
+            f"and the evidence is {_display_ref(context.get('evidence'), 'available in the research ledger')}."
+            "\n\n"
+            f"{_display_ref(context.get('current_impact'), 'This changes research context only')}. "
+            f"The important limit is that {_display_ref(context.get('block'), 'this is not yet executable')}, so this message is not a trade signal."
         )
     elif message_class in {"source_degraded", "model_degraded", "kill_switch", "dashboard_snapshot_stale"}:
         title = _display_ref(context.get("title"), message_class.replace("_", " ").title())
-        body = "\n".join(
-            [
-                f"Qadam: {message_class.replace('_', ' ')}",
-                _display_ref(context.get("subject"), "system status"),
-                f"Why it matters: {_display_ref(context.get('why_it_matters'), 'member attention may be needed')}",
-                f"Evidence: {_display_ref(context.get('evidence'), 'structured health status changed')}",
-                f"Current impact: {_display_ref(context.get('current_impact'), 'Qadam fails closed for affected workflow until recovery')}",
-                f"Block/risk: {_display_ref(context.get('block'), 'fail closed until recovered')}",
-                "Status: system warning only. No trade command is available.",
-                f"Dashboard: {dashboard}",
-            ]
+        body = (
+            f"Qadam has noticed a system warning around {_display_ref(context.get('subject'), 'one part of the system')}. "
+            f"This matters because {_display_ref(context.get('why_it_matters'), 'member attention may be needed')}, "
+            f"and the current evidence is {_display_ref(context.get('evidence'), 'a health status change')}."
+            "\n\n"
+            f"{_display_ref(context.get('current_impact'), 'Qadam fails closed for the affected workflow until recovery')}. "
+            f"The block is {_display_ref(context.get('block'), 'fail closed until recovered')}, and Telegram still has no trade command path."
         )
     else:
         title = _display_ref(context.get("title"), message_class.replace("_", " ").title())
         why_it_matters = context.get("why_it_matters") or context.get("catalyst")
         evidence = context.get("evidence") or context.get("evidence_summary")
-        body = "\n".join(
-            [
-                f"Qadam: {message_class.replace('_', ' ')}",
-                _display_ref(context.get("subject"), "paper lifecycle update"),
-                f"Why it matters: {_display_ref(why_it_matters, 'paper lifecycle evidence changed in the runtime ledger')}",
-                f"Evidence: {_display_ref(evidence, 'runtime ledger records this lifecycle state')}",
-                f"Current impact: {_display_ref(context.get('current_impact'), 'members can review the lifecycle state but cannot act from Telegram')}",
-                f"Block/risk: {_display_ref(context.get('block'), 'no live-capital authority from Telegram')}",
-                "Status: notification only.",
-                f"Dashboard: {dashboard}",
-            ]
+        body = (
+            f"Qadam has a new update about {_display_ref(context.get('subject'), 'the paper lifecycle')}. "
+            f"It matters because {_display_ref(why_it_matters, 'the paper lifecycle evidence changed')}, "
+            f"with supporting context of {_display_ref(evidence, 'the recorded lifecycle state')}."
+            "\n\n"
+            f"{_display_ref(context.get('current_impact'), 'Members can review the state but cannot act from Telegram')}. "
+            f"The important limit is {_display_ref(context.get('block'), 'Telegram has no live-capital or trade authority')}."
         )
 
     _assert_safe_message(title)
     _assert_safe_message(body)
     assert_specific_telegram_message(title, body)
+    style = telegram_human_message_style(title, body)
+    if style["status"] != "human":
+        raise ValueError("technical Telegram message text")
     return title, body
 
 

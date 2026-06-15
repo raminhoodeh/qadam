@@ -22,7 +22,10 @@ from orchestrator.config import Settings
 from orchestrator.event_log import EventLog
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.telegram_comms import FORBIDDEN_TELEGRAM_TEXT
-from orchestrator.telegram_message_quality import telegram_message_specificity
+from orchestrator.telegram_message_quality import (
+    telegram_human_message_style,
+    telegram_message_specificity,
+)
 
 
 TELEGRAM_CODEBASE_UPGRADE_SCHEMA_VERSION = 1
@@ -269,6 +272,49 @@ def _derived_benefits(root_repo: dict[str, Any], dashboard_repo: dict[str, Any])
     return benefits[:5]
 
 
+def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
+    areas = {
+        str(item.get("area") or "")
+        for repo_state in (source.get("root_repo", {}), source.get("dashboard_repo", {}))
+        for item in repo_state.get("change_areas", [])
+        if isinstance(item, dict)
+    }
+    if "Telegram communication runtime" in areas or "Telegram regression checks" in areas:
+        change = (
+            "Qadam now rewrites its Telegram updates into plain language before they go out, "
+            "so the group gets a short explanation instead of an engineering-style status note."
+        )
+    elif "dashboard overview experience" in areas or "public cockpit status snapshot" in areas:
+        change = (
+            "Qadam's live dashboard has been refreshed so the operating picture is easier to read "
+            "and the latest system state is reflected in public-safe form."
+        )
+    elif "source provider decisions" in areas or "source registry" in areas:
+        change = (
+            "Qadam's data-source layer has been cleaned up, which makes it clearer which inputs are "
+            "connected now and which ones still need credentials or provider approval."
+        )
+    elif "PaperOps trading control plane" in areas:
+        change = (
+            "Qadam's paper-trading control plane has been updated, so the system can explain its "
+            "paper portfolio state and trading decisions more clearly."
+        )
+    else:
+        change = _clean_text(
+            source.get("summary"),
+            "Qadam has been updated and the live operating dashboard has been refreshed.",
+            limit=180,
+        )
+        change = change.replace("committed ", "").replace("runtime ", "operating ")
+
+    benefit = (
+        "This does not give Telegram any trading power and it does not switch on live capital. "
+        "It simply makes Qadam's updates easier for a non-technical person to understand, while "
+        "the detailed audit trail stays in the background for review."
+    )
+    return change, benefit
+
+
 def telegram_codebase_upgrade_paths(
     settings: Settings | None = None,
 ) -> tuple[Path, Path, Path]:
@@ -482,52 +528,10 @@ def _deployment_context(
 
 
 def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
-    root = source.get("root_repo", {})
-    dashboard = source.get("dashboard_repo", {})
-    deployment = source.get("deployment", {})
-    aliases = ", ".join(deployment.get("aliases", []) or ["qadam.trade", "www.qadam.trade"])
-    action = "deployed" if source.get("source") == "production_deploy" else "recorded"
-    change_lines = source.get("change_area_lines", [])
-    subjects = [
-        _clean_text(root.get("last_commit_subject"), "", limit=86),
-        _clean_text(dashboard.get("last_commit_subject"), "", limit=86),
-    ]
-    subjects = [
-        item
-        for item in dict.fromkeys(subjects)
-        if item and item != "latest commit unavailable"
-    ]
-    changed = "; ".join(subjects[:2]) or _clean_text(
-        source.get("summary"),
-        "Latest Qadam code and dashboard changes recorded.",
-        limit=150,
-    )
-    area_parts = [
-        *_compact_area_parts(root, "core"),
-        *_compact_area_parts(dashboard, "dashboard"),
-    ]
-    areas = "; ".join(area_parts[:4] or change_lines[:4]) or "core and dashboard commits recorded"
-    evidence_parts = []
-    root_file_count = _int(root.get("last_commit_file_count"))
-    dashboard_file_count = _int(dashboard.get("last_commit_file_count"))
-    if root_file_count:
-        evidence_parts.append(f"{root_file_count} core files")
-    if dashboard_file_count:
-        evidence_parts.append(f"{dashboard_file_count} dashboard files")
-    evidence_parts.append(f"aliases {aliases}")
-    title = "Qadam Update"
-    body = "\n".join(
-        [
-            f"Qadam update {action}",
-            f"Upgrade: core {_short(root.get('head_short'))} / dashboard {_short(dashboard.get('head_short'))}",
-            f"What changed: {changed}",
-            f"Detected update areas: {areas}",
-            "Why it matters: Fund Managers can read the exact deployed change without Git or Vercel logs.",
-            f"Evidence: {'; '.join(evidence_parts)}",
-            "Status: notify-only. No broker writes, paper orders, or live capital changed.",
-            "Dashboard: qadam.trade/dashboard/",
-        ]
-    )
+    change, benefit = _plain_update_explanation(source)
+    action = "has just gone live" if source.get("source") == "production_deploy" else "has been recorded"
+    title = "Qadam"
+    body = f"Qadam {action}. {change}\n\n{benefit}"
     return title, body
 
 
@@ -603,9 +607,10 @@ def build_telegram_codebase_upgrade_notification(
         "deployment": _deployment_context(settings, deployment_url=deployment_url, aliases=aliases),
     }
     title, body = _render_upgrade_message(source_context)
-    text = f"{title}\n\n{body}"
+    text = body
     message_safe = _safe_text(title, body)
     message_specificity = telegram_message_specificity(title, body)
+    message_style = telegram_human_message_style(title, body)
     token = secret_value("TELEGRAM_BOT_TOKEN", settings)
     chat_id = secret_value("TELEGRAM_GROUP_CHAT_ID", settings)
     bot_configured = secret_status("TELEGRAM_BOT_TOKEN", settings).configured
@@ -624,6 +629,8 @@ def build_telegram_codebase_upgrade_notification(
         blockers.append("unsafe_message_text")
     if message_specificity["status"] != "specific":
         blockers.append("telegram_message_not_specific")
+    if message_style["status"] != "human":
+        blockers.append("telegram_message_not_human")
     if not enabled:
         blockers.append("codebase_upgrade_notifications_disabled")
     if dry_run:
@@ -635,7 +642,11 @@ def build_telegram_codebase_upgrade_notification(
     if already_sent and not force_send:
         blockers.append("telegram_codebase_upgrade_already_sent")
 
-    message_sendable = message_safe and message_specificity["status"] == "specific"
+    message_sendable = (
+        message_safe
+        and message_specificity["status"] == "specific"
+        and message_style["status"] == "human"
+    )
     status = "dry_run_ready" if message_sendable else "suppressed_not_safe"
     if message_sendable and not enabled:
         status = "blocked_pending_enablement"
@@ -763,6 +774,8 @@ def build_telegram_codebase_upgrade_notification(
         "message_specificity_status": message_specificity["status"],
         "message_specificity_score": message_specificity["score"],
         "message_fingerprint": message_specificity["fingerprint"],
+        "message_human_style": message_style,
+        "message_human_style_status": message_style["status"],
         "live_send_attempted": live_send_attempted,
         "live_send_succeeded": live_send_succeeded,
         "telegram_message_id_present": telegram_message_id is not None,
@@ -813,6 +826,8 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
         "message_specificity_score",
         "message_specificity_status",
         "message_fingerprint",
+        "message_human_style",
+        "message_human_style_status",
     }
     missing = sorted(required - set(artifact))
     if missing:
@@ -848,26 +863,29 @@ def validate_telegram_codebase_upgrade_notification(artifact: dict[str, Any]) ->
         body = str(preview.get("body") or "")
         if not title.strip() or not body.strip():
             errors.append("telegram_codebase_upgrade_preview_empty")
-        required_phrases = (
-            "Qadam update",
+        style = telegram_human_message_style(title, body)
+        if style["status"] != "human":
+            errors.append("telegram_codebase_upgrade_message_not_human:" + ",".join(style["errors"]))
+        for phrase in (
             "Upgrade:",
             "What changed:",
             "Detected update areas:",
             "Why it matters:",
             "Evidence:",
-            "Status: notify-only.",
-            "Dashboard: qadam.trade/dashboard/",
-        )
-        for phrase in required_phrases:
-            if phrase not in body:
-                errors.append("telegram_codebase_upgrade_message_missing:" + phrase)
-        for phrase in ("What to check:", "Deployment:", "Aliases:"):
+            "Status:",
+            "Dashboard:",
+            "What to check:",
+            "Deployment:",
+            "Aliases:",
+        ):
             if phrase in body:
                 errors.append("telegram_codebase_upgrade_message_too_verbose:" + phrase)
-        if len([line for line in body.splitlines() if line.strip()]) > 9:
+        if len([line for line in body.splitlines() if line.strip()]) > 3:
             errors.append("telegram_codebase_upgrade_message_too_long")
         if not _safe_text(title, body):
             errors.append("telegram_codebase_upgrade_forbidden_text")
+    if artifact.get("message_human_style_status") != "human":
+        errors.append("telegram_codebase_upgrade_human_style_status_not_human")
     specificity = artifact.get("message_specificity", {})
     if not isinstance(specificity, dict):
         errors.append("telegram_codebase_upgrade_specificity_missing")

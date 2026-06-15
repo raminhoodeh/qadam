@@ -22,7 +22,10 @@ from orchestrator.event_log import EventLog
 from orchestrator.paper_account import PaperAccountMirrorStore, paper_account_shadow_context
 from orchestrator.secrets import secret_status, secret_value
 from orchestrator.telegram_comms import FORBIDDEN_TELEGRAM_TEXT
-from orchestrator.telegram_message_quality import telegram_message_specificity
+from orchestrator.telegram_message_quality import (
+    telegram_human_message_style,
+    telegram_message_specificity,
+)
 
 
 TELEGRAM_DAILY_PORTFOLIO_DIGEST_SCHEMA_VERSION = 1
@@ -427,41 +430,18 @@ def _render_digest_message(
     if len(daily_trades) > 8:
         trade_summary = f"{trade_summary}; +{len(daily_trades) - 8} more"
 
-    title = "Qadam Daily Portfolio Update"
-    body = "\n".join(
-        [
-            "Qadam: daily paper portfolio update",
-            f"Date: {local_date} ({timezone_name})",
-            f"Portfolio balance: {_format_money(portfolio['portfolio_value_gbp'])}",
-            (
-                "Performance: "
-                f"{_format_money(portfolio['total_pnl_gbp'])} "
-                f"({_format_pct(portfolio['performance_pct'])}) since "
-                f"{_format_money(portfolio['trial_allocation_gbp'])} paper allocation"
-            ),
-            f"Trades made today: {trade_summary}",
-            f"Why no/next trade: {paperops_context['idle_reason']}",
-            (
-                "PaperOps context: "
-                f"autonomous_pass={paperops_context['autonomous_pass_status']}; "
-                f"qualified_setups={paperops_context['qualified_setup_count']}; "
-                f"submitted_orders={paperops_context['submitted_paper_order_count']}; "
-                f"run_day={paperops_context.get('run_day') or 'unknown'}"
-            ),
-            (
-                "Open positions: "
-                f"{portfolio['open_position_count']} | Orders: {portfolio['order_count']} | "
-                f"Closed trades: {portfolio['closed_trade_count']}"
-            ),
-            (
-                "Current impact: "
-                f"paper equity is {_format_pct(portfolio['performance_pct'])} versus the "
-                f"{_format_money(portfolio['trial_allocation_gbp'])} allocation."
-            ),
-            "Evidence: mirrored paper account, paper orders, open positions, and closed trade ledger.",
-            "Mode: paper only; live capital remains blocked.",
-            "Dashboard: qadam.trade/dashboard/",
-        ]
+    title = "Qadam"
+    body = (
+        f"Qadam's paper portfolio update for {local_date} is ready. The portfolio is now "
+        f"{_format_money(portfolio['portfolio_value_gbp'])}, which is "
+        f"{_format_money(portfolio['total_pnl_gbp'])} ({_format_pct(portfolio['performance_pct'])}) "
+        f"against the {_format_money(portfolio['trial_allocation_gbp'])} paper allocation. "
+        f"Today it has {portfolio['open_position_count']} open positions, {portfolio['order_count']} orders "
+        f"on record, and {portfolio['closed_trade_count']} closed paper trades."
+        "\n\n"
+        f"Trades made today were {trade_summary}. For now, the reason Qadam is waiting or moving slowly is: "
+        f"{paperops_context['idle_reason']}. This is only a paper-trading update; Telegram is explaining "
+        "what happened and cannot approve, place, change, or close trades, and live capital remains off."
     )
     return title, body
 
@@ -496,6 +476,7 @@ def build_daily_portfolio_digest(
     )
     message_preview_redacted = _safe_text(title, body)
     message_specificity = telegram_message_specificity(title, body)
+    message_style = telegram_human_message_style(title, body)
     bot_configured = secret_status("TELEGRAM_BOT_TOKEN", settings).configured
     group_chat_configured = secret_status("TELEGRAM_GROUP_CHAT_ID", settings).configured
     token = secret_value("TELEGRAM_BOT_TOKEN", settings)
@@ -509,6 +490,7 @@ def build_daily_portfolio_digest(
         and settings.live_capital_enabled is False
         and message_preview_redacted
         and message_specificity["status"] == "specific"
+        and message_style["status"] == "human"
     )
 
     blockers: list[str] = []
@@ -516,6 +498,8 @@ def build_daily_portfolio_digest(
         blockers.append("daily_digest_not_eligible")
     if message_specificity["status"] != "specific":
         blockers.append("telegram_message_not_specific")
+    if message_style["status"] != "human":
+        blockers.append("telegram_message_not_human")
     if not due_for_delivery:
         blockers.append("daily_digest_not_due_until_end_of_day")
     if not enabled:
@@ -541,7 +525,7 @@ def build_daily_portfolio_digest(
     live_send_succeeded = False
     telegram_message_id: int | None = None
     failure_category: str | None = None
-    text = f"{title}\n\n{body}"
+    text = body
 
     if (
         send_requested
@@ -623,6 +607,8 @@ def build_daily_portfolio_digest(
         "message_specificity_status": message_specificity["status"],
         "message_specificity_score": message_specificity["score"],
         "message_fingerprint": message_specificity["fingerprint"],
+        "message_human_style": message_style,
+        "message_human_style_status": message_style["status"],
         "portfolio_snapshot": portfolio,
         "portfolio_balance_gbp": portfolio["portfolio_value_gbp"],
         "portfolio_total_pnl_gbp": portfolio["total_pnl_gbp"],
@@ -709,6 +695,8 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
         "message_specificity_score",
         "message_specificity_status",
         "message_fingerprint",
+        "message_human_style",
+        "message_human_style_status",
         "mode",
         "paperops_context",
         "paperops_idle_reason",
@@ -757,6 +745,9 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
         body = str(preview.get("body") or "")
         if not title.strip() or not body.strip():
             errors.append("telegram_daily_portfolio_digest_preview_empty")
+        style = telegram_human_message_style(title, body)
+        if style["status"] != "human":
+            errors.append("telegram_daily_portfolio_digest_message_not_human:" + ",".join(style["errors"]))
         for phrase in (
             "Portfolio balance:",
             "Performance:",
@@ -767,10 +758,12 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
             "Dashboard: qadam.trade/dashboard/",
             "Mode: paper only; live capital remains blocked.",
         ):
-            if phrase not in body:
-                errors.append("telegram_daily_portfolio_digest_message_missing:" + phrase)
+            if phrase in body:
+                errors.append("telegram_daily_portfolio_digest_message_too_verbose:" + phrase)
         if not _safe_text(title, body):
             errors.append("telegram_daily_portfolio_digest_forbidden_text")
+    if artifact.get("message_human_style_status") != "human":
+        errors.append("telegram_daily_portfolio_digest_human_style_status_not_human")
     specificity = artifact.get("message_specificity", {})
     if not isinstance(specificity, dict):
         errors.append("telegram_daily_portfolio_digest_specificity_missing")

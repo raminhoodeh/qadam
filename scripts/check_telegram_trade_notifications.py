@@ -230,6 +230,9 @@ def main() -> int:
     if record:
         preview = record.get("message_preview", {})
         body = str(preview.get("body") or "") if isinstance(preview, dict) else ""
+        for marker in ("Qadam has placed a paper trade", "paper portfolio", "only paper trading", "live capital remains off"):
+            if marker not in body:
+                errors.append(f"telegram_trade_notifications_message_marker_missing:{marker}")
         for marker in (
             "Trade:",
             "Why this trade was sent:",
@@ -237,11 +240,13 @@ def main() -> int:
             "Portfolio:",
             "Performance:",
             "Current impact:",
-            "Mode: paper only; live capital remains blocked.",
-            "Dashboard: qadam.trade/dashboard/",
+            "Mode:",
+            "Dashboard:",
         ):
-            if marker not in body:
-                errors.append(f"telegram_trade_notifications_message_marker_missing:{marker}")
+            if marker in body:
+                errors.append(f"telegram_trade_notifications_message_too_verbose:{marker}")
+        if len([line for line in body.splitlines() if line.strip()]) > 3:
+            errors.append("telegram_trade_notifications_message_too_many_lines")
         if "%" not in body:
             errors.append("telegram_trade_notifications_message_percent_missing")
         if record.get("portfolio_value_gbp") is None:
