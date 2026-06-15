@@ -26,6 +26,9 @@ def main() -> None:
 
     sleeves = edge["sleeves"]
     symbols = edge["market_price_watch"]["symbols"]
+    source_scan = edge["source_scan"]
+    source_universe = edge["source_universe"]
+    all_source_keys = set(source_scan["all_source_keys"])
     required_symbols = {
         "CL=F",
         "BZ=F",
@@ -57,6 +60,13 @@ def main() -> None:
         for sleeve in sleeves
         if int(sleeve.get("order_authority_source_count", 0) or 0) != 0
     ]
+    source_subset_leaks = [
+        sleeve["key"]
+        for sleeve in sleeves
+        if set(sleeve.get("source_keys", [])) != all_source_keys
+        or int(sleeve.get("source_count", 0) or 0) != len(all_source_keys)
+        or sleeve.get("source_application") != "all_qadam_sources_cross_scanned_for_this_sleeve"
+    ]
     errors: list[str] = []
     if missing_symbols:
         errors.append(f"missing_symbols={','.join(missing_symbols)}")
@@ -64,6 +74,12 @@ def main() -> None:
         errors.append(f"authority_leaks={','.join(authority_leaks)}")
     if sleeve_authority_leaks:
         errors.append(f"sleeve_authority_leaks={','.join(sleeve_authority_leaks)}")
+    if source_scan.get("mode") != "all_sources_every_sleeve":
+        errors.append("edge_tracker_not_all_sources_every_sleeve")
+    if int(source_universe.get("source_count", 0) or 0) != len(all_source_keys):
+        errors.append("edge_tracker_source_universe_count_mismatch")
+    if source_subset_leaks:
+        errors.append(f"sleeve_source_subset_leaks={','.join(source_subset_leaks)}")
     if edge["weekly_thesis"].get("cadence") != "weekly":
         errors.append("weekly_thesis_cadence_not_weekly")
     if edge["quantum_pattern_review"].get("paper_order_allowed_count") != 0:
@@ -78,6 +94,8 @@ def main() -> None:
                 "watched_instrument_count": edge["watched_instrument_count"],
                 "weekly_thesis": edge["weekly_thesis"],
                 "quantum_pattern_review": edge["quantum_pattern_review"],
+                "source_scan_mode": source_scan.get("mode"),
+                "source_universe_count": source_universe.get("source_count"),
             },
             indent=2,
             sort_keys=True,
@@ -92,6 +110,8 @@ def main() -> None:
     print(f"edge_tracker_watched_instrument_count={edge['watched_instrument_count']}")
     print(f"edge_tracker_weekly_thesis_cadence={edge['weekly_thesis']['cadence']}")
     print(f"edge_tracker_quantum_mode={edge['quantum_pattern_review']['mode']}")
+    print(f"edge_tracker_source_scan_mode={edge['source_scan']['mode']}")
+    print(f"edge_tracker_source_universe_count={edge['source_universe']['source_count']}")
     print("edge_tracker_order_authority=false")
 
 

@@ -171,6 +171,7 @@ async function main() {
     assert(overview.detail_ledger_placement.overview_scope === "summary_only", "Overview must be summary-only for detailed ledgers");
     assert(overview.paper_capacity.total_gbp === 100000, "Overview must expose the GBP 100,000 paper capacity");
     assert(overview.edge_tracker.sleeve_count === 5, "Overview must expose the five-sleeve edge tracker");
+    assert(overview.edge_tracker.source_scan.mode === "all_sources_every_sleeve", "Overview edge tracker must use all sources for every sleeve");
     assert(overview.edge_tracker.weekly_thesis.cadence === "weekly", "Overview edge tracker must expose weekly thesis cadence");
     assert(models.system_connectivity_model.overview_scope.placement === "control-plane", "Control Plane placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
@@ -218,6 +219,9 @@ async function main() {
     assertIncludes(rendered, "[data-overview-source-summary]", "ACLED API");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Edge Tracker");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Current weekly thesis");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "all sources every sleeve");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Shared source universe");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "sources cross-scanned");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Oil");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Semiconductors");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Defence stocks");

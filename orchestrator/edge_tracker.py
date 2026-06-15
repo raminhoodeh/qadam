@@ -41,7 +41,7 @@ WATCHED_SLEEVES: tuple[dict[str, Any], ...] = (
             "Do conflict, maritime, aviation, fire, macro, and technical signals "
             "imply a repricing of energy-security risk?"
         ),
-        "source_keys": (
+        "primary_lens_source_keys": (
             "acled",
             "gdelt",
             "nasa_firms",
@@ -89,7 +89,7 @@ WATCHED_SLEEVES: tuple[dict[str, Any], ...] = (
             "Do macro liquidity, commodity trade, industrial demand, social flow, "
             "and technical structure imply convex metals exposure?"
         ),
-        "source_keys": (
+        "primary_lens_source_keys": (
             "fred",
             "bis",
             "ecb",
@@ -137,7 +137,7 @@ WATCHED_SLEEVES: tuple[dict[str, Any], ...] = (
             "Do sanctions, export controls, supply-chain pressure, software signals, "
             "earnings context, and technical strength imply semiconductor repricing?"
         ),
-        "source_keys": (
+        "primary_lens_source_keys": (
             "gdelt",
             "rss",
             "sec_edgar",
@@ -196,7 +196,7 @@ WATCHED_SLEEVES: tuple[dict[str, Any], ...] = (
             "Do event-probability curves disagree with source evidence, market "
             "prices, and Qadam's scenario model?"
         ),
-        "source_keys": (
+        "primary_lens_source_keys": (
             "polymarket",
             "kalshi",
             "rss",
@@ -229,7 +229,7 @@ WATCHED_SLEEVES: tuple[dict[str, Any], ...] = (
             "Do conflict intensity, procurement pressure, congressional flows, "
             "shipping disruption, and aviation activity imply defence repricing?"
         ),
-        "source_keys": (
+        "primary_lens_source_keys": (
             "acled",
             "ucdp",
             "gdelt",
@@ -294,14 +294,6 @@ def _parse_generated_at(generated_at: str | None) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def _source_index(watching: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    return {
-        str(source.get("source_key") or ""): source
-        for source in watching
-        if isinstance(source, dict) and source.get("source_key")
-    }
-
-
 def _source_record(source: dict[str, Any]) -> dict[str, Any]:
     status = str(source.get("status") or "pending")
     return {
@@ -317,19 +309,11 @@ def _source_record(source: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _sleeve_sources(
-    sleeve: dict[str, Any],
-    source_by_key: dict[str, dict[str, Any]],
-) -> tuple[list[dict[str, Any]], list[str]]:
-    available: list[dict[str, Any]] = []
-    missing: list[str] = []
-    for key in sleeve["source_keys"]:
-        source = source_by_key.get(str(key))
-        if source:
-            available.append(_source_record(source))
-        else:
-            missing.append(str(key))
-    return available, missing
+def _source_universe(watching: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        [_source_record(source) for source in watching if isinstance(source, dict)],
+        key=lambda source: source["source_key"],
+    )
 
 
 def _sleeve_status(source_records: list[dict[str, Any]]) -> str:
@@ -345,10 +329,10 @@ def _sleeve_status(source_records: list[dict[str, Any]]) -> str:
 
 
 def _build_sleeves(watching: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    source_by_key = _source_index(watching)
+    source_records = _source_universe(watching)
+    source_keys = [record["source_key"] for record in source_records]
     sleeves: list[dict[str, Any]] = []
     for sleeve in WATCHED_SLEEVES:
-        source_records, missing_keys = _sleeve_sources(sleeve, source_by_key)
         counts = Counter(record["status"] for record in source_records)
         research_usable_count = sum(
             1 for record in source_records if record["usable_for_research_context"]
@@ -369,7 +353,8 @@ def _build_sleeves(watching: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "strategy_use": sleeve["strategy_use"],
                 "watched_instruments": list(sleeve["instruments"]),
                 "watched_instrument_count": len(sleeve["instruments"]),
-                "source_keys": list(sleeve["source_keys"]),
+                "source_application": "all_qadam_sources_cross_scanned_for_this_sleeve",
+                "source_keys": source_keys,
                 "source_activity": source_records,
                 "source_count": len(source_records),
                 "online_source_count": int(counts.get("online", 0)),
@@ -377,7 +362,12 @@ def _build_sleeves(watching: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "research_usable_source_count": research_usable_count,
                 "signal_review_eligible_source_count": signal_review_eligible_count,
                 "order_authority_source_count": order_authority_count,
-                "missing_source_keys": missing_keys,
+                "missing_source_keys": [],
+                "primary_lens_source_keys": list(sleeve["primary_lens_source_keys"]),
+                "primary_lens_note": (
+                    "These lenses help explain relevance, but they do not limit "
+                    "the scan. Every exported Qadam source is evaluated for this sleeve."
+                ),
                 "llm_role": (
                     "Local LLM compresses raw source activity; frontier LLM "
                     "challenges the weekly thesis and competing explanations."
@@ -408,9 +398,9 @@ def _weekly_thesis(generated_at: str | None) -> dict[str, Any]:
         "current_thesis_label": f"{iso_year}-W{iso_week:02d} source-price pattern thesis",
         "next_thesis_due_at": next_due.isoformat(),
         "working_thesis": (
-            "Compare conflict, logistics, macro, social, filings, and technical "
-            "activity against oil, silver, semiconductors, prediction markets, "
-            "and defence prices to find non-obvious repricing pressure."
+            "Cross-scan every Qadam data source against every watched oil, "
+            "silver, semiconductor, prediction-market, and defence price to "
+            "find non-obvious repricing pressure."
         ),
         "strategy_refinement": (
             "Weekly review updates hypothesis priors, watchlist weights, and "
@@ -486,7 +476,9 @@ def build_edge_tracker_status(
 
     generated_at = generated_at or _now()
     sleeves = _build_sleeves(watching)
-    source_counts = Counter(str(source.get("status") or "pending") for source in watching)
+    source_universe = _source_universe(watching)
+    source_keys = [source["source_key"] for source in source_universe]
+    source_counts = Counter(source["status"] for source in source_universe)
     instrument_symbols = [
         instrument["symbol"]
         for sleeve in sleeves
@@ -497,23 +489,38 @@ def build_edge_tracker_status(
         "status": "tracking",
         "generated_at": generated_at,
         "purpose": (
-            "Scan Qadam's data sources for patterns between source activity and "
-            "the watched prices of oil, silver, semiconductors, prediction "
-            "markets, and defence stocks."
+            "Cross-scan every Qadam data source against the watched prices of "
+            "oil, silver, semiconductors, prediction markets, and defence stocks."
         ),
         "source_scan": {
             "status": "active" if watching else "waiting",
-            "total_source_count": len(watching),
+            "mode": "all_sources_every_sleeve",
+            "total_source_count": len(source_universe),
+            "all_source_keys": source_keys,
             "online_source_count": int(source_counts.get("online", 0)),
             "degraded_source_count": int(source_counts.get("degraded", 0)),
             "research_usable_source_count": sum(
-                1 for source in watching if source.get("usable_for_research_context") is True
+                1 for source in source_universe if source["usable_for_research_context"] is True
             ),
             "signal_review_eligible_source_count": sum(
-                1 for source in watching if source.get("eligible_for_signal_review") is True
+                1 for source in source_universe if source["eligible_for_signal_review"] is True
             ),
             "order_authority_source_count": sum(
-                1 for source in watching if source.get("can_authorize_orders") is True
+                1 for source in source_universe if source["can_authorize_orders"] is True
+            ),
+            "scan_contract": (
+                "Every watched sleeve receives the same full source universe. "
+                "Sleeve labels only describe market focus, not source exclusion."
+            ),
+        },
+        "source_universe": {
+            "status": "active" if source_universe else "waiting",
+            "mode": "all_sources_every_sleeve",
+            "source_count": len(source_universe),
+            "sources": source_universe,
+            "boundary": (
+                "The full source universe is read-only evidence context. It can "
+                "support pattern recognition but cannot authorize trades."
             ),
         },
         "market_price_watch": {
@@ -555,6 +562,7 @@ def validate_edge_tracker_status(payload: dict[str, Any]) -> None:
         "status",
         "purpose",
         "source_scan",
+        "source_universe",
         "market_price_watch",
         "llm_pattern_review",
         "quantum_pattern_review",
@@ -581,6 +589,23 @@ def validate_edge_tracker_status(payload: dict[str, Any]) -> None:
     for field in EDGE_TRACKER_AUTHORITY_FALSE_FIELDS:
         if payload.get(field) is not False:
             raise ValueError(f"edge tracker must keep {field}=False")
+    source_scan = payload.get("source_scan")
+    if not isinstance(source_scan, dict):
+        raise ValueError("edge tracker source_scan must be a dict")
+    if source_scan.get("mode") != "all_sources_every_sleeve":
+        raise ValueError("edge tracker must use all sources for every sleeve")
+    source_universe = payload.get("source_universe")
+    if not isinstance(source_universe, dict):
+        raise ValueError("edge tracker source_universe must be a dict")
+    universe_sources = source_universe.get("sources")
+    if not isinstance(universe_sources, list):
+        raise ValueError("edge tracker source universe must expose sources")
+    universe_keys = {str(source.get("source_key")) for source in universe_sources if isinstance(source, dict)}
+    scan_keys = {str(key) for key in source_scan.get("all_source_keys", [])}
+    if universe_keys != scan_keys:
+        raise ValueError("edge tracker source_scan keys must match source_universe")
+    if int(source_universe.get("source_count", 0) or 0) != len(universe_keys):
+        raise ValueError("edge tracker source universe count mismatch")
     sleeves = payload.get("sleeves")
     if not isinstance(sleeves, list) or len(sleeves) != 5:
         raise ValueError("edge tracker must expose five watched sleeves")
@@ -595,6 +620,15 @@ def validate_edge_tracker_status(payload: dict[str, Any]) -> None:
             raise ValueError("edge tracker sleeve must be a dict")
         if sleeve.get("order_authority_source_count", 0) != 0:
             raise ValueError(f"edge tracker sleeve has order authority: {sleeve.get('key')}")
+        if sleeve.get("source_application") != "all_qadam_sources_cross_scanned_for_this_sleeve":
+            raise ValueError(f"edge tracker sleeve has weak source application: {sleeve.get('key')}")
+        sleeve_keys = {str(key) for key in sleeve.get("source_keys", [])}
+        if sleeve_keys != universe_keys:
+            raise ValueError(f"edge tracker sleeve source subset detected: {sleeve.get('key')}")
+        if int(sleeve.get("source_count", 0) or 0) != len(universe_keys):
+            raise ValueError(f"edge tracker sleeve source count mismatch: {sleeve.get('key')}")
+        if sleeve.get("missing_source_keys"):
+            raise ValueError(f"edge tracker sleeve reports missing source keys: {sleeve.get('key')}")
         if not sleeve.get("watched_instruments"):
             raise ValueError(f"edge tracker sleeve missing instruments: {sleeve.get('key')}")
         if not sleeve.get("pattern_question"):
