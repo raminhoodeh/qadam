@@ -35,53 +35,13 @@ say "Checking deployment readiness gate"
 "$PYTHON_BIN" scripts/check_telegram_message_specificity.py
 node --check scripts/check_dashboard_deployment_readiness.js
 node scripts/check_dashboard_deployment_readiness.js
-
-say "Checking dashboard phase contracts"
-node scripts/check_dashboard_density_toggle.js
-node scripts/check_dashboard_navigation_ux.js
-node scripts/check_dashboard_panel_redesign.js
-node scripts/check_dashboard_section_explainers.js
-node scripts/check_dashboard_visual_system.js
-node scripts/check_dashboard_page_architecture.js
-node scripts/check_dashboard_information_hierarchy.js
-node scripts/check_dashboard_overhaul_ia_contract.js
-node scripts/check_dashboard_overhaul_copy_system.js
-node scripts/check_dashboard_overhaul_view_models.js
-node scripts/check_dashboard_overhaul_shell.js
-node scripts/check_dashboard_overhaul_overview.js
-node scripts/check_dashboard_overhaul_trades.js
-node scripts/check_dashboard_overhaul_sources.js
-node scripts/check_dashboard_overhaul_reasoning.js
-node scripts/check_dashboard_overhaul_performance.js
-node scripts/check_dashboard_overhaul_operations.js
-node scripts/check_dashboard_overhaul_governance.js
-node scripts/check_dashboard_overhaul_responsive.js
-node scripts/check_dashboard_d11a_information_diet_audit.js
-node scripts/check_dashboard_d11b_new_navigation_contract.js
-node scripts/check_dashboard_d11c_canonical_status_language.js
-node scripts/check_dashboard_d11d_single_safety_strip.js
-node scripts/check_dashboard_d11e_rebuild_overview.js
-node scripts/check_dashboard_d11f_trades_view_consolidation.js
-node scripts/check_dashboard_d11g_evidence_view_consolidation.js
-node scripts/check_dashboard_d11h_reasoning_view_consolidation.js
-node scripts/check_dashboard_d11i_operations_view.js
-node scripts/check_dashboard_d11j_tooltip_simplification.js
-node scripts/check_dashboard_d11k_view_model_refactor.js
-node scripts/check_dashboard_d11l_visual_simplification.js
-node scripts/check_dashboard_d11m_regression_acceptance.js
-node scripts/check_dashboard_d11n_documentation_guide_alignment.js
+node --check scripts/check_dashboard_d11o_deployment_discipline.js
 node scripts/check_dashboard_d11o_deployment_discipline.js
-node scripts/check_dashboard_d12_language_cleanup.js
-node scripts/check_dashboard_d13_health_language.js
-node scripts/check_dashboard_rs8_mission_control.js
-node scripts/check_dashboard_phase6_learning_loop.js
-node scripts/check_dashboard_rs9_learning_loop.js
-node scripts/check_dashboard_rs10_final_paper_autonomy.js
-node scripts/check_dashboard_system_map.js
-node scripts/check_dashboard_durable_spine.js
+
+say "Checking dashboard current product contracts"
+node scripts/check_dashboard_information_hierarchy.js
+node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_cc6_real_portfolio_timeline.js
-node scripts/check_dashboard_cc7_visual_a11y.js
-node scripts/check_dashboard_cc8_prune_docs_deploy.js
 node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js

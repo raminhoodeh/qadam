@@ -23,20 +23,25 @@ function indexOf(needle, label = needle) {
 }
 
 const hero = indexOf("dashboard-hero");
-const safety = indexOf("dashboard-safety-strip");
-const review = indexOf("operating-review-panel");
-const map = indexOf("system-map-panel");
+const portfolioHero = indexOf("data-overview-portfolio-hero");
+const mission = indexOf("data-overview-mission-brief");
+const paperAccount = indexOf("data-overview-paper-trade-state");
+const strategy = indexOf("data-overview-strategy-narrative");
+const controlPlane = indexOf("data-overview-control-plane");
+const sourceTracker = indexOf("data-overview-source-summary");
 const detailFlow = indexOf("dashboard-detail-flow");
 
-assert(hero < review, "mission control must appear after the hero");
-assert(hero < safety, "safety strip must appear after the hero");
-assert(safety < review, "safety strip must appear before mission control");
-assert(review < map, "mission control must appear before the system map");
-assert(map < detailFlow, "detail panels must appear after the system map");
+assert(hero < portfolioHero, "portfolio timeline must appear after the hero");
+assert(portfolioHero < mission, "Mission Snapshot must appear after the portfolio timeline");
+assert(mission < paperAccount, "Paper Account & Trade State must appear after Mission Snapshot");
+assert(paperAccount < strategy, "Strategy Universe must appear after Paper Account & Trade State");
+assert(strategy < controlPlane, "Control Plane must appear after Strategy Universe");
+assert(controlPlane < sourceTracker, "Data source tracker must appear after Control Plane");
+assert(sourceTracker < detailFlow, "hidden detail panels must appear after the first-screen mission control");
 
 [
     "data-overview-first-screen",
-    "data-dashboard-safety-strip",
+    "data-overview-portfolio-hero",
     "data-overview-mission-brief",
     "data-overview-strategy-narrative",
     "data-overview-strategy-universe",
@@ -44,19 +49,21 @@ assert(map < detailFlow, "detail panels must appear after the system map");
     "data-overview-paper-trade-state",
     "data-overview-source-summary",
     "Mission Control",
+    "Real portfolio timeline",
     "Mission Snapshot",
     "Strategy Universe",
     "Paper Account &amp; Trade State",
     "Control Plane",
-    "Evidence summary",
-    "Loading roles, handoffs, oversight route, and dashboard boundary.",
-    "How Qadam turns data into controlled paper trades"
+    "Data source tracker",
+    "Loading portfolio value, trade timeline, and paper-account state.",
+    "Portfolio timeline first, then mission state, paper account, strategy, operating flow, and source detail."
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
 [
     ".operating-review-panel",
-    ".dashboard-safety-strip",
     ".overview-first-screen",
+    ".overview-portfolio-hero",
+    ".portfolio-trade-timeline",
     ".overview-mission-brief",
     ".overview-strategy-narrative",
     ".overview-control-plane",
@@ -74,10 +81,9 @@ const missionFunction = renderer.indexOf("function renderMissionControl");
 const missionCall = renderer.lastIndexOf("renderMissionControl(status, source)");
 const renderFunction = renderer.indexOf("function renderOperatingSummary");
 const renderCall = renderer.lastIndexOf("renderOperatingSummary(status, source)");
-const safetyFunction = renderer.indexOf("function renderDashboardSafetyStrip");
-const safetyCall = renderer.lastIndexOf("renderDashboardSafetyStrip(status, viewModels)");
 const overviewFunction = renderer.indexOf("function renderOverviewFirstScreen");
 const overviewCall = renderer.lastIndexOf("renderOverviewFirstScreen(viewModels)");
+const portfolioFunction = renderer.indexOf("function renderContractPortfolioHero");
 const flowCall = Math.max(
     renderer.lastIndexOf("renderFlowMap(status, source, viewModels)"),
     renderer.lastIndexOf("renderFlowMap(status)")
@@ -86,12 +92,10 @@ assert(missionFunction >= 0, "renderer missing renderMissionControl");
 assert(missionCall >= 0, "renderer does not call renderMissionControl");
 assert(renderFunction >= 0, "renderer missing renderOperatingSummary");
 assert(renderCall >= 0, "renderer does not call renderOperatingSummary");
-assert(safetyFunction >= 0, "renderer missing renderDashboardSafetyStrip");
-assert(safetyCall >= 0, "renderer does not call renderDashboardSafetyStrip");
 assert(overviewFunction >= 0, "renderer missing renderOverviewFirstScreen");
 assert(overviewCall >= 0, "renderer does not call renderOverviewFirstScreen");
+assert(portfolioFunction >= 0, "renderer missing renderContractPortfolioHero");
 assert(missionCall < renderCall, "mission control must render before operating summary cards");
-assert(safetyCall < missionCall, "safety strip must render before mission control");
 assert(renderCall < overviewCall, "operating summary compatibility render must run before the new Overview");
 assert(overviewCall < flowCall, "Overview must render before the system map");
 
@@ -102,6 +106,7 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
     "renderContractStrategyUniverse",
     "renderContractStrategyNarrative",
     "renderContractStrategyBlock",
+    "renderContractPortfolioHero",
     "renderContractPortfolioBlock",
     "renderContractTradeStateSummary",
     "renderContractPaperTradeState",
@@ -115,7 +120,9 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
     "Head of Quant",
     "detail_ledger_placement",
     "data-cc5-contract-source",
-    "Trade ideas stay candidates until gated paper-order records exist"
+    "Real portfolio timeline",
+    "Source list",
+    "Strategy family ledger"
 ].forEach((needle) => assert(renderer.includes(needle), `Overview renderer missing ${needle}`));
 
 console.log("dashboard_information_hierarchy=ok");

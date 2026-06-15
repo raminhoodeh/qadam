@@ -108,7 +108,7 @@ function assertNoUnsafePublicText(text, label) {
 
 [
     "dashboard-detail-flow",
-    "data-dashboard-safety-strip",
+    "data-overview-portfolio-hero",
     "data-balance-ticker",
     "data-trade-toast-rail",
     "data-overview-first-screen",
@@ -117,29 +117,28 @@ function assertNoUnsafePublicText(text, label) {
     "data-overview-mission-brief",
     "data-overview-strategy-narrative",
     "data-overview-strategy-universe",
+    "data-overview-paper-trade-state",
     "data-overview-control-plane",
     "data-overview-source-summary",
     "data-operations-consolidated-readout",
     "Control Plane",
-    "Loading operating map and oversight",
+    "Real portfolio timeline",
+    "Loading portfolio value, trade timeline, and paper-account state.",
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "data-dashboard-view-target=\"evidence\"",
-    "/auth.css?v=20260607-cc11-final-dashboard-structure",
-    "/dashboard.js?v=20260607-cc11-final-dashboard-structure"
+    "/auth.css?v=20260615-dashboard-portfolio-first",
+    "/dashboard.js?v=20260615-dashboard-portfolio-first"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
-    [
-        "Paper trading authorized",
-        "Paper-only readout · live capital off",
-        "Control Plane owns operating flow",
-        "Status display, evidence, paper account, safety blocks.",
-    "outbound-only Telegram notifications",
-    "Read-only runtime diagnostics",
-    "Readable summary first; Diagnostics keeps raw evidence.",
-    "Paper-account mirror, P&amp;L, drawdown, and maturity evidence.",
-    "model outputs cannot bypass risk checks"
+[
+    "Qadam Mission Control",
+    "Start with portfolio value, trade history, mission state, strategy posture, and the operating flow behind Qadam.",
+    "Paper trading mode",
+    "Mission Snapshot",
+    "Paper Account &amp; Trade State",
+    "Strategy Universe",
+    "Data source tracker"
 ].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
 
 [
@@ -149,13 +148,15 @@ function assertNoUnsafePublicText(text, label) {
     "--glow-cyan",
     "backdrop-filter: blur",
     ".dashboard-detail-flow",
-    ".dashboard-safety-strip",
     ".overview-first-screen",
+    ".overview-portfolio-hero",
+    ".portfolio-trade-timeline",
+    ".portfolio-trade-timeline-grid",
     ".overview-mission-brief",
-    ".overview-decision-records",
     ".overview-strategy-narrative",
+    ".strategy-universe-ledger[open]",
     ".overview-source-summary-panel",
-    ".overview-ledger-routing",
+    ".source-universe-ledger",
     ".overview-control-plane",
     ".overview-readout-list",
     ".control-plane-grid",
@@ -173,11 +174,11 @@ function assertNoUnsafePublicText(text, label) {
     "function replacePanelBrief",
     "function renderMissionControl",
     "function renderOverviewFirstScreen",
-    "function renderOverviewDecisionRecords",
+    "function renderContractPortfolioHero",
+    "function renderPortfolioTradeTimeline",
     "function overviewNodeGuide",
     "function renderContractSourceSummary",
     "function renderContractTradeStateSummary",
-    "function renderDashboardSafetyStrip",
     "function buildBalanceTickerModel",
     "function renderBalanceTicker",
     "function buildTradeTimelineTokens",
@@ -199,6 +200,21 @@ function assertNoUnsafePublicText(text, label) {
     assert(!`${html}\n${css}\n${renderer}`.includes(needle), `dashboard acceptance found obsolete density artifact ${needle}`);
 });
 
+[
+    "Read-only dashboard",
+    "Hide diagnostics",
+    "Default to Mission Snapshot",
+    "Read paper mirror and lifecycle counts",
+    "Use Strategy Universe for strategy posture",
+    "Show lifecycle counts only",
+    "Show source posture only",
+    "Control Plane owns operating flow",
+    "paper authorized ready to poll",
+    "Run the PaperOps lifecycle poller"
+].forEach((needle) => {
+    assert(!html.includes(needle), `dashboard HTML still contains obsolete visible copy: ${needle}`);
+});
+
 assertNoUnsafePublicText(html, "dashboard HTML");
 assertNoUnsafePublicText(css, "dashboard CSS");
 assertNoUnsafePublicText(renderer, "dashboard renderer");
@@ -217,20 +233,19 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
     [
         ["[data-status-banner]", "Dashboard status loaded"],
         ["[data-status-banner]", "Live status connected"],
-        ["[data-dashboard-safety-strip]", "Paper trading authorized"],
-        ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
-        ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
+        ["[data-overview-portfolio-hero]", "Real portfolio timeline"],
+        ["[data-overview-portfolio-hero]", "Paper account portfolio value line"],
+        ["[data-overview-portfolio-hero]", "Trade timeline"],
+        ["[data-overview-portfolio-hero]", "Bought and held"],
+        ["[data-overview-portfolio-hero]", "Sold and closed"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
-        ["[data-overview-mission-brief]", "Default to Mission Snapshot"],
         ["[data-overview-mission-brief]", "Durable replay"],
         ["[data-overview-mission-brief]", "Trade lifecycle"],
-        ["[data-overview-mission-brief]", "Safety boundary"],
         ["[data-overview-strategy-narrative]", "Strategy Universe"],
-        ["[data-overview-strategy-narrative]", "Use Strategy Universe for strategy posture"],
         ["[data-overview-strategy-narrative]", "Asymmetric Catalyst Proxy Trading"],
         ["[data-overview-strategy-narrative]", "Universe"],
-        ["[data-overview-strategy-narrative]", "Currently qualified"],
-        ["[data-overview-strategy-narrative]", "Waiting on gates"],
+        ["[data-overview-strategy-narrative]", "Qualified now"],
+        ["[data-overview-strategy-narrative]", "Waiting"],
         ["[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens"],
         ["[data-overview-strategy-narrative]", "Open the full universe"],
         ["[data-overview-strategy-narrative]", "Qadam-native edge"],
@@ -241,8 +256,12 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation"],
         ["[data-overview-strategy-narrative]", "Akber filter"],
         ["[data-overview-strategy-narrative]", "guarded Alpaca Paper"],
+        ["[data-overview-paper-trade-state]", "Paper Account &amp; Trade State"],
+        ["[data-overview-paper-trade-state]", "Balance"],
+        ["[data-overview-paper-trade-state]", "Current value"],
+        ["[data-overview-paper-trade-state]", "Total P&amp;L"],
+        ["[data-overview-paper-trade-state]", "Trade state"],
         ["[data-overview-control-plane]", "Control Plane"],
-        ["[data-overview-control-plane]", "Control Plane owns operating flow"],
         ["[data-overview-control-plane]", "Qadam operating team"],
         ["[data-overview-control-plane]", "Chief Operating Officer"],
         ["[data-overview-control-plane]", "Local LLM"],
@@ -250,12 +269,10 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-overview-control-plane]", "How to read this node"],
         ["[data-overview-control-plane]", "Currently"],
         ["[data-overview-control-plane]", "Next handoff"],
-        ["[data-overview-source-summary]", "Evidence summary"],
-        ["[data-overview-source-summary]", "Show source posture only"],
-        ["[data-overview-source-summary]", "Full source rows and connection ledgers live in Evidence"],
-        ["[data-overview-source-summary]", "Reasoning owns hypotheses"],
-        ["[data-overview-source-summary]", "Trades owns signal rows"],
-        ["[data-overview-control-plane]", "Mission Snapshot owns authority state"],
+        ["[data-overview-source-summary]", "Data source tracker"],
+        ["[data-overview-source-summary]", "Source list"],
+        ["[data-overview-source-summary]", "signal-review eligible"],
+        ["[data-overview-source-summary]", "ACLED API"],
         ["[data-mission-sources]", "logged-in/configured"],
         ["[data-mission-sources]", "replay"],
         ["[data-mission-philosophy]", "Trading philosophy"],
@@ -265,7 +282,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-mission-portfolio]", "Paper account"],
         ["[data-operating-summary]", "Paper account"],
         ["[data-operating-summary]", "Source quality"],
-        ["[data-operating-summary]", "Safety strip"],
+        ["[data-operating-summary]", "Safety boundary"],
         ["[data-operating-summary]", "Bridge"],
         ["[data-overview-control-plane]", "Research Analyst"],
         ["[data-overview-control-plane]", "PaperOps"],
@@ -295,8 +312,24 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
 
     const overviewSourceSummary = rendered.elements.get("[data-overview-source-summary]")?.innerHTML || "";
     const overviewTradeState = rendered.elements.get("[data-overview-paper-trade-state]")?.innerHTML || "";
-    assert(!overviewSourceSummary.includes("ACLED API"), "acceptance: Overview source summary must not render source-row ledger entries");
     assert(!overviewTradeState.includes("USO options watch"), "acceptance: Overview trade state must not render trade-row ledger entries");
+    [
+        "Default to Mission Snapshot",
+        "Read paper mirror and lifecycle counts",
+        "Use Strategy Universe for strategy posture",
+        "Show lifecycle counts only",
+        "Show source posture only",
+        "Control Plane owns operating flow"
+    ].forEach((needle) => {
+        const renderedHtml = [
+            rendered.elements.get("[data-overview-mission-brief]")?.innerHTML || "",
+            rendered.elements.get("[data-overview-strategy-narrative]")?.innerHTML || "",
+            rendered.elements.get("[data-overview-paper-trade-state]")?.innerHTML || "",
+            rendered.elements.get("[data-overview-control-plane]")?.innerHTML || "",
+            rendered.elements.get("[data-overview-source-summary]")?.innerHTML || ""
+        ].join("\n");
+        assert(!renderedHtml.includes(needle), `acceptance: rendered overview still contains obsolete copy ${needle}`);
+    });
 
     console.log("dashboard_acceptance=ok");
 })().catch((error) => {

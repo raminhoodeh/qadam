@@ -38,12 +38,12 @@ const selectors = [
     "[data-capital]",
     "[data-operations-consolidated-readout]",
     "[data-status-banner]",
+    "[data-overview-portfolio-hero]",
     "[data-balance-ticker]",
     "[data-trade-toast-rail]",
     "[data-mode-label]",
     "[data-capital-label]",
     "[data-live-capital-label]",
-    "[data-dashboard-safety-strip]",
     "[data-snapshot-meta]"
 ];
 
@@ -226,8 +226,8 @@ async function main() {
     assertIncludes(rendered, "[data-operating-summary]", "Paper account");
     assertIncludes(rendered, "[data-operating-summary]", "Source quality");
     assertIncludes(rendered, "[data-operating-summary]", "Strategy");
-    assertIncludes(rendered, "[data-operating-summary]", "Safety strip");
-    assertIncludes(rendered, "[data-operating-summary]", "Candidate is not order");
+    assertIncludes(rendered, "[data-operating-summary]", "Trade layer");
+    assertIncludes(rendered, "[data-operating-summary]", "paper orders");
     assertIncludes(rendered, "[data-phase4-summary]", "Q4-12");
     assertIncludes(rendered, "[data-phase4-summary]", "Certified");
     assertIncludes(rendered, "[data-phase4-strategy]", "Is Phase 4 visible but non-executable?");
@@ -245,6 +245,11 @@ async function main() {
     assertIncludes(rendered, "[data-overview-control-plane]", "mission_control");
     assertIncludes(rendered, "[data-overview-control-plane]", "What it does");
     assertIncludes(rendered, "[data-overview-control-plane]", "Boundary");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Real portfolio timeline");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Paper account portfolio value line");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Trade timeline");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Bought and held");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Sold and closed");
     assertIncludes(rendered, "[data-flow-map]", "Q5-13 Functional System Map Dashboard");
     assertIncludes(rendered, "[data-flow-map]", "Backend parity");
     assertIncludes(rendered, "[data-flow-map]", "Unsafe controls");
@@ -295,13 +300,12 @@ async function main() {
     assertIncludes(rendered, "[data-overview-control-plane]", "Next handoff");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Durable replay");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Trade lifecycle");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Safety boundary");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "data-overview-decision-records");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Default to Mission Snapshot");
+    assert(!html(rendered, "[data-overview-mission-brief]").includes("data-overview-decision-records"), "Mission Snapshot must not render old decision-record chrome");
+    assert(!html(rendered, "[data-overview-mission-brief]").includes("Default to Mission Snapshot"), "Mission Snapshot must not render old default decision copy");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Strategy Universe");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Asymmetric Catalyst Proxy Trading");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Currently qualified");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting on gates");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Qualified now");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Open the full universe");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Qadam-native edge");
@@ -313,17 +317,15 @@ async function main() {
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber filter");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "guarded Alpaca Paper");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Paper Account &amp; Trade State");
-    assertIncludes(rendered, "[data-overview-paper-trade-state]", "data-paper-capacity-line");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Balance");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Current value");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Trade state");
-    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Show lifecycle counts only");
-    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Full signal rows, candidate lineage");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Total P&amp;L");
     assert(!html(rendered, "[data-overview-paper-trade-state]").includes("USO options watch"), "Overview trade state must not render trade-row ledgers");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Evidence summary");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Show source posture only");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Full source rows and connection ledgers live in Evidence");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Reasoning owns hypotheses");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Trades owns signal rows");
-    assert(!html(rendered, "[data-overview-source-summary]").includes("ACLED API"), "Overview source summary must not render source-row ledgers");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Data source tracker");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Source list");
+    assertIncludes(rendered, "[data-overview-source-summary]", "signal-review eligible");
+    assertIncludes(rendered, "[data-overview-source-summary]", "ACLED API");
     assertIncludes(rendered, "[data-trade-layer]", "Signal Review");
     assertIncludes(rendered, "[data-trade-layer]", "Decision chain");
     assertIncludes(rendered, "[data-trade-layer]", "Governance comment");

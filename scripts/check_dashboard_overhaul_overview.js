@@ -79,6 +79,7 @@ function buildModels(snapshot = status) {
 async function main() {
     includesAll(dashboardHtml, [
         "data-overview-first-screen",
+        "data-overview-portfolio-hero",
         "data-overview-mission-brief",
         "data-overview-strategy-narrative",
         "data-overview-strategy-universe",
@@ -89,6 +90,9 @@ async function main() {
 
     includesAll(css, [
         ".overview-first-screen",
+        ".overview-portfolio-hero",
+        ".portfolio-trade-timeline",
+        ".portfolio-trade-timeline-grid",
         ".overview-mission-brief",
         ".overview-mission-snapshot-grid",
         ".overview-strategy-narrative",
@@ -100,7 +104,7 @@ async function main() {
         ".overview-control-plane",
         ".control-plane-grid",
         ".overview-source-summary-panel",
-        ".overview-ledger-routing",
+        ".source-universe-ledger",
         ".overview-plain-grid",
         ".overview-plain-card-grid",
         ".overview-capacity-line",
@@ -116,11 +120,12 @@ async function main() {
         "function renderContractStrategyUniverse",
         "function renderContractStrategyNarrative",
         "function renderContractStrategyBlock",
+        "function renderContractPortfolioHero",
+        "function renderPortfolioTradeTimeline",
         "function renderContractPortfolioBlock",
         "function renderContractTradeStateSummary",
         "function renderContractPaperTradeState",
         "function renderContractSourceSummary",
-        "function renderOverviewDecisionRecords",
         "founder_contract_model",
         "data-cc5-contract-source",
         "OVERVIEW_NODE_LABELS",
@@ -164,19 +169,19 @@ async function main() {
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
     const rendered = await renderWithStatus(status);
-    assertIncludes(rendered, "[data-dashboard-safety-strip]", "Paper-only readout · live capital off");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Real portfolio timeline");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Paper account portfolio value line");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Trade timeline");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Bought and held");
+    assertIncludes(rendered, "[data-overview-portfolio-hero]", "Sold and closed");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Mission Snapshot");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Default to Mission Snapshot");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "data-overview-decision-records");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Durable replay");
     assertIncludes(rendered, "[data-overview-mission-brief]", "Trade lifecycle");
-    assertIncludes(rendered, "[data-overview-mission-brief]", "Safety boundary");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Strategy Universe");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Use Strategy Universe for strategy posture");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Second-order AI infrastructure beneficiary lens");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Asymmetric Catalyst Proxy Trading");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Currently qualified");
-    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting on gates");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Qualified now");
+    assertIncludes(rendered, "[data-overview-strategy-narrative]", "Waiting");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Strategy family ledger");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Open the full universe");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Qadam-native edge");
@@ -187,29 +192,24 @@ async function main() {
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Prediction Market Geopolitical Dislocation");
     assertIncludes(rendered, "[data-overview-strategy-narrative]", "Akber filter");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Paper Account &amp; Trade State");
-    assertIncludes(rendered, "[data-overview-paper-trade-state]", "data-paper-capacity-line");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Balance");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Current value");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Realized");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Unrealized");
+    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Total P&amp;L");
     assertIncludes(rendered, "[data-overview-paper-trade-state]", "Trade state");
-    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Read paper mirror and lifecycle counts");
-    assertIncludes(rendered, "[data-overview-paper-trade-state]", "Full signal rows, candidate lineage");
     assertIncludes(rendered, "[data-overview-control-plane]", "Control Plane");
-    assertIncludes(rendered, "[data-overview-control-plane]", "Control Plane owns operating flow");
     assertIncludes(rendered, "[data-overview-control-plane]", "Human oversight");
     assertIncludes(rendered, "[data-overview-control-plane]", "Python COO");
     assertIncludes(rendered, "[data-overview-control-plane]", "Chief Operating Officer");
     assertIncludes(rendered, "[data-overview-control-plane]", "Local LLM");
     assertIncludes(rendered, "[data-overview-control-plane]", "Frontier LLM");
     assertIncludes(rendered, "[data-overview-control-plane]", "Head of Quant");
-    assertIncludes(rendered, "[data-overview-control-plane]", "Mission Snapshot owns authority state");
-    assertIncludes(rendered, "[data-overview-control-plane]", "Trade ideas stay candidates until gated paper-order records exist");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Evidence summary");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Show source posture only");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Full source rows and connection ledgers live in Evidence");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Reasoning owns hypotheses");
-    assertIncludes(rendered, "[data-overview-source-summary]", "Trades owns signal rows");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Data source tracker");
+    assertIncludes(rendered, "[data-overview-source-summary]", "Source list");
+    assertIncludes(rendered, "[data-overview-source-summary]", "signal-review eligible");
+    assertIncludes(rendered, "[data-overview-source-summary]", "ACLED API");
     assert(!html(rendered, "[data-overview-paper-trade-state]").includes("USO options watch"), "Overview trade state must not show named trade rows");
-    assert(!html(rendered, "[data-overview-source-summary]").includes("ACLED API"), "Overview source summary must not show named source rows");
     assert(!html(rendered, "[data-overview-source-summary]").includes("Worldview prior"), "Overview source summary must not show reasoning ledger rows");
 
     const overviewText = [
@@ -239,6 +239,17 @@ async function main() {
         "shadow toggles"
     ].forEach((term) => {
         assert(!overviewText.includes(term), `Overview first screen contains disallowed primary term: ${term}`);
+    });
+
+    [
+        "Default to Mission Snapshot",
+        "Read paper mirror and lifecycle counts",
+        "Use Strategy Universe for strategy posture",
+        "Show lifecycle counts only",
+        "Show source posture only",
+        "Control Plane owns operating flow"
+    ].forEach((term) => {
+        assert(!overviewText.includes(term), `Overview first screen contains obsolete explanatory text: ${term}`);
     });
 
     [

@@ -86,6 +86,14 @@ async function main() {
         "Fund Manager oversight, source feed state",
         "Overview shows source posture only",
         "Trade rows are lifecycle state only",
+        "Read-only dashboard",
+        "Hide diagnostics",
+        "Default to Mission Snapshot",
+        "Read paper mirror and lifecycle counts",
+        "Use Strategy Universe for strategy posture",
+        "Show lifecycle counts only",
+        "Show source posture only",
+        "Control Plane owns operating flow",
         "data-overview-data-sources",
         "data-overview-thought-feed",
         "data-overview-cockpit-grid",
@@ -95,21 +103,24 @@ async function main() {
 
     assertAllIncludes(combinedSource, [
         "Mission Control",
+        "Real portfolio timeline",
         "Mission Snapshot",
+        "Paper Account &amp; Trade State",
         "Strategy Universe",
         "Control Plane",
-        "Loading operating map and oversight",
-        "Evidence summary",
+        "Data source tracker",
+        "Loading portfolio value, trade timeline, and paper-account state.",
         "Human oversight",
-        "Mission Snapshot owns authority state",
-        "overview-decision-records",
-        "renderOverviewDecisionRecords"
+        "portfolio-trade-timeline",
+        "renderContractPortfolioHero",
+        "renderPortfolioTradeTimeline"
     ], "dashboard source");
 
-    assertCountAtLeast(dashboardHtml, "overview-decision-records", 5, "static dashboard shell decision records");
+    assertCount(dashboardHtml, "overview-decision-records", 0, "static dashboard shell decision records");
 
     const rendered = await renderWithStatus(status);
     const overviewHtml = [
+        html(rendered, "[data-overview-portfolio-hero]"),
         html(rendered, "[data-overview-mission-brief]"),
         html(rendered, "[data-overview-strategy-narrative]"),
         html(rendered, "[data-overview-paper-trade-state]"),
@@ -135,6 +146,12 @@ async function main() {
         "Unqualified families stay",
         "Overview shows source posture only",
         "Trade rows are lifecycle state only",
+        "Default to Mission Snapshot",
+        "Read paper mirror and lifecycle counts",
+        "Use Strategy Universe for strategy posture",
+        "Show lifecycle counts only",
+        "Show source posture only",
+        "Control Plane owns operating flow",
         "live capital enabled"
     ], "rendered overview");
 
@@ -144,35 +161,30 @@ async function main() {
         "data-overview-cockpit-grid",
         "data-overview-thinking-grid",
         "data-overview-trade-board",
-        "ACLED API",
-        "FRED API",
         "Worldview prior",
         "USO options watch"
     ], "rendered overview html");
 
     assertAllIncludes(overviewText, [
+        "Real portfolio timeline",
+        "Trade timeline",
+        "Bought and held",
+        "Sold and closed",
         "Mission Snapshot",
         "Human oversight",
         "Control Plane",
-        "Evidence summary",
+        "Data source tracker",
+        "Source list",
         "Paper Account & Trade State",
-        "Reasoning owns hypotheses",
-        "Trade ideas stay candidates until gated paper-order records exist",
-        "Default to Mission Snapshot",
-        "Safety boundary",
-        "Use Strategy Universe for strategy posture",
-        "Read paper mirror and lifecycle counts",
-        "Show lifecycle counts only",
-        "Show source posture only",
-        "Control Plane owns operating flow",
-        "No dashboard command authority"
+        "Total P&L",
+        "Strategy family ledger",
+        "Safety Policy"
     ], "rendered overview");
 
-    assertCountAtLeast(overviewHtml, "data-overview-decision-records", 7, "rendered overview decision records");
+    assertCount(overviewHtml, "data-overview-decision-records", 0, "rendered overview decision records");
     assertCountAtMost(overviewText, "This is read-only mission control", 2, "rendered overview read-only mission control copy");
-    assertCountAtMost(overviewText, "Trade ideas stay candidates", 2, "rendered overview trade-candidate boundary");
-    assertCountAtMost(overviewText, "Full source rows and connection ledgers live in Evidence", 1, "rendered overview evidence routing copy");
-    assertCountAtMost(overviewText, "Full signal rows, candidate lineage", 1, "rendered overview trade routing copy");
+    assertCount(overviewText, "Full source rows and connection ledgers live in Evidence", 0, "rendered overview evidence routing copy");
+    assertCount(overviewText, "Full signal rows, candidate lineage", 0, "rendered overview trade routing copy");
 
     assertAllIncludes(overviewText, [
         "Semiconductor Policy Options Asymmetry",
@@ -211,7 +223,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260607-cc11-final-dashboard-structure");
+    console.log("dashboard_cc9_cache_key=20260615-dashboard-portfolio-first");
 }
 
 main().catch((error) => {

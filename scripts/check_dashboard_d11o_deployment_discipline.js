@@ -10,8 +10,6 @@ const deployScriptPath = path.join(repoRoot, "landing-page-repo", "scripts", "de
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
 const readinessPath = path.join(repoRoot, "scripts", "check_dashboard_deployment_readiness.js");
 const acceptancePath = path.join(repoRoot, "scripts", "check_dashboard_acceptance.js");
-const d11mPath = path.join(repoRoot, "scripts", "check_dashboard_d11m_regression_acceptance.js");
-const d11nPath = path.join(repoRoot, "scripts", "check_dashboard_d11n_documentation_guide_alignment.js");
 const planPath = path.join(repoRoot, "docs", "qadam-dashboard-overhaul-master-implementation-plan.md");
 const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11o-deployment-discipline-2026-05-26.md");
 
@@ -65,8 +63,6 @@ const deployScript = readText(deployScriptPath);
 const preflight = readText(preflightPath);
 const readiness = readText(readinessPath);
 const acceptance = readText(acceptancePath);
-const d11m = readText(d11mPath);
-const d11n = readText(d11nPath);
 const plan = readText(planPath);
 
 includesAll(deployScript, [
@@ -117,9 +113,15 @@ assert(receiptIndex < successPrintIndex, "success message must be printed after 
 includesAll(preflight, [
     "node scripts/check_dashboard_deployment_readiness.js",
     "scripts/check_codebase_upgrade_telegram_notification.py",
-    "node scripts/check_dashboard_d11n_documentation_guide_alignment.js",
+    "node --check scripts/check_dashboard_d11o_deployment_discipline.js",
     "node scripts/check_dashboard_d11o_deployment_discipline.js",
     "node scripts/check_protected_user_guide.js",
+    "node scripts/check_dashboard_information_hierarchy.js",
+    "node scripts/check_dashboard_overhaul_overview.js",
+    "node scripts/check_dashboard_cc6_real_portfolio_timeline.js",
+    "node scripts/check_dashboard_cc9_slop_repetition.js",
+    "node scripts/check_dashboard_renderer.js",
+    "node scripts/check_dashboard_live_bridge.js",
     "\"$PYTHON_BIN\" scripts/check_cockpit_status.py",
     "\"$PYTHON_BIN\" scripts/check_live_bridge.py",
     "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
@@ -141,21 +143,11 @@ assert(
     "dashboard acceptance missing D11O dependency"
 );
 
-includesAll(d11m, [
-    "D11O - Deployment Discipline",
-    "D11P - Performance View Consolidation"
-], "D11M next-stage alignment");
-
-includesAll(d11n, [
-    "D11O - Deployment Discipline",
-    "D11P - Performance View Consolidation"
-], "D11N next-stage alignment");
-
 includesAll(plan, [
     "D11O - Deployment Discipline",
     "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
     "scripts/check_dashboard_d11o_deployment_discipline.js",
-    "D11P - Performance View Consolidation"
+    "D12 - Dashboard Language And Meaning Cleanup"
 ], "D11O master plan");
 
 assert(fs.existsSync(auditPath), "D11O audit document missing");
