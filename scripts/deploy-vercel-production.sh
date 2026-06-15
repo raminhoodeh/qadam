@@ -144,7 +144,7 @@ if ! (
   "${QADAM_PYTHON_BIN}" "${ROOT_DIR}/scripts/send_codebase_upgrade_telegram_notification.py" \
     --live \
     --source "production_deploy" \
-    --summary "Latest committed Qadam runtime and dashboard changes are live on qadam.trade." \
+    --summary "Qadam has been updated and the live dashboard is ready for review." \
     --deployment-url "${deployment_url}" \
       --alias "qadam.trade" \
       --alias "www.qadam.trade"
