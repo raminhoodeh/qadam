@@ -19,6 +19,10 @@ from orchestrator.bookmap_local_bridge import (
     bookmap_local_bridge_packet_context,
     bookmap_local_bridge_status,
 )
+from orchestrator.agent_reach_bridge import (
+    agent_reach_bridge_evidence_items,
+    agent_reach_bridge_public_status,
+)
 from orchestrator.config import Settings
 from orchestrator.broker_reconciliation import BrokerReconciliationReviewStore, broker_reconciliation_summary
 from orchestrator.event_log import EventLog
@@ -26,6 +30,7 @@ from orchestrator.execution import execution_registry
 from orchestrator.execution_policy import ExecutionPolicyReviewStore, execution_policy_summary
 from orchestrator.evidence_packet_normalization import (
     evidence_packet_normalization_summary,
+    normalize_adapter_evidence_packet,
     normalize_signal_evidence_packet,
 )
 from orchestrator.evidence_packet_runtime import (
@@ -2865,6 +2870,18 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         strategy_packets = []
 
     evidence_packets = [_safe_evidence_packet(signal) for signal in signals]
+    agent_reach_bridge = agent_reach_bridge_public_status(settings)
+    agent_reach_items = agent_reach_bridge_evidence_items(agent_reach_bridge)
+    if agent_reach_items:
+        evidence_packets.append(
+            normalize_adapter_evidence_packet(
+                source_key="agent_reach",
+                evidence_items=agent_reach_items,
+                packet_type="social_news_discovery_packet",
+                context_role="supplemental_social_news_discovery_only",
+                summary="Agent Reach social/news/web capability evidence normalized for cockpit replay.",
+            )
+        )
     evidence_normalization = evidence_packet_normalization_summary(evidence_packets)
     try:
         evidence_runtime = evidence_packet_runtime_public_status(
@@ -2981,6 +2998,12 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
             f"{phase2_cycle.get('durable_replay_replayed_source_count', 0)}/"
             f"{phase2_cycle.get('source_count', 0)} sources replayed into shadow review"
         )
+    if agent_reach_bridge.get("status") == "reference_ready":
+        current_focus.append(
+            "Agent Reach bridge: "
+            f"{agent_reach_bridge.get('selected_runtime_evidence_channel_count', 0)} "
+            "social/news/web channels available for supplemental evidence"
+        )
     if local_assessments:
         current_focus.append(
             f"local Research Analyst focus: {local_assessments[-1].get('watch_focus', 'shadow review')}"
@@ -3053,6 +3076,7 @@ def _build_cognition(settings: Settings) -> dict[str, Any]:
         "research_goal_records": research_goals.get("recent_goals", []),
         "market_context": market_context,
         "market_context_packets": market_context.get("recent_packets", []),
+        "agent_reach_bridge": agent_reach_bridge,
         "paper_account_context": paper_context,
         "signal_integrity": {
             "status": signal_integrity.get("status", "ok"),

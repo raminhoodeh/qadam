@@ -14,6 +14,10 @@ from orchestrator.bookmap_local_bridge import (  # noqa: E402
     bookmap_local_bridge_evidence_items,
     fetch_bookmap_local_bridge_sample,
 )
+from orchestrator.agent_reach_bridge import (  # noqa: E402
+    agent_reach_bridge_evidence_items,
+    agent_reach_bridge_public_status,
+)
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.evidence_packet_normalization import (  # noqa: E402
     EVIDENCE_PACKET_NORMALIZATION_VERSION,
@@ -72,6 +76,16 @@ def main() -> int:
             packet_type="orderflow_confirmation_packet",
             context_role="supplemental_orderflow_confirmation_only",
             summary="Bookmap local order-flow evidence normalized for runtime replay.",
+        )
+    )
+    agent_reach_status = agent_reach_bridge_public_status(settings)
+    packets.append(
+        normalize_adapter_evidence_packet(
+            source_key="agent_reach",
+            evidence_items=agent_reach_bridge_evidence_items(agent_reach_status),
+            packet_type="social_news_discovery_packet",
+            context_role="supplemental_social_news_discovery_only",
+            summary="Agent Reach social/news/web capability evidence normalized for runtime replay.",
         )
     )
 

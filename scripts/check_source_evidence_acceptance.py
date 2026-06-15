@@ -43,6 +43,7 @@ CHECKS: tuple[CheckCommand, ...] = (
         "credential_bound_adapter_check",
     ),
     CheckCommand("provider_decision_pass", "scripts/check_provider_decision_pass.py", "provider_decision_pass_check"),
+    CheckCommand("agent_reach_bridge", "scripts/check_agent_reach_bridge.py", "agent_reach_bridge_check"),
     CheckCommand("tradingview_mcp_adapter", "scripts/check_tradingview_mcp_adapter.py", "tradingview_mcp_adapter_check"),
     CheckCommand("bookmap_local_bridge", "scripts/check_bookmap_local_bridge.py", "bookmap_local_bridge_check"),
     CheckCommand(
@@ -207,6 +208,31 @@ def _cross_check(parsed_by_check: dict[str, dict[str, str]]) -> list[str]:
         errors,
     )
     _expect_true(parsed_by_check, "provider_decision_pass", "provider_decision_pass_authority_unchanged", errors)
+
+    _expect_equal(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_status", "ok", errors)
+    _expect_equal(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_reference_status", "reference_ready", errors)
+    _expect_equal(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_canonical_source_count", "35", errors)
+    _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_counts_as_canonical_source", errors)
+    _expect_int_at_least(
+        parsed_by_check,
+        "agent_reach_bridge",
+        "agent_reach_bridge_selected_runtime_evidence_channel_count",
+        8,
+        errors,
+    )
+    _expect_int_at_least(
+        parsed_by_check,
+        "agent_reach_bridge",
+        "agent_reach_bridge_qadam_existing_source_match_count",
+        5,
+        errors,
+    )
+    _expect_equal(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_authority_leak_count", "0", errors)
+    _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_secret_like_value_present", errors)
+    _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_source_quorum_credit_allowed", errors)
+    _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_paper_order_allowed", errors)
+    _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_broker_write_allowed", errors)
+    _expect_false(parsed_by_check, "agent_reach_bridge", "agent_reach_bridge_live_capital_enabled", errors)
 
     _expect_true(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_connected", errors)
     _expect_false(parsed_by_check, "tradingview_mcp_adapter", "tradingview_mcp_adapter_live_calls_enabled", errors)

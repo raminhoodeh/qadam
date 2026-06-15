@@ -86,6 +86,41 @@ Key split decisions:
 | --- | --- | --- |
 | Preference / PREF MCP | Remote Streamable HTTP MCP at `https://pref.trade/mcp`; bearer key `pref_agent_*` or account key | Registered in the Resource Registry as `preference_mcp` with category `supplemental_data_plane`. It is a read-only data plane for prediction markets, orderbooks, physical movement, weather, filings, wallet intelligence, news, macro, sports lines, and other world data. Current Qadam posture is status/catalog/sample/provenance/domain-pack/shadow-context, public cockpit visibility, Preference-aware Phase 4 strategy manifestation, Q4-10/Q4-12 certification gating, and PREF-12 upstream source-promotion decisions only until identity and allowlist gates pass. PREF-12 currently promotes zero sources: Polymarket, Kalshi, SEC EDGAR, and vessel tracking map to existing registry entries; NOAA-style weather and KOL wallet context are deferred. It is not source 36, not an execution venue, not a broker, not a fill/receipt/reconciliation source, and cannot affect canonical trust rank unless a specific upstream source is separately promoted. |
 
+## Supplemental Internet Reach Layer - Agent Reach
+
+Agent Reach is now registered as a local reference bridge through
+`orchestrator/agent_reach_bridge.py` and validated by
+`scripts/check_agent_reach_bridge.py`.
+
+This does not change Qadam's canonical 35-source count. It enriches Qadam's
+read-only evidence layer by mapping the local `Agent-Reach-main/` checkout into
+supplemental channels for:
+
+- RSS/news feeds, public web article readback, and Exa-style source discovery;
+- X/Twitter and Reddit local logged-in/cookie routes where API access is weak
+  or unavailable;
+- GitHub public developer activity for narrow semiconductor/AI-infrastructure
+  watchlists;
+- YouTube transcripts and public video briefings;
+- V2EX, Xueqiu, Bilibili, Xiaohongshu, LinkedIn, and Xiaoyuzhou as optional
+  regional, developer, company, video, or podcast context channels.
+
+The bridge is deliberately metadata-first. It does not install Agent Reach,
+does not run browser sessions, does not read cookies, does not call external
+networks, and does not promote any channel into source quorum. Its normalized
+`social_news_discovery_packet` is persisted in the evidence runtime as
+supplemental context only.
+
+Current practical missing data after this bridge:
+
+- Reddit remains unavailable until a local logged-in OpenCLI or `rdt-cli`
+  route is configured.
+- X/Twitter has API credentials, but Agent Reach's local cookie/browser route
+  is not activated unless the operator sets it up separately.
+- Capitol Trades/STOCK Act and Kalshi still need their provider credentials.
+- LinkedIn/Xiaohongshu/Xueqiu-style cookie channels should use dedicated
+  low-risk accounts if ever activated.
+
 ## Resolved Source-Registry Blockers
 
 The May 2026 source-registry blocker pass resolved the eight stale blockers into explicit v1 decisions:
@@ -154,10 +189,11 @@ As of 2026-06-14, the non-dashboard source/evidence/runtime work is covered by
 `scripts/check_source_evidence_acceptance.py`.
 
 The acceptance gate runs the source-registry cleanup, Phase 1 data spine,
-read-only source hardening, credential-bound adapter, provider-decision,
-TradingView MCP, Bookmap local bridge, evidence normalization, durable evidence
-runtime, and cockpit-status checks. It deliberately excludes Stage 7 dashboard
-simplification because that work is plan-only until explicitly implemented.
+read-only source hardening, credential-bound adapter, provider-decision, Agent
+Reach bridge, TradingView MCP, Bookmap local bridge, evidence normalization,
+durable evidence runtime, and cockpit-status checks. It deliberately excludes
+Stage 7 dashboard simplification because that work is plan-only until
+explicitly implemented.
 
 The gate must report:
 
@@ -165,6 +201,8 @@ The gate must report:
 - zero legacy source-registry blockers;
 - no provider-decision credentials required now;
 - no more than the current selected optional credential gaps;
+- Agent Reach reference ready without changing the canonical source count or
+  reading cookies/browser sessions;
 - TradingView MCP and Bookmap evidence available as read-only supplemental
   context;
 - zero evidence authority leaks and zero raw-reference leaks;

@@ -17,6 +17,10 @@ from orchestrator.bookmap_local_bridge import (  # noqa: E402
     bookmap_local_bridge_evidence_items,
     fetch_bookmap_local_bridge_sample,
 )
+from orchestrator.agent_reach_bridge import (  # noqa: E402
+    agent_reach_bridge_evidence_items,
+    agent_reach_bridge_public_status,
+)
 from orchestrator.credential_bound_adapters import credential_bound_adapter_registry  # noqa: E402
 from orchestrator.evidence_packet_normalization import (  # noqa: E402
     EVIDENCE_PACKET_NORMALIZATION_SCHEMA_VERSION,
@@ -106,8 +110,16 @@ def main() -> int:
         context_role="supplemental_orderflow_confirmation_only",
         summary="Bookmap local order-flow evidence normalized for review only.",
     )
+    agent_reach_status = agent_reach_bridge_public_status()
+    agent_reach_packet = normalize_adapter_evidence_packet(
+        source_key="agent_reach",
+        evidence_items=agent_reach_bridge_evidence_items(agent_reach_status),
+        packet_type="social_news_discovery_packet",
+        context_role="supplemental_social_news_discovery_only",
+        summary="Agent Reach social/news/web capability evidence normalized for review only.",
+    )
 
-    packets = [shadow_packet, tradingview_packet, bookmap_packet]
+    packets = [shadow_packet, tradingview_packet, bookmap_packet, agent_reach_packet]
     provider_types = [
         packet_type
         for state in provider_decision_registry().get("states", [])
@@ -139,6 +151,8 @@ def main() -> int:
         errors.append("provider_evidence_packet_types_missing")
     if not credential_types:
         errors.append("credential_evidence_packet_types_missing")
+    if agent_reach_status.get("status") != "reference_ready":
+        errors.append("agent_reach_bridge_not_reference_ready")
 
     print("evidence_packet_normalization_status=" + ("ok" if not errors else "error"))
     print(f"evidence_packet_normalization_schema_version={EVIDENCE_PACKET_NORMALIZATION_SCHEMA_VERSION}")
