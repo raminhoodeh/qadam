@@ -3336,6 +3336,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     const reasoning = sharedModels.reasoning_model || buildReasoningModel(status);
     const performance = sharedModels.performance_model || buildPerformanceModel(status);
     const operations = sharedModels.operations_model || sharedOperations || buildOperationsModel(status, source, sharedModels);
+    const edgeTracker = sharedModels.edge_tracker_model || buildEdgeTrackerModel(status);
     const missionBrief = normalizeMissionBrief(status, {
         sources_model: sources,
         trades_model: trades,
@@ -3815,6 +3816,7 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
         demo_proof: demoProof,
         system_status: systemStatus,
         data_sources_connected: sourceGroups,
+        edge_tracker: edgeTracker,
         source_summary: sourceSummary,
         reasoning_summary: reasoningSummary,
         trade_state_summary: tradeStateSummary,
@@ -4212,6 +4214,55 @@ function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) 
     };
 }
 
+function buildEdgeTrackerModel(status = {}) {
+    const raw = status.edge_tracker || {};
+    const sleeves = asArray(raw.sleeves).map((sleeve) => ({
+        key: sleeve.key || sleeve.label || "edge_sleeve",
+        label: dashboardText(sleeve.label, "Watched market"),
+        status: sleeve.status || "pending",
+        pattern_question: dashboardText(sleeve.pattern_question, "Pattern question not exported."),
+        strategy_use: dashboardText(sleeve.strategy_use, "Strategy use not exported."),
+        watched_instruments: asArray(sleeve.watched_instruments).map((instrument) => ({
+            symbol: dashboardText(instrument.symbol, "UNKNOWN"),
+            label: dashboardText(instrument.label, "Watched instrument"),
+            instrument_type: dashboardText(instrument.instrument_type, "market price"),
+            paper_route: dashboardText(instrument.paper_route, "confirmation only")
+        })),
+        source_activity: asArray(sleeve.source_activity).map((source) => ({
+            source_key: source.source_key || "unknown",
+            source_name: dashboardText(source.source_name, source.source_key || "Source"),
+            status: source.status || "pending",
+            readiness: dashboardText(source.readiness, "not exported"),
+            eligible_for_signal_review: Boolean(source.eligible_for_signal_review),
+            usable_for_research_context: Boolean(source.usable_for_research_context)
+        })),
+        online_source_count: modelNumber(sleeve.online_source_count, 0),
+        source_count: modelNumber(sleeve.source_count, 0),
+        research_usable_source_count: modelNumber(sleeve.research_usable_source_count, 0),
+        signal_review_eligible_source_count: modelNumber(sleeve.signal_review_eligible_source_count, 0),
+        order_authority_source_count: modelNumber(sleeve.order_authority_source_count, 0),
+        missing_source_keys: asArray(sleeve.missing_source_keys),
+        llm_role: dashboardText(sleeve.llm_role, "LLM role not exported."),
+        quantum_role: dashboardText(sleeve.quantum_role, "Quantum role not exported."),
+        paper_route: dashboardText(sleeve.paper_route, "Paper route not exported.")
+    }));
+    return {
+        id: "edge_tracker_model",
+        status: raw.status || "pending",
+        purpose: dashboardText(raw.purpose, "Qadam scans sources against watched markets for edge."),
+        source_scan: raw.source_scan || {},
+        market_price_watch: raw.market_price_watch || {},
+        llm_pattern_review: raw.llm_pattern_review || {},
+        quantum_pattern_review: raw.quantum_pattern_review || {},
+        weekly_thesis: raw.weekly_thesis || {},
+        sleeves,
+        sleeve_count: modelNumber(raw.sleeve_count, sleeves.length),
+        watched_instrument_count: modelNumber(raw.watched_instrument_count, sleeves.reduce((total, sleeve) => total + sleeve.watched_instruments.length, 0)),
+        strategy_refinement_route: dashboardText(raw.strategy_refinement_route, "Weekly thesis feeds strategy review only."),
+        boundary: dashboardText(raw.boundary, "Read-only research visibility.")
+    };
+}
+
 function buildQadamDashboardViewModels(status = {}, source = {}) {
     const sources = buildSourcesModel(status);
     const trades = buildTradesModel(status, { sources_model: sources });
@@ -4219,6 +4270,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
     const performance = buildPerformanceModel(status);
     const governance = buildGovernanceModel(status);
     const systemConnectivity = buildSystemConnectivityModel(status);
+    const edgeTracker = buildEdgeTrackerModel(status);
     const operations = buildOperationsModel(status, source, {
         system_connectivity_model: systemConnectivity,
         governance_model: governance
@@ -4230,7 +4282,8 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         performance_model: performance,
         system_connectivity_model: systemConnectivity,
         operations_model: operations,
-        governance_model: governance
+        governance_model: governance,
+        edge_tracker_model: edgeTracker
     };
     const overview = buildOverviewModel(status, source, operations, sharedModels);
     const safetyStrip = buildDashboardSafetyStripModel(status, {
@@ -4247,6 +4300,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
             "reasoning_model",
             "performance_model",
             "governance_model",
+            "edge_tracker_model",
             "system_connectivity_model",
             "operations_model",
             "overview_model",
@@ -4256,6 +4310,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
             founder_contract_model: ["mission_control"],
             trades_model: ["sources_model"],
             operations_model: ["system_connectivity_model", "governance_model"],
+            edge_tracker_model: ["edge_tracker"],
             overview_model: [
                 "sources_model",
                 "trades_model",
@@ -4278,6 +4333,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         authority_boundary: "View models are read-only projections of sanitized dashboard status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
         model_graph: modelGraph,
         founder_contract_model: founderContract,
+        edge_tracker_model: edgeTracker,
         safety_strip_model: safetyStrip,
         overview_model: overview,
         trades_model: trades,
@@ -7006,6 +7062,94 @@ function renderOverviewThoughtItem(item) {
     `;
 }
 
+function renderEdgeInstrumentChip(instrument = {}) {
+    return `
+        <span class="edge-instrument-chip" title="${htmlText(instrument.label)}">
+            <strong>${htmlText(instrument.symbol, "UNKNOWN")}</strong>
+            <em>${htmlText(instrument.paper_route, "confirmation only")}</em>
+        </span>
+    `;
+}
+
+function renderEdgeSourceDot(source = {}) {
+    return `
+        <span class="edge-source-dot ${statusClass(source.status)}" title="${htmlText(`${source.source_name} - ${source.readiness}`)}">
+            ${htmlText(source.source_name, source.source_key || "Source")}
+        </span>
+    `;
+}
+
+function renderEdgeSleeveCard(sleeve = {}) {
+    const instruments = asArray(sleeve.watched_instruments).slice(0, 7);
+    const sources = asArray(sleeve.source_activity).filter((source) => source.usable_for_research_context || source.eligible_for_signal_review).slice(0, 7);
+    return `
+        <article class="edge-sleeve-card ${statusClass(sleeve.status)}" data-edge-sleeve="${htmlText(sleeve.key, "sleeve")}">
+            <div class="edge-sleeve-head">
+                <div>
+                    <span>${htmlText(sleeve.label, "Watched market")}</span>
+                    <strong>${htmlText(sleeve.online_source_count, "0")}/${htmlText(sleeve.source_count, "0")} sources active</strong>
+                </div>
+                ${renderStatusPill(sleeve.status || "pending")}
+            </div>
+            <p>${htmlText(sleeve.pattern_question, "Pattern question not exported.")}</p>
+            <div class="edge-instrument-row">
+                ${instruments.map(renderEdgeInstrumentChip).join("")}
+            </div>
+            <div class="edge-source-row">
+                ${sources.length ? sources.map(renderEdgeSourceDot).join("") : `<span class="edge-source-dot pending">No research source exported</span>`}
+            </div>
+            <div class="edge-sleeve-footer">
+                <span>${htmlText(sleeve.strategy_use, "Strategy use not exported.")}</span>
+                <em>${htmlText(sleeve.order_authority_source_count || 0)} order authority</em>
+            </div>
+        </article>
+    `;
+}
+
+function renderOverviewEdgeTracker(edge = {}) {
+    const thesis = edge.weekly_thesis || {};
+    const sourceScan = edge.source_scan || {};
+    const priceWatch = edge.market_price_watch || {};
+    const llm = edge.llm_pattern_review || {};
+    const quantum = edge.quantum_pattern_review || {};
+    const sleeves = asArray(edge.sleeves);
+    return `
+        <div class="overview-edge-tracker ${statusClass(edge.status || "pending")}" data-edge-tracker-rendered>
+            <div class="overview-section-head">
+                <span>Edge Tracker</span>
+                <strong>${htmlText(edge.purpose, "Scanning sources against watched markets.")}</strong>
+                ${renderInlineBadge(`${htmlText(edge.watched_instrument_count || sleeves.reduce((total, sleeve) => total + asArray(sleeve.watched_instruments).length, 0))} watched prices`, "online")}
+            </div>
+            <div class="edge-tracker-summary-grid">
+                ${renderMetric("Sources", `${modelNumber(sourceScan.online_source_count, 0)}/${modelNumber(sourceScan.total_source_count, 0)}`)}
+                ${renderMetric("Signal sources", modelNumber(sourceScan.signal_review_eligible_source_count, 0))}
+                ${renderMetric("Watched prices", modelNumber(priceWatch.instrument_count, edge.watched_instrument_count || 0))}
+                ${renderMetric("LLM review", dashboardText(llm.status, "waiting"))}
+                ${renderMetric("Quantum mode", dashboardText(quantum.mode || quantum.backend, "not run"))}
+                ${renderMetric("Weekly thesis", dashboardText(thesis.iso_week, "scheduled"))}
+            </div>
+            <div class="edge-weekly-thesis">
+                <article>
+                    <span>Current weekly thesis</span>
+                    <p>${htmlText(thesis.working_thesis, "Weekly thesis not exported.")}</p>
+                </article>
+                <article>
+                    <span>How it updates strategy</span>
+                    <p>${htmlText(thesis.strategy_refinement || edge.strategy_refinement_route, "Strategy refinement route not exported.")}</p>
+                </article>
+                <article>
+                    <span>Non-linear check</span>
+                    <p>${htmlText(thesis.non_linear_review || quantum.role, "Quantum review role not exported.")}</p>
+                </article>
+            </div>
+            <div class="edge-sleeve-grid">
+                ${sleeves.map(renderEdgeSleeveCard).join("") || `<p class="mini">No watched market sleeves exported.</p>`}
+            </div>
+            <p class="mini">${htmlText(edge.boundary, "Read-only research visibility.")}</p>
+        </div>
+    `;
+}
+
 function renderOverviewCapacityChart(capacity = {}) {
     const chartPoints = asArray(capacity.equity_curve).length
         ? asArray(capacity.equity_curve)
@@ -7767,6 +7911,11 @@ function renderOverviewFirstScreen(viewModels) {
     const sourceSummary = dashboardQuery("[data-overview-source-summary]");
     if (sourceSummary) {
         sourceSummary.innerHTML = renderContractSourceSummary(contract.sources || {});
+    }
+
+    const edgeTracker = dashboardQuery("[data-overview-edge-tracker]");
+    if (edgeTracker) {
+        edgeTracker.innerHTML = renderOverviewEdgeTracker(viewModels.overview_model?.edge_tracker || viewModels.edge_tracker_model || {});
     }
 
     const nextLinks = dashboardQuery("[data-overview-next-links]");
