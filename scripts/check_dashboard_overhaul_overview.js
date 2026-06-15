@@ -173,6 +173,10 @@ async function main() {
     assert(overview.edge_tracker.sleeve_count === 5, "Overview must expose the five-sleeve edge tracker");
     assert(overview.edge_tracker.source_scan.mode === "all_sources_every_sleeve", "Overview edge tracker must use all sources for every sleeve");
     assert(overview.edge_tracker.weekly_thesis.cadence === "weekly", "Overview edge tracker must expose weekly thesis cadence");
+    assert(overview.edge_tracker.pattern_ledger.sprint.length_days === 30, "Overview must expose the 30-day edge pattern ledger");
+    assert(overview.edge_tracker.pattern_ledger.quantum_review.core_gate === true, "Overview edge pattern ledger must show quantum as core gate");
+    assert(overview.edge_tracker.pattern_ledger.candidate_pattern_count === 5, "Overview edge pattern ledger must expose five candidate patterns");
+    assert(overview.edge_tracker.pattern_ledger.telegram_summary.telegram_command_path_enabled === false, "Overview edge Telegram summary must stay command-disabled");
     assert(models.system_connectivity_model.overview_scope.placement === "control-plane", "Control Plane placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
@@ -222,6 +226,10 @@ async function main() {
     assertIncludes(rendered, "[data-overview-edge-tracker]", "all sources every sleeve");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Shared source universe");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "sources cross-scanned");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "How Qadam knows it found an edge");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Quantum core gate");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Telegram documentation");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Candidate pattern records");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Oil");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Semiconductors");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Defence stocks");

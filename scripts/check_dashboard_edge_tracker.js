@@ -38,6 +38,18 @@ async function main() {
     assert(edge.paper_order_allowed === false, "Edge tracker must not allow paper orders");
     assert(edge.broker_write_allowed === false, "Edge tracker must not allow broker writes");
     assert(edge.live_capital_enabled === false, "Edge tracker must not enable live capital");
+    const ledger = status.edge_pattern_ledger || {};
+    assert(ledger.status, "Status JSON missing edge pattern ledger");
+    assert(ledger.sprint?.length_days === 30, "Edge pattern ledger must define a 30-day hunt");
+    assert(ledger.quantum_review?.core_gate === true, "Edge pattern ledger must make quantum a core gate");
+    assert(ledger.quantum_review?.required_before_validated_edge === true, "Quantum review must be required before a validated edge");
+    assert(ledger.candidate_pattern_count === 5, "Edge pattern ledger must expose five candidate pattern records");
+    assert(Array.isArray(ledger.criteria) && ledger.criteria.length === 8, "Edge pattern ledger must expose eight edge criteria");
+    assert(ledger.criteria.some((criterion) => criterion.key === "quantum_nonlinear_review"), "Edge pattern ledger missing quantum criterion");
+    assert(ledger.telegram_summary?.telegram_command_path_enabled === false, "Telegram edge summary must not enable commands");
+    assert(ledger.telegram_summary?.telegram_live_send_allowed === false, "Telegram edge summary must not send live by default");
+    assert(ledger.patterns.every((pattern) => pattern.quantum_required === true), "Every candidate pattern must require quantum review");
+    assert(ledger.patterns.every((pattern) => pattern.paper_order_allowed === false), "Candidate patterns must not create paper order authority");
 
     const symbols = new Set(edge.market_price_watch?.symbols || []);
     [
@@ -81,6 +93,11 @@ async function main() {
     assertIncludes(rendered, "[data-overview-edge-tracker]", "all sources every sleeve");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "Shared source universe");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "sources cross-scanned");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "How Qadam knows it found an edge");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Quantum core gate");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Telegram documentation");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Candidate pattern records");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "30-day edge hunt");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "CL=F");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "SLV");
     assertIncludes(rendered, "[data-overview-edge-tracker]", "SMH");

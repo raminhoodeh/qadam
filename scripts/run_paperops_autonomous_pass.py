@@ -149,6 +149,42 @@ def main() -> int:
         f"{summary['source_gap_visibility']['silent_blocker_count']}"
     )
     print(
+        "paperops_autonomous_pass_edge_pattern_ledger_status="
+        f"{summary['edge_pattern_ledger']['status']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_sprint_day="
+        f"{summary['edge_pattern_ledger']['sprint_day']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_sprint_days_remaining="
+        f"{summary['edge_pattern_ledger']['sprint_days_remaining']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_candidate_pattern_count="
+        f"{summary['edge_pattern_ledger']['candidate_pattern_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_validated_edge_count="
+        f"{summary['edge_pattern_ledger']['validated_edge_count']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_criteria="
+        f"{summary['edge_pattern_ledger']['criteria']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_quantum_mode="
+        f"{summary['edge_pattern_ledger']['quantum_mode']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_quantum_core_gate="
+        f"{summary['edge_pattern_ledger']['quantum_core_gate']}"
+    )
+    print(
+        "paperops_autonomous_pass_edge_pattern_ledger_telegram_summary_status="
+        f"{summary['edge_pattern_ledger']['telegram_summary_status']}"
+    )
+    print(
         "paperops_autonomous_pass_validation_error_count="
         f"{summary['validation_error_count']}"
     )

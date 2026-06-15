@@ -41,6 +41,10 @@ from orchestrator.edge_tracker import (
     build_edge_tracker_status,
     validate_edge_tracker_status,
 )
+from orchestrator.edge_pattern_ledger import (
+    build_edge_pattern_ledger,
+    validate_edge_pattern_ledger,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8831,6 +8835,15 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         generated_at=generated_at,
         yahoo_finance=payload["yahoo_finance"],
     )
+    payload["edge_pattern_ledger"] = build_edge_pattern_ledger(
+        edge_tracker=payload["edge_tracker"],
+        cognition=payload["cognition"],
+        trade_layer=payload["trade_layer"],
+        quantum_oracle=quantum_oracle,
+        qctrl_fire_opal_ibm=fire_opal_ibm_readiness,
+        paperops_30_day_operations=payload["paperops_30_day_operations"],
+        generated_at=generated_at,
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -8934,6 +8947,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "tradingview_mcp",
         "bookmap_local_bridge",
         "edge_tracker",
+        "edge_pattern_ledger",
         "capital",
         "mission_control",
         "watching",
@@ -9017,6 +9031,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     if durable_ingestion.get("order_authority") is not False:
         raise ValueError("durable ingestion must not have order authority in the cockpit")
     validate_edge_tracker_status(payload["edge_tracker"])
+    validate_edge_pattern_ledger(payload["edge_pattern_ledger"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:

@@ -10,6 +10,7 @@ import sys
 from typing import Any
 
 from orchestrator.config import Settings
+from orchestrator.edge_pattern_ledger import validate_edge_pattern_ledger
 from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
 from orchestrator.paperops_closed_trade_funnel import (
     build_paperops_closed_trade_funnel,
@@ -60,6 +61,7 @@ COMMAND_SEQUENCE: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
     ("paper_live_certification", ("scripts/check_paper_live_certification.py",)),
     ("source_gap_visibility", ("scripts/check_paperops_source_gap_visibility.py",)),
+    ("edge_pattern_ledger", ("scripts/check_edge_pattern_ledger.py",)),
     ("paper_closeout", ("scripts/check_qadam_paper_closeout.py",)),
     ("cockpit_status", ("scripts/check_cockpit_status.py",)),
 )
@@ -889,6 +891,95 @@ def build_paperops_autonomous_pass_summary(
             gap for gap in optional_gaps if gap in OPTIONAL_COVERAGE_GAP_KEYS
         ],
         "source_gap_visibility": source_gap_visibility,
+        "edge_pattern_ledger": {
+            "status": _value(
+                command_results,
+                (("edge_pattern_ledger", "edge_pattern_ledger_status"),),
+                "missing",
+            ),
+            "sprint_day": _int(
+                _value(
+                    command_results,
+                    (("edge_pattern_ledger", "edge_pattern_ledger_sprint_day"),),
+                )
+            ),
+            "sprint_days_remaining": _int(
+                _value(
+                    command_results,
+                    (("edge_pattern_ledger", "edge_pattern_ledger_sprint_days_remaining"),),
+                )
+            ),
+            "candidate_pattern_count": _int(
+                _value(
+                    command_results,
+                    (
+                        (
+                            "edge_pattern_ledger",
+                            "edge_pattern_ledger_candidate_pattern_count",
+                        ),
+                    ),
+                )
+            ),
+            "validated_edge_count": _int(
+                _value(
+                    command_results,
+                    (("edge_pattern_ledger", "edge_pattern_ledger_validated_edge_count"),),
+                )
+            ),
+            "criteria": _value(
+                command_results,
+                (("edge_pattern_ledger", "edge_pattern_ledger_criteria"),),
+                "0/0",
+            ),
+            "quantum_mode": _value(
+                command_results,
+                (("edge_pattern_ledger", "edge_pattern_ledger_quantum_mode"),),
+                "missing",
+            ),
+            "quantum_core_gate": _bool(
+                _value(
+                    command_results,
+                    (("edge_pattern_ledger", "edge_pattern_ledger_quantum_core_gate"),),
+                    "False",
+                )
+            ),
+            "source_count": _int(
+                _value(
+                    command_results,
+                    (("edge_pattern_ledger", "edge_pattern_ledger_source_count"),),
+                )
+            ),
+            "watched_instrument_count": _int(
+                _value(
+                    command_results,
+                    (
+                        (
+                            "edge_pattern_ledger",
+                            "edge_pattern_ledger_watched_instrument_count",
+                        ),
+                    ),
+                )
+            ),
+            "telegram_summary_status": _value(
+                command_results,
+                (
+                    (
+                        "edge_pattern_ledger",
+                        "edge_pattern_ledger_telegram_summary_status",
+                    ),
+                ),
+                "missing",
+            ),
+            "artifact_path": _value(
+                command_results,
+                (("edge_pattern_ledger", "edge_pattern_ledger_artifact_path"),),
+            ),
+            "boundary": (
+                "Edge pattern documentation is research-only. It cannot create "
+                "trade candidates, approve risk, submit paper orders, enable "
+                "Telegram commands, or grant proof credit."
+            ),
+        },
         "submit_regression_guard": submit_regression_guard,
         "command_results": command_results,
     }
@@ -953,6 +1044,15 @@ def build_paperops_autonomous_pass_summary(
             f"{summary['source_gap_visibility']['trade_blocking_source_gap_count']} "
             "trade-blocking."
         ),
+        (
+            "Edge pattern ledger is "
+            f"{summary['edge_pattern_ledger']['status']} on day "
+            f"{summary['edge_pattern_ledger']['sprint_day']} of the 30-day edge hunt: "
+            f"{summary['edge_pattern_ledger']['candidate_pattern_count']} candidate patterns, "
+            f"{summary['edge_pattern_ledger']['validated_edge_count']} validated edges, "
+            f"{summary['edge_pattern_ledger']['criteria']} criteria passing, and quantum core gate "
+            f"{'active' if summary['edge_pattern_ledger']['quantum_core_gate'] else 'not active'}."
+        ),
     ]
     if _int(summary["paper_runtime"].get("open_order_count")):
         summary["automation_report_lines"].append(
@@ -1015,6 +1115,36 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
             errors.append("paperops_autonomous_pass_source_gap_silent_blocker")
         if _int(source_gap_visibility.get("blocker_count")) != 0:
             errors.append("paperops_autonomous_pass_source_gap_blocker_nonzero")
+    edge_pattern_ledger = summary.get("edge_pattern_ledger")
+    if not isinstance(edge_pattern_ledger, dict):
+        errors.append("paperops_autonomous_pass_edge_pattern_ledger_missing")
+    else:
+        if edge_pattern_ledger.get("status") not in {
+            "edge_hunt_active",
+            "candidate_edges_under_observation",
+            "validated_edge",
+        }:
+            errors.append("paperops_autonomous_pass_edge_pattern_ledger_status_invalid")
+        if _int(edge_pattern_ledger.get("sprint_day")) < 1:
+            errors.append("paperops_autonomous_pass_edge_pattern_ledger_sprint_missing")
+        if _int(edge_pattern_ledger.get("candidate_pattern_count")) != 5:
+            errors.append("paperops_autonomous_pass_edge_pattern_ledger_pattern_count")
+        if edge_pattern_ledger.get("quantum_core_gate") is not True:
+            errors.append("paperops_autonomous_pass_edge_pattern_ledger_quantum_not_core")
+        if _int(edge_pattern_ledger.get("source_count")) < 30:
+            errors.append("paperops_autonomous_pass_edge_pattern_ledger_source_count_low")
+        if _int(edge_pattern_ledger.get("watched_instrument_count")) < 20:
+            errors.append("paperops_autonomous_pass_edge_pattern_ledger_watch_count_low")
+        artifact_path = edge_pattern_ledger.get("artifact_path")
+        if artifact_path:
+            try:
+                with Path(str(artifact_path)).open(encoding="utf-8") as handle:
+                    validate_edge_pattern_ledger(json.load(handle))
+            except Exception as exc:  # noqa: BLE001 - surface a compact validation error.
+                errors.append(
+                    "paperops_autonomous_pass_edge_pattern_ledger_artifact_invalid:"
+                    f"{exc.__class__.__name__}"
+                )
     funnel = summary.get("closed_trade_funnel")
     if not isinstance(funnel, dict):
         errors.append("paperops_autonomous_pass_closed_trade_funnel_missing")
