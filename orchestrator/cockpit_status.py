@@ -37,6 +37,10 @@ from orchestrator.evidence_packet_runtime import (
     evidence_packet_runtime_public_status,
     write_evidence_packet_runtime,
 )
+from orchestrator.edge_tracker import (
+    build_edge_tracker_status,
+    validate_edge_tracker_status,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8819,6 +8823,14 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         ],
         "boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
     }
+    payload["edge_tracker"] = build_edge_tracker_status(
+        watching=watching,
+        quantum_oracle=quantum_oracle,
+        qctrl_fire_opal_ibm=fire_opal_ibm_readiness,
+        cognition=payload["cognition"],
+        generated_at=generated_at,
+        yahoo_finance=payload["yahoo_finance"],
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -8921,6 +8933,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "preference_mcp",
         "tradingview_mcp",
         "bookmap_local_bridge",
+        "edge_tracker",
         "capital",
         "mission_control",
         "watching",
@@ -9003,6 +9016,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("durable ingestion must not have signal authority in the cockpit")
     if durable_ingestion.get("order_authority") is not False:
         raise ValueError("durable ingestion must not have order authority in the cockpit")
+    validate_edge_tracker_status(payload["edge_tracker"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:

@@ -86,6 +86,7 @@ async function main() {
         "data-overview-paper-trade-state",
         "data-overview-control-plane",
         "data-overview-source-summary",
+        "data-overview-edge-tracker",
     ], "Overview first-screen HTML");
 
     includesAll(css, [
@@ -105,6 +106,8 @@ async function main() {
         ".control-plane-grid",
         ".overview-source-summary-panel",
         ".source-universe-ledger",
+        ".overview-edge-tracker",
+        ".edge-sleeve-grid",
         ".overview-plain-grid",
         ".overview-plain-card-grid",
         ".overview-capacity-line",
@@ -126,6 +129,8 @@ async function main() {
         "function renderContractTradeStateSummary",
         "function renderContractPaperTradeState",
         "function renderContractSourceSummary",
+        "function buildEdgeTrackerModel",
+        "function renderOverviewEdgeTracker",
         "founder_contract_model",
         "data-cc5-contract-source",
         "OVERVIEW_NODE_LABELS",
@@ -165,6 +170,8 @@ async function main() {
     assert(overview.trade_state_summary.detail_view === "trades", "Overview must route trade detail to Trades");
     assert(overview.detail_ledger_placement.overview_scope === "summary_only", "Overview must be summary-only for detailed ledgers");
     assert(overview.paper_capacity.total_gbp === 100000, "Overview must expose the GBP 100,000 paper capacity");
+    assert(overview.edge_tracker.sleeve_count === 5, "Overview must expose the five-sleeve edge tracker");
+    assert(overview.edge_tracker.weekly_thesis.cadence === "weekly", "Overview edge tracker must expose weekly thesis cadence");
     assert(models.system_connectivity_model.overview_scope.placement === "control-plane", "Control Plane placement mismatch");
     assert(models.system_connectivity_model.feed_clusters.length >= 3, "Overview should expose feed clusters");
 
@@ -209,6 +216,11 @@ async function main() {
     assertIncludes(rendered, "[data-overview-source-summary]", "Source list");
     assertIncludes(rendered, "[data-overview-source-summary]", "signal-review eligible");
     assertIncludes(rendered, "[data-overview-source-summary]", "ACLED API");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Edge Tracker");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Current weekly thesis");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Oil");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Semiconductors");
+    assertIncludes(rendered, "[data-overview-edge-tracker]", "Defence stocks");
     assert(!html(rendered, "[data-overview-paper-trade-state]").includes("USO options watch"), "Overview trade state must not show named trade rows");
     assert(!html(rendered, "[data-overview-source-summary]").includes("Worldview prior"), "Overview source summary must not show reasoning ledger rows");
 
@@ -217,7 +229,8 @@ async function main() {
         html(rendered, "[data-overview-strategy-narrative]"),
         html(rendered, "[data-overview-paper-trade-state]"),
         html(rendered, "[data-overview-control-plane]"),
-        html(rendered, "[data-overview-source-summary]")
+        html(rendered, "[data-overview-source-summary]"),
+        html(rendered, "[data-overview-edge-tracker]")
     ].join(" ");
     [
         "D0",

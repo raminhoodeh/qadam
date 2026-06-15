@@ -23,6 +23,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
+"$PYTHON_BIN" scripts/check_edge_tracker.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 
@@ -42,6 +43,7 @@ say "Checking dashboard current product contracts"
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_cc6_real_portfolio_timeline.js
+node scripts/check_dashboard_edge_tracker.js
 node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js
@@ -68,6 +70,7 @@ git diff --check -- \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
   orchestrator/cockpit_status.py \
+  orchestrator/edge_tracker.py \
   orchestrator/telegram_codebase_upgrade_notifications.py \
   orchestrator/telegram_comms.py \
   orchestrator/telegram_daily_portfolio_digest.py \
@@ -117,6 +120,7 @@ git diff --check -- \
   scripts/check_dashboard_rs9_learning_loop.js \
   scripts/check_dashboard_rs10_final_paper_autonomy.js \
   scripts/check_dashboard_cc6_real_portfolio_timeline.js \
+  scripts/check_dashboard_edge_tracker.js \
   scripts/check_dashboard_cc7_visual_a11y.js \
   scripts/check_dashboard_cc8_prune_docs_deploy.js \
   scripts/check_dashboard_cc9_slop_repetition.js \
@@ -159,6 +163,7 @@ git diff --check -- \
   scripts/check_dashboard_d11o_deployment_discipline.js \
   scripts/check_dashboard_d12_language_cleanup.js \
   scripts/check_protected_user_guide.js \
+  scripts/check_edge_tracker.py \
   scripts/preflight_dashboard_deployment.sh
 
 say "Deployment preflight passed"

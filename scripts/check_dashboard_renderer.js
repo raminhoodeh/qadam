@@ -27,6 +27,7 @@ const selectors = [
     "[data-overview-control-plane]",
     "[data-overview-plain-grid]",
     "[data-overview-source-summary]",
+    "[data-overview-edge-tracker]",
     "[data-phase4-summary]",
     "[data-phase4-strategy]",
     "[data-flow-map]",
