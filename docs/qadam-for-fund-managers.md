@@ -1,4 +1,4 @@
-# Qadam For The Founding Fund Managers
+# Qadam Whitepaper
 
 ## The Short Version
 
