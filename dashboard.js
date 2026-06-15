@@ -4216,6 +4216,10 @@ function buildFounderContractModel(status = {}, source = {}, sharedModels = {}) 
 
 function buildEdgeTrackerModel(status = {}) {
     const raw = status.edge_tracker || {};
+    const rawLedger = status.edge_pattern_ledger || {};
+    const ledgerSprint = rawLedger.sprint || {};
+    const ledgerQuantum = rawLedger.quantum_review || {};
+    const telegramSummary = rawLedger.telegram_summary || {};
     const sleeves = asArray(raw.sleeves).map((sleeve) => ({
         key: sleeve.key || sleeve.label || "edge_sleeve",
         label: dashboardText(sleeve.label, "Watched market"),
@@ -4250,6 +4254,32 @@ function buildEdgeTrackerModel(status = {}) {
         paper_route: dashboardText(sleeve.paper_route, "Paper route not exported.")
     }));
     const sourceUniverse = raw.source_universe || {};
+    const criteria = asArray(rawLedger.criteria).map((criterion) => ({
+        key: criterion.key || "criterion",
+        label: dashboardText(criterion.label, "Edge criterion"),
+        status: criterion.status || (criterion.passed ? "passed" : "observing"),
+        passed: Boolean(criterion.passed),
+        detail: dashboardText(criterion.detail, criterion.explanation || "No detail exported."),
+        explanation: dashboardText(criterion.explanation, "No explanation exported.")
+    }));
+    const patterns = asArray(rawLedger.patterns).map((pattern) => ({
+        pattern_id: pattern.pattern_id || pattern.sleeve_key || "pattern",
+        sleeve_key: pattern.sleeve_key || "unknown",
+        label: dashboardText(pattern.label, "Candidate pattern"),
+        status: pattern.status || "candidate_under_observation",
+        edge_stage: pattern.edge_stage || "candidate_edge_not_validated",
+        source_application: dashboardText(pattern.source_application, "all_qadam_sources_cross_scanned_for_this_pattern"),
+        source_count: modelNumber(pattern.source_count, sourceUniverse.source_count || raw.source_scan?.total_source_count || 0),
+        instrument_symbols: asArray(pattern.instrument_symbols),
+        current_observation: dashboardText(pattern.current_observation, "Observation not exported."),
+        passed_criteria: asArray(pattern.passed_criteria),
+        missing_criteria: asArray(pattern.missing_criteria),
+        quantum_required: pattern.quantum_required === true,
+        telegram_notification_allowed: pattern.telegram_notification_allowed === true,
+        paper_order_allowed: pattern.paper_order_allowed === true,
+        broker_write_allowed: pattern.broker_write_allowed === true,
+        live_capital_enabled: pattern.live_capital_enabled === true
+    }));
     return {
         id: "edge_tracker_model",
         status: raw.status || "pending",
@@ -4274,6 +4304,44 @@ function buildEdgeTrackerModel(status = {}) {
         market_price_watch: raw.market_price_watch || {},
         llm_pattern_review: raw.llm_pattern_review || {},
         quantum_pattern_review: raw.quantum_pattern_review || {},
+        pattern_ledger: {
+            status: rawLedger.status || "not_exported",
+            purpose: dashboardText(rawLedger.purpose, "Document how Qadam knows whether it has found an edge."),
+            edge_definition: dashboardText(rawLedger.edge_definition, "Edge definition not exported."),
+            sprint: {
+                status: ledgerSprint.status || "not_exported",
+                start_date: ledgerSprint.start_date || "",
+                end_date: ledgerSprint.end_date || "",
+                length_days: modelNumber(ledgerSprint.length_days, 30),
+                day_number: modelNumber(ledgerSprint.day_number, 0),
+                days_remaining: modelNumber(ledgerSprint.days_remaining, 0),
+                purpose: dashboardText(ledgerSprint.purpose, "Thirty-day pattern hunt.")
+            },
+            criteria,
+            criterion_count: modelNumber(rawLedger.criterion_count, criteria.length),
+            passed_criterion_count: modelNumber(rawLedger.passed_criterion_count, criteria.filter((criterion) => criterion.passed).length),
+            candidate_pattern_count: modelNumber(rawLedger.candidate_pattern_count, patterns.length),
+            validated_edge_count: modelNumber(rawLedger.validated_edge_count, 0),
+            patterns,
+            quantum_review: {
+                status: ledgerQuantum.status || "not_exported",
+                mode: ledgerQuantum.mode || raw.quantum_pattern_review?.mode || "not_run",
+                backend: ledgerQuantum.backend || raw.quantum_pattern_review?.backend || "not_exported",
+                fire_opal_ibm_status: ledgerQuantum.fire_opal_ibm_status || raw.quantum_pattern_review?.fire_opal_ibm_status || "not_exported",
+                core_gate: ledgerQuantum.core_gate === true,
+                required_before_validated_edge: ledgerQuantum.required_before_validated_edge === true,
+                role: dashboardText(ledgerQuantum.role, "Quantum review is required before Qadam can call a pattern an edge.")
+            },
+            telegram_summary: {
+                status: telegramSummary.status || "not_exported",
+                cadence: dashboardText(telegramSummary.cadence, "weekly_or_candidate_threshold_crossing"),
+                body: dashboardText(telegramSummary.body, "Telegram edge summary not exported."),
+                telegram_live_send_allowed: telegramSummary.telegram_live_send_allowed === true,
+                telegram_command_path_enabled: telegramSummary.telegram_command_path_enabled === true,
+                boundary: dashboardText(telegramSummary.boundary, "Telegram summaries are outbound explanation only.")
+            },
+            boundary: dashboardText(rawLedger.boundary, "Read-only edge documentation.")
+        },
         weekly_thesis: raw.weekly_thesis || {},
         sleeves,
         sleeve_count: modelNumber(raw.sleeve_count, sleeves.length),
@@ -7159,12 +7227,103 @@ function renderEdgeSleeveCard(sleeve = {}) {
     `;
 }
 
+function renderEdgeCriterion(criterion = {}) {
+    const tone = criterion.passed ? "online" : "pending";
+    return `
+        <li class="edge-criterion ${statusClass(tone)}">
+            <span>${htmlText(criterion.label, "Edge criterion")}</span>
+            <strong>${criterion.passed ? "Passed" : "Observing"}</strong>
+            <p>${htmlText(criterion.detail, criterion.explanation || "No criterion detail exported.")}</p>
+        </li>
+    `;
+}
+
+function renderEdgePattern(pattern = {}) {
+    const unsafeAuthority = pattern.paper_order_allowed || pattern.broker_write_allowed || pattern.live_capital_enabled;
+    const symbols = asArray(pattern.instrument_symbols).slice(0, 6);
+    return `
+        <article class="edge-pattern ${statusClass(unsafeAuthority ? "blocked" : pattern.status)}">
+            <div>
+                <span>${htmlText(pattern.label, "Candidate pattern")}</span>
+                <strong>${htmlText(pattern.edge_stage, "candidate_edge_not_validated").replaceAll("_", " ")}</strong>
+            </div>
+            <p>${htmlText(pattern.current_observation, "Observation not exported.")}</p>
+            <div class="edge-source-row">
+                ${renderInlineBadge(`${htmlText(pattern.source_count, "0")} sources`, "online")}
+                ${renderInlineBadge(pattern.quantum_required ? "quantum required" : "quantum missing", pattern.quantum_required ? "online" : "blocked")}
+                ${renderInlineBadge(unsafeAuthority ? "authority leak" : "research only", unsafeAuthority ? "blocked" : "online")}
+            </div>
+            <div class="edge-instrument-row">
+                ${symbols.map((symbol) => `<span class="edge-source-dot pending">${htmlText(symbol)}</span>`).join("")}
+            </div>
+        </article>
+    `;
+}
+
+function renderEdgePatternLedger(ledger = {}) {
+    const sprint = ledger.sprint || {};
+    const quantum = ledger.quantum_review || {};
+    const telegram = ledger.telegram_summary || {};
+    const criteria = asArray(ledger.criteria);
+    const patterns = asArray(ledger.patterns);
+    const criteriaText = `${htmlText(ledger.passed_criterion_count || 0)}/${htmlText(ledger.criterion_count || criteria.length)}`;
+    return `
+        <section class="edge-pattern-ledger ${statusClass(ledger.status || "pending")}" data-edge-pattern-ledger>
+            <div class="edge-ledger-head">
+                <div>
+                    <span>30-day edge hunt</span>
+                    <strong>How Qadam knows it found an edge</strong>
+                    <p>${htmlText(ledger.edge_definition, "Edge definition not exported.")}</p>
+                </div>
+                <div class="edge-ledger-badges">
+                    ${renderInlineBadge(`day ${htmlText(sprint.day_number || 0)}/${htmlText(sprint.length_days || 30)}`, "online")}
+                    ${renderInlineBadge(`${htmlText(sprint.days_remaining || 0)} days left`, "pending")}
+                    ${renderInlineBadge(`${criteriaText} criteria`, "pending")}
+                    ${renderInlineBadge(`${htmlText(ledger.validated_edge_count || 0)} validated`, ledger.validated_edge_count ? "online" : "pending")}
+                </div>
+            </div>
+            <div class="edge-ledger-grid">
+                <article class="edge-ledger-card">
+                    <span>Quantum core gate</span>
+                    <strong>${quantum.core_gate ? "Required" : "Not active"}</strong>
+                    <p>${htmlText(quantum.role, "Quantum review role not exported.")}</p>
+                    <div class="edge-source-row">
+                        ${renderInlineBadge(htmlText(quantum.mode, "not run"), quantum.core_gate ? "online" : "pending")}
+                        ${renderInlineBadge(htmlText(quantum.fire_opal_ibm_status, "not exported"), "pending")}
+                    </div>
+                </article>
+                <article class="edge-ledger-card">
+                    <span>Telegram documentation</span>
+                    <strong>${htmlText(telegram.status, "not exported").replaceAll("_", " ")}</strong>
+                    <p>${htmlText(telegram.body, "Telegram edge summary not exported.")}</p>
+                </article>
+            </div>
+            <div class="edge-ledger-columns">
+                <div>
+                    <span class="edge-ledger-subhead">Edge criteria</span>
+                    <ul class="edge-criterion-list">
+                        ${criteria.map(renderEdgeCriterion).join("") || `<li class="edge-criterion pending"><span>No criteria exported</span><strong>Missing</strong><p>Ledger criteria are not available.</p></li>`}
+                    </ul>
+                </div>
+                <div>
+                    <span class="edge-ledger-subhead">Candidate pattern records</span>
+                    <div class="edge-pattern-grid">
+                        ${patterns.map(renderEdgePattern).join("") || `<p class="mini">No candidate patterns exported.</p>`}
+                    </div>
+                </div>
+            </div>
+            <p class="mini">${htmlText(ledger.boundary, "Read-only edge documentation.")}</p>
+        </section>
+    `;
+}
+
 function renderOverviewEdgeTracker(edge = {}) {
     const thesis = edge.weekly_thesis || {};
     const sourceScan = edge.source_scan || {};
     const priceWatch = edge.market_price_watch || {};
     const llm = edge.llm_pattern_review || {};
     const quantum = edge.quantum_pattern_review || {};
+    const ledger = edge.pattern_ledger || {};
     const sleeves = asArray(edge.sleeves);
     return `
         <div class="overview-edge-tracker ${statusClass(edge.status || "pending")}" data-edge-tracker-rendered>
@@ -7196,6 +7355,7 @@ function renderOverviewEdgeTracker(edge = {}) {
                     <p>${htmlText(thesis.non_linear_review || quantum.role, "Quantum review role not exported.")}</p>
                 </article>
             </div>
+            ${renderEdgePatternLedger(ledger)}
             <div class="edge-sleeve-grid">
                 ${sleeves.map(renderEdgeSleeveCard).join("") || `<p class="mini">No watched market sleeves exported.</p>`}
             </div>
