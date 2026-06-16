@@ -45,6 +45,11 @@ from orchestrator.edge_pattern_ledger import (
     build_edge_pattern_ledger,
     validate_edge_pattern_ledger,
 )
+from orchestrator.pattern_recognition_engine import (
+    build_pattern_recognition_engine,
+    validate_pattern_recognition_engine,
+)
+from orchestrator.quantum_mandatory_review_gate import build_quantum_mandatory_review_gate
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8844,6 +8849,16 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         paperops_30_day_operations=payload["paperops_30_day_operations"],
         generated_at=generated_at,
     )
+    quantum_mandatory_review_gate = build_quantum_mandatory_review_gate(
+        edge_ledger=payload["edge_pattern_ledger"],
+        generated_at=generated_at,
+    )
+    payload["pattern_recognition_engine"] = build_pattern_recognition_engine(
+        edge_tracker=payload["edge_tracker"],
+        edge_pattern_ledger=payload["edge_pattern_ledger"],
+        quantum_gate=quantum_mandatory_review_gate,
+        generated_at=generated_at,
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -8948,6 +8963,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "bookmap_local_bridge",
         "edge_tracker",
         "edge_pattern_ledger",
+        "pattern_recognition_engine",
         "capital",
         "mission_control",
         "watching",
@@ -9032,6 +9048,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("durable ingestion must not have order authority in the cockpit")
     validate_edge_tracker_status(payload["edge_tracker"])
     validate_edge_pattern_ledger(payload["edge_pattern_ledger"])
+    validate_pattern_recognition_engine(payload["pattern_recognition_engine"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:
