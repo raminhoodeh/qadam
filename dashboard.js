@@ -3082,6 +3082,7 @@ function buildGovernanceModel(status = {}) {
     const comments = asArray(notes.recent_comments);
     const telegram = status.communications?.telegram || {};
     const telegramNotifier = status.phase5_telegram_notifier || {};
+    const telegramHumanBrief = status.communications?.telegram_human_brief || status.telegram_human_brief || {};
     const operatorInbox = status.operator_inbox || {};
     const phase4 = phase4StrategyStatus(status);
     const phase6 = status.phase6_learning_loop || {};
@@ -3128,6 +3129,8 @@ function buildGovernanceModel(status = {}) {
         communications: {
             telegram_status: telegram.status || "not exported",
             dry_run_message_count: modelNumber(telegram.dry_run_message_count, 0),
+            human_brief_status: telegramHumanBrief.status || telegram.human_brief_status || "not exported",
+            human_brief_message_specificity_score: modelNumber(telegramHumanBrief.message_specificity_score || telegram.human_brief_message_specificity_score, 0),
             pending_queue_count: modelNumber(telegram.pending_queue_count, 0),
             failed_count: modelNumber(telegram.failed_count, 0),
             suppressed_count: modelNumber(telegram.suppressed_count || telegramNotifier.suppressed_alert_count, 0),
@@ -9933,6 +9936,7 @@ function renderCommunications(status) {
     const telegram = status.communications?.telegram || {};
     const telegramDailyDigest = status.communications?.telegram_daily_portfolio_digest || {};
     const telegramCodebaseUpgrade = status.communications?.telegram_codebase_upgrade || {};
+    const telegramHumanBrief = status.communications?.telegram_human_brief || status.telegram_human_brief || {};
     const telegramIntake = status.communications?.telegram_intake || {};
     const messages = asArray(telegram.recent_messages);
     const classes = asArray(telegram.active_message_classes);
@@ -9994,8 +9998,9 @@ function renderCommunications(status) {
             ${renderMetric("Status", telegram.status || "disabled")}
             ${renderMetric("Mode", telegram.mode || "dry_run")}
             ${renderMetric("Daily digest", telegramDailyDigest.status || telegram.daily_portfolio_digest_status || "not run")}
+            ${renderMetric("Human brief", telegramHumanBrief.status || telegram.human_brief_status || "not run")}
             ${renderMetric("Code upgrades", telegramCodebaseUpgrade.status || telegram.codebase_upgrade_notifications_status || "not run")}
-            ${renderMetric("Message quality", `${telegramCodebaseUpgrade.message_specificity_status || telegramDailyDigest.message_specificity_status || "not run"} · ${telegramCodebaseUpgrade.message_specificity_score || telegramDailyDigest.message_specificity_score || 0}/100`)}
+            ${renderMetric("Message quality", `${telegramHumanBrief.message_specificity_status || telegramCodebaseUpgrade.message_specificity_status || telegramDailyDigest.message_specificity_status || "not run"} · ${telegramHumanBrief.message_specificity_score || telegramCodebaseUpgrade.message_specificity_score || telegramDailyDigest.message_specificity_score || 0}/100`)}
             ${renderMetric("Portfolio balance", formatMoney(telegramDailyDigest.portfolio_balance_gbp || telegram.daily_portfolio_digest_portfolio_balance_gbp))}
             ${renderMetric("P&L", `${formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0)} · ${formatPercent(telegramDailyDigest.portfolio_performance_pct || telegram.daily_portfolio_digest_portfolio_performance_pct || 0)}`)}
             ${renderMetric("Trades today", telegramDailyDigest.daily_trade_count || telegram.daily_portfolio_digest_daily_trade_count || 0)}
@@ -10017,6 +10022,8 @@ function renderCommunications(status) {
             ${renderInlineBadge(`${telegram.dry_run_message_count || 0} dry-run messages`, telegram.dry_run_message_count ? "online" : "pending")}
             ${renderInlineBadge(telegramDailyDigest.enabled ? "daily portfolio digest enabled" : "daily portfolio digest disabled", telegramDailyDigest.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramDailyDigest.dry_run ? "daily digest dry-run" : "daily digest live-send gate", telegramDailyDigest.dry_run ? "pending" : "online")}
+            ${renderInlineBadge(telegramHumanBrief.enabled ? "human brief enabled" : "human brief disabled", telegramHumanBrief.enabled ? "online" : "pending")}
+            ${renderInlineBadge(telegramHumanBrief.dry_run ? "human brief dry-run" : "human brief live-send gate", telegramHumanBrief.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramCodebaseUpgrade.enabled ? "codebase upgrade notifications enabled" : "codebase upgrade notifications disabled", telegramCodebaseUpgrade.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramCodebaseUpgrade.dry_run ? "upgrade notifications dry-run" : "upgrade notifications live-send gate", telegramCodebaseUpgrade.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramIntake.enabled ? "inbound intake enabled" : "inbound intake disabled", telegramIntake.enabled ? "online" : "pending")}
@@ -10025,6 +10032,31 @@ function renderCommunications(status) {
         <section class="trade-intent-section">
             <p class="label">Message classes</p>
             <div class="tag-row">${renderTagList(classes, "No message classes queued")}</div>
+        </section>
+        <section class="trade-intent-section">
+            <p class="label">Daily human brief</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Date", telegramHumanBrief.brief_date || "not written")}
+                ${renderMetric("Style", telegramHumanBrief.message_human_style_status || "not scored")}
+                ${renderMetric("Specificity", `${telegramHumanBrief.message_specificity_status || "not scored"} · ${telegramHumanBrief.message_specificity_score || 0}/100`)}
+                ${renderMetric("Patterns", telegramHumanBrief.candidate_pattern_count || 0)}
+                ${renderMetric("Sources", telegramHumanBrief.source_count || 0)}
+                ${renderMetric("Quantum", telegramHumanBrief.quantum_gate_status || "not run")}
+                ${renderMetric("Held", telegramHumanBrief.promotion_gate_held_count || 0)}
+            </div>
+            <ul class="status-list communications-list">
+                <li>
+                    <strong>${htmlText(telegramHumanBrief.title || "Qadam")}</strong>
+                    <span>${htmlText(telegramHumanBrief.body || "The daily human brief has not been written yet.")}</span>
+                    <div class="comment-meta">
+                        ${renderInlineBadge(telegramHumanBrief.status || "not_run", telegramHumanBrief.live_send_succeeded ? "online" : "pending")}
+                        ${renderInlineBadge(`${telegramHumanBrief.message_human_style_status || "not scored"}`, telegramHumanBrief.message_human_style_status === "human" ? "online" : "pending")}
+                        ${renderInlineBadge(telegramHumanBrief.telegram_live_send_allowed ? "live send allowed" : "live send gated", telegramHumanBrief.telegram_live_send_allowed ? "degraded" : "online")}
+                        ${renderInlineBadge(telegramHumanBrief.telegram_command_path_enabled ? "command authority" : "notify only", telegramHumanBrief.telegram_command_path_enabled ? "blocked" : "online")}
+                    </div>
+                </li>
+            </ul>
+            <p class="mini">${htmlText(telegramHumanBrief.boundary || "Telegram human briefs are outbound explanation only.")}</p>
         </section>
         <section class="trade-intent-section">
             <p class="label">Codebase upgrade notifications</p>
