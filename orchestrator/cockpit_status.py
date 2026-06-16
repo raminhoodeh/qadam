@@ -72,6 +72,10 @@ from orchestrator.quantum_meta_review import (
     build_quantum_meta_review,
     validate_quantum_meta_review,
 )
+from orchestrator.self_improvement_proposals import (
+    build_self_improvement_proposals,
+    validate_self_improvement_proposals,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8914,6 +8918,11 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         strategy_weight_updates=payload["strategy_weight_updates"],
         generated_at=generated_at,
     )
+    payload["self_improvement_proposals"] = build_self_improvement_proposals(
+        quantum_meta_review=payload["quantum_meta_review"],
+        strategy_weight_updates=payload["strategy_weight_updates"],
+        generated_at=generated_at,
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -9024,6 +9033,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "hypothesis_lifecycle",
         "strategy_weight_updates",
         "quantum_meta_review",
+        "self_improvement_proposals",
         "capital",
         "mission_control",
         "watching",
@@ -9114,6 +9124,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     validate_hypothesis_lifecycle(payload["hypothesis_lifecycle"])
     validate_strategy_weight_updates(payload["strategy_weight_updates"])
     validate_quantum_meta_review(payload["quantum_meta_review"])
+    validate_self_improvement_proposals(payload["self_improvement_proposals"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:
