@@ -19,9 +19,13 @@ from orchestrator.edge_pattern_ledger import (
     EDGE_PATTERN_AUTHORITY_FALSE_FIELDS,
     validate_edge_pattern_ledger,
 )
+from orchestrator.quantum_mandatory_review_gate import (
+    build_quantum_mandatory_review_gate,
+    validate_quantum_mandatory_review_gate,
+)
 
 
-DAILY_EDGE_FINDINGS_SCHEMA_VERSION = 1
+DAILY_EDGE_FINDINGS_SCHEMA_VERSION = 2
 DAILY_EDGE_FINDINGS_RUNTIME_ARTIFACT = "daily_edge_findings_brief.json"
 DAILY_EDGE_FINDINGS_HISTORY = "daily_edge_findings_brief_history.jsonl"
 DAILY_EDGE_FINDINGS_EVENT_LOG = "daily_edge_findings_brief_events.jsonl"
@@ -238,8 +242,12 @@ def _pattern_records(
     return records
 
 
-def _strategy_updates(patterns: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _strategy_updates(
+    patterns: list[dict[str, Any]],
+    quantum_gate: dict[str, Any],
+) -> list[dict[str, Any]]:
     updates: list[dict[str, Any]] = []
+    gate_passed = quantum_gate.get("status") == "quantum_review_gate_passed"
     for pattern in patterns:
         raw = {
             "sleeve_key": pattern.get("sleeve_key"),
@@ -254,6 +262,13 @@ def _strategy_updates(patterns: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "status": "proposal_only",
             "sleeve_key": pattern.get("sleeve_key"),
             "market_sleeve": pattern.get("market_sleeve"),
+            "quantum_mandatory_review_gate_required": True,
+            "quantum_mandatory_review_gate_status": quantum_gate.get("status"),
+            "quantum_mandatory_review_gate_passed": gate_passed,
+            "quantum_dependency_satisfied": (
+                gate_passed
+                and pattern.get("quantum_review_dependency_satisfied") is True
+            ),
             "proposed_adjustment": "raise_watch_priority_if_persistence_confirms",
             "reason": (
                 "The pattern has enough cross-source and quantum-reviewed "
@@ -361,9 +376,31 @@ def build_daily_edge_findings_brief(
     validate_edge_pattern_ledger(edge_ledger)
     edge_tracker = _as_dict(cockpit_status.get("edge_tracker"))
     quantum_review = _as_dict(edge_ledger.get("quantum_review"))
+    quantum_gate = build_quantum_mandatory_review_gate(
+        edge_ledger=edge_ledger,
+        generated_at=generated_at,
+    )
+    validate_quantum_mandatory_review_gate(quantum_gate)
     source_scope = _as_dict(edge_ledger.get("source_price_scope"))
     patterns = _pattern_records(edge_ledger=edge_ledger, edge_tracker=edge_tracker)
-    strategy_updates = _strategy_updates(patterns)
+    decisions_by_pattern = {
+        str(decision.get("pattern_id")): decision
+        for decision in _as_list(quantum_gate.get("pattern_gate_decisions"))
+        if isinstance(decision, dict)
+    }
+    for pattern in patterns:
+        decision = decisions_by_pattern.get(str(pattern.get("pattern_id")), {})
+        pattern["quantum_mandatory_review_gate_status"] = quantum_gate.get("status")
+        pattern["quantum_review_dependency_satisfied"] = (
+            decision.get("dependency_satisfied") is True
+        )
+        pattern["quantum_review_gate_decision"] = decision.get(
+            "status",
+            "blocked_pending_quantum_review",
+        )
+        if decision.get("dependency_satisfied") is not True:
+            pattern["affects_paper_trade_candidate_ranking"] = False
+    strategy_updates = _strategy_updates(patterns, quantum_gate)
     portfolio_goal_alignment = _portfolio_goal_alignment(_as_dict(cockpit_status.get("capital")))
     source_count = _int(source_scope.get("source_count"))
     watched_count = _int(source_scope.get("watched_instrument_count"))
@@ -371,7 +408,7 @@ def build_daily_edge_findings_brief(
     validated_count = _int(edge_ledger.get("validated_edge_count"))
     if source_count < DAILY_EDGE_FINDINGS_REQUIRED_MIN_SOURCE_COUNT or watched_count < DAILY_EDGE_FINDINGS_REQUIRED_MIN_WATCHED_INSTRUMENT_COUNT:
         status = "daily_edge_findings_waiting_for_sources"
-    elif quantum_review.get("status") != "ok" or quantum_review.get("core_gate") is not True:
+    elif quantum_gate.get("status") != "quantum_review_gate_passed":
         status = "daily_edge_findings_quantum_degraded"
     else:
         status = "daily_edge_findings_ready_for_review"
@@ -390,6 +427,11 @@ def build_daily_edge_findings_brief(
         "quantum_review_status": quantum_review.get("status", "not_run"),
         "quantum_backend": quantum_review.get("backend", "not_exported"),
         "quantum_review": quantum_review,
+        "quantum_mandatory_review_gate": quantum_gate,
+        "quantum_mandatory_review_gate_status": quantum_gate.get("status"),
+        "quantum_mandatory_review_gate_passed": (
+            quantum_gate.get("status") == "quantum_review_gate_passed"
+        ),
         "edge_ledger_status": edge_ledger.get("status"),
         "criteria": edge_ledger.get("criteria", []),
         "source_price_scope": source_scope,
@@ -441,6 +483,9 @@ def validate_daily_edge_findings_brief(payload: dict[str, Any]) -> None:
         "quantum_review_status",
         "quantum_backend",
         "quantum_review",
+        "quantum_mandatory_review_gate",
+        "quantum_mandatory_review_gate_status",
+        "quantum_mandatory_review_gate_passed",
         "edge_ledger_status",
         "criteria",
         "source_price_scope",
@@ -487,6 +532,14 @@ def validate_daily_edge_findings_brief(payload: dict[str, Any]) -> None:
     if len(patterns) < DAILY_EDGE_FINDINGS_REQUIRED_MIN_PATTERN_COUNT:
         raise ValueError("daily edge findings brief needs at least five patterns")
     quantum_review = _as_dict(payload.get("quantum_review"))
+    quantum_gate = _as_dict(payload.get("quantum_mandatory_review_gate"))
+    validate_quantum_mandatory_review_gate(quantum_gate)
+    if payload.get("quantum_mandatory_review_gate_status") != quantum_gate.get("status"):
+        raise ValueError("daily edge findings quantum gate status mismatch")
+    if payload.get("quantum_mandatory_review_gate_passed") is not (
+        quantum_gate.get("status") == "quantum_review_gate_passed"
+    ):
+        raise ValueError("daily edge findings quantum gate pass flag mismatch")
     if quantum_review.get("core_gate") is not True:
         raise ValueError("daily edge findings brief quantum review must be core gate")
     if quantum_review.get("status") != "ok" and _int(payload.get("validated_edge_count")) > 0:
@@ -498,6 +551,13 @@ def validate_daily_edge_findings_brief(payload: dict[str, Any]) -> None:
             raise ValueError("daily edge findings pattern must use all sources")
         if pattern.get("quantum_non_linear_review_result", {}).get("required") is not True:
             raise ValueError("daily edge findings pattern must require quantum review")
+        if pattern.get("quantum_mandatory_review_gate_status") != quantum_gate.get("status"):
+            raise ValueError("daily edge findings pattern quantum gate status mismatch")
+        if (
+            pattern.get("affects_paper_trade_candidate_ranking") is True
+            and pattern.get("quantum_review_dependency_satisfied") is not True
+        ):
+            raise ValueError("daily edge findings pattern ranking bypasses quantum gate")
         for field in EDGE_PATTERN_AUTHORITY_FALSE_FIELDS:
             if pattern.get(field) is not False:
                 raise ValueError(f"daily edge findings pattern authority leak: {field}")
@@ -509,6 +569,20 @@ def validate_daily_edge_findings_brief(payload: dict[str, Any]) -> None:
             raise ValueError("daily edge findings strategy update must be a dict")
         if update.get("status") != "proposal_only":
             raise ValueError("daily edge findings strategy update must be proposal only")
+        if update.get("quantum_mandatory_review_gate_required") is not True:
+            raise ValueError("daily edge findings strategy update must require quantum gate")
+        if update.get("quantum_mandatory_review_gate_status") != quantum_gate.get("status"):
+            raise ValueError("daily edge findings strategy update quantum gate status mismatch")
+        if (
+            quantum_gate.get("status") == "quantum_review_gate_passed"
+            and update.get("quantum_dependency_satisfied") is not True
+        ):
+            raise ValueError("daily edge findings strategy update lacks quantum dependency")
+        if (
+            quantum_gate.get("status") != "quantum_review_gate_passed"
+            and update.get("quantum_dependency_satisfied") is True
+        ):
+            raise ValueError("daily edge findings strategy update bypasses blocked quantum gate")
         for field in EDGE_PATTERN_AUTHORITY_FALSE_FIELDS:
             if update.get(field) is not False:
                 raise ValueError(f"daily edge findings strategy update authority leak: {field}")
@@ -548,6 +622,13 @@ def write_daily_edge_findings_brief(
         "validated_edge_count": payload.get("validated_edge_count"),
         "quantum_review_status": payload.get("quantum_review_status"),
         "quantum_backend": payload.get("quantum_backend"),
+        "quantum_mandatory_review_gate_status": payload.get(
+            "quantum_mandatory_review_gate_status"
+        ),
+        "quantum_mandatory_review_gate_passed": payload.get(
+            "quantum_mandatory_review_gate_passed"
+        )
+        is True,
         "telegram_message_status": payload.get("telegram_message", {}).get("status"),
         "authority_leak_count": sum(
             1 for field in EDGE_PATTERN_AUTHORITY_FALSE_FIELDS if payload.get(field) is not False

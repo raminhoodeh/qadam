@@ -60,6 +60,10 @@ def main() -> None:
         errors.append("candidate_pattern_count_below_5")
     if brief["quantum_review"].get("core_gate") is not True:
         errors.append("quantum_not_core_gate")
+    if brief["quantum_mandatory_review_gate_status"] != "quantum_review_gate_passed":
+        errors.append("quantum_mandatory_review_gate_not_passed")
+    if brief["quantum_mandatory_review_gate_passed"] is not True:
+        errors.append("quantum_mandatory_review_gate_pass_flag_false")
     if brief["telegram_message"].get("telegram_command_path_enabled") is not False:
         errors.append("telegram_command_path_enabled")
     if brief["telegram_message"].get("telegram_live_send_allowed") is not False:
@@ -81,6 +85,12 @@ def main() -> None:
                 "quantum_review_status": brief["quantum_review_status"],
                 "quantum_backend": brief["quantum_backend"],
                 "quantum_core_gate": brief["quantum_review"].get("core_gate") is True,
+                "quantum_mandatory_review_gate_status": brief[
+                    "quantum_mandatory_review_gate_status"
+                ],
+                "quantum_mandatory_review_gate_passed": brief[
+                    "quantum_mandatory_review_gate_passed"
+                ],
                 "patterns_observed_count": len(brief["patterns_observed"]),
                 "patterns_rejected_count": len(brief["patterns_rejected"]),
                 "strategy_update_count": len(brief["strategy_updates"]),
@@ -105,6 +115,8 @@ def main() -> None:
     print(f"daily_edge_findings_quantum_status={brief['quantum_review_status']}")
     print(f"daily_edge_findings_quantum_backend={brief['quantum_backend']}")
     print(f"daily_edge_findings_quantum_core_gate={brief['quantum_review']['core_gate']}")
+    print(f"daily_edge_findings_quantum_gate_status={brief['quantum_mandatory_review_gate_status']}")
+    print(f"daily_edge_findings_quantum_gate_passed={brief['quantum_mandatory_review_gate_passed']}")
     print(f"daily_edge_findings_patterns_observed_count={len(brief['patterns_observed'])}")
     print(f"daily_edge_findings_patterns_rejected_count={len(brief['patterns_rejected'])}")
     print(f"daily_edge_findings_strategy_update_count={len(brief['strategy_updates'])}")
