@@ -68,6 +68,10 @@ from orchestrator.strategy_weight_updates import (
     build_strategy_weight_updates,
     validate_strategy_weight_updates,
 )
+from orchestrator.quantum_meta_review import (
+    build_quantum_meta_review,
+    validate_quantum_meta_review,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8901,6 +8905,15 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         hypothesis_lifecycle=payload["hypothesis_lifecycle"],
         generated_at=generated_at,
     )
+    payload["quantum_meta_review"] = build_quantum_meta_review(
+        quantum_gate=quantum_mandatory_review_gate,
+        pattern_recognition_engine=payload["pattern_recognition_engine"],
+        edge_memory_ledger=payload["edge_memory_ledger"],
+        strategy_update_record=payload["strategy_update_record"],
+        hypothesis_lifecycle=payload["hypothesis_lifecycle"],
+        strategy_weight_updates=payload["strategy_weight_updates"],
+        generated_at=generated_at,
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -9010,6 +9023,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "strategy_update_record",
         "hypothesis_lifecycle",
         "strategy_weight_updates",
+        "quantum_meta_review",
         "capital",
         "mission_control",
         "watching",
@@ -9099,6 +9113,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     validate_strategy_update_record(payload["strategy_update_record"])
     validate_hypothesis_lifecycle(payload["hypothesis_lifecycle"])
     validate_strategy_weight_updates(payload["strategy_weight_updates"])
+    validate_quantum_meta_review(payload["quantum_meta_review"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:

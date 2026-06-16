@@ -31,6 +31,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_strategy_update_record.py
 "$PYTHON_BIN" scripts/check_hypothesis_lifecycle.py
 "$PYTHON_BIN" scripts/check_strategy_weight_updates.py
+"$PYTHON_BIN" scripts/check_quantum_meta_review.py
 "$PYTHON_BIN" scripts/check_daily_edge_findings_brief.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
@@ -85,6 +86,7 @@ git diff --check -- \
   orchestrator/hypothesis_lifecycle.py \
   orchestrator/pattern_recognition_engine.py \
   orchestrator/quantum_mandatory_review_gate.py \
+  orchestrator/quantum_meta_review.py \
   orchestrator/strategy_weight_updates.py \
   orchestrator/strategy_update_record.py \
   orchestrator/telegram_codebase_upgrade_notifications.py \
@@ -185,6 +187,7 @@ git diff --check -- \
   scripts/check_edge_memory_ledger.py \
   scripts/check_hypothesis_lifecycle.py \
   scripts/check_strategy_weight_updates.py \
+  scripts/check_quantum_meta_review.py \
   scripts/check_quantum_mandatory_review_gate.py \
   scripts/check_pattern_recognition_engine.py \
   scripts/check_strategy_update_record.py \
