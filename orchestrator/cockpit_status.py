@@ -59,6 +59,11 @@ from orchestrator.strategy_update_record import (
     build_strategy_update_record,
     validate_strategy_update_record,
 )
+from orchestrator.hypothesis_lifecycle import (
+    build_hypothesis_lifecycle,
+    read_hypothesis_lifecycle,
+    validate_hypothesis_lifecycle,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8879,6 +8884,13 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         pattern_recognition_engine=payload["pattern_recognition_engine"],
         generated_at=generated_at,
     )
+    payload["hypothesis_lifecycle"] = build_hypothesis_lifecycle(
+        cognition=payload["cognition"],
+        edge_memory_ledger=payload["edge_memory_ledger"],
+        strategy_update_record=payload["strategy_update_record"],
+        previous_lifecycle=read_hypothesis_lifecycle(settings),
+        generated_at=generated_at,
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -8986,6 +8998,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "pattern_recognition_engine",
         "edge_memory_ledger",
         "strategy_update_record",
+        "hypothesis_lifecycle",
         "capital",
         "mission_control",
         "watching",
@@ -9073,6 +9086,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     validate_pattern_recognition_engine(payload["pattern_recognition_engine"])
     validate_edge_memory_ledger(payload["edge_memory_ledger"])
     validate_strategy_update_record(payload["strategy_update_record"])
+    validate_hypothesis_lifecycle(payload["hypothesis_lifecycle"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:
