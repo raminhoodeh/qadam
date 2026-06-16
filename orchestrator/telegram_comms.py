@@ -367,6 +367,18 @@ class TelegramCommunicationsStore:
                     codebase_upgrade = payload
             except json.JSONDecodeError:
                 codebase_upgrade = {"status": "invalid_json"}
+        human_brief_path = _runtime_path(
+            self.settings,
+            "telegram_human_brief.json",
+        )
+        human_brief: dict[str, Any] = {}
+        if human_brief_path.exists():
+            try:
+                payload = json.loads(human_brief_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    human_brief = payload
+            except json.JSONDecodeError:
+                human_brief = {"status": "invalid_json"}
         bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
         bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
         default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
@@ -462,6 +474,30 @@ class TelegramCommunicationsStore:
             ),
             "daily_portfolio_digest_live_send_succeeded": (
                 daily_digest.get("live_send_succeeded") is True
+            ),
+            "human_brief_enabled": self.settings.telegram_human_brief_enabled,
+            "human_brief_dry_run": self.settings.telegram_human_brief_dry_run,
+            "human_brief_status": human_brief.get("status", "not_run"),
+            "human_brief_brief_date": human_brief.get("brief_date"),
+            "human_brief_message_specificity_status": human_brief.get(
+                "message_specificity_status",
+                "not_run",
+            ),
+            "human_brief_message_specificity_score": int(
+                human_brief.get("message_specificity_score", 0) or 0
+            ),
+            "human_brief_message_human_style_status": human_brief.get(
+                "message_human_style_status",
+                "not_run",
+            ),
+            "human_brief_live_send_allowed": (
+                human_brief.get("telegram_live_send_allowed") is True
+            ),
+            "human_brief_live_send_attempted": (
+                human_brief.get("live_send_attempted") is True
+            ),
+            "human_brief_live_send_succeeded": (
+                human_brief.get("live_send_succeeded") is True
             ),
             "codebase_upgrade_notifications_enabled": (
                 self.settings.telegram_codebase_upgrade_notifications_enabled

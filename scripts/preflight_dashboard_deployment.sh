@@ -35,6 +35,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_self_improvement_proposals.py
 "$PYTHON_BIN" scripts/check_promotion_gates.py
 "$PYTHON_BIN" scripts/check_daily_edge_findings_brief.py
+"$PYTHON_BIN" scripts/check_telegram_human_brief.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 
@@ -96,12 +97,14 @@ git diff --check -- \
   orchestrator/telegram_codebase_upgrade_notifications.py \
   orchestrator/telegram_comms.py \
   orchestrator/telegram_daily_portfolio_digest.py \
+  orchestrator/telegram_human_brief.py \
   orchestrator/telegram_message_quality.py \
   orchestrator/telegram_trade_notifications.py \
   scripts/check_codebase_upgrade_telegram_notification.py \
   scripts/check_daily_telegram_portfolio_digest.py \
   scripts/check_dashboard_communications.js \
   scripts/check_telegram_message_specificity.py \
+  scripts/check_telegram_human_brief.py \
   scripts/check_telegram_trade_notifications.py \
   scripts/send_codebase_upgrade_telegram_notification.py \
   docs/qadam-dashboard-implementation-plan.md \
@@ -186,6 +189,7 @@ git diff --check -- \
   scripts/check_dashboard_d12_language_cleanup.js \
   scripts/check_protected_user_guide.js \
   scripts/check_daily_edge_findings_brief.py \
+  scripts/check_telegram_human_brief.py \
   scripts/check_edge_tracker.py \
   scripts/check_edge_pattern_ledger.py \
   scripts/check_edge_memory_ledger.py \

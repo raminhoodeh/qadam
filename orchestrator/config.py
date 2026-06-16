@@ -111,6 +111,8 @@ class Settings:
     telegram_daily_portfolio_digest_dry_run: bool
     telegram_daily_portfolio_digest_timezone: str
     telegram_daily_portfolio_digest_after_local_time: str
+    telegram_human_brief_enabled: bool
+    telegram_human_brief_dry_run: bool
     telegram_codebase_upgrade_notifications_enabled: bool
     telegram_codebase_upgrade_notifications_dry_run: bool
     telegram_inbound_intake_enabled: bool
@@ -213,6 +215,20 @@ class Settings:
                 "17:00",
             ).strip()
             or "17:00",
+            telegram_human_brief_enabled=_bool_config(
+                "QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED",
+                _bool_config(
+                    "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED",
+                    _bool_config("QADAM_TELEGRAM_ENABLED", False),
+                ),
+            ),
+            telegram_human_brief_dry_run=_bool_config(
+                "QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN",
+                _bool_config(
+                    "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
+                    _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
+                ),
+            ),
             telegram_codebase_upgrade_notifications_enabled=_bool_config(
                 "QADAM_TELEGRAM_CODEBASE_UPGRADE_NOTIFICATIONS_ENABLED",
                 _bool_config(

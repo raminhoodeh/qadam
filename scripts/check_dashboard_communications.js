@@ -31,6 +31,16 @@ const TELEGRAM_FIELDS = [
     "dry_run_message_count",
     "failed_count",
     "group_chat_configured",
+    "human_brief_brief_date",
+    "human_brief_dry_run",
+    "human_brief_enabled",
+    "human_brief_live_send_allowed",
+    "human_brief_live_send_attempted",
+    "human_brief_live_send_succeeded",
+    "human_brief_message_human_style_status",
+    "human_brief_message_specificity_score",
+    "human_brief_message_specificity_status",
+    "human_brief_status",
     "last_sent_time",
     "member_count",
     "mode",
@@ -149,6 +159,56 @@ const TELEGRAM_CODEBASE_UPGRADE_FIELDS = [
     "telegram_message_id_present"
 ];
 
+const TELEGRAM_HUMAN_BRIEF_FIELDS = [
+    "active_strategy_mutation_allowed",
+    "already_sent",
+    "blocker_count",
+    "blockers",
+    "body",
+    "bot_configured",
+    "brief_date",
+    "boundary",
+    "broker_write_allowed",
+    "candidate_pattern_count",
+    "delivery_key",
+    "dry_run",
+    "enabled",
+    "group_chat_configured",
+    "human_approval_missing_count",
+    "last_delivery_failure_category",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "message_class",
+    "message_fingerprint",
+    "message_human_style_status",
+    "message_safe",
+    "message_section_header_count",
+    "message_specificity_score",
+    "message_specificity_status",
+    "message_technical_noise_count",
+    "paper_order_submission_allowed",
+    "paragraph_count",
+    "promotion_gate_decision_count",
+    "promotion_gate_held_count",
+    "promotion_review_ready_count",
+    "public_safe",
+    "quantum_gate_passed",
+    "quantum_gate_status",
+    "quantum_required",
+    "schema_version",
+    "source_count",
+    "source_daily_edge_findings_status",
+    "source_promotion_gates_status",
+    "status",
+    "target",
+    "telegram_command_path_enabled",
+    "telegram_live_send_allowed",
+    "telegram_message_id_present",
+    "title",
+    "watched_instrument_count"
+];
+
 const MESSAGE_FIELDS = [
     "created_at",
     "message_class",
@@ -174,15 +234,18 @@ async function main() {
     const telegramIntake = communications.telegram_intake || {};
     const telegramDailyDigest = communications.telegram_daily_portfolio_digest || {};
     const telegramCodebaseUpgrade = communications.telegram_codebase_upgrade || {};
+    const telegramHumanBrief = communications.telegram_human_brief || {};
     const messages = Array.isArray(telegram.recent_messages) ? telegram.recent_messages : [];
     const missing = missingFields(telegram, TELEGRAM_FIELDS);
     const missingIntake = missingFields(telegramIntake, TELEGRAM_INTAKE_FIELDS);
     const missingDailyDigest = missingFields(telegramDailyDigest, TELEGRAM_DAILY_DIGEST_FIELDS);
     const missingCodebaseUpgrade = missingFields(telegramCodebaseUpgrade, TELEGRAM_CODEBASE_UPGRADE_FIELDS);
+    const missingHumanBrief = missingFields(telegramHumanBrief, TELEGRAM_HUMAN_BRIEF_FIELDS);
     assert(!missing.length, `communications.telegram missing fields: ${missing.join(", ")}`);
     assert(!missingIntake.length, `communications.telegram_intake missing fields: ${missingIntake.join(", ")}`);
     assert(!missingDailyDigest.length, `communications.telegram_daily_portfolio_digest missing fields: ${missingDailyDigest.join(", ")}`);
     assert(!missingCodebaseUpgrade.length, `communications.telegram_codebase_upgrade missing fields: ${missingCodebaseUpgrade.join(", ")}`);
+    assert(!missingHumanBrief.length, `communications.telegram_human_brief missing fields: ${missingHumanBrief.join(", ")}`);
 
     assert(telegram.status === "dry_run", "Telegram status is not dry_run");
     assert(telegram.mode === "dry_run", "Telegram mode is not dry_run");
@@ -225,6 +288,26 @@ async function main() {
     assert(Number(telegramDailyDigest.message_specificity_score || 0) >= 70 || telegramDailyDigest.status === "not_run" || telegramDailyDigest.status === "degraded", "Daily portfolio digest specificity score is too low");
     assert(typeof telegramDailyDigest.paperops_idle_reason === "string" || telegramDailyDigest.paperops_idle_reason === null, "Daily portfolio digest idle reason missing");
     assert(/Daily Telegram portfolio digests/i.test(telegramDailyDigest.boundary || ""), "Daily portfolio digest boundary is weak");
+    assert(telegram.human_brief_enabled === true, "Telegram human brief is not enabled");
+    assert(["telegram_human_brief_dry_run_ready", "telegram_human_brief_ready_to_send", "telegram_human_brief_sent", "telegram_human_brief_already_sent"].includes(telegram.human_brief_status), "Telegram human brief summary status is invalid");
+    assert(["telegram_human_brief_dry_run_ready", "telegram_human_brief_ready_to_send", "telegram_human_brief_sent", "telegram_human_brief_already_sent"].includes(telegramHumanBrief.status), "Telegram human brief status is invalid");
+    assert(telegramHumanBrief.target === "group", "Telegram human brief target is not group");
+    assert(telegramHumanBrief.public_safe === true, "Telegram human brief is not public safe");
+    assert(telegramHumanBrief.message_human_style_status === "human", "Telegram human brief is not human style");
+    assert(telegramHumanBrief.message_specificity_status === "specific", "Telegram human brief is not specific");
+    assert(Number(telegramHumanBrief.message_specificity_score || 0) >= 70, "Telegram human brief specificity score is too low");
+    assert(Number(telegramHumanBrief.paragraph_count || 0) >= 1 && Number(telegramHumanBrief.paragraph_count || 0) <= 2, "Telegram human brief paragraph count invalid");
+    assert(Number(telegramHumanBrief.message_technical_noise_count || 0) === 0, "Telegram human brief has technical noise");
+    assert(Number(telegramHumanBrief.message_section_header_count || 0) === 0, "Telegram human brief has section headers");
+    assert(/quantum/i.test(telegramHumanBrief.body || ""), "Telegram human brief missing quantum explanation");
+    assert(/data sources/i.test(telegramHumanBrief.body || ""), "Telegram human brief missing source explanation");
+    assert(/paper order/i.test(telegramHumanBrief.body || ""), "Telegram human brief missing paper-order boundary");
+    assert(telegramHumanBrief.telegram_command_path_enabled === false, "Telegram human brief command authority enabled");
+    assert(telegramHumanBrief.broker_write_allowed === false, "Telegram human brief broker write allowed");
+    assert(telegramHumanBrief.paper_order_submission_allowed === false, "Telegram human brief paper order allowed");
+    assert(telegramHumanBrief.active_strategy_mutation_allowed === false, "Telegram human brief strategy mutation allowed");
+    assert(telegramHumanBrief.live_capital_enabled === false, "Telegram human brief live capital enabled");
+    assert(/Telegram Human Brief/i.test(telegramHumanBrief.boundary || ""), "Telegram human brief boundary is weak");
     assert(telegram.codebase_upgrade_notifications_enabled === true, "Codebase upgrade notification is not enabled");
     assert(["already_sent", "blocked_pending_enablement", "dry_run_ready", "failed", "not_run", "ready_to_send", "sent", "suppressed_not_safe"].includes(telegram.codebase_upgrade_notifications_status), "Codebase upgrade notification status is invalid");
     assert(telegramCodebaseUpgrade.enabled === true, "Codebase upgrade public status is not enabled");
@@ -297,6 +380,7 @@ async function main() {
         "status.communications?.telegram",
         "status.communications?.telegram_daily_portfolio_digest",
         "status.communications?.telegram_codebase_upgrade",
+        "status.communications?.telegram_human_brief",
         "status.communications?.telegram_intake",
         "Telegram Bot",
         "notify_only",

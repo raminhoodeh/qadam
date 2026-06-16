@@ -12630,6 +12630,24 @@ def main() -> int:
             print("cockpit_status_trade_intent_paper_order_allowed=true")
             return 1
 
+    human_brief = payload["telegram_human_brief"]
+    print(f"cockpit_status_telegram_human_brief_status={human_brief['status']}")
+    print(
+        "cockpit_status_telegram_human_brief_specificity="
+        f"{human_brief['message_specificity_status']}:{human_brief['message_specificity_score']}"
+    )
+    print(
+        "cockpit_status_telegram_human_brief_human_style="
+        f"{human_brief['message_human_style_status']}"
+    )
+    print(
+        "cockpit_status_telegram_human_brief_quantum_gate="
+        f"{human_brief['quantum_gate_status']}"
+    )
+    print(
+        "cockpit_status_telegram_human_brief_live_send_allowed="
+        f"{human_brief['telegram_live_send_allowed']}"
+    )
     print("cockpit_status_boundary=" + payload["boundary"])
     return 0
 

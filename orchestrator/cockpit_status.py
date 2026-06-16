@@ -80,6 +80,16 @@ from orchestrator.promotion_gates import (
     build_promotion_gates,
     validate_promotion_gates,
 )
+from orchestrator.daily_edge_findings import (
+    build_daily_edge_findings_brief,
+    validate_daily_edge_findings_brief,
+)
+from orchestrator.telegram_human_brief import (
+    TELEGRAM_HUMAN_BRIEF_BOUNDARY,
+    TELEGRAM_HUMAN_BRIEF_SCHEMA_VERSION,
+    build_telegram_human_brief,
+    validate_telegram_human_brief,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -3747,11 +3757,120 @@ def _communications(settings: Settings) -> dict[str, Any]:
             "live_capital_enabled": False,
             "boundary": TELEGRAM_CODEBASE_UPGRADE_BOUNDARY,
         }
+    telegram_human_brief = _read_runtime_json(settings, "telegram_human_brief.json") or {
+        "schema_version": TELEGRAM_HUMAN_BRIEF_SCHEMA_VERSION,
+        "artifact_type": "telegram_human_brief",
+        "artifact_id": "telegram-human-brief:not-written",
+        "stage": "Stage 5 - Telegram Human Brief",
+        "generated_at": None,
+        "brief_date": None,
+        "status": "telegram_human_brief_blocked",
+        "public_safe": True,
+        "target": "group",
+        "message_class": "telegram_human_brief",
+        "title": "Qadam",
+        "body": (
+            "Qadam has not written the daily human brief yet. Once the daily "
+            "edge findings and promotion gates are ready, this will become a "
+            "plain-language Telegram explanation for the team."
+        ),
+        "paragraph_count": 1,
+        "line_count": 1,
+        "sentence_count": 2,
+        "message_fingerprint": None,
+        "message_specificity_status": "degraded",
+        "message_specificity_score": 0,
+        "message_specificity_reasons": ["telegram_human_brief_not_written"],
+        "message_human_style_status": "degraded",
+        "message_human_style_errors": ["telegram_human_brief_not_written"],
+        "message_technical_noise_count": 0,
+        "message_section_header_count": 0,
+        "message_safe": True,
+        "enabled": settings.telegram_human_brief_enabled,
+        "dry_run": settings.telegram_human_brief_dry_run,
+        "send_requested": False,
+        "force": False,
+        "already_sent": False,
+        "telegram_live_send_allowed": False,
+        "live_send_attempted": False,
+        "live_send_succeeded": False,
+        "telegram_message_id_present": False,
+        "last_delivery_failure_category": "telegram human brief not written",
+        "bot_configured": False,
+        "group_chat_configured": False,
+        "delivery_key": None,
+        "blockers": ["telegram_human_brief_not_written"],
+        "blocker_count": 1,
+        "source_daily_edge_findings_status": "not_written",
+        "source_promotion_gates_status": "not_written",
+        "source_count": 0,
+        "watched_instrument_count": 0,
+        "candidate_pattern_count": 0,
+        "validated_edge_count": 0,
+        "quantum_required": True,
+        "quantum_review_status": "not_written",
+        "quantum_backend": "not_written",
+        "quantum_gate_status": "not_written",
+        "quantum_gate_passed": False,
+        "promotion_gate_decision_count": 0,
+        "promotion_review_ready_count": 0,
+        "promotion_gate_passed_count": 0,
+        "promotion_gate_held_count": 0,
+        "human_approval_missing_count": 0,
+        "outcome_feedback_missing_count": 0,
+        "portfolio_goal_alignment": {},
+        "documentation_routes": {},
+        "boundary": TELEGRAM_HUMAN_BRIEF_BOUNDARY,
+    }
+    for field in (
+        "telegram_command_path_enabled",
+        "telegram_trade_command_enabled",
+        "telegram_place_trade_command_enabled",
+        "telegram_approve_trade_command_enabled",
+        "telegram_reject_trade_command_enabled",
+        "telegram_modify_trade_command_enabled",
+        "telegram_resize_trade_command_enabled",
+        "telegram_close_trade_command_enabled",
+        "telegram_cancel_trade_command_enabled",
+        "trade_candidate_created",
+        "risk_approval_allowed",
+        "execution_allowed",
+        "paper_execution_allowed",
+        "paper_order_allowed",
+        "paper_order_staging_allowed",
+        "paper_order_submission_allowed",
+        "broker_write_allowed",
+        "broker_post_allowed",
+        "alpaca_post_allowed",
+        "order_cancel_allowed",
+        "position_close_allowed",
+        "position_resize_allowed",
+        "strategy_weight_application_allowed",
+        "active_strategy_mutation_allowed",
+        "quantum_provider_call_allowed",
+        "prediction_market_write_allowed",
+        "crypto_perps_write_allowed",
+        "repository_write_allowed",
+        "deploy_allowed",
+        "live_endpoint_allowed",
+        "live_capital_enabled",
+        "phase7_proof_credit_allowed",
+        "secret_value_exposed",
+        "raw_payload_exposed",
+        "raw_provider_response_persisted",
+        "authorization_header_exposed",
+        "chat_id_exposed",
+        "bot_token_exposed",
+        "telegram_handle_exposed",
+        "broker_order_identifier_exposed",
+    ):
+        telegram_human_brief.setdefault(field, False)
     return {
         "telegram": telegram,
         "telegram_intake": telegram_intake,
         "telegram_daily_portfolio_digest": telegram_daily_digest,
         "telegram_codebase_upgrade": telegram_codebase_upgrade,
+        "telegram_human_brief": telegram_human_brief,
         "boundary": (
             "Communications are notify-only and intake-only. The browser and Telegram "
             "rail cannot create broker actions, commands, or hidden approvals."
@@ -8931,6 +9050,18 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         self_improvement_proposals=payload["self_improvement_proposals"],
         generated_at=generated_at,
     )
+    payload["daily_edge_findings_brief"] = build_daily_edge_findings_brief(
+        cockpit_status=payload,
+        generated_at=generated_at,
+    )
+    payload["telegram_human_brief"] = build_telegram_human_brief(
+        daily_edge_findings=payload["daily_edge_findings_brief"],
+        promotion_gates=payload["promotion_gates"],
+        settings=settings,
+        send_requested=False,
+        generated_at=generated_at,
+    )
+    payload["communications"]["telegram_human_brief"] = payload["telegram_human_brief"]
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -9043,6 +9174,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "quantum_meta_review",
         "self_improvement_proposals",
         "promotion_gates",
+        "daily_edge_findings_brief",
+        "telegram_human_brief",
         "capital",
         "mission_control",
         "watching",
@@ -9135,6 +9268,10 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     validate_quantum_meta_review(payload["quantum_meta_review"])
     validate_self_improvement_proposals(payload["self_improvement_proposals"])
     validate_promotion_gates(payload["promotion_gates"])
+    validate_daily_edge_findings_brief(payload["daily_edge_findings_brief"])
+    validate_telegram_human_brief(payload["telegram_human_brief"])
+    if payload["communications"].get("telegram_human_brief") != payload["telegram_human_brief"]:
+        raise ValueError("communications Telegram human brief mirror mismatch")
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:

@@ -20,6 +20,10 @@ from orchestrator.telegram_daily_portfolio_digest import (  # noqa: E402
     build_daily_portfolio_digest,
     validate_daily_portfolio_digest,
 )
+from orchestrator.telegram_human_brief import (  # noqa: E402
+    build_telegram_human_brief,
+    validate_telegram_human_brief,
+)
 from orchestrator.telegram_message_quality import (  # noqa: E402
     telegram_message_specificity,
 )
@@ -27,6 +31,7 @@ from orchestrator.telegram_trade_notifications import (  # noqa: E402
     build_telegram_trade_notifications,
     validate_telegram_trade_notifications,
 )
+from orchestrator.cockpit_status import build_cockpit_status  # noqa: E402
 
 
 def _score(title: str, body: str) -> int:
@@ -127,6 +132,25 @@ def main() -> int:
         errors.extend(daily_errors)
     if not str(daily.get("paperops_idle_reason") or "").strip():
         errors.append("daily_specificity_idle_reason_missing")
+
+    cockpit_status = build_cockpit_status(settings)
+    human_brief = build_telegram_human_brief(
+        daily_edge_findings=cockpit_status["daily_edge_findings_brief"],
+        promotion_gates=cockpit_status["promotion_gates"],
+        settings=settings,
+        send_requested=False,
+        generated_at=cockpit_status["generated_at"],
+    )
+    validate_telegram_human_brief(human_brief)
+    print(f"telegram_specificity_human_brief_status={human_brief['message_specificity_status']}")
+    print(f"telegram_specificity_human_brief_score={human_brief['message_specificity_score']}")
+    print(f"telegram_specificity_human_brief_style={human_brief['message_human_style_status']}")
+    if human_brief["message_specificity_status"] != "specific":
+        errors.append("human_brief_message_not_specific")
+    if human_brief["message_human_style_status"] != "human":
+        errors.append("human_brief_message_not_human")
+    if human_brief["paragraph_count"] not in {1, 2}:
+        errors.append("human_brief_paragraph_count_invalid")
 
     trade_notifications = build_telegram_trade_notifications(settings=settings, send_requested=False)
     trade_errors = validate_telegram_trade_notifications(trade_notifications)

@@ -61,6 +61,8 @@ QADAM_TELEGRAM_ENABLED=false
 QADAM_TELEGRAM_DRY_RUN=true
 QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false
 QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true
+QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED=false
+QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN=true
 ```
 
 The larger placeholder ledger is in `docs/api-specs.md`. Do not copy unused keys into runtime storage unless you are actively configuring that provider.
@@ -212,6 +214,8 @@ Required later for Phase D8A/T1:
 | `QADAM_TELEGRAM_DRY_RUN=true` | Writes outbox messages without sending. Defaults dry-run. |
 | `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false` | Dedicated gate for outbound group alerts when Qadam has already submitted a paper order. |
 | `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true` | Keeps paper-trade group alerts in validation mode until explicitly flipped false. |
+| `QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED=false` | Dedicated gate for the daily plain-language edge findings brief. Defaults disabled unless explicitly enabled. |
+| `QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN=true` | Keeps the daily human brief in preview/dry-run mode until explicitly flipped false. |
 
 Setup path:
 
