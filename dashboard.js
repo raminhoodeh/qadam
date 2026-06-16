@@ -3083,6 +3083,8 @@ function buildGovernanceModel(status = {}) {
     const telegram = status.communications?.telegram || {};
     const telegramNotifier = status.phase5_telegram_notifier || {};
     const telegramHumanBrief = status.communications?.telegram_human_brief || status.telegram_human_brief || {};
+    const dailyLearningAutomation = status.communications?.daily_learning_automation || status.daily_learning_automation || {};
+    const dailyLearningBrief = status.communications?.daily_telegram_learning_brief || status.daily_telegram_learning_brief || {};
     const operatorInbox = status.operator_inbox || {};
     const phase4 = phase4StrategyStatus(status);
     const phase6 = status.phase6_learning_loop || {};
@@ -3131,6 +3133,9 @@ function buildGovernanceModel(status = {}) {
             dry_run_message_count: modelNumber(telegram.dry_run_message_count, 0),
             human_brief_status: telegramHumanBrief.status || telegram.human_brief_status || "not exported",
             human_brief_message_specificity_score: modelNumber(telegramHumanBrief.message_specificity_score || telegram.human_brief_message_specificity_score, 0),
+            daily_learning_automation_status: dailyLearningAutomation.status || telegram.daily_learning_automation_status || "not exported",
+            daily_learning_brief_status: dailyLearningBrief.status || telegram.daily_learning_brief_status || "not exported",
+            daily_learning_brief_message_specificity_score: modelNumber(dailyLearningBrief.message_specificity_score || telegram.daily_learning_brief_message_specificity_score, 0),
             pending_queue_count: modelNumber(telegram.pending_queue_count, 0),
             failed_count: modelNumber(telegram.failed_count, 0),
             suppressed_count: modelNumber(telegram.suppressed_count || telegramNotifier.suppressed_alert_count, 0),
@@ -9937,6 +9942,8 @@ function renderCommunications(status) {
     const telegramDailyDigest = status.communications?.telegram_daily_portfolio_digest || {};
     const telegramCodebaseUpgrade = status.communications?.telegram_codebase_upgrade || {};
     const telegramHumanBrief = status.communications?.telegram_human_brief || status.telegram_human_brief || {};
+    const dailyLearningAutomation = status.communications?.daily_learning_automation || status.daily_learning_automation || {};
+    const dailyLearningBrief = status.communications?.daily_telegram_learning_brief || status.daily_telegram_learning_brief || {};
     const telegramIntake = status.communications?.telegram_intake || {};
     const messages = asArray(telegram.recent_messages);
     const classes = asArray(telegram.active_message_classes);
@@ -9999,8 +10006,10 @@ function renderCommunications(status) {
             ${renderMetric("Mode", telegram.mode || "dry_run")}
             ${renderMetric("Daily digest", telegramDailyDigest.status || telegram.daily_portfolio_digest_status || "not run")}
             ${renderMetric("Human brief", telegramHumanBrief.status || telegram.human_brief_status || "not run")}
+            ${renderMetric("Daily learning", dailyLearningAutomation.status || telegram.daily_learning_automation_status || "not run")}
+            ${renderMetric("Learning brief", dailyLearningBrief.status || telegram.daily_learning_brief_status || "not run")}
             ${renderMetric("Code upgrades", telegramCodebaseUpgrade.status || telegram.codebase_upgrade_notifications_status || "not run")}
-            ${renderMetric("Message quality", `${telegramHumanBrief.message_specificity_status || telegramCodebaseUpgrade.message_specificity_status || telegramDailyDigest.message_specificity_status || "not run"} · ${telegramHumanBrief.message_specificity_score || telegramCodebaseUpgrade.message_specificity_score || telegramDailyDigest.message_specificity_score || 0}/100`)}
+            ${renderMetric("Message quality", `${dailyLearningBrief.message_specificity_status || telegramHumanBrief.message_specificity_status || telegramCodebaseUpgrade.message_specificity_status || telegramDailyDigest.message_specificity_status || "not run"} · ${dailyLearningBrief.message_specificity_score || telegramHumanBrief.message_specificity_score || telegramCodebaseUpgrade.message_specificity_score || telegramDailyDigest.message_specificity_score || 0}/100`)}
             ${renderMetric("Portfolio balance", formatMoney(telegramDailyDigest.portfolio_balance_gbp || telegram.daily_portfolio_digest_portfolio_balance_gbp))}
             ${renderMetric("P&L", `${formatMoney(telegramDailyDigest.portfolio_total_pnl_gbp || 0)} · ${formatPercent(telegramDailyDigest.portfolio_performance_pct || telegram.daily_portfolio_digest_portfolio_performance_pct || 0)}`)}
             ${renderMetric("Trades today", telegramDailyDigest.daily_trade_count || telegram.daily_portfolio_digest_daily_trade_count || 0)}
@@ -10024,6 +10033,10 @@ function renderCommunications(status) {
             ${renderInlineBadge(telegramDailyDigest.dry_run ? "daily digest dry-run" : "daily digest live-send gate", telegramDailyDigest.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramHumanBrief.enabled ? "human brief enabled" : "human brief disabled", telegramHumanBrief.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramHumanBrief.dry_run ? "human brief dry-run" : "human brief live-send gate", telegramHumanBrief.dry_run ? "pending" : "online")}
+            ${renderInlineBadge(dailyLearningAutomation.enabled ? "daily learning automation enabled" : "daily learning automation disabled", dailyLearningAutomation.enabled ? "online" : "pending")}
+            ${renderInlineBadge(dailyLearningAutomation.dry_run ? "daily learning dry-run" : "daily learning live-send gate", dailyLearningAutomation.dry_run ? "pending" : "online")}
+            ${renderInlineBadge(dailyLearningBrief.enabled ? "learning brief enabled" : "learning brief disabled", dailyLearningBrief.enabled ? "online" : "pending")}
+            ${renderInlineBadge(dailyLearningBrief.dry_run ? "learning brief dry-run" : "learning brief live-send gate", dailyLearningBrief.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramCodebaseUpgrade.enabled ? "codebase upgrade notifications enabled" : "codebase upgrade notifications disabled", telegramCodebaseUpgrade.enabled ? "online" : "pending")}
             ${renderInlineBadge(telegramCodebaseUpgrade.dry_run ? "upgrade notifications dry-run" : "upgrade notifications live-send gate", telegramCodebaseUpgrade.dry_run ? "pending" : "online")}
             ${renderInlineBadge(telegramIntake.enabled ? "inbound intake enabled" : "inbound intake disabled", telegramIntake.enabled ? "online" : "pending")}
@@ -10032,6 +10045,33 @@ function renderCommunications(status) {
         <section class="trade-intent-section">
             <p class="label">Message classes</p>
             <div class="tag-row">${renderTagList(classes, "No message classes queued")}</div>
+        </section>
+        <section class="trade-intent-section">
+            <p class="label">Daily Telegram learning brief</p>
+            <div class="summary-strip compact">
+                ${renderMetric("Local date", dailyLearningAutomation.local_date || "not run")}
+                ${renderMetric("Due", dailyLearningAutomation.due_or_forced || dailyLearningAutomation.due_for_delivery ? "yes" : "not yet")}
+                ${renderMetric("Send after", `${dailyLearningAutomation.delivery_after_local_time || "20:00"} ${dailyLearningAutomation.timezone || ""}`)}
+                ${renderMetric("Sources", dailyLearningAutomation.source_count || 0)}
+                ${renderMetric("Markets", dailyLearningAutomation.watched_instrument_count || 0)}
+                ${renderMetric("Patterns", dailyLearningAutomation.candidate_pattern_count || 0)}
+                ${renderMetric("Quantum", dailyLearningAutomation.quantum_gate_status || "not run")}
+                ${renderMetric("Sent", dailyLearningAutomation.live_send_succeeded || dailyLearningAutomation.already_sent ? "yes" : "not yet")}
+            </div>
+            <ul class="status-list communications-list">
+                <li>
+                    <strong>Daily edge-learning pass</strong>
+                    <span>${htmlText(dailyLearningBrief.body || "The daily learning automation has not written today's brief yet.")}</span>
+                    <div class="comment-meta">
+                        ${renderInlineBadge(dailyLearningAutomation.status || "not_run", dailyLearningAutomation.live_send_succeeded ? "online" : "pending")}
+                        ${renderInlineBadge(`${dailyLearningBrief.message_human_style_status || "not scored"}`, dailyLearningBrief.message_human_style_status === "human" ? "online" : "pending")}
+                        ${renderInlineBadge(`${dailyLearningBrief.message_specificity_status || "not scored"} ${dailyLearningBrief.message_specificity_score || 0}/100`, dailyLearningBrief.message_specificity_status === "specific" ? "online" : "pending")}
+                        ${renderInlineBadge(dailyLearningAutomation.automation_live_send_allowed ? "automation send allowed" : "automation send gated", dailyLearningAutomation.automation_live_send_allowed ? "degraded" : "online")}
+                        ${renderInlineBadge(dailyLearningBrief.telegram_command_path_enabled ? "command authority" : "notify only", dailyLearningBrief.telegram_command_path_enabled ? "blocked" : "online")}
+                    </div>
+                </li>
+            </ul>
+            <p class="mini">${htmlText(dailyLearningAutomation.boundary || "Daily learning automation is outbound explanation only.")}</p>
         </section>
         <section class="trade-intent-section">
             <p class="label">Daily human brief</p>
