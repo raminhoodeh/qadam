@@ -45,11 +45,20 @@ from orchestrator.edge_pattern_ledger import (
     build_edge_pattern_ledger,
     validate_edge_pattern_ledger,
 )
+from orchestrator.edge_memory_ledger import (
+    build_edge_memory_ledger,
+    read_edge_memory_ledger,
+    validate_edge_memory_ledger,
+)
 from orchestrator.pattern_recognition_engine import (
     build_pattern_recognition_engine,
     validate_pattern_recognition_engine,
 )
 from orchestrator.quantum_mandatory_review_gate import build_quantum_mandatory_review_gate
+from orchestrator.strategy_update_record import (
+    build_strategy_update_record,
+    validate_strategy_update_record,
+)
 from orchestrator.governance import GovernanceStore
 from orchestrator.intelligence import (
     LocalResearchAssessmentStore,
@@ -8859,6 +8868,17 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         quantum_gate=quantum_mandatory_review_gate,
         generated_at=generated_at,
     )
+    payload["edge_memory_ledger"] = build_edge_memory_ledger(
+        pattern_recognition_engine=payload["pattern_recognition_engine"],
+        edge_pattern_ledger=payload["edge_pattern_ledger"],
+        previous_ledger=read_edge_memory_ledger(settings),
+        generated_at=generated_at,
+    )
+    payload["strategy_update_record"] = build_strategy_update_record(
+        edge_memory_ledger=payload["edge_memory_ledger"],
+        pattern_recognition_engine=payload["pattern_recognition_engine"],
+        generated_at=generated_at,
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -8964,6 +8984,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "edge_tracker",
         "edge_pattern_ledger",
         "pattern_recognition_engine",
+        "edge_memory_ledger",
+        "strategy_update_record",
         "capital",
         "mission_control",
         "watching",
@@ -9049,6 +9071,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     validate_edge_tracker_status(payload["edge_tracker"])
     validate_edge_pattern_ledger(payload["edge_pattern_ledger"])
     validate_pattern_recognition_engine(payload["pattern_recognition_engine"])
+    validate_edge_memory_ledger(payload["edge_memory_ledger"])
+    validate_strategy_update_record(payload["strategy_update_record"])
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:

@@ -27,6 +27,8 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_edge_pattern_ledger.py
 "$PYTHON_BIN" scripts/check_quantum_mandatory_review_gate.py
 "$PYTHON_BIN" scripts/check_pattern_recognition_engine.py
+"$PYTHON_BIN" scripts/check_edge_memory_ledger.py
+"$PYTHON_BIN" scripts/check_strategy_update_record.py
 "$PYTHON_BIN" scripts/check_daily_edge_findings_brief.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
@@ -77,8 +79,10 @@ git diff --check -- \
   orchestrator/daily_edge_findings.py \
   orchestrator/edge_pattern_ledger.py \
   orchestrator/edge_tracker.py \
+  orchestrator/edge_memory_ledger.py \
   orchestrator/pattern_recognition_engine.py \
   orchestrator/quantum_mandatory_review_gate.py \
+  orchestrator/strategy_update_record.py \
   orchestrator/telegram_codebase_upgrade_notifications.py \
   orchestrator/telegram_comms.py \
   orchestrator/telegram_daily_portfolio_digest.py \
@@ -174,8 +178,10 @@ git diff --check -- \
   scripts/check_daily_edge_findings_brief.py \
   scripts/check_edge_tracker.py \
   scripts/check_edge_pattern_ledger.py \
+  scripts/check_edge_memory_ledger.py \
   scripts/check_quantum_mandatory_review_gate.py \
   scripts/check_pattern_recognition_engine.py \
+  scripts/check_strategy_update_record.py \
   scripts/preflight_dashboard_deployment.sh
 
 say "Deployment preflight passed"
