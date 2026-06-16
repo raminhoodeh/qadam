@@ -379,6 +379,30 @@ class TelegramCommunicationsStore:
                     human_brief = payload
             except json.JSONDecodeError:
                 human_brief = {"status": "invalid_json"}
+        learning_brief_path = _runtime_path(
+            self.settings,
+            "daily_telegram_learning_brief.json",
+        )
+        learning_brief: dict[str, Any] = {}
+        if learning_brief_path.exists():
+            try:
+                payload = json.loads(learning_brief_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    learning_brief = payload
+            except json.JSONDecodeError:
+                learning_brief = {"status": "invalid_json"}
+        daily_learning_path = _runtime_path(
+            self.settings,
+            "daily_learning_automation.json",
+        )
+        daily_learning: dict[str, Any] = {}
+        if daily_learning_path.exists():
+            try:
+                payload = json.loads(daily_learning_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    daily_learning = payload
+            except json.JSONDecodeError:
+                daily_learning = {"status": "invalid_json"}
         bot_configured = secret_status("TELEGRAM_BOT_TOKEN", self.settings).configured
         bot_username_configured = secret_status("TELEGRAM_BOT_USERNAME", self.settings).configured
         default_chat_configured = secret_status("TELEGRAM_DEFAULT_CHAT_ID", self.settings).configured
@@ -498,6 +522,51 @@ class TelegramCommunicationsStore:
             ),
             "human_brief_live_send_succeeded": (
                 human_brief.get("live_send_succeeded") is True
+            ),
+            "daily_learning_automation_enabled": (
+                self.settings.daily_learning_automation_enabled
+            ),
+            "daily_learning_automation_dry_run": (
+                self.settings.daily_learning_automation_dry_run
+            ),
+            "daily_learning_automation_status": daily_learning.get("status", "not_run"),
+            "daily_learning_automation_local_date": daily_learning.get("local_date"),
+            "daily_learning_automation_due_for_delivery": (
+                daily_learning.get("due_for_delivery") is True
+            ),
+            "daily_learning_automation_live_send_attempted": (
+                daily_learning.get("live_send_attempted") is True
+            ),
+            "daily_learning_automation_live_send_succeeded": (
+                daily_learning.get("live_send_succeeded") is True
+            ),
+            "daily_learning_brief_enabled": (
+                self.settings.telegram_daily_learning_brief_enabled
+            ),
+            "daily_learning_brief_dry_run": (
+                self.settings.telegram_daily_learning_brief_dry_run
+            ),
+            "daily_learning_brief_status": learning_brief.get("status", "not_run"),
+            "daily_learning_brief_brief_date": learning_brief.get("brief_date"),
+            "daily_learning_brief_message_specificity_status": learning_brief.get(
+                "message_specificity_status",
+                "not_run",
+            ),
+            "daily_learning_brief_message_specificity_score": int(
+                learning_brief.get("message_specificity_score", 0) or 0
+            ),
+            "daily_learning_brief_message_human_style_status": learning_brief.get(
+                "message_human_style_status",
+                "not_run",
+            ),
+            "daily_learning_brief_live_send_allowed": (
+                learning_brief.get("telegram_live_send_allowed") is True
+            ),
+            "daily_learning_brief_live_send_attempted": (
+                learning_brief.get("live_send_attempted") is True
+            ),
+            "daily_learning_brief_live_send_succeeded": (
+                learning_brief.get("live_send_succeeded") is True
             ),
             "codebase_upgrade_notifications_enabled": (
                 self.settings.telegram_codebase_upgrade_notifications_enabled

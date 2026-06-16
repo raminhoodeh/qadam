@@ -113,6 +113,12 @@ class Settings:
     telegram_daily_portfolio_digest_after_local_time: str
     telegram_human_brief_enabled: bool
     telegram_human_brief_dry_run: bool
+    telegram_daily_learning_brief_enabled: bool
+    telegram_daily_learning_brief_dry_run: bool
+    daily_learning_automation_enabled: bool
+    daily_learning_automation_dry_run: bool
+    daily_learning_automation_timezone: str
+    daily_learning_automation_after_local_time: str
     telegram_codebase_upgrade_notifications_enabled: bool
     telegram_codebase_upgrade_notifications_dry_run: bool
     telegram_inbound_intake_enabled: bool
@@ -229,6 +235,62 @@ class Settings:
                     _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
                 ),
             ),
+            telegram_daily_learning_brief_enabled=_bool_config(
+                "QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_ENABLED",
+                _bool_config(
+                    "QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED",
+                    _bool_config(
+                        "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED",
+                        _bool_config("QADAM_TELEGRAM_ENABLED", False),
+                    ),
+                ),
+            ),
+            telegram_daily_learning_brief_dry_run=_bool_config(
+                "QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_DRY_RUN",
+                _bool_config(
+                    "QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN",
+                    _bool_config(
+                        "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
+                        _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
+                    ),
+                ),
+            ),
+            daily_learning_automation_enabled=_bool_config(
+                "QADAM_DAILY_LEARNING_AUTOMATION_ENABLED",
+                _bool_config(
+                    "QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_ENABLED",
+                    _bool_config(
+                        "QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED",
+                        _bool_config(
+                            "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED",
+                            _bool_config("QADAM_TELEGRAM_ENABLED", False),
+                        ),
+                    ),
+                ),
+            ),
+            daily_learning_automation_dry_run=_bool_config(
+                "QADAM_DAILY_LEARNING_AUTOMATION_DRY_RUN",
+                _bool_config(
+                    "QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_DRY_RUN",
+                    _bool_config(
+                        "QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN",
+                        _bool_config(
+                            "QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN",
+                            _bool_config("QADAM_TELEGRAM_DRY_RUN", True),
+                        ),
+                    ),
+                ),
+            ),
+            daily_learning_automation_timezone=os.getenv(
+                "QADAM_DAILY_LEARNING_AUTOMATION_TIMEZONE",
+                "Asia/Dubai",
+            ).strip()
+            or "Asia/Dubai",
+            daily_learning_automation_after_local_time=os.getenv(
+                "QADAM_DAILY_LEARNING_AUTOMATION_AFTER_LOCAL_TIME",
+                "20:00",
+            ).strip()
+            or "20:00",
             telegram_codebase_upgrade_notifications_enabled=_bool_config(
                 "QADAM_TELEGRAM_CODEBASE_UPGRADE_NOTIFICATIONS_ENABLED",
                 _bool_config(

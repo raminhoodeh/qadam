@@ -20,6 +20,10 @@ from orchestrator.telegram_daily_portfolio_digest import (  # noqa: E402
     build_daily_portfolio_digest,
     validate_daily_portfolio_digest,
 )
+from orchestrator.daily_telegram_learning_brief import (  # noqa: E402
+    build_daily_telegram_learning_brief,
+    validate_daily_telegram_learning_brief,
+)
 from orchestrator.telegram_human_brief import (  # noqa: E402
     build_telegram_human_brief,
     validate_telegram_human_brief,
@@ -151,6 +155,33 @@ def main() -> int:
         errors.append("human_brief_message_not_human")
     if human_brief["paragraph_count"] not in {1, 2}:
         errors.append("human_brief_paragraph_count_invalid")
+
+    learning_brief = build_daily_telegram_learning_brief(
+        daily_edge_findings=cockpit_status["daily_edge_findings_brief"],
+        promotion_gates=cockpit_status["promotion_gates"],
+        settings=settings,
+        send_requested=False,
+        generated_at=cockpit_status["generated_at"],
+    )
+    validate_daily_telegram_learning_brief(learning_brief)
+    print(
+        "telegram_specificity_daily_learning_brief_status="
+        f"{learning_brief['message_specificity_status']}"
+    )
+    print(
+        "telegram_specificity_daily_learning_brief_score="
+        f"{learning_brief['message_specificity_score']}"
+    )
+    print(
+        "telegram_specificity_daily_learning_brief_style="
+        f"{learning_brief['message_human_style_status']}"
+    )
+    if learning_brief["message_specificity_status"] != "specific":
+        errors.append("daily_learning_brief_message_not_specific")
+    if learning_brief["message_human_style_status"] != "human":
+        errors.append("daily_learning_brief_message_not_human")
+    if learning_brief["paragraph_count"] not in {1, 2}:
+        errors.append("daily_learning_brief_paragraph_count_invalid")
 
     trade_notifications = build_telegram_trade_notifications(settings=settings, send_requested=False)
     trade_errors = validate_telegram_trade_notifications(trade_notifications)

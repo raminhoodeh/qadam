@@ -12648,6 +12648,33 @@ def main() -> int:
         "cockpit_status_telegram_human_brief_live_send_allowed="
         f"{human_brief['telegram_live_send_allowed']}"
     )
+    learning_brief = payload["daily_telegram_learning_brief"]
+    daily_automation = payload["daily_learning_automation"]
+    print(f"cockpit_status_daily_learning_automation_status={daily_automation['status']}")
+    print(
+        "cockpit_status_daily_learning_automation_due_or_forced="
+        f"{daily_automation['due_or_forced']}"
+    )
+    print(
+        "cockpit_status_daily_learning_automation_learning_brief_status="
+        f"{daily_automation['daily_telegram_learning_brief_status']}"
+    )
+    print(
+        "cockpit_status_daily_telegram_learning_brief_specificity="
+        f"{learning_brief['message_specificity_status']}:{learning_brief['message_specificity_score']}"
+    )
+    print(
+        "cockpit_status_daily_telegram_learning_brief_human_style="
+        f"{learning_brief['message_human_style_status']}"
+    )
+    print(
+        "cockpit_status_daily_telegram_learning_brief_quantum_gate="
+        f"{learning_brief['quantum_gate_status']}"
+    )
+    print(
+        "cockpit_status_daily_telegram_learning_brief_live_send_allowed="
+        f"{learning_brief['telegram_live_send_allowed']}"
+    )
     print("cockpit_status_boundary=" + payload["boundary"])
     return 0
 

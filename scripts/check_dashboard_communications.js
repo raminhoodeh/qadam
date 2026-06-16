@@ -41,6 +41,23 @@ const TELEGRAM_FIELDS = [
     "human_brief_message_specificity_score",
     "human_brief_message_specificity_status",
     "human_brief_status",
+    "daily_learning_automation_dry_run",
+    "daily_learning_automation_due_for_delivery",
+    "daily_learning_automation_enabled",
+    "daily_learning_automation_live_send_attempted",
+    "daily_learning_automation_live_send_succeeded",
+    "daily_learning_automation_local_date",
+    "daily_learning_automation_status",
+    "daily_learning_brief_brief_date",
+    "daily_learning_brief_dry_run",
+    "daily_learning_brief_enabled",
+    "daily_learning_brief_live_send_allowed",
+    "daily_learning_brief_live_send_attempted",
+    "daily_learning_brief_live_send_succeeded",
+    "daily_learning_brief_message_human_style_status",
+    "daily_learning_brief_message_specificity_score",
+    "daily_learning_brief_message_specificity_status",
+    "daily_learning_brief_status",
     "last_sent_time",
     "member_count",
     "mode",
@@ -220,6 +237,89 @@ const MESSAGE_FIELDS = [
     "title"
 ];
 
+const DAILY_TELEGRAM_LEARNING_BRIEF_FIELDS = [
+    "active_strategy_mutation_allowed",
+    "already_sent",
+    "blocker_count",
+    "blockers",
+    "body",
+    "bot_configured",
+    "brief_date",
+    "boundary",
+    "broker_write_allowed",
+    "candidate_pattern_count",
+    "delivery_key",
+    "dry_run",
+    "enabled",
+    "force_delivery_window",
+    "group_chat_configured",
+    "human_approval_missing_count",
+    "last_delivery_failure_category",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "message_human_style_status",
+    "message_safe",
+    "message_section_header_count",
+    "message_specificity_score",
+    "message_specificity_status",
+    "message_technical_noise_count",
+    "paper_order_submission_allowed",
+    "paragraph_count",
+    "public_safe",
+    "quantum_gate_passed",
+    "quantum_gate_status",
+    "source_count",
+    "status",
+    "strategy_learning_applied_count",
+    "target",
+    "telegram_command_path_enabled",
+    "telegram_live_send_allowed",
+    "title",
+    "watched_instrument_count"
+];
+
+const DAILY_LEARNING_AUTOMATION_FIELDS = [
+    "active_strategy_mutation_allowed",
+    "already_sent",
+    "automation_live_send_allowed",
+    "blocker_count",
+    "blockers",
+    "boundary",
+    "broker_write_allowed",
+    "cadence",
+    "candidate_pattern_count",
+    "daily_edge_findings_status",
+    "daily_telegram_learning_brief_human_style_status",
+    "daily_telegram_learning_brief_live_send_allowed",
+    "daily_telegram_learning_brief_specificity_score",
+    "daily_telegram_learning_brief_specificity_status",
+    "daily_telegram_learning_brief_status",
+    "delivery_after_local_time",
+    "dry_run",
+    "due_for_delivery",
+    "due_or_forced",
+    "effective_send_requested",
+    "enabled",
+    "force_delivery_window",
+    "human_approval_missing_count",
+    "live_capital_enabled",
+    "live_send_attempted",
+    "live_send_succeeded",
+    "local_date",
+    "paper_order_submission_allowed",
+    "public_safe",
+    "quantum_gate_passed",
+    "quantum_gate_status",
+    "send_requested",
+    "source_count",
+    "status",
+    "strategy_learning_applied_count",
+    "telegram_command_path_enabled",
+    "timezone",
+    "watched_instrument_count"
+];
+
 function hasOwn(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -235,17 +335,23 @@ async function main() {
     const telegramDailyDigest = communications.telegram_daily_portfolio_digest || {};
     const telegramCodebaseUpgrade = communications.telegram_codebase_upgrade || {};
     const telegramHumanBrief = communications.telegram_human_brief || {};
+    const dailyTelegramLearningBrief = communications.daily_telegram_learning_brief || {};
+    const dailyLearningAutomation = communications.daily_learning_automation || {};
     const messages = Array.isArray(telegram.recent_messages) ? telegram.recent_messages : [];
     const missing = missingFields(telegram, TELEGRAM_FIELDS);
     const missingIntake = missingFields(telegramIntake, TELEGRAM_INTAKE_FIELDS);
     const missingDailyDigest = missingFields(telegramDailyDigest, TELEGRAM_DAILY_DIGEST_FIELDS);
     const missingCodebaseUpgrade = missingFields(telegramCodebaseUpgrade, TELEGRAM_CODEBASE_UPGRADE_FIELDS);
     const missingHumanBrief = missingFields(telegramHumanBrief, TELEGRAM_HUMAN_BRIEF_FIELDS);
+    const missingDailyLearningBrief = missingFields(dailyTelegramLearningBrief, DAILY_TELEGRAM_LEARNING_BRIEF_FIELDS);
+    const missingDailyLearningAutomation = missingFields(dailyLearningAutomation, DAILY_LEARNING_AUTOMATION_FIELDS);
     assert(!missing.length, `communications.telegram missing fields: ${missing.join(", ")}`);
     assert(!missingIntake.length, `communications.telegram_intake missing fields: ${missingIntake.join(", ")}`);
     assert(!missingDailyDigest.length, `communications.telegram_daily_portfolio_digest missing fields: ${missingDailyDigest.join(", ")}`);
     assert(!missingCodebaseUpgrade.length, `communications.telegram_codebase_upgrade missing fields: ${missingCodebaseUpgrade.join(", ")}`);
     assert(!missingHumanBrief.length, `communications.telegram_human_brief missing fields: ${missingHumanBrief.join(", ")}`);
+    assert(!missingDailyLearningBrief.length, `communications.daily_telegram_learning_brief missing fields: ${missingDailyLearningBrief.join(", ")}`);
+    assert(!missingDailyLearningAutomation.length, `communications.daily_learning_automation missing fields: ${missingDailyLearningAutomation.join(", ")}`);
 
     assert(telegram.status === "dry_run", "Telegram status is not dry_run");
     assert(telegram.mode === "dry_run", "Telegram mode is not dry_run");
@@ -308,6 +414,42 @@ async function main() {
     assert(telegramHumanBrief.active_strategy_mutation_allowed === false, "Telegram human brief strategy mutation allowed");
     assert(telegramHumanBrief.live_capital_enabled === false, "Telegram human brief live capital enabled");
     assert(/Telegram Human Brief/i.test(telegramHumanBrief.boundary || ""), "Telegram human brief boundary is weak");
+    assert(["daily_learning_automation_disabled", "daily_learning_automation_not_due", "daily_learning_automation_dry_run_ready", "daily_learning_automation_ready_to_send", "daily_learning_automation_sent", "daily_learning_automation_already_sent"].includes(dailyLearningAutomation.status), "Daily learning automation status is invalid");
+    assert(["daily_telegram_learning_brief_dry_run_ready", "daily_telegram_learning_brief_ready_to_send", "daily_telegram_learning_brief_sent", "daily_telegram_learning_brief_already_sent"].includes(dailyTelegramLearningBrief.status), "Daily Telegram learning brief status is invalid");
+    assert(telegram.daily_learning_automation_status === dailyLearningAutomation.status, "Daily learning automation summary mismatch");
+    assert(telegram.daily_learning_brief_status === dailyTelegramLearningBrief.status, "Daily learning brief summary mismatch");
+    assert(dailyLearningAutomation.cadence === "daily", "Daily learning automation cadence is invalid");
+    assert(dailyLearningAutomation.public_safe === true, "Daily learning automation is not public safe");
+    assert(dailyLearningAutomation.quantum_gate_passed === true, "Daily learning automation quantum gate did not pass");
+    assert(Number(dailyLearningAutomation.source_count || 0) >= 30, "Daily learning automation source count too low");
+    assert(Number(dailyLearningAutomation.watched_instrument_count || 0) >= 20, "Daily learning automation watched market count too low");
+    assert(Number(dailyLearningAutomation.candidate_pattern_count || 0) >= 5, "Daily learning automation candidate pattern count too low");
+    assert(dailyLearningAutomation.telegram_command_path_enabled === false, "Daily learning automation command authority enabled");
+    assert(dailyLearningAutomation.broker_write_allowed === false, "Daily learning automation broker write allowed");
+    assert(dailyLearningAutomation.paper_order_submission_allowed === false, "Daily learning automation paper order allowed");
+    assert(dailyLearningAutomation.active_strategy_mutation_allowed === false, "Daily learning automation strategy mutation allowed");
+    assert(dailyLearningAutomation.live_capital_enabled === false, "Daily learning automation live capital enabled");
+    assert(Number(dailyLearningAutomation.strategy_learning_applied_count || 0) === 0, "Daily learning automation applied learning");
+    assert(/Daily Learning Automation/i.test(dailyLearningAutomation.boundary || ""), "Daily learning automation boundary is weak");
+    assert(dailyTelegramLearningBrief.target === "group", "Daily Telegram learning brief target is not group");
+    assert(dailyTelegramLearningBrief.public_safe === true, "Daily Telegram learning brief is not public safe");
+    assert(dailyTelegramLearningBrief.message_human_style_status === "human", "Daily Telegram learning brief is not human style");
+    assert(dailyTelegramLearningBrief.message_specificity_status === "specific", "Daily Telegram learning brief is not specific");
+    assert(Number(dailyTelegramLearningBrief.message_specificity_score || 0) >= 70, "Daily Telegram learning brief specificity score is too low");
+    assert(Number(dailyTelegramLearningBrief.paragraph_count || 0) >= 1 && Number(dailyTelegramLearningBrief.paragraph_count || 0) <= 2, "Daily Telegram learning brief paragraph count invalid");
+    assert(Number(dailyTelegramLearningBrief.message_technical_noise_count || 0) === 0, "Daily Telegram learning brief has technical noise");
+    assert(Number(dailyTelegramLearningBrief.message_section_header_count || 0) === 0, "Daily Telegram learning brief has section headers");
+    assert(/learning/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing learning explanation");
+    assert(/quantum/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing quantum explanation");
+    assert(/data sources/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing source explanation");
+    assert(/paper order/i.test(dailyTelegramLearningBrief.body || ""), "Daily Telegram learning brief missing paper-order boundary");
+    assert(dailyTelegramLearningBrief.telegram_command_path_enabled === false, "Daily Telegram learning brief command authority enabled");
+    assert(dailyTelegramLearningBrief.broker_write_allowed === false, "Daily Telegram learning brief broker write allowed");
+    assert(dailyTelegramLearningBrief.paper_order_submission_allowed === false, "Daily Telegram learning brief paper order allowed");
+    assert(dailyTelegramLearningBrief.active_strategy_mutation_allowed === false, "Daily Telegram learning brief strategy mutation allowed");
+    assert(dailyTelegramLearningBrief.live_capital_enabled === false, "Daily Telegram learning brief live capital enabled");
+    assert(Number(dailyTelegramLearningBrief.strategy_learning_applied_count || 0) === 0, "Daily Telegram learning brief applied learning");
+    assert(/Daily Telegram Learning Brief/i.test(dailyTelegramLearningBrief.boundary || ""), "Daily Telegram learning brief boundary is weak");
     assert(telegram.codebase_upgrade_notifications_enabled === true, "Codebase upgrade notification is not enabled");
     assert(["already_sent", "blocked_pending_enablement", "dry_run_ready", "failed", "not_run", "ready_to_send", "sent", "suppressed_not_safe"].includes(telegram.codebase_upgrade_notifications_status), "Codebase upgrade notification status is invalid");
     assert(telegramCodebaseUpgrade.enabled === true, "Codebase upgrade public status is not enabled");
@@ -381,6 +523,10 @@ async function main() {
         "status.communications?.telegram_daily_portfolio_digest",
         "status.communications?.telegram_codebase_upgrade",
         "status.communications?.telegram_human_brief",
+        "status.communications?.daily_learning_automation",
+        "status.communications?.daily_telegram_learning_brief",
+        "Daily learning automation",
+        "Daily Telegram learning brief",
         "status.communications?.telegram_intake",
         "Telegram Bot",
         "notify_only",

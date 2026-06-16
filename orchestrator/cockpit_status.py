@@ -84,6 +84,18 @@ from orchestrator.daily_edge_findings import (
     build_daily_edge_findings_brief,
     validate_daily_edge_findings_brief,
 )
+from orchestrator.daily_telegram_learning_brief import (
+    DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY,
+    DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION,
+    build_daily_telegram_learning_brief,
+    validate_daily_telegram_learning_brief,
+)
+from orchestrator.daily_learning_automation import (
+    DAILY_LEARNING_AUTOMATION_BOUNDARY,
+    DAILY_LEARNING_AUTOMATION_SCHEMA_VERSION,
+    build_daily_learning_automation,
+    validate_daily_learning_automation,
+)
 from orchestrator.telegram_human_brief import (
     TELEGRAM_HUMAN_BRIEF_BOUNDARY,
     TELEGRAM_HUMAN_BRIEF_SCHEMA_VERSION,
@@ -3865,12 +3877,186 @@ def _communications(settings: Settings) -> dict[str, Any]:
         "broker_order_identifier_exposed",
     ):
         telegram_human_brief.setdefault(field, False)
+    daily_telegram_learning_brief = _read_runtime_json(
+        settings,
+        "daily_telegram_learning_brief.json",
+    ) or {
+        "schema_version": DAILY_TELEGRAM_LEARNING_BRIEF_SCHEMA_VERSION,
+        "artifact_type": "daily_telegram_learning_brief",
+        "artifact_id": "daily-telegram-learning-brief:not-written",
+        "stage": "Stage 6A - Daily Telegram Learning Brief",
+        "generated_at": None,
+        "brief_date": None,
+        "status": "daily_telegram_learning_brief_blocked",
+        "public_safe": True,
+        "target": "group",
+        "message_class": "daily_telegram_learning_brief",
+        "title": "Qadam",
+        "body": (
+            "Qadam has not written the daily learning brief yet. Once the daily "
+            "automation runs, this will become a plain-language Telegram note "
+            "about what Qadam learned from source and price patterns."
+        ),
+        "paragraph_count": 1,
+        "line_count": 1,
+        "sentence_count": 2,
+        "message_fingerprint": None,
+        "message_specificity_status": "degraded",
+        "message_specificity_score": 0,
+        "message_specificity_reasons": ["daily_telegram_learning_brief_not_written"],
+        "message_human_style_status": "degraded",
+        "message_human_style_errors": ["daily_telegram_learning_brief_not_written"],
+        "message_technical_noise_count": 0,
+        "message_section_header_count": 0,
+        "message_safe": True,
+        "enabled": settings.telegram_daily_learning_brief_enabled,
+        "dry_run": settings.telegram_daily_learning_brief_dry_run,
+        "send_requested": False,
+        "force_delivery_window": False,
+        "already_sent": False,
+        "telegram_live_send_allowed": False,
+        "live_send_attempted": False,
+        "live_send_succeeded": False,
+        "telegram_message_id_present": False,
+        "last_delivery_failure_category": "daily Telegram learning brief not written",
+        "bot_configured": False,
+        "group_chat_configured": False,
+        "delivery_key": None,
+        "blockers": ["daily_telegram_learning_brief_not_written"],
+        "blocker_count": 1,
+        "source_daily_edge_findings_status": "not_written",
+        "source_promotion_gates_status": "not_written",
+        "source_count": 0,
+        "watched_instrument_count": 0,
+        "candidate_pattern_count": 0,
+        "validated_edge_count": 0,
+        "quantum_required": True,
+        "quantum_review_status": "not_written",
+        "quantum_backend": "not_written",
+        "quantum_gate_status": "not_written",
+        "quantum_gate_passed": False,
+        "promotion_gate_decision_count": 0,
+        "promotion_review_ready_count": 0,
+        "promotion_gate_passed_count": 0,
+        "promotion_gate_held_count": 0,
+        "human_approval_missing_count": 0,
+        "strategy_learning_applied_count": 0,
+        "portfolio_goal_alignment": {},
+        "documentation_routes": {},
+        "boundary": DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY,
+    }
+    daily_learning_automation = _read_runtime_json(
+        settings,
+        "daily_learning_automation.json",
+    ) or {
+        "schema_version": DAILY_LEARNING_AUTOMATION_SCHEMA_VERSION,
+        "artifact_type": "daily_learning_automation",
+        "artifact_id": "daily-learning-automation:not-run",
+        "stage": "Stage 6 - Daily Automation",
+        "generated_at": None,
+        "status": "daily_learning_automation_disabled",
+        "public_safe": True,
+        "cadence": "daily",
+        "enabled": settings.daily_learning_automation_enabled,
+        "dry_run": settings.daily_learning_automation_dry_run,
+        "send_requested": False,
+        "effective_send_requested": False,
+        "force_delivery_window": False,
+        "timezone": settings.daily_learning_automation_timezone,
+        "local_date": None,
+        "local_time": None,
+        "delivery_after_local_time": settings.daily_learning_automation_after_local_time,
+        "due_for_delivery": False,
+        "due_or_forced": False,
+        "automation_live_send_allowed": False,
+        "daily_edge_findings_status": "not_written",
+        "daily_telegram_learning_brief_status": daily_telegram_learning_brief.get("status"),
+        "daily_telegram_learning_brief_specificity_status": daily_telegram_learning_brief.get(
+            "message_specificity_status",
+            "not_run",
+        ),
+        "daily_telegram_learning_brief_specificity_score": int(
+            daily_telegram_learning_brief.get("message_specificity_score", 0) or 0
+        ),
+        "daily_telegram_learning_brief_human_style_status": daily_telegram_learning_brief.get(
+            "message_human_style_status",
+            "not_run",
+        ),
+        "daily_telegram_learning_brief_live_send_allowed": False,
+        "live_send_attempted": False,
+        "live_send_succeeded": False,
+        "already_sent": False,
+        "last_delivery_failure_category": "daily learning automation not run",
+        "source_count": 0,
+        "watched_instrument_count": 0,
+        "candidate_pattern_count": 0,
+        "validated_edge_count": 0,
+        "quantum_required": True,
+        "quantum_review_status": "not_written",
+        "quantum_backend": "not_written",
+        "quantum_gate_status": "not_written",
+        "quantum_gate_passed": False,
+        "promotion_review_ready_count": 0,
+        "promotion_gate_held_count": 0,
+        "human_approval_missing_count": 0,
+        "strategy_learning_applied_count": 0,
+        "blockers": ["daily_learning_automation_not_run"],
+        "blocker_count": 1,
+        "documentation_routes": {},
+        "boundary": DAILY_LEARNING_AUTOMATION_BOUNDARY,
+    }
+    for artifact in (daily_telegram_learning_brief, daily_learning_automation):
+        for field in (
+            "telegram_command_path_enabled",
+            "telegram_trade_command_enabled",
+            "telegram_place_trade_command_enabled",
+            "telegram_approve_trade_command_enabled",
+            "telegram_reject_trade_command_enabled",
+            "telegram_modify_trade_command_enabled",
+            "telegram_resize_trade_command_enabled",
+            "telegram_close_trade_command_enabled",
+            "telegram_cancel_trade_command_enabled",
+            "trade_candidate_created",
+            "risk_approval_allowed",
+            "execution_allowed",
+            "paper_execution_allowed",
+            "paper_order_allowed",
+            "paper_order_staging_allowed",
+            "paper_order_submission_allowed",
+            "broker_write_allowed",
+            "broker_post_allowed",
+            "alpaca_post_allowed",
+            "order_cancel_allowed",
+            "position_close_allowed",
+            "position_resize_allowed",
+            "strategy_weight_application_allowed",
+            "active_strategy_mutation_allowed",
+            "quantum_provider_call_allowed",
+            "prediction_market_write_allowed",
+            "crypto_perps_write_allowed",
+            "repository_write_allowed",
+            "deploy_allowed",
+            "live_endpoint_allowed",
+            "live_capital_enabled",
+            "phase7_proof_credit_allowed",
+            "secret_value_exposed",
+            "raw_payload_exposed",
+            "raw_provider_response_persisted",
+            "authorization_header_exposed",
+            "chat_id_exposed",
+            "bot_token_exposed",
+            "telegram_handle_exposed",
+            "broker_order_identifier_exposed",
+        ):
+            artifact.setdefault(field, False)
     return {
         "telegram": telegram,
         "telegram_intake": telegram_intake,
         "telegram_daily_portfolio_digest": telegram_daily_digest,
         "telegram_codebase_upgrade": telegram_codebase_upgrade,
         "telegram_human_brief": telegram_human_brief,
+        "daily_telegram_learning_brief": daily_telegram_learning_brief,
+        "daily_learning_automation": daily_learning_automation,
         "boundary": (
             "Communications are notify-only and intake-only. The browser and Telegram "
             "rail cannot create broker actions, commands, or hidden approvals."
@@ -9061,7 +9247,86 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         send_requested=False,
         generated_at=generated_at,
     )
+    payload["daily_telegram_learning_brief"] = build_daily_telegram_learning_brief(
+        daily_edge_findings=payload["daily_edge_findings_brief"],
+        promotion_gates=payload["promotion_gates"],
+        settings=settings,
+        send_requested=False,
+        generated_at=generated_at,
+    )
+    payload["daily_learning_automation"] = build_daily_learning_automation(
+        daily_edge_findings=payload["daily_edge_findings_brief"],
+        daily_telegram_learning_brief=payload["daily_telegram_learning_brief"],
+        settings=settings,
+        send_requested=False,
+        generated_at=generated_at,
+    )
     payload["communications"]["telegram_human_brief"] = payload["telegram_human_brief"]
+    payload["communications"]["daily_telegram_learning_brief"] = payload[
+        "daily_telegram_learning_brief"
+    ]
+    payload["communications"]["daily_learning_automation"] = payload[
+        "daily_learning_automation"
+    ]
+    payload["communications"]["telegram"].update(
+        {
+            "human_brief_status": payload["telegram_human_brief"]["status"],
+            "human_brief_brief_date": payload["telegram_human_brief"]["brief_date"],
+            "human_brief_message_specificity_status": payload["telegram_human_brief"][
+                "message_specificity_status"
+            ],
+            "human_brief_message_specificity_score": payload["telegram_human_brief"][
+                "message_specificity_score"
+            ],
+            "human_brief_message_human_style_status": payload["telegram_human_brief"][
+                "message_human_style_status"
+            ],
+            "human_brief_live_send_allowed": payload["telegram_human_brief"][
+                "telegram_live_send_allowed"
+            ],
+            "human_brief_live_send_attempted": payload["telegram_human_brief"][
+                "live_send_attempted"
+            ],
+            "human_brief_live_send_succeeded": payload["telegram_human_brief"][
+                "live_send_succeeded"
+            ],
+            "daily_learning_automation_status": payload["daily_learning_automation"]["status"],
+            "daily_learning_automation_local_date": payload["daily_learning_automation"][
+                "local_date"
+            ],
+            "daily_learning_automation_due_for_delivery": payload[
+                "daily_learning_automation"
+            ]["due_for_delivery"],
+            "daily_learning_automation_live_send_attempted": payload[
+                "daily_learning_automation"
+            ]["live_send_attempted"],
+            "daily_learning_automation_live_send_succeeded": payload[
+                "daily_learning_automation"
+            ]["live_send_succeeded"],
+            "daily_learning_brief_status": payload["daily_telegram_learning_brief"]["status"],
+            "daily_learning_brief_brief_date": payload["daily_telegram_learning_brief"][
+                "brief_date"
+            ],
+            "daily_learning_brief_message_specificity_status": payload[
+                "daily_telegram_learning_brief"
+            ]["message_specificity_status"],
+            "daily_learning_brief_message_specificity_score": payload[
+                "daily_telegram_learning_brief"
+            ]["message_specificity_score"],
+            "daily_learning_brief_message_human_style_status": payload[
+                "daily_telegram_learning_brief"
+            ]["message_human_style_status"],
+            "daily_learning_brief_live_send_allowed": payload[
+                "daily_telegram_learning_brief"
+            ]["telegram_live_send_allowed"],
+            "daily_learning_brief_live_send_attempted": payload[
+                "daily_telegram_learning_brief"
+            ]["live_send_attempted"],
+            "daily_learning_brief_live_send_succeeded": payload[
+                "daily_telegram_learning_brief"
+            ]["live_send_succeeded"],
+        }
+    )
     payload["paper_authority_reconciliation"] = build_paper_authority_reconciliation(
         payload,
         settings=settings,
@@ -9176,6 +9441,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "promotion_gates",
         "daily_edge_findings_brief",
         "telegram_human_brief",
+        "daily_telegram_learning_brief",
+        "daily_learning_automation",
         "capital",
         "mission_control",
         "watching",
@@ -9270,8 +9537,20 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     validate_promotion_gates(payload["promotion_gates"])
     validate_daily_edge_findings_brief(payload["daily_edge_findings_brief"])
     validate_telegram_human_brief(payload["telegram_human_brief"])
+    validate_daily_telegram_learning_brief(payload["daily_telegram_learning_brief"])
+    validate_daily_learning_automation(payload["daily_learning_automation"])
     if payload["communications"].get("telegram_human_brief") != payload["telegram_human_brief"]:
         raise ValueError("communications Telegram human brief mirror mismatch")
+    if (
+        payload["communications"].get("daily_telegram_learning_brief")
+        != payload["daily_telegram_learning_brief"]
+    ):
+        raise ValueError("communications daily Telegram learning brief mirror mismatch")
+    if (
+        payload["communications"].get("daily_learning_automation")
+        != payload["daily_learning_automation"]
+    ):
+        raise ValueError("communications daily learning automation mirror mismatch")
     yahoo_finance = payload["yahoo_finance"]
     missing_yahoo = sorted(YAHOO_FINANCE_PUBLIC_REQUIRED_FIELDS - set(yahoo_finance))
     if missing_yahoo:

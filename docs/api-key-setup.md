@@ -63,6 +63,12 @@ QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_ENABLED=false
 QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true
 QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED=false
 QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN=true
+QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_ENABLED=false
+QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_DRY_RUN=true
+QADAM_DAILY_LEARNING_AUTOMATION_ENABLED=false
+QADAM_DAILY_LEARNING_AUTOMATION_DRY_RUN=true
+QADAM_DAILY_LEARNING_AUTOMATION_TIMEZONE=Asia/Dubai
+QADAM_DAILY_LEARNING_AUTOMATION_AFTER_LOCAL_TIME=20:00
 ```
 
 The larger placeholder ledger is in `docs/api-specs.md`. Do not copy unused keys into runtime storage unless you are actively configuring that provider.
@@ -216,6 +222,12 @@ Required later for Phase D8A/T1:
 | `QADAM_TELEGRAM_TRADE_GROUP_NOTIFICATIONS_DRY_RUN=true` | Keeps paper-trade group alerts in validation mode until explicitly flipped false. |
 | `QADAM_TELEGRAM_HUMAN_BRIEF_ENABLED=false` | Dedicated gate for the daily plain-language edge findings brief. Defaults disabled unless explicitly enabled. |
 | `QADAM_TELEGRAM_HUMAN_BRIEF_DRY_RUN=true` | Keeps the daily human brief in preview/dry-run mode until explicitly flipped false. |
+| `QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_ENABLED=false` | Dedicated Stage 6A gate for the daily Telegram learning brief. Defaults disabled unless explicitly enabled. |
+| `QADAM_TELEGRAM_DAILY_LEARNING_BRIEF_DRY_RUN=true` | Keeps the daily Telegram learning brief in preview/dry-run mode until explicitly flipped false. |
+| `QADAM_DAILY_LEARNING_AUTOMATION_ENABLED=false` | Dedicated Stage 6 automation gate for the once-daily edge-learning pass. Defaults disabled unless explicitly enabled. |
+| `QADAM_DAILY_LEARNING_AUTOMATION_DRY_RUN=true` | Keeps the daily automation from attempting a live Telegram send even when the brief is due. |
+| `QADAM_DAILY_LEARNING_AUTOMATION_TIMEZONE=Asia/Dubai` | Local timezone used to decide whether the daily learning brief is due. |
+| `QADAM_DAILY_LEARNING_AUTOMATION_AFTER_LOCAL_TIME=20:00` | Earliest local time for the daily learning brief automation window. |
 
 Setup path:
 
