@@ -25,6 +25,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_edge_tracker.py
 "$PYTHON_BIN" scripts/check_edge_pattern_ledger.py
+"$PYTHON_BIN" scripts/check_daily_edge_findings_brief.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 
@@ -71,6 +72,7 @@ git diff --check -- \
   landing-page-repo/guide/index.html \
   landing-page-repo/scripts/deploy-vercel-production.sh \
   orchestrator/cockpit_status.py \
+  orchestrator/daily_edge_findings.py \
   orchestrator/edge_pattern_ledger.py \
   orchestrator/edge_tracker.py \
   orchestrator/telegram_codebase_upgrade_notifications.py \
@@ -165,6 +167,7 @@ git diff --check -- \
   scripts/check_dashboard_d11o_deployment_discipline.js \
   scripts/check_dashboard_d12_language_cleanup.js \
   scripts/check_protected_user_guide.js \
+  scripts/check_daily_edge_findings_brief.py \
   scripts/check_edge_tracker.py \
   scripts/check_edge_pattern_ledger.py \
   scripts/preflight_dashboard_deployment.sh
