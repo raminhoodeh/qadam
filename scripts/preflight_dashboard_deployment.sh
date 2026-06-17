@@ -55,6 +55,7 @@ node scripts/check_dashboard_d11o_deployment_discipline.js
 say "Checking dashboard current product contracts"
 node scripts/check_dashboard_information_hierarchy.js
 node scripts/check_dashboard_overhaul_overview.js
+node scripts/check_dashboard_stage7_visibility.js
 node scripts/check_dashboard_cc6_real_portfolio_timeline.js
 node scripts/check_dashboard_edge_tracker.js
 node scripts/check_dashboard_cc9_slop_repetition.js
@@ -68,6 +69,9 @@ node scripts/check_dashboard_tradingview_source.js
 node scripts/check_dashboard_communications.js
 node scripts/check_dashboard_forum.js
 node scripts/check_protected_user_guide.js
+node scripts/check_dashboard_d11l_visual_simplification.js
+node scripts/check_dashboard_d11m_regression_acceptance.js
+node scripts/check_dashboard_d11n_documentation_guide_alignment.js
 
 say "Checking status exporters"
 "$PYTHON_BIN" scripts/check_cockpit_status.py
@@ -106,6 +110,7 @@ git diff --check -- \
   scripts/check_codebase_upgrade_telegram_notification.py \
   scripts/check_daily_telegram_portfolio_digest.py \
   scripts/check_dashboard_communications.js \
+  scripts/check_dashboard_stage7_visibility.js \
   scripts/check_daily_learning_automation.py \
   scripts/check_telegram_message_specificity.py \
   scripts/check_telegram_human_brief.py \

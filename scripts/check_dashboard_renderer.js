@@ -21,6 +21,8 @@ const selectors = [
     "[data-mission-trades]",
     "[data-mission-portfolio]",
     "[data-operating-summary]",
+    "[data-dashboard-safety-strip]",
+    "[data-stage7-dashboard-visibility]",
     "[data-overview-mission-brief]",
     "[data-overview-strategy-narrative]",
     "[data-overview-paper-trade-state]",

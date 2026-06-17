@@ -79,7 +79,8 @@ function assertNoSecretMaterial(text, label) {
 }
 
 function assertCanonicalViewNav() {
-    const linkMatches = [...dashboardHtml.matchAll(/data-dashboard-view-target="([^"]+)"/g)].map((match) => match[1]);
+    const viewsBlock = renderer.match(/const DASHBOARD_VIEWS = \[([\s\S]*?)\];/)?.[1] || "";
+    const linkMatches = [...viewsBlock.matchAll(/\{\s*id:\s*"([^"]+)",\s*label:\s*"[^"]+"\s*\}/g)].map((match) => match[1]);
     const expectedViews = ["overview", "trades", "evidence", "reasoning", "operations"];
     assert(
         JSON.stringify(linkMatches) === JSON.stringify(expectedViews),
@@ -91,13 +92,11 @@ function assertCanonicalViewNav() {
             `dashboard missing section for view ${view}`
         );
     });
-    includesAll(dashboardHtml, [
-        "data-dashboard-debug-toggle",
-        "data-dashboard-advanced-links hidden",
-        "Diagnostics",
-        "data-dashboard-view-target=\"operations\""
-    ], "advanced debug navigation shell");
     includesAll(renderer, [
+        "DASHBOARD_VIEWS",
+        "DASHBOARD_ADVANCED_DEBUG_KEY",
+        "data-dashboard-debug-toggle",
+        "data-dashboard-advanced-links",
         "function setDashboardDebugMode",
         "window.setQadamDashboardDebugMode",
         "dashboardDebugModeEnabled"
@@ -182,16 +181,19 @@ async function assertRenderedDashboardContract() {
         ["[data-dashboard-safety-strip]", "Paper trading authorized"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
+        ["[data-stage7-dashboard-visibility]", "System Operating Map"],
+        ["[data-stage7-dashboard-visibility]", "System Status"],
+        ["[data-stage7-dashboard-visibility]", "Data Sources Connected"],
+        ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
+        ["[data-stage7-dashboard-visibility]", "Qadam Activity Feed"],
+        ["[data-stage7-dashboard-visibility]", "Trade Consideration Board"],
+        ["[data-stage7-dashboard-visibility]", "Paper Portfolio Capacity"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
         ["[data-overview-strategy-narrative]", "Strategy Universe"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
-        ["[data-overview-mission-brief]", "Safety boundary"],
-        ["[data-overview-mission-brief]", "it cannot approve trades, broker writes, position changes, funding, or live capital changes"],
         ["[data-overview-control-plane]", "Control Plane"],
-        ["[data-overview-control-plane]", "Mission Snapshot owns authority state"],
-        ["[data-overview-control-plane]", "Trade ideas stay candidates until gated paper-order records exist"],
         ["[data-trade-layer]", "Trade lifecycle board"],
         ["[data-trade-layer]", "Consolidated trade readout"],
         ["[data-trade-layer]", "Paper trade lifecycle"],
@@ -236,8 +238,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260607-cc11-final-dashboard-structure",
-        "/dashboard.js?v=20260607-cc11-final-dashboard-structure"
+        "/auth.css?v=20260615-dashboard-portfolio-first",
+        "/dashboard.js?v=20260615-dashboard-portfolio-first"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

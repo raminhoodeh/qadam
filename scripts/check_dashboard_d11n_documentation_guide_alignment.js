@@ -7,6 +7,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const guideDocPath = path.join(repoRoot, "docs", "qadam-user-guide.md");
 const guideHtmlPath = path.join(repoRoot, "landing-page-repo", "guide", "index.html");
 const dashboardHtmlPath = path.join(repoRoot, "landing-page-repo", "dashboard", "index.html");
+const dashboardJsPath = path.join(repoRoot, "landing-page-repo", "dashboard.js");
 const protectedGuideCheckPath = path.join(repoRoot, "scripts", "check_protected_user_guide.js");
 const d11mCheckPath = path.join(repoRoot, "scripts", "check_dashboard_d11m_regression_acceptance.js");
 const preflightPath = path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh");
@@ -17,6 +18,7 @@ const auditPath = path.join(repoRoot, "docs", "qadam-dashboard-d11n-documentatio
 const guideDoc = fs.readFileSync(guideDocPath, "utf8");
 const guideHtml = fs.readFileSync(guideHtmlPath, "utf8");
 const dashboardHtml = fs.readFileSync(dashboardHtmlPath, "utf8");
+const dashboardJs = fs.readFileSync(dashboardJsPath, "utf8");
 const protectedGuideCheck = fs.readFileSync(protectedGuideCheckPath, "utf8");
 const d11mCheck = fs.readFileSync(d11mCheckPath, "utf8");
 const preflight = fs.readFileSync(preflightPath, "utf8");
@@ -56,8 +58,9 @@ function assertNoUnsafePublicText(text, label) {
 }
 
 function dashboardViewLabels() {
-    return [...dashboardHtml.matchAll(/data-dashboard-view-target="([^"]+)"[^>]*>([^<]+)<\/a>/g)]
-        .map((match) => match[2].trim());
+    const viewsBlock = dashboardJs.match(/const DASHBOARD_VIEWS = \[([\s\S]*?)\];/)?.[1] || "";
+    return [...viewsBlock.matchAll(/\{\s*id:\s*"[^"]+",\s*label:\s*"([^"]+)"\s*\}/g)]
+        .map((match) => match[1].trim());
 }
 
 function assertGuideMatchesDashboardNav() {
@@ -90,14 +93,14 @@ function assertNoOldPanelHuntInstructions() {
 
 function assertOldTermMapping() {
     [
-        "| Mission Control | Older implementation name now represented by Overview. |",
+        "| Mission Control | Older implementation name now represented by Overview / Stage 7 cockpit. |",
         "| Watching | Older implementation name now represented by Evidence. |",
         "| Cognition | Older implementation name now represented by Reasoning. |",
         "| Money | Older implementation name now represented inside Trades. |",
         "| Forbidden | Older implementation name now represented by Safety Status plus Operations diagnostics. |"
     ].forEach((needle) => assertIncludes(guideDoc, needle, "guide markdown old-term mapping"));
     [
-        "<strong>Mission Control</strong><span>Overview.",
+        "<strong>Mission Control</strong><span>Overview / Stage 7 cockpit.",
         "<strong>Watching</strong><span>Evidence.",
         "<strong>Cognition</strong><span>Reasoning.",
         "<strong>Trade Layer</strong><span>Trades.",
@@ -109,20 +112,18 @@ function assertGuideConcepts() {
     includesAll(guideDoc, [
         "Start in the Overview view.",
         "Safety Status",
-        "six founder decision",
-        "System/team map",
-        "Sources",
-        "Strategy",
-        "Portfolio",
-        "Trades",
-        "Thinking",
-        "Diagnostics are not a seventh operating block",
-        "Overview's health readout and mini-map",
-        "Open Evidence",
-        "Open Reasoning",
-        "Open Trades",
-        "Open Operations only",
-        "full expandable system map",
+        "Stage 7 makes Overview the default Fund Manager",
+        "Seven Stage 7 Dashboard Sections",
+        "System Operating Map",
+        "System Status",
+        "Data Sources Connected",
+        "Trading Strategies",
+        "Qadam Activity Feed",
+        "Trade Consideration Board",
+        "Paper Portfolio Capacity",
+        "Advanced / Debug Mode",
+        "Open Advanced / Debug Mode only",
+        "hidden chain-of-thought",
         "blocked/no-trade state as potentially healthy",
         "Record a no-trade rationale when there is no qualified setup",
         "Do not force a",
@@ -131,20 +132,18 @@ function assertGuideConcepts() {
     includesAll(guideHtml, [
         "Start in the Overview view.",
         "Safety Status",
-        "six founder decision blocks",
-        "System/team map",
-        "Sources",
-        "Strategy",
-        "Portfolio",
-        "Trades",
-        "Thinking",
-        "Diagnostics are not a seventh operating block",
-        "Overview's health readout and mini-map",
-        "Open Evidence",
-        "Open Reasoning",
-        "Open Trades",
-        "Open Operations only",
-        "full expandable system map",
+        "Stage 7 makes Overview the default Fund Manager",
+        "Seven Stage 7 Dashboard Sections",
+        "System Operating Map",
+        "System Status",
+        "Data Sources Connected",
+        "Trading Strategies",
+        "Qadam Activity Feed",
+        "Trade Consideration Board",
+        "Paper Portfolio Capacity",
+        "Advanced / Debug Mode",
+        "Open Advanced / Debug Mode only",
+        "hidden chain-of-thought",
         "blocked/no-trade state as potentially healthy",
         "Record a no-trade rationale when there is no qualified setup",
         "Do not force a paper trade to satisfy cadence."
@@ -165,7 +164,7 @@ function assertPlanAndChecks() {
         "Evidence view",
         "Reasoning view",
         "Operations view",
-        "Six Founder Decision Blocks",
+        "Seven Stage 7 Dashboard Sections",
         "five primary views",
         "guide HTML still tells users to hunt old panel"
     ], "protected guide checker alignment");

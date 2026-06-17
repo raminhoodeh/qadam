@@ -185,16 +185,19 @@ Use this sequence the first time you open Qadam.
 2. Read Safety Status first: it should say OK - paper only, OK - read-only,
    OK - live capital off, Dashboard cannot place orders, and AI cannot bypass risk
    checks.
-3. Use Overview's health readout and mini-map to understand whether Qadam is
-   watching sources, forming hypotheses, seeing trade candidates, or blocked.
-4. Open Evidence to inspect source health, setup evidence, and supplemental
-   context.
-5. Open Reasoning to separate private priors, factual evidence, hypotheses,
-   missing corroboration, Strategy Lead review, and quant annotations.
-6. Open Trades to inspect observed signals, candidates, blocked trades, paper
-   order state, and paper-account performance.
-7. Open Operations only when you need the full expandable system map, event
-   trail, Telegram state, governance comments, or technical diagnostics.
+3. Read the seven Stage 7 dashboard sections in order: System Operating Map,
+   System Status, Data Sources Connected, Trading Strategies, Qadam Activity
+   Feed, Trade Consideration Board, and Paper Portfolio Capacity.
+4. Use the System Operating Map to understand the handoff from sources, to the
+   local and frontier models, to the quantum/quant review, risk gate, Alpaca
+   Paper, and learning loop.
+5. Use the Activity Feed and Trade Consideration Board to see what Qadam is
+   thinking about without exposing hidden chain-of-thought or implying an order
+   exists.
+6. Use Paper Portfolio Capacity to track the GBP 100,000 paper baseline against
+   the GBP 200,000 60-day target.
+7. Open Advanced / Debug Mode only when you need the deeper Trades, Evidence,
+   Reasoning, Operations, event-trail, or technical diagnostics views.
 8. Treat a blocked/no-trade state as potentially healthy until the evidence
    says otherwise.
 9. Add a comment only if you have a useful observation, concern, or proposed
@@ -202,29 +205,57 @@ Use this sequence the first time you open Qadam.
 
 ## 9. How To Read The Dashboard
 
-Start in the Overview view. It is now organized around six founder decision
-blocks: System/team map, Sources, Strategy, Portfolio, Trades, and Thinking.
-Those blocks answer the main operating questions before you open the deeper
-review tabs. The navigation still includes Overview, Trades, Evidence,
-Reasoning, and Operations, but the default Overview is the primary mission
-control surface. Use Operations only when you need Diagnostics, legacy audit
-sections, raw event trails, or deployment/runtime details.
+Start in the Overview view. Stage 7 makes Overview the default Fund Manager
+cockpit instead of a long stack of technical cards. It is organized around seven
+plain-language sections: System Operating Map, System Status, Data Sources
+Connected, Trading Strategies, Qadam Activity Feed, Trade Consideration Board,
+and Paper Portfolio Capacity.
 
-### Overview
+The deeper Trades, Evidence, Reasoning, and Operations views still exist for
+technical review, but they belong behind Advanced / Debug Mode. Use Advanced /
+Debug Mode only when you need legacy audit sections, raw event trails,
+deployment/runtime details, or exact diagnostic evidence.
+
+### Overview / Stage 7 Cockpit
 
 Use it to answer:
 
-- what changed since the last read
-- whether Qadam is in paper mode with live capital disabled
-- whether the live bridge or static snapshot is supplying the dashboard
-- whether sources, hypotheses, candidates, paper state, or safety gates need
-  attention
-- how the high-level system is wired through the compact mini-map
-- how the system/team map, sources, strategy, portfolio, trades, and thinking
-  blocks fit together
+- how the whole system is wired from source observation to paper account and
+  learning loop
+- whether the core system is ready to observe, reason, quantify, paper trade, or
+  needs attention
+- how many data sources are connected and whether any required source gap is
+  still blocking paper operation
+- which strategy domains Qadam is watching: prediction markets, crude oil,
+  defence, silver, and semiconductors
+- what Qadam is currently focused on, in public-safe summary language
+- what trade ideas are observations, hypotheses, candidates, blocked, submitted,
+  open, closed, or postmortem-ready
+- how much of the GBP 100,000 paper capacity is deployed against the GBP 200,000
+  60-day target
 
 Overview is a readout, not a command surface. It cannot promote hypotheses,
 approve trades, submit paper orders, write to brokers, or enable live capital.
+
+### Seven Stage 7 Dashboard Sections
+
+| Section | What it tells you |
+| --- | --- |
+| System Operating Map | How Qadam's fund team hands work from sources, to the Python COO, local LLM, frontier LLM, quantum/quant review, risk gate, Alpaca Paper, and learning loop. |
+| System Status | The consequence-based state: ready to observe, ready to reason, ready to quantify, ready to paper trade, or needs attention. |
+| Data Sources Connected | The connected-source count, required blocker count, degraded feeds, and source groups without making the user hunt through every adapter. |
+| Trading Strategies | The 60-day paper mandate, tracked markets, and active thesis families. |
+| Qadam Activity Feed | A human-readable feed of what Qadam is evaluating now, without raw logs or hidden chain-of-thought. |
+| Trade Consideration Board | The plain progression from observed signal to hypothesis, candidate, blocked, submitted, open, closed, or postmortem. |
+| Paper Portfolio Capacity | The paper account value and deployment line against the GBP 100,000 baseline and GBP 200,000 target. |
+
+### Advanced / Debug Mode
+
+Advanced / Debug Mode is for inspection, not daily monitoring. It exposes the
+deeper Trades, Evidence, Reasoning, Operations, and legacy diagnostic sections so
+an operator can audit source evidence, runtime events, migration proofs, and
+backend-derived status. It still cannot approve, submit, modify, close, resize,
+or fund trades.
 
 ### Trades
 
@@ -370,8 +401,8 @@ Use this mapping when reading old notes:
 
 | Old term | Read it now as |
 | --- | --- |
-| Mission Control | Overview |
-| System map | Overview mini-map or Operations full map |
+| Mission Control | Overview / Stage 7 cockpit |
+| System map | Overview's System Operating Map or Operations full map |
 | Watching | Evidence |
 | Cognition | Reasoning |
 | Worldview / Private Edge | Reasoning prior context |
@@ -497,18 +528,19 @@ Use this routine when checking Qadam.
 1. Start with Overview.
 2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
-3. Scan the Overview mini-map and review card for the current operating posture.
-4. Open Evidence and review degraded, missing, stale, or supplemental-only
-   sources.
-5. Open Reasoning and separate priors, evidence, hypotheses, missing
-   corroboration, and analyst review.
-6. Open Trades and separate observations, candidates, blocked ideas, paper
-   order state, and paper-account state.
-7. Open Operations only for the full expandable system map, event trail,
-   safety diagnostics, Telegram communications, or governance comments.
-8. Record a no-trade rationale when there is no qualified setup. Do not force a
+3. Scan the System Operating Map, System Status, Data Sources Connected, Trading
+   Strategies, Qadam Activity Feed, Trade Consideration Board, and Paper
+   Portfolio Capacity sections.
+4. Check whether any required source, reasoning, quant, risk, or paper-account
+   dependency needs attention.
+5. Separate what Qadam is watching from what it is considering, and separate
+   trade ideas from actual paper trade states.
+6. Open Advanced / Debug Mode only for the deeper Trades, Evidence, Reasoning,
+   Operations, event trail, safety diagnostics, Telegram communications, or
+   governance comments.
+7. Record a no-trade rationale when there is no qualified setup. Do not force a
    paper trade to satisfy cadence.
-9. Add a comment if something looks wrong, unclear, or strategically important.
+8. Add a comment if something looks wrong, unclear, or strategically important.
 
 ## 16. What Members Can And Cannot Do
 
@@ -702,13 +734,13 @@ Escalate or comment if:
 | Term | Meaning |
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
-| Overview | The default dashboard view for the operating readout and compact system mini-map. |
+| Overview | The default Stage 7 dashboard cockpit: map, status, sources, strategies, activity feed, trade board, and paper capacity. |
 | Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
 | Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
 | Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |
 | Operations | The dashboard view for the full system map, event trail, communications, governance, and technical diagnostics. |
 | Safety Status | The one global dashboard authority summary: paper only, read-only, live capital off, dashboard cannot place orders, AI cannot bypass risk checks. |
-| Mission Control | Older implementation name now represented by Overview. |
+| Mission Control | Older implementation name now represented by Overview / Stage 7 cockpit. |
 | Watching | Older implementation name now represented by Evidence. |
 | Cognition | Older implementation name now represented by Reasoning. |
 | Money | Older implementation name now represented inside Trades. |
