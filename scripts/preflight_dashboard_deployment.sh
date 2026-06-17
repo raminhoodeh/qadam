@@ -37,6 +37,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_daily_edge_findings_brief.py
 "$PYTHON_BIN" scripts/check_telegram_human_brief.py
 "$PYTHON_BIN" scripts/check_daily_learning_automation.py
+"$PYTHON_BIN" scripts/check_daily_edge_learning_acceptance.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 
@@ -201,6 +202,7 @@ git diff --check -- \
   scripts/check_daily_edge_findings_brief.py \
   scripts/check_telegram_human_brief.py \
   scripts/check_daily_learning_automation.py \
+  scripts/check_daily_edge_learning_acceptance.py \
   scripts/check_edge_tracker.py \
   scripts/check_edge_pattern_ledger.py \
   scripts/check_edge_memory_ledger.py \
