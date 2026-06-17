@@ -46,16 +46,41 @@
                 </div>
             </section>
 
+            <section class="dashboard-safety-strip pending" aria-label="Safety Status" data-dashboard-safety-strip>
+                <div class="dashboard-safety-strip-main">
+                    <p class="label">Safety status</p>
+                    <h2>Paper trading authorized</h2>
+                    <p>Paper-only readout · live capital off. Dashboard cannot place orders; model outputs cannot bypass risk checks.</p>
+                </div>
+                <div class="dashboard-safety-strip-badges">
+                    <span class="inline-badge pending" data-mode-label>Paper mode</span>
+                    <span class="inline-badge pending" data-capital-label>Paper account loading</span>
+                    <span class="inline-badge blocked" data-live-capital-label>Live capital off</span>
+                </div>
+                <div class="dashboard-safety-strip-authority">
+                    <strong>Read-only safety mirror</strong>
+                    <span>One place for paper mode, capital, and order authority.</span>
+                    <small>Loading backend-derived authority status.</small>
+                </div>
+            </section>
+
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
-                <p class="sr-only">Portfolio timeline first, then mission state, paper account, strategy, operating flow, and source detail.</p>
-                <section class="overview-portfolio-hero" aria-label="Real portfolio timeline" data-overview-portfolio-hero>
+                <p class="sr-only">Stage 7 Fund Manager cockpit: system map, status, sources, strategies, activity feed, trade consideration board, and paper portfolio capacity.</p>
+                <section class="stage7-dashboard-visibility" aria-label="Stage 7 Fund Manager cockpit" data-stage7-dashboard-visibility>
+                    <div class="overview-section-head">
+                        <span>Fund Manager cockpit</span>
+                        <strong>Loading Qadam's operating map, current status, active thinking, trade ideas, and paper capacity.</strong>
+                    </div>
+                </section>
+
+                <section class="overview-portfolio-hero" aria-label="Real portfolio timeline" data-overview-portfolio-hero data-dashboard-debug-only hidden>
                     <div class="overview-section-head">
                         <span>Real portfolio timeline</span>
                         <strong>Loading portfolio value, trade timeline, and paper-account state.</strong>
                     </div>
                 </section>
 
-                <section class="overview-command-grid" aria-label="Current mission state">
+                <section class="overview-command-grid" aria-label="Current mission state" data-dashboard-debug-only hidden>
                     <section class="overview-mission-brief" aria-label="Mission Snapshot" data-overview-mission-brief>
                         <div class="overview-section-head">
                             <span>Mission Snapshot</span>
@@ -71,21 +96,21 @@
                     </article>
                 </section>
 
-                <section class="overview-strategy-narrative" aria-label="Strategy Universe" data-overview-strategy-narrative data-overview-strategy-universe>
+                <section class="overview-strategy-narrative" aria-label="Strategy Universe" data-overview-strategy-narrative data-overview-strategy-universe data-dashboard-debug-only hidden>
                     <div class="overview-section-head">
                         <span>Strategy Universe</span>
                         <strong>Loading strategy families</strong>
                     </div>
                 </section>
 
-                <section class="overview-system-summary overview-control-plane" aria-label="Control Plane" data-overview-control-plane>
+                <section class="overview-system-summary overview-control-plane" aria-label="Control Plane" data-overview-control-plane data-dashboard-debug-only hidden>
                     <div class="overview-section-head">
                         <span>Control Plane</span>
                         <strong>Loading operating map and oversight</strong>
                     </div>
                 </section>
 
-                <section class="overview-plain-grid" aria-label="Connected sources" data-overview-plain-grid>
+                <section class="overview-plain-grid" aria-label="Connected sources" data-overview-plain-grid data-dashboard-debug-only hidden>
                     <article class="overview-source-summary-panel" data-overview-source-summary>
                         <div class="overview-section-head">
                             <span>Data source tracker</span>
@@ -94,7 +119,7 @@
                     </article>
                 </section>
 
-                <section class="overview-edge-tracker-panel" aria-label="Qadam Edge Tracker" data-overview-edge-tracker>
+                <section class="overview-edge-tracker-panel" aria-label="Qadam Edge Tracker" data-overview-edge-tracker data-dashboard-debug-only hidden>
                     <div class="overview-section-head">
                         <span>Edge Tracker</span>
                         <strong>Loading watched markets, pattern review, and weekly thesis.</strong>

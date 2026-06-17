@@ -3884,6 +3884,352 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
     };
 }
 
+const STAGE7_LEVEL1_SECTIONS = [
+    "system_operating_map",
+    "system_status",
+    "data_sources_connected",
+    "trading_strategies",
+    "qadam_activity_feed",
+    "trade_consideration_board",
+    "paper_portfolio_capacity"
+];
+
+function stage7PlainState(status, fallback = "Waiting") {
+    const text = dashboardText(status, fallback);
+    if (/blocked|failed|halt/i.test(text)) return "Blocked";
+    if (/degraded|missing|stale|drift|review/i.test(text)) return "Needs attention";
+    if (/pending|waiting|not_due|not ready|deferred|idle/i.test(text)) return "Waiting";
+    if (/optional|local only/i.test(text)) return "Optional";
+    if (/read.only|readonly|paper|ok|ready|connected|online|sent|tracking|passed/i.test(text)) return "OK";
+    return text;
+}
+
+function stage7ToneForState(state) {
+    if (/blocked/i.test(state)) return "blocked";
+    if (/needs attention/i.test(state)) return "degraded";
+    if (/waiting|optional/i.test(state)) return "pending";
+    return "online";
+}
+
+function stage7StatusRecord(id, label, sourceState, summary, consequence = null) {
+    const state = consequence || stage7PlainState(sourceState);
+    return {
+        id,
+        label,
+        state,
+        tone: stage7ToneForState(state),
+        source_state: dashboardText(sourceState, "not exported"),
+        summary: dashboardText(summary, "No summary exported."),
+        proof_scope: "read_only_status"
+    };
+}
+
+function stage7BuildNode(key, role, plainLabel, question, sourceState, current, handoff, authority = "Read-only status only.") {
+    const state = stage7PlainState(sourceState);
+    return {
+        key,
+        role,
+        plain_label: plainLabel,
+        question,
+        state,
+        tone: stage7ToneForState(state),
+        source_state: dashboardText(sourceState, "not exported"),
+        current: dashboardText(current, "No current activity exported."),
+        handoff: dashboardText(handoff, "Passes sanitized state to the next gate."),
+        authority: dashboardText(authority, "Read-only visibility only.")
+    };
+}
+
+function stage7TradeBoardRow(item = {}, fallback = {}) {
+    const instrument = item.instrument || item.symbol || item.asset || item.ticker || fallback.instrument || "Market idea";
+    const gate = item.current_gate || item.gate || item.status || item.risk_state || fallback.gate || "watching";
+    const state = stage7PlainState(gate);
+    return {
+        id: item.intent_id || item.signal_id || item.alert_id || item.order_id || item.id || `${fallback.stage || "stage"}_${instrument}`,
+        instrument,
+        domain: item.domain || item.strategy || item.asset_class || fallback.domain || "Qadam watchlist",
+        thesis: item.thesis || item.evidence_summary || item.trigger || item.chart_context || item.catalyst || item.summary || fallback.thesis || "Qadam is watching for evidence before this can move.",
+        gate: dashboardText(gate, "watching"),
+        state,
+        tone: stage7ToneForState(state),
+        quality: item.quality_label || item.confidence_label || item.source_quorum_status || item.status || fallback.quality || "under review",
+        blocker: item.blocked_reason || item.reason || item.risk_reason || item.next_condition || fallback.blocker || "No blocker exported.",
+        paper_capacity_effect: item.notional_gbp || item.risk_size_gbp || item.value_gbp || fallback.paper_capacity_effect || null
+    };
+}
+
+function stage7BoardColumn(key, label, rows, summary) {
+    return {
+        key,
+        label,
+        count: asArray(rows).length,
+        rows: asArray(rows).slice(0, 4),
+        summary,
+        authority: "Read-only decision-state board. It cannot place or approve trades."
+    };
+}
+
+function buildStage7TradeBoard(status = {}, trades = {}, overview = {}) {
+    const tradeLayer = status.trade_layer || {};
+    const lifecycle = trades.lifecycle || {};
+    const lifecycleRecords = asArray(trades.lifecycle_records || lifecycle.records);
+    const observed = asArray(tradeLayer.watching).map((item) => stage7TradeBoardRow(item, {
+        stage: "watching",
+        gate: "watching",
+        quality: "source observation"
+    }));
+    const evidenceForming = [
+        ...asArray(status.evidence_packets).slice(0, 2),
+        ...asArray(status.shadow_packets).slice(0, 2)
+    ].map((item) => stage7TradeBoardRow(item, {
+        stage: "evidence",
+        instrument: item.instrument || item.signal_id || "Evidence packet",
+        domain: item.packet_type || "evidence",
+        thesis: item.summary || item.packet_role || "Evidence is being normalized before strategy review.",
+        gate: item.status || "evidence forming",
+        quality: `${item.item_count || 0} evidence items`
+    }));
+    const candidates = asArray(tradeLayer.candidates).map((item) => stage7TradeBoardRow(item, {
+        stage: "candidate",
+        gate: "candidate"
+    }));
+    const riskReview = [
+        ...asArray(tradeLayer.blocked),
+        ...asArray(status.risk_agent?.reviews).slice(0, 2),
+        ...asArray(status.signal_integrity?.reviews).slice(0, 2)
+    ].map((item) => stage7TradeBoardRow(item, {
+        stage: "risk",
+        gate: item.blocked_reason ? "blocked" : "risk or quant review",
+        quality: item.risk_state || item.status || "risk review",
+        blocker: item.blocked_reason || item.summary || "Waiting for risk, signal, or quant confirmation."
+    }));
+    const paperOrders = [
+        ...asArray(tradeLayer.staged_orders),
+        ...asArray(tradeLayer.submitted_orders),
+        ...asArray(status.capital?.orders).filter((order) => !/filled|closed|cancelled|canceled/i.test(String(order.status || ""))).slice(0, 3)
+    ].map((item) => stage7TradeBoardRow(item, {
+        stage: "paper_order",
+        gate: item.status || "paper order state",
+        quality: "Alpaca Paper only"
+    }));
+    const positions = asArray(status.capital?.open_positions).map((item) => stage7TradeBoardRow(item, {
+        stage: "position",
+        gate: item.status || "open position",
+        thesis: "Open paper position mirrored from Alpaca Paper.",
+        quality: "paper mirror"
+    }));
+    const postmortems = asArray(status.capital?.closed_trades).slice(0, 4).map((item) => stage7TradeBoardRow(item, {
+        stage: "postmortem",
+        gate: item.postmortem_status || "postmortem due",
+        thesis: item.close_reason || "Closed paper trade awaiting learning review.",
+        quality: "learning loop"
+    }));
+
+    const columns = [
+        stage7BoardColumn("watching", "Watching", observed, "Raw observations and market signals Qadam is tracking."),
+        stage7BoardColumn("evidence_forming", "Evidence forming", evidenceForming, "Evidence packets and shadow packets before strategy review."),
+        stage7BoardColumn("candidate", "Candidate", candidates, "Ideas that reached candidate state but are still not orders."),
+        stage7BoardColumn("risk_quant_review", "Risk / quant review", riskReview, "Risk, signal integrity, and quant review state."),
+        stage7BoardColumn("paper_order", "Paper order", paperOrders, "Staged or submitted Alpaca Paper state only."),
+        stage7BoardColumn("position_exit", "Position / exit", positions, "Open paper positions and exit monitoring."),
+        stage7BoardColumn("postmortem", "Postmortem", postmortems, "Closed paper trade records feeding learning review.")
+    ];
+    return {
+        columns,
+        column_count: columns.length,
+        active_idea_count: columns.reduce((total, column) => total + column.count, 0),
+        summary: overview.lifecycle_summary || `${trades.counts?.candidate || 0} candidates and ${trades.counts?.open_position || 0} open positions are visible.`,
+        paper_order_authority: false,
+        broker_write_allowed: false,
+        live_capital_enabled: false
+    };
+}
+
+function buildStage7VisibilityModel(status = {}, models = {}) {
+    const overview = models.overview_model || {};
+    const contract = models.founder_contract_model || {};
+    const sources = models.sources_model || {};
+    const trades = models.trades_model || {};
+    const reasoning = models.reasoning_model || {};
+    const performance = models.performance_model || {};
+    const operations = models.operations_model || {};
+    const edge = models.edge_tracker_model || overview.edge_tracker || {};
+    const sourceCounts = sources.counts || {};
+    const tradeCounts = trades.counts || {};
+    const reasoningCounts = reasoning.counts || {};
+    const paper = performance.paper_account || {};
+    const dailyAutomation = status.daily_learning_automation || status.communications?.daily_learning_automation || {};
+    const dailyBrief = status.daily_telegram_learning_brief || status.communications?.daily_telegram_learning_brief || {};
+    const quantumOracle = status.quantum_oracle || {};
+    const qctrl = status.paper_live_qctrl_product_access || {};
+    const fireOpal = status.fire_opal_ibm || {};
+    const paperContext = status.paper_context || {};
+    const paperLive = status.paper_live_certification || {};
+    const activeAutomation = status.paperops_active_paper_trading_automation || {};
+    const learningStatus = status.promotion_gates?.status || status.strategy_update_record?.status || dailyAutomation.status;
+    const localReview = asArray(reasoning.review_chain).find((review) => review.key === "research_analyst") || {};
+    const strategyReview = asArray(reasoning.review_chain).find((review) => review.key === "strategy_lead") || {};
+    const signalReview = asArray(reasoning.review_chain).find((review) => review.key === "signal_integrity") || {};
+    const quantReview = reasoning.quant_annotation || {};
+    const systemNodes = [
+        stage7BuildNode("fund_manager", "Fund Manager", "You supervise", "What needs review?", overview.review_focus?.tone || "online", overview.review_focus?.summary, "Approves review priorities, not trades.", "Can review and comment; cannot create execution authority."),
+        stage7BuildNode("world_sources", "World sources", "Data sources", "Is the outside world visible?", sources.tone || status.mission_control?.status, `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online; ${sourceCounts.missing_credentials || 0} missing credentials.`, "Feeds the COO and evidence runtime.", "Sources provide observations only; they cannot authorize orders."),
+        stage7BuildNode("python_coo", "Python COO", "COO", "Is routing and scheduling alive?", activeAutomation.status || status.paperops_30_day_operations?.status, activeAutomation.unattended_paper_execution_delegation_reason || status.paperops_30_day_operations?.recommended_next_action, "Routes status through PaperOps and daily learning automation.", "The COO runs guarded scripts; the dashboard cannot run shell commands."),
+        stage7BuildNode("local_llm", "Local LLM", "Research Analyst", "Is local triage available?", localReview.status || status.local_research_analyst?.status, localReview.summary || "Local triage summarizes source evidence.", "Compresses observations into research packets.", "Research output is evidence context, not execution approval."),
+        stage7BuildNode("frontier_llm", "Frontier LLM", "Strategy Lead", "Is deeper reasoning available?", strategyReview.status || status.strategy_lead?.status, strategyReview.summary || `${reasoningCounts.hypotheses || 0} hypotheses and ${reasoningCounts.evidence_packets || 0} evidence packets under review.`, "Forms and challenges hypotheses.", "Strategy review cannot bypass risk or paper gates."),
+        stage7BuildNode("quant_quantum", "Quantum / Quant", "Head of Quant", "Is quant consultation ready?", quantumOracle.status || qctrl.status || fireOpal.status, quantReview.summary || `${dashboardText(quantumOracle.backend || quantumOracle.mode || qctrl.status, "quant review")} is visible for paper-mode consultation.`, "Annotates uncertainty and non-linear pattern checks.", "Quant review is required evidence, not broker authority."),
+        stage7BuildNode("signal_risk", "Signal + Risk", "Risk gate", "Can any idea become a paper trade?", signalReview.status || status.risk_agent?.status || status.execution_policy?.status, signalReview.summary || `${tradeCounts.candidate || 0} candidates, ${tradeCounts.blocked || 0} blocked ideas.`, "Allows only gated ideas to approach paper-order state.", "Risk and signal gates can block; the dashboard cannot approve."),
+        stage7BuildNode("alpaca_paper", "Alpaca Paper", "Paper desk", "Can approved paper orders execute?", paperContext.connection_status || status.alpaca_paper_mirror?.status || status.capital?.status, `${tradeCounts.submitted_paper_order || 0} submitted paper orders, ${tradeCounts.open_position || 0} open positions, live capital off.`, "Executes only guarded paper orders.", "Alpaca Paper is the only execution route; live capital remains disabled."),
+        stage7BuildNode("postmortems", "Postmortems", "Learning loop", "Are outcomes being learned from?", learningStatus || status.edge_memory_ledger?.status, `${tradeCounts.postmortem_due || paper.postmortem_due_count || 0} postmortems due; daily learning brief ${stage7PlainState(dailyBrief.status)}.`, "Feeds learning proposals and promotion gates.", "Learning proposals cannot mutate strategy without promotion gates.")
+    ];
+    const systemEdges = [
+        { from: "world_sources", to: "python_coo", state: "solid", label: "active evidence flow" },
+        { from: "python_coo", to: "local_llm", state: "solid", label: "triage packets" },
+        { from: "local_llm", to: "frontier_llm", state: "solid", label: "research to strategy" },
+        { from: "frontier_llm", to: "quant_quantum", state: "dashed", label: "context and hard calls" },
+        { from: "quant_quantum", to: "signal_risk", state: "solid", label: "quant annotation" },
+        { from: "signal_risk", to: "alpaca_paper", state: "locked", label: "explicit safety boundary" },
+        { from: "alpaca_paper", to: "postmortems", state: "solid", label: "paper outcomes" },
+        { from: "postmortems", to: "frontier_llm", state: "dashed", label: "learning feedback" }
+    ];
+    const statusRows = [
+        stage7StatusRecord("ready_to_observe", "Ready to observe", sources.quorum?.status || sources.tone, `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online; evidence runtime ${status.evidence_packet_runtime?.status || "not exported"}.`),
+        stage7StatusRecord("ready_to_reason", "Ready to reason", strategyReview.status || localReview.status || reasoning.tone, `${reasoningCounts.research_goals || 0} research goals, ${reasoningCounts.hypotheses || 0} hypotheses, ${reasoningCounts.evidence_packets || 0} evidence packets.`),
+        stage7StatusRecord("ready_to_quantify", "Ready to quantify", quantumOracle.status || qctrl.status || fireOpal.status, `Quantum/quant status: ${dashboardText(quantumOracle.mode || quantumOracle.backend || qctrl.status || fireOpal.status, "not exported")}.`),
+        stage7StatusRecord("ready_to_paper_trade", "Ready to paper trade", paperLive.status || activeAutomation.status, `${tradeCounts.candidate || 0} candidates, ${tradeCounts.submitted_paper_order || 0} paper orders, ${tradeCounts.open_position || 0} open positions.`, paperLive.paper_live_operation_allowed ? "OK" : "Waiting"),
+        stage7StatusRecord("needs_attention", "Needs attention", overview.review_focus?.tone || (tradeCounts.postmortem_due ? "degraded" : "online"), overview.review_focus?.summary || `${tradeCounts.postmortem_due || 0} postmortems due; ${sourceCounts.missing_credentials || 0} missing credentials.`)
+    ];
+    const sourcePipelines = asArray(overview.data_sources_connected).length
+        ? asArray(overview.data_sources_connected)
+        : asArray(sources.pipelines).slice(0, 5);
+    const strategyFamilies = asArray(overview.trading_strategies);
+    const dailyBriefState = stage7PlainState(dailyBrief.status || "not exported");
+    const activityItems = [
+        {
+            actor: "COO",
+            timestamp: status.generated_at,
+            status: stage7PlainState(sources.tone || "ok"),
+            summary: `${sourceCounts.online || 0}/${sourceCounts.total || 0} data sources are visible; ${sourceCounts.signal_review_eligible || 0} can support signal review.`,
+            proof: "Evidence workspace"
+        },
+        {
+            actor: "Research Analyst",
+            timestamp: status.generated_at,
+            status: stage7PlainState(localReview.status || reasoning.tone),
+            summary: `${reasoningCounts.evidence_packets || 0} evidence packets and ${reasoningCounts.shadow_packets || 0} shadow packets are available for review.`,
+            proof: "Reasoning workspace"
+        },
+        {
+            actor: "Strategy Lead",
+            timestamp: status.generated_at,
+            status: stage7PlainState(strategyReview.status || "review"),
+            summary: `${strategyFamilies.length || overview.strategy_family_count || 0} strategy families are visible; ${overview.qualified_strategy_family_count || 0} are qualified right now.`,
+            proof: "Strategy ledger"
+        },
+        {
+            actor: "Head of Quant",
+            timestamp: status.generated_at,
+            status: stage7PlainState(quantumOracle.status || qctrl.status || "waiting"),
+            summary: `Quantum/quant review is ${dashboardText(quantumOracle.mode || quantumOracle.backend || qctrl.status, "visible")} and the daily learning gate is ${dashboardText(dailyAutomation.quantum_gate_status || dailyBrief.quantum_gate_status, "not run")}.`,
+            proof: "Quantum review"
+        },
+        {
+            actor: "Risk Gate",
+            timestamp: status.generated_at,
+            status: tradeCounts.blocked ? "Needs attention" : "OK",
+            summary: `${tradeCounts.candidate || 0} candidates, ${tradeCounts.blocked || 0} blocked ideas, and ${tradeCounts.qualified_setup || 0} qualified setups are visible.`,
+            proof: "Trade board"
+        },
+        {
+            actor: "Paper Desk",
+            timestamp: status.generated_at,
+            status: "OK",
+            summary: `${formatMoney(paper.current_balance_gbp || status.capital?.current_balance_gbp || 0)} paper value, ${tradeCounts.open_position || 0} open positions, ${tradeCounts.closed_paper_trade || 0} closed paper trades.`,
+            proof: "Paper capacity"
+        },
+        {
+            actor: "Learning Loop",
+            timestamp: dailyAutomation.generated_at || status.generated_at,
+            status: dailyBriefState,
+            summary: `Daily learning brief is ${dailyBriefState.toLowerCase()}; ${dailyAutomation.candidate_pattern_count || edge.pattern_ledger?.candidate_pattern_count || 0} candidate patterns are being tracked with quantum review.`,
+            proof: "Daily learning artifact"
+        }
+    ];
+    const capacity = overview.paper_capacity || {};
+    const sections = [
+        { id: "system_operating_map", label: "System Operating Map", question: "How does Qadam turn world data into paper state?", tone: "online" },
+        { id: "system_status", label: "System Status", question: "Is the system healthy enough to trust?", tone: statusRows.some((row) => row.tone === "blocked") ? "blocked" : "online" },
+        { id: "data_sources_connected", label: "Data Sources Connected", question: "Which source groups are connected and useful?", tone: sources.tone || "online" },
+        { id: "trading_strategies", label: "Trading Strategies", question: "What is Qadam trying to trade and why?", tone: strategyFamilies.some((strategy) => strategy.qualified_setup) ? "online" : "pending" },
+        { id: "qadam_activity_feed", label: "Qadam Activity Feed", question: "What has Qadam thought or done recently?", tone: "online" },
+        { id: "trade_consideration_board", label: "Trade Consideration Board", question: "What trades is Qadam considering?", tone: tradeCounts.candidate ? "pending" : "online" },
+        { id: "paper_portfolio_capacity", label: "Paper Portfolio Capacity", question: "How much paper capital is deployed, idle, or progressing?", tone: capacity.deployed_gbp ? "pending" : "online" }
+    ];
+    return {
+        schema_version: "stage7_dashboard_visibility.v1",
+        stage: "Stage 7 - Dashboard Visibility",
+        status: "stage7_visibility_ready",
+        level_1_section_count: sections.length,
+        level_1_sections: sections,
+        operating_map: {
+            nodes: systemNodes,
+            edges: systemEdges,
+            sentence: "Qadam is watching sources, turning evidence into hypotheses, filtering them through strategy, quant, and risk, then using Alpaca Paper only when gates pass."
+        },
+        system_status: {
+            rows: statusRows,
+            safety_summary: "Dashboard remains read-only. Live capital is disabled, broker writes are disabled, and Telegram is notify-only.",
+            needs_attention_count: statusRows.filter((row) => row.tone === "blocked" || row.tone === "degraded").length
+        },
+        data_sources: {
+            online: sourceCounts.online || 0,
+            total: sourceCounts.total || 0,
+            required_blocker_count: status.paperops_source_gap_visibility?.trade_blocking_gap_count || 0,
+            optional_gap_count: status.paperops_source_gap_visibility?.optional_gap_count || sourceCounts.missing_credentials || 0,
+            research_usable_count: sourceCounts.research_usable || sourceCounts.research_context_usable || 0,
+            signal_review_eligible_count: sourceCounts.signal_review_eligible || 0,
+            groups: sourcePipelines.slice(0, 5),
+            influencing_groups: sourcePipelines.filter((group) => modelNumber(group.signal_review_eligible_count || group.signal_review_eligible, 0)).slice(0, 4)
+        },
+        trading_strategies: {
+            mandate: "Grow the GBP 100,000 paper portfolio toward GBP 200,000 over 60 days.",
+            domains: ["Prediction markets", "Crude oil", "Defence", "Silver", "Semiconductors"],
+            setup_style: "Event-driven, evidence-gated, pricing/probability-mispricing strategy.",
+            posture: tradeCounts.candidate ? "Candidate review" : (tradeCounts.open_position ? "Managing paper positions" : "Watching for evidence"),
+            latest_packet_summary: overview.native_strategy?.summary || overview.summary || "Strategy posture comes from Mission Control, evidence, and PaperOps state.",
+            families: strategyFamilies.slice(0, 5),
+            qualified_count: overview.qualified_strategy_family_count || strategyFamilies.filter((strategy) => strategy.qualified_setup).length
+        },
+        activity_feed: {
+            items: activityItems,
+            item_count: activityItems.length,
+            public_safe: true,
+            hidden_chain_of_thought_exposed: false
+        },
+        trade_consideration_board: buildStage7TradeBoard(status, trades, overview),
+        paper_portfolio_capacity: {
+            ...capacity,
+            baseline_gbp: capacity.total_gbp || paper.starting_balance_gbp || 100000,
+            target_gbp: capacity.target_gbp || 200000,
+            idle_gbp: capacity.cash_gbp || paper.cash_gbp || 0,
+            open_risk_gbp: capacity.deployed_gbp || 0,
+            realized_pnl_gbp: paper.realized_pnl_gbp || status.capital?.realized_pnl_gbp || 0,
+            unrealized_pnl_gbp: paper.unrealized_pnl_gbp || status.capital?.unrealized_pnl_gbp || 0,
+            history_sparse: asArray(capacity.equity_curve).length < 3
+        },
+        authority: {
+            dashboard_write_authority: false,
+            broker_write_allowed: false,
+            paper_order_submission_allowed: false,
+            telegram_command_path_enabled: false,
+            quantum_job_creation_allowed: false,
+            strategy_mutation_allowed: false,
+            live_capital_enabled: false
+        },
+        boundary: "Stage 7 Dashboard Visibility is read-only. It explains Qadam's operating state but cannot approve, submit, close, resize, fund, mutate, message-command, or create quantum jobs."
+    };
+}
+
 function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const operations = viewModels.operations_model || buildOperationsModel(status);
     const performance = viewModels.performance_model || buildPerformanceModel(status);
@@ -4387,10 +4733,17 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         performance_model: performance
     });
     const founderContract = buildFounderContractModel(status, source, sharedModels);
+    const stage7Visibility = buildStage7VisibilityModel(status, {
+        ...sharedModels,
+        overview_model: overview,
+        safety_strip_model: safetyStrip,
+        founder_contract_model: founderContract
+    });
     const modelGraph = {
         contract: "single_shared_dashboard_view_model_bundle",
         build_order: [
             "founder_contract_model",
+            "stage7_visibility_model",
             "sources_model",
             "trades_model",
             "reasoning_model",
@@ -4404,6 +4757,16 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         ],
         shared_dependencies: {
             founder_contract_model: ["mission_control"],
+            stage7_visibility_model: [
+                "founder_contract_model",
+                "overview_model",
+                "sources_model",
+                "trades_model",
+                "reasoning_model",
+                "performance_model",
+                "operations_model",
+                "edge_tracker_model"
+            ],
             trades_model: ["sources_model"],
             operations_model: ["system_connectivity_model", "governance_model"],
             edge_tracker_model: ["edge_tracker"],
@@ -4429,6 +4792,7 @@ function buildQadamDashboardViewModels(status = {}, source = {}) {
         authority_boundary: "View models are read-only projections of sanitized dashboard status. They cannot grant trading, broker, provider, Telegram, learning-write, or live-capital authority.",
         model_graph: modelGraph,
         founder_contract_model: founderContract,
+        stage7_visibility_model: stage7Visibility,
         edge_tracker_model: edgeTracker,
         safety_strip_model: safetyStrip,
         overview_model: overview,
@@ -8073,6 +8437,257 @@ function renderContractSourceSummary(sources = {}) {
                     ${pipelines.map(renderContractSourcePipeline).join("")}
                 </div>
             </details>
+        </div>
+    `;
+}
+
+function renderStage7SectionHeader(section = {}, explainer = "") {
+    return `
+        <div class="stage7-section-head">
+            <div>
+                <p class="label">${htmlText(section.label, "Stage 7 section")}</p>
+                <h2>${htmlText(section.question, "What does this section answer?")}</h2>
+            </div>
+            ${renderInlineBadge(section.tone === "online" ? "OK" : stage7PlainState(section.tone), section.tone || "pending")}
+            ${explainer ? `<p>${htmlText(explainer)}</p>` : ""}
+        </div>
+    `;
+}
+
+function renderStage7MapNode(node = {}, index = 0) {
+    return `
+        <details class="stage7-map-node ${statusClass(node.tone)}" data-stage7-map-node="${literalHtmlText(node.key)}">
+            <summary>
+                <span>${String(index + 1).padStart(2, "0")}</span>
+                <div>
+                    <strong>${htmlText(node.plain_label)}</strong>
+                    <em>${htmlText(node.role)}</em>
+                </div>
+                ${renderStatusPill(node.state)}
+            </summary>
+            <dl>
+                <div><dt>Question</dt><dd>${htmlText(node.question)}</dd></div>
+                <div><dt>Current</dt><dd>${htmlText(node.current)}</dd></div>
+                <div><dt>Handoff</dt><dd>${htmlText(node.handoff)}</dd></div>
+                <div><dt>Authority</dt><dd>${htmlText(node.authority)}</dd></div>
+            </dl>
+        </details>
+    `;
+}
+
+function renderStage7Edge(edge = {}) {
+    const edgeTone = edge.state === "locked" ? "blocked" : edge.state === "faded" ? "pending" : "online";
+    return `
+        <span class="stage7-map-edge ${statusClass(edgeTone)}" data-stage7-edge-state="${literalHtmlText(edge.state)}">
+            <strong>${htmlText(edge.from)} -> ${htmlText(edge.to)}</strong>
+            <em>${htmlText(edge.state)} · ${htmlText(edge.label)}</em>
+        </span>
+    `;
+}
+
+function renderStage7SystemMap(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "system_operating_map") || {};
+    const map = stage7.operating_map || {};
+    return `
+        <section class="stage7-section stage7-system-map" data-stage7-section="system_operating_map">
+            ${renderStage7SectionHeader(section, "A plain-language map of the fund team inside the laptop.")}
+            <div class="stage7-map-grid">
+                ${asArray(map.nodes).map(renderStage7MapNode).join("")}
+            </div>
+            <div class="stage7-edge-legend">
+                ${asArray(map.edges).map(renderStage7Edge).join("")}
+            </div>
+            <p class="stage7-map-sentence">${htmlText(map.sentence)}</p>
+        </section>
+    `;
+}
+
+function renderStage7SystemStatus(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "system_status") || {};
+    const model = stage7.system_status || {};
+    return `
+        <section class="stage7-section stage7-system-status" data-stage7-section="system_status">
+            ${renderStage7SectionHeader(section, "Status is grouped by consequence, not subsystem name.")}
+            <div class="stage7-status-grid">
+                ${asArray(model.rows).map((row) => `
+                    <article class="stage7-status-row ${statusClass(row.tone)}">
+                        <span>${htmlText(row.label)}</span>
+                        <strong>${htmlText(row.state)}</strong>
+                        <p>${htmlText(row.summary)}</p>
+                    </article>
+                `).join("")}
+            </div>
+            <p class="stage7-safety-note">${htmlText(model.safety_summary)}</p>
+        </section>
+    `;
+}
+
+function renderStage7Sources(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "data_sources_connected") || {};
+    const data = stage7.data_sources || {};
+    const groups = asArray(data.groups);
+    return `
+        <section class="stage7-section stage7-sources" data-stage7-section="data_sources_connected">
+            ${renderStage7SectionHeader(section, "Shows source capability and source gaps without dumping the whole registry.")}
+            <div class="stage7-kpi-strip">
+                ${renderMetric("Online", `${data.online || 0}/${data.total || 0}`)}
+                ${renderMetric("Research usable", data.research_usable_count || 0)}
+                ${renderMetric("Signal review", data.signal_review_eligible_count || 0)}
+                ${renderMetric("Required blockers", data.required_blocker_count || 0)}
+                ${renderMetric("Optional gaps", data.optional_gap_count || 0)}
+            </div>
+            <div class="stage7-source-groups">
+                ${groups.map((group) => `
+                    <article class="${statusClass(group.tone || group.status)}">
+                        <strong>${htmlText(group.label || group.pipeline || group.key, "Source group")}</strong>
+                        <span>${htmlText(group.value || `${group.online_count || 0}/${group.source_count || 0} online`)}</span>
+                        <p>${htmlText(group.summary || "Source group status is available in Evidence.")}</p>
+                    </article>
+                `).join("")}
+            </div>
+            <details class="stage7-proof-drawer">
+                <summary>Proof drawer: influencing source groups</summary>
+                <div class="tag-row">
+                    ${asArray(data.influencing_groups).map((group) => renderInlineBadge(group.label || group.pipeline || "source group", group.tone || group.status || "pending")).join("") || renderInlineBadge("No influencing group exported", "pending")}
+                </div>
+            </details>
+        </section>
+    `;
+}
+
+function renderStage7Strategies(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "trading_strategies") || {};
+    const strategy = stage7.trading_strategies || {};
+    return `
+        <section class="stage7-section stage7-strategies" data-stage7-section="trading_strategies">
+            ${renderStage7SectionHeader(section, "Explains the trading mandate in normal fund-manager language.")}
+            <div class="stage7-strategy-brief">
+                <article>
+                    <span>Active paper mandate</span>
+                    <strong>${htmlText(strategy.mandate)}</strong>
+                    <p>${htmlText(strategy.setup_style)}</p>
+                </article>
+                <article>
+                    <span>Current posture</span>
+                    <strong>${htmlText(strategy.posture)}</strong>
+                    <p>${htmlText(strategy.latest_packet_summary)}</p>
+                </article>
+            </div>
+            <div class="tag-row">${asArray(strategy.domains).map((domain) => renderInlineBadge(domain, "online")).join("")}</div>
+            <details class="stage7-proof-drawer">
+                <summary>Proof drawer: strategy families</summary>
+                <div class="stage7-family-grid">
+                    ${asArray(strategy.families).map((family) => `
+                        <article class="${statusClass(family.tone)}">
+                            <strong>${htmlText(family.label || family.key)}</strong>
+                            <span>${htmlText(family.current_state || family.value || "watching")}</span>
+                            <p>${htmlText(family.qadam_fit_reason || family.summary || family.boundary)}</p>
+                        </article>
+                    `).join("")}
+                </div>
+            </details>
+        </section>
+    `;
+}
+
+function renderStage7ActivityFeed(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "qadam_activity_feed") || {};
+    const feed = stage7.activity_feed || {};
+    return `
+        <section class="stage7-section stage7-activity-feed" data-stage7-section="qadam_activity_feed">
+            ${renderStage7SectionHeader(section, "Public-safe summaries of decisions and observations, not hidden chain-of-thought.")}
+            <ol class="stage7-feed-list">
+                ${asArray(feed.items).map((item) => `
+                    <li class="${statusClass(stage7ToneForState(item.status))}">
+                        <time>${formatTime(item.timestamp)}</time>
+                        <strong>${htmlText(item.actor)}</strong>
+                        <span>${htmlText(item.summary)}</span>
+                        <em>${htmlText(item.proof)} · ${htmlText(item.status)}</em>
+                    </li>
+                `).join("")}
+            </ol>
+        </section>
+    `;
+}
+
+function renderStage7TradeBoard(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "trade_consideration_board") || {};
+    const board = stage7.trade_consideration_board || {};
+    return `
+        <section class="stage7-section stage7-trade-board" data-stage7-section="trade_consideration_board">
+            ${renderStage7SectionHeader(section, "Shows what Qadam is considering without becoming an execution board.")}
+            <p class="stage7-section-summary">${htmlText(board.summary)}</p>
+            <div class="stage7-board-grid">
+                ${asArray(board.columns).map((column) => `
+                    <article class="stage7-board-column" data-stage7-board-column="${literalHtmlText(column.key)}">
+                        <header>
+                            <span>${htmlText(column.label)}</span>
+                            <strong>${htmlText(column.count)}</strong>
+                        </header>
+                        <p>${htmlText(column.summary)}</p>
+                        <ul>
+                            ${asArray(column.rows).length ? asArray(column.rows).map((row) => `
+                                <li class="${statusClass(row.tone)}">
+                                    <strong>${htmlText(row.instrument)}</strong>
+                                    <span>${htmlText(row.thesis)}</span>
+                                    <em>${htmlText(row.gate)} · ${htmlText(row.quality)}</em>
+                                </li>
+                            `).join("") : `<li class="pending"><strong>None now</strong><span>No current item exported for this stage.</span><em>Waiting</em></li>`}
+                        </ul>
+                    </article>
+                `).join("")}
+            </div>
+        </section>
+    `;
+}
+
+function renderStage7PortfolioCapacity(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "paper_portfolio_capacity") || {};
+    const capacity = stage7.paper_portfolio_capacity || {};
+    return `
+        <section class="stage7-section stage7-paper-capacity" data-stage7-section="paper_portfolio_capacity">
+            ${renderStage7SectionHeader(section, "Makes the GBP 100,000 to GBP 200,000 paper target visible.")}
+            ${renderOverviewCapacityChart(capacity)}
+            <div class="stage7-kpi-strip">
+                ${renderMetric("Baseline", formatMoney(capacity.baseline_gbp))}
+                ${renderMetric("Target", formatMoney(capacity.target_gbp))}
+                ${renderMetric("Idle cash", formatMoney(capacity.idle_gbp))}
+                ${renderMetric("Open risk", formatMoney(capacity.open_risk_gbp))}
+                ${renderMetric("Realized P&L", formatMoney(capacity.realized_pnl_gbp))}
+                ${renderMetric("Unrealized P&L", formatMoney(capacity.unrealized_pnl_gbp))}
+            </div>
+            ${capacity.history_sparse ? `<p class="mini">Historical points are sparse, so the chart shows exported paper-account points only. No backfilled curve is fabricated.</p>` : ""}
+        </section>
+    `;
+}
+
+function renderStage7Visibility(viewModels = {}) {
+    const target = dashboardQuery("[data-stage7-dashboard-visibility]");
+    if (!target) return;
+    const stage7 = viewModels.stage7_visibility_model || {};
+    target.innerHTML = `
+        <div class="stage7-visibility-shell" data-stage7-rendered data-stage7-contract="dashboard_visibility_v1">
+            <div class="stage7-hero">
+                <div>
+                    <p class="label">Stage 7 Dashboard Visibility</p>
+                    <h2>Fund Manager cockpit</h2>
+                    <p>Seven sections show how Qadam watches the world, reasons about evidence, considers paper trades, and manages paper capacity.</p>
+                </div>
+                <div class="stage7-kpi-strip compact">
+                    ${renderMetric("Sections", stage7.level_1_section_count || 0)}
+                    ${renderMetric("Sources", `${stage7.data_sources?.online || 0}/${stage7.data_sources?.total || 0}`)}
+                    ${renderMetric("Trade ideas", stage7.trade_consideration_board?.active_idea_count || 0)}
+                    ${renderMetric("Paper value", formatMoney(stage7.paper_portfolio_capacity?.equity_gbp))}
+                </div>
+            </div>
+            ${renderStage7SystemMap(stage7)}
+            ${renderStage7SystemStatus(stage7)}
+            ${renderStage7Sources(stage7)}
+            ${renderStage7Strategies(stage7)}
+            ${renderStage7ActivityFeed(stage7)}
+            ${renderStage7TradeBoard(stage7)}
+            ${renderStage7PortfolioCapacity(stage7)}
+            <p class="stage7-boundary">${htmlText(stage7.boundary)}</p>
         </div>
     `;
 }
@@ -12140,6 +12755,7 @@ async function renderQadamDashboardStatus(session) {
         renderDashboardSafetyStrip(status, viewModels);
         renderMissionControl(status, source);
         renderOperatingSummary(status, source);
+        renderStage7Visibility(viewModels);
         renderOverviewFirstScreen(viewModels);
         renderPhase4Strategy(status);
         renderFundModel(status, source);
