@@ -109,12 +109,18 @@ includesAll(whitepaper, [
     "Paper account state",
     "Trade lifecycle",
     "Research and reasoning",
-    "Audit drawer"
+    "Audit drawer",
+    "How Qadam Finds Edge Over Time",
+    "edge is not one signal",
+    "Evidence repeats before repricing",
+    "quantum/classical review",
+    "Alpaca Paper",
+    "Postmortem"
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260607-cc11-final-dashboard-structure",
-    "/dashboard.js?v=20260607-cc11-final-dashboard-structure"
+    "/auth.css?v=20260615-dashboard-portfolio-first",
+    "/dashboard.js?v=20260615-dashboard-portfolio-first"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",
@@ -124,7 +130,7 @@ includesAll(plan, [
     "CC8",
     "Prune payload, tests, docs, deploy",
     "prune_audit",
-    "20260607-cc11-final-dashboard-structure"
+    "20260615-dashboard-portfolio-first"
 ], "CC8 plan");
 
 assertPublicSafe(guideHtml, "guide HTML");

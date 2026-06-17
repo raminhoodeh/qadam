@@ -60,6 +60,7 @@ node scripts/check_dashboard_overhaul_overview.js
 node scripts/check_dashboard_stage7_visibility.js
 node scripts/check_dashboard_cc6_real_portfolio_timeline.js
 node scripts/check_dashboard_edge_tracker.js
+node scripts/check_dashboard_cc8_prune_docs_deploy.js
 node scripts/check_dashboard_cc9_slop_repetition.js
 node scripts/check_dashboard_renderer.js
 node scripts/check_dashboard_live_bridge.js

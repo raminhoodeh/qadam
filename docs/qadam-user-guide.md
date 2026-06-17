@@ -467,7 +467,80 @@ Source event
 
 Any missing step should block or degrade the trade.
 
-## 12. Akber's 6-Stage Filter
+## 12. How Qadam Finds And Acts On Edge
+
+Qadam's edge is not one headline, one chart, one model opinion, or one private
+worldview claim. Edge means Qadam has found a repeated, source-backed pattern
+where real-world activity appears to move before market prices or prediction
+probabilities fully reflect it.
+
+Qadam looks for that edge across every watched sleeve:
+
+- prediction markets
+- crude oil
+- silver
+- semiconductors
+- defence stocks
+
+It uses all available source pipelines for all watched markets. Conflict,
+shipping, aviation, macro, commodities, filings, prediction markets, technical
+analysis, news, social context, and broker/account state are not treated as
+separate little dashboards. They are normalized into evidence packets so Qadam
+can ask whether the same pressure is showing up across multiple places.
+
+The edge ladder is:
+
+| Stage | Meaning |
+| --- | --- |
+| Observation | Something changed in the world, market, source spine, or price action. |
+| Pattern candidate | Qadam sees a possible relationship between source activity and price or probability movement. |
+| Edge under observation | The pattern repeats, has corroborating evidence, and has a clear market it might affect. |
+| Trade candidate | Strategy Lead turns the edge into a specific paper-trade idea with entry, invalidation, sizing, and time window. |
+| Guarded paper trade | Risk, signal integrity, Q-CTRL / quantum consultation where required, and execution policy all allow a paper order. |
+| Postmortem | The outcome is reviewed after the paper position closes. |
+| Strategy update proposal | Qadam proposes whether the pattern should increase, decrease, or change future strategy weight. |
+
+The quantum/classical review is a core part of this process, not decoration. It
+is used when Qadam is testing non-linear, ambiguous, or cross-source
+relationships that a simple linear rule may miss. Quantum review can support,
+weaken, or block a pattern hypothesis, but it does not place trades by itself.
+
+What does not count as edge:
+
+- a single headline
+- a single technical setup without real-world evidence
+- a private worldview prior without current corroboration
+- one LLM saying a trade is interesting
+- a Telegram message
+- a green status label
+- a dashboard pattern that has not entered the edge memory ledger
+
+The edge memory ledger records pattern candidates, why Qadam cared, which
+sources supported or contradicted them, what the market did next, whether the
+paper trade worked, and what should change. This ledger is public-safe and
+read-only. It cannot create trade candidates, approve risk, submit orders,
+enable live capital, or grant proof credit.
+
+Every day, Qadam should produce a daily Telegram learning brief in human
+language explaining what it noticed and what it is still unsure about. Every
+week, Qadam should produce a weekly thesis refresh that summarizes which
+patterns strengthened, weakened, or stayed unproven. Strategy update proposals are not applied automatically:
+they must survive promotion gates, postmortems, and the paper-only governance
+boundary.
+
+Qadam acts on edge only when the full chain is intact:
+
+1. Evidence repeats before repricing.
+2. The affected market or instrument is explicit.
+3. The pattern has corroboration and contradiction review.
+4. Quantum/classical review has completed where required.
+5. Strategy Lead converts the pattern into a bounded trade candidate.
+6. Signal Integrity and Risk approve the candidate.
+7. Execution policy allows action.
+8. Alpaca Paper is the only broker route used for paper orders.
+9. The closed outcome updates the ledger and future strategy proposals.
+
+## 13. Akber's 6-Stage Filter
 
 Qadam uses Akber's approach as the strategic filter:
 
@@ -480,7 +553,7 @@ Qadam uses Akber's approach as the strategic filter:
 
 Qadam's job is to apply this consistently and record whether it worked.
 
-## 13. How To Review A Trade Idea
+## 14. How To Review A Trade Idea
 
 When Qadam shows a signal or candidate, ask:
 
@@ -501,7 +574,7 @@ When Qadam shows a signal or candidate, ask:
 
 If those answers are missing, the idea should remain blocked or under review.
 
-## 14. Paper Growth Rules
+## 15. Paper Growth Rules
 
 Qadam's current paper mandate is the 60-day paper growth trial.
 
@@ -521,7 +594,7 @@ Operating rules:
 If a day has no qualified setup, the correct action is to record the no-trade
 rationale. Qadam should not trade just to satisfy the 60-day target.
 
-## 15. Daily Operating Routine
+## 16. Daily Operating Routine
 
 Use this routine when checking Qadam.
 
@@ -542,7 +615,7 @@ Use this routine when checking Qadam.
    paper trade to satisfy cadence.
 8. Add a comment if something looks wrong, unclear, or strategically important.
 
-## 16. What Members Can And Cannot Do
+## 17. What Members Can And Cannot Do
 
 What Members Can Do:
 
@@ -575,7 +648,7 @@ Members cannot:
 - manually interfere with individual paper trades during a clean paper growth
   sample
 
-## 17. Local Operator Instructions
+## 18. Local Operator Instructions
 
 Most members do not need this section. It is for the person operating Qadam from
 the local repo.
@@ -657,7 +730,7 @@ node scripts/check_dashboard_phase7_demo_proof.js
 Never use a green dashboard as proof of live trading authority. Authority comes
 from backend gates and explicit runtime artifacts.
 
-## 18. Data Source Rules
+## 19. Data Source Rules
 
 Qadam uses five broad source pipelines:
 
@@ -681,7 +754,7 @@ Data rules:
 - prediction-market data can inform context, but write authority remains blocked
   unless a later explicit gate allows it
 
-## 19. Troubleshooting
+## 20. Troubleshooting
 
 If the dashboard will not load:
 
@@ -713,7 +786,7 @@ If Telegram contradicts the dashboard:
    plus inbound world-event and strategy-intake counters.
 3. Escalate with a comment.
 
-## 20. Red Flags
+## 21. Red Flags
 
 Escalate or comment if:
 
@@ -729,7 +802,7 @@ Escalate or comment if:
 - Any secret, token, chat ID, local path, or credential appears in the UI
 - any screen implies live capital is enabled
 
-## 21. Glossary
+## 22. Glossary
 
 | Term | Meaning |
 | --- | --- |
@@ -760,8 +833,11 @@ Escalate or comment if:
 | Paper-live control plane certified | Guarded paper-trading machinery exists and is visible, but full submission may still be held. |
 | Paper-live certified | Full guarded paper submission is allowed by PT-10. |
 | Q-CTRL hold | A hold that blocks paper submission until Q-CTRL consultation/product access gates clear. |
+| Edge memory ledger | Public-safe record of pattern candidates, evidence, outcomes, and strategy update proposals. |
+| Daily Telegram learning brief | Human-readable daily summary of what Qadam noticed, what changed, and what remains unproven. |
+| Weekly thesis refresh | Weekly review of which pattern-recognition theses strengthened, weakened, or stayed unresolved. |
 
-## 22. First Release Success
+## 23. First Release Success
 
 Qadam is usable when a new founding member can answer:
 
