@@ -181,13 +181,13 @@ async function assertRenderedDashboardContract() {
         ["[data-dashboard-safety-strip]", "Paper trading authorized"],
         ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
         ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
-        ["[data-stage7-dashboard-visibility]", "System Operating Map"],
-        ["[data-stage7-dashboard-visibility]", "System Status"],
-        ["[data-stage7-dashboard-visibility]", "Data Sources Connected"],
-        ["[data-stage7-dashboard-visibility]", "Trading Strategies"],
-        ["[data-stage7-dashboard-visibility]", "Qadam Activity Feed"],
-        ["[data-stage7-dashboard-visibility]", "Trade Consideration Board"],
-        ["[data-stage7-dashboard-visibility]", "Paper Portfolio Capacity"],
+        ["[data-stage7-dashboard-visibility]", "Paper Fund Status"],
+        ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
+        ["[data-stage7-dashboard-visibility]", "Watched Markets Universe"],
+        ["[data-stage7-dashboard-visibility]", "Strategy Playbook"],
+        ["[data-stage7-dashboard-visibility]", "Hedge Fund Investment Team"],
+        ["[data-stage7-dashboard-visibility]", "Hypotheses &amp; Pattern Recognition"],
+        ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Learning Loop"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
@@ -238,8 +238,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260615-dashboard-portfolio-first",
-        "/dashboard.js?v=20260615-dashboard-portfolio-first"
+        "/auth.css?v=20260618-mission-control-flow",
+        "/dashboard.js?v=20260618-mission-control-flow"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

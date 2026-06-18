@@ -185,17 +185,17 @@ Use this sequence the first time you open Qadam.
 2. Read Safety Status first: it should say OK - paper only, OK - read-only,
    OK - live capital off, Dashboard cannot place orders, and AI cannot bypass risk
    checks.
-3. Read the seven Stage 7 dashboard sections in order: System Operating Map,
-   System Status, Data Sources Connected, Trading Strategies, Qadam Activity
-   Feed, Trade Consideration Board, and Paper Portfolio Capacity.
-4. Use the System Operating Map to understand the handoff from sources, to the
-   local and frontier models, to the quantum/quant review, risk gate, Alpaca
-   Paper, and learning loop.
-5. Use the Activity Feed and Trade Consideration Board to see what Qadam is
-   thinking about without exposing hidden chain-of-thought or implying an order
-   exists.
-6. Use Paper Portfolio Capacity to track the GBP 100,000 paper baseline against
-   the GBP 200,000 60-day target.
+3. Read the seven Mission Control sections in order: Paper Fund Status, Source
+   Intelligence Network, Watched Markets Universe, Strategy Playbook, Hedge Fund
+   Investment Team, Hypotheses & Pattern Recognition, and Backtesting & Learning
+   Loop.
+4. Use Paper Fund Status to understand the GBP 100,000 paper baseline, current
+   value, open holdings, trade timeline, and GBP 200,000 60-day target.
+5. Use the later sections to follow the causal chain: sources feed watched
+   markets, strategies filter the setup, the investment team reviews it,
+   hypotheses form, and the learning loop records what changed.
+6. Treat the hypotheses section as public-safe summary language, not hidden chain-of-thought
+   and not proof that an order exists.
 7. Open Advanced / Debug Mode only when you need the deeper Trades, Evidence,
    Reasoning, Operations, event-trail, or technical diagnostics views.
 8. Treat a blocked/no-trade state as potentially healthy until the evidence
@@ -205,49 +205,45 @@ Use this sequence the first time you open Qadam.
 
 ## 9. How To Read The Dashboard
 
-Start in the Overview view. Stage 7 makes Overview the default Fund Manager
-cockpit instead of a long stack of technical cards. It is organized around seven
-plain-language sections: System Operating Map, System Status, Data Sources
-Connected, Trading Strategies, Qadam Activity Feed, Trade Consideration Board,
-and Paper Portfolio Capacity.
+Start in the Overview view. Mission Control makes Overview the default paper-fund walkthrough instead of a long stack of technical cards. It is organized around
+seven plain-language sections: Paper Fund Status, Source
+Intelligence Network, Watched Markets Universe, Strategy Playbook, Hedge Fund
+Investment Team, Hypotheses & Pattern Recognition, and Backtesting & Learning
+Loop.
 
 The deeper Trades, Evidence, Reasoning, and Operations views still exist for
 technical review, but they belong behind Advanced / Debug Mode. Use Advanced /
 Debug Mode only when you need legacy audit sections, raw event trails,
 deployment/runtime details, or exact diagnostic evidence.
 
-### Overview / Stage 7 Cockpit
+### Overview / Mission Control Walkthrough
 
 Use it to answer:
 
-- how the whole system is wired from source observation to paper account and
-  learning loop
-- whether the core system is ready to observe, reason, quantify, paper trade, or
-  needs attention
-- how many data sources are connected and whether any required source gap is
-  still blocking paper operation
-- which strategy domains Qadam is watching: prediction markets, crude oil,
-  defence, silver, and semiconductors
-- what Qadam is currently focused on, in public-safe summary language
-- what trade ideas are observations, hypotheses, candidates, blocked, submitted,
-  open, closed, or postmortem-ready
-- how much of the GBP 100,000 paper capacity is deployed against the GBP 200,000
-  60-day target
+- whether the paper fund is working, what it holds, and how the value has moved
+- what sources Qadam is using and which categories they belong to
+- which markets Qadam watches: prediction markets, crude oil, defence, silver,
+  and semiconductors
+- which strategy families are active and how Akber's filter is applied
+- which part of the hedge-fund-style investment team does each job
+- what hypotheses and source-price patterns are under review
+- whether learning is coming from formal backtests, replay, paper outcomes,
+  postmortems, or strategy feedback proposals
 
 Overview is a readout, not a command surface. It cannot promote hypotheses,
 approve trades, submit paper orders, write to brokers, or enable live capital.
 
-### Seven Stage 7 Dashboard Sections
+### Seven Mission Control Sections
 
 | Section | What it tells you |
 | --- | --- |
-| System Operating Map | How Qadam's fund team hands work from sources, to the Python COO, local LLM, frontier LLM, quantum/quant review, risk gate, Alpaca Paper, and learning loop. |
-| System Status | The consequence-based state: ready to observe, ready to reason, ready to quantify, ready to paper trade, or needs attention. |
-| Data Sources Connected | The connected-source count, required blocker count, degraded feeds, and source groups without making the user hunt through every adapter. |
-| Trading Strategies | The 60-day paper mandate, tracked markets, and active thesis families. |
-| Qadam Activity Feed | A human-readable feed of what Qadam is evaluating now, without raw logs or hidden chain-of-thought. |
-| Trade Consideration Board | The plain progression from observed signal to hypothesis, candidate, blocked, submitted, open, closed, or postmortem. |
-| Paper Portfolio Capacity | The paper account value and deployment line against the GBP 100,000 baseline and GBP 200,000 target. |
+| Paper Fund Status | The current paper portfolio value, equity curve, open holdings, closed trades, recent buys/sells, and why available for each row. |
+| Source Intelligence Network | The source categories Qadam uses: conflict/geopolitics, physical-world signals, macro/trade data, markets/technical analysis, and social/news/filings. |
+| Watched Markets Universe | The five sleeves Qadam watches: crude oil, silver, semiconductors, prediction markets, and defence stocks, with their watched instruments. |
+| Strategy Playbook | The 60-day paper mandate, the five strategy families, and Akber's context, catalyst, confirmation, risk, execution, and postmortem-learning filter. |
+| Hedge Fund Investment Team | The Python COO, local LLM, frontier LLM, Head of Quant, risk desk, paper trading desk, and learning review roles. |
+| Hypotheses & Pattern Recognition | Candidate source-price patterns, source agreement, LLM review, quantum/quant review, and why Qadam is trading or waiting. |
+| Backtesting & Learning Loop | Formal backtest status where available, paper-forward replay, postmortems, edge memory, strategy feedback, and promotion gates. |
 
 ### Advanced / Debug Mode
 
@@ -401,8 +397,8 @@ Use this mapping when reading old notes:
 
 | Old term | Read it now as |
 | --- | --- |
-| Mission Control | Overview / Stage 7 cockpit |
-| System map | Overview's System Operating Map or Operations full map |
+| Mission Control | Overview / Mission Control walkthrough |
+| System map | Mission Control walkthrough or Operations full map |
 | Watching | Evidence |
 | Cognition | Reasoning |
 | Worldview / Private Edge | Reasoning prior context |
@@ -601,9 +597,9 @@ Use this routine when checking Qadam.
 1. Start with Overview.
 2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
-3. Scan the System Operating Map, System Status, Data Sources Connected, Trading
-   Strategies, Qadam Activity Feed, Trade Consideration Board, and Paper
-   Portfolio Capacity sections.
+3. Scan Paper Fund Status, Source Intelligence Network, Watched Markets
+   Universe, Strategy Playbook, Hedge Fund Investment Team, Hypotheses & Pattern
+   Recognition, and Backtesting & Learning Loop.
 4. Check whether any required source, reasoning, quant, risk, or paper-account
    dependency needs attention.
 5. Separate what Qadam is watching from what it is considering, and separate
@@ -807,13 +803,13 @@ Escalate or comment if:
 | Term | Meaning |
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
-| Overview | The default Stage 7 dashboard cockpit: map, status, sources, strategies, activity feed, trade board, and paper capacity. |
+| Overview | The default Mission Control walkthrough: paper fund status, source network, watched markets, strategy playbook, investment team, hypotheses, and learning loop. |
 | Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
 | Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
 | Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |
 | Operations | The dashboard view for the full system map, event trail, communications, governance, and technical diagnostics. |
 | Safety Status | The one global dashboard authority summary: paper only, read-only, live capital off, dashboard cannot place orders, AI cannot bypass risk checks. |
-| Mission Control | Older implementation name now represented by Overview / Stage 7 cockpit. |
+| Mission Control | Older implementation name now represented by Overview / Mission Control walkthrough. |
 | Watching | Older implementation name now represented by Evidence. |
 | Cognition | Older implementation name now represented by Reasoning. |
 | Money | Older implementation name now represented inside Trades. |

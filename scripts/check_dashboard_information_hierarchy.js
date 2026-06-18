@@ -35,10 +35,10 @@ const sourceTracker = indexOf("data-overview-source-summary");
 const detailFlow = indexOf("dashboard-detail-flow");
 
 assert(hero < safetyStrip, "Safety Status must appear after the hero");
-assert(safetyStrip < missionControl, "Stage 7 cockpit must appear after Safety Status");
-assert(missionControl < stage7Cockpit, "Stage 7 cockpit must be first inside Overview");
-assert(stage7Cockpit < portfolioHero, "advanced portfolio timeline must appear after the Stage 7 cockpit");
-assert(portfolioHero < mission, "Mission Snapshot must appear after the Stage 7 cockpit compatibility shell");
+assert(safetyStrip < missionControl, "Mission Control walkthrough must appear after Safety Status");
+assert(missionControl < stage7Cockpit, "Mission Control walkthrough must be first inside Overview");
+assert(stage7Cockpit < portfolioHero, "advanced portfolio timeline must appear after the Mission Control walkthrough");
+assert(portfolioHero < mission, "Mission Snapshot must appear after the Mission Control compatibility shell");
 assert(mission < paperAccount, "Paper Account & Trade State must appear after Mission Snapshot");
 assert(paperAccount < strategy, "Strategy Universe must appear after Paper Account & Trade State");
 assert(strategy < controlPlane, "Control Plane must appear after Strategy Universe");
@@ -57,15 +57,15 @@ assert(sourceTracker < detailFlow, "hidden detail panels must appear after the f
     "data-overview-paper-trade-state",
     "data-overview-source-summary",
     "Mission Control",
-    "Stage 7 Fund Manager cockpit",
+    "Mission Control walkthrough",
     "Real portfolio timeline",
     "Mission Snapshot",
     "Strategy Universe",
     "Paper Account &amp; Trade State",
     "Control Plane",
     "Data source tracker",
-    "Loading Qadam's operating map, current status, active thinking, trade ideas, and paper capacity.",
-    "Stage 7 Fund Manager cockpit: system map, status, sources, strategies, activity feed, trade consideration board, and paper portfolio capacity."
+    "Loading paper fund status, source network, markets, strategies, investment team, hypotheses, and learning loop.",
+    "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and learning loop."
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
 [
@@ -73,9 +73,12 @@ assert(sourceTracker < detailFlow, "hidden detail panels must appear after the f
     ".overview-first-screen",
     ".dashboard-safety-strip",
     ".stage7-dashboard-visibility",
-    ".stage7-system-map",
-    ".stage7-system-status",
-    ".stage7-trade-board",
+    ".mission-paper-fund",
+    ".mission-source-network",
+    ".mission-markets",
+    ".mission-team",
+    ".mission-hypotheses",
+    ".mission-learning",
     ".overview-portfolio-hero",
     ".portfolio-trade-timeline",
     ".overview-mission-brief",
@@ -114,18 +117,28 @@ assert(stage7Function >= 0, "renderer missing renderStage7Visibility");
 assert(stage7Call >= 0, "renderer does not call renderStage7Visibility");
 assert(portfolioFunction >= 0, "renderer missing renderContractPortfolioHero");
 assert(missionCall < renderCall, "mission control must render before operating summary cards");
-assert(renderCall < stage7Call, "operating summary compatibility render must run before Stage 7 cockpit");
-assert(stage7Call < overviewCall, "Stage 7 cockpit must render before advanced Overview compatibility cards");
+assert(renderCall < stage7Call, "operating summary compatibility render must run before Mission Control walkthrough");
+assert(stage7Call < overviewCall, "Mission Control walkthrough must render before advanced Overview compatibility cards");
 assert(overviewCall < flowCall, "Overview must render before the system map");
 
 [
     "renderOverviewFirstScreen",
     "buildStage7VisibilityModel",
     "renderStage7Visibility",
-    "System Operating Map",
-    "Qadam Activity Feed",
-    "Trade Consideration Board",
-    "Paper Portfolio Capacity",
+    "Paper Fund Status",
+    "Source Intelligence Network",
+    "Watched Markets Universe",
+    "Strategy Playbook",
+    "Hedge Fund Investment Team",
+    "Hypotheses & Pattern Recognition",
+    "Backtesting & Learning Loop",
+    "renderMissionPaperFund",
+    "renderMissionSourceNetwork",
+    "renderMissionMarkets",
+    "renderMissionStrategies",
+    "renderMissionTeam",
+    "renderMissionHypotheses",
+    "renderMissionLearning",
     "renderContractTeamMap",
     "renderContractControlPlane",
     "renderContractStrategyUniverse",

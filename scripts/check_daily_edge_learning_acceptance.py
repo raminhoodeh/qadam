@@ -102,7 +102,7 @@ CHECKS: tuple[CheckCommand, ...] = (
     CheckCommand(
         "dashboard_stage7_visibility",
         ("node", "scripts/check_dashboard_stage7_visibility.js"),
-        stdout_success_text="Dashboard Stage 7 visibility contract OK",
+        stdout_success_text="Dashboard Mission Control walkthrough contract OK",
     ),
 )
 
