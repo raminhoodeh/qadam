@@ -3885,13 +3885,13 @@ function buildOverviewModel(status = {}, source = {}, sharedOperations = null, s
 }
 
 const STAGE7_LEVEL1_SECTIONS = [
-    "system_operating_map",
-    "system_status",
-    "data_sources_connected",
-    "trading_strategies",
-    "qadam_activity_feed",
-    "trade_consideration_board",
-    "paper_portfolio_capacity"
+    "paper_fund_status",
+    "source_intelligence_network",
+    "watched_markets_universe",
+    "strategy_playbook",
+    "hedge_fund_investment_team",
+    "hypotheses_pattern_recognition",
+    "backtesting_learning_loop"
 ];
 
 function stage7PlainState(status, fallback = "Waiting") {
@@ -4045,6 +4045,193 @@ function buildStage7TradeBoard(status = {}, trades = {}, overview = {}) {
     };
 }
 
+function stage7SourceGroups(status = {}, sources = {}) {
+    const sourceLedger = asArray(
+        status.mission_control?.data_sources?.ledger
+            || status.data_sources?.ledger
+            || status.source_registry?.ledger
+            || status.watching
+    );
+    const pipelineLabels = {
+        conflict: "Conflict & Geopolitics",
+        physical: "Physical World Signals",
+        macro: "Macro & Trade Data",
+        market: "Markets & Technical Analysis",
+        social: "Social, News & Filings"
+    };
+    const grouped = sourceLedger.reduce((acc, source) => {
+        const key = source.pipeline || source.pipeline_key || "other";
+        acc[key] = acc[key] || [];
+        acc[key].push(source);
+        return acc;
+    }, {});
+    const preferredOrder = ["conflict", "physical", "macro", "market", "social"];
+    const orderedKeys = [
+        ...preferredOrder.filter((key) => grouped[key]),
+        ...Object.keys(grouped).filter((key) => !preferredOrder.includes(key)).sort()
+    ];
+    const groups = orderedKeys.map((key) => {
+        const records = grouped[key] || [];
+        const onlineCount = records.filter((source) => /online|ok|ready|connected/i.test(String(source.status || source.readiness || ""))).length;
+        const degradedCount = records.filter((source) => /degraded|missing|blocked|failed/i.test(String(source.status || source.credential_status || ""))).length;
+        const signalCount = records.filter((source) => source.eligible_for_signal_review === true).length;
+        const researchCount = records.filter((source) => source.usable_for_research_context !== false).length;
+        return {
+            key,
+            label: pipelineLabels[key] || key.replaceAll("_", " "),
+            source_count: records.length,
+            online_count: onlineCount,
+            degraded_count: degradedCount,
+            research_usable_count: researchCount,
+            signal_review_eligible_count: signalCount,
+            tone: degradedCount ? "degraded" : onlineCount ? "online" : "pending",
+            summary: `${onlineCount}/${records.length} online; ${researchCount} usable for research; ${signalCount} can support signal review.`,
+            sources: records.map((source) => ({
+                key: source.source_key || source.key || source.source_name || "source",
+                name: dashboardText(source.source_name || source.name, source.source_key || "Source"),
+                status: source.status || source.readiness || "pending",
+                readiness: source.readiness || source.credential_status || "not exported",
+                role: source.coverage_role || source.pipeline || "observation input",
+                eligible_for_signal_review: source.eligible_for_signal_review === true,
+                usable_for_research_context: source.usable_for_research_context !== false
+            }))
+        };
+    });
+    return groups.length ? groups : asArray(sources.pipelines).map((pipeline) => ({
+        key: pipeline.key || pipeline.pipeline || pipeline.label,
+        label: pipeline.label || pipeline.pipeline || "Source group",
+        source_count: modelNumber(pipeline.source_count, 0),
+        online_count: modelNumber(pipeline.online_count, 0),
+        degraded_count: modelNumber(pipeline.degraded_count, 0),
+        research_usable_count: modelNumber(pipeline.research_usable_count, 0),
+        signal_review_eligible_count: modelNumber(pipeline.signal_review_eligible_count, 0),
+        tone: pipeline.tone || pipeline.status || "pending",
+        summary: pipeline.summary || `${pipeline.online_count || 0}/${pipeline.source_count || 0} online.`,
+        sources: asArray(pipeline.sources)
+    }));
+}
+
+function stage7PortfolioModel(status = {}, contract = {}, performance = {}) {
+    const contractPortfolio = contract.portfolio || {};
+    const runtimePortfolio = status.mission_control?.portfolio || status.capital || performance.paper_account || {};
+    const orders = asArray(contractPortfolio.orders).length ? asArray(contractPortfolio.orders) : asArray(runtimePortfolio.orders);
+    const openPositions = asArray(contractPortfolio.open_positions).length ? asArray(contractPortfolio.open_positions) : asArray(runtimePortfolio.open_positions);
+    const equityCurve = asArray(contractPortfolio.equity_curve).length ? asArray(contractPortfolio.equity_curve) : asArray(runtimePortfolio.equity_curve);
+    const targetGbp = modelNumber(contractPortfolio.target_gbp || runtimePortfolio.target_gbp, 200000);
+    const baselineGbp = modelNumber(contractPortfolio.starting_balance_gbp || runtimePortfolio.starting_balance_gbp || runtimePortfolio.balance_gbp, 100000);
+    const currentGbp = modelNumber(contractPortfolio.balance_gbp || contractPortfolio.current_balance_gbp || runtimePortfolio.current_balance_gbp || runtimePortfolio.equity_gbp, baselineGbp);
+    return {
+        ...runtimePortfolio,
+        ...contractPortfolio,
+        balance_gbp: currentGbp,
+        current_balance_gbp: currentGbp,
+        starting_balance_gbp: baselineGbp,
+        target_gbp: targetGbp,
+        equity_curve: equityCurve,
+        orders,
+        open_positions: openPositions,
+        open_position_count: modelNumber(contractPortfolio.open_position_count || runtimePortfolio.open_position_count, openPositions.length),
+        order_count: modelNumber(contractPortfolio.order_count || runtimePortfolio.order_count, orders.length),
+        closed_trade_count: modelNumber(contractPortfolio.closed_trade_count || runtimePortfolio.closed_trade_count, 0),
+        maturity_closed_trade_target: modelNumber(contractPortfolio.maturity_closed_trade_target || runtimePortfolio.maturity_closed_trade_target, 100),
+        target_progress_fraction: targetGbp > baselineGbp ? Math.max(0, Math.min(1, (currentGbp - baselineGbp) / (targetGbp - baselineGbp))) : 0,
+        capacity_used_fraction: baselineGbp ? Math.max(0, Math.min(1, modelNumber(runtimePortfolio.total_position_value_gbp || runtimePortfolio.open_risk_gbp || 0, 0) / baselineGbp)) : 0,
+        timeline_source: contractPortfolio.timeline_source || runtimePortfolio.portfolio_value_source || "paper account mirror"
+    };
+}
+
+function stage7MarketSleeves(edge = {}, strategy = {}) {
+    const fallbackSymbols = {
+        "Crude Oil": ["CL=F", "BZ=F", "USO", "XLE"],
+        Silver: ["SI=F", "SLV", "SIL", "PAAS"],
+        Semiconductors: ["SMH", "SOXX", "NVDA", "AMD", "TSM", "ASML"],
+        "Prediction Markets": ["Polymarket CLOB", "Kalshi events"],
+        Defence: ["ITA", "XAR", "LMT", "RTX", "NOC"]
+    };
+    const sleeves = asArray(edge.sleeves).length
+        ? asArray(edge.sleeves)
+        : Object.entries(fallbackSymbols).map(([label, symbols]) => ({
+            key: label.toLowerCase().replaceAll(" ", "_"),
+            label,
+            watched_instruments: symbols.map((symbol) => ({ symbol, label: symbol, paper_route: "watchlist" })),
+            pattern_question: "Waiting for the source-price scan to export a pattern question.",
+            strategy_use: "Market sleeve under Qadam review.",
+            status: "pending"
+        }));
+    const familiesByInstrument = new Map(asArray(strategy.strategy_families || strategy.families).map((family) => [
+        String(family.instrument || family.key || "").toLowerCase(),
+        family
+    ]));
+    return sleeves.map((sleeve) => {
+        const rawLabel = sleeve.label || sleeve.key || "Market sleeve";
+        const label = /^oil$/i.test(String(rawLabel)) ? "Crude Oil" : rawLabel;
+        const family = familiesByInstrument.get(String(sleeve.key || "").toLowerCase())
+            || familiesByInstrument.get(String(label).toLowerCase().replaceAll(" ", "_"))
+            || {};
+        return {
+            key: sleeve.key || label.toLowerCase().replaceAll(" ", "_"),
+            label,
+            status: sleeve.status || family.current_state || "watching",
+            tone: family.qualified_setup ? "online" : stage7ToneForState(stage7PlainState(sleeve.status || family.current_state || "watching")),
+            watched_instruments: asArray(sleeve.watched_instruments),
+            pattern_question: sleeve.pattern_question || "No pattern question exported.",
+            strategy_use: sleeve.strategy_use || family.qadam_fit_reason || "Strategy use not exported.",
+            active_strategy: family.label || family.key || "Strategy match pending",
+            online_source_count: modelNumber(sleeve.online_source_count, 0),
+            signal_review_eligible_source_count: modelNumber(sleeve.signal_review_eligible_source_count, 0)
+        };
+    });
+}
+
+function stage7LearningLoopModel(status = {}, edge = {}) {
+    const daily = status.daily_edge_findings_brief || {};
+    const patternEngine = status.pattern_recognition_engine || {};
+    const memory = status.edge_memory_ledger || {};
+    const lifecycle = status.hypothesis_lifecycle || {};
+    const updates = status.strategy_update_record || {};
+    const weights = status.strategy_weight_updates || {};
+    const meta = status.quantum_meta_review || {};
+    const promotion = status.promotion_gates || {};
+    const formalBacktest = status.backtest_results || status.backtesting_results || status.backtesting || null;
+    return {
+        formal_backtest_available: Boolean(formalBacktest),
+        formal_backtest_status: formalBacktest?.status || "not exported",
+        replay_status: status.phase6_shadow_strategy_runner?.status || status.shadow_strategy_runner?.status || "not exported",
+        paper_forward_status: daily.status || "not exported",
+        strategy_feedback_status: updates.status || weights.status || "not exported",
+        quantum_meta_review_status: meta.status || edge.quantum_pattern_review?.status || "not exported",
+        candidate_pattern_count: modelNumber(daily.candidate_pattern_count || edge.pattern_ledger?.candidate_pattern_count, 0),
+        validated_edge_count: modelNumber(daily.validated_edge_count || edge.pattern_ledger?.validated_edge_count, 0),
+        hypothesis_thread_count: modelNumber(lifecycle.hypothesis_lifecycle_record_count || lifecycle.thread_count || lifecycle.source_hypothesis_count, 0),
+        strategy_update_count: modelNumber(updates.strategy_update_count || updates.update_count || weights.strategy_weight_update_proposal_count, 0),
+        promotion_review_ready_count: modelNumber(promotion.promotion_review_ready_count, 0),
+        explanation: formalBacktest
+            ? "Historical backtest results are exported and can be compared with paper-forward outcomes."
+            : "No formal historical backtest artifact is exported yet. Qadam is using paper-forward results, postmortems, shadow replay records, edge memory, and strategy update proposals until a dedicated backtest artifact exists.",
+        cards: [
+            { label: "Pattern engine", state: patternEngine.status || "not exported", summary: patternEngine.purpose || "Builds source-price features before quant review." },
+            { label: "Edge memory", state: memory.status || "not exported", summary: memory.purpose || "Stores pattern evidence and outcome memory." },
+            { label: "Hypothesis lifecycle", state: lifecycle.status || "not exported", summary: "Tracks whether hypotheses are observing, ready for review, refuted, or retained." },
+            { label: "Strategy feedback model", state: updates.status || weights.status || "not exported", summary: "Compares hypotheses, paper outcomes, replay evidence, and proposed strategy weights." },
+            { label: "Quantum meta-review", state: meta.status || edge.quantum_pattern_review?.status || "not exported", summary: meta.purpose || "Checks non-linear learning coherence before any proposal can be promoted." },
+            { label: "Promotion gates", state: promotion.status || "not exported", summary: "Keeps strategy changes human-governed and prevents silent mutation." }
+        ]
+    };
+}
+
+function missionControlTeamRoleLabel(role = {}) {
+    const key = String(role.key || role.label || "").toLowerCase();
+    const labels = {
+        safety_policy: "Risk Desk",
+        risk_agent: "Risk Desk",
+        signal_integrity_gate: "Risk Desk",
+        paper_demo_state: "Paper Trading Desk",
+        broker_reconciliation: "Paper Trading Desk",
+        execution_adapter_status: "Paper Trading Desk"
+    };
+    return labels[key] || role.label || role.owner || "Qadam role";
+}
+
 function buildStage7VisibilityModel(status = {}, models = {}) {
     const overview = models.overview_model || {};
     const contract = models.founder_contract_model || {};
@@ -4052,12 +4239,12 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
     const trades = models.trades_model || {};
     const reasoning = models.reasoning_model || {};
     const performance = models.performance_model || {};
-    const operations = models.operations_model || {};
     const edge = models.edge_tracker_model || overview.edge_tracker || {};
     const sourceCounts = sources.counts || {};
     const tradeCounts = trades.counts || {};
     const reasoningCounts = reasoning.counts || {};
-    const paper = performance.paper_account || {};
+    const missionStrategy = status.mission_control?.strategy || {};
+    const paper = stage7PortfolioModel(status, contract, performance);
     const dailyAutomation = status.daily_learning_automation || status.communications?.daily_learning_automation || {};
     const dailyBrief = status.daily_telegram_learning_brief || status.communications?.daily_telegram_learning_brief || {};
     const quantumOracle = status.quantum_oracle || {};
@@ -4071,38 +4258,46 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
     const strategyReview = asArray(reasoning.review_chain).find((review) => review.key === "strategy_lead") || {};
     const signalReview = asArray(reasoning.review_chain).find((review) => review.key === "signal_integrity") || {};
     const quantReview = reasoning.quant_annotation || {};
-    const systemNodes = [
-        stage7BuildNode("fund_manager", "Fund Manager", "You supervise", "What needs review?", overview.review_focus?.tone || "online", overview.review_focus?.summary, "Approves review priorities, not trades.", "Can review and comment; cannot create execution authority."),
-        stage7BuildNode("world_sources", "World sources", "Data sources", "Is the outside world visible?", sources.tone || status.mission_control?.status, `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online; ${sourceCounts.missing_credentials || 0} missing credentials.`, "Feeds the COO and evidence runtime.", "Sources provide observations only; they cannot authorize orders."),
-        stage7BuildNode("python_coo", "Python COO", "COO", "Is routing and scheduling alive?", activeAutomation.status || status.paperops_30_day_operations?.status, activeAutomation.unattended_paper_execution_delegation_reason || status.paperops_30_day_operations?.recommended_next_action, "Routes status through PaperOps and daily learning automation.", "The COO runs guarded scripts; the dashboard cannot run shell commands."),
-        stage7BuildNode("local_llm", "Local LLM", "Research Analyst", "Is local triage available?", localReview.status || status.local_research_analyst?.status, localReview.summary || "Local triage summarizes source evidence.", "Compresses observations into research packets.", "Research output is evidence context, not execution approval."),
-        stage7BuildNode("frontier_llm", "Frontier LLM", "Strategy Lead", "Is deeper reasoning available?", strategyReview.status || status.strategy_lead?.status, strategyReview.summary || `${reasoningCounts.hypotheses || 0} hypotheses and ${reasoningCounts.evidence_packets || 0} evidence packets under review.`, "Forms and challenges hypotheses.", "Strategy review cannot bypass risk or paper gates."),
-        stage7BuildNode("quant_quantum", "Quantum / Quant", "Head of Quant", "Is quant consultation ready?", quantumOracle.status || qctrl.status || fireOpal.status, quantReview.summary || `${dashboardText(quantumOracle.backend || quantumOracle.mode || qctrl.status, "quant review")} is visible for paper-mode consultation.`, "Annotates uncertainty and non-linear pattern checks.", "Quant review is required evidence, not broker authority."),
-        stage7BuildNode("signal_risk", "Signal + Risk", "Risk gate", "Can any idea become a paper trade?", signalReview.status || status.risk_agent?.status || status.execution_policy?.status, signalReview.summary || `${tradeCounts.candidate || 0} candidates, ${tradeCounts.blocked || 0} blocked ideas.`, "Allows only gated ideas to approach paper-order state.", "Risk and signal gates can block; the dashboard cannot approve."),
-        stage7BuildNode("alpaca_paper", "Alpaca Paper", "Paper desk", "Can approved paper orders execute?", paperContext.connection_status || status.alpaca_paper_mirror?.status || status.capital?.status, `${tradeCounts.submitted_paper_order || 0} submitted paper orders, ${tradeCounts.open_position || 0} open positions, live capital off.`, "Executes only guarded paper orders.", "Alpaca Paper is the only execution route; live capital remains disabled."),
-        stage7BuildNode("postmortems", "Postmortems", "Learning loop", "Are outcomes being learned from?", learningStatus || status.edge_memory_ledger?.status, `${tradeCounts.postmortem_due || paper.postmortem_due_count || 0} postmortems due; daily learning brief ${stage7PlainState(dailyBrief.status)}.`, "Feeds learning proposals and promotion gates.", "Learning proposals cannot mutate strategy without promotion gates.")
-    ];
-    const systemEdges = [
-        { from: "world_sources", to: "python_coo", state: "solid", label: "active evidence flow" },
-        { from: "python_coo", to: "local_llm", state: "solid", label: "triage packets" },
-        { from: "local_llm", to: "frontier_llm", state: "solid", label: "research to strategy" },
-        { from: "frontier_llm", to: "quant_quantum", state: "dashed", label: "context and hard calls" },
-        { from: "quant_quantum", to: "signal_risk", state: "solid", label: "quant annotation" },
-        { from: "signal_risk", to: "alpaca_paper", state: "locked", label: "explicit safety boundary" },
-        { from: "alpaca_paper", to: "postmortems", state: "solid", label: "paper outcomes" },
-        { from: "postmortems", to: "frontier_llm", state: "dashed", label: "learning feedback" }
-    ];
-    const statusRows = [
-        stage7StatusRecord("ready_to_observe", "Ready to observe", sources.quorum?.status || sources.tone, `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online; evidence runtime ${status.evidence_packet_runtime?.status || "not exported"}.`),
-        stage7StatusRecord("ready_to_reason", "Ready to reason", strategyReview.status || localReview.status || reasoning.tone, `${reasoningCounts.research_goals || 0} research goals, ${reasoningCounts.hypotheses || 0} hypotheses, ${reasoningCounts.evidence_packets || 0} evidence packets.`),
-        stage7StatusRecord("ready_to_quantify", "Ready to quantify", quantumOracle.status || qctrl.status || fireOpal.status, `Quantum/quant status: ${dashboardText(quantumOracle.mode || quantumOracle.backend || qctrl.status || fireOpal.status, "not exported")}.`),
-        stage7StatusRecord("ready_to_paper_trade", "Ready to paper trade", paperLive.status || activeAutomation.status, `${tradeCounts.candidate || 0} candidates, ${tradeCounts.submitted_paper_order || 0} paper orders, ${tradeCounts.open_position || 0} open positions.`, paperLive.paper_live_operation_allowed ? "OK" : "Waiting"),
-        stage7StatusRecord("needs_attention", "Needs attention", overview.review_focus?.tone || (tradeCounts.postmortem_due ? "degraded" : "online"), overview.review_focus?.summary || `${tradeCounts.postmortem_due || 0} postmortems due; ${sourceCounts.missing_credentials || 0} missing credentials.`)
-    ];
-    const sourcePipelines = asArray(overview.data_sources_connected).length
-        ? asArray(overview.data_sources_connected)
-        : asArray(sources.pipelines).slice(0, 5);
-    const strategyFamilies = asArray(overview.trading_strategies);
+    const teamRoles = asArray(status.mission_control?.team).length
+        ? asArray(status.mission_control.team).map((role) => ({
+            key: role.key || role.label,
+            label: missionControlTeamRoleLabel(role),
+            owner: role.owner || "Qadam",
+            status: role.status || "pending",
+            tone: stage7ToneForState(stage7PlainState(role.status || "pending")),
+            role: role.one_line || role.current_process || "Role description not exported.",
+            current_process: role.current_process || "No current process exported.",
+            authority: role.authority || "read_only"
+        }))
+        : [
+            { key: "coo", label: "Chief Operating Officer", owner: "Python Orchestrator", status: activeAutomation.status || "online", role: "Coordinates local modules, health checks, and paper-mode boundaries.", current_process: activeAutomation.unattended_paper_execution_delegation_reason || "Supervising local modules.", authority: "read_only" },
+            { key: "research_analyst", label: "Research Analyst", owner: "Local LLM", status: localReview.status || "online", role: "Compresses noisy observations into research packets.", current_process: localReview.summary || "Local triage available.", authority: "non_executable" },
+            { key: "strategy_lead", label: "Strategy Lead", owner: "Frontier LLM", status: strategyReview.status || "online", role: "Challenges hypotheses and strategy packets.", current_process: strategyReview.summary || "Strategy challenge available.", authority: "non_executable" },
+            { key: "head_of_quant", label: "Head of Quant", owner: "Quantum/classical review", status: quantumOracle.status || qctrl.status || "pending", role: "Runs bounded non-linear scenario review.", current_process: quantReview.summary || `${dashboardText(quantumOracle.backend || quantumOracle.mode || qctrl.status, "quant review")} visible.`, authority: "non_executable" },
+            { key: "risk_desk", label: "Risk Desk", owner: "Risk and execution gates", status: status.risk_agent?.status || signalReview.status || "pending", role: "Blocks weak setups and sizes paper exposure only after gates pass.", current_process: signalReview.summary || `${tradeCounts.candidate || 0} candidates and ${tradeCounts.blocked || 0} blocked ideas.`, authority: "write_blocked" },
+            { key: "paper_trading_desk", label: "Paper Trading Desk", owner: "Alpaca Paper", status: paperContext.connection_status || status.alpaca_paper_mirror?.status || "online", role: "Mirrors and reconciles Alpaca Paper orders and positions.", current_process: `${paper.open_position_count || 0} open positions; live capital off.`, authority: "guarded_paper_only" },
+            { key: "learning_review", label: "Learning Review", owner: "Postmortems and strategy feedback", status: learningStatus || "review_ready", role: "Turns outcomes into proposed learning updates.", current_process: `Daily learning brief ${stage7PlainState(dailyBrief.status)}.`, authority: "review_only" }
+        ].map((role) => ({ ...role, tone: stage7ToneForState(stage7PlainState(role.status)) }));
+    const sourceGroups = stage7SourceGroups(status, sources);
+    const strategyFamilies = asArray(missionStrategy.strategy_families).length
+        ? asArray(missionStrategy.strategy_families)
+        : asArray(overview.trading_strategies);
+    const strategyModel = {
+        ...missionStrategy,
+        strategy_families: strategyFamilies,
+        families: strategyFamilies,
+        strategy_family_count: modelNumber(missionStrategy.strategy_family_count || overview.strategy_family_count, strategyFamilies.length),
+        qualified_strategy_family_count: modelNumber(missionStrategy.qualified_strategy_family_count || overview.qualified_strategy_family_count, strategyFamilies.filter((strategy) => strategy.qualified_setup).length),
+        akber_lens: missionStrategy.akber_lens || {
+            stages: ["context", "catalyst", "confirmation", "risk", "execution", "postmortem learning"],
+            summary: "Akber's 6-stage method filters every setup before paper action."
+        }
+    };
+    const marketSleeves = stage7MarketSleeves(edge, strategyModel);
+    const dailyEdge = status.daily_edge_findings_brief || {};
+    const candidatePatterns = asArray(dailyEdge.patterns_observed).length
+        ? asArray(dailyEdge.patterns_observed)
+        : asArray(edge.pattern_ledger?.patterns || status.edge_pattern_ledger?.patterns);
     const dailyBriefState = stage7PlainState(dailyBrief.status || "not exported");
     const activityItems = [
         {
@@ -4155,31 +4350,127 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             proof: "Daily learning artifact"
         }
     ];
-    const capacity = overview.paper_capacity || {};
     const sections = [
-        { id: "system_operating_map", label: "System Operating Map", question: "How does Qadam turn world data into paper state?", tone: "online" },
-        { id: "system_status", label: "System Status", question: "Is the system healthy enough to trust?", tone: statusRows.some((row) => row.tone === "blocked") ? "blocked" : "online" },
-        { id: "data_sources_connected", label: "Data Sources Connected", question: "Which source groups are connected and useful?", tone: sources.tone || "online" },
-        { id: "trading_strategies", label: "Trading Strategies", question: "What is Qadam trying to trade and why?", tone: strategyFamilies.some((strategy) => strategy.qualified_setup) ? "online" : "pending" },
-        { id: "qadam_activity_feed", label: "Qadam Activity Feed", question: "What has Qadam thought or done recently?", tone: "online" },
-        { id: "trade_consideration_board", label: "Trade Consideration Board", question: "What trades is Qadam considering?", tone: tradeCounts.candidate ? "pending" : "online" },
-        { id: "paper_portfolio_capacity", label: "Paper Portfolio Capacity", question: "How much paper capital is deployed, idle, or progressing?", tone: capacity.deployed_gbp ? "pending" : "online" }
+        { id: "paper_fund_status", label: "Paper Fund Status", question: "Is Qadam working as a paper fund?", tone: paper.open_position_count || paper.closed_trade_count ? "online" : "pending" },
+        { id: "source_intelligence_network", label: "Source Intelligence Network", question: "What information is Qadam using?", tone: sources.tone || "online" },
+        { id: "watched_markets_universe", label: "Watched Markets Universe", question: "What markets can Qadam seek edge in?", tone: marketSleeves.length ? "online" : "pending" },
+        { id: "strategy_playbook", label: "Strategy Playbook + Akber Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
+        { id: "hedge_fund_investment_team", label: "Hedge Fund Investment Team", question: "Which part of Qadam does what?", tone: teamRoles.some((role) => role.tone === "blocked") ? "blocked" : "online" },
+        { id: "hypotheses_pattern_recognition", label: "Hypotheses & Pattern Recognition", question: "What is Qadam currently thinking about?", tone: candidatePatterns.length ? "pending" : "online" },
+        { id: "backtesting_learning_loop", label: "Backtesting & Learning Loop", question: "How does Qadam improve after evidence and outcomes?", tone: "pending" }
     ];
+    const openHoldingNames = asArray(paper.open_positions).map((position) => position.instrument || position.symbol).filter(Boolean).slice(0, 4);
+    const paperFundBrief = [
+        `Qadam is managing a ${formatMoney(paper.current_balance_gbp || paper.balance_gbp)} paper portfolio against a ${formatMoney(paper.target_gbp)} 60-day target.`,
+        `${paper.open_position_count || 0} open holdings${openHoldingNames.length ? ` (${openHoldingNames.join(", ")})` : ""}, ${paper.closed_trade_count || 0} closed paper trades, and ${tradeCounts.candidate || 0} trade candidates are visible.`,
+        `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online; ${candidatePatterns.length || 0} candidate patterns are under review; live capital remains off.`
+    ].join(" ");
+    const learningLoop = stage7LearningLoopModel(status, edge);
     return {
-        schema_version: "stage7_dashboard_visibility.v1",
-        stage: "Stage 7 - Dashboard Visibility",
-        status: "stage7_visibility_ready",
+        schema_version: "mission_control_walkthrough.v1",
+        legacy_schema_version: "stage7_dashboard_visibility.v1",
+        stage: "Mission Control Walkthrough",
+        status: "mission_control_walkthrough_ready",
+        legacy_status: "stage7_visibility_ready",
         level_1_section_count: sections.length,
         level_1_sections: sections,
+        fund_brief: {
+            title: "Today's Fund Brief",
+            body: paperFundBrief,
+            lifecycle: [
+                "Watching",
+                "Pattern detected",
+                "Hypothesis under review",
+                "Testing",
+                "Trade candidate",
+                "Paper position",
+                "Outcome review",
+                "Strategy learning"
+            ],
+            generated_at: status.generated_at
+        },
+        paper_fund_status: {
+            portfolio: paper,
+            equity_curve_points: asArray(paper.equity_curve).length,
+            current_value_gbp: paper.current_balance_gbp || paper.balance_gbp,
+            target_gbp: paper.target_gbp,
+            open_positions: asArray(paper.open_positions),
+            recent_orders: asArray(paper.orders).slice(0, 12),
+            why_clickthrough_available: asArray(paper.orders).some((order) => order.source_intent_id || order.intent_id || order.why || order.reason),
+            explanation_gap: "Some mirrored Alpaca Paper rows do not yet export a source intent, so the dashboard shows the best available reason and marks unlinked rows honestly."
+        },
+        source_intelligence_network: {
+            online: sourceCounts.online || 0,
+            total: sourceCounts.total || 0,
+            research_usable_count: sourceCounts.research_usable || sourceCounts.research_context_usable || 0,
+            signal_review_eligible_count: sourceCounts.signal_review_eligible || 0,
+            required_blocker_count: status.paperops_source_gap_visibility?.trade_blocking_gap_count || 0,
+            optional_gap_count: status.paperops_source_gap_visibility?.optional_gap_count || sourceCounts.missing_credentials || 0,
+            groups: sourceGroups,
+            boundary: "Sources are observation inputs only. They can inform hypotheses and signal review; they cannot authorize orders."
+        },
+        watched_markets_universe: {
+            sleeve_count: marketSleeves.length,
+            watched_instrument_count: modelNumber(edge.watched_instrument_count, marketSleeves.reduce((total, sleeve) => total + asArray(sleeve.watched_instruments).length, 0)),
+            sleeves: marketSleeves,
+            price_watch_status: edge.market_price_watch?.status || "listed",
+            boundary: edge.market_price_watch?.live_price_boundary || "Watched markets are research and paper-route context, not broker truth."
+        },
+        strategy_playbook: {
+            mandate: "Grow the GBP 100,000 paper portfolio toward GBP 200,000 over 60 days.",
+            setup_style: "Event-driven, evidence-gated, pricing/probability-mispricing strategy.",
+            posture: tradeCounts.candidate ? "Candidate review" : (tradeCounts.open_position ? "Managing paper positions" : "Watching for evidence"),
+            universe: strategyModel.universe || ["prediction markets", "crude oil", "defence", "silver", "semiconductors"],
+            akber_lens: strategyModel.akber_lens,
+            families: strategyFamilies.slice(0, 5),
+            qualified_count: strategyModel.qualified_strategy_family_count,
+            family_count: strategyModel.strategy_family_count,
+            boundary: missionStrategy.boundary || "Strategies cannot bypass source, quant, risk, or PaperOps gates."
+        },
+        hedge_fund_investment_team: {
+            roles: teamRoles,
+            role_count: teamRoles.length,
+            status: teamRoles.some((role) => role.tone === "blocked") ? "needs_review" : "online",
+            sentence: "Qadam works like a small paper hedge fund team: data feeds observe, the Python COO coordinates, models research, quant challenges, risk gates, Alpaca Paper records, and learning reviews outcomes."
+        },
+        hypotheses_pattern_recognition: {
+            candidate_pattern_count: candidatePatterns.length,
+            validated_edge_count: modelNumber(dailyEdge.validated_edge_count || edge.pattern_ledger?.validated_edge_count, 0),
+            hypothesis_count: reasoningCounts.hypotheses || asArray(reasoning.hypothesis_queue).length || 0,
+            evidence_packet_count: reasoningCounts.evidence_packets || 0,
+            patterns: candidatePatterns.slice(0, 5),
+            criteria: asArray(dailyEdge.criteria || edge.pattern_ledger?.criteria).slice(0, 8),
+            llm_status: edge.llm_pattern_review?.status || localReview.status || strategyReview.status || "not exported",
+            quantum_status: edge.quantum_pattern_review?.status || quantumOracle.status || qctrl.status || "not exported",
+            quantum_mode: edge.quantum_pattern_review?.mode || quantumOracle.mode || quantumOracle.backend || "not exported",
+            why_no_trade: tradeCounts.candidate
+                ? "At least one idea has reached candidate state, but paper action still depends on source, quant, risk, idempotency, and Alpaca Paper gates."
+                : "Qadam can be active without trading. Current patterns are still being tested for persistence, source agreement, market confirmation, and guarded paper-route readiness.",
+            boundary: "Pattern recognition can change research conviction and ranking; it cannot create orders or live capital authority."
+        },
+        backtesting_learning_loop: learningLoop,
         operating_map: {
-            nodes: systemNodes,
-            edges: systemEdges,
-            sentence: "Qadam is watching sources, turning evidence into hypotheses, filtering them through strategy, quant, and risk, then using Alpaca Paper only when gates pass."
+            nodes: teamRoles.map((role) => stage7BuildNode(role.key, role.owner, role.label, role.role, role.status, role.current_process, "Passes public-safe state to the next review step.", role.authority)),
+            edges: [
+                { from: "sources", to: "markets", state: "solid", label: "observations mapped to watched markets" },
+                { from: "markets", to: "strategies", state: "solid", label: "market sleeve to strategy playbook" },
+                { from: "strategies", to: "team", state: "solid", label: "research and quant review" },
+                { from: "team", to: "hypotheses", state: "dashed", label: "candidate patterns and hypotheses" },
+                { from: "hypotheses", to: "paper", state: "locked", label: "risk and PaperOps boundary" },
+                { from: "paper", to: "learning", state: "solid", label: "outcomes and replay" }
+            ],
+            sentence: "World data comes in, Qadam maps it to watched markets, filters it through strategy and the investment team, forms hypotheses, paper trades only through guarded routes, then learns from outcomes."
         },
         system_status: {
-            rows: statusRows,
+            rows: [
+                stage7StatusRecord("fund", "Paper fund", paper.connection_status || paper.mirror_freshness || "online", `${formatMoney(paper.current_balance_gbp || paper.balance_gbp)} current value; ${paper.open_position_count || 0} open positions.`),
+                stage7StatusRecord("sources", "Sources", sources.quorum?.status || sources.tone, `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online.`),
+                stage7StatusRecord("reasoning", "Reasoning", strategyReview.status || localReview.status || reasoning.tone, `${reasoningCounts.hypotheses || 0} hypotheses and ${reasoningCounts.evidence_packets || 0} evidence packets.`),
+                stage7StatusRecord("quant", "Quant review", edge.quantum_pattern_review?.status || quantumOracle.status || qctrl.status || fireOpal.status, `${dashboardText(edge.quantum_pattern_review?.mode || quantumOracle.mode || quantumOracle.backend || qctrl.status, "not exported")} review mode.`),
+                stage7StatusRecord("paper_route", "Paper route", paperLive.status || activeAutomation.status, `${tradeCounts.candidate || 0} candidates, ${tradeCounts.open_position || 0} open positions, live capital off.`)
+            ],
             safety_summary: "Dashboard remains read-only. Live capital is disabled, broker writes are disabled, and Telegram is notify-only.",
-            needs_attention_count: statusRows.filter((row) => row.tone === "blocked" || row.tone === "degraded").length
+            needs_attention_count: 0
         },
         data_sources: {
             online: sourceCounts.online || 0,
@@ -4188,8 +4479,8 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             optional_gap_count: status.paperops_source_gap_visibility?.optional_gap_count || sourceCounts.missing_credentials || 0,
             research_usable_count: sourceCounts.research_usable || sourceCounts.research_context_usable || 0,
             signal_review_eligible_count: sourceCounts.signal_review_eligible || 0,
-            groups: sourcePipelines.slice(0, 5),
-            influencing_groups: sourcePipelines.filter((group) => modelNumber(group.signal_review_eligible_count || group.signal_review_eligible, 0)).slice(0, 4)
+            groups: sourceGroups,
+            influencing_groups: sourceGroups.filter((group) => modelNumber(group.signal_review_eligible_count, 0)).slice(0, 4)
         },
         trading_strategies: {
             mandate: "Grow the GBP 100,000 paper portfolio toward GBP 200,000 over 60 days.",
@@ -4198,7 +4489,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             posture: tradeCounts.candidate ? "Candidate review" : (tradeCounts.open_position ? "Managing paper positions" : "Watching for evidence"),
             latest_packet_summary: overview.native_strategy?.summary || overview.summary || "Strategy posture comes from Mission Control, evidence, and PaperOps state.",
             families: strategyFamilies.slice(0, 5),
-            qualified_count: overview.qualified_strategy_family_count || strategyFamilies.filter((strategy) => strategy.qualified_setup).length
+            qualified_count: strategyModel.qualified_strategy_family_count
         },
         activity_feed: {
             items: activityItems,
@@ -4208,14 +4499,17 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         },
         trade_consideration_board: buildStage7TradeBoard(status, trades, overview),
         paper_portfolio_capacity: {
-            ...capacity,
-            baseline_gbp: capacity.total_gbp || paper.starting_balance_gbp || 100000,
-            target_gbp: capacity.target_gbp || 200000,
-            idle_gbp: capacity.cash_gbp || paper.cash_gbp || 0,
-            open_risk_gbp: capacity.deployed_gbp || 0,
-            realized_pnl_gbp: paper.realized_pnl_gbp || status.capital?.realized_pnl_gbp || 0,
-            unrealized_pnl_gbp: paper.unrealized_pnl_gbp || status.capital?.unrealized_pnl_gbp || 0,
-            history_sparse: asArray(capacity.equity_curve).length < 3
+            ...overview.paper_capacity,
+            baseline_gbp: paper.starting_balance_gbp || 100000,
+            total_gbp: paper.starting_balance_gbp || 100000,
+            target_gbp: paper.target_gbp || 200000,
+            equity_gbp: paper.current_balance_gbp || paper.balance_gbp,
+            idle_gbp: paper.cash_gbp || overview.paper_capacity?.cash_gbp || 0,
+            open_risk_gbp: overview.paper_capacity?.deployed_gbp || 0,
+            realized_pnl_gbp: paper.realized_pnl_gbp || 0,
+            unrealized_pnl_gbp: paper.unrealized_pnl_gbp || 0,
+            equity_curve: asArray(paper.equity_curve),
+            history_sparse: asArray(paper.equity_curve).length < 3
         },
         authority: {
             dashboard_write_authority: false,
@@ -4226,7 +4520,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             strategy_mutation_allowed: false,
             live_capital_enabled: false
         },
-        boundary: "Stage 7 Dashboard Visibility is read-only. It explains Qadam's operating state but cannot approve, submit, close, resize, fund, mutate, message-command, or create quantum jobs."
+        boundary: "Mission Control is read-only. It explains Qadam's paper-fund state and learning loop but cannot approve, submit, close, resize, fund, mutate, command Telegram, or create quantum jobs."
     };
 }
 
@@ -8661,32 +8955,308 @@ function renderStage7PortfolioCapacity(stage7 = {}) {
     `;
 }
 
+function renderMissionLifecycleRibbon(items = []) {
+    return `
+        <ol class="mission-flow-lifecycle" aria-label="Qadam decision lifecycle">
+            ${asArray(items).map((item, index) => `
+                <li>
+                    <span>${String(index + 1).padStart(2, "0")}</span>
+                    <strong>${htmlText(item)}</strong>
+                </li>
+            `).join("")}
+        </ol>
+    `;
+}
+
+function renderMissionPaperFund(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "paper_fund_status") || {};
+    const fund = stage7.paper_fund_status || {};
+    const portfolio = fund.portfolio || {};
+    const openPositions = asArray(fund.open_positions);
+    return `
+        <section class="stage7-section mission-flow-section mission-paper-fund" data-stage7-section="paper_fund_status">
+            ${renderStage7SectionHeader(section, "Money first: value, holdings, trades, exposure, and why each row exists.")}
+            ${renderContractPortfolioBlock(portfolio)}
+            <div class="stage7-kpi-strip mission-kpi-strip">
+                ${renderMetric("Current value", formatMoney(fund.current_value_gbp))}
+                ${renderMetric("Target", formatMoney(fund.target_gbp))}
+                ${renderMetric("Open holdings", portfolio.open_position_count || openPositions.length || 0)}
+                ${renderMetric("Closed trades", portfolio.closed_trade_count || 0)}
+                ${renderMetric("Orders", portfolio.order_count || asArray(portfolio.orders).length)}
+                ${renderMetric("Realized P&L", formatMoney(portfolio.realized_pnl_gbp))}
+                ${renderMetric("Unrealized P&L", formatMoney(portfolio.unrealized_pnl_gbp))}
+                ${renderMetric("Curve points", fund.equity_curve_points || 0)}
+            </div>
+            <div class="mission-holdings-grid">
+                ${openPositions.length ? openPositions.slice(0, 6).map((position) => `
+                    <details class="mission-flow-card ${statusClass(position.status || "online")}">
+                        <summary>
+                            <strong>${htmlText(position.instrument || position.symbol, "Holding")}</strong>
+                            <span>${htmlText(position.direction || "long")} · ${formatMoney(position.unrealized_pnl_gbp)} unrealized</span>
+                        </summary>
+                        <dl class="mission-flow-facts">
+                            <div><dt>Quantity</dt><dd>${htmlText(position.quantity, "n/a")}</dd></div>
+                            <div><dt>Entry</dt><dd>${htmlText(portfolioTradePrice({ entry_price: position.entry_price }))}</dd></div>
+                            <div><dt>Current</dt><dd>${htmlText(portfolioTradePrice({ current_price: position.current_price }))}</dd></div>
+                            <div><dt>Why</dt><dd>${htmlText(portfolioTradeRecordReason(position, "position"))}</dd></div>
+                        </dl>
+                    </details>
+                `).join("") : `<article class="mission-flow-card pending"><strong>No open holdings</strong><p>Qadam has no open paper positions in this snapshot.</p></article>`}
+            </div>
+            ${renderPortfolioTradeTimeline(portfolio)}
+            <p class="stage7-section-summary">${htmlText(fund.explanation_gap)}</p>
+        </section>
+    `;
+}
+
+function renderMissionSourceNetwork(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "source_intelligence_network") || {};
+    const network = stage7.source_intelligence_network || {};
+    return `
+        <section class="stage7-section mission-flow-section mission-source-network" data-stage7-section="source_intelligence_network">
+            ${renderStage7SectionHeader(section, "Grouped by the kind of real-world information Qadam receives.")}
+            <div class="stage7-kpi-strip mission-kpi-strip">
+                ${renderMetric("Online", `${network.online || 0}/${network.total || 0}`)}
+                ${renderMetric("Research usable", network.research_usable_count || 0)}
+                ${renderMetric("Signal review", network.signal_review_eligible_count || 0)}
+                ${renderMetric("Required blockers", network.required_blocker_count || 0)}
+                ${renderMetric("Optional gaps", network.optional_gap_count || 0)}
+            </div>
+            <div class="mission-source-grid">
+                ${asArray(network.groups).map((group, index) => `
+                    <details class="mission-source-group ${statusClass(group.tone)}" ${index < 2 ? "open" : ""}>
+                        <summary>
+                            <strong>${htmlText(group.label)}</strong>
+                            <span>${htmlText(group.summary)}</span>
+                        </summary>
+                        <ul>
+                            ${asArray(group.sources).map((source) => `
+                                <li class="${statusClass(source.status)}">
+                                    <strong>${htmlText(source.name)}</strong>
+                                    <span>${htmlText(source.status)} · ${htmlText(source.readiness)}</span>
+                                    <em>${source.eligible_for_signal_review ? "signal review" : "research context"}</em>
+                                </li>
+                            `).join("") || `<li><strong>No source rows exported</strong><span>Open the Evidence view for raw diagnostics.</span></li>`}
+                        </ul>
+                    </details>
+                `).join("")}
+            </div>
+            <p class="stage7-section-summary">${htmlText(network.boundary)}</p>
+        </section>
+    `;
+}
+
+function renderMissionMarkets(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "watched_markets_universe") || {};
+    const universe = stage7.watched_markets_universe || {};
+    return `
+        <section class="stage7-section mission-flow-section mission-markets" data-stage7-section="watched_markets_universe">
+            ${renderStage7SectionHeader(section, "The focused markets Qadam scans for edge.")}
+            <div class="stage7-kpi-strip mission-kpi-strip">
+                ${renderMetric("Market sleeves", universe.sleeve_count || 0)}
+                ${renderMetric("Watched instruments", universe.watched_instrument_count || 0)}
+                ${renderMetric("Price watch", universe.price_watch_status || "listed")}
+            </div>
+            <div class="mission-market-grid">
+                ${asArray(universe.sleeves).map((sleeve) => `
+                    <article class="mission-market-card ${statusClass(sleeve.tone || sleeve.status)}">
+                        <div>
+                            <span>${htmlText(sleeve.active_strategy)}</span>
+                            <strong>${htmlText(sleeve.label)}</strong>
+                            <p>${htmlText(sleeve.pattern_question)}</p>
+                        </div>
+                        <div class="mission-chip-row">
+                            ${asArray(sleeve.watched_instruments).map((instrument) => `
+                                <span class="edge-instrument-chip">
+                                    <strong>${htmlText(instrument.symbol || instrument.label)}</strong>
+                                    <em>${htmlText(instrument.paper_route || instrument.instrument_type || "watchlist")}</em>
+                                </span>
+                            `).join("")}
+                        </div>
+                        <p class="mini">${htmlText(sleeve.strategy_use)}</p>
+                    </article>
+                `).join("")}
+            </div>
+            <p class="stage7-section-summary">${htmlText(universe.boundary)}</p>
+        </section>
+    `;
+}
+
+function renderMissionStrategies(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "strategy_playbook") || {};
+    const playbook = stage7.strategy_playbook || {};
+    const akberStages = asArray(playbook.akber_lens?.stages);
+    return `
+        <section class="stage7-section mission-flow-section mission-strategies" data-stage7-section="strategy_playbook">
+            ${renderStage7SectionHeader(section, "Strategy families plus Akber's practical trading filter.")}
+            <div class="stage7-strategy-brief">
+                <article>
+                    <span>Active paper mandate</span>
+                    <strong>${htmlText(playbook.mandate)}</strong>
+                    <p>${htmlText(playbook.setup_style)}</p>
+                </article>
+                <article>
+                    <span>Current posture</span>
+                    <strong>${htmlText(playbook.posture)}</strong>
+                    <p>${htmlText(playbook.boundary)}</p>
+                </article>
+            </div>
+            <ol class="mission-akber-filter">
+                ${akberStages.map((stage, index) => `
+                    <li>
+                        <span>${String(index + 1).padStart(2, "0")}</span>
+                        <strong>${htmlText(stage)}</strong>
+                    </li>
+                `).join("")}
+            </ol>
+            <div class="stage7-family-grid mission-strategy-grid">
+                ${asArray(playbook.families).map((family) => `
+                    <article class="${statusClass(family.qualified_setup ? "online" : family.current_state || "pending")}">
+                        <strong>${htmlText(family.label || family.key)}</strong>
+                        <span>${htmlText(family.current_state || family.setup_state || "watching")}</span>
+                        <p>${htmlText(family.current_reason || family.qadam_fit_reason || "No strategy reason exported.")}</p>
+                        <div class="mission-chip-row">
+                            ${renderInlineBadge(`rank ${htmlText(family.rank, "n/a")}`, "pending")}
+                            ${renderInlineBadge(`fit ${htmlText(family.fit_score || family.fit, "n/a")}`, family.qualified_setup ? "online" : "pending")}
+                            ${renderInlineBadge(family.qualified_setup ? "qualified now" : "waiting", family.qualified_setup ? "online" : "pending")}
+                        </div>
+                    </article>
+                `).join("")}
+            </div>
+        </section>
+    `;
+}
+
+function renderMissionTeam(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "hedge_fund_investment_team") || {};
+    const team = stage7.hedge_fund_investment_team || {};
+    return `
+        <section class="stage7-section mission-flow-section mission-team" data-stage7-section="hedge_fund_investment_team">
+            ${renderStage7SectionHeader(section, team.sentence || "The operating roles inside Qadam.")}
+            <div class="mission-team-grid">
+                ${asArray(team.roles).map((role, index) => `
+                    <details class="stage7-map-node mission-team-role ${statusClass(role.tone || role.status)}" ${index < 4 ? "open" : ""}>
+                        <summary>
+                            <span>${String(index + 1).padStart(2, "0")}</span>
+                            <div>
+                                <strong>${htmlText(role.label)}</strong>
+                                <em>${htmlText(role.owner)}</em>
+                            </div>
+                            ${renderStatusPill(role.status)}
+                        </summary>
+                        <dl>
+                            <div><dt>Role</dt><dd>${htmlText(role.role)}</dd></div>
+                            <div><dt>Current</dt><dd>${htmlText(role.current_process)}</dd></div>
+                            <div><dt>Authority</dt><dd>${htmlText(role.authority)}</dd></div>
+                        </dl>
+                    </details>
+                `).join("")}
+            </div>
+        </section>
+    `;
+}
+
+function renderMissionHypotheses(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "hypotheses_pattern_recognition") || {};
+    const pattern = stage7.hypotheses_pattern_recognition || {};
+    return `
+        <section class="stage7-section mission-flow-section mission-hypotheses" data-stage7-section="hypotheses_pattern_recognition">
+            ${renderStage7SectionHeader(section, "Candidate patterns are shown as hypotheses, not as validated edges.")}
+            <div class="stage7-kpi-strip mission-kpi-strip">
+                ${renderMetric("Candidate patterns", pattern.candidate_pattern_count || 0)}
+                ${renderMetric("Validated edges", pattern.validated_edge_count || 0)}
+                ${renderMetric("Hypotheses", pattern.hypothesis_count || 0)}
+                ${renderMetric("Evidence packets", pattern.evidence_packet_count || 0)}
+                ${renderMetric("LLM review", pattern.llm_status || "not exported")}
+                ${renderMetric("Quant review", pattern.quantum_mode || pattern.quantum_status || "not exported")}
+            </div>
+            <div class="mission-pattern-grid">
+                ${asArray(pattern.patterns).map((item) => {
+                    const label = item.market_sleeve || item.label || item.sleeve_key || "Pattern";
+                    const symbols = asArray(item.watched_market_symbols || item.instrument_symbols).slice(0, 6);
+                    return `
+                        <article class="edge-pattern ${statusClass(item.status || "pending")}">
+                            <div>
+                                <span>${htmlText(label)}</span>
+                                <strong>${htmlText(item.edge_stage || item.status || "hypothesis under review").replaceAll("_", " ")}</strong>
+                            </div>
+                            <p>${htmlText(item.observed_relationship || item.current_observation || item.pattern_question || "Pattern observation not exported.")}</p>
+                            <div class="mission-chip-row">
+                                ${symbols.map((symbol) => `<span class="edge-source-dot pending">${htmlText(symbol)}</span>`).join("")}
+                            </div>
+                            <p class="mini">${htmlText(item.lead_lag_or_divergence_hypothesis || item.trading_strategy_implication || item.quantum_role || "Waiting for confirmation.")}</p>
+                        </article>
+                    `;
+                }).join("") || `<article class="edge-pattern pending"><strong>No patterns exported</strong><p>Qadam has no candidate pattern records in this snapshot.</p></article>`}
+            </div>
+            <details class="stage7-proof-drawer mission-criteria-drawer">
+                <summary>Pattern criteria and why no trade yet</summary>
+                <div class="edge-criterion-list">
+                    ${asArray(pattern.criteria).map(renderEdgeCriterion).join("")}
+                </div>
+                <p>${htmlText(pattern.why_no_trade)}</p>
+            </details>
+            <p class="stage7-section-summary">${htmlText(pattern.boundary)}</p>
+        </section>
+    `;
+}
+
+function renderMissionLearning(stage7 = {}) {
+    const section = asArray(stage7.level_1_sections).find((item) => item.id === "backtesting_learning_loop") || {};
+    const learning = stage7.backtesting_learning_loop || {};
+    return `
+        <section class="stage7-section mission-flow-section mission-learning" data-stage7-section="backtesting_learning_loop">
+            ${renderStage7SectionHeader(section, "Backtesting, replay, paper outcomes, and strategy feedback are separated clearly.")}
+            <div class="stage7-kpi-strip mission-kpi-strip">
+                ${renderMetric("Formal backtest", learning.formal_backtest_available ? learning.formal_backtest_status : "not exported")}
+                ${renderMetric("Paper-forward", learning.paper_forward_status || "not exported")}
+                ${renderMetric("Replay", learning.replay_status || "not exported")}
+                ${renderMetric("Patterns", learning.candidate_pattern_count || 0)}
+                ${renderMetric("Validated edges", learning.validated_edge_count || 0)}
+                ${renderMetric("Strategy proposals", learning.strategy_update_count || 0)}
+            </div>
+            <p class="stage7-section-summary">${htmlText(learning.explanation)}</p>
+            <div class="mission-learning-grid">
+                ${asArray(learning.cards).map((card) => `
+                    <article class="mission-flow-card ${statusClass(card.state)}">
+                        <span>${htmlText(card.label)}</span>
+                        <strong>${htmlText(card.state).replaceAll("_", " ")}</strong>
+                        <p>${htmlText(card.summary)}</p>
+                    </article>
+                `).join("")}
+            </div>
+        </section>
+    `;
+}
+
 function renderStage7Visibility(viewModels = {}) {
     const target = dashboardQuery("[data-stage7-dashboard-visibility]");
     if (!target) return;
     const stage7 = viewModels.stage7_visibility_model || {};
     target.innerHTML = `
-        <div class="stage7-visibility-shell" data-stage7-rendered data-stage7-contract="dashboard_visibility_v1">
-            <div class="stage7-hero">
+        <div class="stage7-visibility-shell mission-control-walkthrough" data-stage7-rendered data-stage7-contract="mission_control_walkthrough_v1">
+            <div class="stage7-hero mission-flow-hero">
                 <div>
-                    <p class="label">Stage 7 Dashboard Visibility</p>
-                    <h2>Fund Manager cockpit</h2>
-                    <p>Seven sections show how Qadam watches the world, reasons about evidence, considers paper trades, and manages paper capacity.</p>
+                    <p class="label">${htmlText(stage7.fund_brief?.title, "Today's Fund Brief")}</p>
+                    <h2>Qadam as a paper hedge fund</h2>
+                    <p>${htmlText(stage7.fund_brief?.body, "Qadam's paper-fund brief has not loaded yet.")}</p>
                 </div>
                 <div class="stage7-kpi-strip compact">
                     ${renderMetric("Sections", stage7.level_1_section_count || 0)}
-                    ${renderMetric("Sources", `${stage7.data_sources?.online || 0}/${stage7.data_sources?.total || 0}`)}
-                    ${renderMetric("Trade ideas", stage7.trade_consideration_board?.active_idea_count || 0)}
-                    ${renderMetric("Paper value", formatMoney(stage7.paper_portfolio_capacity?.equity_gbp))}
+                    ${renderMetric("Sources", `${stage7.source_intelligence_network?.online || 0}/${stage7.source_intelligence_network?.total || 0}`)}
+                    ${renderMetric("Markets", stage7.watched_markets_universe?.sleeve_count || 0)}
+                    ${renderMetric("Patterns", stage7.hypotheses_pattern_recognition?.candidate_pattern_count || 0)}
+                    ${renderMetric("Paper value", formatMoney(stage7.paper_fund_status?.current_value_gbp))}
                 </div>
             </div>
-            ${renderStage7SystemMap(stage7)}
-            ${renderStage7SystemStatus(stage7)}
-            ${renderStage7Sources(stage7)}
-            ${renderStage7Strategies(stage7)}
-            ${renderStage7ActivityFeed(stage7)}
-            ${renderStage7TradeBoard(stage7)}
-            ${renderStage7PortfolioCapacity(stage7)}
+            ${renderMissionLifecycleRibbon(stage7.fund_brief?.lifecycle)}
+            ${renderMissionPaperFund(stage7)}
+            ${renderMissionSourceNetwork(stage7)}
+            ${renderMissionMarkets(stage7)}
+            ${renderMissionStrategies(stage7)}
+            ${renderMissionTeam(stage7)}
+            ${renderMissionHypotheses(stage7)}
+            ${renderMissionLearning(stage7)}
             <p class="stage7-boundary">${htmlText(stage7.boundary)}</p>
         </div>
     `;

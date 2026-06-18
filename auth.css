@@ -6560,6 +6560,240 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     background: rgba(3, 5, 7, 0.42);
 }
 
+.mission-control-walkthrough {
+    counter-reset: mission-section;
+}
+
+.mission-flow-hero {
+    background:
+        linear-gradient(135deg, rgba(var(--cyan-rgb), 0.1), rgba(var(--green-rgb), 0.045) 46%, rgba(255, 255, 255, 0.018)),
+        rgba(7, 10, 12, 0.88);
+}
+
+.mission-flow-lifecycle {
+    background: rgba(2, 5, 7, 0.68);
+    border: 1px solid rgba(var(--cyan-rgb), 0.18);
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 12px;
+}
+
+.mission-flow-lifecycle li {
+    align-items: start;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mission-flow-lifecycle span,
+.mission-flow-card span,
+.mission-market-card span,
+.mission-source-group summary span {
+    color: var(--muted-soft);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mission-flow-lifecycle strong {
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+.mission-flow-section {
+    counter-increment: mission-section;
+    scroll-margin-top: 84px;
+}
+
+.mission-paper-fund,
+.mission-source-network,
+.mission-markets,
+.mission-strategies,
+.mission-team,
+.mission-hypotheses,
+.mission-learning {
+    min-width: 0;
+}
+
+.mission-flow-section > .stage7-section-head .label::before {
+    color: var(--cyan);
+    content: counter(mission-section, decimal-leading-zero) " / ";
+    font-family: var(--font-mono);
+}
+
+.mission-kpi-strip {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.mission-holdings-grid,
+.mission-source-grid,
+.mission-market-grid,
+.mission-strategy-grid,
+.mission-team-grid,
+.mission-pattern-grid,
+.mission-learning-grid {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mission-holdings-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.mission-source-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.mission-market-grid,
+.mission-pattern-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.mission-team-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mission-learning-grid,
+.mission-strategy-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.mission-flow-card,
+.mission-market-card,
+.mission-source-group {
+    background: rgba(4, 7, 10, 0.66);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+}
+
+.mission-flow-card > summary,
+.mission-source-group > summary {
+    cursor: pointer;
+    display: grid;
+    gap: 4px;
+    list-style: none;
+}
+
+.mission-flow-card > summary::-webkit-details-marker,
+.mission-source-group > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mission-flow-card strong,
+.mission-market-card strong,
+.mission-source-group strong {
+    color: var(--text);
+    line-height: 1.25;
+}
+
+.mission-flow-card p,
+.mission-market-card p,
+.mission-source-group p {
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.mission-flow-facts {
+    border-top: 1px solid var(--line-quiet);
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding-top: 10px;
+}
+
+.mission-flow-facts div {
+    display: grid;
+    gap: 4px;
+}
+
+.mission-flow-facts dt {
+    color: var(--muted-soft);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mission-flow-facts dd {
+    color: var(--text);
+    line-height: 1.35;
+    margin: 0;
+}
+
+.mission-source-group ul {
+    border-top: 1px solid var(--line-quiet);
+    display: grid;
+    gap: 7px;
+    list-style: none;
+    margin: 10px 0 0;
+    max-height: 280px;
+    overflow: auto;
+    padding: 10px 2px 0 0;
+}
+
+.mission-source-group li {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 3px;
+    padding: 8px;
+}
+
+.mission-source-group li em {
+    color: var(--cyan);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mission-chip-row,
+.mission-akber-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mission-akber-filter {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mission-akber-filter li {
+    align-items: center;
+    background: rgba(var(--cyan-rgb), 0.07);
+    border: 1px solid rgba(var(--cyan-rgb), 0.2);
+    border-radius: 999px;
+    color: var(--text);
+    display: inline-flex;
+    gap: 8px;
+    padding: 8px 10px;
+}
+
+.mission-akber-filter span {
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.mission-criteria-drawer .edge-criterion-list {
+    margin-bottom: 12px;
+}
+
 html[data-dashboard-debug="off"] .stage7-section {
     padding: 14px;
 }
@@ -6596,6 +6830,12 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
 
     .stage7-kpi-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mission-flow-lifecycle,
+    .mission-source-grid,
+    .mission-team-grid {
+        grid-template-columns: 1fr;
     }
 }
 
