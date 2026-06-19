@@ -106,6 +106,11 @@ async function main() {
         ".stage7-visibility-shell",
         ".mission-control-walkthrough",
         ".mission-paper-fund",
+        ".mission-paper-metrics",
+        ".mission-paper-exposure",
+        ".mission-paper-columns",
+        ".mission-paper-timeline",
+        ".mission-paper-drawer",
         ".mission-source-network",
         ".mission-markets",
         ".mission-strategies",
@@ -124,6 +129,8 @@ async function main() {
         "function buildStage7VisibilityModel",
         "function renderStage7Visibility",
         "function renderMissionPaperFund",
+        "function initMissionPaperFundDrawer",
+        "function renderMissionPaperFundDrawer",
         "function renderMissionSourceNetwork",
         "function renderMissionMarkets",
         "function renderMissionStrategies",
@@ -160,6 +167,13 @@ async function main() {
     assert(stage7.level_1_section_count === 7, "Mission Control must expose seven default sections");
     assert(JSON.stringify(stage7.level_1_sections.map((section) => section.id)) === JSON.stringify(REQUIRED_SECTIONS), "Mission Control section order mismatch");
     assert(stage7.paper_fund_status.current_value_gbp > 0, "Mission Control paper fund value missing");
+    assert(stage7.paper_fund_status.starting_balance_gbp === 100000, "Mission Control paper fund starting balance missing");
+    assert(stage7.paper_fund_status.cash_available_gbp > 0, "Mission Control paper cash available missing");
+    assert(stage7.paper_fund_status.capacity_used_label, "Mission Control paper capacity label missing");
+    assert(stage7.paper_fund_status.exposure_by_sleeve.length >= 5, "Mission Control exposure by sleeve missing");
+    assert(stage7.paper_fund_status.timeline_events.length > 0, "Mission Control paper timeline missing");
+    assert(stage7.paper_fund_status.quantum_review_method, "Mission Control paper trade drawer quantum method missing");
+    assert(stage7.paper_fund_status.quantum_review_method === "Classical Fallback (Deterministic)", "Mission Control must not label credential readiness as hardware quantum use");
     assert(stage7.source_intelligence_network.total >= 30, "Mission Control source count too low");
     assert(stage7.source_intelligence_network.required_blocker_count === 0, "Mission Control should not show required trade-blocking source gaps");
     assert(stage7.watched_markets_universe.sleeve_count === 5, "Mission Control watched-market sleeve count mismatch");
@@ -192,6 +206,16 @@ async function main() {
         "Backtesting &amp; Learning Loop",
         "Today&#39;s Fund Brief",
         "Qadam as a paper hedge fund",
+        "Portfolio Value",
+        "Starting Balance",
+        "Paper Capacity Used",
+        "Cash Available",
+        "Exposure by Market Sleeve",
+        "Open Positions",
+        "Recent Buys &amp; Sells",
+        "Closed Trades",
+        "Chronological Trade Timeline",
+        "Why This Trade?",
         "Paper route",
         "Research Analyst",
         "Strategy Lead",
@@ -210,6 +234,8 @@ async function main() {
     ].forEach((needle) => {
         assert(stage7Html.includes(needle), `Rendered Stage 7 missing visible copy: ${needle}`);
     });
+    assert(stage7Html.includes("data-paper-fund-detail="), "Rendered Stage 7 missing paper-fund detail payload buttons");
+    assert(stage7Html.includes("data-paper-fund-drawer"), "Rendered Stage 7 missing shared paper-fund drawer");
     assertIncludes(rendered, "[data-stage7-dashboard-visibility]", "data-stage7-contract=\"mission_control_walkthrough_v1\"");
     assert(!stage7Html.includes("Phase 7"), "Mission Control default dashboard should not expose Phase 7 copy");
     assert(!stage7Html.includes("Stage 7"), "Mission Control default dashboard should not expose Stage 7 copy");
