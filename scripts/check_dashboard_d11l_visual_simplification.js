@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260619-paper-fund-status",
-        "/dashboard.js?v=20260619-paper-fund-status"
+        "/auth.css?v=20260619-source-intelligence-network",
+        "/dashboard.js?v=20260619-source-intelligence-network"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -144,7 +144,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260619-paper-fund-status");
+    console.log("dashboard_d11l_cache_key=20260619-source-intelligence-network");
     console.log("dashboard_authority_unchanged=True");
 }
 

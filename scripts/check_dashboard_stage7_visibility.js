@@ -119,7 +119,10 @@ async function main() {
         ".mission-learning",
         ".mission-flow-lifecycle",
         ".stage7-proof-drawer",
-        ".mission-source-grid",
+        ".mission-source-category-grid",
+        ".mission-source-category",
+        ".mission-source-drawer",
+        ".mission-source-observation",
         ".mission-market-grid",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
@@ -132,6 +135,9 @@ async function main() {
         "function initMissionPaperFundDrawer",
         "function renderMissionPaperFundDrawer",
         "function renderMissionSourceNetwork",
+        "function initMissionSourceNetworkDrawer",
+        "function renderMissionSourceDrawer",
+        "function renderMissionSourceDrawerBody",
         "function renderMissionMarkets",
         "function renderMissionStrategies",
         "function renderMissionTeam",
@@ -176,6 +182,20 @@ async function main() {
     assert(stage7.paper_fund_status.quantum_review_method === "Classical Fallback (Deterministic)", "Mission Control must not label credential readiness as hardware quantum use");
     assert(stage7.source_intelligence_network.total >= 30, "Mission Control source count too low");
     assert(stage7.source_intelligence_network.required_blocker_count === 0, "Mission Control should not show required trade-blocking source gaps");
+    assert(stage7.source_intelligence_network.groups.length === 5, "Mission Control must expose five source intelligence categories");
+    assert(JSON.stringify(stage7.source_intelligence_network.groups.map((group) => group.label)) === JSON.stringify([
+        "Conflict & Geopolitics",
+        "Physical World Signals",
+        "Macro & Trade Data",
+        "Markets & Technical Analysis",
+        "Social News & Filings"
+    ]), "Mission Control source category labels mismatch");
+    assert(stage7.source_intelligence_network.groups.every((group) => group.summary.includes("connected") && group.summary.includes("degraded")), "Mission Control source categories need plain connected/degraded counts");
+    assert(stage7.source_intelligence_network.groups.some((group) => group.currently_influencing), "Mission Control source categories missing currently influencing tag");
+    assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => ["Connected", "Degraded", "Optional Gap"].includes(source.status_label)), "Mission Control source rows must use simple source status labels");
+    assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.last_update), "Mission Control source rows missing last update");
+    assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.description), "Mission Control source rows missing plain-English contribution");
+    assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).some((source) => source.recent_observation), "Mission Control source rows missing observation text");
     assert(stage7.watched_markets_universe.sleeve_count === 5, "Mission Control watched-market sleeve count mismatch");
     assert(stage7.strategy_playbook.mandate.includes("GBP 100,000"), "Mission Control mandate missing paper baseline");
     assert(stage7.strategy_playbook.mandate.includes("GBP 200,000"), "Mission Control mandate missing paper target");
@@ -216,6 +236,13 @@ async function main() {
         "Closed Trades",
         "Chronological Trade Timeline",
         "Why This Trade?",
+        "Conflict &amp; Geopolitics",
+        "Physical World Signals",
+        "Macro &amp; Trade Data",
+        "Markets &amp; Technical Analysis",
+        "Social News &amp; Filings",
+        "These sources inform Qadam&#39;s hypotheses. None of them can place trades.",
+        "Currently influencing:",
         "Paper route",
         "Research Analyst",
         "Strategy Lead",
@@ -236,6 +263,9 @@ async function main() {
     });
     assert(stage7Html.includes("data-paper-fund-detail="), "Rendered Stage 7 missing paper-fund detail payload buttons");
     assert(stage7Html.includes("data-paper-fund-drawer"), "Rendered Stage 7 missing shared paper-fund drawer");
+    assert(stage7Html.includes("data-source-category-detail="), "Rendered Stage 7 missing source category drawer payload buttons");
+    assert(stage7Html.includes("data-source-network-drawer"), "Rendered Stage 7 missing shared source network drawer");
+    assert(!stage7Html.includes("<details class=\"mission-source-group"), "Rendered Stage 7 must not use expandable source detail cards");
     assertIncludes(rendered, "[data-stage7-dashboard-visibility]", "data-stage7-contract=\"mission_control_walkthrough_v1\"");
     assert(!stage7Html.includes("Phase 7"), "Mission Control default dashboard should not expose Phase 7 copy");
     assert(!stage7Html.includes("Stage 7"), "Mission Control default dashboard should not expose Stage 7 copy");
