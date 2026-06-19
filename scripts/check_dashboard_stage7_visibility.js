@@ -133,6 +133,10 @@ async function main() {
         ".mission-strategy-card",
         ".mission-strategy-drawer",
         ".mission-strategy-gate-breakdown",
+        ".mission-team-card",
+        ".mission-team-drawer",
+        ".mission-team-quant-badge",
+        ".mission-team-cannot-list",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
 
@@ -164,6 +168,14 @@ async function main() {
         "function missionStrategyPayload",
         "Akber six-stage filter",
         "Full Akber gate breakdown",
+        "function stage7InvestmentTeamRoles",
+        "function missionTeamPayload",
+        "function initMissionTeamDrawer",
+        "function renderMissionTeamDrawer",
+        "function renderMissionTeamDrawerBody",
+        "Cannot do",
+        "Recent run types",
+        "Authority level",
         "function renderMissionTeam",
         "function renderMissionHypotheses",
         "function renderMissionLearning",
@@ -292,7 +304,34 @@ async function main() {
     ["Prediction markets", "Crude oil", "Defence", "Silver", "Semiconductors"].forEach((domain) => {
         assert(stage7.strategy_playbook.universe.map((item) => item.toLowerCase()).includes(domain.toLowerCase()), `Mission Control strategy domain missing ${domain}`);
     });
-    assert(stage7.hedge_fund_investment_team.role_count >= 7, "Mission Control investment team is too thin");
+    assert(stage7.hedge_fund_investment_team.role_count === 7, "Mission Control investment team must expose exactly seven readable roles");
+    assert(JSON.stringify(stage7.hedge_fund_investment_team.roles.map((role) => role.label)) === JSON.stringify([
+        "Chief Operating Officer (Python)",
+        "Research Analyst (Local LLM)",
+        "Strategy Lead (Frontier LLM)",
+        "Head of Quant",
+        "Risk Desk",
+        "Paper Trading Desk",
+        "Learning Review"
+    ]), "Mission Control investment team role labels/order mismatch");
+    const allowedRoleStatuses = ["Active", "Idle", "Monitoring"];
+    const allowedAuthorityLevels = ["Read Only", "Propose Only", "Execute Paper Only", "Human Governed"];
+    stage7.hedge_fund_investment_team.roles.forEach((role) => {
+        assert(allowedRoleStatuses.includes(role.status_label), `Mission Control role status invalid: ${role.label}`);
+        assert(allowedAuthorityLevels.includes(role.authority_level), `Mission Control role authority invalid: ${role.label}`);
+        assert(role.job_description, `Mission Control role job description missing: ${role.label}`);
+        assert(role.current_task, `Mission Control role current task missing: ${role.label}`);
+        assert(Array.isArray(role.cannot_do) && role.cannot_do.length >= 4, `Mission Control role guardrail list too thin: ${role.label}`);
+    });
+    const headOfQuant = stage7.hedge_fund_investment_team.roles.find((role) => role.key === "head_of_quant");
+    assert(headOfQuant, "Mission Control Head of Quant role missing");
+    assert([
+        "IBM / Q-CTRL Hardware",
+        "Fire Opal Optimisation",
+        "Classical Fallback (Deterministic)"
+    ].includes(headOfQuant.quant_method_label), "Mission Control Head of Quant method label invalid");
+    assert(headOfQuant.quant_method_label !== "Quantum", "Mission Control Head of Quant must not use generic Quantum label");
+    assert(Array.isArray(headOfQuant.quant_run_log) && headOfQuant.quant_run_log.length >= 3, "Mission Control Head of Quant run log missing");
     assert(stage7.hypotheses_pattern_recognition.candidate_pattern_count >= 5, "Mission Control pattern section missing candidates");
     assert(stage7.backtesting_learning_loop.cards.length >= 6, "Mission Control learning loop is too thin");
     assert(stage7.paper_portfolio_capacity.baseline_gbp === 100000, "Stage 7 paper capacity baseline mismatch");
@@ -335,10 +374,19 @@ async function main() {
         "Currently influencing:",
         "Paper route",
         "Research Analyst",
+        "Chief Operating Officer (Python)",
+        "Research Analyst (Local LLM)",
+        "Current task",
+        "Authority",
         "Strategy Lead",
+        "Strategy Lead (Frontier LLM)",
         "Head of Quant",
+        "Classical Fallback (Deterministic)",
         "Risk Desk",
         "Paper Trading Desk",
+        "Learning Review",
+        "data-team-role-detail=",
+        "data-team-drawer",
         "Strategy feedback model",
         "Current State",
         "Holding",
@@ -386,6 +434,7 @@ async function main() {
     assert(stage7Html.includes("data-source-category-detail="), "Rendered Stage 7 missing source category drawer payload buttons");
     assert(stage7Html.includes("data-source-network-drawer"), "Rendered Stage 7 missing shared source network drawer");
     assert(!stage7Html.includes("<details class=\"mission-source-group"), "Rendered Stage 7 must not use expandable source detail cards");
+    assert(!stage7Html.includes("<details class=\"stage7-map-node mission-team-role"), "Rendered Stage 7 must not use expandable investment team detail cards");
     assertIncludes(rendered, "[data-stage7-dashboard-visibility]", "data-stage7-contract=\"mission_control_walkthrough_v1\"");
     assert(!stage7Html.includes("Phase 7"), "Mission Control default dashboard should not expose Phase 7 copy");
     assert(!stage7Html.includes("Stage 7"), "Mission Control default dashboard should not expose Stage 7 copy");
