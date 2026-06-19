@@ -3723,6 +3723,7 @@ def main() -> int:
         "paperops_source_gap_visibility",
         {},
     )
+    paperops_completion_gaps = payload.get("paperops_completion_gaps", {})
     paperops_30_day_operations = payload.get("paperops_30_day_operations", {})
     paperops_cockpit_notification = payload.get(
         "paperops_cockpit_notification_upgrade",
@@ -4079,6 +4080,34 @@ def main() -> int:
     print(
         "cockpit_status_paperops_source_gap_visibility_silent_blocker_count="
         f"{paperops_source_gap_visibility.get('silent_blocker_count')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_status="
+        f"{paperops_completion_gaps.get('status')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_operator_required_count="
+        f"{paperops_completion_gaps.get('operator_required_item_count')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_paper_blocking_count="
+        f"{paperops_completion_gaps.get('paper_operation_blocking_gap_count')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_optional_source_gap_count="
+        f"{paperops_completion_gaps.get('optional_source_gap_count')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_bookmap_connected="
+        f"{paperops_completion_gaps.get('bookmap_connected')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_quantum_hardware_execution_confirmed="
+        f"{paperops_completion_gaps.get('quantum_hardware_execution_confirmed')}"
+    )
+    print(
+        "cockpit_status_paperops_completion_gaps_paperops_monitoring_ready="
+        f"{paperops_completion_gaps.get('paperops_monitoring_ready')}"
     )
     print(
         "cockpit_status_paperops_30_day_operations_status="
@@ -8443,6 +8472,7 @@ def main() -> int:
         "paperops_active_paper_trading_automation",
         "paperops_submit_regression_guard",
         "paperops_source_gap_visibility",
+        "paperops_completion_gaps",
     ):
         if expected_diagnostic not in diagnostics.get("audit_sections", {}):
             print(f"cockpit_status_diagnostics_section_missing={expected_diagnostic}")
@@ -9006,6 +9036,48 @@ def main() -> int:
     if paperops_source_gap_visibility.get("phase7_proof_credit_allowed") is not False:
         print("cockpit_status_paperops_source_gap_visibility_proof_credit_allowed=true")
         return 1
+    if paperops_completion_gaps.get("status") not in {
+        "paper_operational_with_non_blocking_completion_gaps",
+        "paper_operational_all_completion_items_done",
+        "paper_operation_attention_required",
+    }:
+        print("cockpit_status_paperops_completion_gaps_status_invalid=true")
+        return 1
+    if int(paperops_completion_gaps.get("validation_error_count", 0) or 0) != 0:
+        print("cockpit_status_paperops_completion_gaps_validation_errors=true")
+        return 1
+    if paperops_completion_gaps.get("public_safe") is not True:
+        print("cockpit_status_paperops_completion_gaps_not_public_safe=true")
+        return 1
+    if int(paperops_completion_gaps.get("paper_operation_blocking_gap_count", 0) or 0) != len(
+        paperops_completion_gaps.get("paper_blocking_items") or []
+    ):
+        print("cockpit_status_paperops_completion_gaps_blocking_count_mismatch=true")
+        return 1
+    if int(paperops_completion_gaps.get("operator_required_item_count", 0) or 0) != len(
+        paperops_completion_gaps.get("operator_required_items") or []
+    ):
+        print("cockpit_status_paperops_completion_gaps_operator_count_mismatch=true")
+        return 1
+    for completion_authority_field in (
+        "signal_authority",
+        "trade_candidate_creation_allowed",
+        "risk_approval_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "live_endpoint_called",
+        "secret_value_exposed",
+        "raw_secret_key_exposed",
+        "live_capital_enabled",
+        "proof_credit_allowed",
+    ):
+        if paperops_completion_gaps.get(completion_authority_field) is not False:
+            print(
+                "cockpit_status_paperops_completion_gaps_authority_leak="
+                + completion_authority_field
+            )
+            return 1
     if mission_stack.get("paperops_30_day_operations") != paperops_30_day_operations.get(
         "status"
     ):

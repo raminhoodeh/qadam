@@ -149,6 +149,8 @@ async function main() {
         ".mission-feedback-panel",
         ".mission-proposal-queue",
         ".mission-readiness-map",
+        ".mission-completion-gaps",
+        ".mission-completion-list",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
 
@@ -204,6 +206,8 @@ async function main() {
         "function renderMissionLearningDrawer",
         "function renderMissionLearningDrawerBody",
         "function renderMissionLearning",
+        "function stage7CompletionGaps",
+        "function renderMissionCompletionGaps",
         "Backtesting & Replay Lab",
         "True Backtest",
         "Scenario Replay",
@@ -235,6 +239,7 @@ async function main() {
 
     const models = buildModels();
     const stage7 = models.stage7_visibility_model;
+    assert(status.paperops_completion_gaps, "Mission Control fixture missing completion-gap status");
     assert(stage7.schema_version === "mission_control_walkthrough.v1", "Mission Control schema mismatch");
     assert(stage7.legacy_schema_version === "stage7_dashboard_visibility.v1", "Mission Control compatibility schema missing");
     assert(stage7.status === "mission_control_walkthrough_ready", "Mission Control status mismatch");
@@ -428,6 +433,12 @@ async function main() {
         assert(item.status, `Mission Control readiness map status missing: ${item.sleeve}`);
     });
     assert(stage7.backtesting_learning_loop.cards.length >= 6, "Mission Control learning compatibility cards are too thin");
+    assert(stage7.completion_gaps.status === status.paperops_completion_gaps.status, "Mission Control completion gaps status mismatch");
+    assert(stage7.completion_gaps.paper_operation_blocking_gap_count === status.paperops_completion_gaps.paper_operation_blocking_gap_count, "Mission Control completion paper blocker count mismatch");
+    assert(stage7.completion_gaps.operator_required_item_count === status.paperops_completion_gaps.operator_required_item_count, "Mission Control completion operator item count mismatch");
+    assert(stage7.completion_gaps.optional_source_gap_count === status.paperops_completion_gaps.optional_source_gap_count, "Mission Control completion optional source count mismatch");
+    assert(stage7.completion_gaps.quantum_hardware_execution_confirmed === status.paperops_completion_gaps.quantum_hardware_execution_confirmed, "Mission Control completion quantum proof mismatch");
+    assert(stage7.completion_gaps.paperops_monitoring_ready === status.paperops_completion_gaps.paperops_monitoring_ready, "Mission Control completion PaperOps readiness mismatch");
     assert(stage7.paper_portfolio_capacity.baseline_gbp === 100000, "Stage 7 paper capacity baseline mismatch");
     assert(stage7.paper_portfolio_capacity.target_gbp === 200000, "Stage 7 paper capacity target mismatch");
     Object.entries(stage7.authority).forEach(([key, value]) => {
@@ -492,6 +503,11 @@ async function main() {
         "data-hypothesis-detail=",
         "data-hypothesis-drawer",
         "Backtesting &amp; Replay Lab",
+        "Remaining setup",
+        "What still needs attention",
+        "Paper blockers",
+        "Quantum hardware",
+        "PaperOps monitor",
         "True Backtest",
         "Scenario Replay",
         "Paper Forward",

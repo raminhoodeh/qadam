@@ -130,8 +130,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260620-dashboard-final-polish",
-    "/dashboard.js?v=20260620-dashboard-final-polish"
+    "/auth.css?v=20260620-completion-gaps",
+    "/dashboard.js?v=20260620-completion-gaps"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -164,6 +164,7 @@ function assertNoUnsafePublicText(text, label) {
     ".mission-source-network",
     ".mission-markets",
     ".mission-learning",
+    ".mission-completion-gaps",
     ".source-universe-ledger",
     ".overview-control-plane",
     ".overview-readout-list",
@@ -250,6 +251,9 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Investment Team"],
         ["[data-stage7-dashboard-visibility]", "Hypotheses &amp; Pattern Recognition"],
         ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Replay Lab"],
+        ["[data-stage7-dashboard-visibility]", "Remaining setup"],
+        ["[data-stage7-dashboard-visibility]", "What still needs attention"],
+        ["[data-stage7-dashboard-visibility]", "Paper blockers"],
         ["[data-stage7-dashboard-visibility]", "GBP 100,000"],
         ["[data-stage7-dashboard-visibility]", "GBP 200,000"],
         ["[data-stage7-dashboard-visibility]", "Mission Control is read-only"],

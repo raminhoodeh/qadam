@@ -172,6 +172,10 @@ from orchestrator.paperops_submit_regression_guard import (
 from orchestrator.paperops_source_gap_visibility import (
     paperops_source_gap_visibility_public_status,
 )
+from orchestrator.paperops_completion_gaps import (
+    paperops_completion_gaps_public_status,
+    validate_paperops_completion_gaps,
+)
 from orchestrator.paperops_lifecycle_mirror_freshness import (
     build_paperops_lifecycle_mirror_freshness,
 )
@@ -6482,6 +6486,7 @@ def _diagnostics(payload: dict[str, Any]) -> dict[str, Any]:
         "paperops_notification_review",
         "paperops_submit_regression_guard",
         "paperops_source_gap_visibility",
+        "paperops_completion_gaps",
         "paperops_30_day_operations",
         "paperops_opportunity_scan_cadence",
         "paperops_cockpit_notification_upgrade",
@@ -9032,6 +9037,13 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     validate_qctrl_fire_opal_ibm_readiness(fire_opal_ibm_readiness)
     quantum_oracle["fire_opal_ibm_readiness"] = fire_opal_ibm_readiness
     watching = _build_watching(data_map, settings)
+    bookmap_public_status = _bookmap_local_bridge_status(settings)
+    source_gap_public_status = paperops_source_gap_visibility_public_status(settings)
+    paperops_30_day_public_status = paperops_30_day_operations_public_status(settings)
+    paper_live_certification_status = paper_live_certification_public_status(settings)
+    paperops_active_automation_status = (
+        paperops_active_paper_trading_automation_public_status(settings)
+    )
     payload = {
         "schema_version": COCKPIT_STATUS_SCHEMA_VERSION,
         "generated_at": generated_at,
@@ -9054,7 +9066,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "yahoo_finance": _safe_yahoo_finance_status(settings, generated_at),
         "preference_mcp": _safe_preference_mcp_status(settings, generated_at),
         "tradingview_mcp": _tradingview_mcp_status(settings),
-        "bookmap_local_bridge": _bookmap_local_bridge_status(settings),
+        "bookmap_local_bridge": bookmap_public_status,
         "modules": _build_modules(health, generated_at),
         "process_console": _build_process_console(settings, generated_at),
         "decision_philosophy": _decision_philosophy(),
@@ -9107,20 +9119,27 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_submit_regression_guard": (
             paperops_submit_regression_guard_public_status(settings)
         ),
-        "paperops_source_gap_visibility": (
-            paperops_source_gap_visibility_public_status(settings)
+        "paperops_source_gap_visibility": source_gap_public_status,
+        "paperops_completion_gaps": paperops_completion_gaps_public_status(
+            settings,
+            generated_at=generated_at,
+            source_gaps=source_gap_public_status,
+            bookmap=bookmap_public_status,
+            quantum=quantum_oracle,
+            fire_opal=fire_opal_ibm_readiness,
+            operations=paperops_30_day_public_status,
+            certification=paper_live_certification_status,
+            active_automation=paperops_active_automation_status,
         ),
-        "paperops_30_day_operations": paperops_30_day_operations_public_status(settings),
+        "paperops_30_day_operations": paperops_30_day_public_status,
         "paperops_opportunity_scan_cadence": (
             paperops_opportunity_scan_cadence_public_status(settings)
         ),
         "paperops_cockpit_notification_upgrade": (
             paperops_cockpit_notification_upgrade_public_status(settings)
         ),
-        "paper_live_certification": paper_live_certification_public_status(settings),
-        "paperops_active_paper_trading_automation": (
-            paperops_active_paper_trading_automation_public_status(settings)
-        ),
+        "paper_live_certification": paper_live_certification_status,
+        "paperops_active_paper_trading_automation": paperops_active_automation_status,
         "paperops_qualified_setup_production": (
             paperops_qualified_setup_production_public_status(settings)
         ),
@@ -9415,6 +9434,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "paperops_notification_review",
         "paperops_submit_regression_guard",
         "paperops_source_gap_visibility",
+        "paperops_completion_gaps",
         "paperops_30_day_operations",
         "paperops_opportunity_scan_cadence",
         "paperops_cockpit_notification_upgrade",
@@ -10206,6 +10226,44 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
     ):
         if int(source_gap_visibility.get(key, 0) or 0) != 0:
             raise ValueError(f"PaperOps source-gap visibility unsafe count nonzero: {key}")
+    completion_gaps = payload["paperops_completion_gaps"]
+    completion_errors = validate_paperops_completion_gaps(completion_gaps)
+    if completion_errors:
+        raise ValueError(
+            "PaperOps completion gaps validation errors present: "
+            f"{completion_errors}"
+        )
+    if completion_gaps.get("public_safe") is not True:
+        raise ValueError("PaperOps completion gaps must be public-safe")
+    if completion_gaps.get("status") not in {
+        "paper_operational_with_non_blocking_completion_gaps",
+        "paper_operational_all_completion_items_done",
+        "paper_operation_attention_required",
+    }:
+        raise ValueError("PaperOps completion gaps status is invalid")
+    if int(completion_gaps.get("paper_operation_blocking_gap_count", 0) or 0) != len(
+        completion_gaps.get("paper_blocking_items") or []
+    ):
+        raise ValueError("PaperOps completion gaps blocking count mismatch")
+    if int(completion_gaps.get("operator_required_item_count", 0) or 0) != len(
+        completion_gaps.get("operator_required_items") or []
+    ):
+        raise ValueError("PaperOps completion gaps operator item count mismatch")
+    for key in (
+        "signal_authority",
+        "trade_candidate_creation_allowed",
+        "risk_approval_allowed",
+        "execution_allowed",
+        "paper_order_allowed",
+        "broker_write_allowed",
+        "live_endpoint_called",
+        "secret_value_exposed",
+        "raw_secret_key_exposed",
+        "live_capital_enabled",
+        "proof_credit_allowed",
+    ):
+        if completion_gaps.get(key) is not False:
+            raise ValueError(f"PaperOps completion gaps must keep {key}=False")
     paperops_30_day = payload["paperops_30_day_operations"]
     missing_paperops_30_day = sorted(
         PAPEROPS_30_DAY_OPERATIONS_PUBLIC_REQUIRED_FIELDS - set(paperops_30_day)

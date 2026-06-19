@@ -21,6 +21,7 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paperops_paper_exit_path.py
 "$PYTHON_BIN" scripts/check_paper_operational_cycle.py
 "$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
+"$PYTHON_BIN" scripts/check_paperops_completion_gaps.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_edge_tracker.py
@@ -97,6 +98,7 @@ git diff --check -- \
   orchestrator/edge_tracker.py \
   orchestrator/edge_memory_ledger.py \
   orchestrator/hypothesis_lifecycle.py \
+  orchestrator/paperops_completion_gaps.py \
   orchestrator/pattern_recognition_engine.py \
   orchestrator/quantum_mandatory_review_gate.py \
   orchestrator/quantum_meta_review.py \
@@ -114,6 +116,7 @@ git diff --check -- \
   scripts/check_daily_telegram_portfolio_digest.py \
   scripts/check_dashboard_communications.js \
   scripts/check_dashboard_stage7_visibility.js \
+  scripts/check_paperops_completion_gaps.py \
   scripts/check_daily_learning_automation.py \
   scripts/check_telegram_message_specificity.py \
   scripts/check_telegram_human_brief.py \
@@ -153,6 +156,7 @@ git diff --check -- \
   docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md \
   docs/qadam-dashboard-d12-language-cleanup-2026-05-26.md \
   docs/qadam-dashboard-d13-health-language-and-ibm-readiness-2026-05-26.md \
+  docs/qadam-paperops-completion-gaps-2026-06-20.md \
   scripts/check_dashboard_d13_health_language.js \
   scripts/check_dashboard_phase6_learning_loop.js \
   scripts/check_dashboard_rs9_learning_loop.js \
