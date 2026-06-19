@@ -51,6 +51,11 @@ function assertCountAtMost(text, needle, expected, label) {
     assert(actual <= expected, `${label} expected at most ${expected} occurrence(s) of ${needle}, got ${actual}`);
 }
 
+function assertWordBudget(text, expected, label) {
+    const words = textOnly(text).split(/\s+/).filter(Boolean).length;
+    assert(words <= expected, `${label} expected at most ${expected} words, got ${words}`);
+}
+
 function assertAllAbsent(text, needles, label) {
     needles.forEach((needle) => assertAbsent(text, needle, label));
 }
@@ -128,6 +133,8 @@ async function main() {
         html(rendered, "[data-overview-source-summary]"),
     ].join(" ");
     const overviewText = textOnly(overviewHtml);
+    const missionControlHtml = html(rendered, "[data-stage7-dashboard-visibility]");
+    const missionControlText = textOnly(missionControlHtml);
 
     assertAllAbsent(overviewText, [
         "Mission Control brief",
@@ -185,6 +192,23 @@ async function main() {
     assertCountAtMost(overviewText, "This is read-only mission control", 2, "rendered overview read-only mission control copy");
     assertCount(overviewText, "Full source rows and connection ledgers live in Evidence", 0, "rendered overview evidence routing copy");
     assertCount(overviewText, "Full signal rows, candidate lineage", 0, "rendered overview trade routing copy");
+    assertWordBudget(missionControlText, 4200, "default Mission Control overview");
+    [
+        ["Today's Fund Brief", 1],
+        ["Qadam as a paper hedge fund", 1],
+        ["Paper Fund Status", 1],
+        ["Source Intelligence Network", 2],
+        ["Watched Markets Universe", 2],
+        ["Strategy Playbook", 2],
+        ["Hedge Fund Investment Team", 2],
+        ["Hypotheses & Pattern Recognition", 2],
+        ["Backtesting & Replay Lab", 2],
+        ["read-only", 1],
+        ["live capital", 2],
+        ["cannot", 2]
+    ].forEach(([needle, max]) => {
+        assertCountAtMost(missionControlText, needle, max, "default Mission Control repetition budget");
+    });
 
     assertAllIncludes(overviewText, [
         "Semiconductor Policy Options Asymmetry",
@@ -223,7 +247,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260619-dashboard-polish");
+    console.log("dashboard_cc9_cache_key=20260620-dashboard-final-polish");
 }
 
 main().catch((error) => {

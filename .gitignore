@@ -29,3 +29,9 @@ landing-page-repo/
 world-monitor/
 tradingview-mcp-main/
 Agent-Reach-main/
+
+# Local Finder/AirDrop duplicate copies. These are not source-of-truth files.
+* [0-9]
+* [0-9].*
+* [0-9][0-9]
+* [0-9][0-9].*
