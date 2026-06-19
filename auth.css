@@ -6922,26 +6922,30 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     align-content: start;
 }
 
-.mission-paper-drawer[hidden] {
+.mission-paper-drawer[hidden],
+.mission-market-drawer[hidden] {
     display: none;
 }
 
 .mission-paper-drawer,
-.mission-source-drawer {
+.mission-source-drawer,
+.mission-market-drawer {
     inset: 0;
     position: fixed;
     z-index: 80;
 }
 
 .mission-paper-drawer-backdrop,
-.mission-source-drawer-backdrop {
+.mission-source-drawer-backdrop,
+.mission-market-drawer-backdrop {
     background: rgba(0, 0, 0, 0.5);
     inset: 0;
     position: absolute;
 }
 
 .mission-paper-drawer-panel,
-.mission-source-drawer-panel {
+.mission-source-drawer-panel,
+.mission-market-drawer-panel {
     background:
         linear-gradient(180deg, rgba(var(--cyan-rgb), 0.08), rgba(255, 255, 255, 0.025)),
         rgba(7, 10, 12, 0.96);
@@ -6959,7 +6963,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 }
 
 .mission-paper-drawer-close,
-.mission-source-drawer-close {
+.mission-source-drawer-close,
+.mission-market-drawer-close {
     align-self: start;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--line);
@@ -6971,7 +6976,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 }
 
 .mission-paper-drawer h3,
-.mission-source-drawer h3 {
+.mission-source-drawer h3,
+.mission-market-drawer h3 {
     color: var(--text);
     font-size: clamp(22px, 3vw, 32px);
     line-height: 1.1;
@@ -6982,7 +6988,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     display: none;
 }
 
-.mission-source-drawer-panel > p:not(.label) {
+.mission-source-drawer-panel > p:not(.label),
+.mission-market-drawer-panel > p:not(.label) {
     color: var(--muted);
     line-height: 1.45;
     margin: 0;
@@ -7100,6 +7107,178 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     gap: 10px;
     min-width: 0;
     padding: 12px;
+}
+
+.mission-market-card {
+    align-content: start;
+    padding: 0;
+}
+
+.mission-market-card-button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    text-align: left;
+    transition: background 160ms ease, transform 160ms ease;
+    width: 100%;
+}
+
+.mission-market-card-button:hover,
+.mission-market-card-button:focus-visible {
+    background: rgba(var(--cyan-rgb), 0.055);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.mission-market-card > a {
+    border-top: 1px solid var(--line-quiet);
+    color: var(--cyan);
+    display: block;
+    font-size: 12px;
+    font-weight: 900;
+    padding: 10px 12px 12px;
+    text-decoration: none;
+}
+
+.mission-market-card > a:hover,
+.mission-market-card > a:focus-visible {
+    background: rgba(var(--cyan-rgb), 0.06);
+    outline: none;
+}
+
+.mission-market-card-top,
+.mission-market-card-facts {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.mission-market-card-top {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.mission-market-card-top em,
+.mission-market-card-facts em,
+.mission-market-drawer-card span,
+.mission-market-drawer-section header span {
+    color: var(--muted-soft);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mission-market-state {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 5px 8px;
+}
+
+.mission-market-card small,
+.mission-market-card-facts b,
+.mission-market-drawer-card p,
+.mission-market-drawer-section p,
+.mission-market-connection-list p,
+.mission-market-connection-list small,
+.mission-market-instrument-row span,
+.mission-market-instrument-row small {
+    color: var(--muted);
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.mission-market-card-facts b {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.mission-market-drawer-grid,
+.mission-market-instrument-list,
+.mission-market-connection-list {
+    display: grid;
+    gap: 8px;
+}
+
+.mission-market-drawer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mission-market-drawer-card,
+.mission-market-drawer-section,
+.mission-market-instrument-row,
+.mission-market-connection-list article {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+    padding: 10px;
+}
+
+.mission-market-drawer-card strong,
+.mission-market-drawer-section header strong,
+.mission-market-instrument-row strong,
+.mission-market-connection-list strong {
+    color: var(--text);
+}
+
+.mission-market-drawer-section header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.mission-market-movement.online,
+.mission-market-state.online {
+    border-color: rgba(var(--green-rgb), 0.36);
+}
+
+.mission-market-movement.pending,
+.mission-market-state.pending {
+    border-color: rgba(255, 199, 102, 0.36);
+}
+
+.mission-hypothesis-filter {
+    align-items: center;
+    background: rgba(var(--cyan-rgb), 0.07);
+    border: 1px solid rgba(var(--cyan-rgb), 0.2);
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 10px 12px;
+}
+
+.mission-hypothesis-filter[hidden] {
+    display: none;
+}
+
+.mission-hypothesis-filter span {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.mission-hypothesis-filter button {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    padding: 6px 10px;
 }
 
 .mission-flow-card > summary,
@@ -7266,7 +7445,8 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
 
     .mission-flow-lifecycle,
     .mission-source-grid,
-    .mission-team-grid {
+    .mission-team-grid,
+    .mission-market-drawer-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -7314,7 +7494,8 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
     }
 
     .mission-paper-drawer-panel,
-    .mission-source-drawer-panel {
+    .mission-source-drawer-panel,
+    .mission-market-drawer-panel {
         border-left: 0;
         max-width: 100vw;
     }

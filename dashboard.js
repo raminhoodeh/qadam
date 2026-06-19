@@ -4397,7 +4397,78 @@ function paperFundTimelineEvents(portfolio = {}) {
         .slice(0, 80);
 }
 
-function stage7MarketSleeves(edge = {}, strategy = {}) {
+function stage7SleeveDisplayLabel(value) {
+    const token = String(value || "").toLowerCase().replaceAll("_", " ").trim();
+    if (token === "oil" || token === "crude oil") return "Crude Oil";
+    if (token === "defence stocks" || token === "defense stocks" || token === "defense") return "Defence";
+    if (token === "prediction markets" || token === "prediction market") return "Prediction Markets";
+    if (token === "semiconductors") return "Semiconductors";
+    if (token === "silver") return "Silver";
+    return dashboardText(value, "Market sleeve");
+}
+
+function stage7SleeveKey(value) {
+    return String(stage7SleeveDisplayLabel(value))
+        .toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
+function stage7StrategyInstrumentKey(value) {
+    const token = String(value || "").toLowerCase().replaceAll(" ", "_");
+    if (token === "oil") return "crude_oil";
+    if (token === "defense") return "defence";
+    return token;
+}
+
+function stage7MarketCurrentState(sleeve = {}, family = {}, activePatterns = [], heldPositions = []) {
+    if (heldPositions.length) return "Holding";
+    const state = String(sleeve.status || family.current_state || "").toLowerCase();
+    if (/ignore|disabled|out_of_scope/.test(state)) return "Ignoring";
+    if (activePatterns.length || family.visible_in_cockpit || state) return "Watching";
+    return "Ignoring";
+}
+
+function stage7MarketAkberGate(state, family = {}, activePatterns = []) {
+    const familyState = String(family.current_state || family.setup_state || "").toLowerCase();
+    if (state === "Holding") return "Execution";
+    if (/qualified|paper_review|production/.test(familyState)) return "Risk";
+    if (/risk|sizing|staged/.test(familyState)) return "Risk";
+    if (activePatterns.length) return "Confirmation";
+    return "Context";
+}
+
+function stage7MarketMovement(sleeve = {}, heldPositions = [], activePatterns = []) {
+    const pnl = heldPositions.reduce((total, position) => total + modelNumber(position.unrealized_pnl_gbp || position.realized_pnl_gbp, 0), 0);
+    if (heldPositions.length) {
+        const direction = pnl > 0 ? "up" : (pnl < 0 ? "down" : "flat");
+        return {
+            direction,
+            reason: `${heldPositions.map((position) => position.instrument || position.symbol).filter(Boolean).join(", ")} paper holding is ${direction} by ${formatMoney(pnl)} in the mirrored Alpaca Paper account.`
+        };
+    }
+    const pattern = activePatterns[0] || {};
+    const confidenceDelta = modelNumber(pattern.confidence_after_quantum_review, 0) - modelNumber(pattern.confidence_before_quantum_review, 0);
+    if (confidenceDelta > 0) {
+        return {
+            direction: "up",
+            reason: `Pattern confidence improved after quantum review, but Qadam is still waiting for persistence and confirmation.`
+        };
+    }
+    if (confidenceDelta < 0) {
+        return {
+            direction: "down",
+            reason: `Pattern confidence weakened after review, so Qadam is keeping this sleeve under watch only.`
+        };
+    }
+    return {
+        direction: "flat",
+        reason: dashboardText(pattern.observed_relationship || sleeve.pattern_question, "No recent price movement reason exported; Qadam is watching for source-price divergence.")
+    };
+}
+
+function stage7MarketSleeves(edge = {}, strategy = {}, context = {}) {
     const fallbackSymbols = {
         "Crude Oil": ["CL=F", "BZ=F", "USO", "XLE"],
         Silver: ["SI=F", "SLV", "SIL", "PAAS"],
@@ -4416,28 +4487,88 @@ function stage7MarketSleeves(edge = {}, strategy = {}) {
             status: "pending"
         }));
     const familiesByInstrument = new Map(asArray(strategy.strategy_families || strategy.families).map((family) => [
-        String(family.instrument || family.key || "").toLowerCase(),
+        stage7StrategyInstrumentKey(family.instrument || family.key),
         family
     ]));
+    const openPositions = asArray(context.paper?.open_positions);
+    const activePatterns = asArray(context.candidate_patterns);
+    const sourceLedger = asArray(context.status?.watching).length
+        ? asArray(context.status.watching)
+        : asArray(context.status?.mission_control?.data_sources?.ledger);
+    const sourceNameByKey = new Map(sourceLedger.map((source) => [
+        source.source_key || source.key,
+        dashboardText(source.source_name || source.name || source.source_key || source.key, "Source")
+    ]));
+    const order = ["crude_oil", "silver", "semiconductors", "prediction_markets", "defence"];
     return sleeves.map((sleeve) => {
         const rawLabel = sleeve.label || sleeve.key || "Market sleeve";
-        const label = /^oil$/i.test(String(rawLabel)) ? "Crude Oil" : rawLabel;
-        const family = familiesByInstrument.get(String(sleeve.key || "").toLowerCase())
-            || familiesByInstrument.get(String(label).toLowerCase().replaceAll(" ", "_"))
+        const label = stage7SleeveDisplayLabel(rawLabel);
+        const key = stage7SleeveKey(label);
+        const family = familiesByInstrument.get(stage7StrategyInstrumentKey(sleeve.key))
+            || familiesByInstrument.get(stage7StrategyInstrumentKey(label))
             || {};
+        const sleevePatterns = activePatterns.filter((pattern) => (
+            stage7SleeveKey(pattern.sleeve_key || pattern.market_sleeve || pattern.label) === key
+            || stage7StrategyInstrumentKey(pattern.sleeve_key) === stage7StrategyInstrumentKey(sleeve.key)
+        ));
+        const instruments = asArray(sleeve.watched_instruments);
+        const instrumentSymbols = new Set(instruments.map((instrument) => String(instrument.symbol || instrument.label || "").toUpperCase()));
+        const heldPositions = openPositions.filter((position) => {
+            const instrument = String(position.instrument || position.symbol || "").toUpperCase();
+            return instrumentSymbols.has(instrument) || stage7SleeveDisplayLabel(paperFundSleeveForInstrument(instrument)) === label;
+        });
+        const currentState = stage7MarketCurrentState(sleeve, family, sleevePatterns, heldPositions);
+        const movement = stage7MarketMovement(sleeve, heldPositions, sleevePatterns);
+        const akberGate = stage7MarketAkberGate(currentState, family, sleevePatterns);
+        const sourceKeys = asArray(sleeve.primary_lens_source_keys).length
+            ? asArray(sleeve.primary_lens_source_keys)
+            : asArray(sleeve.source_keys).slice(0, 10);
+        const sourceLabels = sourceKeys.map((sourceKey) => sourceNameByKey.get(sourceKey) || dashboardText(sourceKey)).slice(0, 12);
+        const instrumentSummary = instruments.map((instrument) => instrument.symbol || instrument.label).filter(Boolean).slice(0, 6).join(", ");
         return {
-            key: sleeve.key || label.toLowerCase().replaceAll(" ", "_"),
+            key,
             label,
-            status: sleeve.status || family.current_state || "watching",
-            tone: family.qualified_setup ? "online" : stage7ToneForState(stage7PlainState(sleeve.status || family.current_state || "watching")),
-            watched_instruments: asArray(sleeve.watched_instruments),
+            raw_status: sleeve.status || family.current_state || "watching",
+            current_state: currentState,
+            status: currentState,
+            tone: currentState === "Holding" ? "online" : (currentState === "Watching" ? "pending" : "degraded"),
+            watched_instruments: instruments.map((instrument) => ({
+                symbol: instrument.symbol || instrument.label || "Instrument",
+                label: instrument.label || instrument.symbol || "Instrument",
+                instrument_type: instrument.instrument_type || "watchlist item",
+                paper_route: instrument.paper_route || "watchlist context",
+                status_note: heldPositions.some((position) => String(position.instrument || position.symbol || "").toUpperCase() === String(instrument.symbol || instrument.label || "").toUpperCase())
+                    ? "Currently held in Alpaca Paper"
+                    : dashboardText(instrument.paper_route || instrument.instrument_type, "Watched for market confirmation")
+            })),
+            instrument_summary: instrumentSummary || "No instruments exported",
             pattern_question: sleeve.pattern_question || "No pattern question exported.",
             strategy_use: sleeve.strategy_use || family.qadam_fit_reason || "Strategy use not exported.",
             active_strategy: family.label || family.key || "Strategy match pending",
+            strategy_fit: family.fit || "not scored",
+            strategy_fit_score: firstPresent(family.fit_score, null),
+            strategy_rank: firstPresent(family.rank, null),
+            why_this_market_matters: sleeve.pattern_question || family.qadam_fit_reason || "Qadam watches this sleeve for source-price divergence and paper-tradable edge.",
+            active_hypothesis_count: sleevePatterns.length,
+            active_hypotheses: sleevePatterns.map((pattern) => ({
+                id: pattern.pattern_id || pattern.sleeve_key || key,
+                label: dashboardText(pattern.market_sleeve || label),
+                status: dashboardText(pattern.status || "under review"),
+                summary: dashboardText(pattern.observed_relationship || pattern.lead_lag_or_divergence_hypothesis || "Pattern review is active."),
+                missing: asArray(pattern.missing_criteria).map((item) => dashboardText(item))
+            })),
+            recent_movement_direction: movement.direction,
+            recent_movement_reason: movement.reason,
+            akber_gate: akberGate,
+            held_instruments: heldPositions.map((position) => position.instrument || position.symbol).filter(Boolean),
+            source_keys: sourceKeys,
+            source_labels: sourceLabels,
+            source_connection_summary: `${modelNumber(sleeve.online_source_count, 0)}/${modelNumber(sleeve.source_count, 37)} sources connected; ${modelNumber(sleeve.signal_review_eligible_source_count, 0)} can support signal review.`,
             online_source_count: modelNumber(sleeve.online_source_count, 0),
-            signal_review_eligible_source_count: modelNumber(sleeve.signal_review_eligible_source_count, 0)
+            signal_review_eligible_source_count: modelNumber(sleeve.signal_review_eligible_source_count, 0),
+            order_index: order.includes(key) ? order.indexOf(key) : 99
         };
-    });
+    }).sort((a, b) => a.order_index - b.order_index);
 }
 
 function stage7LearningLoopModel(status = {}, edge = {}) {
@@ -4563,11 +4694,16 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             summary: "Akber's 6-stage method filters every setup before paper action."
         }
     };
-    const marketSleeves = stage7MarketSleeves(edge, strategyModel);
     const dailyEdge = status.daily_edge_findings_brief || {};
     const candidatePatterns = asArray(dailyEdge.patterns_observed).length
         ? asArray(dailyEdge.patterns_observed)
         : asArray(edge.pattern_ledger?.patterns || status.edge_pattern_ledger?.patterns);
+    const marketSleeves = stage7MarketSleeves(edge, strategyModel, {
+        paper,
+        status,
+        sourceGroups,
+        candidate_patterns: candidatePatterns
+    });
     const dailyBriefState = stage7PlainState(dailyBrief.status || "not exported");
     const activityItems = [
         {
@@ -9635,38 +9771,229 @@ function renderMissionSourceNetwork(stage7 = {}) {
     `;
 }
 
+function missionMarketPayload(sleeve = {}) {
+    return {
+        title: dashboardText(sleeve.label, "Market sleeve"),
+        key: dashboardText(sleeve.key, ""),
+        current_state: dashboardText(sleeve.current_state, "Watching"),
+        instrument_summary: dashboardText(sleeve.instrument_summary, "No instruments exported"),
+        why_this_market_matters: dashboardText(sleeve.why_this_market_matters || sleeve.pattern_question, "Qadam watches this sleeve for source-price divergence and paper-tradable edge."),
+        active_strategy: dashboardText(sleeve.active_strategy, "Strategy match pending"),
+        strategy_use: dashboardText(sleeve.strategy_use, "Strategy use not exported."),
+        strategy_fit: dashboardText(sleeve.strategy_fit || sleeve.strategy_fit_score, "not scored"),
+        strategy_rank: dashboardText(sleeve.strategy_rank, "not ranked"),
+        akber_gate: dashboardText(sleeve.akber_gate, "Context"),
+        recent_movement_direction: dashboardText(sleeve.recent_movement_direction, "flat"),
+        recent_movement_reason: dashboardText(sleeve.recent_movement_reason, "No recent price movement reason exported."),
+        source_connection_summary: dashboardText(sleeve.source_connection_summary, "Source connection summary not exported."),
+        source_labels: asArray(sleeve.source_labels).map((source) => dashboardText(source, "Source")),
+        instruments: asArray(sleeve.watched_instruments).map((instrument) => ({
+            symbol: dashboardText(instrument.symbol || instrument.label, "Instrument"),
+            label: dashboardText(instrument.label || instrument.symbol, "Instrument"),
+            instrument_type: dashboardText(instrument.instrument_type, "watchlist item"),
+            paper_route: dashboardText(instrument.paper_route, "watchlist context"),
+            status_note: dashboardText(instrument.status_note, "Watched for market confirmation")
+        })),
+        hypotheses: asArray(sleeve.active_hypotheses).map((hypothesis) => ({
+            id: dashboardText(hypothesis.id, ""),
+            label: dashboardText(hypothesis.label, "Hypothesis"),
+            status: dashboardText(hypothesis.status, "under review"),
+            summary: dashboardText(hypothesis.summary, "Pattern review is active."),
+            missing: asArray(hypothesis.missing).map((item) => dashboardText(item, "criterion"))
+        })),
+        held_instruments: asArray(sleeve.held_instruments).map((instrument) => dashboardText(instrument, "Instrument"))
+    };
+}
+
+function missionMarketAttribute(sleeve = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionMarketPayload(sleeve))));
+}
+
+function renderMissionMarketDrawer() {
+    return `
+        <aside class="mission-market-drawer" data-market-drawer hidden aria-hidden="true" aria-label="Watched market sleeve drawer">
+            <div class="mission-market-drawer-backdrop" data-market-drawer-close></div>
+            <section class="mission-market-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="market-drawer-title">
+                <button class="mission-market-drawer-close" type="button" data-market-drawer-close aria-label="Close market detail">Close</button>
+                <p class="label">Watched Markets Universe</p>
+                <h3 id="market-drawer-title" data-market-drawer-title>Market sleeve</h3>
+                <p data-market-drawer-summary></p>
+                <div data-market-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionMarketDrawerBody(detail = {}) {
+    const instruments = asArray(detail.instruments);
+    const hypotheses = asArray(detail.hypotheses);
+    const sources = asArray(detail.source_labels);
+    return `
+        <div class="mission-market-drawer-grid">
+            <article class="mission-market-drawer-card">
+                <span>Current State</span>
+                <strong>${htmlText(detail.current_state)}</strong>
+                <p>${htmlText(detail.why_this_market_matters)}</p>
+            </article>
+            <article class="mission-market-drawer-card">
+                <span>Strategy currently applied</span>
+                <strong>${htmlText(detail.active_strategy)}</strong>
+                <p>${htmlText(detail.strategy_use)}</p>
+            </article>
+            <article class="mission-market-drawer-card">
+                <span>Current Akber gate</span>
+                <strong>${htmlText(detail.akber_gate)}</strong>
+                <p>Rank ${htmlText(detail.strategy_rank)} · fit ${htmlText(detail.strategy_fit)}</p>
+            </article>
+            <article class="mission-market-drawer-card mission-market-movement ${statusClass(detail.recent_movement_direction)}">
+                <span>Recent Movement</span>
+                <strong>${htmlText(detail.recent_movement_direction)}</strong>
+                <p>${htmlText(detail.recent_movement_reason)}</p>
+            </article>
+        </div>
+        <section class="mission-market-drawer-section">
+            <header>
+                <span>Full instrument list</span>
+                <strong>${instruments.length}</strong>
+            </header>
+            <div class="mission-market-instrument-list">
+                ${instruments.length ? instruments.map((instrument) => `
+                    <article class="mission-market-instrument-row">
+                        <strong>${htmlText(instrument.symbol)}</strong>
+                        <span>${htmlText(instrument.label)} · ${htmlText(instrument.instrument_type)}</span>
+                        <small>${htmlText(instrument.paper_route)} · ${htmlText(instrument.status_note)}</small>
+                    </article>
+                `).join("") : `<p class="mini">No individual instruments exported for this sleeve.</p>`}
+            </div>
+        </section>
+        <section class="mission-market-drawer-section">
+            <header>
+                <span>Active hypothesis summary</span>
+                <strong>${hypotheses.length}</strong>
+            </header>
+            <div class="mission-market-connection-list">
+                ${hypotheses.length ? hypotheses.map((hypothesis) => `
+                    <article>
+                        <strong>${htmlText(hypothesis.label)}</strong>
+                        <span>${htmlText(hypothesis.status)}</span>
+                        <p>${htmlText(hypothesis.summary)}</p>
+                        ${asArray(hypothesis.missing).length ? `<small>Waiting for: ${htmlText(asArray(hypothesis.missing).join(", "))}</small>` : `<small>No missing criteria exported.</small>`}
+                    </article>
+                `).join("") : `<p class="mini">No active hypothesis is currently attached to this sleeve.</p>`}
+            </div>
+        </section>
+        <section class="mission-market-drawer-section">
+            <header>
+                <span>Data sources feeding this sleeve</span>
+                <strong>${sources.length}</strong>
+            </header>
+            <p>${htmlText(detail.source_connection_summary)}</p>
+            <div class="mission-chip-row">
+                ${sources.length ? sources.map((source) => `<span class="edge-source-dot pending">${htmlText(source)}</span>`).join("") : `<span class="edge-source-dot pending">Source mapping not exported</span>`}
+            </div>
+        </section>
+        <p class="mini">Connection path: source category to market sleeve to strategy to hypothesis. The market sleeve cannot create trades; Qadam still routes any paper order through the guarded Alpaca Paper path.</p>
+    `;
+}
+
+function initMissionMarketDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-market-drawer]");
+    const title = root.querySelector("[data-market-drawer-title]");
+    const summary = root.querySelector("[data-market-drawer-summary]");
+    const body = root.querySelector("[data-market-drawer-body]");
+    if (!drawer || !title || !summary || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    root.querySelectorAll("[data-market-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-market-sleeve-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.marketSleeveDetail || "%7B%7D"));
+                title.textContent = detail.title || "Market sleeve";
+                summary.textContent = `${detail.current_state || "Watching"} · ${detail.instrument_summary || "No instruments exported"}`;
+                body.innerHTML = renderMissionMarketDrawerBody(detail);
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-market-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Market sleeve unavailable";
+                summary.textContent = "This sleeve did not expose a readable detail payload.";
+                body.innerHTML = `<p class="mini">Open the Reasoning view for raw hypothesis diagnostics.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+    const filterBanner = root.querySelector("[data-hypothesis-filter-banner]");
+    const filterText = root.querySelector("[data-hypothesis-filter-text]");
+    const clearFilter = () => {
+        root.querySelectorAll("[data-hypothesis-sleeve]").forEach((card) => {
+            card.hidden = false;
+        });
+        if (filterBanner) filterBanner.hidden = true;
+    };
+    root.querySelectorAll("[data-hypothesis-filter-clear]").forEach((button) => {
+        button.addEventListener("click", clearFilter);
+    });
+    root.querySelectorAll("[data-market-hypothesis-link]").forEach((link) => {
+        link.addEventListener("click", () => {
+            const sleeveKey = link.dataset.marketHypothesisLink || "";
+            const label = link.dataset.marketHypothesisLabel || "selected sleeve";
+            if (!sleeveKey) return;
+            root.querySelectorAll("[data-hypothesis-sleeve]").forEach((card) => {
+                card.hidden = card.dataset.hypothesisSleeve !== sleeveKey;
+            });
+            if (filterBanner && filterText) {
+                filterText.textContent = `Showing hypotheses for ${label}.`;
+                filterBanner.hidden = false;
+            }
+        });
+    });
+}
+
 function renderMissionMarkets(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "watched_markets_universe") || {};
     const universe = stage7.watched_markets_universe || {};
     return `
         <section class="stage7-section mission-flow-section mission-markets" data-stage7-section="watched_markets_universe">
             ${renderStage7SectionHeader(section, "The focused markets Qadam scans for edge.")}
-            <div class="stage7-kpi-strip mission-kpi-strip">
-                ${renderMetric("Market sleeves", universe.sleeve_count || 0)}
-                ${renderMetric("Watched instruments", universe.watched_instrument_count || 0)}
-                ${renderMetric("Price watch", universe.price_watch_status || "listed")}
-            </div>
             <div class="mission-market-grid">
                 ${asArray(universe.sleeves).map((sleeve) => `
                     <article class="mission-market-card ${statusClass(sleeve.tone || sleeve.status)}">
-                        <div>
-                            <span>${htmlText(sleeve.active_strategy)}</span>
+                        <button class="mission-market-card-button" type="button" data-market-sleeve-detail="${missionMarketAttribute(sleeve)}" aria-label="Open ${literalHtmlText(sleeve.label)} market sleeve">
+                            <span class="mission-market-card-top">
+                                <em>Current State</em>
+                                <strong class="mission-market-state ${statusClass(sleeve.tone || sleeve.status)}">${htmlText(sleeve.current_state)}</strong>
+                            </span>
                             <strong>${htmlText(sleeve.label)}</strong>
-                            <p>${htmlText(sleeve.pattern_question)}</p>
-                        </div>
-                        <div class="mission-chip-row">
-                            ${asArray(sleeve.watched_instruments).map((instrument) => `
-                                <span class="edge-instrument-chip">
-                                    <strong>${htmlText(instrument.symbol || instrument.label)}</strong>
-                                    <em>${htmlText(instrument.paper_route || instrument.instrument_type || "watchlist")}</em>
-                                </span>
-                            `).join("")}
-                        </div>
-                        <p class="mini">${htmlText(sleeve.strategy_use)}</p>
+                            <p>${htmlText(sleeve.instrument_summary)}</p>
+                            <small>${htmlText(sleeve.why_this_market_matters || sleeve.pattern_question)}</small>
+                            <span class="mission-market-card-facts">
+                                <em>Strategy currently applied</em>
+                                <b>${htmlText(sleeve.active_strategy)}</b>
+                            </span>
+                            <span class="mission-market-card-facts">
+                                <em>Current Akber gate</em>
+                                <b>${htmlText(sleeve.akber_gate)}</b>
+                            </span>
+                            <span class="mission-market-card-facts mission-market-movement ${statusClass(sleeve.recent_movement_direction)}">
+                                <em>Recent Movement</em>
+                                <b>${htmlText(sleeve.recent_movement_direction)} · ${htmlText(sleeve.recent_movement_reason)}</b>
+                            </span>
+                        </button>
+                        <a href="#hypotheses_pattern_recognition" data-market-hypothesis-link="${literalHtmlText(sleeve.key)}" data-market-hypothesis-label="${literalHtmlText(sleeve.label)}">
+                            Active Hypotheses: ${htmlText(sleeve.active_hypothesis_count || 0)}
+                        </a>
                     </article>
                 `).join("")}
             </div>
             <p class="stage7-section-summary">${htmlText(universe.boundary)}</p>
+            ${renderMissionMarketDrawer()}
         </section>
     `;
 }
@@ -9749,7 +10076,7 @@ function renderMissionHypotheses(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "hypotheses_pattern_recognition") || {};
     const pattern = stage7.hypotheses_pattern_recognition || {};
     return `
-        <section class="stage7-section mission-flow-section mission-hypotheses" data-stage7-section="hypotheses_pattern_recognition">
+        <section class="stage7-section mission-flow-section mission-hypotheses" id="hypotheses_pattern_recognition" data-stage7-section="hypotheses_pattern_recognition">
             ${renderStage7SectionHeader(section, "Candidate patterns are shown as hypotheses, not as validated edges.")}
             <div class="stage7-kpi-strip mission-kpi-strip">
                 ${renderMetric("Candidate patterns", pattern.candidate_pattern_count || 0)}
@@ -9759,12 +10086,16 @@ function renderMissionHypotheses(stage7 = {}) {
                 ${renderMetric("LLM review", pattern.llm_status || "not exported")}
                 ${renderMetric("Quant review", pattern.quantum_mode || pattern.quantum_status || "not exported")}
             </div>
+            <div class="mission-hypothesis-filter" data-hypothesis-filter-banner hidden>
+                <span data-hypothesis-filter-text>Showing selected sleeve hypotheses.</span>
+                <button type="button" data-hypothesis-filter-clear>Show all</button>
+            </div>
             <div class="mission-pattern-grid">
                 ${asArray(pattern.patterns).map((item) => {
                     const label = item.market_sleeve || item.label || item.sleeve_key || "Pattern";
                     const symbols = asArray(item.watched_market_symbols || item.instrument_symbols).slice(0, 6);
                     return `
-                        <article class="edge-pattern ${statusClass(item.status || "pending")}">
+                        <article class="edge-pattern ${statusClass(item.status || "pending")}" data-hypothesis-sleeve="${literalHtmlText(stage7SleeveKey(label))}">
                             <div>
                                 <span>${htmlText(label)}</span>
                                 <strong>${htmlText(item.edge_stage || item.status || "hypothesis under review").replaceAll("_", " ")}</strong>
@@ -9851,6 +10182,7 @@ function renderStage7Visibility(viewModels = {}) {
     `;
     initMissionPaperFundDrawer(target);
     initMissionSourceNetworkDrawer(target);
+    initMissionMarketDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {
