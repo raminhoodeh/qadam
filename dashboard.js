@@ -4812,6 +4812,192 @@ function missionControlTeamRoleLabel(role = {}) {
     return labels[key] || role.label || role.owner || "Qadam role";
 }
 
+function stage7RoleStatusLabel(status, currentTask = "") {
+    const text = `${status || ""} ${currentTask || ""}`.toLowerCase();
+    if (/idle|standby|no active/.test(text)) return "Idle";
+    if (/review|pending|blocked|deferred|monitor|waiting|queued/.test(text)) return "Monitoring";
+    if (/online|ok|ready|active|connected|certified|enabled|configured|available/.test(text)) return "Active";
+    return "Monitoring";
+}
+
+function stage7RoleStatusTone(statusLabel) {
+    if (statusLabel === "Active") return "online";
+    if (statusLabel === "Idle") return "pending";
+    return "pending";
+}
+
+function stage7AuthorityLabel(authority = "") {
+    const text = String(authority || "").toLowerCase();
+    if (/guarded_paper|execute_paper|paper_only/.test(text)) return "Execute Paper Only";
+    if (/human|review|write_blocked|approval|governed/.test(text)) return "Human Governed";
+    if (/non_executable|propose|shadow|challenge/.test(text)) return "Propose Only";
+    return "Read Only";
+}
+
+function stage7RoleCannotDo(key, authorityLevel) {
+    const shared = [
+        "enable live capital",
+        "call live broker endpoints",
+        "bypass Qadam's paper safety gates"
+    ];
+    const specific = {
+        coo: ["invent trades by itself", "override risk or execution policy", "send operational commands from the dashboard"],
+        research_analyst: ["place trades", "approve a hypothesis", "change strategy weights"],
+        strategy_lead: ["submit orders", "override the Head of Quant or Risk Desk", "self-apply strategy changes"],
+        head_of_quant: ["place trades", "approve risk sizing", "claim hardware execution when the run used fallback"],
+        risk_desk: ["create a thesis", "submit broker orders directly", "ignore idempotency or account reconciliation"],
+        paper_trading_desk: ["trade live capital", "submit outside the guarded Alpaca Paper route", "change strategy logic"],
+        learning_review: ["mutate strategy weights silently", "approve its own proposals", "create broker writes"]
+    };
+    const authority = authorityLevel === "Execute Paper Only"
+        ? ["execute outside approved paper-only authority"]
+        : [`act beyond ${authorityLevel.toLowerCase()} authority`];
+    return [...(specific[key] || []), ...authority, ...shared];
+}
+
+function stage7QuantRunLog(quantumOracle = {}, qctrl = {}, fireOpal = {}, quantMethodLabel = "Classical Fallback (Deterministic)") {
+    const oracleBackend = dashboardText(firstPresent(quantumOracle.backend, quantumOracle.latest_backend), "not exported");
+    const oracleMode = dashboardText(firstPresent(quantumOracle.mode, quantumOracle.latest_local_simulation_mode), "not exported");
+    const qctrlStatus = dashboardText(qctrl.status, "not exported");
+    const fireOpalStatus = dashboardText(fireOpal.status, "not exported");
+    return [
+        {
+            label: "Latest review method",
+            method: quantMethodLabel,
+            detail: `Latest exported oracle backend is ${oracleBackend} with mode ${oracleMode}.`
+        },
+        {
+            label: "Q-CTRL product access",
+            method: quantMethodLabel,
+            detail: `Q-CTRL status is ${qctrlStatus}; this does not by itself mean hardware execution.`
+        },
+        {
+            label: "IBM / Fire Opal device path",
+            method: quantMethodLabel,
+            detail: `IBM / Fire Opal status is ${fireOpalStatus}; Qadam only reports hardware when the actual run method confirms it.`
+        }
+    ];
+}
+
+function stage7FindRawTeamRole(rawRoles = [], keys = []) {
+    const wanted = keys.map((key) => String(key || "").toLowerCase());
+    return asArray(rawRoles).find((role) => {
+        const roleKey = String(role.key || "").toLowerCase();
+        const roleLabel = String(role.label || "").toLowerCase();
+        const roleOwner = String(role.owner || "").toLowerCase();
+        return wanted.some((key) => roleKey === key || roleLabel.includes(key) || roleOwner.includes(key));
+    }) || {};
+}
+
+function stage7BuildTeamRole(config = {}, rawRoles = [], context = {}) {
+    const raw = stage7FindRawTeamRole(rawRoles, config.raw_keys || [config.key]);
+    const currentTask = dashboardText(raw.current_process || config.current_task, "Monitoring the current paper-fund snapshot.");
+    const statusLabel = stage7RoleStatusLabel(raw.status || config.status, currentTask);
+    const authorityLevel = stage7AuthorityLabel(raw.authority || config.authority);
+    const quantMethodLabel = config.key === "head_of_quant"
+        ? context.quant_method_label || raw.quant_method_label || "Classical Fallback (Deterministic)"
+        : null;
+    return {
+        key: config.key,
+        label: config.label,
+        owner: config.owner,
+        status_label: statusLabel,
+        status_tone: stage7RoleStatusTone(statusLabel),
+        raw_status: dashboardText(raw.status || config.status, "not exported"),
+        job_description: dashboardText(config.job_description || raw.role, "Role description not exported."),
+        full_description: dashboardText(raw.role || config.full_description || config.job_description, "Role description not exported."),
+        current_task: currentTask,
+        authority_level: authorityLevel,
+        cannot_do: stage7RoleCannotDo(config.key, authorityLevel),
+        quant_method_label: quantMethodLabel,
+        quant_run_log: config.key === "head_of_quant"
+            ? stage7QuantRunLog(context.quantum_oracle, context.qctrl, context.fire_opal, quantMethodLabel)
+            : []
+    };
+}
+
+function stage7InvestmentTeamRoles(rawRoles = [], context = {}) {
+    return [
+        stage7BuildTeamRole({
+            key: "coo",
+            raw_keys: ["coo", "chief operating officer", "python"],
+            label: "Chief Operating Officer (Python)",
+            owner: "Python Orchestrator",
+            status: context.active_automation?.status || "active",
+            authority: "read_only",
+            job_description: "Keeps Qadam's local operating system coordinated and paper-safe.",
+            full_description: "The Python COO coordinates source refreshes, PaperOps checks, dashboard snapshots, and local health boundaries.",
+            current_task: context.active_automation?.unattended_paper_execution_delegation_reason || "Coordinating PaperOps, source health, and public-safe dashboard snapshots."
+        }, rawRoles, context),
+        stage7BuildTeamRole({
+            key: "research_analyst",
+            raw_keys: ["research_analyst", "research analyst", "local llm"],
+            label: "Research Analyst (Local LLM)",
+            owner: "Local LLM",
+            status: context.local_review?.status || "active",
+            authority: "non_executable",
+            job_description: "Compresses noisy source observations into research packets.",
+            full_description: "The local research analyst reads the source network and converts raw observations into public-safe research context.",
+            current_task: context.local_review?.summary || `Processing ${context.source_count || 0} connected and degraded source feeds into research packets.`
+        }, rawRoles, context),
+        stage7BuildTeamRole({
+            key: "strategy_lead",
+            raw_keys: ["strategy_lead", "strategy lead", "frontier llm"],
+            label: "Strategy Lead (Frontier LLM)",
+            owner: "Frontier LLM",
+            status: context.strategy_review?.status || "active",
+            authority: "non_executable",
+            job_description: "Challenges hypotheses and decides whether an idea deserves deeper review.",
+            full_description: "The Strategy Lead challenges local research, compares it with the watched market universe, and prepares strategy-level recommendations.",
+            current_task: context.strategy_review?.summary || "Challenging hypotheses against source agreement, market reaction, and strategy fit."
+        }, rawRoles, context),
+        stage7BuildTeamRole({
+            key: "head_of_quant",
+            raw_keys: ["head_of_quant", "head of quant", "quant"],
+            label: "Head of Quant",
+            owner: "Quant review",
+            status: context.quantum_oracle?.status || context.qctrl?.status || "monitoring",
+            authority: "non_executable",
+            job_description: "Reviews non-linear pattern evidence and reports the actual run method.",
+            full_description: "The Head of Quant checks whether candidate patterns survive bounded non-linear review, and it must state whether the latest run used hardware, Fire Opal optimisation, or classical fallback.",
+            current_task: context.quant_review?.summary || `${context.quant_method_label} used for the latest exported review.`
+        }, rawRoles, context),
+        stage7BuildTeamRole({
+            key: "risk_desk",
+            raw_keys: ["risk_desk", "risk desk", "risk_agent", "safety_policy", "signal_integrity_gate"],
+            label: "Risk Desk",
+            owner: "Risk and execution gates",
+            status: context.signal_review?.status || context.status?.risk_agent?.status || "monitoring",
+            authority: "write_blocked",
+            job_description: "Blocks weak, oversized, stale, or unauthorized ideas before paper execution.",
+            full_description: "The Risk Desk checks signal integrity, sizing, policy, idempotency, and execution eligibility before PaperOps can act.",
+            current_task: context.signal_review?.summary || `${context.trade_counts?.candidate || 0} candidates and ${context.trade_counts?.blocked || 0} blocked ideas under review.`
+        }, rawRoles, context),
+        stage7BuildTeamRole({
+            key: "paper_trading_desk",
+            raw_keys: ["paper_trading_desk", "paper trading desk", "paper_demo_state", "broker_reconciliation", "execution_adapter_status", "paperops"],
+            label: "Paper Trading Desk",
+            owner: "Alpaca Paper",
+            status: context.paper_context?.connection_status || context.status?.alpaca_paper_mirror?.status || "active",
+            authority: "guarded_paper_only",
+            job_description: "Records paper-only orders, positions, receipts, and account mirror state.",
+            full_description: "The Paper Trading Desk is the only role connected to the Alpaca Paper route, and even it remains bounded by guarded paper-only authority.",
+            current_task: `${context.paper?.open_position_count || 0} open positions, ${context.paper?.closed_trade_count || 0} closed paper trades, live capital off.`
+        }, rawRoles, context),
+        stage7BuildTeamRole({
+            key: "learning_review",
+            raw_keys: ["learning_review", "learning review", "rs-9", "promotion"],
+            label: "Learning Review",
+            owner: "Postmortems and strategy feedback",
+            status: context.learning_status || "review_ready",
+            authority: "review_only",
+            job_description: "Turns paper outcomes into human-governed learning proposals.",
+            full_description: "Learning Review compares postmortems, paper-forward evidence, strategy updates, and promotion gates without silently changing live strategy.",
+            current_task: `Daily learning brief ${stage7PlainState(context.daily_brief?.status)}; strategy proposals remain human-governed.`
+        }, rawRoles, context)
+    ];
+}
+
 function buildStage7VisibilityModel(status = {}, models = {}) {
     const overview = models.overview_model || {};
     const contract = models.founder_contract_model || {};
@@ -4839,26 +5025,35 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
     const strategyReview = asArray(reasoning.review_chain).find((review) => review.key === "strategy_lead") || {};
     const signalReview = asArray(reasoning.review_chain).find((review) => review.key === "signal_integrity") || {};
     const quantReview = reasoning.quant_annotation || {};
-    const teamRoles = asArray(status.mission_control?.team).length
-        ? asArray(status.mission_control.team).map((role) => ({
-            key: role.key || role.label,
-            label: missionControlTeamRoleLabel(role),
-            owner: role.owner || "Qadam",
-            status: role.status || "pending",
-            tone: stage7ToneForState(stage7PlainState(role.status || "pending")),
-            role: role.one_line || role.current_process || "Role description not exported.",
-            current_process: role.current_process || "No current process exported.",
-            authority: role.authority || "read_only"
-        }))
-        : [
-            { key: "coo", label: "Chief Operating Officer", owner: "Python Orchestrator", status: activeAutomation.status || "online", role: "Coordinates local modules, health checks, and paper-mode boundaries.", current_process: activeAutomation.unattended_paper_execution_delegation_reason || "Supervising local modules.", authority: "read_only" },
-            { key: "research_analyst", label: "Research Analyst", owner: "Local LLM", status: localReview.status || "online", role: "Compresses noisy observations into research packets.", current_process: localReview.summary || "Local triage available.", authority: "non_executable" },
-            { key: "strategy_lead", label: "Strategy Lead", owner: "Frontier LLM", status: strategyReview.status || "online", role: "Challenges hypotheses and strategy packets.", current_process: strategyReview.summary || "Strategy challenge available.", authority: "non_executable" },
-            { key: "head_of_quant", label: "Head of Quant", owner: "Quantum/classical review", status: quantumOracle.status || qctrl.status || "pending", role: "Runs bounded non-linear scenario review.", current_process: quantReview.summary || `${quantMethodLabel} visible for the latest exported review.`, authority: "non_executable", quant_method_label: quantMethodLabel },
-            { key: "risk_desk", label: "Risk Desk", owner: "Risk and execution gates", status: status.risk_agent?.status || signalReview.status || "pending", role: "Blocks weak setups and sizes paper exposure only after gates pass.", current_process: signalReview.summary || `${tradeCounts.candidate || 0} candidates and ${tradeCounts.blocked || 0} blocked ideas.`, authority: "write_blocked" },
-            { key: "paper_trading_desk", label: "Paper Trading Desk", owner: "Alpaca Paper", status: paperContext.connection_status || status.alpaca_paper_mirror?.status || "online", role: "Mirrors and reconciles Alpaca Paper orders and positions.", current_process: `${paper.open_position_count || 0} open positions; live capital off.`, authority: "guarded_paper_only" },
-            { key: "learning_review", label: "Learning Review", owner: "Postmortems and strategy feedback", status: learningStatus || "review_ready", role: "Turns outcomes into proposed learning updates.", current_process: `Daily learning brief ${stage7PlainState(dailyBrief.status)}.`, authority: "review_only" }
-        ].map((role) => ({ ...role, tone: stage7ToneForState(stage7PlainState(role.status)) }));
+    const rawTeamRoles = asArray(status.mission_control?.team).map((role) => ({
+        key: role.key || role.label,
+        label: missionControlTeamRoleLabel(role),
+        owner: role.owner || "Qadam",
+        status: role.status || "pending",
+        tone: stage7ToneForState(stage7PlainState(role.status || "pending")),
+        role: role.one_line || role.current_process || "Role description not exported.",
+        current_process: role.current_process || "No current process exported.",
+        authority: role.authority || "read_only",
+        quant_method_label: role.quant_method_label
+    }));
+    const teamRoles = stage7InvestmentTeamRoles(rawTeamRoles, {
+        active_automation: activeAutomation,
+        local_review: localReview,
+        strategy_review: strategyReview,
+        signal_review: signalReview,
+        quant_review: quantReview,
+        quantum_oracle: quantumOracle,
+        qctrl,
+        fire_opal: fireOpal,
+        quant_method_label: quantMethodLabel,
+        paper,
+        paper_context: paperContext,
+        daily_brief: dailyBrief,
+        learning_status: learningStatus,
+        trade_counts: tradeCounts,
+        source_count: sourceCounts.total || status.mission_control?.data_sources?.total || asArray(status.watching).length,
+        status
+    });
     const sourceGroups = stage7SourceGroups(status, sources);
     const strategyFamilies = asArray(missionStrategy.strategy_families).length
         ? asArray(missionStrategy.strategy_families)
@@ -5033,7 +5228,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         hedge_fund_investment_team: {
             roles: teamRoles,
             role_count: teamRoles.length,
-            status: teamRoles.some((role) => role.tone === "blocked") ? "needs_review" : "online",
+            status: teamRoles.some((role) => role.status_tone === "blocked") ? "needs_review" : "online",
             sentence: "Qadam works like a small paper hedge fund team: data feeds observe, the Python COO coordinates, models research, quant challenges, risk gates, Alpaca Paper records, and learning reviews outcomes."
         },
         hypotheses_pattern_recognition: {
@@ -5053,7 +5248,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         },
         backtesting_learning_loop: learningLoop,
         operating_map: {
-            nodes: teamRoles.map((role) => stage7BuildNode(role.key, role.owner, role.label, role.role, role.status, role.current_process, "Passes public-safe state to the next review step.", role.authority)),
+            nodes: teamRoles.map((role) => stage7BuildNode(role.key, role.owner, role.label, role.job_description, role.status_label, role.current_task, "Passes public-safe state to the next review step.", role.authority_level)),
             edges: [
                 { from: "sources", to: "markets", state: "solid", label: "observations mapped to watched markets" },
                 { from: "markets", to: "strategies", state: "solid", label: "market sleeve to strategy playbook" },
@@ -10398,6 +10593,137 @@ function renderMissionStrategies(stage7 = {}) {
     `;
 }
 
+function missionTeamPayload(role = {}) {
+    return {
+        key: dashboardText(role.key, "role"),
+        title: dashboardText(role.label, "Qadam role"),
+        owner: dashboardText(role.owner, "Qadam"),
+        status_label: dashboardText(role.status_label, "Monitoring"),
+        raw_status: dashboardText(role.raw_status, "not exported"),
+        job_description: dashboardText(role.job_description, "Role description not exported."),
+        full_description: dashboardText(role.full_description, role.job_description || "Role description not exported."),
+        current_task: dashboardText(role.current_task, "Monitoring the current paper-fund snapshot."),
+        authority_level: dashboardText(role.authority_level, "Read Only"),
+        cannot_do: asArray(role.cannot_do).map((item) => dashboardText(item, "restricted action")),
+        quant_method_label: dashboardText(role.quant_method_label, ""),
+        quant_run_log: asArray(role.quant_run_log).map((item) => ({
+            label: dashboardText(item.label, "Run type"),
+            method: dashboardText(item.method, "Classical Fallback (Deterministic)"),
+            detail: dashboardText(item.detail, "No run detail exported.")
+        })),
+        boundary: "Team roles can observe, analyse, propose, gate, or execute paper-only depending on their authority. None of them can enable live capital from this dashboard."
+    };
+}
+
+function missionTeamAttribute(role = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionTeamPayload(role))));
+}
+
+function renderMissionTeamDrawer() {
+    return `
+        <aside class="mission-team-drawer" data-team-drawer hidden aria-hidden="true" aria-label="Hedge fund team drawer">
+            <div class="mission-team-drawer-backdrop" data-team-drawer-close></div>
+            <section class="mission-team-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="team-drawer-title">
+                <button class="mission-team-drawer-close" type="button" data-team-drawer-close aria-label="Close role detail">Close</button>
+                <p class="label">Hedge Fund Investment Team</p>
+                <h3 id="team-drawer-title" data-team-drawer-title>Qadam role</h3>
+                <p data-team-drawer-summary></p>
+                <div data-team-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionTeamDrawerBody(detail = {}) {
+    const cannotDo = asArray(detail.cannot_do);
+    const runLog = asArray(detail.quant_run_log);
+    return `
+        <div class="mission-team-drawer-grid">
+            <article>
+                <span>Current status</span>
+                <strong>${htmlText(detail.status_label)}</strong>
+                <p>Raw runtime state: ${htmlText(detail.raw_status)}</p>
+            </article>
+            <article>
+                <span>Authority level</span>
+                <strong>${htmlText(detail.authority_level)}</strong>
+                <p>${htmlText(detail.boundary)}</p>
+            </article>
+            <article>
+                <span>Current task</span>
+                <strong>${htmlText(detail.current_task)}</strong>
+                <p>${htmlText(detail.job_description)}</p>
+            </article>
+            <article>
+                <span>Owner</span>
+                <strong>${htmlText(detail.owner)}</strong>
+                <p>${htmlText(detail.full_description)}</p>
+            </article>
+        </div>
+        <section class="mission-team-drawer-section">
+            <header>
+                <span>Cannot do</span>
+                <strong>${cannotDo.length} boundaries</strong>
+            </header>
+            <ul class="mission-team-cannot-list">
+                ${cannotDo.map((item) => `<li>${htmlText(item)}</li>`).join("")}
+            </ul>
+        </section>
+        ${detail.key === "head_of_quant" ? `
+            <section class="mission-team-drawer-section">
+                <header>
+                    <span>Recent run types</span>
+                    <strong>${htmlText(detail.quant_method_label)}</strong>
+                </header>
+                <ol class="mission-team-run-log">
+                    ${runLog.map((item) => `
+                        <li>
+                            <span>${htmlText(item.label)}</span>
+                            <strong>${htmlText(item.method)}</strong>
+                            <p>${htmlText(item.detail)}</p>
+                        </li>
+                    `).join("")}
+                </ol>
+            </section>
+        ` : ""}
+    `;
+}
+
+function initMissionTeamDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-team-drawer]");
+    const title = root.querySelector("[data-team-drawer-title]");
+    const summary = root.querySelector("[data-team-drawer-summary]");
+    const body = root.querySelector("[data-team-drawer-body]");
+    if (!drawer || !title || !summary || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    root.querySelectorAll("[data-team-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-team-role-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.teamRoleDetail || "%7B%7D"));
+                title.textContent = detail.title || "Qadam role";
+                summary.textContent = `${detail.status_label || "Monitoring"} · ${detail.authority_level || "Read Only"}`;
+                body.innerHTML = renderMissionTeamDrawerBody(detail);
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-team-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Role detail unavailable";
+                summary.textContent = "This role did not expose a readable detail payload.";
+                body.innerHTML = `<p class="mini">Open the Operations view for raw team diagnostics.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+}
+
 function renderMissionTeam(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "hedge_fund_investment_team") || {};
     const team = stage7.hedge_fund_investment_team || {};
@@ -10406,23 +10732,27 @@ function renderMissionTeam(stage7 = {}) {
             ${renderStage7SectionHeader(section, team.sentence || "The operating roles inside Qadam.")}
             <div class="mission-team-grid">
                 ${asArray(team.roles).map((role, index) => `
-                    <details class="stage7-map-node mission-team-role ${statusClass(role.tone || role.status)}" ${index < 4 ? "open" : ""}>
-                        <summary>
+                    <button class="mission-team-card ${statusClass(role.status_tone || role.status_label)}" type="button" data-team-role-detail="${missionTeamAttribute(role)}" aria-label="Open ${literalHtmlText(role.label)} role detail">
+                        <span class="mission-team-card-top">
                             <span>${String(index + 1).padStart(2, "0")}</span>
-                            <div>
-                                <strong>${htmlText(role.label)}</strong>
-                                <em>${htmlText(role.owner)}</em>
-                            </div>
-                            ${renderStatusPill(role.status)}
-                        </summary>
-                        <dl>
-                            <div><dt>Role</dt><dd>${htmlText(role.role)}</dd></div>
-                            <div><dt>Current</dt><dd>${htmlText(role.current_process)}</dd></div>
-                            <div><dt>Authority</dt><dd>${htmlText(role.authority)}</dd></div>
-                        </dl>
-                    </details>
+                            <em>${htmlText(role.status_label)}</em>
+                        </span>
+                        <strong>${htmlText(role.label)}</strong>
+                        <small>${htmlText(role.job_description)}</small>
+                        <span class="mission-team-status">${htmlText(role.owner)}</span>
+                        <span class="mission-team-card-facts">
+                            <em>Current task</em>
+                            <b>${htmlText(role.current_task)}</b>
+                        </span>
+                        <span class="mission-team-card-facts">
+                            <em>Authority</em>
+                            <b>${htmlText(role.authority_level)}</b>
+                        </span>
+                        ${role.key === "head_of_quant" ? `<span class="mission-team-quant-badge">${htmlText(role.quant_method_label)}</span>` : ""}
+                    </button>
                 `).join("")}
             </div>
+            ${renderMissionTeamDrawer()}
         </section>
     `;
 }
@@ -10539,6 +10869,7 @@ function renderStage7Visibility(viewModels = {}) {
     initMissionSourceNetworkDrawer(target);
     initMissionMarketDrawer(target);
     initMissionStrategyDrawer(target);
+    initMissionTeamDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {
