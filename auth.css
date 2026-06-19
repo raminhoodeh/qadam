@@ -6617,7 +6617,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-strategies,
 .mission-team,
 .mission-hypotheses,
-.mission-learning {
+.mission-learning,
+.mission-completion-gaps {
     min-width: 0;
 }
 
@@ -7825,6 +7826,7 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-feedback-inputs,
 .mission-proposal-queue > div,
 .mission-readiness-map > div,
+.mission-completion-list,
 .mission-learning-drawer-grid {
     display: grid;
     gap: 8px;
@@ -7839,6 +7841,7 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-feedback-panel,
 .mission-proposal-queue,
 .mission-readiness-map,
+.mission-completion-list article,
 .mission-learning-drawer-section {
     background: rgba(3, 6, 8, 0.52);
     border: 1px solid var(--line-quiet);
@@ -7860,6 +7863,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-readiness-map header span,
 .mission-readiness-map article span,
 .mission-readiness-map article em,
+.mission-completion-list article span,
+.mission-completion-list article small,
 .mission-learning-drawer-grid span,
 .mission-learning-drawer-section header span {
     color: var(--muted-soft);
@@ -7875,6 +7880,7 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-feedback-inputs p,
 .mission-proposal-queue article p,
 .mission-readiness-map article p,
+.mission-completion-list article p,
 .mission-learning-drawer-grid p,
 .mission-learning-drawer-section p {
     color: var(--muted);
@@ -7885,6 +7891,18 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 
 .mission-learning-item-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mission-completion-list {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.mission-completion-list article.blocked {
+    border-color: rgba(var(--coral-rgb), 0.42);
+}
+
+.mission-completion-list article.pending {
+    border-color: rgba(var(--gold-rgb), 0.28);
 }
 
 .mission-learning-item {

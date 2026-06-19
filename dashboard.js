@@ -5736,6 +5736,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             boundary: "Pattern recognition updates research conviction and ranking only. Orders still route through Risk Desk, PaperOps, and Alpaca Paper."
         },
         backtesting_learning_loop: learningLoop,
+        completion_gaps: stage7CompletionGaps(status.paperops_completion_gaps || {}),
         operating_map: {
             nodes: teamRoles.map((role) => stage7BuildNode(role.key, role.owner, role.label, role.job_description, role.status_label, role.current_task, "Passes public-safe state to the next review step.", role.authority_level)),
             edges: [
@@ -11716,6 +11717,77 @@ function renderMissionLearning(stage7 = {}) {
     `;
 }
 
+function stage7CompletionGaps(gaps = {}) {
+    const items = asArray(gaps.operator_required_items).slice(0, 6).map((item) => ({
+        key: item.gap_key || item.label || "remaining_setup",
+        label: item.label || item.gap_key || "Remaining setup item",
+        category: item.category || "setup",
+        status: item.status || "not exported",
+        current_state: item.current_state || "Not exported",
+        next_action: item.next_action || "Review the source artifact for the next action.",
+        paper_operation_blocking: Boolean(item.paper_operation_blocking),
+        operator_required: Boolean(item.operator_required)
+    }));
+    return {
+        status: gaps.status || "not exported",
+        paper_operation_blocking_gap_count: modelNumber(gaps.paper_operation_blocking_gap_count, 0),
+        operator_required_item_count: modelNumber(gaps.operator_required_item_count, items.length),
+        optional_source_gap_count: modelNumber(gaps.optional_source_gap_count, 0),
+        bookmap_connected: Boolean(gaps.bookmap_connected),
+        quantum_hardware_execution_confirmed: Boolean(gaps.quantum_hardware_execution_confirmed),
+        paperops_monitoring_ready: Boolean(gaps.paperops_monitoring_ready),
+        next_required_action: gaps.next_required_action || "Remaining setup state has not loaded yet.",
+        items,
+        boundary: "Remaining setup is public-safe status only. Paper execution authority stays with the guarded PaperOps route."
+    };
+}
+
+function renderMissionCompletionGaps(stage7 = {}) {
+    const gaps = stage7.completion_gaps || {};
+    const items = asArray(gaps.items);
+    const statusLabel = gaps.paper_operation_blocking_gap_count
+        ? "Needs attention"
+        : (gaps.operator_required_item_count ? "Paper OK, setup open" : "Complete");
+    return `
+        <section class="stage7-section mission-flow-section mission-completion-gaps" data-stage7-section="remaining_setup">
+            <header class="stage7-section-head">
+                <div>
+                    <p class="label">Remaining setup</p>
+                    <h3>What still needs attention</h3>
+                    <p>${htmlText(gaps.next_required_action)}</p>
+                </div>
+                ${renderInlineBadge(statusLabel, gaps.paper_operation_blocking_gap_count ? "blocked" : "online")}
+            </header>
+            <div class="stage7-kpi-strip mission-kpi-strip">
+                ${renderMetric("Paper blockers", gaps.paper_operation_blocking_gap_count || 0)}
+                ${renderMetric("Operator items", gaps.operator_required_item_count || 0)}
+                ${renderMetric("Optional sources", gaps.optional_source_gap_count || 0)}
+                ${renderMetric("Bookmap", gaps.bookmap_connected ? "Connected" : "Local bridge")}
+                ${renderMetric("Quantum hardware", gaps.quantum_hardware_execution_confirmed ? "Confirmed" : "Not proven")}
+                ${renderMetric("PaperOps monitor", gaps.paperops_monitoring_ready ? "Ready" : "Review")}
+            </div>
+            <div class="mission-completion-list">
+                ${items.length ? items.map((item) => `
+                    <article class="${statusClass(item.paper_operation_blocking ? "blocked" : "pending")}">
+                        <span>${htmlText(item.category)}</span>
+                        <strong>${htmlText(item.label)}</strong>
+                        <p>${htmlText(item.current_state)}</p>
+                        <small>${htmlText(item.next_action)}</small>
+                    </article>
+                `).join("") : `
+                    <article class="online">
+                        <span>setup</span>
+                        <strong>No remaining setup items exported</strong>
+                        <p>The completion-gap artifact has no operator items.</p>
+                        <small>Continue normal paper monitoring.</small>
+                    </article>
+                `}
+            </div>
+            <p class="stage7-section-summary">${htmlText(gaps.boundary)}</p>
+        </section>
+    `;
+}
+
 function renderStage7Visibility(viewModels = {}) {
     const target = dashboardQuery("[data-stage7-dashboard-visibility]");
     if (!target) return;
@@ -11744,6 +11816,7 @@ function renderStage7Visibility(viewModels = {}) {
             ${renderMissionTeam(stage7)}
             ${renderMissionHypotheses(stage7)}
             ${renderMissionLearning(stage7)}
+            ${renderMissionCompletionGaps(stage7)}
             <p class="stage7-boundary">${htmlText(stage7.boundary)}</p>
         </div>
     `;
