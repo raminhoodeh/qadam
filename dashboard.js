@@ -4113,13 +4113,27 @@ function stage7SourceGroups(status = {}, sources = {}) {
 
 function stage7PortfolioModel(status = {}, contract = {}, performance = {}) {
     const contractPortfolio = contract.portfolio || {};
-    const runtimePortfolio = status.mission_control?.portfolio || status.capital || performance.paper_account || {};
+    const missionPortfolio = status.mission_control?.portfolio || {};
+    const capitalPortfolio = status.capital || {};
+    const paperAccount = performance.paper_account || {};
+    const runtimePortfolio = {
+        ...paperAccount,
+        ...capitalPortfolio,
+        ...missionPortfolio
+    };
     const orders = asArray(contractPortfolio.orders).length ? asArray(contractPortfolio.orders) : asArray(runtimePortfolio.orders);
     const openPositions = asArray(contractPortfolio.open_positions).length ? asArray(contractPortfolio.open_positions) : asArray(runtimePortfolio.open_positions);
+    const closedTrades = asArray(contractPortfolio.closed_trades).length ? asArray(contractPortfolio.closed_trades) : asArray(runtimePortfolio.closed_trades);
     const equityCurve = asArray(contractPortfolio.equity_curve).length ? asArray(contractPortfolio.equity_curve) : asArray(runtimePortfolio.equity_curve);
     const targetGbp = modelNumber(contractPortfolio.target_gbp || runtimePortfolio.target_gbp, 200000);
     const baselineGbp = modelNumber(contractPortfolio.starting_balance_gbp || runtimePortfolio.starting_balance_gbp || runtimePortfolio.balance_gbp, 100000);
     const currentGbp = modelNumber(contractPortfolio.balance_gbp || contractPortfolio.current_balance_gbp || runtimePortfolio.current_balance_gbp || runtimePortfolio.equity_gbp, baselineGbp);
+    const deployedGbp = paperFundDeployedValue(openPositions);
+    const cashAvailableGbp = modelNumber(
+        firstPresent(contractPortfolio.cash_available_gbp, contractPortfolio.cash_gbp, contractPortfolio.source_cash, runtimePortfolio.cash_available_gbp, runtimePortfolio.cash_gbp, runtimePortfolio.source_cash),
+        Math.max(0, currentGbp - deployedGbp)
+    );
+    const capacityUsedFraction = baselineGbp ? Math.max(0, Math.min(1, deployedGbp / baselineGbp)) : 0;
     return {
         ...runtimePortfolio,
         ...contractPortfolio,
@@ -4127,17 +4141,121 @@ function stage7PortfolioModel(status = {}, contract = {}, performance = {}) {
         current_balance_gbp: currentGbp,
         starting_balance_gbp: baselineGbp,
         target_gbp: targetGbp,
+        cash_available_gbp: cashAvailableGbp,
+        deployed_gbp: deployedGbp,
         equity_curve: equityCurve,
         orders,
+        closed_trades: closedTrades,
         open_positions: openPositions,
         open_position_count: modelNumber(contractPortfolio.open_position_count || runtimePortfolio.open_position_count, openPositions.length),
         order_count: modelNumber(contractPortfolio.order_count || runtimePortfolio.order_count, orders.length),
-        closed_trade_count: modelNumber(contractPortfolio.closed_trade_count || runtimePortfolio.closed_trade_count, 0),
+        closed_trade_count: modelNumber(contractPortfolio.closed_trade_count || runtimePortfolio.closed_trade_count, closedTrades.length),
         maturity_closed_trade_target: modelNumber(contractPortfolio.maturity_closed_trade_target || runtimePortfolio.maturity_closed_trade_target, 100),
         target_progress_fraction: targetGbp > baselineGbp ? Math.max(0, Math.min(1, (currentGbp - baselineGbp) / (targetGbp - baselineGbp))) : 0,
-        capacity_used_fraction: baselineGbp ? Math.max(0, Math.min(1, modelNumber(runtimePortfolio.total_position_value_gbp || runtimePortfolio.open_risk_gbp || 0, 0) / baselineGbp)) : 0,
+        capacity_used_fraction: capacityUsedFraction,
+        capacity_available_gbp: Math.max(0, baselineGbp - deployedGbp),
+        exposure_by_sleeve: paperFundExposureBySleeve(openPositions, baselineGbp),
+        timeline_events: paperFundTimelineEvents({ ...runtimePortfolio, ...contractPortfolio, orders, open_positions: openPositions, closed_trades: closedTrades }),
         timeline_source: contractPortfolio.timeline_source || runtimePortfolio.portfolio_value_source || "paper account mirror"
     };
+}
+
+function paperFundPositionValue(position = {}) {
+    const explicit = firstPresent(position.risk_size_gbp, position.market_value_gbp, position.notional_gbp, position.value_gbp);
+    if (explicit !== null && explicit !== undefined && explicit !== "") return modelNumber(explicit, 0);
+    const price = modelNumber(firstPresent(position.current_price, position.entry_price), 0);
+    const quantity = modelNumber(firstPresent(position.quantity, position.qty, position.position_qty), 0);
+    return price * quantity;
+}
+
+function paperFundDeployedValue(openPositions = []) {
+    return asArray(openPositions).reduce((total, position) => total + paperFundPositionValue(position), 0);
+}
+
+function paperFundSleeveForInstrument(instrument = "") {
+    const symbol = String(instrument || "").toUpperCase();
+    const sleeveMap = {
+        "Crude Oil": ["CL", "CL=F", "BZ", "BZ=F", "USO", "XLE", "OIH"],
+        Silver: ["SI", "SI=F", "SLV", "SIL", "PAAS", "AG"],
+        Semiconductors: ["SMH", "SOXX", "NVDA", "AMD", "TSM", "ASML", "AVGO", "MU"],
+        "Prediction Markets": ["POLYMARKET", "KALSHI"],
+        Defence: ["ITA", "XAR", "LMT", "RTX", "NOC", "GD", "BA", "HII"]
+    };
+    return Object.entries(sleeveMap).find(([_label, symbols]) => symbols.includes(symbol))?.[0] || "Other";
+}
+
+function paperFundExposureBySleeve(openPositions = [], baselineGbp = 100000) {
+    const canonicalSleeves = ["Semiconductors", "Defence", "Crude Oil", "Silver", "Prediction Markets"];
+    const bySleeve = new Map(canonicalSleeves.map((label) => [label, {
+        label,
+        deployed_gbp: 0,
+        position_count: 0,
+        percent_of_start: 0,
+        instruments: []
+    }]));
+    asArray(openPositions).forEach((position) => {
+        const instrument = position.instrument || position.symbol || position.asset || position.ticker || "Instrument";
+        const sleeve = paperFundSleeveForInstrument(instrument);
+        if (!bySleeve.has(sleeve)) {
+            bySleeve.set(sleeve, { label: sleeve, deployed_gbp: 0, position_count: 0, percent_of_start: 0, instruments: [] });
+        }
+        const record = bySleeve.get(sleeve);
+        record.deployed_gbp += paperFundPositionValue(position);
+        record.position_count += 1;
+        record.instruments.push(String(instrument));
+    });
+    return Array.from(bySleeve.values()).map((record) => ({
+        ...record,
+        deployed_gbp: Math.round(record.deployed_gbp * 100) / 100,
+        percent_of_start: baselineGbp ? Math.round((record.deployed_gbp / baselineGbp) * 1000) / 10 : 0,
+        instruments: Array.from(new Set(record.instruments))
+    }));
+}
+
+function paperFundRecordId(record = {}, fallback = "record") {
+    return record.trade_id || record.order_id || record.position_id || record.source_intent_id || record.intent_id || `${fallback}:${record.instrument || record.symbol || "instrument"}:${portfolioTradeTime(record) || "time"}`;
+}
+
+function paperFundLifecycleForRecord(record = {}, type = "order") {
+    if (type === "position") return "Paper Position";
+    if (type === "closed") return "Outcome Review";
+    const direction = String(record.direction || record.side || "").toLowerCase();
+    if (/sell|close|short/.test(direction)) return "Outcome Review";
+    if (/buy|long/.test(direction)) return "Paper Position";
+    return "Trade Candidate";
+}
+
+function paperFundTimelineEvents(portfolio = {}) {
+    const events = [];
+    const seen = new Set();
+    const addEvent = (record, type) => {
+        const id = `${type}:${paperFundRecordId(record, type)}`;
+        if (seen.has(id)) return;
+        seen.add(id);
+        const instrument = record.instrument || record.symbol || record.asset || record.ticker || "Instrument";
+        const direction = record.direction || record.side || (type === "position" ? "long" : "record");
+        const timestamp = portfolioTradeTime(record);
+        const pnl = modelNumber(firstPresent(record.realized_pnl_gbp, record.unrealized_pnl_gbp), 0);
+        events.push({
+            id,
+            type,
+            instrument,
+            direction,
+            timestamp,
+            status: record.status || record.order_status || record.postmortem_status || (type === "position" ? "open position" : "recorded"),
+            pnl_gbp: pnl,
+            tone: pnl > 0 ? "online" : (pnl < 0 ? "blocked" : statusClass(record.status || "pending")),
+            lifecycle: paperFundLifecycleForRecord(record, type),
+            record
+        });
+    };
+    asArray(portfolio.orders).forEach((record) => addEvent(record, "order"));
+    asArray(portfolio.open_positions).forEach((record) => addEvent(record, "position"));
+    asArray(portfolio.closed_trades).forEach((record) => addEvent(record, "closed"));
+    return events
+        .filter((event) => event.timestamp || event.type === "position")
+        .sort((a, b) => (Date.parse(b.timestamp || "") || 0) - (Date.parse(a.timestamp || "") || 0))
+        .slice(0, 80);
 }
 
 function stage7MarketSleeves(edge = {}, strategy = {}) {
@@ -4219,6 +4337,18 @@ function stage7LearningLoopModel(status = {}, edge = {}) {
     };
 }
 
+function missionControlQuantMethodLabel(quantumOracle = {}, qctrl = {}, fireOpal = {}) {
+    const oracleBackend = String(firstPresent(quantumOracle.latest_backend, quantumOracle.backend, "")).toLowerCase();
+    const oracleMode = String(firstPresent(quantumOracle.latest_local_simulation_mode, quantumOracle.mode, "")).toLowerCase();
+    const oracleMethod = `${oracleBackend} ${oracleMode}`;
+    if (/classical|fallback|shadow|deterministic/.test(oracleMethod)) return "Classical Fallback (Deterministic)";
+    const hardwareSubmitted = modelNumber(quantumOracle.hardware_submitted_count || qctrl.hardware_submitted_count || fireOpal.hardware_submitted_count, 0);
+    const hardwareText = String(firstPresent(quantumOracle.latest_backend, quantumOracle.provider, qctrl.backend, fireOpal.backend, fireOpal.status, "")).toLowerCase();
+    if (hardwareSubmitted > 0 && /ibm|q-?ctrl|hardware|qiskit|runtime/.test(hardwareText)) return "IBM / Q-CTRL Hardware";
+    if (/fire\s*opal|fire_opal|optimization|optimisation/.test(hardwareText) && !/device_probe|submitted|readiness/.test(hardwareText)) return "Fire Opal Optimisation";
+    return "Classical Fallback (Deterministic)";
+}
+
 function missionControlTeamRoleLabel(role = {}) {
     const key = String(role.key || role.label || "").toLowerCase();
     const labels = {
@@ -4250,6 +4380,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
     const quantumOracle = status.quantum_oracle || {};
     const qctrl = status.paper_live_qctrl_product_access || {};
     const fireOpal = status.fire_opal_ibm || {};
+    const quantMethodLabel = missionControlQuantMethodLabel(quantumOracle, qctrl, fireOpal);
     const paperContext = status.paper_context || {};
     const paperLive = status.paper_live_certification || {};
     const activeAutomation = status.paperops_active_paper_trading_automation || {};
@@ -4273,7 +4404,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             { key: "coo", label: "Chief Operating Officer", owner: "Python Orchestrator", status: activeAutomation.status || "online", role: "Coordinates local modules, health checks, and paper-mode boundaries.", current_process: activeAutomation.unattended_paper_execution_delegation_reason || "Supervising local modules.", authority: "read_only" },
             { key: "research_analyst", label: "Research Analyst", owner: "Local LLM", status: localReview.status || "online", role: "Compresses noisy observations into research packets.", current_process: localReview.summary || "Local triage available.", authority: "non_executable" },
             { key: "strategy_lead", label: "Strategy Lead", owner: "Frontier LLM", status: strategyReview.status || "online", role: "Challenges hypotheses and strategy packets.", current_process: strategyReview.summary || "Strategy challenge available.", authority: "non_executable" },
-            { key: "head_of_quant", label: "Head of Quant", owner: "Quantum/classical review", status: quantumOracle.status || qctrl.status || "pending", role: "Runs bounded non-linear scenario review.", current_process: quantReview.summary || `${dashboardText(quantumOracle.backend || quantumOracle.mode || qctrl.status, "quant review")} visible.`, authority: "non_executable" },
+            { key: "head_of_quant", label: "Head of Quant", owner: "Quantum/classical review", status: quantumOracle.status || qctrl.status || "pending", role: "Runs bounded non-linear scenario review.", current_process: quantReview.summary || `${quantMethodLabel} visible for the latest exported review.`, authority: "non_executable", quant_method_label: quantMethodLabel },
             { key: "risk_desk", label: "Risk Desk", owner: "Risk and execution gates", status: status.risk_agent?.status || signalReview.status || "pending", role: "Blocks weak setups and sizes paper exposure only after gates pass.", current_process: signalReview.summary || `${tradeCounts.candidate || 0} candidates and ${tradeCounts.blocked || 0} blocked ideas.`, authority: "write_blocked" },
             { key: "paper_trading_desk", label: "Paper Trading Desk", owner: "Alpaca Paper", status: paperContext.connection_status || status.alpaca_paper_mirror?.status || "online", role: "Mirrors and reconciles Alpaca Paper orders and positions.", current_process: `${paper.open_position_count || 0} open positions; live capital off.`, authority: "guarded_paper_only" },
             { key: "learning_review", label: "Learning Review", owner: "Postmortems and strategy feedback", status: learningStatus || "review_ready", role: "Turns outcomes into proposed learning updates.", current_process: `Daily learning brief ${stage7PlainState(dailyBrief.status)}.`, authority: "review_only" }
@@ -4393,9 +4524,20 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             portfolio: paper,
             equity_curve_points: asArray(paper.equity_curve).length,
             current_value_gbp: paper.current_balance_gbp || paper.balance_gbp,
+            starting_balance_gbp: paper.starting_balance_gbp,
             target_gbp: paper.target_gbp,
+            deployed_gbp: paper.deployed_gbp,
+            cash_available_gbp: paper.cash_available_gbp,
+            capacity_used_fraction: paper.capacity_used_fraction,
+            capacity_used_label: `${Math.round((paper.capacity_used_fraction || 0) * 1000) / 10}%`,
+            exposure_by_sleeve: asArray(paper.exposure_by_sleeve),
             open_positions: asArray(paper.open_positions),
+            closed_trades: asArray(paper.closed_trades),
             recent_orders: asArray(paper.orders).slice(0, 12),
+            timeline_events: asArray(paper.timeline_events).slice(0, 30),
+            quantum_review_method: quantMethodLabel,
+            quantum_review_status: edge.quantum_pattern_review?.status || quantumOracle.status || qctrl.status || "not exported",
+            quantum_review_gate_status: status.quantum_mandatory_review_gate?.status || dailyAutomation.quantum_gate_status || dailyBrief.quantum_gate_status || "not exported",
             why_clickthrough_available: asArray(paper.orders).some((order) => order.source_intent_id || order.intent_id || order.why || order.reason),
             explanation_gap: "Some mirrored Alpaca Paper rows do not yet export a source intent, so the dashboard shows the best available reason and marks unlinked rows honestly."
         },
@@ -8968,43 +9110,236 @@ function renderMissionLifecycleRibbon(items = []) {
     `;
 }
 
+function missionPaperDetailPayload(record = {}, type = "order", fund = {}) {
+    const instrument = record.instrument || record.symbol || record.asset || record.ticker || "Instrument";
+    const direction = dashboardText(record.direction || record.side || (type === "position" ? "long" : "record"));
+    const quantity = firstPresent(record.quantity, record.qty, record.filled_quantity, record.shares, record.position_qty, "n/a");
+    const lifecycle = paperFundLifecycleForRecord(record, type);
+    const action = type === "position"
+        ? "Current paper holding"
+        : (type === "closed" ? "Closed or postmortem record" : `${direction} paper order`);
+    return {
+        title: `${instrument} · ${action}`,
+        lifecycle,
+        instrument,
+        action,
+        direction,
+        quantity: String(quantity),
+        when: formatTime(portfolioTradeTime(record)),
+        price: portfolioTradePrice(record),
+        pnl: formatMoney(firstPresent(record.realized_pnl_gbp, record.unrealized_pnl_gbp, 0)),
+        strategy: dashboardText(record.strategy || record.strategy_family || record.source_strategy || record.strategy_key, "No strategy lineage exported for this mirrored row yet."),
+        evidence: dashboardText(record.evidence_summary || record.source_signal_id || record.source_intent_id || record.intent_id, "No separate evidence packet is linked to this row in the public snapshot yet."),
+        risk: record.risk_status
+            ? dashboardText(record.risk_status)
+            : `${formatMoney(record.risk_size_gbp || record.notional_gbp || 0)} mirrored exposure; broker write authority remains false.`,
+        quantum: `${dashboardText(fund.quantum_review_method, "Classical Fallback (Deterministic)")} · ${dashboardText(fund.quantum_review_gate_status || fund.quantum_review_status, "review status not exported")}`,
+        watching_next: dashboardText(record.next_watch || record.invalidation || record.boundary, "Qadam continues watching price, evidence agreement, risk limits, and paper-route idempotency before any next action."),
+        postmortem: type === "closed"
+            ? dashboardText(record.postmortem_summary || record.close_reason || record.postmortem_status, "Postmortem summary not exported yet.")
+            : dashboardText(record.postmortem_summary, "Not closed yet; postmortem begins after the paper outcome is available."),
+        boundary: dashboardText(record.boundary, "Read-only paper mirror row. The dashboard cannot create, cancel, close, or resize trades.")
+    };
+}
+
+function missionPaperDetailAttribute(record = {}, type = "order", fund = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionPaperDetailPayload(record, type, fund))));
+}
+
+function renderMissionPaperItem(record = {}, type = "order", fund = {}) {
+    const instrument = record.instrument || record.symbol || record.asset || record.ticker || "Instrument";
+    const direction = dashboardText(record.direction || record.side || (type === "position" ? "long" : "record"));
+    const status = dashboardText(record.status || record.order_status || record.postmortem_status || (type === "position" ? "open position" : "recorded"));
+    const pnlValue = modelNumber(firstPresent(record.realized_pnl_gbp, record.unrealized_pnl_gbp), 0);
+    const pnlTone = pnlValue > 0 ? "online" : (pnlValue < 0 ? "blocked" : "pending");
+    const lifecycle = paperFundLifecycleForRecord(record, type);
+    const why = portfolioTradeRecordReason(record, type);
+    return `
+        <button class="mission-paper-row ${statusClass(status)}" type="button" data-paper-fund-detail="${missionPaperDetailAttribute(record, type, fund)}" aria-label="Open why this trade details for ${literalHtmlText(instrument)}">
+            <span class="mission-paper-row-top">
+                <strong>${htmlText(instrument)}</strong>
+                ${renderInlineBadge(lifecycle, lifecycle === "Outcome Review" ? "pending" : "online")}
+            </span>
+            <span>${htmlText(direction)} · ${htmlText(status)} · ${htmlText(formatTime(portfolioTradeTime(record)))}</span>
+            <span class="mission-paper-row-bottom">
+                <em>${htmlText(portfolioTradePrice(record))}</em>
+                <em class="${statusClass(pnlTone)}">${formatMoney(pnlValue)}</em>
+            </span>
+            <small>Why This Trade? ${htmlText(why)}</small>
+        </button>
+    `;
+}
+
+function renderMissionPaperList(title, records = [], type = "order", fund = {}, emptyMessage = "No rows exported in this snapshot.") {
+    return `
+        <section class="mission-paper-list">
+            <header>
+                <span>${htmlText(title)}</span>
+                <strong>${asArray(records).length}</strong>
+            </header>
+            <div>
+                ${asArray(records).length
+                    ? asArray(records).slice(0, 12).map((record) => renderMissionPaperItem(record, type, fund)).join("")
+                    : `<p class="mini">${htmlText(emptyMessage)}</p>`}
+            </div>
+        </section>
+    `;
+}
+
+function renderMissionPaperExposure(exposures = []) {
+    return `
+        <div class="mission-paper-exposure" aria-label="Exposure by market sleeve">
+            <header>
+                <span>Exposure by Market Sleeve</span>
+                <strong>Paper exposure grouped by Qadam's five watched arenas</strong>
+            </header>
+            <div class="mission-paper-exposure-grid">
+                ${asArray(exposures).map((sleeve) => {
+                    const width = Math.max(2, Math.min(100, modelNumber(sleeve.percent_of_start, 0)));
+                    return `
+                        <article>
+                            <div>
+                                <strong>${htmlText(sleeve.label)}</strong>
+                                <span>${formatMoney(sleeve.deployed_gbp)} · ${htmlText(sleeve.percent_of_start)}%</span>
+                            </div>
+                            <div class="mission-paper-exposure-bar"><span style="width: ${width}%"></span></div>
+                            <small>${asArray(sleeve.instruments).length ? htmlText(asArray(sleeve.instruments).join(", ")) : "No current exposure"}</small>
+                        </article>
+                    `;
+                }).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function renderMissionPaperTimeline(events = [], fund = {}) {
+    return `
+        <div class="mission-paper-timeline" aria-label="Chronological paper fund event strip">
+            <header>
+                <span>Chronological Trade Timeline</span>
+                <strong>Buys, sells, closed records, and current holds in sequence</strong>
+            </header>
+            <div class="mission-paper-event-strip">
+                ${asArray(events).length ? asArray(events).slice(0, 24).map((event) => {
+                    const record = event.record || {};
+                    const pnlTone = modelNumber(event.pnl_gbp, 0) > 0 ? "online" : (modelNumber(event.pnl_gbp, 0) < 0 ? "blocked" : "pending");
+                    const arrow = modelNumber(event.pnl_gbp, 0) > 0 ? "up" : (modelNumber(event.pnl_gbp, 0) < 0 ? "down" : "flat");
+                    return `
+                        <button class="mission-paper-event ${statusClass(event.tone || event.status)}" type="button" data-paper-fund-detail="${missionPaperDetailAttribute(record, event.type, fund)}">
+                            <span>${htmlText(formatTime(event.timestamp))}</span>
+                            <strong>${htmlText(event.instrument)}</strong>
+                            <em>${htmlText(event.direction)} · ${htmlText(event.lifecycle)}</em>
+                            <small class="${statusClass(pnlTone)}">${htmlText(arrow)} · ${formatMoney(event.pnl_gbp)}</small>
+                        </button>
+                    `;
+                }).join("") : `<p class="mini">No paper-trade timeline events exported in this snapshot.</p>`}
+            </div>
+        </div>
+    `;
+}
+
+function renderMissionPaperFundDrawer() {
+    return `
+        <aside class="mission-paper-drawer" data-paper-fund-drawer hidden aria-hidden="true" aria-label="Why This Trade detail drawer">
+            <div class="mission-paper-drawer-backdrop" data-paper-fund-drawer-close></div>
+            <section class="mission-paper-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="paper-fund-drawer-title">
+                <button class="mission-paper-drawer-close" type="button" data-paper-fund-drawer-close aria-label="Close trade detail">Close</button>
+                <p class="label">Why This Trade?</p>
+                <h3 id="paper-fund-drawer-title" data-paper-fund-drawer-title>Trade detail</h3>
+                <div data-paper-fund-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionPaperDrawerBody(detail = {}) {
+    const rows = [
+        ["Lifecycle", detail.lifecycle],
+        ["Action", detail.action],
+        ["When", detail.when],
+        ["Quantity", detail.quantity],
+        ["Price", detail.price],
+        ["P&L", detail.pnl],
+        ["Strategy", detail.strategy],
+        ["Evidence", detail.evidence],
+        ["Risk Checks", detail.risk],
+        ["Quant Review", detail.quantum],
+        ["Watching Next", detail.watching_next],
+        ["Postmortem", detail.postmortem],
+        ["Boundary", detail.boundary]
+    ];
+    return `
+        <dl class="mission-paper-drawer-facts">
+            ${rows.map(([term, value]) => `
+                <div>
+                    <dt>${htmlText(term)}</dt>
+                    <dd>${htmlText(value)}</dd>
+                </div>
+            `).join("")}
+        </dl>
+    `;
+}
+
+function initMissionPaperFundDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-paper-fund-drawer]");
+    const title = root.querySelector("[data-paper-fund-drawer-title]");
+    const body = root.querySelector("[data-paper-fund-drawer-body]");
+    if (!drawer || !title || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    root.querySelectorAll("[data-paper-fund-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-paper-fund-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.paperFundDetail || "%7B%7D"));
+                title.textContent = detail.title || "Trade detail";
+                body.innerHTML = renderMissionPaperDrawerBody(detail);
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-paper-fund-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Trade detail unavailable";
+                body.innerHTML = `<p class="mini">This row did not expose a readable detail payload.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+}
+
 function renderMissionPaperFund(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "paper_fund_status") || {};
     const fund = stage7.paper_fund_status || {};
     const portfolio = fund.portfolio || {};
     const openPositions = asArray(fund.open_positions);
+    const orders = asArray(fund.recent_orders);
+    const closedTrades = asArray(fund.closed_trades);
     return `
         <section class="stage7-section mission-flow-section mission-paper-fund" data-stage7-section="paper_fund_status">
             ${renderStage7SectionHeader(section, "Money first: value, holdings, trades, exposure, and why each row exists.")}
-            ${renderContractPortfolioBlock(portfolio)}
-            <div class="stage7-kpi-strip mission-kpi-strip">
-                ${renderMetric("Current value", formatMoney(fund.current_value_gbp))}
-                ${renderMetric("Target", formatMoney(fund.target_gbp))}
-                ${renderMetric("Open holdings", portfolio.open_position_count || openPositions.length || 0)}
-                ${renderMetric("Closed trades", portfolio.closed_trade_count || 0)}
-                ${renderMetric("Orders", portfolio.order_count || asArray(portfolio.orders).length)}
-                ${renderMetric("Realized P&L", formatMoney(portfolio.realized_pnl_gbp))}
-                ${renderMetric("Unrealized P&L", formatMoney(portfolio.unrealized_pnl_gbp))}
-                ${renderMetric("Curve points", fund.equity_curve_points || 0)}
+            <div class="mission-paper-metrics">
+                ${renderMetric("Portfolio Value", formatMoney(fund.current_value_gbp))}
+                ${renderMetric("Starting Balance", formatMoney(fund.starting_balance_gbp))}
+                ${renderMetric("Paper Capacity Used", `${htmlText(fund.capacity_used_label)} · ${formatMoney(fund.deployed_gbp)} deployed`)}
+                ${renderMetric("Cash Available", formatMoney(fund.cash_available_gbp))}
             </div>
-            <div class="mission-holdings-grid">
-                ${openPositions.length ? openPositions.slice(0, 6).map((position) => `
-                    <details class="mission-flow-card ${statusClass(position.status || "online")}">
-                        <summary>
-                            <strong>${htmlText(position.instrument || position.symbol, "Holding")}</strong>
-                            <span>${htmlText(position.direction || "long")} · ${formatMoney(position.unrealized_pnl_gbp)} unrealized</span>
-                        </summary>
-                        <dl class="mission-flow-facts">
-                            <div><dt>Quantity</dt><dd>${htmlText(position.quantity, "n/a")}</dd></div>
-                            <div><dt>Entry</dt><dd>${htmlText(portfolioTradePrice({ entry_price: position.entry_price }))}</dd></div>
-                            <div><dt>Current</dt><dd>${htmlText(portfolioTradePrice({ current_price: position.current_price }))}</dd></div>
-                            <div><dt>Why</dt><dd>${htmlText(portfolioTradeRecordReason(position, "position"))}</dd></div>
-                        </dl>
-                    </details>
-                `).join("") : `<article class="mission-flow-card pending"><strong>No open holdings</strong><p>Qadam has no open paper positions in this snapshot.</p></article>`}
+            <div class="mission-paper-chart">
+                ${renderContractPortfolioBlock(portfolio)}
             </div>
-            ${renderPortfolioTradeTimeline(portfolio)}
+            ${renderMissionPaperExposure(fund.exposure_by_sleeve)}
+            <div class="mission-paper-columns">
+                ${renderMissionPaperList("Open Positions", openPositions, "position", fund, "No open paper positions in this snapshot.")}
+                ${renderMissionPaperList("Recent Buys & Sells", orders, "order", fund, "No buy or sell order rows exported in this snapshot.")}
+                ${renderMissionPaperList("Closed Trades", closedTrades, "closed", fund, "No closed paper-trade rows exported in this snapshot.")}
+            </div>
+            ${renderMissionPaperTimeline(fund.timeline_events, fund)}
             <p class="stage7-section-summary">${htmlText(fund.explanation_gap)}</p>
+            ${renderMissionPaperFundDrawer()}
         </section>
     `;
 }
@@ -9260,6 +9595,7 @@ function renderStage7Visibility(viewModels = {}) {
             <p class="stage7-boundary">${htmlText(stage7.boundary)}</p>
         </div>
     `;
+    initMissionPaperFundDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {
