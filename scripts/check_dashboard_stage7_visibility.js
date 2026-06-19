@@ -129,6 +129,10 @@ async function main() {
         ".mission-market-drawer-grid",
         ".mission-market-movement",
         ".mission-hypothesis-filter",
+        ".mission-akber-pipeline",
+        ".mission-strategy-card",
+        ".mission-strategy-drawer",
+        ".mission-strategy-gate-breakdown",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
 
@@ -151,6 +155,15 @@ async function main() {
         "Full instrument list",
         "Data sources feeding this sleeve",
         "function renderMissionStrategies",
+        "function stage7StrategyPlaybookFamilies",
+        "function stage7StrategyLifecycle",
+        "function initMissionStrategyDrawer",
+        "function renderMissionStrategyDrawer",
+        "function renderMissionStrategyDrawerBody",
+        "function renderMissionStrategyPipeline",
+        "function missionStrategyPayload",
+        "Akber six-stage filter",
+        "Full Akber gate breakdown",
         "function renderMissionTeam",
         "function renderMissionHypotheses",
         "function renderMissionLearning",
@@ -235,6 +248,47 @@ async function main() {
     assert(stage7.watched_markets_universe.sleeves.every((sleeve) => sleeve.watched_instruments.length >= 2), "Mission Control market drawers need full instrument lists");
     assert(stage7.strategy_playbook.mandate.includes("GBP 100,000"), "Mission Control mandate missing paper baseline");
     assert(stage7.strategy_playbook.mandate.includes("GBP 200,000"), "Mission Control mandate missing paper target");
+    assert(JSON.stringify(stage7.strategy_playbook.akber_lens.stages) === JSON.stringify([
+        "Context",
+        "Catalyst",
+        "Confirmation",
+        "Risk",
+        "Execution",
+        "Postmortem Learning"
+    ]), "Mission Control Akber stages mismatch");
+    assert(stage7.strategy_playbook.families.length === 5, "Mission Control must expose five strategy cards");
+    assert(JSON.stringify(stage7.strategy_playbook.families.map((family) => family.label)) === JSON.stringify([
+        "Semiconductor Policy Options Asymmetry",
+        "Defence Repricing Geopolitical Watch",
+        "Silver Macro Liquidity Stress",
+        "Crude Oil Energy Security Disruption",
+        "Prediction Market Geopolitical Dislocation"
+    ]), "Mission Control strategy card order mismatch");
+    const allowedStrategyStates = [
+        "Watching for context",
+        "Catalyst detected",
+        "Waiting for confirmation",
+        "Under risk review",
+        "Ready for paper review",
+        "In paper position",
+        "Learning from outcome"
+    ];
+    stage7.strategy_playbook.families.forEach((family) => {
+        assert(allowedStrategyStates.includes(family.lifecycle_status), `Mission Control strategy uses invalid status vocabulary: ${family.label}`);
+        assert(!/\b(waiting_on_required_gates|qualified_for_guarded_paper_review|qualified now|waiting)\b/i.test(family.lifecycle_status), `Mission Control strategy leaked raw status vocabulary: ${family.label}`);
+        assert(family.display_rank, `Mission Control strategy rank missing: ${family.label}`);
+        assert(family.display_fit_score, `Mission Control strategy fit score missing: ${family.label}`);
+        assert(family.trend_direction, `Mission Control strategy trend missing: ${family.label}`);
+        assert(family.current_akber_gate, `Mission Control strategy Akber gate missing: ${family.label}`);
+        assert(family.last_gate_passed, `Mission Control strategy last gate missing: ${family.label}`);
+        assert(family.next_gate_needed, `Mission Control strategy next gate missing: ${family.label}`);
+        assert(family.gate_breakdown.length === 6, `Mission Control strategy drawer gate breakdown incomplete: ${family.label}`);
+        assert(family.evidence_summary, `Mission Control strategy evidence summary missing: ${family.label}`);
+        assert(family.linked_hypothesis, `Mission Control strategy linked hypothesis missing: ${family.label}`);
+        if (family.lifecycle_status !== "In paper position") {
+            assert(family.why_not_ready, `Mission Control strategy missing why-not-ready explanation: ${family.label}`);
+        }
+    });
     ["Prediction markets", "Crude oil", "Defence", "Silver", "Semiconductors"].forEach((domain) => {
         assert(stage7.strategy_playbook.universe.map((item) => item.toLowerCase()).includes(domain.toLowerCase()), `Mission Control strategy domain missing ${domain}`);
     });
@@ -297,6 +351,25 @@ async function main() {
         "data-market-drawer",
         "data-market-hypothesis-link=",
         "id=\"hypotheses_pattern_recognition\"",
+        "Akber six-stage filter",
+        "Context",
+        "Catalyst",
+        "Confirmation",
+        "Risk",
+        "Execution",
+        "Postmortem Learning",
+        "Semiconductor Policy Options Asymmetry",
+        "Defence Repricing Geopolitical Watch",
+        "Silver Macro Liquidity Stress",
+        "Crude Oil Energy Security Disruption",
+        "Prediction Market Geopolitical Dislocation",
+        "Current Rank",
+        "Fit Score",
+        "Trend",
+        "Why not ready?",
+        "In paper position",
+        "data-strategy-detail=",
+        "data-strategy-drawer",
         "Prediction markets",
         "Crude Oil",
         "Defence",
