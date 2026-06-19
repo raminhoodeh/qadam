@@ -4057,7 +4057,105 @@ function stage7SourceGroups(status = {}, sources = {}) {
         physical: "Physical World Signals",
         macro: "Macro & Trade Data",
         market: "Markets & Technical Analysis",
-        social: "Social, News & Filings"
+        social: "Social News & Filings"
+    };
+    const pipelineDescriptions = {
+        conflict: "War, security, blockade, escalation, and geopolitical-risk feeds.",
+        physical: "Physical-world movement, fire, shipping, aviation, satellite, and infrastructure signals.",
+        macro: "Rates, trade, inflation, commodities, industrial, and official economic context.",
+        market: "Prices, technical analysis, order-flow, prediction-market, and broker mirror context.",
+        social: "News, filings, social chatter, patents, code activity, and political-trading context."
+    };
+    const sourceDescriptions = {
+        acled: "Tracks conflict events and political violence that can move oil, defence, and prediction-market probabilities.",
+        ucdp: "Adds independent conflict-history context so Qadam can check whether a geopolitical signal is isolated or persistent.",
+        gdelt: "Scans global news tone and event coverage for early signs of geopolitical, semiconductor, and defence catalysts.",
+        oref: "Monitors Israel alert context that can matter for regional escalation and oil-risk hypotheses.",
+        conflict_tracker: "Summarises major conflict zones so Qadam can keep geopolitical risk in context.",
+        nasa_firms: "Detects fires and heat anomalies that can reveal physical disruption before prices react.",
+        aviationstack: "Tracks flight movement and route disruption as a physical-world stress signal.",
+        ais_maritime: "Tracks vessel movement and shipping disruption, especially around oil chokepoints.",
+        arcgis_usace: "Adds geospatial and infrastructure context for ports, waterways, and physical bottlenecks.",
+        space_track_celestrak: "Tracks satellite and orbital context that can support physical-world and defence hypotheses.",
+        gps_jamming: "Flags navigation interference that can point to regional conflict or maritime disruption.",
+        internet_outage: "Tracks internet disruption that can indicate civil unrest, conflict, or infrastructure stress.",
+        fred: "Adds official US macro series for rates, liquidity, inflation, and commodity context.",
+        bls: "Adds labour and inflation context that can affect macro-sensitive assets.",
+        bis: "Adds global banking and credit context for macro stress and liquidity hypotheses.",
+        ecb: "Adds European macro and liquidity context relevant to rates, FX, commodities, and risk appetite.",
+        un_comtrade: "Tracks trade flows and import-export pressure in energy, metals, semiconductors, and defence supply chains.",
+        usgs: "Adds minerals and resource context for metals, semiconductors, and industrial supply-chain hypotheses.",
+        unusual_whales: "Optional options-flow context that is currently disabled unless reselected.",
+        polymarket: "Tracks prediction-market probabilities and order-book context where public odds may diverge from Qadam's evidence.",
+        kalshi: "Optional prediction-market context awaiting credentials and account availability.",
+        hyperliquid: "Tracks crypto and perpetual-market stress where cross-asset risk can surface early.",
+        alpaca: "Mirrors paper broker account, orders, positions, and market data for paper-only execution visibility.",
+        rapidapi: "Optional marketplace source slot awaiting a specific provider decision.",
+        coinglass: "Pending adapter for derivatives positioning and liquidation context.",
+        chainlink: "Pending adapter for public price-feed context.",
+        bookmap: "Reads local order-flow context when a local bridge is available; it cannot place orders.",
+        tradingview_mcp: "Provides read-only technical-analysis context from the local TradingView MCP adapter.",
+        tradingview_paid_alerts: "Receives paid TradingView alert observations without execution authority.",
+        rss: "Collects news and public feeds for broad event coverage.",
+        telegram: "Captures user-submitted observations and bot communications as read-only context.",
+        twitter_x: "Tracks public social/news velocity that can corroborate or challenge live hypotheses.",
+        reddit: "Optional retail-forum context awaiting Reddit OAuth credentials.",
+        sec_edgar: "Reads company filings for semiconductor, defence, and market-sensitive disclosures.",
+        stock_act: "Optional political-trading context awaiting Capitol Trades or STOCK Act credentials.",
+        patents: "Tracks patent activity for supply-chain, defence, and semiconductor innovation signals.",
+        github: "Pending adapter for software and developer-activity context."
+    };
+    const watchingByKey = new Map(asArray(status.watching).map((source) => [source.source_key || source.key, source]));
+    const optionalGapByKey = new Map(asArray(status.mission_control?.data_sources?.optional_source_gap_records)
+        .map((gap) => [gap.source_key || gap.key, gap]));
+    const candidatePatterns = asArray(status.daily_edge_findings_brief?.patterns_observed).length
+        ? asArray(status.daily_edge_findings_brief.patterns_observed)
+        : asArray(status.edge_pattern_ledger?.patterns || status.pattern_recognition_engine?.candidate_patterns);
+    const sourceInfluenceMap = candidatePatterns.reduce((acc, pattern) => {
+        const sourceKeys = asArray(pattern.source_families_involved || pattern.sources || pattern.source_keys);
+        sourceKeys.forEach((sourceKey) => {
+            if (!sourceKey) return;
+            const market = pattern.market_sleeve || pattern.sleeve_label || pattern.sleeve_key || "market";
+            const label = `${dashboardText(market)} pattern review`;
+            const existing = acc.get(sourceKey) || [];
+            existing.push({
+                label,
+                market,
+                observation: pattern.observed_relationship || pattern.lead_lag_or_divergence_hypothesis || pattern.trading_strategy_implication || "Qadam is testing whether this source helps explain a watched-market move."
+            });
+            acc.set(sourceKey, existing);
+        });
+        return acc;
+    }, new Map());
+    const sourceStatusLabel = (source) => {
+        const sourceKey = source.source_key || source.key;
+        const status = String(source.status || source.readiness || "").toLowerCase();
+        const credentialStatus = String(source.credential_status || "").toLowerCase();
+        const selectionStatus = String(source.selection_status || "").toLowerCase();
+        const actionCategory = String(source.action_category || "").toLowerCase();
+        if (optionalGapByKey.has(sourceKey) || credentialStatus === "missing_optional" || selectionStatus === "optional_disabled" || actionCategory === "intentionally_disabled") return "Optional Gap";
+        if (/online|ok|ready|connected|configured/.test(status)) return "Connected";
+        if (/missing|credential/.test(credentialStatus) && optionalGapByKey.has(sourceKey)) return "Optional Gap";
+        return "Degraded";
+    };
+    const statusTone = (label) => label === "Connected" ? "online" : (label === "Optional Gap" ? "pending" : "degraded");
+    const sourceLastUpdate = (source) => {
+        const watching = watchingByKey.get(source.source_key || source.key) || {};
+        return source.last_payload_time || source.last_heartbeat || watching.last_payload_time || watching.last_heartbeat || status.generated_at || "not exported";
+    };
+    const sourceContribution = (source) => {
+        const sourceKey = source.source_key || source.key;
+        return sourceDescriptions[sourceKey]
+            || dashboardText(source.coverage_role || source.role, pipelineDescriptions[source.pipeline] || "Observation input for Qadam's research process.");
+    };
+    const sourceObservation = (source, influenceRecords = []) => {
+        if (influenceRecords.length) {
+            const markets = [...new Set(influenceRecords.map((item) => dashboardText(item.market)).filter(Boolean))].slice(0, 3).join(", ");
+            return `${dashboardText(source.source_name || source.name || source.source_key)} is currently feeding ${markets || "a watched-market"} review: ${dashboardText(influenceRecords[0].observation)}`;
+        }
+        const gap = optionalGapByKey.get(source.source_key || source.key);
+        if (gap) return `${dashboardText(source.source_name || source.name || source.source_key)} is an optional gap: ${dashboardText(gap.next_action, "credentials or provider access are still needed before it can contribute.")}`;
+        return `${dashboardText(source.source_name || source.name || source.source_key)} last reported ${sourceStatusLabel(source).toLowerCase()} and contributes: ${sourceContribution(source)}`;
     };
     const grouped = sourceLedger.reduce((acc, source) => {
         const key = source.pipeline || source.pipeline_key || "other";
@@ -4066,48 +4164,89 @@ function stage7SourceGroups(status = {}, sources = {}) {
         return acc;
     }, {});
     const preferredOrder = ["conflict", "physical", "macro", "market", "social"];
-    const orderedKeys = [
-        ...preferredOrder.filter((key) => grouped[key]),
-        ...Object.keys(grouped).filter((key) => !preferredOrder.includes(key)).sort()
-    ];
+    const orderedKeys = sourceLedger.length
+        ? preferredOrder
+        : [
+            ...preferredOrder.filter((key) => grouped[key]),
+            ...Object.keys(grouped).filter((key) => !preferredOrder.includes(key)).sort()
+        ];
     const groups = orderedKeys.map((key) => {
         const records = grouped[key] || [];
-        const onlineCount = records.filter((source) => /online|ok|ready|connected/i.test(String(source.status || source.readiness || ""))).length;
-        const degradedCount = records.filter((source) => /degraded|missing|blocked|failed/i.test(String(source.status || source.credential_status || ""))).length;
+        const normalizedSources = records.map((source) => {
+            const sourceKey = source.source_key || source.key || source.source_name || "source";
+            const influenceRecords = sourceInfluenceMap.get(sourceKey) || [];
+            const statusLabel = sourceStatusLabel(source);
+            return {
+                key: sourceKey,
+                name: dashboardText(source.source_name || source.name, sourceKey),
+                status: source.status || source.readiness || "pending",
+                status_label: statusLabel,
+                status_tone: statusTone(statusLabel),
+                readiness: source.readiness || source.credential_status || "not exported",
+                last_update: sourceLastUpdate(source),
+                description: sourceContribution(source),
+                currently_influencing: influenceRecords.length ? influenceRecords[0].label : "",
+                influencing_hypotheses: [...new Set(influenceRecords.map((item) => item.label))],
+                recent_observation: sourceObservation(source, influenceRecords),
+                operator_action: source.operator_action || optionalGapByKey.get(sourceKey)?.next_action || "none",
+                eligible_for_signal_review: source.eligible_for_signal_review === true,
+                usable_for_research_context: source.usable_for_research_context !== false
+            };
+        });
+        const connectedCount = normalizedSources.filter((source) => source.status_label === "Connected").length;
+        const optionalGapCount = normalizedSources.filter((source) => source.status_label === "Optional Gap").length;
+        const degradedCount = normalizedSources.filter((source) => source.status_label === "Degraded").length;
         const signalCount = records.filter((source) => source.eligible_for_signal_review === true).length;
         const researchCount = records.filter((source) => source.usable_for_research_context !== false).length;
+        const influencingHypotheses = [...new Set(normalizedSources.flatMap((source) => asArray(source.influencing_hypotheses)))];
+        const countParts = [
+            `${connectedCount} connected`,
+            `${degradedCount} degraded`
+        ];
+        if (optionalGapCount) countParts.push(`${optionalGapCount} optional gap${optionalGapCount === 1 ? "" : "s"}`);
         return {
             key,
             label: pipelineLabels[key] || key.replaceAll("_", " "),
+            description: pipelineDescriptions[key] || "Observation sources grouped for plain-English review.",
             source_count: records.length,
-            online_count: onlineCount,
+            online_count: connectedCount,
+            connected_count: connectedCount,
             degraded_count: degradedCount,
+            optional_gap_count: optionalGapCount,
             research_usable_count: researchCount,
             signal_review_eligible_count: signalCount,
-            tone: degradedCount ? "degraded" : onlineCount ? "online" : "pending",
-            summary: `${onlineCount}/${records.length} online; ${researchCount} usable for research; ${signalCount} can support signal review.`,
-            sources: records.map((source) => ({
-                key: source.source_key || source.key || source.source_name || "source",
-                name: dashboardText(source.source_name || source.name, source.source_key || "Source"),
-                status: source.status || source.readiness || "pending",
-                readiness: source.readiness || source.credential_status || "not exported",
-                role: source.coverage_role || source.pipeline || "observation input",
-                eligible_for_signal_review: source.eligible_for_signal_review === true,
-                usable_for_research_context: source.usable_for_research_context !== false
-            }))
+            tone: degradedCount ? "degraded" : connectedCount ? "online" : "pending",
+            summary: countParts.join(", "),
+            currently_influencing: influencingHypotheses[0] || "",
+            influencing_hypotheses: influencingHypotheses,
+            sources: normalizedSources
         };
     });
     return groups.length ? groups : asArray(sources.pipelines).map((pipeline) => ({
         key: pipeline.key || pipeline.pipeline || pipeline.label,
         label: pipeline.label || pipeline.pipeline || "Source group",
+        description: pipeline.summary || "Observation sources grouped for plain-English review.",
         source_count: modelNumber(pipeline.source_count, 0),
         online_count: modelNumber(pipeline.online_count, 0),
+        connected_count: modelNumber(pipeline.online_count, 0),
         degraded_count: modelNumber(pipeline.degraded_count, 0),
+        optional_gap_count: modelNumber(pipeline.optional_gap_count, 0),
         research_usable_count: modelNumber(pipeline.research_usable_count, 0),
         signal_review_eligible_count: modelNumber(pipeline.signal_review_eligible_count, 0),
         tone: pipeline.tone || pipeline.status || "pending",
         summary: pipeline.summary || `${pipeline.online_count || 0}/${pipeline.source_count || 0} online.`,
-        sources: asArray(pipeline.sources)
+        currently_influencing: "",
+        influencing_hypotheses: [],
+        sources: asArray(pipeline.sources).map((source) => ({
+            ...source,
+            status_label: source.status_label || sourceStatusLabel(source),
+            status_tone: source.status_tone || statusTone(source.status_label || sourceStatusLabel(source)),
+            last_update: source.last_update || source.last_heartbeat || status.generated_at || "not exported",
+            description: source.description || source.role || "Observation input for Qadam's research process.",
+            currently_influencing: source.currently_influencing || "",
+            influencing_hypotheses: asArray(source.influencing_hypotheses),
+            recent_observation: source.recent_observation || "No recent source observation exported in this snapshot."
+        }))
     }));
 }
 
@@ -9344,39 +9483,154 @@ function renderMissionPaperFund(stage7 = {}) {
     `;
 }
 
+function missionSourceCategoryPayload(group = {}) {
+    return {
+        title: dashboardText(group.label, "Source category"),
+        summary: dashboardText(group.summary, "No source summary exported."),
+        description: dashboardText(group.description, "Observation sources grouped for plain-English review."),
+        currently_influencing: dashboardText(group.currently_influencing, ""),
+        sources: asArray(group.sources).map((source) => ({
+            key: source.key || source.source_key || source.name,
+            name: dashboardText(source.name || source.source_name || source.key, "Source"),
+            status_label: dashboardText(source.status_label, "Degraded"),
+            status_tone: dashboardText(source.status_tone, "degraded"),
+            last_update: dashboardText(formatTime(source.last_update), "not exported"),
+            description: dashboardText(source.description, "Observation input for Qadam's research process."),
+            currently_influencing: dashboardText(source.currently_influencing, ""),
+            recent_observation: dashboardText(source.recent_observation, "No recent source observation exported in this snapshot.")
+        }))
+    };
+}
+
+function missionSourceCategoryAttribute(group = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionSourceCategoryPayload(group))));
+}
+
+function renderMissionSourceDrawer() {
+    return `
+        <aside class="mission-source-drawer" data-source-network-drawer hidden aria-hidden="true" aria-label="Source Intelligence Network drawer">
+            <div class="mission-source-drawer-backdrop" data-source-network-drawer-close></div>
+            <section class="mission-source-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="source-network-drawer-title">
+                <button class="mission-source-drawer-close" type="button" data-source-network-drawer-close aria-label="Close source detail">Close</button>
+                <p class="label">Source Intelligence Network</p>
+                <h3 id="source-network-drawer-title" data-source-network-drawer-title>Source category</h3>
+                <p data-source-network-drawer-summary></p>
+                <div data-source-network-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionSourceDrawerBody(detail = {}) {
+    const sources = asArray(detail.sources);
+    return `
+        <div class="mission-source-drawer-intro">
+            <strong>${htmlText(detail.summary, "No category summary exported.")}</strong>
+            <span>${htmlText(detail.description, "Observation sources grouped for plain-English review.")}</span>
+            ${detail.currently_influencing ? renderInlineBadge(`Currently influencing: ${detail.currently_influencing}`, "online") : ""}
+        </div>
+        <div class="mission-source-observation" data-source-observation-panel>
+            <span>Most recent observation</span>
+            <strong>${sources.length ? htmlText(sources[0].name) : "No source selected"}</strong>
+            <p>${sources.length ? htmlText(sources[0].recent_observation) : "No source observation exported in this snapshot."}</p>
+        </div>
+        <div class="mission-source-drawer-list">
+            ${sources.length ? sources.map((source) => `
+                <button class="mission-source-row ${statusClass(source.status_tone || source.status_label)}" type="button" data-source-observation="${literalHtmlText(encodeURIComponent(JSON.stringify({
+                    title: source.name,
+                    observation: source.recent_observation
+                })))}">
+                    <span class="mission-source-row-top">
+                        <strong>${htmlText(source.name)}</strong>
+                        ${renderInlineBadge(source.status_label, source.status_tone)}
+                    </span>
+                    <span>Last update: ${htmlText(source.last_update)}</span>
+                    <small>${htmlText(source.description)}</small>
+                    <em>${source.currently_influencing ? `Currently influencing: ${htmlText(source.currently_influencing)}` : "Not currently influencing a live hypothesis"}</em>
+                </button>
+            `).join("") : `<p class="mini">No individual source rows exported for this category.</p>`}
+        </div>
+    `;
+}
+
+function initMissionSourceNetworkDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-source-network-drawer]");
+    const title = root.querySelector("[data-source-network-drawer-title]");
+    const summary = root.querySelector("[data-source-network-drawer-summary]");
+    const body = root.querySelector("[data-source-network-drawer-body]");
+    if (!drawer || !title || !summary || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    const bindObservationButtons = () => {
+        body.querySelectorAll("[data-source-observation]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const panel = body.querySelector("[data-source-observation-panel]");
+                if (!panel) return;
+                try {
+                    const detail = JSON.parse(decodeURIComponent(button.dataset.sourceObservation || "%7B%7D"));
+                    panel.innerHTML = `
+                        <span>Most recent observation</span>
+                        <strong>${htmlText(detail.title, "Source")}</strong>
+                        <p>${htmlText(detail.observation, "No recent source observation exported in this snapshot.")}</p>
+                    `;
+                } catch (_error) {
+                    panel.innerHTML = `
+                        <span>Most recent observation</span>
+                        <strong>Source detail unavailable</strong>
+                        <p>This source did not expose a readable observation payload.</p>
+                    `;
+                }
+            });
+        });
+    };
+    root.querySelectorAll("[data-source-network-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-source-category-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.sourceCategoryDetail || "%7B%7D"));
+                title.textContent = detail.title || "Source category";
+                summary.textContent = detail.currently_influencing
+                    ? `Currently influencing: ${detail.currently_influencing}`
+                    : "No live hypothesis is currently tagged to this category.";
+                body.innerHTML = renderMissionSourceDrawerBody(detail);
+                bindObservationButtons();
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-source-network-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Source category unavailable";
+                summary.textContent = "This category did not expose a readable detail payload.";
+                body.innerHTML = `<p class="mini">Open the Evidence view for raw source diagnostics.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+}
+
 function renderMissionSourceNetwork(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "source_intelligence_network") || {};
     const network = stage7.source_intelligence_network || {};
     return `
         <section class="stage7-section mission-flow-section mission-source-network" data-stage7-section="source_intelligence_network">
             ${renderStage7SectionHeader(section, "Grouped by the kind of real-world information Qadam receives.")}
-            <div class="stage7-kpi-strip mission-kpi-strip">
-                ${renderMetric("Online", `${network.online || 0}/${network.total || 0}`)}
-                ${renderMetric("Research usable", network.research_usable_count || 0)}
-                ${renderMetric("Signal review", network.signal_review_eligible_count || 0)}
-                ${renderMetric("Required blockers", network.required_blocker_count || 0)}
-                ${renderMetric("Optional gaps", network.optional_gap_count || 0)}
-            </div>
-            <div class="mission-source-grid">
-                ${asArray(network.groups).map((group, index) => `
-                    <details class="mission-source-group ${statusClass(group.tone)}" ${index < 2 ? "open" : ""}>
-                        <summary>
-                            <strong>${htmlText(group.label)}</strong>
-                            <span>${htmlText(group.summary)}</span>
-                        </summary>
-                        <ul>
-                            ${asArray(group.sources).map((source) => `
-                                <li class="${statusClass(source.status)}">
-                                    <strong>${htmlText(source.name)}</strong>
-                                    <span>${htmlText(source.status)} · ${htmlText(source.readiness)}</span>
-                                    <em>${source.eligible_for_signal_review ? "signal review" : "research context"}</em>
-                                </li>
-                            `).join("") || `<li><strong>No source rows exported</strong><span>Open the Evidence view for raw diagnostics.</span></li>`}
-                        </ul>
-                    </details>
+            <div class="mission-source-category-grid">
+                ${asArray(network.groups).map((group) => `
+                    <button class="mission-source-category ${statusClass(group.tone)}" type="button" data-source-category-detail="${missionSourceCategoryAttribute(group)}" aria-label="Open ${literalHtmlText(group.label)} source category">
+                        <span>${htmlText(group.label)}</span>
+                        <strong>${htmlText(group.summary)}</strong>
+                        <small>${htmlText(group.description)}</small>
+                        ${group.currently_influencing ? `<em>Currently influencing: ${htmlText(group.currently_influencing)}</em>` : `<em>No live hypothesis influence tag</em>`}
+                    </button>
                 `).join("")}
             </div>
-            <p class="stage7-section-summary">${htmlText(network.boundary)}</p>
+            <p class="stage7-section-summary">These sources inform Qadam&#39;s hypotheses. None of them can place trades.</p>
+            ${renderMissionSourceDrawer()}
         </section>
     `;
 }
@@ -9596,6 +9850,7 @@ function renderStage7Visibility(viewModels = {}) {
         </div>
     `;
     initMissionPaperFundDrawer(target);
+    initMissionSourceNetworkDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {

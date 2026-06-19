@@ -6738,6 +6738,7 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 
 .mission-holdings-grid,
 .mission-paper-columns,
+.mission-source-category-grid,
 .mission-source-grid,
 .mission-market-grid,
 .mission-strategy-grid,
@@ -6755,6 +6756,82 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 
 .mission-paper-columns {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mission-source-category-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.mission-source-category {
+    appearance: none;
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.045), rgba(255, 255, 255, 0.018)),
+        rgba(4, 7, 10, 0.62);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    cursor: pointer;
+    display: grid;
+    gap: 8px;
+    min-height: 176px;
+    min-width: 0;
+    padding: 12px;
+    text-align: left;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.mission-source-category:hover,
+.mission-source-category:focus-visible {
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.09), rgba(255, 255, 255, 0.025)),
+        rgba(4, 7, 10, 0.76);
+    border-color: rgba(var(--cyan-rgb), 0.42);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.mission-source-category span,
+.mission-source-drawer-intro span,
+.mission-source-row span,
+.mission-source-row small,
+.mission-source-row em,
+.mission-source-observation span {
+    color: var(--muted);
+}
+
+.mission-source-category > span {
+    color: var(--muted-soft);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.mission-source-category strong {
+    color: var(--text);
+    font-size: 18px;
+    line-height: 1.15;
+}
+
+.mission-source-category small {
+    display: -webkit-box;
+    line-height: 1.35;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.mission-source-category em,
+.mission-source-row em {
+    background: rgba(var(--cyan-rgb), 0.07);
+    border: 1px solid rgba(var(--cyan-rgb), 0.2);
+    border-radius: 999px;
+    color: var(--cyan);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1.25;
+    padding: 5px 8px;
+    width: fit-content;
 }
 
 .mission-paper-list {
@@ -6849,19 +6926,22 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     display: none;
 }
 
-.mission-paper-drawer {
+.mission-paper-drawer,
+.mission-source-drawer {
     inset: 0;
     position: fixed;
     z-index: 80;
 }
 
-.mission-paper-drawer-backdrop {
+.mission-paper-drawer-backdrop,
+.mission-source-drawer-backdrop {
     background: rgba(0, 0, 0, 0.5);
     inset: 0;
     position: absolute;
 }
 
-.mission-paper-drawer-panel {
+.mission-paper-drawer-panel,
+.mission-source-drawer-panel {
     background:
         linear-gradient(180deg, rgba(var(--cyan-rgb), 0.08), rgba(255, 255, 255, 0.025)),
         rgba(7, 10, 12, 0.96);
@@ -6878,7 +6958,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     width: 100%;
 }
 
-.mission-paper-drawer-close {
+.mission-paper-drawer-close,
+.mission-source-drawer-close {
     align-self: start;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--line);
@@ -6889,11 +6970,79 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     padding: 8px 12px;
 }
 
-.mission-paper-drawer h3 {
+.mission-paper-drawer h3,
+.mission-source-drawer h3 {
     color: var(--text);
     font-size: clamp(22px, 3vw, 32px);
     line-height: 1.1;
     margin: 0;
+}
+
+.mission-source-drawer[hidden] {
+    display: none;
+}
+
+.mission-source-drawer-panel > p:not(.label) {
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.mission-source-drawer-intro,
+.mission-source-observation {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 7px;
+    padding: 12px;
+}
+
+.mission-source-drawer-intro strong,
+.mission-source-observation strong,
+.mission-source-row strong {
+    color: var(--text);
+}
+
+.mission-source-observation p {
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.mission-source-drawer-list {
+    display: grid;
+    gap: 8px;
+}
+
+.mission-source-row {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    cursor: pointer;
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+    padding: 10px;
+    text-align: left;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.mission-source-row:hover,
+.mission-source-row:focus-visible {
+    background: rgba(var(--cyan-rgb), 0.07);
+    border-color: rgba(var(--cyan-rgb), 0.42);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.mission-source-row-top {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    min-width: 0;
 }
 
 .mission-paper-drawer-facts {
@@ -7110,6 +7259,7 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
 
     .mission-paper-metrics,
     .mission-paper-exposure-grid,
+    .mission-source-category-grid,
     .mission-paper-columns {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -7154,6 +7304,7 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
 
     .mission-paper-metrics,
     .mission-paper-exposure-grid,
+    .mission-source-category-grid,
     .mission-paper-columns {
         grid-template-columns: 1fr;
     }
@@ -7162,7 +7313,8 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
         grid-auto-columns: minmax(220px, 86vw);
     }
 
-    .mission-paper-drawer-panel {
+    .mission-paper-drawer-panel,
+    .mission-source-drawer-panel {
         border-left: 0;
         max-width: 100vw;
     }
