@@ -64,8 +64,8 @@ assert(sourceTracker < detailFlow, "hidden detail panels must appear after the f
     "Paper Account &amp; Trade State",
     "Control Plane",
     "Data source tracker",
-    "Loading paper fund status, source network, markets, strategies, investment team, hypotheses, and learning loop.",
-    "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and learning loop."
+    "Loading paper fund status, source network, markets, strategies, investment team, hypotheses, and replay lab.",
+    "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and replay lab."
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
 [
@@ -131,7 +131,7 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
     "Strategy Playbook",
     "Hedge Fund Investment Team",
     "Hypotheses & Pattern Recognition",
-    "Backtesting & Learning Loop",
+    "Backtesting & Replay Lab",
     "renderMissionPaperFund",
     "renderMissionSourceNetwork",
     "renderMissionMarkets",

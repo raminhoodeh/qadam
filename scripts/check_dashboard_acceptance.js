@@ -130,13 +130,13 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260619-hypotheses-patterns",
-    "/dashboard.js?v=20260619-hypotheses-patterns"
+    "/auth.css?v=20260619-backtesting-replay-lab",
+    "/dashboard.js?v=20260619-backtesting-replay-lab"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
     "Qadam Mission Control",
-    "Start with the paper fund, then follow the sources, markets, strategies, investment team, hypotheses, and learning loop.",
+    "Start with the paper fund, then follow the sources, markets, strategies, investment team, hypotheses, and replay lab.",
     "Paper trading mode",
     "Mission Snapshot",
     "Paper Account &amp; Trade State",
@@ -249,7 +249,7 @@ assertNoUnsafePublicText(renderer, "dashboard renderer");
         ["[data-stage7-dashboard-visibility]", "Strategy Playbook"],
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Investment Team"],
         ["[data-stage7-dashboard-visibility]", "Hypotheses &amp; Pattern Recognition"],
-        ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Learning Loop"],
+        ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Replay Lab"],
         ["[data-stage7-dashboard-visibility]", "GBP 100,000"],
         ["[data-stage7-dashboard-visibility]", "GBP 200,000"],
         ["[data-stage7-dashboard-visibility]", "Mission Control is read-only"],

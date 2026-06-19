@@ -193,7 +193,7 @@ Use this sequence the first time you open Qadam.
    value, open holdings, trade timeline, and GBP 200,000 60-day target.
 5. Use the later sections to follow the causal chain: sources feed watched
    markets, strategies filter the setup, the investment team reviews it,
-   hypotheses form, and the learning loop records what changed.
+   hypotheses form, and the replay lab records what changed.
 6. Treat the hypotheses section as public-safe summary language, not hidden chain-of-thought
    and not proof that an order exists.
 7. Open Advanced / Debug Mode only when you need the deeper Trades, Evidence,
@@ -243,7 +243,7 @@ approve trades, submit paper orders, write to brokers, or enable live capital.
 | Strategy Playbook | The 60-day paper mandate, the five strategy families, and Akber's context, catalyst, confirmation, risk, execution, and postmortem-learning filter. |
 | Hedge Fund Investment Team | The Python COO, local LLM, frontier LLM, Head of Quant, risk desk, paper trading desk, and learning review roles. |
 | Hypotheses & Pattern Recognition | Candidate source-price patterns, source agreement, LLM review, quantum/quant review, and why Qadam is trading or waiting. |
-| Backtesting & Learning Loop | Formal backtest status where available, paper-forward replay, postmortems, edge memory, strategy feedback, and promotion gates. |
+| Backtesting & Replay Lab | Defines True Backtest, Scenario Replay, Paper Forward, and Postmortem, then shows current tests, strategy feedback proposals, and what is closest to review. |
 
 ### Advanced / Debug Mode
 
@@ -458,7 +458,7 @@ Source event
   -> paper order can be staged/submitted only if allowed
   -> paper position opens/closes
   -> postmortem
-  -> learning loop
+  -> replay lab
 ```
 
 Any missing step should block or degrade the trade.
@@ -599,7 +599,7 @@ Use this routine when checking Qadam.
    off, no UI-to-broker path, and no LLM-to-broker path.
 3. Scan Paper Fund Status, Source Intelligence Network, Watched Markets
    Universe, Strategy Playbook, Hedge Fund Investment Team, Hypotheses & Pattern
-   Recognition, and Backtesting & Learning Loop.
+   Recognition, and Backtesting & Replay Lab.
 4. Check whether any required source, reasoning, quant, risk, or paper-account
    dependency needs attention.
 5. Separate what Qadam is watching from what it is considering, and separate
@@ -803,7 +803,7 @@ Escalate or comment if:
 | Term | Meaning |
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
-| Overview | The default Mission Control walkthrough: paper fund status, source network, watched markets, strategy playbook, investment team, hypotheses, and learning loop. |
+| Overview | The default Mission Control walkthrough: paper fund status, source network, watched markets, strategy playbook, investment team, hypotheses, and replay lab. |
 | Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
 | Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
 | Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |

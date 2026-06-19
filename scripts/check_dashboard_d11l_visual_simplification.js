@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260619-hypotheses-patterns",
-        "/dashboard.js?v=20260619-hypotheses-patterns"
+        "/auth.css?v=20260619-backtesting-replay-lab",
+        "/dashboard.js?v=20260619-backtesting-replay-lab"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -144,7 +144,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260619-hypotheses-patterns");
+    console.log("dashboard_d11l_cache_key=20260619-backtesting-replay-lab");
     console.log("dashboard_authority_unchanged=True");
 }
 

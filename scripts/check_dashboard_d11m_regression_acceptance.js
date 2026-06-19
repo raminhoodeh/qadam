@@ -187,7 +187,7 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Strategy Playbook"],
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Investment Team"],
         ["[data-stage7-dashboard-visibility]", "Hypotheses &amp; Pattern Recognition"],
-        ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Learning Loop"],
+        ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Replay Lab"],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
@@ -238,8 +238,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260619-hypotheses-patterns",
-        "/dashboard.js?v=20260619-hypotheses-patterns"
+        "/auth.css?v=20260619-backtesting-replay-lab",
+        "/dashboard.js?v=20260619-backtesting-replay-lab"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

@@ -92,7 +92,7 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-stage7-dashboard-visibility",
         "Mission Control walkthrough",
-        "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and learning loop.",
+        "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and replay lab.",
         "data-dashboard-debug-only hidden",
         "data-overview-portfolio-hero",
         "data-overview-mission-brief",
@@ -143,6 +143,12 @@ async function main() {
         ".mission-hypothesis-flow",
         ".mission-hypothesis-source-list",
         ".mission-hypothesis-metric-grid",
+        ".mission-learning-definitions",
+        ".mission-learning-item",
+        ".mission-learning-drawer",
+        ".mission-feedback-panel",
+        ".mission-proposal-queue",
+        ".mission-readiness-map",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
 
@@ -193,7 +199,18 @@ async function main() {
         "LLM agreement status",
         "Quant / quantum review status",
         "function renderMissionHypotheses",
+        "function missionLearningPayload",
+        "function initMissionLearningDrawer",
+        "function renderMissionLearningDrawer",
+        "function renderMissionLearningDrawerBody",
         "function renderMissionLearning",
+        "Backtesting & Replay Lab",
+        "True Backtest",
+        "Scenario Replay",
+        "Paper Forward",
+        "Postmortem",
+        "Strategy Feedback Model",
+        "What Qadam expects to trade next",
         "stage7_visibility_model",
         "Mission Control is read-only"
     ], "Mission Control dashboard renderer");
@@ -208,7 +225,7 @@ async function main() {
             "Strategy Playbook",
             "Hedge Fund Investment Team",
             index === 0 ? "Hypotheses & Pattern Recognition" : "Hypotheses &amp; Pattern Recognition",
-            index === 0 ? "Backtesting & Learning Loop" : "Backtesting &amp; Learning Loop",
+            index === 0 ? "Backtesting & Replay Lab" : "Backtesting &amp; Replay Lab",
             "Advanced / Debug Mode",
             "GBP 100,000",
             "GBP 200,000",
@@ -223,6 +240,7 @@ async function main() {
     assert(stage7.status === "mission_control_walkthrough_ready", "Mission Control status mismatch");
     assert(stage7.level_1_section_count === 7, "Mission Control must expose seven default sections");
     assert(JSON.stringify(stage7.level_1_sections.map((section) => section.id)) === JSON.stringify(REQUIRED_SECTIONS), "Mission Control section order mismatch");
+    assert(stage7.level_1_sections.at(-1).label === "Backtesting & Replay Lab", "Mission Control final section label mismatch");
     assert(stage7.paper_fund_status.current_value_gbp > 0, "Mission Control paper fund value missing");
     assert(stage7.paper_fund_status.starting_balance_gbp === 100000, "Mission Control paper fund starting balance missing");
     assert(stage7.paper_fund_status.cash_available_gbp > 0, "Mission Control paper cash available missing");
@@ -369,7 +387,47 @@ async function main() {
         assert(hypothesis.confirmation_needed, `Mission Control hypothesis confirmation rule missing: ${hypothesis.market_sleeve}`);
         assert(hypothesis.invalidation_rule, `Mission Control hypothesis invalidation rule missing: ${hypothesis.market_sleeve}`);
     });
-    assert(stage7.backtesting_learning_loop.cards.length >= 6, "Mission Control learning loop is too thin");
+    const learning = stage7.backtesting_learning_loop;
+    assert(learning.section_title === "Backtesting & Replay Lab", "Mission Control learning section title mismatch");
+    assert(JSON.stringify(learning.definitions.map((definition) => definition.label)) === JSON.stringify([
+        "True Backtest",
+        "Scenario Replay",
+        "Paper Forward",
+        "Postmortem"
+    ]), "Mission Control learning method definitions mismatch");
+    const allowedLearningLabels = new Set(["True Backtest", "Scenario Replay", "Paper Forward", "Postmortem"]);
+    assert(learning.evaluation_items.length >= 7, "Mission Control Backtesting & Replay Lab is too thin");
+    learning.evaluation_items.forEach((item) => {
+        assert(allowedLearningLabels.has(item.method_label), `Mission Control learning item has invalid method label: ${item.title}`);
+        assert(item.hypothesis, `Mission Control learning item missing hypothesis: ${item.title}`);
+        assert(item.method, `Mission Control learning item missing method: ${item.title}`);
+        assert(item.data_used, `Mission Control learning item missing data used: ${item.title}`);
+        assert(item.result_so_far, `Mission Control learning item missing result: ${item.title}`);
+        assert(["Pending Human Review", "Approved", "Rejected"].includes(item.proposal_status), `Mission Control learning item proposal status invalid: ${item.title}`);
+    });
+    if (!learning.formal_backtest_available) {
+        assert(learning.evaluation_items.some((item) => item.method_label === "Scenario Replay" && item.result_so_far.includes("Replay only") && item.result_so_far.includes("no historical simulation available yet")), "Mission Control replay items must say replay-only when true backtest is unavailable");
+    }
+    assert(learning.strategy_feedback_model.name === "Strategy Feedback Model", "Mission Control Strategy Feedback Model missing");
+    assert(learning.strategy_feedback_model.inputs.length === 4, "Mission Control Strategy Feedback Model must show four input classes");
+    assert(JSON.stringify(learning.strategy_feedback_model.inputs.map((input) => input.label)) === JSON.stringify([
+        "Backtest results",
+        "Scenario replays",
+        "Paper outcomes",
+        "Postmortems"
+    ]), "Mission Control Strategy Feedback Model inputs mismatch");
+    assert(learning.strategy_feedback_model.proposal_queue.length > 0, "Mission Control proposal queue missing");
+    learning.strategy_feedback_model.proposal_queue.forEach((proposal) => {
+        assert(["Pending Human Review", "Approved", "Rejected"].includes(proposal.status), `Mission Control proposal queue status invalid: ${proposal.sleeve}`);
+        assert(proposal.boundary.includes("No strategy mutation") || proposal.boundary.includes("Human-governed") || proposal.boundary.includes("cannot"), `Mission Control proposal boundary weak: ${proposal.sleeve}`);
+    });
+    assert(learning.readiness_map.length >= 5, "Mission Control readiness map missing watched sleeves");
+    learning.readiness_map.forEach((item) => {
+        assert(item.sleeve, "Mission Control readiness map sleeve missing");
+        assert(item.condition, `Mission Control readiness map condition missing: ${item.sleeve}`);
+        assert(item.status, `Mission Control readiness map status missing: ${item.sleeve}`);
+    });
+    assert(stage7.backtesting_learning_loop.cards.length >= 6, "Mission Control learning compatibility cards are too thin");
     assert(stage7.paper_portfolio_capacity.baseline_gbp === 100000, "Stage 7 paper capacity baseline mismatch");
     assert(stage7.paper_portfolio_capacity.target_gbp === 200000, "Stage 7 paper capacity target mismatch");
     Object.entries(stage7.authority).forEach(([key, value]) => {
@@ -388,7 +446,7 @@ async function main() {
         "Strategy Playbook",
         "Hedge Fund Investment Team",
         "Hypotheses &amp; Pattern Recognition",
-        "Backtesting &amp; Learning Loop",
+        "Backtesting &amp; Replay Lab",
         "Today&#39;s Fund Brief",
         "Qadam as a paper hedge fund",
         "Portfolio Value",
@@ -433,7 +491,19 @@ async function main() {
         "Why no trade yet?",
         "data-hypothesis-detail=",
         "data-hypothesis-drawer",
-        "Strategy feedback model",
+        "Backtesting &amp; Replay Lab",
+        "True Backtest",
+        "Scenario Replay",
+        "Paper Forward",
+        "Postmortem",
+        "Replay only - no historical simulation available yet",
+        "Strategy Feedback Model",
+        "Proposal Queue",
+        "Pending Human Review",
+        "What Qadam expects to trade next",
+        "Readiness map, not a prediction",
+        "data-learning-detail=",
+        "data-learning-drawer",
         "Current State",
         "Holding",
         "Watching",
