@@ -6926,7 +6926,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer[hidden],
 .mission-strategy-drawer[hidden],
 .mission-team-drawer[hidden],
-.mission-hypothesis-drawer[hidden] {
+.mission-hypothesis-drawer[hidden],
+.mission-learning-drawer[hidden] {
     display: none;
 }
 
@@ -6935,7 +6936,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer,
 .mission-strategy-drawer,
 .mission-team-drawer,
-.mission-hypothesis-drawer {
+.mission-hypothesis-drawer,
+.mission-learning-drawer {
     inset: 0;
     position: fixed;
     z-index: 80;
@@ -6946,7 +6948,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer-backdrop,
 .mission-strategy-drawer-backdrop,
 .mission-team-drawer-backdrop,
-.mission-hypothesis-drawer-backdrop {
+.mission-hypothesis-drawer-backdrop,
+.mission-learning-drawer-backdrop {
     background: rgba(0, 0, 0, 0.5);
     inset: 0;
     position: absolute;
@@ -6957,7 +6960,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer-panel,
 .mission-strategy-drawer-panel,
 .mission-team-drawer-panel,
-.mission-hypothesis-drawer-panel {
+.mission-hypothesis-drawer-panel,
+.mission-learning-drawer-panel {
     background:
         linear-gradient(180deg, rgba(var(--cyan-rgb), 0.08), rgba(255, 255, 255, 0.025)),
         rgba(7, 10, 12, 0.96);
@@ -6979,7 +6983,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer-close,
 .mission-strategy-drawer-close,
 .mission-team-drawer-close,
-.mission-hypothesis-drawer-close {
+.mission-hypothesis-drawer-close,
+.mission-learning-drawer-close {
     align-self: start;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--line);
@@ -6995,7 +7000,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer h3,
 .mission-strategy-drawer h3,
 .mission-team-drawer h3,
-.mission-hypothesis-drawer h3 {
+.mission-hypothesis-drawer h3,
+.mission-learning-drawer h3 {
     color: var(--text);
     font-size: clamp(22px, 3vw, 32px);
     line-height: 1.1;
@@ -7010,7 +7016,8 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
 .mission-market-drawer-panel > p:not(.label),
 .mission-strategy-drawer-panel > p:not(.label),
 .mission-team-drawer-panel > p:not(.label),
-.mission-hypothesis-drawer-panel > p:not(.label) {
+.mission-hypothesis-drawer-panel > p:not(.label),
+.mission-learning-drawer-panel > p:not(.label) {
     color: var(--muted);
     line-height: 1.45;
     margin: 0;
@@ -7813,6 +7820,179 @@ html[data-dashboard-debug="off"] .overview-thought-list strong {
     padding-right: 3px;
 }
 
+.mission-learning-definitions,
+.mission-learning-item-grid,
+.mission-feedback-inputs,
+.mission-proposal-queue > div,
+.mission-readiness-map > div,
+.mission-learning-drawer-grid {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.mission-learning-definitions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mission-learning-definitions article,
+.mission-feedback-panel,
+.mission-proposal-queue,
+.mission-readiness-map,
+.mission-learning-drawer-section {
+    background: rgba(3, 6, 8, 0.52);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+}
+
+.mission-learning-definitions span,
+.mission-learning-item-top em,
+.mission-learning-item small,
+.mission-feedback-panel header span,
+.mission-feedback-inputs span,
+.mission-proposal-queue header span,
+.mission-proposal-queue article span,
+.mission-proposal-queue article small,
+.mission-readiness-map header span,
+.mission-readiness-map article span,
+.mission-readiness-map article em,
+.mission-learning-drawer-grid span,
+.mission-learning-drawer-section header span {
+    color: var(--muted-soft);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mission-learning-definitions p,
+.mission-learning-item p,
+.mission-feedback-panel p,
+.mission-feedback-inputs p,
+.mission-proposal-queue article p,
+.mission-readiness-map article p,
+.mission-learning-drawer-grid p,
+.mission-learning-drawer-section p {
+    color: var(--muted);
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.mission-learning-item-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mission-learning-item {
+    appearance: none;
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.045), rgba(255, 255, 255, 0.018)),
+        rgba(4, 7, 10, 0.62);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    color: inherit;
+    cursor: pointer;
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+    text-align: left;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.mission-learning-item:hover,
+.mission-learning-item:focus-visible {
+    background:
+        linear-gradient(180deg, rgba(var(--cyan-rgb), 0.09), rgba(255, 255, 255, 0.025)),
+        rgba(4, 7, 10, 0.76);
+    border-color: rgba(var(--cyan-rgb), 0.42);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.mission-learning-item-top,
+.mission-feedback-panel > header,
+.mission-proposal-queue > header,
+.mission-readiness-map > header,
+.mission-learning-drawer-section header {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.mission-learning-item-top strong {
+    border: 1px solid rgba(var(--cyan-rgb), 0.24);
+    border-radius: 999px;
+    color: var(--cyan);
+    font-size: 11px;
+    line-height: 1.25;
+    padding: 6px 9px;
+}
+
+.mission-learning-item b,
+.mission-feedback-panel header strong,
+.mission-feedback-inputs strong,
+.mission-proposal-queue header strong,
+.mission-proposal-queue article strong,
+.mission-readiness-map header strong,
+.mission-readiness-map article strong,
+.mission-learning-drawer-grid strong,
+.mission-learning-drawer-section header strong,
+.mission-learning-drawer-section b {
+    color: var(--text);
+}
+
+.mission-feedback-panel {
+    border-color: rgba(var(--cyan-rgb), 0.2);
+}
+
+.mission-feedback-inputs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mission-feedback-inputs article,
+.mission-proposal-queue article,
+.mission-readiness-map article,
+.mission-learning-drawer-grid article {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line-quiet);
+    border-radius: 8px;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding: 9px;
+}
+
+.mission-proposal-queue > div {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mission-readiness-map > div {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.mission-readiness-map article span {
+    align-items: center;
+    background: rgba(var(--cyan-rgb), 0.08);
+    border: 1px solid rgba(var(--cyan-rgb), 0.22);
+    border-radius: 999px;
+    color: var(--cyan);
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    width: 28px;
+}
+
+.mission-learning-drawer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .mission-flow-card > summary,
 .mission-source-group > summary {
     cursor: pointer;
@@ -7971,6 +8151,9 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
     .mission-paper-metrics,
     .mission-paper-exposure-grid,
     .mission-source-category-grid,
+    .mission-learning-definitions,
+    .mission-feedback-inputs,
+    .mission-readiness-map > div,
     .mission-paper-columns {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -7982,7 +8165,9 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
     .mission-strategy-drawer-grid,
     .mission-team-drawer-grid,
     .mission-hypothesis-flow,
-    .mission-hypothesis-drawer-grid {
+    .mission-hypothesis-drawer-grid,
+    .mission-learning-item-grid,
+    .mission-learning-drawer-grid {
         grid-template-columns: 1fr;
     }
 
@@ -8005,6 +8190,12 @@ html[data-dashboard-debug="off"] .stage7-dashboard-visibility {
         display: grid;
         grid-template-columns: 1fr;
         width: 100%;
+    }
+
+    .mission-learning-definitions,
+    .mission-feedback-inputs,
+    .mission-readiness-map > div {
+        grid-template-columns: 1fr;
     }
 
     .balance-ticker,

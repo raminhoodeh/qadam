@@ -4950,6 +4950,92 @@ function stage7HypothesisCards(patterns = [], context = {}) {
     });
 }
 
+const STAGE7_LEARNING_METHOD_LABELS = [
+    "True Backtest",
+    "Scenario Replay",
+    "Paper Forward",
+    "Postmortem"
+];
+
+function stage7LearningProposalStatus(record = {}) {
+    const text = String([
+        record.status,
+        record.decision_status,
+        record.proposal_status,
+        record.promotion_gate_passed ? "approved" : "",
+        record.promotion_allowed ? "approved" : "",
+        record.applied ? "approved" : "",
+        record.rejected ? "rejected" : ""
+    ].join(" ")).toLowerCase();
+    if (/approved|applied|passed/.test(text) && !/not applied|not_applied|held|blocked/.test(text)) return "Approved";
+    if (/reject|refut|discard|failed/.test(text)) return "Rejected";
+    return "Pending Human Review";
+}
+
+function stage7LearningProposalTone(status) {
+    if (status === "Approved") return "online";
+    if (status === "Rejected") return "blocked";
+    return "pending";
+}
+
+function stage7LearningRecordsBySleeve(records = []) {
+    return asArray(records).reduce((acc, record) => {
+        const key = stage7SleeveKey(record.market_sleeve || record.sleeve_key || record.instrument_key || record.strategy_family_name || record.strategy_family_key);
+        if (key && !acc.has(key)) acc.set(key, record);
+        return acc;
+    }, new Map());
+}
+
+function stage7LearningProposalRecord(record = {}, fallback = {}) {
+    const sleeve = stage7SleeveDisplayLabel(record.market_sleeve || record.sleeve_key || record.instrument_key || fallback.market_sleeve || "Market sleeve");
+    const status = stage7LearningProposalStatus(record);
+    return {
+        id: record.update_id || record.weight_update_id || record.promotion_gate_id || record.source_proposal_id || fallback.id || stage7SleeveKey(sleeve),
+        sleeve,
+        status,
+        status_tone: stage7LearningProposalTone(status),
+        proposal: dashboardText(
+            record.proposed_adjustment
+                || record.strategy_update_proposed_adjustment
+                || record.recommendation
+                || record.source_proposal_kind
+                || fallback.proposal,
+            "Keep observing before changing strategy priority."
+        ),
+        would_change: dashboardText(
+            record.target_strategy_component
+                || record.target_weight_surface
+                || record.strategy_family_name
+                || fallback.would_change,
+            "Strategy research priority only."
+        ),
+        reason: dashboardText(record.reason || record.rationale || record.allowed_next_action || fallback.reason, "Proposal is recorded for review and is not applied automatically."),
+        rollback_condition: dashboardText(record.rollback_condition || fallback.rollback_condition, "Rollback or discard if the evidence weakens, contradicts later paper outcomes, or fails review."),
+        boundary: dashboardText(record.blocked_action || fallback.boundary, "Human-governed proposal only. No strategy mutation, paper order, broker write, or live-capital change is created here.")
+    };
+}
+
+function stage7LearningDefinitions() {
+    return [
+        {
+            label: "True Backtest",
+            summary: "A historical simulation of a strategy against prior market and source data."
+        },
+        {
+            label: "Scenario Replay",
+            summary: "A past or current setup rerun through Qadam's current logic to see how it would classify the evidence."
+        },
+        {
+            label: "Paper Forward",
+            summary: "The live paper-trading record: what Qadam actually held, submitted, closed, or avoided."
+        },
+        {
+            label: "Postmortem",
+            summary: "The learning review after a closed paper trade or rejected setup."
+        }
+    ];
+}
+
 function stage7LearningLoopModel(status = {}, edge = {}) {
     const daily = status.daily_edge_findings_brief || {};
     const patternEngine = status.pattern_recognition_engine || {};
@@ -4960,7 +5046,157 @@ function stage7LearningLoopModel(status = {}, edge = {}) {
     const meta = status.quantum_meta_review || {};
     const promotion = status.promotion_gates || {};
     const formalBacktest = status.backtest_results || status.backtesting_results || status.backtesting || null;
+    const patterns = asArray(daily.patterns_observed).length
+        ? asArray(daily.patterns_observed)
+        : asArray(edge.pattern_ledger?.patterns || patternEngine.candidate_patterns);
+    const updatesBySleeve = stage7LearningRecordsBySleeve(updates.proposals || daily.strategy_updates);
+    const weightsBySleeve = stage7LearningRecordsBySleeve(weights.weight_update_records);
+    const metaBySleeve = stage7LearningRecordsBySleeve(meta.meta_review_records);
+    const promotionBySleeve = stage7LearningRecordsBySleeve(promotion.promotion_gate_decisions);
+    const proposalQueue = (
+        asArray(updates.proposals).length
+            ? asArray(updates.proposals)
+            : (asArray(weights.weight_update_records).length ? asArray(weights.weight_update_records) : asArray(daily.strategy_updates))
+    ).slice(0, 6).map((record) => stage7LearningProposalRecord(record));
+    const paperClosedTrades = asArray(status.capital?.closed_trades || status.paper_fund_status?.closed_trades);
+    const paperOpenPositions = asArray(status.capital?.open_positions || status.paper_fund_status?.open_positions);
+    const replayItems = patterns.slice(0, 5).map((pattern) => {
+        const sleeve = stage7SleeveDisplayLabel(pattern.market_sleeve || pattern.sleeve_key || "Market sleeve");
+        const sleeveKey = stage7SleeveKey(sleeve);
+        const update = updatesBySleeve.get(sleeveKey) || {};
+        const weight = weightsBySleeve.get(sleeveKey) || {};
+        const metaReview = metaBySleeve.get(sleeveKey) || {};
+        const promotionGate = promotionBySleeve.get(sleeveKey) || {};
+        const proposal = stage7LearningProposalRecord(weight.strategy_family_name ? weight : (update.update_id ? update : promotionGate), {
+            market_sleeve: sleeve,
+            proposal: pattern.trading_strategy_implication,
+            would_change: "Research priority for this market sleeve.",
+            reason: pattern.lead_lag_or_divergence_hypothesis,
+            boundary: "Research and replay output only. Downstream Strategy Lead, Signal Integrity, Risk, PaperOps, and Alpaca Paper gates remain separate."
+        });
+        const missingCriteria = asArray(pattern.missing_criteria);
+        const passedCriteria = asArray(pattern.passed_criteria);
+        const confidence = modelNumber(pattern.confidence_after_quantum_review, modelNumber(weight.latest_edge_readiness_score, 0));
+        return {
+            id: pattern.pattern_id || `replay-${sleeveKey}`,
+            method_label: "Scenario Replay",
+            status_tone: "pending",
+            title: `${sleeve} replay`,
+            hypothesis: dashboardText(pattern.observed_relationship, `${sleeve} is being tested for repeatable source-price behaviour.`),
+            method: "Replay only - no historical simulation available yet.",
+            market_sleeve: sleeve,
+            data_used: `${modelNumber(pattern.source_count, 0)} sources, ${asArray(pattern.watched_market_symbols).slice(0, 6).join(", ") || "watched instruments"}, quantum-reviewed pattern artifact.`,
+            result_so_far: `Replay only - no historical simulation available yet. Current review has ${passedCriteria.length} passed criteria, ${missingCriteria.length || 0} missing criteria, and ${stage7Percent(confidence)} reviewed confidence.`,
+            proposal: proposal.proposal,
+            proposal_status: proposal.status,
+            proposal_status_tone: proposal.status_tone,
+            proposal_reason: proposal.reason,
+            strategy_feedback_proposal: proposal,
+            quantum_review: dashboardText(pattern.quantum_non_linear_review_result?.status || metaReview.quantum_review_status || meta.status, "not exported"),
+            what_would_confirm: missingCriteria.length
+                ? `Needs ${missingCriteria.map(stage7TitleFromKey).join(", ")}.`
+                : "Needs fresh Signal Integrity, Risk, PaperOps, and paper-route acceptance.",
+            what_would_invalidate: dashboardText(weight.rollback_condition || update.rollback_condition, "Invalidate if the relationship decays, reverses, or contradicts later paper outcomes."),
+            boundary: "This lab item explains evidence and proposals only. It has no order, broker-write, or live-capital authority."
+        };
+    });
+    const paperForwardItem = {
+        id: "paper-forward-outcomes",
+        method_label: "Paper Forward",
+        status_tone: paperOpenPositions.length || paperClosedTrades.length ? "online" : "pending",
+        title: "Paper account outcomes",
+        hypothesis: "Qadam compares actual paper holdings and closed trades with the hypotheses that produced them.",
+        method: "Paper Forward",
+        market_sleeve: "All sleeves",
+        data_used: `${paperOpenPositions.length} open paper positions and ${paperClosedTrades.length} closed paper trades from the paper account mirror.`,
+        result_so_far: `${paperOpenPositions.length} open paper positions and ${paperClosedTrades.length} closed paper trades are available for outcome comparison.`,
+        proposal: "Use paper-forward outcomes as evidence before changing research priority.",
+        proposal_status: "Pending Human Review",
+        proposal_status_tone: "pending",
+        proposal_reason: "Actual paper outcomes are inputs into the Strategy Feedback Model, not automatic instructions.",
+        strategy_feedback_proposal: stage7LearningProposalRecord({}, {
+            id: "paper-forward-proposal",
+            market_sleeve: "All sleeves",
+            proposal: "Compare paper outcomes with replay results before strategy changes.",
+            would_change: "Learning review priority",
+            reason: "Paper-forward results are the closest available proxy for real operating behaviour.",
+            boundary: "Paper outcomes cannot mutate strategy without explicit human-governed review."
+        }),
+        quantum_review: meta.status || edge.quantum_pattern_review?.status || "not exported",
+        what_would_confirm: "Closed trades and open-position behaviour agree with replay and source-price evidence.",
+        what_would_invalidate: "Paper outcomes diverge from the hypothesis, show poor timing, or fail the risk/postmortem review.",
+        boundary: "Paper Forward is a record of observed paper behaviour, not permission to trade."
+    };
+    const postmortemItem = {
+        id: "postmortem-learning",
+        method_label: "Postmortem",
+        status_tone: paperClosedTrades.length ? "online" : "pending",
+        title: "Outcome review and postmortems",
+        hypothesis: "Closed paper outcomes are reviewed to decide what Qadam should keep, reduce, or reject in future research.",
+        method: "Postmortem",
+        market_sleeve: "All sleeves",
+        data_used: `${paperClosedTrades.length} closed paper trades, edge memory records, proposal records, and quantum meta-review holds.`,
+        result_so_far: `${modelNumber(promotion.promotion_review_ready_count, 0)} proposals are review-ready; ${modelNumber(promotion.promotion_gate_held_count, 0)} are held by promotion gates.`,
+        proposal: "Keep learning proposals in the human review queue until evidence, quantum dependency, and governance gates pass.",
+        proposal_status: "Pending Human Review",
+        proposal_status_tone: "pending",
+        proposal_reason: dashboardText(promotion.loop_level_decision || promotion.blocked_reason, "Promotion gates are holding automatic application."),
+        strategy_feedback_proposal: stage7LearningProposalRecord(asArray(promotion.promotion_gate_decisions)[0] || {}, {
+            id: "postmortem-proposal",
+            market_sleeve: "All sleeves",
+            proposal: "Retain or demote strategy hypotheses after postmortem review.",
+            would_change: "Human-governed strategy learning",
+            reason: "Postmortems decide whether a pattern deserved trust after the actual paper outcome.",
+            boundary: "Postmortem output is review-only and cannot create broker authority."
+        }),
+        quantum_review: meta.status || edge.quantum_pattern_review?.status || "not exported",
+        what_would_confirm: "Postmortems show the evidence chain improved timing, sizing discipline, or avoided a bad setup.",
+        what_would_invalidate: "Postmortems show the thesis was coincidental, late, under-corroborated, or contradicted by outcome data.",
+        boundary: "Postmortems can recommend learning actions, but cannot apply them automatically."
+    };
+    const trueBacktestItems = formalBacktest ? [{
+        id: "true-backtest-export",
+        method_label: "True Backtest",
+        status_tone: "online",
+        title: "Exported true backtest",
+        hypothesis: dashboardText(formalBacktest.summary || formalBacktest.hypothesis, "Historical backtest results are exported for comparison."),
+        method: "True Backtest",
+        market_sleeve: dashboardText(formalBacktest.market_sleeve, "All sleeves"),
+        data_used: dashboardText(formalBacktest.data_used || formalBacktest.dataset, "Historical market and source data."),
+        result_so_far: dashboardText(formalBacktest.result || formalBacktest.status, "Backtest result exported."),
+        proposal: "Compare backtest results with paper-forward and replay evidence.",
+        proposal_status: "Pending Human Review",
+        proposal_status_tone: "pending",
+        proposal_reason: "Backtest evidence is comparative input only until reviewed.",
+        strategy_feedback_proposal: stage7LearningProposalRecord({}, { id: "true-backtest-proposal", proposal: "Compare historical and paper-forward evidence.", market_sleeve: "All sleeves" }),
+        quantum_review: meta.status || edge.quantum_pattern_review?.status || "not exported",
+        what_would_confirm: "Backtest and paper-forward evidence agree on timing and drawdown behaviour.",
+        what_would_invalidate: "Backtest results fail to survive replay, paper outcomes, or quantum meta-review.",
+        boundary: "True backtests are evidence only and cannot bypass current paper gates."
+    }] : [];
+    const evaluationItems = [
+        ...trueBacktestItems,
+        ...replayItems,
+        paperForwardItem,
+        postmortemItem
+    ];
+    const readinessMap = patterns.slice(0, 5).map((pattern) => {
+        const sleeve = stage7SleeveDisplayLabel(pattern.market_sleeve || pattern.sleeve_key || "Market sleeve");
+        const missingCriteria = asArray(pattern.missing_criteria);
+        const score = modelNumber(pattern.confidence_after_quantum_review, 0);
+        return {
+            sleeve,
+            score,
+            score_label: stage7Percent(score),
+            status: pattern.trade_candidate_creation_allowed ? "Trade Candidate" : "Testing",
+            condition: missingCriteria.length
+                ? `Needs ${missingCriteria.map(stage7TitleFromKey).join(", ")}.`
+                : "Needs fresh Signal Integrity, Risk, PaperOps, and Alpaca Paper acceptance.",
+            tone: pattern.trade_candidate_creation_allowed ? "online" : "pending"
+        };
+    }).sort((a, b) => b.score - a.score || a.sleeve.localeCompare(b.sleeve));
     return {
+        section_title: "Backtesting & Replay Lab",
         formal_backtest_available: Boolean(formalBacktest),
         formal_backtest_status: formalBacktest?.status || "not exported",
         replay_status: status.phase6_shadow_strategy_runner?.status || status.shadow_strategy_runner?.status || "not exported",
@@ -4974,7 +5210,48 @@ function stage7LearningLoopModel(status = {}, edge = {}) {
         promotion_review_ready_count: modelNumber(promotion.promotion_review_ready_count, 0),
         explanation: formalBacktest
             ? "Historical backtest results are exported and can be compared with paper-forward outcomes."
-            : "No formal historical backtest artifact is exported yet. Qadam is using paper-forward results, postmortems, shadow replay records, edge memory, and strategy update proposals until a dedicated backtest artifact exists.",
+            : "No formal historical backtest artifact is exported yet. Qadam is using replay, paper-forward results, postmortems, edge memory, and strategy update proposals until a dedicated backtest artifact exists.",
+        definitions: stage7LearningDefinitions(),
+        evaluation_items: evaluationItems,
+        strategy_feedback_model: {
+            name: "Strategy Feedback Model",
+            status: updates.status || weights.status || "not exported",
+            inputs: [
+                {
+                    label: "Backtest results",
+                    status: formalBacktest?.status || "not exported",
+                    detail: formalBacktest ? "Historical simulation data is available for comparison." : "No formal true backtest artifact is exported yet."
+                },
+                {
+                    label: "Scenario replays",
+                    status: status.phase6_shadow_strategy_runner?.status || status.shadow_strategy_runner?.status || "replay only",
+                    detail: `${replayItems.length} replay items compare source-price evidence against current Qadam logic.`
+                },
+                {
+                    label: "Paper outcomes",
+                    status: daily.status || "not exported",
+                    detail: `${paperOpenPositions.length} open positions and ${paperClosedTrades.length} closed paper trades are visible.`
+                },
+                {
+                    label: "Postmortems",
+                    status: promotion.status || "not exported",
+                    detail: `${modelNumber(promotion.promotion_review_ready_count, 0)} proposals ready for human-governed review; ${modelNumber(promotion.promotion_gate_held_count, 0)} held.`
+                }
+            ],
+            generated_proposal_count: proposalQueue.length,
+            proposal_queue: proposalQueue.length ? proposalQueue : [
+                stage7LearningProposalRecord({}, {
+                    id: "proposal-queue-empty",
+                    market_sleeve: "All sleeves",
+                    proposal: "No strategy feedback proposal has been exported yet.",
+                    would_change: "Nothing",
+                    reason: "The learning loop is waiting for more evidence.",
+                    boundary: "No proposal authority exists without explicit review."
+                })
+            ],
+            boundary: "The Strategy Feedback Model proposes review items only. It cannot mutate strategy weights, create trade candidates, submit paper orders, write brokers, or enable live capital."
+        },
+        readiness_map: readinessMap,
         cards: [
             { label: "Pattern engine", state: patternEngine.status || "not exported", summary: patternEngine.purpose || "Builds source-price features before quant review." },
             { label: "Edge memory", state: memory.status || "not exported", summary: memory.purpose || "Stores pattern evidence and outcome memory." },
@@ -5339,7 +5616,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         { id: "strategy_playbook", label: "Strategy Playbook + Akber Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
         { id: "hedge_fund_investment_team", label: "Hedge Fund Investment Team", question: "Which part of Qadam does what?", tone: teamRoles.some((role) => role.status_tone === "blocked") ? "blocked" : "online" },
         { id: "hypotheses_pattern_recognition", label: "Hypotheses & Pattern Recognition", question: "What is Qadam currently thinking about?", tone: candidatePatterns.length ? "pending" : "online" },
-        { id: "backtesting_learning_loop", label: "Backtesting & Learning Loop", question: "How does Qadam improve after evidence and outcomes?", tone: "pending" }
+        { id: "backtesting_learning_loop", label: "Backtesting & Replay Lab", question: "How does Qadam improve after evidence and outcomes?", tone: "pending" }
     ];
     const openHoldingNames = asArray(paper.open_positions).map((position) => position.instrument || position.symbol).filter(Boolean).slice(0, 4);
     const paperFundBrief = [
@@ -11146,6 +11423,152 @@ function initMissionHypothesisDrawer(root) {
     });
 }
 
+function missionLearningPayload(item = {}) {
+    return {
+        id: dashboardText(item.id, "learning-item"),
+        title: dashboardText(item.title, "Learning item"),
+        method_label: dashboardText(item.method_label, "Scenario Replay"),
+        hypothesis: dashboardText(item.hypothesis, "Hypothesis not exported."),
+        method: dashboardText(item.method, "Method not exported."),
+        market_sleeve: dashboardText(item.market_sleeve, "Market sleeve"),
+        data_used: dashboardText(item.data_used, "Data used not exported."),
+        result_so_far: dashboardText(item.result_so_far, "Result not exported."),
+        proposal: dashboardText(item.proposal, "No proposal exported."),
+        proposal_status: dashboardText(item.proposal_status, "Pending Human Review"),
+        proposal_reason: dashboardText(item.proposal_reason, "Proposal is awaiting human-governed review."),
+        strategy_feedback_proposal: {
+            proposal: dashboardText(item.strategy_feedback_proposal?.proposal || item.proposal, "No proposal exported."),
+            would_change: dashboardText(item.strategy_feedback_proposal?.would_change, "Strategy research priority."),
+            reason: dashboardText(item.strategy_feedback_proposal?.reason || item.proposal_reason, "No rationale exported."),
+            rollback_condition: dashboardText(item.strategy_feedback_proposal?.rollback_condition, "Rollback condition not exported."),
+            boundary: dashboardText(item.strategy_feedback_proposal?.boundary || item.boundary, "Review-only learning output.")
+        },
+        quantum_review: dashboardText(item.quantum_review, "not exported"),
+        what_would_confirm: dashboardText(item.what_would_confirm, "Confirmation requirement not exported."),
+        what_would_invalidate: dashboardText(item.what_would_invalidate, "Invalidation rule not exported."),
+        boundary: dashboardText(item.boundary, "Learning lab output is review-only.")
+    };
+}
+
+function missionLearningAttribute(item = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionLearningPayload(item))));
+}
+
+function renderMissionLearningDrawer() {
+    return `
+        <aside class="mission-learning-drawer" data-learning-drawer hidden aria-hidden="true" aria-label="Backtesting and replay detail drawer">
+            <div class="mission-learning-drawer-backdrop" data-learning-drawer-close></div>
+            <section class="mission-learning-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="learning-drawer-title">
+                <button class="mission-learning-drawer-close" type="button" data-learning-drawer-close aria-label="Close learning detail">Close</button>
+                <p class="label">Backtesting &amp; Replay Lab</p>
+                <h3 id="learning-drawer-title" data-learning-drawer-title>Learning item</h3>
+                <p data-learning-drawer-summary></p>
+                <div data-learning-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionLearningDrawerBody(detail = {}) {
+    const proposal = detail.strategy_feedback_proposal || {};
+    return `
+        <div class="mission-learning-drawer-grid">
+            <article>
+                <span>Method</span>
+                <strong>${htmlText(detail.method_label)}</strong>
+                <p>${htmlText(detail.method)}</p>
+            </article>
+            <article>
+                <span>Market sleeve</span>
+                <strong>${htmlText(detail.market_sleeve)}</strong>
+                <p>${htmlText(detail.quantum_review)} quantum / quant review status.</p>
+            </article>
+            <article>
+                <span>Data used</span>
+                <strong>Evidence set</strong>
+                <p>${htmlText(detail.data_used)}</p>
+            </article>
+            <article>
+                <span>Result so far</span>
+                <strong>${htmlText(detail.proposal_status)}</strong>
+                <p>${htmlText(detail.result_so_far)}</p>
+            </article>
+        </div>
+        <section class="mission-learning-drawer-section">
+            <header>
+                <span>Hypothesis being tested</span>
+                <strong>${htmlText(detail.market_sleeve)}</strong>
+            </header>
+            <p>${htmlText(detail.hypothesis)}</p>
+        </section>
+        <section class="mission-learning-drawer-section">
+            <header>
+                <span>Strategy Feedback Model proposal</span>
+                <strong>${htmlText(detail.proposal_status)}</strong>
+            </header>
+            <p><b>${htmlText(proposal.proposal || detail.proposal)}</b></p>
+            <p>${htmlText(proposal.reason || detail.proposal_reason)}</p>
+            <p>Would change: ${htmlText(proposal.would_change)}.</p>
+            <p>Rollback: ${htmlText(proposal.rollback_condition)}.</p>
+        </section>
+        <div class="mission-learning-drawer-grid">
+            <article>
+                <span>What would confirm it</span>
+                <strong>Confirmation</strong>
+                <p>${htmlText(detail.what_would_confirm)}</p>
+            </article>
+            <article>
+                <span>What would invalidate it</span>
+                <strong>Invalidation</strong>
+                <p>${htmlText(detail.what_would_invalidate)}</p>
+            </article>
+        </div>
+        <section class="mission-learning-drawer-section">
+            <header>
+                <span>Boundary</span>
+                <strong>Review only</strong>
+            </header>
+            <p>${htmlText(detail.boundary)}</p>
+            <p>${htmlText(proposal.boundary, "The proposal queue is human-governed and cannot mutate strategy automatically.")}</p>
+        </section>
+    `;
+}
+
+function initMissionLearningDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-learning-drawer]");
+    const title = root.querySelector("[data-learning-drawer-title]");
+    const summary = root.querySelector("[data-learning-drawer-summary]");
+    const body = root.querySelector("[data-learning-drawer-body]");
+    if (!drawer || !title || !summary || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    root.querySelectorAll("[data-learning-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-learning-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.learningDetail || "%7B%7D"));
+                title.textContent = detail.title || "Learning item";
+                summary.textContent = `${detail.method_label || "Scenario Replay"} · ${detail.proposal_status || "Pending Human Review"}`;
+                body.innerHTML = renderMissionLearningDrawerBody(detail);
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-learning-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Learning detail unavailable";
+                summary.textContent = "This item did not expose a readable detail payload.";
+                body.innerHTML = `<p class="mini">Open the Operations view for raw learning diagnostics.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+}
+
 function renderMissionHypotheses(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "hypotheses_pattern_recognition") || {};
     const pattern = stage7.hypotheses_pattern_recognition || {};
@@ -11204,9 +11627,10 @@ function renderMissionHypotheses(stage7 = {}) {
 function renderMissionLearning(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "backtesting_learning_loop") || {};
     const learning = stage7.backtesting_learning_loop || {};
+    const feedback = learning.strategy_feedback_model || {};
     return `
         <section class="stage7-section mission-flow-section mission-learning" data-stage7-section="backtesting_learning_loop">
-            ${renderStage7SectionHeader(section, "Backtesting, replay, paper outcomes, and strategy feedback are separated clearly.")}
+            ${renderStage7SectionHeader({ ...section, label: learning.section_title || section.label || "Backtesting & Replay Lab" }, "Backtesting, replay, paper outcomes, and strategy feedback are separated clearly.")}
             <div class="stage7-kpi-strip mission-kpi-strip">
                 ${renderMetric("Formal backtest", learning.formal_backtest_available ? learning.formal_backtest_status : "not exported")}
                 ${renderMetric("Paper-forward", learning.paper_forward_status || "not exported")}
@@ -11216,15 +11640,79 @@ function renderMissionLearning(stage7 = {}) {
                 ${renderMetric("Strategy proposals", learning.strategy_update_count || 0)}
             </div>
             <p class="stage7-section-summary">${htmlText(learning.explanation)}</p>
-            <div class="mission-learning-grid">
-                ${asArray(learning.cards).map((card) => `
-                    <article class="mission-flow-card ${statusClass(card.state)}">
-                        <span>${htmlText(card.label)}</span>
-                        <strong>${htmlText(card.state).replaceAll("_", " ")}</strong>
-                        <p>${htmlText(card.summary)}</p>
+            <div class="mission-learning-definitions">
+                ${asArray(learning.definitions).map((definition) => `
+                    <article>
+                        <span>${htmlText(definition.label)}</span>
+                        <p>${htmlText(definition.summary)}</p>
                     </article>
                 `).join("")}
             </div>
+            <div class="mission-learning-item-grid">
+                ${asArray(learning.evaluation_items).map((item) => `
+                    <button class="mission-learning-item ${statusClass(item.status_tone || item.proposal_status)}" type="button" data-learning-detail="${missionLearningAttribute(item)}" aria-label="Open ${literalHtmlText(item.title)} learning detail">
+                        <span class="mission-learning-item-top">
+                            <em>${htmlText(item.method_label)}</em>
+                            <strong>${htmlText(item.proposal_status)}</strong>
+                        </span>
+                        <b>${htmlText(item.title)}</b>
+                        <p>${htmlText(item.result_so_far)}</p>
+                        <small>${htmlText(item.data_used)}</small>
+                    </button>
+                `).join("")}
+            </div>
+            <div class="mission-feedback-panel">
+                <header>
+                    <div>
+                        <span>Strategy Feedback Model</span>
+                        <strong>${htmlText(feedback.name, "Strategy Feedback Model")}</strong>
+                    </div>
+                    ${renderInlineBadge(feedback.status || "not exported", feedback.status || "pending")}
+                </header>
+                <p>${htmlText(feedback.boundary)}</p>
+                <div class="mission-feedback-inputs">
+                    ${asArray(feedback.inputs).map((input) => `
+                        <article class="${statusClass(input.status)}">
+                            <span>${htmlText(input.label)}</span>
+                            <strong>${htmlText(input.status)}</strong>
+                            <p>${htmlText(input.detail)}</p>
+                        </article>
+                    `).join("")}
+                </div>
+                <section class="mission-proposal-queue">
+                    <header>
+                        <span>Proposal Queue</span>
+                        <strong>${htmlText(feedback.generated_proposal_count || 0)} visible</strong>
+                    </header>
+                    <div>
+                        ${asArray(feedback.proposal_queue).map((proposal) => `
+                            <article class="${statusClass(proposal.status_tone || proposal.status)}">
+                                <span>${htmlText(proposal.status)}</span>
+                                <strong>${htmlText(proposal.sleeve)}</strong>
+                                <p>${htmlText(proposal.proposal)}</p>
+                                <small>${htmlText(proposal.reason)}</small>
+                            </article>
+                        `).join("")}
+                    </div>
+                </section>
+            </div>
+            <section class="mission-readiness-map">
+                <header>
+                    <span>What Qadam expects to trade next</span>
+                    <strong>Readiness map, not a prediction</strong>
+                </header>
+                <div>
+                    ${asArray(learning.readiness_map).map((item, index) => `
+                        <article class="${statusClass(item.tone || item.status)}">
+                            <span>${index + 1}</span>
+                            <strong>${htmlText(item.sleeve)}</strong>
+                            <em>${htmlText(item.score_label)} · ${htmlText(item.status)}</em>
+                            <p>${htmlText(item.condition)}</p>
+                        </article>
+                    `).join("")}
+                </div>
+            </section>
+            ${renderMissionLearningDrawer()}
         </section>
     `;
 }
@@ -11266,6 +11754,7 @@ function renderStage7Visibility(viewModels = {}) {
     initMissionStrategyDrawer(target);
     initMissionTeamDrawer(target);
     initMissionHypothesisDrawer(target);
+    initMissionLearningDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {
