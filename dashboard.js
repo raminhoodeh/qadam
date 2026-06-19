@@ -4571,6 +4571,186 @@ function stage7MarketSleeves(edge = {}, strategy = {}, context = {}) {
     }).sort((a, b) => a.order_index - b.order_index);
 }
 
+function stage7AkberStageLabels(akberLens = {}) {
+    const fallback = ["Context", "Catalyst", "Confirmation", "Risk", "Execution", "Postmortem Learning"];
+    const stages = asArray(akberLens.stages).length ? asArray(akberLens.stages) : fallback;
+    const normalized = stages.map((stage) => {
+        const text = dashboardText(stage, "");
+        if (!text) return "";
+        if (/postmortem/i.test(text)) return "Postmortem Learning";
+        return text.split(/[\s_-]+/).filter(Boolean).map((part) => (
+            part.length <= 3 && part === part.toUpperCase()
+                ? part
+                : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        )).join(" ");
+    }).filter(Boolean);
+    return normalized.length ? normalized.slice(0, 6) : fallback;
+}
+
+function stage7StrategySleeveKey(family = {}) {
+    return stage7StrategyInstrumentKey(family.instrument || family.sleeve || family.market_sleeve || family.key);
+}
+
+function stage7StrategyPatternForFamily(family = {}, patterns = []) {
+    const familyKey = stage7StrategySleeveKey(family);
+    return asArray(patterns).find((pattern) => (
+        stage7StrategyInstrumentKey(pattern.sleeve_key || pattern.market_sleeve || pattern.label) === familyKey
+        || stage7SleeveKey(pattern.market_sleeve || pattern.label || pattern.sleeve_key) === stage7SleeveKey(family.instrument || family.sleeve || family.label)
+    )) || {};
+}
+
+function stage7StrategySleeveForFamily(family = {}, marketSleeves = []) {
+    const familyKey = stage7StrategySleeveKey(family);
+    return asArray(marketSleeves).find((sleeve) => (
+        stage7StrategyInstrumentKey(sleeve.key || sleeve.label) === familyKey
+        || stage7SleeveKey(sleeve.label || sleeve.key) === stage7SleeveKey(family.instrument || family.sleeve || family.label)
+    )) || {};
+}
+
+function stage7StrategyLifecycle(family = {}, sleeve = {}, pattern = {}) {
+    const reason = String(family.current_reason || family.setup_state || family.current_state || "").toLowerCase();
+    const held = asArray(sleeve.held_instruments).length > 0 || sleeve.current_state === "Holding";
+    if (held) {
+        return {
+            status: "In paper position",
+            tone: "online",
+            gate: "Execution",
+            last_gate_passed: "Risk",
+            next_gate_needed: "Postmortem Learning",
+            why_not_ready: "This strategy already has mirrored Alpaca Paper exposure; Qadam is watching outcome, risk, and postmortem learning next."
+        };
+    }
+    if (family.qualified_setup) {
+        return {
+            status: "Ready for paper review",
+            tone: "online",
+            gate: "Risk",
+            last_gate_passed: "Confirmation",
+            next_gate_needed: "Execution",
+            why_not_ready: "The setup has reached guarded paper review; it still needs the PaperOps execution route and idempotency gates before a new paper order."
+        };
+    }
+    if (/risk|sizing|notional|paper staging|paper_order|venue|execution|route/.test(reason)) {
+        return {
+            status: "Under risk review",
+            tone: "pending",
+            gate: "Risk",
+            last_gate_passed: "Confirmation",
+            next_gate_needed: "Execution",
+            why_not_ready: dashboardText(family.current_reason, "Waiting for risk sizing, route readiness, and paper staging confirmation.")
+        };
+    }
+    if (pattern.status || /confirm|corroborat|signal/.test(reason)) {
+        return {
+            status: "Waiting for confirmation",
+            tone: "pending",
+            gate: "Confirmation",
+            last_gate_passed: "Catalyst",
+            next_gate_needed: "Risk",
+            why_not_ready: dashboardText(family.current_reason, "Waiting for price confirmation against the source signal.")
+        };
+    }
+    if (family.catalyst_focus) {
+        return {
+            status: "Catalyst detected",
+            tone: "pending",
+            gate: "Catalyst",
+            last_gate_passed: "Context",
+            next_gate_needed: "Confirmation",
+            why_not_ready: "Qadam has a catalyst theme, but it still needs source agreement and market confirmation."
+        };
+    }
+    return {
+        status: "Watching for context",
+        tone: "degraded",
+        gate: "Context",
+        last_gate_passed: "None",
+        next_gate_needed: "Catalyst",
+        why_not_ready: "Qadam is still collecting enough context before treating this as a catalyst."
+    };
+}
+
+function stage7StrategyTrend(family = {}, sleeve = {}, pattern = {}) {
+    const delta = modelNumber(pattern.confidence_after_quantum_review, 0) - modelNumber(pattern.confidence_before_quantum_review, 0);
+    if (delta > 0.02) {
+        return {
+            direction: "More relevant",
+            tone: "online",
+            reason: "Quantum review increased this sleeve's pattern confidence over the latest daily edge pass."
+        };
+    }
+    if (delta < -0.02) {
+        return {
+            direction: "Less relevant",
+            tone: "blocked",
+            reason: "The latest review reduced this sleeve's confidence, so Qadam is deprioritising it."
+        };
+    }
+    if (sleeve.current_state === "Holding" || family.qualified_setup) {
+        return {
+            direction: "More relevant",
+            tone: "online",
+            reason: "The strategy is either in a mirrored paper position or has reached guarded paper review."
+        };
+    }
+    return {
+        direction: "Stable",
+        tone: "pending",
+        reason: "No decisive 24-hour confidence shift is exported; Qadam is keeping it under watch."
+    };
+}
+
+function stage7StrategyGateBreakdown(stageLabels = [], lifecycle = {}) {
+    const labels = stageLabels.length ? stageLabels : stage7AkberStageLabels();
+    const gateIndex = Math.max(0, labels.findIndex((label) => label.toLowerCase() === String(lifecycle.gate || "").toLowerCase()));
+    return labels.map((label, index) => {
+        const state = index < gateIndex ? "passed" : (index === gateIndex ? "active" : "pending");
+        return {
+            label,
+            state,
+            explanation: state === "passed"
+                ? `${label} has already passed for this strategy.`
+                : (state === "active" ? `${label} is the current Akber gate.` : `${label} is still pending.`)
+        };
+    });
+}
+
+function stage7StrategyPlaybookFamilies(strategy = {}, marketSleeves = [], paper = {}, patterns = []) {
+    const stageLabels = stage7AkberStageLabels(strategy.akber_lens);
+    return asArray(strategy.strategy_families || strategy.families).slice(0, 5).map((family) => {
+        const sleeve = stage7StrategySleeveForFamily(family, marketSleeves);
+        const pattern = stage7StrategyPatternForFamily(family, patterns);
+        const lifecycle = stage7StrategyLifecycle(family, sleeve, pattern);
+        const trend = stage7StrategyTrend(family, sleeve, pattern);
+        const gateBreakdown = stage7StrategyGateBreakdown(stageLabels, lifecycle);
+        const sourceFamilies = asArray(pattern.source_families_involved).map((source) => dashboardText(source, "Source family"));
+        return {
+            ...family,
+            label: family.label || family.key || "Strategy family",
+            market_sleeve: sleeve.label || stage7SleeveDisplayLabel(family.instrument || family.key),
+            sleeve_key: sleeve.key || stage7SleeveKey(family.instrument || family.key),
+            lifecycle_status: lifecycle.status,
+            lifecycle_tone: lifecycle.tone,
+            current_akber_gate: lifecycle.gate,
+            last_gate_passed: lifecycle.last_gate_passed,
+            next_gate_needed: lifecycle.next_gate_needed,
+            why_not_ready: lifecycle.why_not_ready,
+            trend_direction: trend.direction,
+            trend_tone: trend.tone,
+            trend_reason: trend.reason,
+            gate_breakdown: gateBreakdown,
+            evidence_summary: dashboardText(pattern.observed_relationship || family.current_reason || family.qadam_fit_reason, "No current evidence summary exported for this strategy."),
+            linked_hypothesis: dashboardText(pattern.lead_lag_or_divergence_hypothesis || pattern.trading_strategy_implication || family.catalyst_focus, "No linked hypothesis exported yet."),
+            source_families: sourceFamilies,
+            active_hypothesis_count: modelNumber(sleeve.active_hypothesis_count, pattern.status ? 1 : 0),
+            held_instruments: asArray(sleeve.held_instruments),
+            paper_notional_gbp: modelNumber(family.notional_gbp, 0),
+            display_rank: firstPresent(family.rank, "n/a"),
+            display_fit_score: firstPresent(family.fit_score, family.fit, "n/a")
+        };
+    });
+}
+
 function stage7LearningLoopModel(status = {}, edge = {}) {
     const daily = status.daily_edge_findings_brief || {};
     const patternEngine = status.pattern_recognition_engine || {};
@@ -4704,6 +4884,8 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         sourceGroups,
         candidate_patterns: candidatePatterns
     });
+    const akberStageLabels = stage7AkberStageLabels(strategyModel.akber_lens);
+    const strategyPlaybookFamilies = stage7StrategyPlaybookFamilies(strategyModel, marketSleeves, paper, candidatePatterns);
     const dailyBriefState = stage7PlainState(dailyBrief.status || "not exported");
     const activityItems = [
         {
@@ -4838,8 +5020,12 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             setup_style: "Event-driven, evidence-gated, pricing/probability-mispricing strategy.",
             posture: tradeCounts.candidate ? "Candidate review" : (tradeCounts.open_position ? "Managing paper positions" : "Watching for evidence"),
             universe: strategyModel.universe || ["prediction markets", "crude oil", "defence", "silver", "semiconductors"],
-            akber_lens: strategyModel.akber_lens,
-            families: strategyFamilies.slice(0, 5),
+            akber_lens: {
+                ...(strategyModel.akber_lens || {}),
+                stages: akberStageLabels,
+                summary: strategyModel.akber_lens?.summary || "Akber's 6-stage method filters every setup before paper action."
+            },
+            families: strategyPlaybookFamilies,
             qualified_count: strategyModel.qualified_strategy_family_count,
             family_count: strategyModel.strategy_family_count,
             boundary: missionStrategy.boundary || "Strategies cannot bypass source, quant, risk, or PaperOps gates."
@@ -9998,6 +10184,180 @@ function renderMissionMarkets(stage7 = {}) {
     `;
 }
 
+function missionStrategyPayload(family = {}) {
+    return {
+        title: dashboardText(family.label || family.key, "Strategy family"),
+        market_sleeve: dashboardText(family.market_sleeve, "Market sleeve"),
+        lifecycle_status: dashboardText(family.lifecycle_status, "Watching for context"),
+        current_akber_gate: dashboardText(family.current_akber_gate, "Context"),
+        last_gate_passed: dashboardText(family.last_gate_passed, "None"),
+        next_gate_needed: dashboardText(family.next_gate_needed, "Catalyst"),
+        why_not_ready: dashboardText(family.why_not_ready, "Qadam is waiting for the next Akber gate."),
+        evidence_summary: dashboardText(family.evidence_summary, "No evidence summary exported."),
+        linked_hypothesis: dashboardText(family.linked_hypothesis, "No linked hypothesis exported."),
+        qadam_fit_reason: dashboardText(family.qadam_fit_reason, "No fit reason exported."),
+        catalyst_focus: dashboardText(family.catalyst_focus, "No catalyst focus exported."),
+        trend_direction: dashboardText(family.trend_direction, "Stable"),
+        trend_reason: dashboardText(family.trend_reason, "No trend reason exported."),
+        rank: dashboardText(family.display_rank || family.rank, "n/a"),
+        fit_score: dashboardText(family.display_fit_score || family.fit_score || family.fit, "n/a"),
+        side: dashboardText(family.side, "not determined"),
+        paper_notional_gbp: modelNumber(family.paper_notional_gbp || family.notional_gbp, 0),
+        held_instruments: asArray(family.held_instruments).map((instrument) => dashboardText(instrument, "Instrument")),
+        source_families: asArray(family.source_families).map((source) => dashboardText(source, "Source family")),
+        active_hypothesis_count: modelNumber(family.active_hypothesis_count, 0),
+        gate_breakdown: asArray(family.gate_breakdown).map((gate) => ({
+            label: dashboardText(gate.label, "Gate"),
+            state: dashboardText(gate.state, "pending"),
+            explanation: dashboardText(gate.explanation, "Gate status not exported.")
+        })),
+        boundary: "A strategy can evaluate and propose. It cannot approve risk, stage orders, submit paper trades, write brokers, or enable live capital from this dashboard."
+    };
+}
+
+function missionStrategyAttribute(family = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionStrategyPayload(family))));
+}
+
+function renderMissionStrategyPipeline(stages = [], families = []) {
+    return `
+        <div class="mission-akber-pipeline-wrap">
+            <p class="label">Akber six-stage filter</p>
+            <ol class="mission-akber-pipeline" aria-label="Akber six-stage filter">
+                ${asArray(stages).map((stage, index) => {
+                    const matching = asArray(families).filter((family) => (
+                        String(family.current_akber_gate || "").toLowerCase() === String(stage || "").toLowerCase()
+                    ));
+                    return `
+                        <li>
+                            <span>${String(index + 1).padStart(2, "0")}</span>
+                            <strong>${htmlText(stage)}</strong>
+                            <div class="mission-strategy-markers" aria-label="${literalHtmlText(stage)} strategy markers">
+                                ${matching.length ? matching.map((family) => `
+                                    <em title="${literalHtmlText(family.label || family.key)}">${htmlText(family.display_rank || family.rank || "?")}</em>
+                                `).join("") : `<small>No strategy here</small>`}
+                            </div>
+                        </li>
+                    `;
+                }).join("")}
+            </ol>
+        </div>
+    `;
+}
+
+function renderMissionStrategyDrawer() {
+    return `
+        <aside class="mission-strategy-drawer" data-strategy-drawer hidden aria-hidden="true" aria-label="Trading strategy drawer">
+            <div class="mission-strategy-drawer-backdrop" data-strategy-drawer-close></div>
+            <section class="mission-strategy-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="strategy-drawer-title">
+                <button class="mission-strategy-drawer-close" type="button" data-strategy-drawer-close aria-label="Close strategy detail">Close</button>
+                <p class="label">Trading Strategies &amp; Akber Filter</p>
+                <h3 id="strategy-drawer-title" data-strategy-drawer-title>Strategy family</h3>
+                <p data-strategy-drawer-summary></p>
+                <div data-strategy-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionStrategyDrawerBody(detail = {}) {
+    const gates = asArray(detail.gate_breakdown);
+    return `
+        <div class="mission-strategy-drawer-grid">
+            <article>
+                <span>Market sleeve</span>
+                <strong>${htmlText(detail.market_sleeve)}</strong>
+                <p>${htmlText(detail.qadam_fit_reason)}</p>
+            </article>
+            <article>
+                <span>Current status</span>
+                <strong>${htmlText(detail.lifecycle_status)}</strong>
+                <p>${htmlText(detail.why_not_ready)}</p>
+            </article>
+            <article>
+                <span>Last gate passed</span>
+                <strong>${htmlText(detail.last_gate_passed)}</strong>
+                <p>Next gate needed: ${htmlText(detail.next_gate_needed)}</p>
+            </article>
+            <article>
+                <span>Trend</span>
+                <strong>${htmlText(detail.trend_direction)}</strong>
+                <p>${htmlText(detail.trend_reason)}</p>
+            </article>
+        </div>
+        <section class="mission-strategy-drawer-section">
+            <header>
+                <span>Full Akber gate breakdown</span>
+                <strong>${gates.length}</strong>
+            </header>
+            <ol class="mission-strategy-gate-breakdown">
+                ${gates.map((gate, index) => `
+                    <li class="${statusClass(gate.state)}">
+                        <span>${String(index + 1).padStart(2, "0")}</span>
+                        <strong>${htmlText(gate.label)}</strong>
+                        <em>${htmlText(gate.state)}</em>
+                        <p>${htmlText(gate.explanation)}</p>
+                    </li>
+                `).join("")}
+            </ol>
+        </section>
+        <section class="mission-strategy-drawer-section">
+            <header>
+                <span>Evidence currently being evaluated</span>
+                <strong>${htmlText(detail.active_hypothesis_count)} hypotheses</strong>
+            </header>
+            <p>${htmlText(detail.evidence_summary)}</p>
+            <p><strong>Linked hypothesis:</strong> ${htmlText(detail.linked_hypothesis)}</p>
+            <div class="mission-chip-row">
+                ${asArray(detail.source_families).length ? asArray(detail.source_families).map((source) => `<span class="edge-source-dot pending">${htmlText(source)}</span>`).join("") : `<span class="edge-source-dot pending">Source family export pending</span>`}
+            </div>
+        </section>
+        <section class="mission-strategy-drawer-section">
+            <header>
+                <span>Paper context</span>
+                <strong>${formatMoney(detail.paper_notional_gbp)}</strong>
+            </header>
+            <p>Side: ${htmlText(detail.side)}. Held instruments: ${asArray(detail.held_instruments).length ? htmlText(asArray(detail.held_instruments).join(", ")) : "none"}.</p>
+            <p>${htmlText(detail.boundary)}</p>
+        </section>
+    `;
+}
+
+function initMissionStrategyDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-strategy-drawer]");
+    const title = root.querySelector("[data-strategy-drawer-title]");
+    const summary = root.querySelector("[data-strategy-drawer-summary]");
+    const body = root.querySelector("[data-strategy-drawer-body]");
+    if (!drawer || !title || !summary || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    root.querySelectorAll("[data-strategy-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-strategy-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.strategyDetail || "%7B%7D"));
+                title.textContent = detail.title || "Strategy family";
+                summary.textContent = `${detail.lifecycle_status || "Watching for context"} · current gate: ${detail.current_akber_gate || "Context"}`;
+                body.innerHTML = renderMissionStrategyDrawerBody(detail);
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-strategy-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Strategy detail unavailable";
+                summary.textContent = "This strategy did not expose a readable detail payload.";
+                body.innerHTML = `<p class="mini">Open the Reasoning view for raw strategy diagnostics.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+}
+
 function renderMissionStrategies(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "strategy_playbook") || {};
     const playbook = stage7.strategy_playbook || {};
@@ -10005,40 +10365,35 @@ function renderMissionStrategies(stage7 = {}) {
     return `
         <section class="stage7-section mission-flow-section mission-strategies" data-stage7-section="strategy_playbook">
             ${renderStage7SectionHeader(section, "Strategy families plus Akber's practical trading filter.")}
-            <div class="stage7-strategy-brief">
-                <article>
-                    <span>Active paper mandate</span>
-                    <strong>${htmlText(playbook.mandate)}</strong>
-                    <p>${htmlText(playbook.setup_style)}</p>
-                </article>
-                <article>
-                    <span>Current posture</span>
-                    <strong>${htmlText(playbook.posture)}</strong>
-                    <p>${htmlText(playbook.boundary)}</p>
-                </article>
-            </div>
-            <ol class="mission-akber-filter">
-                ${akberStages.map((stage, index) => `
-                    <li>
-                        <span>${String(index + 1).padStart(2, "0")}</span>
-                        <strong>${htmlText(stage)}</strong>
-                    </li>
-                `).join("")}
-            </ol>
+            <p class="stage7-section-summary">${htmlText(playbook.mandate)} ${htmlText(playbook.setup_style)} Current posture: ${htmlText(playbook.posture)}.</p>
+            ${renderMissionStrategyPipeline(akberStages, playbook.families)}
             <div class="stage7-family-grid mission-strategy-grid">
                 ${asArray(playbook.families).map((family) => `
-                    <article class="${statusClass(family.qualified_setup ? "online" : family.current_state || "pending")}">
+                    <button class="mission-strategy-card ${statusClass(family.lifecycle_tone || family.lifecycle_status)}" type="button" data-strategy-detail="${missionStrategyAttribute(family)}" aria-label="Open ${literalHtmlText(family.label || family.key)} strategy detail">
+                        <span class="mission-strategy-card-top">
+                            <em>Current Rank</em>
+                            <strong>#${htmlText(family.display_rank || family.rank, "n/a")}</strong>
+                        </span>
                         <strong>${htmlText(family.label || family.key)}</strong>
-                        <span>${htmlText(family.current_state || family.setup_state || "watching")}</span>
-                        <p>${htmlText(family.current_reason || family.qadam_fit_reason || "No strategy reason exported.")}</p>
-                        <div class="mission-chip-row">
-                            ${renderInlineBadge(`rank ${htmlText(family.rank, "n/a")}`, "pending")}
-                            ${renderInlineBadge(`fit ${htmlText(family.fit_score || family.fit, "n/a")}`, family.qualified_setup ? "online" : "pending")}
-                            ${renderInlineBadge(family.qualified_setup ? "qualified now" : "waiting", family.qualified_setup ? "online" : "pending")}
-                        </div>
-                    </article>
+                        <span class="mission-strategy-status">${htmlText(family.lifecycle_status)}</span>
+                        <span class="mission-strategy-card-facts">
+                            <em>Fit Score</em>
+                            <b>${htmlText(family.display_fit_score || family.fit_score || family.fit, "n/a")}</b>
+                        </span>
+                        <span class="mission-strategy-card-facts ${statusClass(family.trend_tone || family.trend_direction)}">
+                            <em>Trend</em>
+                            <b>${htmlText(family.trend_direction)} · ${htmlText(family.trend_reason)}</b>
+                        </span>
+                        ${family.lifecycle_status === "In paper position" ? `
+                            <small>Currently in paper position: ${asArray(family.held_instruments).length ? htmlText(asArray(family.held_instruments).join(", ")) : "mirrored paper exposure"}</small>
+                        ` : `
+                            <small><b>Why not ready?</b> ${htmlText(family.why_not_ready)}</small>
+                        `}
+                    </button>
                 `).join("")}
             </div>
+            <p class="stage7-section-summary">${htmlText(playbook.boundary)}</p>
+            ${renderMissionStrategyDrawer()}
         </section>
     `;
 }
@@ -10183,6 +10538,7 @@ function renderStage7Visibility(viewModels = {}) {
     initMissionPaperFundDrawer(target);
     initMissionSourceNetworkDrawer(target);
     initMissionMarketDrawer(target);
+    initMissionStrategyDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {
