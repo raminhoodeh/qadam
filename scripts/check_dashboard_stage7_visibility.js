@@ -137,6 +137,12 @@ async function main() {
         ".mission-team-drawer",
         ".mission-team-quant-badge",
         ".mission-team-cannot-list",
+        ".mission-pattern-explainer",
+        ".mission-hypothesis-card",
+        ".mission-hypothesis-drawer",
+        ".mission-hypothesis-flow",
+        ".mission-hypothesis-source-list",
+        ".mission-hypothesis-metric-grid",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
 
@@ -177,6 +183,15 @@ async function main() {
         "Recent run types",
         "Authority level",
         "function renderMissionTeam",
+        "function stage7HypothesisCards",
+        "function missionHypothesisPayload",
+        "function initMissionHypothesisDrawer",
+        "function renderMissionHypothesisDrawer",
+        "function renderMissionHypothesisDrawerBody",
+        "Specific sources that triggered this",
+        "Source Category",
+        "LLM agreement status",
+        "Quant / quantum review status",
         "function renderMissionHypotheses",
         "function renderMissionLearning",
         "stage7_visibility_model",
@@ -333,6 +348,27 @@ async function main() {
     assert(headOfQuant.quant_method_label !== "Quantum", "Mission Control Head of Quant must not use generic Quantum label");
     assert(Array.isArray(headOfQuant.quant_run_log) && headOfQuant.quant_run_log.length >= 3, "Mission Control Head of Quant run log missing");
     assert(stage7.hypotheses_pattern_recognition.candidate_pattern_count >= 5, "Mission Control pattern section missing candidates");
+    assert(stage7.hypotheses_pattern_recognition.linear_explanation.includes("Linear pattern detection"), "Mission Control hypothesis section missing linear explanation");
+    assert(stage7.hypotheses_pattern_recognition.nonlinear_explanation.includes("Quantum review") || stage7.hypotheses_pattern_recognition.nonlinear_explanation.includes("Non-linear"), "Mission Control hypothesis section missing non-linear explanation");
+    assert(stage7.hypotheses_pattern_recognition.quantum_review_method === "Classical Fallback (Deterministic)", "Mission Control hypothesis quant method must be honest");
+    assert(stage7.hypotheses_pattern_recognition.patterns.length === 5, "Mission Control hypothesis cards must cover the five active sleeves");
+    stage7.hypotheses_pattern_recognition.patterns.forEach((hypothesis) => {
+        assert(["Watching", "Pattern detected", "Hypothesis under review", "Testing", "Trade candidate", "Paper position", "Outcome review", "Strategy learning"].includes(hypothesis.lifecycle_stage), `Mission Control hypothesis lifecycle vocabulary invalid: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.why_no_trade_yet, `Mission Control hypothesis missing why-no-trade line: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.metrics.length === 4, `Mission Control hypothesis missing four labelled metrics: ${hypothesis.market_sleeve}`);
+        assert(JSON.stringify(hypothesis.metrics.map((metric) => metric.label)) === JSON.stringify([
+            "Evidence Strength",
+            "Source Agreement",
+            "Market Reaction",
+            "Trade Readiness"
+        ]), `Mission Control hypothesis metric labels mismatch: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.triggered_sources.length >= 3, `Mission Control hypothesis source list too thin: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.flow.length === 4, `Mission Control hypothesis flow incomplete: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.llm_agreement_status, `Mission Control hypothesis LLM status missing: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.quantum_review_method === "Classical Fallback (Deterministic)", `Mission Control hypothesis quantum method mismatch: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.confirmation_needed, `Mission Control hypothesis confirmation rule missing: ${hypothesis.market_sleeve}`);
+        assert(hypothesis.invalidation_rule, `Mission Control hypothesis invalidation rule missing: ${hypothesis.market_sleeve}`);
+    });
     assert(stage7.backtesting_learning_loop.cards.length >= 6, "Mission Control learning loop is too thin");
     assert(stage7.paper_portfolio_capacity.baseline_gbp === 100000, "Stage 7 paper capacity baseline mismatch");
     assert(stage7.paper_portfolio_capacity.target_gbp === 200000, "Stage 7 paper capacity target mismatch");
@@ -387,6 +423,16 @@ async function main() {
         "Learning Review",
         "data-team-role-detail=",
         "data-team-drawer",
+        "Linear pattern detection",
+        "Non-linear pattern detection",
+        "Hypothesis under review",
+        "Evidence Strength",
+        "Source Agreement",
+        "Market Reaction",
+        "Trade Readiness",
+        "Why no trade yet?",
+        "data-hypothesis-detail=",
+        "data-hypothesis-drawer",
         "Strategy feedback model",
         "Current State",
         "Holding",
@@ -435,6 +481,7 @@ async function main() {
     assert(stage7Html.includes("data-source-network-drawer"), "Rendered Stage 7 missing shared source network drawer");
     assert(!stage7Html.includes("<details class=\"mission-source-group"), "Rendered Stage 7 must not use expandable source detail cards");
     assert(!stage7Html.includes("<details class=\"stage7-map-node mission-team-role"), "Rendered Stage 7 must not use expandable investment team detail cards");
+    assert(!stage7Html.includes("<details class=\"stage7-proof-drawer mission-criteria-drawer"), "Rendered Stage 7 must not bury hypothesis criteria in the old shared details block");
     assertIncludes(rendered, "[data-stage7-dashboard-visibility]", "data-stage7-contract=\"mission_control_walkthrough_v1\"");
     assert(!stage7Html.includes("Phase 7"), "Mission Control default dashboard should not expose Phase 7 copy");
     assert(!stage7Html.includes("Stage 7"), "Mission Control default dashboard should not expose Stage 7 copy");
