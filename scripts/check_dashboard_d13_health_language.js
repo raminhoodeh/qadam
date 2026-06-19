@@ -51,7 +51,7 @@ const {
 
     [
         "Paper trading authorized",
-        "Paper-only readout · live capital off"
+        "Paper-only monitoring"
     ].forEach((label) => {
         assert(safetyStripHtml.includes(label), `safety strip OK label missing: ${label}`);
     });

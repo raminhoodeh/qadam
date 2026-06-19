@@ -97,7 +97,7 @@ includesAll(dashboardHtml, [
     "Blocked",
     "Waiting",
     "Paper trading authorized",
-    "Paper-only readout · live capital off",
+    "Paper-only monitoring",
     "Read-only lock"
 ], "static fallback canonical vocabulary");
 
@@ -151,7 +151,7 @@ assert(typeof window.canonicalQadamDashboardStatus === "function", "canonical st
 
     includesAll(`${flowHtml} ${safetyStripHtml} ${reasoningHtml}`, [
         "OK",
-        "Paper-only readout · live capital off",
+        "Paper-only monitoring",
         "Waiting",
         "Blocked"
     ], "rendered canonical status output");

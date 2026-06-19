@@ -180,11 +180,11 @@ function assertPlainOverview(models) {
         "single safety strip must keep live-capital safety explicit"
     );
     assert(
-        models.safety_strip_model.safety_label === "Paper-only readout · live capital off",
+        models.safety_strip_model.safety_label === "Paper-only monitoring",
         "single safety strip public label mismatch"
     );
     assert(
-        models.safety_strip_model.boundary.includes("cannot approve"),
+        models.safety_strip_model.boundary.includes("No approval"),
         "single safety strip boundary missing"
     );
     assert(

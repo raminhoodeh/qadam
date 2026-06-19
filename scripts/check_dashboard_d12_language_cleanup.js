@@ -89,12 +89,12 @@ function assertNoSecretMaterial(text, label) {
 async function main() {
     includesAll(dashboardHtml, [
         "<title>Qadam Dashboard</title>",
-        "/auth.css?v=20260607-cc11-final-dashboard-structure",
-        "/dashboard.js?v=20260607-cc11-final-dashboard-structure",
+        "/auth.css?v=20260619-dashboard-polish",
+        "/dashboard.js?v=20260619-dashboard-polish",
         "Qadam paper trading dashboard",
         "Mission Control",
         "Safety status",
-        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
+        "Paper-only monitoring. Live capital is off; order authority stays behind runtime gates.",
         "60-day paper growth trial",
         "Control Plane",
         "Paper Account &amp; Trade State",
@@ -102,7 +102,7 @@ async function main() {
     ], "D12 dashboard shell");
 
     includesAll(renderer, [
-        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
+        "Order authority remains behind runtime gates",
         "Paper growth maturity requires verified records",
         "This is read-only mission control",
         "What Qadam is choosing now",
@@ -113,8 +113,8 @@ async function main() {
 
     includesAll(`${guideHtml}\n${guideDoc}`, [
         "Safety Status",
-        "Dashboard cannot place orders",
-        "AI cannot bypass risk checks"
+        "paper-only monitoring",
+        "live capital off"
     ], "D12 guide copy");
 
     includesAll(`${plan}\n${audit}`, [
@@ -137,16 +137,16 @@ async function main() {
     ].map(textOnly).join(" ");
 
     includesAll(overviewText, [
-        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
+        "Order authority remains behind runtime gates",
         "Paper Account & Trade State",
         "Realized",
         "Unrealized",
         "Mission Snapshot",
         "Durable replay",
-        "Safety boundary",
-        "Paper-only, read-only",
+        "authority stops",
+        "only guarded paper checks",
         "Trade state",
-        "Trade ideas stay candidates until gated paper-order records exist"
+        "Trade ideas stay candidates"
     ], "D12 rendered overview");
     assertNoSlop(overviewText, "D12 rendered overview");
 
@@ -156,7 +156,7 @@ async function main() {
     assertNoSecretMaterial(guideDoc, "D12 guide doc");
 
     console.log("dashboard_d12_language_cleanup=ok");
-    console.log("dashboard_d12_cache_key=20260607-cc11-final-dashboard-structure");
+    console.log("dashboard_d12_cache_key=20260619-dashboard-polish");
     console.log("dashboard_d12_default_copy_plain=True");
     console.log("dashboard_authority_unchanged=True");
 }

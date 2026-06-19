@@ -223,7 +223,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260619-backtesting-replay-lab");
+    console.log("dashboard_cc9_cache_key=20260619-dashboard-polish");
 }
 
 main().catch((error) => {

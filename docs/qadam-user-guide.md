@@ -182,13 +182,12 @@ into comments, forms, chats, docs, or prompts.
 Use this sequence the first time you open Qadam.
 
 1. Start in the Overview view.
-2. Read Safety Status first: it should say OK - paper only, OK - read-only,
-   OK - live capital off, Dashboard cannot place orders, and AI cannot bypass risk
-   checks.
+2. Read Safety Status first: it should confirm paper-only monitoring, read-only
+   dashboard state, and live capital off.
 3. Read the seven Mission Control sections in order: Paper Fund Status, Source
    Intelligence Network, Watched Markets Universe, Strategy Playbook, Hedge Fund
-   Investment Team, Hypotheses & Pattern Recognition, and Backtesting & Learning
-   Loop.
+   Investment Team, Hypotheses & Pattern Recognition, and Backtesting & Replay
+   Lab.
 4. Use Paper Fund Status to understand the GBP 100,000 paper baseline, current
    value, open holdings, trade timeline, and GBP 200,000 60-day target.
 5. Use the later sections to follow the causal chain: sources feed watched
@@ -208,8 +207,8 @@ Use this sequence the first time you open Qadam.
 Start in the Overview view. Mission Control makes Overview the default paper-fund walkthrough instead of a long stack of technical cards. It is organized around
 seven plain-language sections: Paper Fund Status, Source
 Intelligence Network, Watched Markets Universe, Strategy Playbook, Hedge Fund
-Investment Team, Hypotheses & Pattern Recognition, and Backtesting & Learning
-Loop.
+Investment Team, Hypotheses & Pattern Recognition, and Backtesting & Replay
+Lab.
 
 The deeper Trades, Evidence, Reasoning, and Operations views still exist for
 technical review, but they belong behind Advanced / Debug Mode. Use Advanced /
@@ -803,7 +802,7 @@ Escalate or comment if:
 | Term | Meaning |
 | --- | --- |
 | Cockpit | The Qadam dashboard. |
-| Overview | The default Mission Control walkthrough: paper fund status, source network, watched markets, strategy playbook, investment team, hypotheses, and replay lab. |
+| Overview | The default Mission Control walkthrough: fund, sources, markets, strategy, team, hypotheses, and replay lab. |
 | Trades | The dashboard view for signals, trade ideas, paper trades, paper-account performance, and verified records. |
 | Evidence | The dashboard view for source posture, setup evidence, and supplemental context. |
 | Reasoning | The dashboard view for priors, evidence, hypotheses, blockers, and analyst review. |

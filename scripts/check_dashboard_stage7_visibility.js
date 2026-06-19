@@ -92,7 +92,7 @@ async function main() {
     includesAll(dashboardHtml, [
         "data-stage7-dashboard-visibility",
         "Mission Control walkthrough",
-        "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and replay lab.",
+        "Mission Control walkthrough: fund, sources, markets, strategy, team, hypotheses, replay lab.",
         "data-dashboard-debug-only hidden",
         "data-overview-portfolio-hero",
         "data-overview-mission-brief",
@@ -466,7 +466,7 @@ async function main() {
         "Social News &amp; Filings",
         "These sources inform Qadam&#39;s hypotheses. None of them can place trades.",
         "Currently influencing:",
-        "Paper route",
+        "Alpaca Paper",
         "Research Analyst",
         "Chief Operating Officer (Python)",
         "Research Analyst (Local LLM)",

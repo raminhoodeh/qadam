@@ -119,8 +119,8 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260619-backtesting-replay-lab",
-    "/dashboard.js?v=20260619-backtesting-replay-lab"
+    "/auth.css?v=20260619-dashboard-polish",
+    "/dashboard.js?v=20260619-dashboard-polish"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",
@@ -130,7 +130,7 @@ includesAll(plan, [
     "CC8",
     "Prune payload, tests, docs, deploy",
     "prune_audit",
-    "20260619-backtesting-replay-lab"
+    "20260619-dashboard-polish"
 ], "CC8 plan");
 
 assertPublicSafe(guideHtml, "guide HTML");

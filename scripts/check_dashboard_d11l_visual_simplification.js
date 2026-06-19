@@ -58,8 +58,8 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260619-backtesting-replay-lab",
-        "/dashboard.js?v=20260619-backtesting-replay-lab"
+        "/auth.css?v=20260619-dashboard-polish",
+        "/dashboard.js?v=20260619-dashboard-polish"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -126,7 +126,7 @@ async function main() {
     const rendered = await renderWithStatus(status);
     [
         ["[data-dashboard-safety-strip]", "Paper trading authorized"],
-        ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
+        ["[data-dashboard-safety-strip]", "Paper-only monitoring"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
         ["[data-overview-strategy-narrative]", "Strategy Universe"],
         ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
@@ -144,7 +144,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260619-backtesting-replay-lab");
+    console.log("dashboard_d11l_cache_key=20260619-dashboard-polish");
     console.log("dashboard_authority_unchanged=True");
 }
 

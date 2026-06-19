@@ -64,8 +64,8 @@ assert(sourceTracker < detailFlow, "hidden detail panels must appear after the f
     "Paper Account &amp; Trade State",
     "Control Plane",
     "Data source tracker",
-    "Loading paper fund status, source network, markets, strategies, investment team, hypotheses, and replay lab.",
-    "Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and replay lab."
+    "Loading fund, sources, markets, strategy, team, hypotheses, and replay lab.",
+    "Mission Control walkthrough: fund, sources, markets, strategy, team, hypotheses, replay lab."
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
 [

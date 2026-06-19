@@ -112,9 +112,8 @@ function assertSafetyStripIsSingleGlobalAuthority() {
     );
     includesAll(dashboardHtml, [
         "Paper trading authorized",
-        "Paper-only readout · live capital off",
-        "Dashboard cannot place orders; model outputs cannot bypass risk checks",
-        "One place for paper mode, capital, and order authority"
+        "Paper-only monitoring. Live capital is off; order authority stays behind runtime gates.",
+        "Paper mode, capital state, and order authority in one strip."
     ], "single safety strip static shell");
     assert(!dashboardHtml.includes("<dt>Limits</dt>"), "static shell still contains Limits rows");
     assert(!dashboardHtml.includes("<dt>Boundary</dt>"), "static shell still contains Boundary rows");
@@ -125,7 +124,7 @@ function assertSafetyStripIsSingleGlobalAuthority() {
         "? \"OK - paper only\"",
         "mode_label: modeLabel",
         "safety_label:",
-        "Dashboard cannot place orders; model outputs cannot bypass risk checks"
+        "Order authority remains behind runtime gates"
     ], "single safety strip renderer");
 }
 
@@ -179,8 +178,8 @@ async function assertRenderedDashboardContract() {
 
     [
         ["[data-dashboard-safety-strip]", "Paper trading authorized"],
-        ["[data-dashboard-safety-strip]", "Paper-only readout · live capital off"],
-        ["[data-dashboard-safety-strip]", "Dashboard cannot place orders; model outputs cannot bypass risk checks"],
+        ["[data-dashboard-safety-strip]", "Paper-only monitoring"],
+        ["[data-dashboard-safety-strip]", "Order authority remains behind runtime gates"],
         ["[data-stage7-dashboard-visibility]", "Paper Fund Status"],
         ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
         ["[data-stage7-dashboard-visibility]", "Watched Markets Universe"],
@@ -238,8 +237,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260619-backtesting-replay-lab",
-        "/dashboard.js?v=20260619-backtesting-replay-lab"
+        "/auth.css?v=20260619-dashboard-polish",
+        "/dashboard.js?v=20260619-dashboard-polish"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();

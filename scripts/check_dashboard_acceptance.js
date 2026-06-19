@@ -130,13 +130,13 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260619-backtesting-replay-lab",
-    "/dashboard.js?v=20260619-backtesting-replay-lab"
+    "/auth.css?v=20260619-dashboard-polish",
+    "/dashboard.js?v=20260619-dashboard-polish"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
     "Qadam Mission Control",
-    "Start with the paper fund, then follow the sources, markets, strategies, investment team, hypotheses, and replay lab.",
+    "Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.",
     "Paper trading mode",
     "Mission Snapshot",
     "Paper Account &amp; Trade State",
