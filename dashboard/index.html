@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Private Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260619-backtesting-replay-lab">
+    <link rel="stylesheet" href="/auth.css?v=20260619-dashboard-polish">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -39,7 +39,7 @@
                 <div>
                     <p class="eyebrow">Qadam paper trading dashboard</p>
                     <h1>Qadam Mission Control</h1>
-                <p class="copy">Logged in as <span data-user-email></span>. Start with the paper fund, then follow the sources, markets, strategies, investment team, hypotheses, and replay lab.</p>
+                <p class="copy">Logged in as <span data-user-email></span>. Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.</p>
                 </div>
                 <div class="mode-stack" aria-label="Dashboard status">
                     <span>Paper trading mode</span>
@@ -50,7 +50,7 @@
                 <div class="dashboard-safety-strip-main">
                     <p class="label">Safety status</p>
                     <h2>Paper trading authorized</h2>
-                    <p>Paper-only readout · live capital off. Dashboard cannot place orders; model outputs cannot bypass risk checks.</p>
+                    <p>Paper-only monitoring. Live capital is off; order authority stays behind runtime gates.</p>
                 </div>
                 <div class="dashboard-safety-strip-badges">
                     <span class="inline-badge pending" data-mode-label>Paper mode</span>
@@ -59,17 +59,17 @@
                 </div>
                 <div class="dashboard-safety-strip-authority">
                     <strong>Read-only safety mirror</strong>
-                    <span>One place for paper mode, capital, and order authority.</span>
+                    <span>Paper mode, capital state, and order authority in one strip.</span>
                     <small>Loading backend-derived authority status.</small>
                 </div>
             </section>
 
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
-                <p class="sr-only">Mission Control walkthrough: paper fund status, source intelligence network, watched markets, strategy playbook, investment team, hypotheses, and replay lab.</p>
+                <p class="sr-only">Mission Control walkthrough: fund, sources, markets, strategy, team, hypotheses, replay lab.</p>
                 <section class="stage7-dashboard-visibility" aria-label="Mission Control walkthrough" data-stage7-dashboard-visibility>
                     <div class="overview-section-head">
                         <span>Mission Control walkthrough</span>
-                        <strong>Loading paper fund status, source network, markets, strategies, investment team, hypotheses, and replay lab.</strong>
+                        <strong>Loading fund, sources, markets, strategy, team, hypotheses, and replay lab.</strong>
                     </div>
                 </section>
 
@@ -571,7 +571,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260619-backtesting-replay-lab"></script>
+    <script src="/dashboard.js?v=20260619-dashboard-polish"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

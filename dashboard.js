@@ -5249,7 +5249,7 @@ function stage7LearningLoopModel(status = {}, edge = {}) {
                     boundary: "No proposal authority exists without explicit review."
                 })
             ],
-            boundary: "The Strategy Feedback Model proposes review items only. It cannot mutate strategy weights, create trade candidates, submit paper orders, write brokers, or enable live capital."
+            boundary: "Proposals are review-only. They do not change strategy weights, create trade candidates, submit paper orders, write brokers, or enable live capital."
         },
         readiness_map: readinessMap,
         cards: [
@@ -5620,9 +5620,8 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
     ];
     const openHoldingNames = asArray(paper.open_positions).map((position) => position.instrument || position.symbol).filter(Boolean).slice(0, 4);
     const paperFundBrief = [
-        `Qadam is managing a ${formatMoney(paper.current_balance_gbp || paper.balance_gbp)} paper portfolio against a ${formatMoney(paper.target_gbp)} 60-day target.`,
-        `${paper.open_position_count || 0} open holdings${openHoldingNames.length ? ` (${openHoldingNames.join(", ")})` : ""}, ${paper.closed_trade_count || 0} closed paper trades, and ${tradeCounts.candidate || 0} trade candidates are visible.`,
-        `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online; ${candidatePatterns.length || 0} candidate patterns are under review; live capital remains off.`
+        `Paper value is ${formatMoney(paper.current_balance_gbp || paper.balance_gbp)} against the ${formatMoney(paper.target_gbp)} 60-day target.`,
+        `${paper.open_position_count || 0} open holdings${openHoldingNames.length ? ` (${openHoldingNames.join(", ")})` : ""}, ${paper.closed_trade_count || 0} closed paper trades, ${tradeCounts.candidate || 0} trade candidates, ${sourceCounts.online || 0}/${sourceCounts.total || 0} sources online, and ${candidatePatterns.length || 0} patterns under review.`
     ].join(" ");
     const learningLoop = stage7LearningLoopModel(status, edge);
     const hypothesisCards = stage7HypothesisCards(candidatePatterns.slice(0, 5), {
@@ -5688,7 +5687,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             required_blocker_count: status.paperops_source_gap_visibility?.trade_blocking_gap_count || 0,
             optional_gap_count: status.paperops_source_gap_visibility?.optional_gap_count || sourceCounts.missing_credentials || 0,
             groups: sourceGroups,
-            boundary: "Sources are observation inputs only. They can inform hypotheses and signal review; they cannot authorize orders."
+            boundary: "Sources are observation inputs only: they inform hypotheses and signal review, never orders."
         },
         watched_markets_universe: {
             sleeve_count: marketSleeves.length,
@@ -5734,7 +5733,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             why_no_trade: tradeCounts.candidate
                 ? "At least one idea has reached candidate state, but paper action still depends on source, quant, risk, idempotency, and Alpaca Paper gates."
                 : "Qadam can be active without trading. Current patterns are still being tested for persistence, source agreement, market confirmation, and guarded paper-route readiness.",
-            boundary: "Pattern recognition can change research conviction and ranking; it cannot create orders or live capital authority. Paper route remains guarded through Risk Desk, PaperOps, and Alpaca Paper only."
+            boundary: "Pattern recognition updates research conviction and ranking only. Orders still route through Risk Desk, PaperOps, and Alpaca Paper."
         },
         backtesting_learning_loop: learningLoop,
         operating_map: {
@@ -5757,7 +5756,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
                 stage7StatusRecord("quant", "Quant review", edge.quantum_pattern_review?.status || quantumOracle.status || qctrl.status || fireOpal.status, `${dashboardText(edge.quantum_pattern_review?.mode || quantumOracle.mode || quantumOracle.backend || qctrl.status, "not exported")} review mode.`),
                 stage7StatusRecord("paper_route", "Paper route", paperLive.status || activeAutomation.status, `${tradeCounts.candidate || 0} candidates, ${tradeCounts.open_position || 0} open positions, live capital off.`)
             ],
-            safety_summary: "Dashboard remains read-only. Live capital is disabled, broker writes are disabled, and Telegram is notify-only.",
+            safety_summary: "Safety mirror active. Live capital is off; Telegram is notify-only.",
             needs_attention_count: 0
         },
         data_sources: {
@@ -5808,7 +5807,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             strategy_mutation_allowed: false,
             live_capital_enabled: false
         },
-        boundary: "Mission Control is read-only. It explains Qadam's paper-fund state and learning loop but cannot approve, submit, close, resize, fund, mutate, command Telegram, or create quantum jobs."
+        boundary: "Mission Control is read-only. It explains paper-fund state and learning, but cannot approve trades, command Telegram, or create quantum jobs."
     };
 }
 
@@ -5886,10 +5885,10 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         headline: tone === "blocked"
             ? "Review safety before reading the dashboard"
             : authorityHeadline,
-        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags. Dashboard cannot place orders; model outputs cannot bypass risk checks.`,
+        summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags. Order authority remains behind runtime gates.`,
         safety_label: liveCapitalEnabled
             ? "Review: live capital flag detected"
-            : "Paper-only readout · live capital off",
+            : "Paper-only monitoring",
         authority_label: paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
         authority_tone: paperAuthorityTone,
         authority_status: paperAuthorityStatus,
@@ -5902,13 +5901,13 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         capital_label: `${formatCapitalMoney(paperBalance, capital)} paper account`,
         live_capital_label: liveCapitalEnabled ? "Live capital enabled" : "OK - live capital off",
         read_only_label: operations.runtime?.live_bridge_read_only === false ? "Bridge review" : "OK - read-only",
-        ui_broker_label: "Dashboard display only",
-        llm_broker_label: "Model outputs stay behind risk checks",
+        ui_broker_label: "Display only",
+        llm_broker_label: "Models stay behind risk checks",
         proof_label: "Paper growth maturity requires verified records",
         live_capital_enabled: liveCapitalEnabled,
         write_authority: writeAuthority,
         authority_flag_count: authorityFlags.length,
-        boundary: "Single display strip only. It cannot approve, place, modify, resize, close, fund, or verify performance credit for trades."
+        boundary: "Single display strip. No approval, order, funding, resize, close, or performance-credit authority."
     };
 }
 
