@@ -4751,6 +4751,205 @@ function stage7StrategyPlaybookFamilies(strategy = {}, marketSleeves = [], paper
     });
 }
 
+function stage7Percent(value, fallback = 0) {
+    const number = modelNumber(value, fallback);
+    return `${Math.round(Math.max(0, Math.min(1, number)) * 100)}%`;
+}
+
+function stage7TitleFromKey(value = "") {
+    return String(value || "")
+        .replaceAll("_", " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .map((word) => word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : "")
+        .join(" ");
+}
+
+function stage7HypothesisLifecycleStage(pattern = {}, lifecycle = {}) {
+    const text = [
+        pattern.status,
+        pattern.edge_stage,
+        lifecycle.lifecycle_state,
+        lifecycle.decision,
+        lifecycle.strategy_update_status
+    ].join(" ").toLowerCase();
+    if (/paper position|open position|position/.test(text) || pattern.paper_order_allowed) return "Paper position";
+    if (/outcome|postmortem|closed/.test(text)) return "Outcome review";
+    if (/strategy learning|strategy_update/.test(text)) return "Strategy learning";
+    if (/trade candidate|signal_integrity|candidate_promotion/.test(text) && pattern.trade_candidate_creation_allowed) return "Trade candidate";
+    if (/testing|backtest|replay/.test(text)) return "Testing";
+    if (/under review|held|candidate|observed|corroboration|not approved|not_validated/.test(text)) return "Hypothesis under review";
+    if (/detected|pattern/.test(text)) return "Pattern detected";
+    return "Watching";
+}
+
+function stage7HypothesisMetric(label, valueLabel, detail, tone = "pending") {
+    return {
+        label,
+        value_label: dashboardText(valueLabel, "not exported"),
+        detail: dashboardText(detail, "No detail exported."),
+        tone
+    };
+}
+
+function stage7HypothesisMetricSet(pattern = {}, enginePattern = {}) {
+    const passedCriteria = asArray(pattern.passed_criteria || enginePattern.passed_criteria);
+    const missingCriteria = asArray(pattern.missing_criteria || enginePattern.missing_criteria);
+    const criterionTotal = passedCriteria.length + missingCriteria.length;
+    const evidenceScore = modelNumber(
+        firstPresent(pattern.confidence_after_quantum_review, enginePattern.edge_readiness_score, enginePattern.criterion_score),
+        0
+    );
+    const sourceScore = modelNumber(firstPresent(enginePattern.primary_lens_overlap_score, enginePattern.source_pressure_score), 0);
+    const marketScore = modelNumber(firstPresent(enginePattern.signal_review_coverage_score, passedCriteria.includes("market_confirmation") ? 0.72 : 0.38), 0);
+    const readinessLabel = criterionTotal
+        ? `${passedCriteria.length}/${criterionTotal} criteria`
+        : (pattern.trade_candidate_creation_allowed ? "Candidate-ready" : "Criteria pending");
+    const readinessTone = pattern.trade_candidate_creation_allowed || pattern.paper_order_allowed
+        ? "online"
+        : (missingCriteria.length ? "pending" : "degraded");
+    return [
+        stage7HypothesisMetric(
+            "Evidence Strength",
+            stage7Percent(evidenceScore),
+            `Confidence after review is ${stage7Percent(evidenceScore)}${pattern.confidence_before_quantum_review ? `, versus ${stage7Percent(pattern.confidence_before_quantum_review)} before quantum review` : ""}.`,
+            evidenceScore >= 0.7 ? "online" : "pending"
+        ),
+        stage7HypothesisMetric(
+            "Source Agreement",
+            `${asArray(pattern.source_families_involved || enginePattern.primary_lens_source_keys).length || pattern.source_count || enginePattern.source_count || 0} feeds`,
+            `Qadam is comparing this sleeve against the source universe, not a single feed. Source overlap score is ${stage7Percent(sourceScore)}.`,
+            sourceScore >= 0.65 || asArray(pattern.source_families_involved).length >= 5 ? "online" : "pending"
+        ),
+        stage7HypothesisMetric(
+            "Market Reaction",
+            stage7Percent(marketScore),
+            passedCriteria.includes("market_confirmation")
+                ? "Market confirmation is present, but still not enough by itself to approve a trade."
+                : "Market reaction has not confirmed the source pattern strongly enough yet.",
+            marketScore >= 0.65 ? "online" : "pending"
+        ),
+        stage7HypothesisMetric(
+            "Trade Readiness",
+            readinessLabel,
+            missingCriteria.length
+                ? `Still waiting for ${missingCriteria.map(stage7TitleFromKey).join(", ")}.`
+                : "Downstream risk, PaperOps, idempotency, and Alpaca Paper gates still decide whether anything can be submitted.",
+            readinessTone
+        )
+    ];
+}
+
+function stage7HypothesisWhyNoTrade(pattern = {}, lifecycle = {}, metrics = []) {
+    const missing = asArray(pattern.missing_criteria || lifecycle.missing_correlations);
+    if (pattern.paper_order_allowed || pattern.trade_candidate_creation_allowed) {
+        return "This has not become a new paper order yet because PaperOps, idempotency, risk sizing, and Alpaca Paper route checks still have to accept a fresh eligible setup.";
+    }
+    if (lifecycle.decision_reason) {
+        return dashboardText(lifecycle.decision_reason);
+    }
+    if (missing.length) {
+        return `No trade yet because Qadam is still waiting for ${missing.map(stage7TitleFromKey).join(", ")} before this can move past hypothesis review.`;
+    }
+    const readiness = asArray(metrics).find((metric) => metric.label === "Trade Readiness");
+    return `No trade yet because this remains research evidence: ${dashboardText(readiness?.detail, "risk and paper-route gates have not accepted it.")}`;
+}
+
+function stage7HypothesisSourceMeta(sourceKeys = [], sourceGroups = []) {
+    const sourceMap = new Map();
+    asArray(sourceGroups).forEach((group) => {
+        asArray(group.sources).forEach((source) => {
+            sourceMap.set(source.key, {
+                key: source.key,
+                name: source.name,
+                category: group.label,
+                status_label: source.status_label,
+                status_tone: source.status_tone,
+                description: source.description
+            });
+        });
+    });
+    return asArray(sourceKeys).map((sourceKey) => (
+        sourceMap.get(sourceKey) || {
+            key: sourceKey,
+            name: stage7TitleFromKey(sourceKey),
+            category: "Source category",
+            status_label: "Connected",
+            status_tone: "pending",
+            description: "Source participates in the all-source pattern scan for this sleeve."
+        }
+    ));
+}
+
+function stage7FindLifecycleForPattern(pattern = {}, lifecycle = {}) {
+    const threads = asArray(lifecycle.hypothesis_threads);
+    const patternSleeve = stage7SleeveKey(pattern.market_sleeve || pattern.label || pattern.sleeve_key);
+    return threads.find((thread) => (
+        stage7SleeveKey(thread.market_sleeve || thread.sleeve_key || thread.instrument_focus) === patternSleeve
+    )) || {};
+}
+
+function stage7HypothesisCards(patterns = [], context = {}) {
+    const enginePatterns = asArray(context.pattern_engine?.candidate_patterns);
+    const engineById = new Map(enginePatterns.map((pattern) => [pattern.pattern_id, pattern]));
+    const engineBySleeve = new Map(enginePatterns.map((pattern) => [stage7SleeveKey(pattern.market_sleeve || pattern.sleeve_key), pattern]));
+    const strategiesBySleeve = new Map(asArray(context.strategy_families).map((family) => [stage7SleeveKey(family.market_sleeve || family.sleeve_key || family.label), family]));
+    const quantMethodLabel = context.quant_method_label || "Classical Fallback (Deterministic)";
+    return asArray(patterns).map((pattern) => {
+        const sleeveLabel = stage7SleeveDisplayLabel(pattern.market_sleeve || pattern.label || pattern.sleeve_key || "Market sleeve");
+        const sleeveKey = stage7SleeveKey(sleeveLabel);
+        const enginePattern = engineById.get(pattern.pattern_id) || engineBySleeve.get(sleeveKey) || {};
+        const lifecycle = stage7FindLifecycleForPattern(pattern, context.hypothesis_lifecycle);
+        const strategy = strategiesBySleeve.get(sleeveKey) || {};
+        const lifecycleStage = stage7HypothesisLifecycleStage(pattern, lifecycle);
+        const metrics = stage7HypothesisMetricSet(pattern, enginePattern);
+        const sourceKeys = asArray(pattern.source_families_involved || enginePattern.primary_lens_source_keys || pattern.source_keys).slice(0, 14);
+        const triggeredSources = stage7HypothesisSourceMeta(sourceKeys, context.source_groups);
+        const sourceCategories = [...new Set(triggeredSources.map((source) => source.category))];
+        const whyNoTradeYet = stage7HypothesisWhyNoTrade(pattern, lifecycle, metrics);
+        const missingCriteria = asArray(pattern.missing_criteria || enginePattern.missing_criteria || lifecycle.missing_correlations);
+        const passedCriteria = asArray(pattern.passed_criteria || enginePattern.passed_criteria);
+        return {
+            id: pattern.pattern_id || lifecycle.lifecycle_id || sleeveKey,
+            sleeve_key: sleeveKey,
+            market_sleeve: sleeveLabel,
+            lifecycle_stage: lifecycleStage,
+            lifecycle_tone: lifecycleStage === "Trade candidate" || lifecycleStage === "Paper position" ? "online" : "pending",
+            pattern_summary: dashboardText(pattern.observed_relationship || enginePattern.pattern_question || lifecycle.representative_thesis, "Qadam is testing whether source movement repeatedly explains this watched market."),
+            plain_english_pattern: dashboardText(pattern.lead_lag_or_divergence_hypothesis || lifecycle.representative_thesis || pattern.trading_strategy_implication, "Qadam is looking for source-price divergence that repeats over time."),
+            why_no_trade_yet: whyNoTradeYet,
+            full_why_no_trade_yet: `${whyNoTradeYet} This dashboard can explain the hypothesis, but it cannot create trade authority.`,
+            metrics,
+            triggered_sources: triggeredSources,
+            triggered_source_count: triggeredSources.length,
+            source_categories: sourceCategories,
+            source_category_label: sourceCategories.length ? sourceCategories.slice(0, 3).join(" + ") : "Source category not mapped",
+            market_symbols: asArray(pattern.watched_market_symbols || enginePattern.instrument_symbols || pattern.instrument_symbols),
+            strategy_evaluating: strategy.label || enginePattern.strategy_use || pattern.trading_strategy_implication || "Strategy match pending",
+            strategy_gate: strategy.current_akber_gate || "Confirmation",
+            llm_agreement_status: dashboardText(context.llm_review?.status || pattern.llm_role || "LLM review active"),
+            llm_agreement_detail: dashboardText(pattern.llm_role || context.llm_review?.role, "Local LLM compresses the source context and frontier LLM challenges the explanation."),
+            quantum_review_status: dashboardText(pattern.quantum_non_linear_review_result?.status || context.quantum_review?.status || context.quantum_gate?.status || "not exported"),
+            quantum_review_method: quantMethodLabel,
+            quantum_review_detail: dashboardText(pattern.quantum_non_linear_review_result?.finding || context.quantum_review?.role || context.daily_edge?.non_linear_pattern_summary, "Quantum review is a mandatory non-linear challenge before Qadam may call a pattern an edge."),
+            confirmation_needed: missingCriteria.length
+                ? `Confirmation needed: ${missingCriteria.map(stage7TitleFromKey).join(", ")}.`
+                : "Confirmation needed: fresh signal integrity, risk sizing, idempotency, and PaperOps acceptance.",
+            invalidation_rule: dashboardText(lifecycle.invalidation, "Invalidate this if source agreement fades, the market reaction contradicts the thesis, or the pattern stops repeating."),
+            flow: [
+                { label: "Source Category", value: sourceCategories[0] || "All-source scan", detail: sourceCategories.slice(1).join(", ") || "All available Qadam source groups are scanned." },
+                { label: "Market Sleeve", value: sleeveLabel, detail: asArray(pattern.watched_market_symbols || enginePattern.instrument_symbols).slice(0, 5).join(", ") || "Watched instruments not exported." },
+                { label: "Strategy Evaluating", value: strategy.label || "Strategy match pending", detail: strategy.current_akber_gate ? `Current Akber gate: ${strategy.current_akber_gate}` : "Strategy gate pending." },
+                { label: "Hypothesis Stage", value: lifecycleStage, detail: whyNoTradeYet }
+            ],
+            passed_criteria: passedCriteria.map(stage7TitleFromKey),
+            missing_criteria: missingCriteria.map(stage7TitleFromKey),
+            boundary: "Hypotheses can inform ranking and review only. They cannot approve risk, submit paper orders, write brokers, or enable live capital."
+        };
+    });
+}
+
 function stage7LearningLoopModel(status = {}, edge = {}) {
     const daily = status.daily_edge_findings_brief || {};
     const patternEngine = status.pattern_recognition_engine || {};
@@ -5138,7 +5337,7 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         { id: "source_intelligence_network", label: "Source Intelligence Network", question: "What information is Qadam using?", tone: sources.tone || "online" },
         { id: "watched_markets_universe", label: "Watched Markets Universe", question: "What markets can Qadam seek edge in?", tone: marketSleeves.length ? "online" : "pending" },
         { id: "strategy_playbook", label: "Strategy Playbook + Akber Filter", question: "How does Qadam decide what matters?", tone: strategyModel.qualified_strategy_family_count ? "online" : "pending" },
-        { id: "hedge_fund_investment_team", label: "Hedge Fund Investment Team", question: "Which part of Qadam does what?", tone: teamRoles.some((role) => role.tone === "blocked") ? "blocked" : "online" },
+        { id: "hedge_fund_investment_team", label: "Hedge Fund Investment Team", question: "Which part of Qadam does what?", tone: teamRoles.some((role) => role.status_tone === "blocked") ? "blocked" : "online" },
         { id: "hypotheses_pattern_recognition", label: "Hypotheses & Pattern Recognition", question: "What is Qadam currently thinking about?", tone: candidatePatterns.length ? "pending" : "online" },
         { id: "backtesting_learning_loop", label: "Backtesting & Learning Loop", question: "How does Qadam improve after evidence and outcomes?", tone: "pending" }
     ];
@@ -5149,6 +5348,17 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
         `${sourceCounts.online || 0}/${sourceCounts.total || 0} sources are online; ${candidatePatterns.length || 0} candidate patterns are under review; live capital remains off.`
     ].join(" ");
     const learningLoop = stage7LearningLoopModel(status, edge);
+    const hypothesisCards = stage7HypothesisCards(candidatePatterns.slice(0, 5), {
+        source_groups: sourceGroups,
+        strategy_families: strategyPlaybookFamilies,
+        pattern_engine: status.pattern_recognition_engine || {},
+        hypothesis_lifecycle: status.hypothesis_lifecycle || {},
+        llm_review: status.edge_pattern_ledger?.llm_review || edge.llm_pattern_review || {},
+        quantum_review: status.edge_pattern_ledger?.quantum_review || dailyEdge.quantum_review || edge.quantum_pattern_review || {},
+        quantum_gate: status.quantum_mandatory_review_gate || status.pattern_recognition_engine?.quantum_gate || {},
+        quant_method_label: quantMethodLabel,
+        daily_edge: dailyEdge
+    });
     return {
         schema_version: "mission_control_walkthrough.v1",
         legacy_schema_version: "stage7_dashboard_visibility.v1",
@@ -5236,15 +5446,18 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
             validated_edge_count: modelNumber(dailyEdge.validated_edge_count || edge.pattern_ledger?.validated_edge_count, 0),
             hypothesis_count: reasoningCounts.hypotheses || asArray(reasoning.hypothesis_queue).length || 0,
             evidence_packet_count: reasoningCounts.evidence_packets || 0,
-            patterns: candidatePatterns.slice(0, 5),
+            patterns: hypothesisCards,
             criteria: asArray(dailyEdge.criteria || edge.pattern_ledger?.criteria).slice(0, 8),
             llm_status: edge.llm_pattern_review?.status || localReview.status || strategyReview.status || "not exported",
             quantum_status: edge.quantum_pattern_review?.status || quantumOracle.status || qctrl.status || "not exported",
             quantum_mode: edge.quantum_pattern_review?.mode || quantumOracle.mode || quantumOracle.backend || "not exported",
+            quantum_review_method: quantMethodLabel,
+            linear_explanation: "Linear pattern detection asks a simple question: if one signal rises, does one watched market usually react next?",
+            nonlinear_explanation: `Non-linear pattern detection asks whether unusual combinations across geopolitics, physical-world signals, macro data, market data, and social/news feeds jointly point to a market move that would not be obvious from any one feed. ${dashboardText(dailyEdge.non_linear_pattern_summary, "Quantum review remains a mandatory challenge before Qadam may call a pattern an edge.")}`,
             why_no_trade: tradeCounts.candidate
                 ? "At least one idea has reached candidate state, but paper action still depends on source, quant, risk, idempotency, and Alpaca Paper gates."
                 : "Qadam can be active without trading. Current patterns are still being tested for persistence, source agreement, market confirmation, and guarded paper-route readiness.",
-            boundary: "Pattern recognition can change research conviction and ranking; it cannot create orders or live capital authority."
+            boundary: "Pattern recognition can change research conviction and ranking; it cannot create orders or live capital authority. Paper route remains guarded through Risk Desk, PaperOps, and Alpaca Paper only."
         },
         backtesting_learning_loop: learningLoop,
         operating_map: {
@@ -10757,6 +10970,182 @@ function renderMissionTeam(stage7 = {}) {
     `;
 }
 
+function missionHypothesisPayload(hypothesis = {}) {
+    return {
+        id: dashboardText(hypothesis.id, "hypothesis"),
+        title: dashboardText(hypothesis.market_sleeve, "Market sleeve"),
+        lifecycle_stage: dashboardText(hypothesis.lifecycle_stage, "Hypothesis under review"),
+        pattern_summary: dashboardText(hypothesis.pattern_summary, "Pattern summary not exported."),
+        plain_english_pattern: dashboardText(hypothesis.plain_english_pattern, "Pattern detail not exported."),
+        why_no_trade_yet: dashboardText(hypothesis.full_why_no_trade_yet || hypothesis.why_no_trade_yet, "No trade reason not exported."),
+        metrics: asArray(hypothesis.metrics).map((metric) => ({
+            label: dashboardText(metric.label, "Metric"),
+            value_label: dashboardText(metric.value_label, "not exported"),
+            detail: dashboardText(metric.detail, "No detail exported."),
+            tone: dashboardText(metric.tone, "pending")
+        })),
+        triggered_sources: asArray(hypothesis.triggered_sources).map((source) => ({
+            name: dashboardText(source.name || source.key, "Source"),
+            key: dashboardText(source.key, "source"),
+            category: dashboardText(source.category, "Source category"),
+            status_label: dashboardText(source.status_label, "Connected"),
+            status_tone: dashboardText(source.status_tone, "pending"),
+            description: dashboardText(source.description, "Source participates in this hypothesis.")
+        })),
+        source_category_label: dashboardText(hypothesis.source_category_label, "Source category"),
+        market_sleeve: dashboardText(hypothesis.market_sleeve, "Market sleeve"),
+        market_symbols: asArray(hypothesis.market_symbols).map((symbol) => dashboardText(symbol, "Symbol")),
+        strategy_evaluating: dashboardText(hypothesis.strategy_evaluating, "Strategy match pending"),
+        strategy_gate: dashboardText(hypothesis.strategy_gate, "Confirmation"),
+        llm_agreement_status: dashboardText(hypothesis.llm_agreement_status, "LLM review active"),
+        llm_agreement_detail: dashboardText(hypothesis.llm_agreement_detail, "LLM review detail not exported."),
+        quantum_review_status: dashboardText(hypothesis.quantum_review_status, "not exported"),
+        quantum_review_method: dashboardText(hypothesis.quantum_review_method, "Classical Fallback (Deterministic)"),
+        quantum_review_detail: dashboardText(hypothesis.quantum_review_detail, "Quantum review detail not exported."),
+        confirmation_needed: dashboardText(hypothesis.confirmation_needed, "Confirmation requirement not exported."),
+        invalidation_rule: dashboardText(hypothesis.invalidation_rule, "Invalidation rule not exported."),
+        flow: asArray(hypothesis.flow).map((step) => ({
+            label: dashboardText(step.label, "Step"),
+            value: dashboardText(step.value, "not exported"),
+            detail: dashboardText(step.detail, "No detail exported.")
+        })),
+        passed_criteria: asArray(hypothesis.passed_criteria).map((item) => dashboardText(item, "Criterion")),
+        missing_criteria: asArray(hypothesis.missing_criteria).map((item) => dashboardText(item, "Criterion")),
+        boundary: dashboardText(hypothesis.boundary, "Hypotheses cannot create trade authority.")
+    };
+}
+
+function missionHypothesisAttribute(hypothesis = {}) {
+    return literalHtmlText(encodeURIComponent(JSON.stringify(missionHypothesisPayload(hypothesis))));
+}
+
+function renderMissionHypothesisDrawer() {
+    return `
+        <aside class="mission-hypothesis-drawer" data-hypothesis-drawer hidden aria-hidden="true" aria-label="Hypothesis detail drawer">
+            <div class="mission-hypothesis-drawer-backdrop" data-hypothesis-drawer-close></div>
+            <section class="mission-hypothesis-drawer-panel" role="dialog" aria-modal="false" aria-labelledby="hypothesis-drawer-title">
+                <button class="mission-hypothesis-drawer-close" type="button" data-hypothesis-drawer-close aria-label="Close hypothesis detail">Close</button>
+                <p class="label">Hypotheses &amp; Pattern Recognition</p>
+                <h3 id="hypothesis-drawer-title" data-hypothesis-drawer-title>Hypothesis</h3>
+                <p data-hypothesis-drawer-summary></p>
+                <div data-hypothesis-drawer-body></div>
+            </section>
+        </aside>
+    `;
+}
+
+function renderMissionHypothesisDrawerBody(detail = {}) {
+    const sources = asArray(detail.triggered_sources);
+    const metrics = asArray(detail.metrics);
+    const flow = asArray(detail.flow);
+    return `
+        <div class="mission-hypothesis-flow">
+            ${flow.map((step) => `
+                <article>
+                    <span>${htmlText(step.label)}</span>
+                    <strong>${htmlText(step.value)}</strong>
+                    <p>${htmlText(step.detail)}</p>
+                </article>
+            `).join("")}
+        </div>
+        <section class="mission-hypothesis-drawer-section">
+            <header>
+                <span>Specific sources that triggered this</span>
+                <strong>${sources.length}</strong>
+            </header>
+            <div class="mission-hypothesis-source-list">
+                ${sources.length ? sources.map((source) => `
+                    <article class="${statusClass(source.status_tone || source.status_label)}">
+                        <strong>${htmlText(source.name)}</strong>
+                        <span>${htmlText(source.category)} · ${htmlText(source.status_label)}</span>
+                        <p>${htmlText(source.description)}</p>
+                    </article>
+                `).join("") : `<p class="mini">No specific source list was exported for this hypothesis.</p>`}
+            </div>
+        </section>
+        <div class="mission-hypothesis-drawer-grid">
+            <article>
+                <span>LLM agreement status</span>
+                <strong>${htmlText(detail.llm_agreement_status)}</strong>
+                <p>${htmlText(detail.llm_agreement_detail)}</p>
+            </article>
+            <article>
+                <span>Quant / quantum review status</span>
+                <strong>${htmlText(detail.quantum_review_method)}</strong>
+                <p>${htmlText(detail.quantum_review_status)} · ${htmlText(detail.quantum_review_detail)}</p>
+            </article>
+            <article>
+                <span>What would confirm it</span>
+                <strong>${htmlText(detail.confirmation_needed)}</strong>
+                <p>Passed: ${asArray(detail.passed_criteria).length ? htmlText(asArray(detail.passed_criteria).join(", ")) : "criteria not exported"}.</p>
+            </article>
+            <article>
+                <span>What would invalidate it</span>
+                <strong>Invalidation rule</strong>
+                <p>${htmlText(detail.invalidation_rule)}</p>
+            </article>
+        </div>
+        <section class="mission-hypothesis-drawer-section">
+            <header>
+                <span>Signal summary</span>
+                <strong>${metrics.length} fields</strong>
+            </header>
+            <div class="mission-hypothesis-metric-grid">
+                ${metrics.map((metric) => `
+                    <article class="${statusClass(metric.tone)}">
+                        <span>${htmlText(metric.label)}</span>
+                        <strong>${htmlText(metric.value_label)}</strong>
+                        <p>${htmlText(metric.detail)}</p>
+                    </article>
+                `).join("")}
+            </div>
+        </section>
+        <section class="mission-hypothesis-drawer-section">
+            <header>
+                <span>Why no trade yet?</span>
+                <strong>${htmlText(detail.lifecycle_stage)}</strong>
+            </header>
+            <p>${htmlText(detail.why_no_trade_yet)}</p>
+            <p>${htmlText(detail.boundary)}</p>
+        </section>
+    `;
+}
+
+function initMissionHypothesisDrawer(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const drawer = root.querySelector("[data-hypothesis-drawer]");
+    const title = root.querySelector("[data-hypothesis-drawer-title]");
+    const summary = root.querySelector("[data-hypothesis-drawer-summary]");
+    const body = root.querySelector("[data-hypothesis-drawer-body]");
+    if (!drawer || !title || !summary || !body) return;
+    const closeDrawer = () => {
+        drawer.hidden = true;
+        drawer.setAttribute("aria-hidden", "true");
+    };
+    root.querySelectorAll("[data-hypothesis-drawer-close]").forEach((button) => {
+        button.addEventListener("click", closeDrawer);
+    });
+    root.querySelectorAll("[data-hypothesis-detail]").forEach((button) => {
+        button.addEventListener("click", () => {
+            try {
+                const detail = JSON.parse(decodeURIComponent(button.dataset.hypothesisDetail || "%7B%7D"));
+                title.textContent = detail.title || "Hypothesis";
+                summary.textContent = `${detail.lifecycle_stage || "Hypothesis under review"} · ${detail.strategy_evaluating || "strategy pending"}`;
+                body.innerHTML = renderMissionHypothesisDrawerBody(detail);
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+                drawer.querySelector("[data-hypothesis-drawer-close]")?.focus?.();
+            } catch (_error) {
+                title.textContent = "Hypothesis detail unavailable";
+                summary.textContent = "This hypothesis did not expose a readable detail payload.";
+                body.innerHTML = `<p class="mini">Open the Reasoning view for raw hypothesis diagnostics.</p>`;
+                drawer.hidden = false;
+                drawer.setAttribute("aria-hidden", "false");
+            }
+        });
+    });
+}
+
 function renderMissionHypotheses(stage7 = {}) {
     const section = asArray(stage7.level_1_sections).find((item) => item.id === "hypotheses_pattern_recognition") || {};
     const pattern = stage7.hypotheses_pattern_recognition || {};
@@ -10769,7 +11158,11 @@ function renderMissionHypotheses(stage7 = {}) {
                 ${renderMetric("Hypotheses", pattern.hypothesis_count || 0)}
                 ${renderMetric("Evidence packets", pattern.evidence_packet_count || 0)}
                 ${renderMetric("LLM review", pattern.llm_status || "not exported")}
-                ${renderMetric("Quant review", pattern.quantum_mode || pattern.quantum_status || "not exported")}
+                ${renderMetric("Quant review", pattern.quantum_review_method || pattern.quantum_mode || pattern.quantum_status || "not exported")}
+            </div>
+            <div class="mission-pattern-explainer">
+                <p>${htmlText(pattern.linear_explanation)}</p>
+                <p>${htmlText(pattern.nonlinear_explanation)}</p>
             </div>
             <div class="mission-hypothesis-filter" data-hypothesis-filter-banner hidden>
                 <span data-hypothesis-filter-text>Showing selected sleeve hypotheses.</span>
@@ -10777,31 +11170,33 @@ function renderMissionHypotheses(stage7 = {}) {
             </div>
             <div class="mission-pattern-grid">
                 ${asArray(pattern.patterns).map((item) => {
-                    const label = item.market_sleeve || item.label || item.sleeve_key || "Pattern";
-                    const symbols = asArray(item.watched_market_symbols || item.instrument_symbols).slice(0, 6);
+                    const label = item.market_sleeve || "Pattern";
+                    const symbols = asArray(item.market_symbols).slice(0, 6);
                     return `
-                        <article class="edge-pattern ${statusClass(item.status || "pending")}" data-hypothesis-sleeve="${literalHtmlText(stage7SleeveKey(label))}">
-                            <div>
-                                <span>${htmlText(label)}</span>
-                                <strong>${htmlText(item.edge_stage || item.status || "hypothesis under review").replaceAll("_", " ")}</strong>
-                            </div>
-                            <p>${htmlText(item.observed_relationship || item.current_observation || item.pattern_question || "Pattern observation not exported.")}</p>
+                        <button class="edge-pattern mission-hypothesis-card ${statusClass(item.lifecycle_tone || item.lifecycle_stage)}" type="button" data-hypothesis-sleeve="${literalHtmlText(item.sleeve_key || stage7SleeveKey(label))}" data-hypothesis-detail="${missionHypothesisAttribute(item)}" aria-label="Open ${literalHtmlText(label)} hypothesis detail">
+                            <span class="mission-hypothesis-card-top">
+                                <em>${htmlText(label)}</em>
+                                <strong>${htmlText(item.lifecycle_stage)}</strong>
+                            </span>
+                            <p>${htmlText(item.pattern_summary)}</p>
                             <div class="mission-chip-row">
                                 ${symbols.map((symbol) => `<span class="edge-source-dot pending">${htmlText(symbol)}</span>`).join("")}
                             </div>
-                            <p class="mini">${htmlText(item.lead_lag_or_divergence_hypothesis || item.trading_strategy_implication || item.quantum_role || "Waiting for confirmation.")}</p>
-                        </article>
+                            <div class="mission-hypothesis-metric-grid">
+                                ${asArray(item.metrics).map((metric) => `
+                                    <span class="${statusClass(metric.tone)}">
+                                        <em>${htmlText(metric.label)}</em>
+                                        <b>${htmlText(metric.value_label)}</b>
+                                    </span>
+                                `).join("")}
+                            </div>
+                            <p class="mission-hypothesis-why"><b>Why no trade yet?</b> ${htmlText(item.why_no_trade_yet)}</p>
+                        </button>
                     `;
                 }).join("") || `<article class="edge-pattern pending"><strong>No patterns exported</strong><p>Qadam has no candidate pattern records in this snapshot.</p></article>`}
             </div>
-            <details class="stage7-proof-drawer mission-criteria-drawer">
-                <summary>Pattern criteria and why no trade yet</summary>
-                <div class="edge-criterion-list">
-                    ${asArray(pattern.criteria).map(renderEdgeCriterion).join("")}
-                </div>
-                <p>${htmlText(pattern.why_no_trade)}</p>
-            </details>
             <p class="stage7-section-summary">${htmlText(pattern.boundary)}</p>
+            ${renderMissionHypothesisDrawer()}
         </section>
     `;
 }
@@ -10870,6 +11265,7 @@ function renderStage7Visibility(viewModels = {}) {
     initMissionMarketDrawer(target);
     initMissionStrategyDrawer(target);
     initMissionTeamDrawer(target);
+    initMissionHypothesisDrawer(target);
 }
 
 function renderOverviewFirstScreen(viewModels) {
