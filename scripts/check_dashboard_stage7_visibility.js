@@ -124,6 +124,11 @@ async function main() {
         ".mission-source-drawer",
         ".mission-source-observation",
         ".mission-market-grid",
+        ".mission-market-card-button",
+        ".mission-market-drawer",
+        ".mission-market-drawer-grid",
+        ".mission-market-movement",
+        ".mission-hypothesis-filter",
         "@media (max-width: 900px)"
     ], "Mission Control dashboard CSS");
 
@@ -139,6 +144,12 @@ async function main() {
         "function renderMissionSourceDrawer",
         "function renderMissionSourceDrawerBody",
         "function renderMissionMarkets",
+        "function initMissionMarketDrawer",
+        "function renderMissionMarketDrawer",
+        "function renderMissionMarketDrawerBody",
+        "function missionMarketPayload",
+        "Full instrument list",
+        "Data sources feeding this sleeve",
         "function renderMissionStrategies",
         "function renderMissionTeam",
         "function renderMissionHypotheses",
@@ -197,6 +208,31 @@ async function main() {
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.description), "Mission Control source rows missing plain-English contribution");
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).some((source) => source.recent_observation), "Mission Control source rows missing observation text");
     assert(stage7.watched_markets_universe.sleeve_count === 5, "Mission Control watched-market sleeve count mismatch");
+    assert(JSON.stringify(stage7.watched_markets_universe.sleeves.map((sleeve) => sleeve.label)) === JSON.stringify([
+        "Crude Oil",
+        "Silver",
+        "Semiconductors",
+        "Prediction Markets",
+        "Defence"
+    ]), "Mission Control watched-market sleeve labels/order mismatch");
+    stage7.watched_markets_universe.sleeves.forEach((sleeve) => {
+        assert(["Holding", "Watching", "Ignoring"].includes(sleeve.current_state), `Mission Control sleeve current state invalid: ${sleeve.label}`);
+        assert(sleeve.instrument_summary, `Mission Control sleeve instrument summary missing: ${sleeve.label}`);
+        assert(sleeve.why_this_market_matters, `Mission Control sleeve reason missing: ${sleeve.label}`);
+        assert(sleeve.active_strategy, `Mission Control sleeve active strategy missing: ${sleeve.label}`);
+        assert(sleeve.akber_gate, `Mission Control sleeve Akber gate missing: ${sleeve.label}`);
+        assert(sleeve.recent_movement_direction, `Mission Control sleeve movement direction missing: ${sleeve.label}`);
+        assert(sleeve.recent_movement_reason, `Mission Control sleeve movement reason missing: ${sleeve.label}`);
+        assert(Number.isFinite(sleeve.active_hypothesis_count), `Mission Control sleeve hypothesis count missing: ${sleeve.label}`);
+    });
+    const sleevesByLabel = new Map(stage7.watched_markets_universe.sleeves.map((sleeve) => [sleeve.label, sleeve]));
+    assert(sleevesByLabel.get("Semiconductors")?.current_state === "Holding", "Mission Control semiconductors sleeve should show holding state");
+    assert(sleevesByLabel.get("Defence")?.current_state === "Holding", "Mission Control defence sleeve should show holding state");
+    ["Crude Oil", "Silver", "Prediction Markets"].forEach((label) => {
+        assert(sleevesByLabel.get(label)?.current_state === "Watching", `Mission Control ${label} sleeve should show watching state`);
+    });
+    assert(stage7.watched_markets_universe.sleeves.every((sleeve) => sleeve.active_hypothesis_count >= 1), "Mission Control every watched sleeve should expose active hypothesis count");
+    assert(stage7.watched_markets_universe.sleeves.every((sleeve) => sleeve.watched_instruments.length >= 2), "Mission Control market drawers need full instrument lists");
     assert(stage7.strategy_playbook.mandate.includes("GBP 100,000"), "Mission Control mandate missing paper baseline");
     assert(stage7.strategy_playbook.mandate.includes("GBP 200,000"), "Mission Control mandate missing paper target");
     ["Prediction markets", "Crude oil", "Defence", "Silver", "Semiconductors"].forEach((domain) => {
@@ -250,6 +286,17 @@ async function main() {
         "Risk Desk",
         "Paper Trading Desk",
         "Strategy feedback model",
+        "Current State",
+        "Holding",
+        "Watching",
+        "Active Hypotheses",
+        "Strategy currently applied",
+        "Recent Movement",
+        "Current Akber gate",
+        "data-market-sleeve-detail=",
+        "data-market-drawer",
+        "data-market-hypothesis-link=",
+        "id=\"hypotheses_pattern_recognition\"",
         "Prediction markets",
         "Crude Oil",
         "Defence",

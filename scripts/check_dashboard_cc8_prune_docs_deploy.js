@@ -119,8 +119,8 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260619-source-intelligence-network",
-    "/dashboard.js?v=20260619-source-intelligence-network"
+    "/auth.css?v=20260619-watched-markets-universe",
+    "/dashboard.js?v=20260619-watched-markets-universe"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",
@@ -130,7 +130,7 @@ includesAll(plan, [
     "CC8",
     "Prune payload, tests, docs, deploy",
     "prune_audit",
-    "20260619-source-intelligence-network"
+    "20260619-watched-markets-universe"
 ], "CC8 plan");
 
 assertPublicSafe(guideHtml, "guide HTML");

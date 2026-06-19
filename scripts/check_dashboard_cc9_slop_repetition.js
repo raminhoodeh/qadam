@@ -223,7 +223,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260619-source-intelligence-network");
+    console.log("dashboard_cc9_cache_key=20260619-watched-markets-universe");
 }
 
 main().catch((error) => {
