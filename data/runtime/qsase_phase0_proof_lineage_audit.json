@@ -1,0 +1,384 @@
+{
+  "artifact_id": "qsase:phase0:proof-lineage",
+  "artifact_type": "qsase_phase0_proof_lineage",
+  "component": {
+    "closed_trade_audit": [
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "f7a6ca71-fb83-484e-9d1b-68bd5f329bda"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "de8391be-95d7-4e10-a301-3341af2815d6"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "fa5a2558-42b1-40ed-9257-0328d8888440"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "99cf2dcb-6cb4-4167-bc3f-b2a685c732f7"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "a77e329b-c1c9-4d2e-b020-741fbb767f9f"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "4f730c10-688a-42cf-a65a-9957a3040554"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "1fc986ad-eedc-4641-ac6b-4cb05cc0e17c"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "64db75f8-642d-416d-b8d5-a31de83ab58a"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "b54ab294-56b1-445d-b452-2e01a1621c13"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "bd0a2759-6085-43a7-b33c-e62ff7997db0"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "8dda0d53-a1d1-466f-bede-74504f89f816"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "c074c290-4b30-4059-9b09-63ee42c79f0d"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "b6dafc69-a3e0-4242-a3ba-52bea382a043"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "ff195703-87d3-499c-96a0-3e1b2529fa9e"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "da3870f3-359a-402b-b8dd-5a7701399f15"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "66280f2f-822e-4a4c-8881-841919f645c7"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "17bbb530-058c-499a-af81-6e521e74ad10"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "d2da97a7-f88f-41e4-b07c-de3191354a32"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "ee9fda9f-d838-448c-94d8-4ebbea23d96d"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "e7579ebc-36db-48d8-88ef-7d5be2979f5e"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "db10ae2f-8238-45a7-a0f5-9f3ebcc883ee"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "d87dd8aa-46f5-4fd1-9ef7-8a3620b7965f"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "SMH",
+        "trade_ref": "d1dea02d-733f-4af1-98b6-ee2298a5bd1a"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "ITA",
+        "trade_ref": "d0f19bef-032d-477f-9a01-1922075261bc"
+      },
+      {
+        "missing_lineage_fields": [
+          "research_goal_id",
+          "candidate_identity",
+          "idempotency_key",
+          "client_order_id",
+          "symbol",
+          "postmortem_id"
+        ],
+        "symbol": "XLK",
+        "trade_ref": "c6ebc938-ebd4-4e23-9d6b-1d3a8835fd37"
+      }
+    ],
+    "cockpit_closed_trade_count": 78,
+    "cockpit_postmortem_due_count": 78,
+    "complete_lineage_closed_trade_count": 0,
+    "component": "proof_lineage",
+    "degraded_reasons": [],
+    "gaps": [
+      "some closed paper trades lack complete proof lineage"
+    ],
+    "paper_closed_trades_jsonl_count": 78,
+    "paper_proof_ledger_verified_record_count": 0,
+    "phase7_proof_trade_count": 2,
+    "phase7_proof_trade_credit_count": 0,
+    "required_lineage_fields": [
+      "research_goal_id",
+      "candidate_identity",
+      "idempotency_key",
+      "client_order_id",
+      "symbol",
+      "closed_at",
+      "postmortem_id"
+    ],
+    "safety": {
+      "backfill_allowed": false,
+      "broker_post_allowed": false,
+      "broker_write_allowed": false,
+      "candidate_creation_allowed": false,
+      "canonical_paperops_wrapper_compatible": true,
+      "execution_approval_allowed": false,
+      "fail_closed": true,
+      "live_capital_enabled": false,
+      "live_endpoint_allowed": false,
+      "paper_only": true,
+      "paper_order_allowed": false,
+      "paper_order_submission_allowed": false,
+      "proof_credit_allowed": false,
+      "proposal_first": true,
+      "public_safe": true,
+      "qctrl_jobs_allowed": false,
+      "read_only": true,
+      "risk_approval_allowed": false,
+      "simulated_elapsed_time_allowed": false,
+      "telegram_command_path_enabled": false,
+      "telegram_inbound_authoritative": false
+    },
+    "source_artifact": "phase7_proof_lifecycle_monitor.json",
+    "source_generated_at": "2026-06-28T18:24:55.674294+00:00",
+    "source_status": "proof_lifecycle_events_recorded",
+    "status": "ready_with_gaps"
+  },
+  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
+  "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
+  "safety": {
+    "backfill_allowed": false,
+    "broker_post_allowed": false,
+    "broker_write_allowed": false,
+    "candidate_creation_allowed": false,
+    "canonical_paperops_wrapper_compatible": true,
+    "execution_approval_allowed": false,
+    "fail_closed": true,
+    "live_capital_enabled": false,
+    "live_endpoint_allowed": false,
+    "paper_only": true,
+    "paper_order_allowed": false,
+    "paper_order_submission_allowed": false,
+    "proof_credit_allowed": false,
+    "proposal_first": true,
+    "public_safe": true,
+    "qctrl_jobs_allowed": false,
+    "read_only": true,
+    "risk_approval_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_inbound_authoritative": false
+  },
+  "schema_version": 1,
+  "status": "ready_with_gaps"
+}

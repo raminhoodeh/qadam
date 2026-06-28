@@ -1,0 +1,113 @@
+{
+  "artifact_id": "qsase:phase0:candidate-identity",
+  "artifact_type": "qsase_phase0_candidate_identity",
+  "component": {
+    "candidate_record_count": 2,
+    "component": "candidate_identity",
+    "degraded_reasons": [],
+    "duplicate_candidate_identity_count": 0,
+    "eligible_setup_count": 2,
+    "gaps": [
+      "one or more candidate records are missing full Phase 0 identity fields"
+    ],
+    "identity_requirements": [
+      "research_goal_id",
+      "candidate_identity",
+      "instrument",
+      "setup_freshness_key",
+      "strategy_family_key",
+      "source_signal_id",
+      "source_origin_record_id",
+      "risk_state",
+      "invalidation",
+      "time_window"
+    ],
+    "missing_required_identity_count": 2,
+    "qualified_setup_count": 2,
+    "record_audit": [
+      {
+        "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:5167f651f76be9ec",
+        "eligible_setup": true,
+        "instrument": "defence",
+        "missing_identity_fields": [
+          "invalidation"
+        ],
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "research_goal_id_present": true,
+        "setup_freshness_key_present": true,
+        "source_quorum_passed": true,
+        "strategy_family_key": "defence_repricing_geopolitical_watch"
+      },
+      {
+        "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:f8a811f8317bce76",
+        "eligible_setup": true,
+        "instrument": "semiconductors",
+        "missing_identity_fields": [
+          "invalidation"
+        ],
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "research_goal_id_present": true,
+        "setup_freshness_key_present": true,
+        "source_quorum_passed": true,
+        "strategy_family_key": "semiconductor_policy_options_asymmetry"
+      }
+    ],
+    "safety": {
+      "backfill_allowed": false,
+      "broker_post_allowed": false,
+      "broker_write_allowed": false,
+      "candidate_creation_allowed": false,
+      "canonical_paperops_wrapper_compatible": true,
+      "execution_approval_allowed": false,
+      "fail_closed": true,
+      "live_capital_enabled": false,
+      "live_endpoint_allowed": false,
+      "paper_only": true,
+      "paper_order_allowed": false,
+      "paper_order_submission_allowed": false,
+      "proof_credit_allowed": false,
+      "proposal_first": true,
+      "public_safe": true,
+      "qctrl_jobs_allowed": false,
+      "read_only": true,
+      "risk_approval_allowed": false,
+      "simulated_elapsed_time_allowed": false,
+      "telegram_command_path_enabled": false,
+      "telegram_inbound_authoritative": false
+    },
+    "source_artifact": "phase7_qualified_setup_ledger.json",
+    "source_generated_at": "2026-06-28T18:24:54.334160+00:00",
+    "source_status": "read_only_q7_setups_recorded",
+    "status": "ready_with_gaps"
+  },
+  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
+  "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
+  "safety": {
+    "backfill_allowed": false,
+    "broker_post_allowed": false,
+    "broker_write_allowed": false,
+    "candidate_creation_allowed": false,
+    "canonical_paperops_wrapper_compatible": true,
+    "execution_approval_allowed": false,
+    "fail_closed": true,
+    "live_capital_enabled": false,
+    "live_endpoint_allowed": false,
+    "paper_only": true,
+    "paper_order_allowed": false,
+    "paper_order_submission_allowed": false,
+    "proof_credit_allowed": false,
+    "proposal_first": true,
+    "public_safe": true,
+    "qctrl_jobs_allowed": false,
+    "read_only": true,
+    "risk_approval_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_inbound_authoritative": false
+  },
+  "schema_version": 1,
+  "status": "ready_with_gaps"
+}

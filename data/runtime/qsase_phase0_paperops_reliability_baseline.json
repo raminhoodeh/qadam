@@ -1,0 +1,967 @@
+{
+  "artifact_id": "qsase:phase0:paperops-reliability-baseline",
+  "artifact_type": "qsase_phase0_paperops_reliability_baseline",
+  "blocker_count": 0,
+  "blockers": [],
+  "canonical_wrapper": {
+    "command": ".venv/bin/python scripts/run_paperops_autonomous_pass.py",
+    "phase0_invokes_wrapper": false,
+    "phase0_mutates_paperops_state": false,
+    "summary_contract": "paperops_autonomous_pass_summary.json"
+  },
+  "component_statuses": {
+    "candidate_identity": "ready_with_gaps",
+    "dashboard_deploy_hygiene": "ready",
+    "paper_lifecycle": "ready_with_gaps",
+    "proof_lineage": "ready_with_gaps",
+    "review_signature_readiness": "ready",
+    "scanner_freshness": "ready_with_gaps",
+    "telemetry_consistency": "ready_with_gaps",
+    "validated_edge_readiness": "ready_with_gaps"
+  },
+  "components": {
+    "candidate_identity": {
+      "candidate_record_count": 2,
+      "component": "candidate_identity",
+      "degraded_reasons": [],
+      "duplicate_candidate_identity_count": 0,
+      "eligible_setup_count": 2,
+      "gaps": [
+        "one or more candidate records are missing full Phase 0 identity fields"
+      ],
+      "identity_requirements": [
+        "research_goal_id",
+        "candidate_identity",
+        "instrument",
+        "setup_freshness_key",
+        "strategy_family_key",
+        "source_signal_id",
+        "source_origin_record_id",
+        "risk_state",
+        "invalidation",
+        "time_window"
+      ],
+      "missing_required_identity_count": 2,
+      "qualified_setup_count": 2,
+      "record_audit": [
+        {
+          "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:5167f651f76be9ec",
+          "eligible_setup": true,
+          "instrument": "defence",
+          "missing_identity_fields": [
+            "invalidation"
+          ],
+          "paper_order_submission_allowed": false,
+          "proof_credit_allowed": false,
+          "research_goal_id_present": true,
+          "setup_freshness_key_present": true,
+          "source_quorum_passed": true,
+          "strategy_family_key": "defence_repricing_geopolitical_watch"
+        },
+        {
+          "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:f8a811f8317bce76",
+          "eligible_setup": true,
+          "instrument": "semiconductors",
+          "missing_identity_fields": [
+            "invalidation"
+          ],
+          "paper_order_submission_allowed": false,
+          "proof_credit_allowed": false,
+          "research_goal_id_present": true,
+          "setup_freshness_key_present": true,
+          "source_quorum_passed": true,
+          "strategy_family_key": "semiconductor_policy_options_asymmetry"
+        }
+      ],
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "source_artifact": "phase7_qualified_setup_ledger.json",
+      "source_generated_at": "2026-06-28T18:24:54.334160+00:00",
+      "source_status": "read_only_q7_setups_recorded",
+      "status": "ready_with_gaps"
+    },
+    "dashboard_deploy_hygiene": {
+      "aliases": [
+        "qadam.trade",
+        "www.qadam.trade"
+      ],
+      "cockpit_status_age_seconds": 1189,
+      "cockpit_status_generated_at": "2026-06-28T18:28:47.340660+00:00",
+      "cockpit_status_signature_exists": true,
+      "component": "dashboard_deploy_hygiene",
+      "dashboard_public_safe_boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
+      "degraded_reasons": [],
+      "deployment_receipt_age_seconds": 1160,
+      "deployment_receipt_deployed_at": "2026-06-28T18:29:16.401Z",
+      "deployment_url": "https://qadam-8jzk606xb-ramin-hoodehs-projects.vercel.app",
+      "gaps": [],
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "status": "ready"
+    },
+    "paper_lifecycle": {
+      "accepted_order_policy_records": [
+        {
+          "age_seconds": 67243,
+          "client_order_id_present": true,
+          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
+          "stale_after_seconds": 14400,
+          "submitted_at": "2026-06-28T00:07:53.148863Z",
+          "symbol": "ITA"
+        },
+        {
+          "age_seconds": 67242,
+          "client_order_id_present": true,
+          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
+          "stale_after_seconds": 14400,
+          "submitted_at": "2026-06-28T00:07:53.965503Z",
+          "symbol": "SMH"
+        },
+        {
+          "age_seconds": 20615,
+          "client_order_id_present": true,
+          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
+          "stale_after_seconds": 14400,
+          "submitted_at": "2026-06-28T13:05:01.218579586Z",
+          "symbol": "ITA"
+        },
+        {
+          "age_seconds": 20613,
+          "client_order_id_present": true,
+          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
+          "stale_after_seconds": 14400,
+          "submitted_at": "2026-06-28T13:05:02.918177236Z",
+          "symbol": "SMH"
+        }
+      ],
+      "broker_status_counts": {
+        "accepted": 4
+      },
+      "cockpit_open_position_count": 2,
+      "cockpit_order_count": 86,
+      "component": "paper_lifecycle",
+      "degraded_reasons": [],
+      "fill_event_count": 0,
+      "gaps": [
+        "accepted paper orders are older than the Phase 0 stale-order visibility window"
+      ],
+      "mirrored_submitted_order_count": 4,
+      "paper_order_poll_failed_count": 0,
+      "paper_order_poll_succeeded_count": 4,
+      "poll_candidate_count": 4,
+      "proof_lifecycle_policy": {
+        "broker_close_allowed": false,
+        "broker_echo_required": true,
+        "broker_position_mutation_allowed": false,
+        "broker_receipt_ref_required": true,
+        "broker_resize_allowed": false,
+        "closed_trade_requires_q7_9_postmortem": true,
+        "crypto_perps_write_allowed": false,
+        "external_broker_post_performed_by_validation": false,
+        "failed_reconciliation_blocks_certification": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "local_lifecycle_write_allowed": true,
+        "manual_trade_level_override_allowed": false,
+        "monitor_mode": "phase7_local_proof_lifecycle_monitor",
+        "order_cancel_allowed": false,
+        "policy_schema_version": 1,
+        "prediction_market_write_allowed": false,
+        "proof_credit_allowed": false,
+        "reconciliation_required": true,
+        "source_broker_receipt_required": true,
+        "source_guarded_submit_required": true,
+        "submitted_order_ref_required": true
+      },
+      "proof_lifecycle_status": "proof_lifecycle_events_recorded",
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "source_artifact": "paperops_paper_lifecycle_poller.json",
+      "source_generated_at": "2026-06-28T18:24:42.474947+00:00",
+      "source_status": "paper_lifecycle_poll_recorded",
+      "stale_accepted_order_count": 4,
+      "status": "ready_with_gaps"
+    },
+    "proof_lineage": {
+      "closed_trade_audit": [
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "f7a6ca71-fb83-484e-9d1b-68bd5f329bda"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "de8391be-95d7-4e10-a301-3341af2815d6"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "fa5a2558-42b1-40ed-9257-0328d8888440"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "99cf2dcb-6cb4-4167-bc3f-b2a685c732f7"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "a77e329b-c1c9-4d2e-b020-741fbb767f9f"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "4f730c10-688a-42cf-a65a-9957a3040554"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "1fc986ad-eedc-4641-ac6b-4cb05cc0e17c"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "64db75f8-642d-416d-b8d5-a31de83ab58a"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "b54ab294-56b1-445d-b452-2e01a1621c13"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "bd0a2759-6085-43a7-b33c-e62ff7997db0"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "8dda0d53-a1d1-466f-bede-74504f89f816"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "c074c290-4b30-4059-9b09-63ee42c79f0d"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "b6dafc69-a3e0-4242-a3ba-52bea382a043"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "ff195703-87d3-499c-96a0-3e1b2529fa9e"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "da3870f3-359a-402b-b8dd-5a7701399f15"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "66280f2f-822e-4a4c-8881-841919f645c7"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "17bbb530-058c-499a-af81-6e521e74ad10"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "d2da97a7-f88f-41e4-b07c-de3191354a32"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "ee9fda9f-d838-448c-94d8-4ebbea23d96d"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "e7579ebc-36db-48d8-88ef-7d5be2979f5e"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "db10ae2f-8238-45a7-a0f5-9f3ebcc883ee"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "d87dd8aa-46f5-4fd1-9ef7-8a3620b7965f"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "d1dea02d-733f-4af1-98b6-ee2298a5bd1a"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "ITA",
+          "trade_ref": "d0f19bef-032d-477f-9a01-1922075261bc"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "XLK",
+          "trade_ref": "c6ebc938-ebd4-4e23-9d6b-1d3a8835fd37"
+        }
+      ],
+      "cockpit_closed_trade_count": 78,
+      "cockpit_postmortem_due_count": 78,
+      "complete_lineage_closed_trade_count": 0,
+      "component": "proof_lineage",
+      "degraded_reasons": [],
+      "gaps": [
+        "some closed paper trades lack complete proof lineage"
+      ],
+      "paper_closed_trades_jsonl_count": 78,
+      "paper_proof_ledger_verified_record_count": 0,
+      "phase7_proof_trade_count": 2,
+      "phase7_proof_trade_credit_count": 0,
+      "required_lineage_fields": [
+        "research_goal_id",
+        "candidate_identity",
+        "idempotency_key",
+        "client_order_id",
+        "symbol",
+        "closed_at",
+        "postmortem_id"
+      ],
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "source_artifact": "phase7_proof_lifecycle_monitor.json",
+      "source_generated_at": "2026-06-28T18:24:55.674294+00:00",
+      "source_status": "proof_lifecycle_events_recorded",
+      "status": "ready_with_gaps"
+    },
+    "review_signature_readiness": {
+      "authority_ledgers_present": {
+        "proof_order_staging": true,
+        "qualified_setup_ledger": true
+      },
+      "component": "review_signature_readiness",
+      "degraded_reasons": [],
+      "gaps": [],
+      "granting_authority": false,
+      "paperops_signature_readiness": {
+        "guarded_paper_submit_route": true,
+        "idempotency": true,
+        "qctrl_consultation_record": true,
+        "quantum_review_gate_record": true,
+        "risk_budget": true,
+        "source_quorum": true,
+        "strategy_family_lineage": true
+      },
+      "qctrl_consultation_generated_at": "2026-05-26T23:01:00.843967+00:00",
+      "qctrl_consultation_status": "consultation_recorded",
+      "quantum_review_gate_generated_at": "2026-06-28T18:27:14.333900+00:00",
+      "quantum_review_gate_status": "quantum_review_gate_passed",
+      "review_readiness_only": true,
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "status": "ready",
+      "submit_enablement_status": "enabled_pending_explicit_submit"
+    },
+    "scanner_freshness": {
+      "candidate_refresh_allowed": true,
+      "component": "scanner_freshness",
+      "counts": {
+        "closed_paper_trade_count": 7,
+        "duplicate_submit_count": 0,
+        "fresh_eligible_submit_count": 0,
+        "observed_trade_candidate_count": 5,
+        "open_position_count": 7,
+        "production_qualified_setup_count": 0,
+        "submitted_paper_order_count": 7
+      },
+      "degraded_reasons": [],
+      "freshness_sla_seconds": 1500,
+      "gaps": [
+        "20-minute local scheduler is not recorded active",
+        "scanner artifact is older than 25 minutes outside regular market hours"
+      ],
+      "market_hours": {
+        "calendar": "approx_us_equity_regular_session_utc",
+        "in_regular_session": false,
+        "observed_at": "2026-06-28T18:48:36.473098+00:00",
+        "regular_close_utc": "20:00",
+        "regular_open_utc": "13:30",
+        "state": "closed_weekend"
+      },
+      "opportunity_scan_interval_minutes": 20,
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "scanner_ready": true,
+      "source_artifact": "paperops_opportunity_scan_cadence.json",
+      "source_generated_age_seconds": 2072836,
+      "source_generated_at": "2026-06-04T19:01:20.159436+00:00",
+      "source_mtime_age_seconds": 2072836,
+      "status": "ready_with_gaps",
+      "trade_submission_allowed_by_scan": false,
+      "twenty_minute_recurring_scheduler_active": false
+    },
+    "telemetry_consistency": {
+      "comparisons": {
+        "closed_paper_trade_count": {
+          "cockpit_portfolio": 78,
+          "lifecycle_poller": 0,
+          "paperops_summary": 78,
+          "scanner_cadence": 7
+        },
+        "open_position_count": {
+          "cockpit_portfolio": 2,
+          "lifecycle_poller": 0,
+          "paperops_summary": 2,
+          "scanner_cadence": 7
+        },
+        "submitted_paper_order_count": {
+          "cockpit_portfolio": 86,
+          "lifecycle_poller": 4,
+          "paperops_summary": 0,
+          "scanner_cadence": 7
+        }
+      },
+      "component": "telemetry_consistency",
+      "degraded_reasons": [],
+      "gaps": [
+        "runtime artifacts disagree on core PaperOps counts"
+      ],
+      "mismatched_count_keys": [
+        "open_position_count",
+        "closed_paper_trade_count",
+        "submitted_paper_order_count"
+      ],
+      "missing_source_artifacts": [],
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "single_public_dashboard_contract": "cockpit-status.json",
+      "status": "ready_with_gaps"
+    },
+    "validated_edge_readiness": {
+      "candidate_edges_under_observation": 3,
+      "candidate_setup_record_count": 3,
+      "closed_proof_trade_count": 0,
+      "component": "validated_edge_readiness",
+      "degraded_reasons": [],
+      "edge_pattern_ledger_status": "candidate_edges_under_observation",
+      "gaps": [
+        "no closed proof trades are available to validate observed edges"
+      ],
+      "graduation_rule": "lead_lag_or_divergence_or_source_before_price_evidence_required_before_validated_edge",
+      "proof_trade_count": 0,
+      "qualified_setup_count": 2,
+      "safety": {
+        "backfill_allowed": false,
+        "broker_post_allowed": false,
+        "broker_write_allowed": false,
+        "candidate_creation_allowed": false,
+        "canonical_paperops_wrapper_compatible": true,
+        "execution_approval_allowed": false,
+        "fail_closed": true,
+        "live_capital_enabled": false,
+        "live_endpoint_allowed": false,
+        "paper_only": true,
+        "paper_order_allowed": false,
+        "paper_order_submission_allowed": false,
+        "proof_credit_allowed": false,
+        "proposal_first": true,
+        "public_safe": true,
+        "qctrl_jobs_allowed": false,
+        "read_only": true,
+        "risk_approval_allowed": false,
+        "simulated_elapsed_time_allowed": false,
+        "telegram_command_path_enabled": false,
+        "telegram_inbound_authoritative": false
+      },
+      "status": "ready_with_gaps",
+      "validated_edge_count": 0
+    }
+  },
+  "degraded_reason_count": 0,
+  "degraded_reasons": [],
+  "gap_count": 7,
+  "gaps": [
+    "20-minute local scheduler is not recorded active",
+    "accepted paper orders are older than the Phase 0 stale-order visibility window",
+    "no closed proof trades are available to validate observed edges",
+    "one or more candidate records are missing full Phase 0 identity fields",
+    "runtime artifacts disagree on core PaperOps counts",
+    "scanner artifact is older than 25 minutes outside regular market hours",
+    "some closed paper trades lack complete proof lineage"
+  ],
+  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "paper_growth_trial": {
+    "actual_calendar_run": true,
+    "backfill_used": false,
+    "run_day": 35,
+    "simulated_time_used": false
+  },
+  "paper_runtime": {
+    "closed_paper_trade_count": 78,
+    "duplicate_submit_count": 4,
+    "fresh_eligible_submit_count": 0,
+    "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
+    "open_order_count": 8,
+    "open_position_count": 2,
+    "submitted_paper_order_count": 0
+  },
+  "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
+  "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
+  "public_status": {
+    "label": "PaperOps execution reliability baseline",
+    "message": "Read-only Phase 0 diagnostic baseline for the 30-day paper growth trial.",
+    "state": "ready_with_gaps"
+  },
+  "safety": {
+    "backfill_allowed": false,
+    "broker_post_allowed": false,
+    "broker_write_allowed": false,
+    "candidate_creation_allowed": false,
+    "canonical_paperops_wrapper_compatible": true,
+    "execution_approval_allowed": false,
+    "fail_closed": true,
+    "live_capital_enabled": false,
+    "live_endpoint_allowed": false,
+    "paper_only": true,
+    "paper_order_allowed": false,
+    "paper_order_submission_allowed": false,
+    "proof_credit_allowed": false,
+    "proposal_first": true,
+    "public_safe": true,
+    "qctrl_jobs_allowed": false,
+    "read_only": true,
+    "risk_approval_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_inbound_authoritative": false
+  },
+  "schema_version": 1,
+  "source_artifacts": {
+    "cockpit_status": {
+      "exists": true,
+      "mtime": "2026-06-28T18:28:52.105667+00:00",
+      "mtime_age_seconds": 1184,
+      "path": "data/runtime/cockpit-status.json",
+      "size_bytes": 2775769
+    },
+    "cockpit_status_signature": {
+      "exists": true,
+      "mtime": "2026-06-28T18:28:52.114244+00:00",
+      "mtime_age_seconds": 1184,
+      "path": "data/runtime/cockpit-status.signature.json",
+      "size_bytes": 576
+    },
+    "dashboard_deployment_receipt": {
+      "exists": true,
+      "mtime": "2026-06-28T18:29:16.403533+00:00",
+      "mtime_age_seconds": 1160,
+      "path": "data/runtime/dashboard-deployment-receipt.json",
+      "size_bytes": 373
+    },
+    "paper_closed_trades": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:51.130646+00:00",
+      "mtime_age_seconds": 1425,
+      "path": "data/runtime/paper_closed_trades.jsonl",
+      "size_bytes": 39546
+    },
+    "paper_orders": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:51.129215+00:00",
+      "mtime_age_seconds": 1425,
+      "path": "data/runtime/paper_orders.jsonl",
+      "size_bytes": 45215
+    },
+    "paperops_alpaca_paper_submit_enablement": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:54.684163+00:00",
+      "mtime_age_seconds": 1421,
+      "path": "data/runtime/paperops_alpaca_paper_submit_enablement.json",
+      "size_bytes": 3426
+    },
+    "paperops_autonomous_pass_summary": {
+      "exists": true,
+      "mtime": "2026-06-28T18:12:51.685510+00:00",
+      "mtime_age_seconds": 2144,
+      "path": "data/runtime/paperops_autonomous_pass_summary.json",
+      "size_bytes": 189840
+    },
+    "paperops_opportunity_scan_cadence": {
+      "exists": true,
+      "mtime": "2026-06-04T19:01:20.172757+00:00",
+      "mtime_age_seconds": 2072836,
+      "path": "data/runtime/paperops_opportunity_scan_cadence.json",
+      "size_bytes": 6404
+    },
+    "paperops_paper_lifecycle_poller": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:54.948359+00:00",
+      "mtime_age_seconds": 1421,
+      "path": "data/runtime/paperops_paper_lifecycle_poller.json",
+      "size_bytes": 31594
+    },
+    "paperops_qctrl_paper_consultation": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:53.555033+00:00",
+      "mtime_age_seconds": 1422,
+      "path": "data/runtime/paperops_qctrl_paper_consultation.json",
+      "size_bytes": 4710
+    },
+    "phase7_proof_lifecycle_monitor": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:55.675339+00:00",
+      "mtime_age_seconds": 1420,
+      "path": "data/runtime/phase7_proof_lifecycle_monitor.json",
+      "size_bytes": 38955
+    },
+    "phase7_proof_order_staging": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:54.508259+00:00",
+      "mtime_age_seconds": 1421,
+      "path": "data/runtime/phase7_proof_order_staging.json",
+      "size_bytes": 76860
+    },
+    "phase7_qualified_setup_ledger": {
+      "exists": true,
+      "mtime": "2026-06-28T18:24:54.336465+00:00",
+      "mtime_age_seconds": 1422,
+      "path": "data/runtime/phase7_qualified_setup_ledger.json",
+      "size_bytes": 68688
+    },
+    "quantum_mandatory_review_gate": {
+      "exists": true,
+      "mtime": "2026-06-28T18:27:14.338919+00:00",
+      "mtime_age_seconds": 1282,
+      "path": "data/runtime/quantum_mandatory_review_gate.json",
+      "size_bytes": 10667
+    }
+  },
+  "status": "ready_with_gaps",
+  "validation_errors": []
+}

@@ -1,0 +1,53 @@
+{
+  "active_phase": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
+  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "phases": {
+    "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
+      "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
+      "blocker_count": 0,
+      "component_statuses": {
+        "candidate_identity": "ready_with_gaps",
+        "dashboard_deploy_hygiene": "ready",
+        "paper_lifecycle": "ready_with_gaps",
+        "proof_lineage": "ready_with_gaps",
+        "review_signature_readiness": "ready",
+        "scanner_freshness": "ready_with_gaps",
+        "telemetry_consistency": "ready_with_gaps",
+        "validated_edge_readiness": "ready_with_gaps"
+      },
+      "degraded_reason_count": 0,
+      "fail_closed": true,
+      "gap_count": 7,
+      "later_qsase_phases_implemented": false,
+      "name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
+      "paper_only": true,
+      "proposal_first": true,
+      "read_only": true,
+      "status": "ready_with_gaps"
+    }
+  },
+  "safety": {
+    "backfill_allowed": false,
+    "broker_post_allowed": false,
+    "broker_write_allowed": false,
+    "candidate_creation_allowed": false,
+    "canonical_paperops_wrapper_compatible": true,
+    "execution_approval_allowed": false,
+    "fail_closed": true,
+    "live_capital_enabled": false,
+    "live_endpoint_allowed": false,
+    "paper_only": true,
+    "paper_order_allowed": false,
+    "paper_order_submission_allowed": false,
+    "proof_credit_allowed": false,
+    "proposal_first": true,
+    "public_safe": true,
+    "qctrl_jobs_allowed": false,
+    "read_only": true,
+    "risk_approval_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_inbound_authoritative": false
+  },
+  "schema_version": 1
+}

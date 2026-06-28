@@ -1,0 +1,90 @@
+{
+  "artifact_id": "qsase:phase0:telemetry-consistency",
+  "artifact_type": "qsase_phase0_telemetry_consistency",
+  "component": {
+    "comparisons": {
+      "closed_paper_trade_count": {
+        "cockpit_portfolio": 78,
+        "lifecycle_poller": 0,
+        "paperops_summary": 78,
+        "scanner_cadence": 7
+      },
+      "open_position_count": {
+        "cockpit_portfolio": 2,
+        "lifecycle_poller": 0,
+        "paperops_summary": 2,
+        "scanner_cadence": 7
+      },
+      "submitted_paper_order_count": {
+        "cockpit_portfolio": 86,
+        "lifecycle_poller": 4,
+        "paperops_summary": 0,
+        "scanner_cadence": 7
+      }
+    },
+    "component": "telemetry_consistency",
+    "degraded_reasons": [],
+    "gaps": [
+      "runtime artifacts disagree on core PaperOps counts"
+    ],
+    "mismatched_count_keys": [
+      "open_position_count",
+      "closed_paper_trade_count",
+      "submitted_paper_order_count"
+    ],
+    "missing_source_artifacts": [],
+    "safety": {
+      "backfill_allowed": false,
+      "broker_post_allowed": false,
+      "broker_write_allowed": false,
+      "candidate_creation_allowed": false,
+      "canonical_paperops_wrapper_compatible": true,
+      "execution_approval_allowed": false,
+      "fail_closed": true,
+      "live_capital_enabled": false,
+      "live_endpoint_allowed": false,
+      "paper_only": true,
+      "paper_order_allowed": false,
+      "paper_order_submission_allowed": false,
+      "proof_credit_allowed": false,
+      "proposal_first": true,
+      "public_safe": true,
+      "qctrl_jobs_allowed": false,
+      "read_only": true,
+      "risk_approval_allowed": false,
+      "simulated_elapsed_time_allowed": false,
+      "telegram_command_path_enabled": false,
+      "telegram_inbound_authoritative": false
+    },
+    "single_public_dashboard_contract": "cockpit-status.json",
+    "status": "ready_with_gaps"
+  },
+  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
+  "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
+  "safety": {
+    "backfill_allowed": false,
+    "broker_post_allowed": false,
+    "broker_write_allowed": false,
+    "candidate_creation_allowed": false,
+    "canonical_paperops_wrapper_compatible": true,
+    "execution_approval_allowed": false,
+    "fail_closed": true,
+    "live_capital_enabled": false,
+    "live_endpoint_allowed": false,
+    "paper_only": true,
+    "paper_order_allowed": false,
+    "paper_order_submission_allowed": false,
+    "proof_credit_allowed": false,
+    "proposal_first": true,
+    "public_safe": true,
+    "qctrl_jobs_allowed": false,
+    "read_only": true,
+    "risk_approval_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_inbound_authoritative": false
+  },
+  "schema_version": 1,
+  "status": "ready_with_gaps"
+}
