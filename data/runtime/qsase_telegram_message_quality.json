@@ -1,0 +1,92 @@
+{
+  "artifact_type": "qsase_telegram_message_quality",
+  "authority": {
+    "broker_write_allowed": false,
+    "broker_write_created": false,
+    "execution_approval_created": false,
+    "live_capital_enabled": false,
+    "live_send_attempted": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qctrl_job_submitted": false,
+    "qualified_setup_created": false,
+    "quantum_provider_call_allowed": false,
+    "risk_approval_created": false,
+    "secret_read_allowed": false,
+    "secret_write_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_live_send_allowed": false,
+    "telegram_review_only": true,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false
+  },
+  "candidate_count": 5,
+  "generated_at": "2026-06-28T20:40:46.899829+00:00",
+  "generic_rejected_count": 0,
+  "human_style_count": 5,
+  "quality_rows": [
+    {
+      "duplicate_rejected": true,
+      "generic_rejected": false,
+      "human_style_status": "human",
+      "message_candidate_id": "qsase-telegram-candidate:cab3ddf37cbb2b6b7629",
+      "message_class": "qsase_why_not_trading_now",
+      "specificity_score": 100,
+      "specificity_status": "specific",
+      "status": "message_rejected_duplicate",
+      "unsafe_rejected": false
+    },
+    {
+      "duplicate_rejected": true,
+      "generic_rejected": false,
+      "human_style_status": "human",
+      "message_candidate_id": "qsase-telegram-candidate:efd9efae0e80c4506f25",
+      "message_class": "qsase_paperops_gate",
+      "specificity_score": 100,
+      "specificity_status": "specific",
+      "status": "message_rejected_duplicate",
+      "unsafe_rejected": false
+    },
+    {
+      "duplicate_rejected": true,
+      "generic_rejected": false,
+      "human_style_status": "human",
+      "message_candidate_id": "qsase-telegram-candidate:719140fd88671d1439ca",
+      "message_class": "qsase_learning_note",
+      "specificity_score": 100,
+      "specificity_status": "specific",
+      "status": "message_rejected_duplicate",
+      "unsafe_rejected": false
+    },
+    {
+      "duplicate_rejected": true,
+      "generic_rejected": false,
+      "human_style_status": "human",
+      "message_candidate_id": "qsase-telegram-candidate:2e49999a27d3b986c7e1",
+      "message_class": "qsase_repair_note",
+      "specificity_score": 100,
+      "specificity_status": "specific",
+      "status": "message_rejected_duplicate",
+      "unsafe_rejected": false
+    },
+    {
+      "duplicate_rejected": true,
+      "generic_rejected": false,
+      "human_style_status": "human",
+      "message_candidate_id": "qsase-telegram-candidate:895114af4b6f4b299022",
+      "message_class": "qsase_dashboard_visibility",
+      "specificity_score": 100,
+      "specificity_status": "specific",
+      "status": "message_rejected_duplicate",
+      "unsafe_rejected": false
+    }
+  ],
+  "schema_version": "qsase_telegram_notification_boundary.v1",
+  "specific_count": 5,
+  "status": "message_quality_passed",
+  "unsafe_rejected_count": 0
+}

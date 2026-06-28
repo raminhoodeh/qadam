@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_13_dashboard_visibility",
-  "generated_at": "2026-06-28T20:32:55.326649+00:00",
+  "active_phase": "qsase_14_telegram_summary_boundary",
+  "generated_at": "2026-06-28T20:40:46.899829+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -180,6 +180,32 @@
       "trade_intent_count": 16,
       "trade_intents_path": "data/runtime/qsase_dashboard_trade_intents.json",
       "trading_history_row_count": 80
+    },
+    "qsase_14_telegram_summary_boundary": {
+      "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json",
+      "command_disabled": true,
+      "dashboard_communications_mirror_path": "data/runtime/qsase_telegram_dashboard_communications_mirror.json",
+      "dedupe_ledger_path": "data/runtime/qsase_telegram_dedupe_ledger.jsonl",
+      "delivery_receipts_path": "data/runtime/qsase_telegram_delivery_receipts.jsonl",
+      "inbound_command_ignored_count": 0,
+      "inbound_record_count": 2,
+      "later_qsase_phases_implemented": false,
+      "message_candidate_count": 5,
+      "message_candidates_path": "data/runtime/qsase_telegram_message_candidates.json",
+      "message_quality_path": "data/runtime/qsase_telegram_message_quality.json",
+      "message_ready_count": 0,
+      "message_rejected_duplicate_count": 5,
+      "message_rejected_generic_count": 0,
+      "message_rejected_unsafe_count": 0,
+      "name": "QSASE-14: Telegram Summary Boundary",
+      "no_broker_writes": true,
+      "no_commands_created": true,
+      "no_orders_created": true,
+      "no_proof_credit_granted": true,
+      "paper_only": true,
+      "public_safe": true,
+      "review_only": true,
+      "status": "qsase_telegram_notification_boundary_degraded"
     },
     "qsase_1_self_model_artifact_validation": {
       "artifact_path": "data/runtime/qsase_self_model.json",

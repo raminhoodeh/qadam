@@ -172,3 +172,14 @@
 - Strategy families / in-play / linear / nonlinear / trade-intent rows: `5` / `3` / `16` / `16` / `16`
 - Learning / repair / anti-slop errors: `30` / `20` / `0`
 - Safety: dashboard artifacts are read-only decision records; no commands, trade candidates, qualified setups, approvals, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.
+
+<!-- qsase_14_telegram_summary_boundary -->
+## QSASE-14: Telegram Summary Boundary
+
+- Generated at: `2026-06-28T20:40:46.899829+00:00`
+- Status: `qsase_telegram_notification_boundary_degraded`
+- Runtime artifact: `data/runtime/qsase_telegram_notification_boundary.json`
+- Candidates ready / duplicate / generic / unsafe: `0` / `5` / `0` / `0`
+- Inbound records / commands ignored: `2` / `0`
+- Delivery failures / sent: `0` / `0`
+- Safety: Telegram candidates are dashboard-visible, review-only, command-disabled, deduped, and unable to create candidates, approvals, paper orders, broker writes, live capital, or paper proof ledger credit.
