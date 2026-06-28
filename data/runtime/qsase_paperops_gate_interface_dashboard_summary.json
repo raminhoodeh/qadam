@@ -1,0 +1,54 @@
+{
+  "artifact_type": "qsase_paperops_gate_interface_dashboard_summary",
+  "authority_flags_false": true,
+  "authority_state": "paperops_handoff_context_only_no_order",
+  "blocking_gate": "akber_filter_failed",
+  "command_disabled": true,
+  "drawdown_state": "no_sample_within_cap",
+  "duplicate_exposure_state": "managed_by_paperops_idempotency_and_duplicate_guard",
+  "generated_at": "2026-06-28T20:12:29.063498+00:00",
+  "guarded_alpaca_paper_route_state": "available_for_review",
+  "idempotency_state": "duplicate_detected",
+  "live_send_allowed": false,
+  "no_broker_writes": true,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_qualified_setups_created": true,
+  "proof_boundary": "handoff is not paper proof ledger credit",
+  "public_safe": true,
+  "qctrl_paper_consultation_state": "not_bypassed",
+  "schema_version": "qsase_paperops_gate_interface.v1",
+  "status": "qsase_paperops_gate_interface_degraded",
+  "summary_rows": [
+    {
+      "label": "PaperOps gate",
+      "value": "qsase_paperops_gate_interface_degraded"
+    },
+    {
+      "label": "Router candidates",
+      "value": 0
+    },
+    {
+      "label": "Eligible handoffs",
+      "value": 0
+    },
+    {
+      "label": "Held handoffs",
+      "value": 0
+    },
+    {
+      "label": "Rejected handoffs",
+      "value": 16
+    },
+    {
+      "label": "Q-CTRL",
+      "value": "not_bypassed"
+    },
+    {
+      "label": "Authority",
+      "value": "no order submitted"
+    }
+  ],
+  "top_handoff_candidate": "qsase-paperops-handoff:0bb4de91cff921390d89",
+  "top_setup": "energy_security_disruption in CL=F may produce a repeatable source-price lag."
+}

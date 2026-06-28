@@ -137,3 +137,15 @@
 - Hard vetoes / soft blockers: `72` / `284`
 - Why-not-trading-now: `Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route.`
 - Safety: router output is not execution approval; no trade candidates, risk approvals, execution intents, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_11_paperops_handoff_interface -->
+## QSASE-11: PaperOps Handoff Interface
+
+- Generated at: `2026-06-28T20:12:29.063498+00:00`
+- Status: `qsase_paperops_gate_interface_degraded`
+- Runtime artifact: `data/runtime/qsase_paperops_gate_interface.json`
+- Router candidates: `0`
+- Eligible / held / rejected handoffs: `0` / `0` / `16`
+- Duplicate idempotency / duplicate exposure / drawdown / Q-CTRL / route blocks: `16` / `0` / `0` / `0` / `16`
+- Top blocking gate: `akber_filter_failed`
+- Safety: handoff records are upstream context only; no qualified setups, trade candidates, risk approvals, execution intents, paper orders, broker writes, live capital, or proof credit created.

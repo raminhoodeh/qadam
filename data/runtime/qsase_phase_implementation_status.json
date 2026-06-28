@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_10_strategy_router",
-  "generated_at": "2026-06-28T20:06:07.093629+00:00",
+  "active_phase": "qsase_11_paperops_handoff_interface",
+  "generated_at": "2026-06-28T20:12:29.063498+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -78,6 +78,37 @@
       "strategy_input_count": 16,
       "watchlist_only_count": 0,
       "why_not_trading_now_path": "data/runtime/qsase_why_not_trading_now.json"
+    },
+    "qsase_11_paperops_handoff_interface": {
+      "artifact_path": "data/runtime/qsase_paperops_gate_interface.json",
+      "authority_flags_false": true,
+      "drawdown_block_count": 0,
+      "duplicate_exposure_count": 0,
+      "duplicate_idempotency_count": 16,
+      "eligible_for_paperops_review_count": 0,
+      "existing_paperops_remains_only_submit_route": true,
+      "gate_records_path": "data/runtime/qsase_paperops_gate_interface.jsonl",
+      "handoff_record_count": 0,
+      "handoff_records_are_not_orders": true,
+      "handoff_records_are_not_qualified_setups": true,
+      "handoff_records_path": "data/runtime/qsase_paperops_handoff_records.jsonl",
+      "held_handoff_count": 0,
+      "later_qsase_phases_implemented": false,
+      "name": "QSASE-11: PaperOps Handoff Interface",
+      "no_broker_writes": true,
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "paper_route_unavailable_count": 16,
+      "proposal_first": true,
+      "public_safe": true,
+      "qctrl_hold_count": 0,
+      "rejected_handoff_count": 16,
+      "rejected_handoffs_path": "data/runtime/qsase_paperops_rejected_handoffs.jsonl",
+      "research_only": true,
+      "router_candidate_count": 0,
+      "status": "qsase_paperops_gate_interface_degraded"
     },
     "qsase_1_self_model_artifact_validation": {
       "artifact_path": "data/runtime/qsase_self_model.json",
