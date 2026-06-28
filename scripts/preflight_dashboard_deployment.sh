@@ -54,6 +54,10 @@ node --check scripts/check_dashboard_deployment_readiness.js
 node scripts/check_dashboard_deployment_readiness.js
 node --check scripts/check_dashboard_d11o_deployment_discipline.js
 node scripts/check_dashboard_d11o_deployment_discipline.js
+node --check scripts/check_non_homepage_regression_suite.js
+node scripts/check_non_homepage_regression_suite.js
+node --check scripts/check_non_homepage_deploy_discipline.js
+node scripts/check_non_homepage_deploy_discipline.js
 
 say "Checking dashboard current product contracts"
 node scripts/check_dashboard_information_hierarchy.js
@@ -89,7 +93,13 @@ git diff --check -- \
   landing-page-repo/dashboard/index.html \
   landing-page-repo/dashboard.js \
   landing-page-repo/guide/index.html \
+  landing-page-repo/login/index.html \
+  landing-page-repo/non-homepage-layout.css \
+  landing-page-repo/non-homepage-tokens.css \
   landing-page-repo/scripts/deploy-vercel-production.sh \
+  landing-page-repo/sign-up/index.html \
+  landing-page-repo/whitepaper.css \
+  landing-page-repo/whitepaper/index.html \
   orchestrator/cockpit_status.py \
   orchestrator/daily_edge_findings.py \
   orchestrator/daily_learning_automation.py \
@@ -203,6 +213,16 @@ git diff --check -- \
   scripts/check_dashboard_d11m_regression_acceptance.js \
   scripts/check_dashboard_d11n_documentation_guide_alignment.js \
   scripts/check_dashboard_d11o_deployment_discipline.js \
+  scripts/check_non_homepage_accessibility.js \
+  scripts/check_non_homepage_auth_pages.js \
+  scripts/check_non_homepage_dashboard_redesign.js \
+  scripts/check_non_homepage_deploy_discipline.js \
+  scripts/check_non_homepage_design_tokens.js \
+  scripts/check_non_homepage_guide_redesign.js \
+  scripts/check_non_homepage_layout_components.js \
+  scripts/check_non_homepage_navigation_contract.js \
+  scripts/check_non_homepage_regression_suite.js \
+  scripts/check_non_homepage_whitepaper_redesign.js \
   scripts/check_dashboard_d12_language_cleanup.js \
   scripts/check_protected_user_guide.js \
   scripts/check_daily_edge_findings_brief.py \

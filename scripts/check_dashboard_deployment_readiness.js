@@ -59,6 +59,9 @@ function assertNoUnsafePublicText(text, label) {
     "landing-page-repo/auth.css",
     "landing-page-repo/auth.js",
     "landing-page-repo/dashboard.js",
+    "landing-page-repo/non-homepage-layout.css",
+    "landing-page-repo/non-homepage-tokens.css",
+    "landing-page-repo/whitepaper.css",
     "landing-page-repo/status/cockpit-status.json",
     "landing-page-repo/status/cockpit-status.signature.json",
     "landing-page-repo/.vercel/project.json",
@@ -69,6 +72,8 @@ function assertNoUnsafePublicText(text, label) {
     "scripts/check_dashboard_acceptance.js",
     "scripts/check_dashboard_deployment_readiness.js",
     "scripts/check_dashboard_d11o_deployment_discipline.js",
+    "scripts/check_non_homepage_regression_suite.js",
+    "scripts/check_non_homepage_deploy_discipline.js",
     "docs/qadam-dashboard-d11o-deployment-discipline-2026-05-26.md",
     "docs/qadam-dashboard-overhaul-master-implementation-plan.md"
 ].forEach(assertFile);
@@ -86,7 +91,7 @@ const ignore = readText(ignorePath);
 [".git", ".vercel", ".DS_Store", "node_modules"].forEach((needle) => {
     assertIncludes(ignore, needle, "landing .vercelignore");
 });
-["dashboard", "guide", "status", "auth.css", "dashboard.js"].forEach((needle) => {
+["dashboard", "guide", "login", "sign-up", "whitepaper", "status", "auth.css", "whitepaper.css", "dashboard.js", "non-homepage-layout.css", "non-homepage-tokens.css"].forEach((needle) => {
     assert(!ignore.includes(needle), `landing .vercelignore must not exclude ${needle}`);
 });
 
@@ -142,6 +147,9 @@ const masterPlan = readText(path.join(repoRoot, "docs", "qadam-dashboard-overhau
     "landing-page-repo/dashboard/index.html",
     "landing-page-repo/guide/index.html",
     "landing-page-repo/auth.css",
+    "landing-page-repo/whitepaper.css",
+    "landing-page-repo/non-homepage-layout.css",
+    "landing-page-repo/non-homepage-tokens.css",
     "landing-page-repo/dashboard.js",
     "landing-page-repo/scripts/deploy-vercel-production.sh",
     "scripts/preflight_dashboard_deployment.sh",
@@ -149,6 +157,14 @@ const masterPlan = readText(path.join(repoRoot, "docs", "qadam-dashboard-overhau
 ].forEach((relativePath) => {
     assertNoUnsafePublicText(readText(path.join(repoRoot, relativePath)), relativePath);
 });
+
+const preflight = readText(path.join(repoRoot, "scripts", "preflight_dashboard_deployment.sh"));
+[
+    "node --check scripts/check_non_homepage_regression_suite.js",
+    "node scripts/check_non_homepage_regression_suite.js",
+    "node --check scripts/check_non_homepage_deploy_discipline.js",
+    "node scripts/check_non_homepage_deploy_discipline.js"
+].forEach((needle) => assertIncludes(preflight, needle, "dashboard deployment preflight"));
 
 if (fs.existsSync(localVercelEnvPath)) {
     const mode = fs.statSync(localVercelEnvPath).mode & 0o777;
