@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from pathlib import Path
+import re
 import subprocess
 from typing import Any
 import urllib.parse
@@ -126,6 +127,28 @@ def _clean_list(values: Any, fallback: list[str], *, limit: int = 160, count: in
         if len(cleaned) >= count:
             break
     return cleaned or fallback[:count]
+
+
+def _sentence_fragment(value: Any, fallback: str = "", *, limit: int = 180) -> str:
+    text = _clean_text(value, fallback, limit=limit).rstrip(".")
+    if text.startswith("The "):
+        text = "the " + text[4:]
+    elif text.startswith("A "):
+        text = "a " + text[2:]
+    elif text.startswith("An "):
+        text = "an " + text[3:]
+    elif text:
+        text = text[0].lower() + text[1:]
+    return text
+
+
+def _telegram_body_safe_fragment(value: Any) -> bool:
+    text = str(value or "")
+    return not re.search(
+        r"\b(?:commit|branch|git|vercel|deployment|delivery key|fingerprint|schema|artifact|runtime|repo|repository|alias(?:es)?)\b|https?://|qadam\.trade/",
+        text,
+        re.IGNORECASE,
+    )
 
 
 def _status_paths(status_lines: list[str]) -> list[str]:
@@ -273,13 +296,24 @@ def _derived_benefits(root_repo: dict[str, Any], dashboard_repo: dict[str, Any])
 
 
 def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
+    summary = _clean_text(source.get("summary"), "", limit=180)
+    details = _clean_list(source.get("details"), [], limit=160, count=3)
+    benefits = _clean_list(source.get("benefits"), [], limit=180, count=3)
+    safe_details = [detail for detail in details if _telegram_body_safe_fragment(detail)]
+    safe_benefits = [benefit for benefit in benefits if _telegram_body_safe_fragment(benefit)]
     areas = {
         str(item.get("area") or "")
         for repo_state in (source.get("root_repo", {}), source.get("dashboard_repo", {}))
         for item in repo_state.get("change_areas", [])
         if isinstance(item, dict)
     }
-    if "Telegram communication runtime" in areas or "Telegram regression checks" in areas:
+
+    if summary and summary not in {"Qadam codebase and dashboard were upgraded.", "Qadam has been updated."}:
+        change = summary.rstrip(".") + "."
+        if safe_details:
+            detail = _sentence_fragment(safe_details[0], limit=160)
+            change = f"{change} In plain terms, {detail}."
+    elif "Telegram communication runtime" in areas or "Telegram regression checks" in areas:
         change = (
             "Qadam now rewrites its Telegram updates into plain language before they go out, "
             "so the group gets a short explanation instead of an engineering-style status note."
@@ -307,10 +341,12 @@ def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
         )
         change = change.replace("committed ", "").replace("runtime ", "operating ")
 
+    benefit_reason = _sentence_fragment(safe_benefits[0], limit=180) if safe_benefits else (
+        "the group can understand why the update matters without checking local logs"
+    )
     benefit = (
-        "This does not give Telegram any trading power and it does not switch on live capital. "
-        "It simply makes Qadam's updates easier for a non-technical person to understand, while "
-        "the detailed audit trail stays in the background for review."
+        f"This helps because {benefit_reason}. Telegram still has no trading power and it does not "
+        "switch on live capital; it is just the place where Qadam explains what changed in plain English."
     )
     return change, benefit
 
@@ -397,6 +433,9 @@ def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
         "dashboard_commit_short": payload.get("dashboard_commit_short"),
         "send_requested": payload.get("send_requested") is True,
         "live_send_attempted": payload.get("live_send_attempted") is True,
+        "message_preview": payload.get("message_preview"),
+        "message_fingerprint": payload.get("message_fingerprint"),
+        "message_preview_redacted": payload.get("message_preview_redacted") is True,
         "bot_token_exposed": False,
         "chat_id_exposed": False,
         "raw_provider_response_persisted": False,
@@ -529,8 +568,12 @@ def _deployment_context(
 
 def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
     change, benefit = _plain_update_explanation(source)
-    action = "has just gone live" if source.get("source") == "production_deploy" else "has been recorded"
+    action = "has just gone live" if source.get("source") == "production_deploy" else "has a new update"
     title = "Qadam"
+    if change.startswith("Qadam's "):
+        change = "Its " + change[8:]
+    elif change.startswith("Qadam "):
+        change = "It " + change[6:]
     body = f"Qadam {action}. {change}\n\n{benefit}"
     return title, body
 
@@ -698,6 +741,9 @@ def build_telegram_codebase_upgrade_notification(
                 "dashboard_commit_short": source_context["dashboard_repo"]["head_short"],
                 "send_requested": send_requested,
                 "live_send_attempted": live_send_attempted,
+                "message_preview": {"title": title, "body": body, "dashboard_link": "qadam.trade/dashboard/"},
+                "message_preview_redacted": message_safe,
+                "message_fingerprint": message_specificity["fingerprint"],
             },
         )
 

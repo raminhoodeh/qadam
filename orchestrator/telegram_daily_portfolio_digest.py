@@ -123,6 +123,25 @@ def _format_qty(value: Any) -> str:
         return str(value)
 
 
+def _human_idle_reason(value: Any) -> str:
+    text = " ".join(str(value or "").strip().split())
+    if not text:
+        return "no fresh setup has cleared the evidence and sizing checks yet"
+    known = {
+        "no_fresh_eligible_candidate": "no fresh setup has cleared the evidence and sizing checks yet",
+        "ready_no_fresh_eligible_order": "there is no fresh eligible paper order to submit",
+        "ready_pending_explicit_execute": "the next eligible order is waiting for the guarded execution path",
+        "submitted paper-order state is already recorded": "the latest paper-order state is already recorded",
+        "qualified setup review did not reach the guarded submit path": "the qualified setup review did not reach the guarded submit path",
+        "no qualified setup cleared the paper sizing and evidence gates": "no qualified setup cleared the paper sizing and evidence gates",
+    }
+    if text in known:
+        return known[text]
+    if "_" in text or "=" in text:
+        return text.replace("_", " ").replace("=", " ")
+    return text
+
+
 def _parse_timestamp(value: Any) -> datetime | None:
     if not value:
         return None
@@ -226,6 +245,9 @@ def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
         "failure_category": payload.get("failure_category"),
         "send_requested": payload.get("send_requested") is True,
         "live_send_attempted": payload.get("live_send_attempted") is True,
+        "message_preview": payload.get("message_preview"),
+        "message_fingerprint": payload.get("message_fingerprint"),
+        "message_preview_redacted": payload.get("message_preview_redacted") is True,
         "bot_token_exposed": False,
         "chat_id_exposed": False,
         "raw_provider_response_persisted": False,
@@ -398,6 +420,7 @@ def _paperops_daily_context(settings: Settings) -> dict[str, Any]:
             idle_reason = "qualified setup review did not reach the guarded submit path"
         else:
             idle_reason = "submitted paper-order state is already recorded"
+    idle_reason = _human_idle_reason(idle_reason)
     return {
         "autonomous_pass_status": summary.get("status", "not_run"),
         "active_automation_status": active.get("status", "not_run"),
@@ -432,16 +455,16 @@ def _render_digest_message(
 
     title = "Qadam"
     body = (
-        f"Qadam's paper portfolio update for {local_date} is ready. The portfolio is now "
+        f"Qadam's paper portfolio closed {local_date} at "
         f"{_format_money(portfolio['portfolio_value_gbp'])}, which is "
         f"{_format_money(portfolio['total_pnl_gbp'])} ({_format_pct(portfolio['performance_pct'])}) "
         f"against the {_format_money(portfolio['trial_allocation_gbp'])} paper allocation. "
-        f"Today it has {portfolio['open_position_count']} open positions, {portfolio['order_count']} orders "
-        f"on record, and {portfolio['closed_trade_count']} closed paper trades."
+        f"It is carrying {portfolio['open_position_count']} open positions, with "
+        f"{portfolio['closed_trade_count']} closed paper trades in the ledger."
         "\n\n"
-        f"Trades made today were {trade_summary}. For now, the reason Qadam is waiting or moving slowly is: "
-        f"{paperops_context['idle_reason']}. This is only a paper-trading update; Telegram is explaining "
-        "what happened and cannot approve, place, change, or close trades, and live capital remains off."
+        f"Today Qadam recorded {trade_summary}. For now, it is not forcing another order because "
+        f"{paperops_context['idle_reason']}. This is only a paper-trading update; Telegram can report "
+        "what happened, but it cannot approve, place, change, or close trades, and live capital remains off."
     )
     return title, body
 
@@ -565,6 +588,9 @@ def build_daily_portfolio_digest(
                 "failure_category": failure_category,
                 "send_requested": send_requested,
                 "live_send_attempted": live_send_attempted,
+                "message_preview": {"title": title, "body": body, "dashboard_link": "qadam.trade/dashboard/"},
+                "message_preview_redacted": message_preview_redacted,
+                "message_fingerprint": message_specificity["fingerprint"],
             },
         )
 
@@ -760,6 +786,16 @@ def validate_daily_portfolio_digest(artifact: dict[str, Any]) -> list[str]:
         ):
             if phrase in body:
                 errors.append("telegram_daily_portfolio_digest_message_too_verbose:" + phrase)
+        for phrase in (
+            "PaperOps",
+            "source_status=",
+            "broker_status=",
+            "idempotency_key",
+            "submitted_to_alpaca_paper",
+            "paperops_proxy_symbol_map",
+        ):
+            if phrase in body:
+                errors.append("telegram_daily_portfolio_digest_message_internal_noise:" + phrase)
         if not _safe_text(title, body):
             errors.append("telegram_daily_portfolio_digest_forbidden_text")
     if artifact.get("message_human_style_status") != "human":

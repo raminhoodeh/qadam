@@ -233,8 +233,8 @@ def main() -> int:
     preview_body = forced_preview.get("message_preview", {}).get("body", "")
     if "Qadam" not in preview_body:
         errors.append("telegram_codebase_upgrade_preview_missing:Qadam")
-    if "non-technical person" not in preview_body:
-        errors.append("telegram_codebase_upgrade_preview_missing:non_technical_explanation")
+    if "In plain terms" not in preview_body or "This helps because" not in preview_body:
+        errors.append("telegram_codebase_upgrade_preview_missing:plain_explanation")
     if "trading power" not in preview_body or "live capital" not in preview_body:
         errors.append("telegram_codebase_upgrade_preview_missing:safety_boundary")
     for marker in (

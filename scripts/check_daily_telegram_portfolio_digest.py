@@ -162,7 +162,7 @@ def main() -> int:
     if not str(written.get("paperops_idle_reason") or "").strip():
         errors.append("telegram_daily_portfolio_digest_idle_reason_missing")
     preview_body = forced_preview.get("message_preview", {}).get("body", "")
-    for phrase in ("paper portfolio", "Trades made today", "paper-trading update", "live capital remains off"):
+    for phrase in ("paper portfolio", "Today Qadam recorded", "paper-trading update", "live capital remains off"):
         if phrase not in preview_body:
             errors.append(f"telegram_daily_portfolio_digest_preview_missing:{phrase}")
     for phrase in (
@@ -176,6 +176,16 @@ def main() -> int:
     ):
         if phrase in preview_body:
             errors.append(f"telegram_daily_portfolio_digest_preview_too_verbose:{phrase}")
+    for phrase in (
+        "PaperOps",
+        "source_status=",
+        "broker_status=",
+        "idempotency_key",
+        "submitted_to_alpaca_paper",
+        "paperops_proxy_symbol_map",
+    ):
+        if phrase in preview_body:
+            errors.append(f"telegram_daily_portfolio_digest_preview_internal_noise:{phrase}")
     if len([line for line in preview_body.splitlines() if line.strip()]) > 3:
         errors.append("telegram_daily_portfolio_digest_preview_too_many_lines")
     expected_probe_errors = (

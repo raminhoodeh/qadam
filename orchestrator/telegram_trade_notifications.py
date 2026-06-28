@@ -185,6 +185,9 @@ def _archive_delivery(settings: Settings, payload: dict[str, Any]) -> None:
         "failure_category": payload.get("failure_category"),
         "send_requested": payload.get("send_requested") is True,
         "live_send_attempted": payload.get("live_send_attempted") is True,
+        "message_preview": payload.get("message_preview"),
+        "message_fingerprint": payload.get("message_fingerprint"),
+        "message_preview_redacted": payload.get("message_preview_redacted") is True,
         "bot_token_exposed": False,
         "chat_id_exposed": False,
         "raw_provider_response_persisted": False,
@@ -271,6 +274,12 @@ def _trade_decision_context(record: dict[str, Any]) -> dict[str, Any]:
     symbol_source = str(record.get("alpaca_symbol_source") or preview.get("symbol_source") or "request_preview")
     source_status = str(record.get("status") or "unknown")
     receipt_status = str(receipt.get("broker_order_status") or "submitted")
+    if receipt_status == "accepted":
+        plain_reason = "the setup cleared Qadam's paper-trading checks and Alpaca Paper accepted the order"
+    elif receipt_status in {"filled", "partially_filled"}:
+        plain_reason = "the setup cleared Qadam's paper-trading checks and Alpaca Paper reported execution progress"
+    else:
+        plain_reason = "the setup cleared Qadam's paper-trading checks and the order was submitted to Alpaca Paper"
     return {
         "why_submitted": (
             f"PaperOps recorded {source_status} after the guarded paper-post path selected "
@@ -280,6 +289,11 @@ def _trade_decision_context(record: dict[str, Any]) -> dict[str, Any]:
             f"source_status={source_status}; broker_status={receipt_status}; "
             f"idempotency_key_present={bool(record.get('idempotency_key'))}"
         ),
+        "plain_reason": plain_reason,
+        "source_status": source_status,
+        "broker_status": receipt_status,
+        "symbol_source": symbol_source,
+        "idempotency_key_present": bool(record.get("idempotency_key")),
     }
 
 
@@ -317,15 +331,15 @@ def _render_trade_message(
 ) -> tuple[str, str]:
     title = "Qadam"
     body = (
-        f"Qadam has placed a paper trade in Alpaca Paper: {trade['side'].upper()} "
-        f"{trade['quantity_display']} {trade['symbol']}. It did this because "
-        f"{decision_context['why_submitted']}. The supporting context was "
-        f"{decision_context['evidence']}."
+        f"Qadam placed a paper {trade['side'].upper()} order for "
+        f"{trade['quantity_display']} {trade['symbol']} in Alpaca Paper. This happened because "
+        f"{decision_context['plain_reason']}, so the group should treat it as a portfolio update rather "
+        "than a request to act."
         "\n\n"
         f"The paper portfolio is now {_format_money(portfolio['portfolio_value_gbp'])}, "
-        f"with total paper profit and loss of {_format_money(portfolio['total_pnl_gbp'])} "
+        f"with total paper profit/loss of {_format_money(portfolio['total_pnl_gbp'])} "
         f"({_format_pct(portfolio['performance_pct'])}). This is still only paper trading; "
-        "Telegram is explaining what happened and cannot approve, change, or close the trade, "
+        "Telegram is reporting what happened and cannot approve, change, or close the trade, "
         "and live capital remains off."
     )
     return title, body
@@ -435,6 +449,9 @@ def _notification_record(
                 "failure_category": failure_category,
                 "send_requested": send_requested,
                 "live_send_attempted": live_send_attempted,
+                "message_preview": {"title": title, "body": body, "dashboard_link": "qadam.trade/dashboard/"},
+                "message_preview_redacted": _safe_text(title, body),
+                "message_fingerprint": message_specificity["fingerprint"],
             },
         )
 
@@ -537,17 +554,22 @@ def build_telegram_trade_notifications(
     settings = settings or Settings.from_env()
     generated_at = _now()
     source = _paperops_source(settings)
-    records = [
-        _notification_record(
-            record,
+    records: list[dict[str, Any]] = []
+    sent_keys = _sent_delivery_keys(settings)
+    for selected_record in _selected_records(source):
+        record = _notification_record(
+            selected_record,
             settings=settings,
             source_status=str(source.get("status") or "missing"),
             send_requested=send_requested,
-            sent_keys=_sent_delivery_keys(settings),
+            sent_keys=sent_keys,
             generated_at=generated_at,
         )
-        for record in _selected_records(source)
-    ]
+        records.append(record)
+        if record.get("eligible_for_trade_notification") is True:
+            delivery_key = str(record.get("delivery_key") or "")
+            if delivery_key:
+                sent_keys.add(delivery_key)
     eligible_count = sum(1 for record in records if record["eligible_for_trade_notification"])
     sent_count = sum(1 for record in records if record["status"] == "sent")
     live_attempt_count = sum(1 for record in records if record["live_send_attempted"])
@@ -716,6 +738,17 @@ def validate_telegram_trade_notification_record(record: dict[str, Any]) -> list[
         ):
             if phrase in body:
                 errors.append("telegram_trade_notification_message_too_verbose:" + phrase)
+        for phrase in (
+            "PaperOps",
+            "paper-post",
+            "source_status=",
+            "broker_status=",
+            "idempotency_key",
+            "submitted_to_alpaca_paper",
+            "paperops_proxy_symbol_map",
+        ):
+            if phrase in body:
+                errors.append("telegram_trade_notification_message_internal_noise:" + phrase)
         if "%" not in body:
             errors.append("telegram_trade_notification_performance_line_missing")
         if not _safe_text(title, body):

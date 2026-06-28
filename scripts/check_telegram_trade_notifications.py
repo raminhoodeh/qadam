@@ -5,8 +5,12 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+from dataclasses import replace
+import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -14,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.event_log import EventLog  # noqa: E402
+import orchestrator.telegram_trade_notifications as trade_notifications  # noqa: E402
 from orchestrator.telegram_trade_notifications import (  # noqa: E402
     TELEGRAM_TRADE_NOTIFICATIONS_SCHEMA_VERSION,
     build_telegram_trade_notifications,
@@ -42,6 +47,80 @@ def _first_record(artifact: dict) -> dict:
         if isinstance(record, dict):
             return record
     return {}
+
+
+def _synthetic_duplicate_live_probe(base_settings: Settings) -> tuple[dict, list[dict]]:
+    original_send = trade_notifications._telegram_send
+    old_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    old_chat = os.environ.get("TELEGRAM_GROUP_CHAT_ID")
+    deliveries: list[dict] = []
+
+    def fake_send(token: str, chat_id: str, text: str) -> dict:
+        deliveries.append({"token_seen": bool(token), "chat_seen": bool(chat_id), "text": text})
+        return {"ok": True, "result": {"message_id": 9000 + len(deliveries)}}
+
+    with tempfile.TemporaryDirectory(prefix="qadam-telegram-trade-check-") as tmp:
+        runtime = Path(tmp)
+        source_record = {
+            "status": "submitted_to_alpaca_paper",
+            "idempotency_key": "synthetic-trade-key",
+            "alpaca_symbol": "SMH",
+            "alpaca_symbol_source": "paperops_proxy_symbol_map",
+            "request_preview": {
+                "client_order_id": "synthetic-client-order",
+                "symbol": "SMH",
+                "side": "buy",
+                "qty": "1",
+                "type": "market",
+                "time_in_force": "day",
+            },
+            "broker_receipt": {
+                "broker_order_status": "accepted",
+                "broker_order_id_hash": "synthetic-broker-hash",
+            },
+        }
+        (runtime / "paperops_alpaca_paper_post.json").write_text(
+            json.dumps(
+                {
+                    "status": "submitted_to_alpaca_paper",
+                    "selected_post_records": [source_record, deepcopy(source_record), deepcopy(source_record)],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        settings = replace(
+            base_settings,
+            runtime_dir=str(runtime),
+            mode="paper",
+            live_capital_enabled=False,
+            telegram_trade_group_notifications_enabled=True,
+            telegram_trade_group_notifications_dry_run=False,
+            secrets_file=str(runtime / "qadam-secrets.env"),
+        )
+        (runtime / "qadam-secrets.env").write_text(
+            "TELEGRAM_BOT_TOKEN=fake-token\nTELEGRAM_GROUP_CHAT_ID=fake-chat\n",
+            encoding="utf-8",
+        )
+        (runtime / "qadam-secrets.env").chmod(0o600)
+        try:
+            os.environ["TELEGRAM_BOT_TOKEN"] = "fake-token"
+            os.environ["TELEGRAM_GROUP_CHAT_ID"] = "fake-chat"
+            trade_notifications._telegram_send = fake_send
+            artifact = build_telegram_trade_notifications(settings=settings, send_requested=True)
+        finally:
+            trade_notifications._telegram_send = original_send
+            if old_token is None:
+                os.environ.pop("TELEGRAM_BOT_TOKEN", None)
+            else:
+                os.environ["TELEGRAM_BOT_TOKEN"] = old_token
+            if old_chat is None:
+                os.environ.pop("TELEGRAM_GROUP_CHAT_ID", None)
+            else:
+                os.environ["TELEGRAM_GROUP_CHAT_ID"] = old_chat
+        return artifact, deliveries
 
 
 def main() -> int:
@@ -81,6 +160,14 @@ def main() -> int:
     secret_probe = deepcopy(written)
     secret_probe["bot_token_exposed"] = True
     secret_errors = validate_telegram_trade_notifications(secret_probe)
+    synthetic_artifact, synthetic_deliveries = _synthetic_duplicate_live_probe(settings)
+    synthetic_record = _first_record(synthetic_artifact)
+    synthetic_body = ""
+    if synthetic_record:
+        preview = synthetic_record.get("message_preview", {})
+        if isinstance(preview, dict):
+            synthetic_body = str(preview.get("body") or "")
+    synthetic_validation_errors = validate_telegram_trade_notifications(synthetic_artifact)
 
     print(f"telegram_trade_notifications_status={written['status']}")
     print(
@@ -172,9 +259,27 @@ def main() -> int:
         "telegram_trade_notifications_secret_probe_error_count="
         f"{len(secret_errors)}"
     )
+    print(
+        "telegram_trade_notifications_synthetic_delivery_attempt_count="
+        f"{len(synthetic_deliveries)}"
+    )
+    print(
+        "telegram_trade_notifications_synthetic_live_send_attempted_count="
+        f"{synthetic_artifact['live_send_attempted_count']}"
+    )
+    print(
+        "telegram_trade_notifications_synthetic_already_sent_count="
+        f"{synthetic_artifact['already_sent_count']}"
+    )
+    print(
+        "telegram_trade_notifications_synthetic_validation_errors="
+        f"{synthetic_validation_errors}"
+    )
 
     if validation_errors:
         errors.extend(validation_errors)
+    if synthetic_validation_errors:
+        errors.extend(synthetic_validation_errors)
     if replay["total_events"] != 1:
         errors.append("telegram_trade_notifications_event_log_count_mismatch")
     if written["mode"] != "paper":
@@ -257,6 +362,33 @@ def main() -> int:
             errors.append("telegram_trade_notifications_not_specific")
         if int(record.get("message_specificity_score", 0) or 0) < 70:
             errors.append("telegram_trade_notifications_specificity_score_low")
+    if synthetic_artifact["source_selected_record_count"] != 3:
+        errors.append("telegram_trade_notifications_synthetic_source_count_wrong")
+    if synthetic_artifact["live_send_attempted_count"] != 1:
+        errors.append("telegram_trade_notifications_synthetic_duplicate_attempted")
+    if synthetic_artifact["live_send_succeeded_count"] != 1:
+        errors.append("telegram_trade_notifications_synthetic_success_count_wrong")
+    if synthetic_artifact["already_sent_count"] != 2:
+        errors.append("telegram_trade_notifications_synthetic_duplicates_not_suppressed")
+    if len(synthetic_deliveries) != 1:
+        errors.append("telegram_trade_notifications_synthetic_delivery_count_wrong")
+    for marker in (
+        "Qadam placed a paper BUY order for 1 SMH",
+        "paper portfolio",
+        "live capital remains off",
+    ):
+        if marker not in synthetic_body:
+            errors.append(f"telegram_trade_notifications_synthetic_message_missing:{marker}")
+    for marker in (
+        "PaperOps",
+        "submitted_to_alpaca_paper",
+        "paperops_proxy_symbol_map",
+        "source_status=",
+        "broker_status=",
+        "idempotency_key",
+    ):
+        if marker in synthetic_body:
+            errors.append(f"telegram_trade_notifications_synthetic_message_internal_noise:{marker}")
 
     if errors:
         for error in errors:

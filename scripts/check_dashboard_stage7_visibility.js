@@ -266,7 +266,15 @@ async function main() {
     ]), "Mission Control source category labels mismatch");
     assert(stage7.source_intelligence_network.groups.every((group) => group.summary.includes("connected") && group.summary.includes("degraded")), "Mission Control source categories need plain connected/degraded counts");
     assert(stage7.source_intelligence_network.groups.some((group) => group.currently_influencing), "Mission Control source categories missing currently influencing tag");
-    assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => ["Connected", "Degraded", "Optional Gap"].includes(source.status_label)), "Mission Control source rows must use simple source status labels");
+    const allowedSourceStatuses = [
+        "Connected",
+        "Degraded",
+        "Optional Gap",
+        "Optional Disabled",
+        "Future Adapter",
+        "Provider Decision"
+    ];
+    assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => allowedSourceStatuses.includes(source.status_label)), "Mission Control source rows must use simple source status labels");
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.last_update), "Mission Control source rows missing last update");
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).every((source) => source.description), "Mission Control source rows missing plain-English contribution");
     assert(stage7.source_intelligence_network.groups.flatMap((group) => group.sources).some((source) => source.recent_observation), "Mission Control source rows missing observation text");
