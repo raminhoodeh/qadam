@@ -4090,9 +4090,9 @@ function stage7SourceGroups(status = {}, sources = {}) {
         kalshi: "Kalshi is connected through OddsPipe, which gives Qadam read-only normalized Kalshi/Polymarket markets, OHLCV context, and cross-platform spreads while direct Kalshi account access remains deferred.",
         hyperliquid: "Tracks crypto and perpetual-market stress where cross-asset risk can surface early.",
         alpaca: "Mirrors paper broker account, orders, positions, and market data for paper-only execution visibility.",
-        rapidapi: "Optional marketplace source slot awaiting a specific provider decision.",
-        coinglass: "Pending adapter for derivatives positioning and liquidation context.",
-        chainlink: "Pending adapter for public price-feed context.",
+        rapidapi: "Intentionally disabled marketplace slot. No RapidAPI key is needed unless Qadam later selects a specific RapidAPI-backed provider.",
+        coinglass: "Future optional derivatives-positioning adapter. No CoinGlass key is needed until Qadam explicitly promotes crypto/perps context.",
+        chainlink: "Future optional price-feed cross-check. No RPC key is needed until a read-only adapter is built and approved.",
         bookmap: "Reads local order-flow context when a local bridge is available; it cannot place orders.",
         tradingview_mcp: "Provides read-only technical-analysis context from the local TradingView MCP adapter.",
         tradingview_paid_alerts: "Receives paid TradingView alert observations without execution authority.",
@@ -4103,7 +4103,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         sec_edgar: "Reads company filings for semiconductor, defence, and market-sensitive disclosures.",
         stock_act: "Reads Capitol Trades/STOCK Act congressional disclosures through the Apify Capitol Trades Scraper as political-trading context. It is evidence only, not trade authority.",
         patents: "Tracks patent activity for supply-chain, defence, and semiconductor innovation signals.",
-        github: "Pending adapter for software and developer-activity context."
+        github: "Future optional developer and supply-chain activity adapter. No GitHub token is needed until a narrow watchlist and signal role are selected."
     };
     const watchingByKey = new Map(asArray(status.watching).map((source) => [source.source_key || source.key, source]));
     const optionalGapByKey = new Map(asArray(status.mission_control?.data_sources?.optional_source_gap_records)
@@ -4133,12 +4133,21 @@ function stage7SourceGroups(status = {}, sources = {}) {
         const credentialStatus = String(source.credential_status || "").toLowerCase();
         const selectionStatus = String(source.selection_status || "").toLowerCase();
         const actionCategory = String(source.action_category || "").toLowerCase();
-        if (optionalGapByKey.has(sourceKey) || credentialStatus === "missing_optional" || selectionStatus === "optional_disabled" || actionCategory === "intentionally_disabled") return "Optional Gap";
+        const readiness = String(source.readiness || "").toLowerCase();
+        const registryStatus = String(source.registry_status || source.raw_status || "").toLowerCase();
+        const providerStatus = String(source.provider_decision_status || source.provider_activation_state || "").toLowerCase();
+        const providerDecisionText = `${readiness} ${registryStatus} ${providerStatus} ${selectionStatus} ${actionCategory}`;
+        if (actionCategory === "intentionally_disabled" || selectionStatus === "optional_disabled" || /marketplace disabled|intentionally disabled/.test(providerDecisionText)) return "Optional Disabled";
+        if (actionCategory === "needs_adapter" || registryStatus === "needs_adapter" || /adapter not built|pending adapter|pending public adapter|optional adapter/.test(providerDecisionText)) return "Future Adapter";
+        if (/provider decision required|provider selected/.test(providerDecisionText) && credentialStatus === "not_required") return "Provider Decision";
+        if (optionalGapByKey.has(sourceKey) || credentialStatus === "missing_optional") return "Optional Gap";
         if (/online|ok|ready|connected|configured/.test(status)) return "Connected";
         if (/missing|credential/.test(credentialStatus) && optionalGapByKey.has(sourceKey)) return "Optional Gap";
         return "Degraded";
     };
-    const statusTone = (label) => label === "Connected" ? "online" : (label === "Optional Gap" ? "pending" : "degraded");
+    const statusTone = (label) => label === "Connected"
+        ? "online"
+        : (["Optional Gap", "Optional Disabled", "Future Adapter", "Provider Decision"].includes(label) ? "pending" : "degraded");
     const sourceLastUpdate = (source) => {
         const watching = watchingByKey.get(source.source_key || source.key) || {};
         return source.last_payload_time || source.last_heartbeat || watching.last_payload_time || watching.last_heartbeat || status.generated_at || "not exported";
@@ -4155,6 +4164,10 @@ function stage7SourceGroups(status = {}, sources = {}) {
         }
         const gap = optionalGapByKey.get(source.source_key || source.key);
         if (gap) return `${dashboardText(source.source_name || source.name || source.source_key)} is an optional gap: ${dashboardText(gap.next_action, "credentials or provider access are still needed before it can contribute.")}`;
+        const label = sourceStatusLabel(source);
+        if (label === "Optional Disabled") return `${dashboardText(source.source_name || source.name || source.source_key)} is intentionally disabled. It is not a failed connection and does not need credentials for the current paper-trading core.`;
+        if (label === "Future Adapter") return `${dashboardText(source.source_name || source.name || source.source_key)} is a future optional adapter. It is not connected because Qadam has not promoted this source into the live evidence set yet.`;
+        if (label === "Provider Decision") return `${dashboardText(source.source_name || source.name || source.source_key)} is a provider-decision slot. Qadam has recorded the possible provider, but it is not part of the live source quorum yet.`;
         return `${dashboardText(source.source_name || source.name || source.source_key)} last reported ${sourceStatusLabel(source).toLowerCase()} and contributes: ${sourceContribution(source)}`;
     };
     const grouped = sourceLedger.reduce((acc, source) => {
@@ -4195,6 +4208,9 @@ function stage7SourceGroups(status = {}, sources = {}) {
         });
         const connectedCount = normalizedSources.filter((source) => source.status_label === "Connected").length;
         const optionalGapCount = normalizedSources.filter((source) => source.status_label === "Optional Gap").length;
+        const optionalDisabledCount = normalizedSources.filter((source) => source.status_label === "Optional Disabled").length;
+        const futureAdapterCount = normalizedSources.filter((source) => source.status_label === "Future Adapter").length;
+        const providerDecisionCount = normalizedSources.filter((source) => source.status_label === "Provider Decision").length;
         const degradedCount = normalizedSources.filter((source) => source.status_label === "Degraded").length;
         const signalCount = records.filter((source) => source.eligible_for_signal_review === true).length;
         const researchCount = records.filter((source) => source.usable_for_research_context !== false).length;
@@ -4204,6 +4220,9 @@ function stage7SourceGroups(status = {}, sources = {}) {
             `${degradedCount} degraded`
         ];
         if (optionalGapCount) countParts.push(`${optionalGapCount} optional gap${optionalGapCount === 1 ? "" : "s"}`);
+        if (futureAdapterCount) countParts.push(`${futureAdapterCount} future adapter${futureAdapterCount === 1 ? "" : "s"}`);
+        if (providerDecisionCount) countParts.push(`${providerDecisionCount} provider decision${providerDecisionCount === 1 ? "" : "s"}`);
+        if (optionalDisabledCount) countParts.push(`${optionalDisabledCount} optional disabled`);
         return {
             key,
             label: pipelineLabels[key] || key.replaceAll("_", " "),
@@ -4213,6 +4232,9 @@ function stage7SourceGroups(status = {}, sources = {}) {
             connected_count: connectedCount,
             degraded_count: degradedCount,
             optional_gap_count: optionalGapCount,
+            optional_disabled_count: optionalDisabledCount,
+            future_adapter_count: futureAdapterCount,
+            provider_decision_count: providerDecisionCount,
             research_usable_count: researchCount,
             signal_review_eligible_count: signalCount,
             tone: degradedCount ? "degraded" : connectedCount ? "online" : "pending",
