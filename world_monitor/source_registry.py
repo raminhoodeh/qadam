@@ -526,17 +526,18 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
         "social",
         3,
         "world_monitor_social_stock_act",
-        "Capitol Trades or selected STOCK Act provider credential",
-        ("https://www.capitoltrades.com/trades",),
+        "Apify API token",
+        ("https://api.apify.com/v2/actors/saswave~capitol-trades-scraper/run-sync-get-dataset-items",),
         "daily or event-driven",
-        "plan dependent; budget 24/day",
+        "Apify actor pricing; budget 1 page per validation poll",
         ("CAPITOL_TRADES_API_KEY",),
-        status="adapter_live_requires_key",
+        status="adapter_live_via_apify",
         notes=(
-            "Provider direction updated: use Capitol Trades or its selected API path for v1, not UnusualWhales. "
-            "The adapter remains read-only and provider-doc gated until the credential/API contract is supplied."
+            "Provider direction updated: use the Apify Capitol Trades Scraper actor for v1 congressional trade "
+            "disclosures, not UnusualWhales. The adapter remains read-only and cross-validates against price action "
+            "and SEC context before research use."
         ),
-        operator_action="add_capitol_trades_credentials",
+        operator_action="maintain_capitol_trades_apify_key",
     ),
     SourceSpec(
         "patents",

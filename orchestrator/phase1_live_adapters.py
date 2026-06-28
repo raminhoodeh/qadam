@@ -81,11 +81,12 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         event_type="politician_trade_disclosure",
         trust_score=0.72,
         sample_summary="STOCK Act congressional trade disclosure requiring cross-check against price action and filings.",
-        primary_endpoint="https://www.capitoltrades.com/trades",
+        primary_endpoint="https://api.apify.com/v2/actors/saswave~capitol-trades-scraper/run-sync-get-dataset-items",
+        method="POST",
         required_any_secret_groups=(("CAPITOL_TRADES_API_KEY",),),
         notes=(
-            "Provider direction updated: Capitol Trades or its selected API path is the v1 STOCK Act source. "
-            "Output is read-only evidence, not trade authority."
+            "Provider direction updated: Capitol Trades is connected through the Apify Capitol Trades Scraper "
+            "actor for read-only STOCK Act disclosure context. Output is evidence only, not trade authority."
         ),
     ),
     "polymarket": Phase1AdapterConfig(
@@ -356,6 +357,29 @@ def _safe_endpoint(endpoint: str) -> str:
 
 
 def _event_summary(config: Phase1AdapterConfig, record: dict[str, Any]) -> str:
+    if config.key == "stock_act":
+        politician = record.get("politician_name") or record.get("politician") or record.get("representative")
+        issuer = (
+            record.get("traded_issuer_ticker")
+            or record.get("issuer_ticker")
+            or record.get("ticker")
+            or record.get("traded_issuer_name")
+            or record.get("issuer")
+        )
+        tx_type = record.get("type") or record.get("transaction_type") or record.get("transaction")
+        trade_date = record.get("traded") or record.get("trade_date") or record.get("date")
+        if politician or issuer:
+            return " | ".join(
+                str(part)
+                for part in (
+                    "Capitol Trades disclosure",
+                    politician,
+                    tx_type,
+                    issuer,
+                    trade_date,
+                )
+                if part
+            )[:240]
     if config.key == "kalshi":
         kalshi = record.get("kalshi")
         polymarket = record.get("polymarket")
@@ -659,7 +683,9 @@ class Phase1ReadOnlyAdapter:
             if secret_value("ODDSPIPE_API_KEY", self.settings):
                 return {"limit": 25, "min_score": 60, "top_n": 200}
             return {"limit": 25}
-        if key in {"unusual_whales", "stock_act"}:
+        if key == "stock_act":
+            return {"format": "json", "clean": "true", "limit": 25}
+        if key == "unusual_whales":
             return {"limit": 25}
         if key == "space_track_celestrak":
             return {"GROUP": "stations", "FORMAT": "json"}
@@ -702,6 +728,11 @@ class Phase1ReadOnlyAdapter:
             return body
         if self.config.key == "hyperliquid":
             return {"type": "metaAndAssetCtxs"}
+        if self.config.key == "stock_act":
+            return {
+                "start_urls": ["https://www.capitoltrades.com/trades?txDate=90d"],
+                "max_page": 1,
+            }
         return None
 
     def _live_url(self) -> str:
@@ -718,7 +749,11 @@ class Phase1ReadOnlyAdapter:
             if base_url:
                 return f"{base_url}/trade-api/v2/markets"
         if self.config.key == "stock_act":
-            return secret_value("CAPITOL_TRADES_API_URL", self.settings) or self.config.primary_endpoint
+            endpoint = secret_value("CAPITOL_TRADES_API_URL", self.settings)
+            if endpoint:
+                return endpoint
+            actor = secret_value("CAPITOL_TRADES_APIFY_ACTOR_ID", self.settings) or "saswave~capitol-trades-scraper"
+            return f"https://api.apify.com/v2/actors/{actor}/run-sync-get-dataset-items"
         return self.config.primary_endpoint
 
     async def fetch_live(self, *, timeout_seconds: float = 12.0) -> SourceEnvelope:
@@ -851,7 +886,7 @@ class Phase1ReadOnlyAdapter:
                 else:
                     headers = self._request_headers()
                 if self.config.method == "POST":
-                    response = await client.post(url, headers=headers, json=body or params)
+                    response = await client.post(url, headers=headers, params=params, json=body or params)
                 else:
                     response = await client.get(url, headers=headers, params=params)
                 response.raise_for_status()

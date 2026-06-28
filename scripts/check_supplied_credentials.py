@@ -363,6 +363,13 @@ def build_report(settings: Settings) -> dict[str, Any]:
             settings=settings,
             checked_at=checked_at,
         ),
+        _phase1_provider(
+            "capitol_trades",
+            source_key="stock_act",
+            role="politician_trade_disclosures",
+            settings=settings,
+            checked_at=checked_at,
+        ),
         _static_validation(
             "kalshi_direct",
             role="prediction_market_regulated_direct_account",

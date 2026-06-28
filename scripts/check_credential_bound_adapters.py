@@ -45,6 +45,7 @@ SECRET_ENV_KEYS = (
     "KALSHI_API_BASE_URL",
     "CAPITOL_TRADES_API_KEY",
     "CAPITOL_TRADES_API_URL",
+    "CAPITOL_TRADES_APIFY_ACTOR_ID",
 )
 SECRET_LIKE_PATTERNS = (
     re.compile(r"\d{6,}:[A-Za-z0-9_-]{20,}"),
@@ -170,13 +171,13 @@ def main() -> int:
             (
                 "CAPITOL_TRADES_API_KEY=dummy_capitol_key",
             ),
-            "provider_endpoint_unconfirmed",
+            "ready_for_live_readonly",
         ),
         (
             "stock_act",
             (
                 "CAPITOL_TRADES_API_KEY=dummy_capitol_key",
-                "CAPITOL_TRADES_API_URL=https://api.example.invalid/capitol-trades",
+                "CAPITOL_TRADES_API_URL=https://api.apify.com/v2/actors/saswave~capitol-trades-scraper/run-sync-get-dataset-items",
             ),
             "ready_for_live_readonly",
         ),

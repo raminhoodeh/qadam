@@ -77,13 +77,13 @@ If a key is ever pasted into a chat, committed, or shown publicly, rotate it at 
 
 ## Credential-Bound Adapter Pass
 
-As of 2026-06-28, Reddit, Kalshi/OddsPipe, and Capitol Trades/STOCK Act have explicit credential-bound read-only adapter contracts. OddsPipe is the selected first-release read-only route for Kalshi/Polymarket coverage while direct Kalshi remains deferred. Reddit and Capitol Trades are not counted as connected until their required credentials are present locally and, for Capitol Trades, a provider-confirmed API endpoint is supplied.
+As of 2026-06-28, Reddit, Kalshi/OddsPipe, and Capitol Trades/STOCK Act have explicit credential-bound read-only adapter contracts. OddsPipe is the selected first-release read-only route for Kalshi/Polymarket coverage while direct Kalshi remains deferred. Capitol Trades/STOCK Act is now routed through the Apify Capitol Trades Scraper actor once `CAPITOL_TRADES_API_KEY` is present locally.
 
 | Source | Adapter state without credentials | Required local values | Activation behavior |
 | --- | --- | --- | --- |
 | Reddit | `missing_credentials` | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`; optional `REDDIT_USER_AGENT` | Exchanges client credentials for a read-only OAuth bearer token and reads Reddit context only. |
 | Kalshi / OddsPipe | `missing_credentials` if neither route is configured | `ODDSPIPE_API_KEY`; later optional `KALSHI_API_KEY`, `KALSHI_API_SECRET`, `KALSHI_API_BASE_URL` | Uses OddsPipe for read-only normalized Kalshi/Polymarket market data, OHLCV context, and spreads. Direct Kalshi RSA signing remains a deferred future path. |
-| Capitol Trades / STOCK Act | `missing_credentials`, or `provider_endpoint_unconfirmed` if only the key is present | `CAPITOL_TRADES_API_KEY` and provider-confirmed `CAPITOL_TRADES_API_URL` | Reads congressional trading disclosures only after the provider endpoint contract is known. |
+| Capitol Trades / STOCK Act | `missing_credentials` until the Apify token is present | `CAPITOL_TRADES_API_KEY`; optional `CAPITOL_TRADES_API_URL`, `CAPITOL_TRADES_APIFY_ACTOR_ID` | Reads congressional trading disclosures through the Apify Capitol Trades Scraper actor. Output is read-only evidence only. |
 
 Validate the credential-bound contract without using real secrets:
 
@@ -121,7 +121,7 @@ This check must show zero credentials required now and zero order, broker-write,
 | 2 | Alpaca Paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Required for the £100,000 paper-account proof rail once the execution adapter is built. | Create/sign in to Alpaca, open Paper Trading, generate paper API keys, and use the paper endpoint. |
 | 3 | OddsPipe prediction-market aggregator | `ODDSPIPE_API_KEY` | Required for first-release normalized Kalshi/Polymarket market monitoring without direct Kalshi account eligibility. | Create an OddsPipe key and store it locally. Direct Kalshi credentials can be added later only when the account and region are eligible. |
 | 4 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | High-value conflict and geopolitical event source. | Create a myACLED account, then request API auth and refresh tokens for `https://acleddata.com/api/acled/read`. Prefer token refresh automation over repeated password use. |
-| 5 | Capitol Trades / STOCK Act provider | `CAPITOL_TRADES_API_KEY`, `CAPITOL_TRADES_API_URL` | Congressional trading context for the STOCK Act source. | Use the provider/API path selected for Qadam and store the key plus the provider-confirmed endpoint locally. |
+| 5 | Capitol Trades / STOCK Act via Apify | `CAPITOL_TRADES_API_KEY`; optional `CAPITOL_TRADES_API_URL` | Congressional trading context for the STOCK Act source. | Use the Apify Capitol Trades Scraper token. The default actor endpoint is already encoded; override `CAPITOL_TRADES_API_URL` only if the provider path changes. |
 | 6 | FRED | `FRED_API_KEY` | Better official macro API access. | Log into a FRED account and request a distinct API key for Qadam. Qadam can still use public CSV fallback without it. |
 
 ## TradingView
@@ -257,7 +257,7 @@ Qadam does not need quantum hardware to complete Phase 1D. Keep these as readine
 
 NASA FIRMS is now the first physical pipeline adapter promoted into Qadam. Without `NASA_FIRMS_API_KEY`, the adapter is healthy in sample mode and marked `unavailable_missing_credentials` for live mode. With the key configured, `scripts/check_nasa_firms_adapter.py --live` can make a read-only FIRMS area CSV request and archive the sanitized result locally.
 
-As of 2026-06-14, the remaining selected credential-bound gaps are Reddit OAuth, Kalshi account credentials, and Capitol Trades/STOCK Act provider access. Their adapter contracts are implemented, but they remain disconnected until the local values above are supplied. Capitol Trades also requires a real API endpoint, not only the public website URL.
+As of 2026-06-28, the remaining selected credential-bound gap is Reddit OAuth. Direct Kalshi account access remains deferred because OddsPipe covers read-only Kalshi/Polymarket data, and Capitol Trades/STOCK Act is connected through the Apify Capitol Trades Scraper when `CAPITOL_TRADES_API_KEY` is present.
 
 Official references:
 

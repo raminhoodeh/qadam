@@ -95,6 +95,7 @@ This does not dilute Qadam. It reduces cognitive load. The project remains deep,
 | Telegram appendix | `docs/qadam-telegram-bot-implementation-plan.md` | Member communications rail, bot phases, message classes, and dashboard visibility. |
 | OSS reference appendix | `docs/qadam-oss-reference-implementation-plan.md` | Implementation overlay for adopting useful patterns from external financial-agent, terminal, MCP, chat, and durable inbox repos without importing unsafe execution authority. |
 | Trading edge realization appendix | `docs/qadam-trading-edge-realization-plan.md` | Multi-stage plan for turning Qadam's architecture edge into fresh setup identity, candidate generation, strategy routing, market confirmation, risk sizing, exits, postmortems, and idle-state diagnosis without relaxing paper-only safety. |
+| QSASE appendix | `docs/qadam-qsase-implementation-plan.md` | Evolution plan for Qadam's Self-Aware Strategy Engine: universal source-price pattern discovery, linear and nonlinear backtesting, strategy foundry, Akber filter integration, quantum review, strategy routing, and guarded PaperOps handoff. |
 | User guide | `docs/qadam-user-guide.md` | Full beginner operating manual for using Qadam, reading the cockpit, reviewing demo-proof trades, and preserving safety boundaries. |
 | Live source appendix | `docs/api-source-inventory.md` | 35 live/live-adjacent feeds and source conflicts. |
 | API credential appendix | `docs/api-specs.md` | Full API/provider inventory, credential placeholders, onboarding batches, and current provider decisions. |
@@ -139,6 +140,12 @@ That foundation is not allowed to become proof by itself. In the trading chain, 
 The next quality-throughput layer is defined in `docs/qadam-trading-edge-realization-plan.md`. Its purpose is to make Qadam better at converting observations into fresh, distinct, evidence-backed paper candidates without weakening any safety gate. The plan covers Fresh Setup Identity v2, a Trade Candidate Factory, Strategy Router, second-order AI infrastructure universe, market confirmation layer, dynamic risk sizing, exit intelligence, postmortem-driven weight proposals, durable replay watchdog, idle-state diagnosis, and final paper-autonomy certification refresh.
 
 This roadmap does not grant new live-capital authority. It preserves the rule that Qadam may submit multiple Alpaca paper trades per day only when distinct qualified setups pass source quorum, market confirmation, Signal Integrity, Strategy Lead review, Head of Quant shadow annotation where applicable, Risk Agent sizing, Execution Policy, kill-switch, idempotency, Event Log, broker-readiness, and reconciliation gates.
+
+### QSASE Evolution Roadmap
+
+The next metamorphosis layer is defined in `docs/qadam-qsase-implementation-plan.md`. QSASE turns Qadam's existing strategy, learning, source, model, quantum, and PaperOps machinery into a self-reflective strategy operating system. It first searches the entire data universe against the entire trading universe, then uses linear backtesting, nonlinear and quantum pattern review, Akber's filter, shadow replay, and guarded strategy routing to decide which strategies should be studied, rejected, shadow-tested, or sent to PaperOps paper review.
+
+QSASE does not grant execution authority. It cannot bypass source quorum, Signal Integrity, Strategy Lead review, Head of Quant review, Risk Agent sizing, Execution Policy, idempotency, the guarded Alpaca Paper route, proof-ledger rules, or the live-capital boundary.
 
 ## 4. System Shape
 
@@ -330,7 +337,7 @@ Current implementation start:
 - `scripts/start_postgres_timescale_ingestion.sh` now exists as the dedicated Postgres/Timescale durable-ingestion bootstrap. It starts only the Timescale-backed Postgres service, waits for connectivity, applies migrations, seeds durable reference/world-model data, writes all 35 deterministic source observations, runs the live-required ingestion contract, and verifies replay coverage.
 - `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` verifies that durable observations can be replayed across the full 35-source registry without writing new rows.
 - Current local state as of 2026-05-21: OrbStack provides the Docker-compatible runtime, `qadam-postgres` is running locally, `scripts/start_postgres_timescale_ingestion.sh` completes with `postgres_timescale_durable_ingestion=ok`, and strict replay verification sees all 35 canonical sources in `source_observation`.
-- A read-only Phase 1 live adapter promotion layer now exists for ACLED, UnusualWhales, STOCK Act via UnusualWhales Congress, Polymarket, Kalshi/OddsPipe, Alpaca, AIS, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- A read-only Phase 1 live adapter promotion layer now exists for ACLED, STOCK Act via the Apify Capitol Trades Scraper, Polymarket, Kalshi/OddsPipe, Alpaca, AIS, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram. UnusualWhales remains intentionally disabled unless re-selected.
 - These 17 adapter contracts join the already promoted GDELT, Oref, NASA FIRMS, FRED, and RSS adapters, taking promoted adapter coverage to 22 sources.
 - The new adapter layer has sample mode, masked credential status, raw payload archival, normalized events, degraded-state handling, and fail-closed live fetches.
 - `scripts/check_phase1_live_source_hardening.py` is now the Phase 1 live-source hardening gate. It validates each of the 22 promoted sources one by one, writes `data/runtime/phase1_live_source_validation.json`, appends a local history file, and classifies every source as `live`, `degraded`, `missing_credentials`, or `sample_ready`.

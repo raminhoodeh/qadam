@@ -54,6 +54,6 @@ Agent Reach reduces the implementation gap but does not remove operator setup:
 - Reddit still needs a local logged-in route.
 - X/Twitter local fallback still needs a safe account/cookie path if used.
 - Kalshi credentials are still missing.
-- Capitol Trades/STOCK Act credentials are still missing.
+- Capitol Trades/STOCK Act is routed through the Apify Capitol Trades Scraper once the local Apify token is present.
 - Any LinkedIn/Xiaohongshu/Xueqiu-style cookie channel should use a dedicated
   account and remain read-only.

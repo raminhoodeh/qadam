@@ -63,19 +63,19 @@ CREDENTIAL_BOUND_ADAPTERS: dict[str, CredentialBoundAdapterSpec] = {
     ),
     "stock_act": CredentialBoundAdapterSpec(
         source_key="stock_act",
-        provider_name="Capitol Trades / STOCK Act provider",
+        provider_name="Capitol Trades / Apify STOCK Act scraper",
         required_env_vars=("CAPITOL_TRADES_API_KEY",),
-        optional_env_vars=("CAPITOL_TRADES_API_URL",),
+        optional_env_vars=("CAPITOL_TRADES_API_URL", "CAPITOL_TRADES_APIFY_ACTOR_ID"),
         credential_kind="provider_api_key",
-        auth_flow="provider_confirmed_bearer_or_header_auth",
-        setup_url="mailto:info@2iqresearch.com",
-        default_endpoint="https://www.capitoltrades.com/trades",
+        auth_flow="apify_actor_dataset_readonly",
+        setup_url="https://console.apify.com/actors/saswave~capitol-trades-scraper",
+        default_endpoint="https://api.apify.com/v2/actors/saswave~capitol-trades-scraper/run-sync-get-dataset-items",
         endpoint_env_var="CAPITOL_TRADES_API_URL",
-        provider_endpoint_required=True,
+        provider_endpoint_required=False,
         evidence_packet_types=("politician_trade_disclosure", "policy_trading_context"),
         notes=(
-            "Requires an official provider API endpoint before live reads. The public website URL is not treated "
-            "as a stable API contract."
+            "Uses the Apify Capitol Trades Scraper actor as Qadam's read-only STOCK Act coverage path. "
+            "It returns congressional disclosure JSON only; it cannot create orders or approve risk."
         ),
     ),
 }

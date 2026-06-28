@@ -18,7 +18,7 @@ Key split decisions:
 - Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
-- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit and Capitol Trades/STOCK Act. Direct Kalshi remains deferred, but OddsPipe is now the selected read-only Kalshi/Polymarket coverage route for Stage 0. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
+- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gap is Reddit. Direct Kalshi remains deferred, but OddsPipe is now the selected read-only Kalshi/Polymarket coverage route for Stage 0. Capitol Trades/STOCK Act is connected through the Apify Capitol Trades Scraper when the local Apify token is present. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
 
 ## Tier 1 - Wire First
 
@@ -55,7 +55,7 @@ Key split decisions:
 | Reddit | OAuth app | Credential-bound confirmation source, not primary. |
 | Telegram | Bot API plus Telethon/MTProto user session | World Monitor has strong channel polling logic. |
 | SEC EDGAR | Public API, User-Agent required | High-trust corporate filing source. |
-| STOCK Act filings | Capitol Trades/provider-selected congressional trades path | Credential-bound v1 provider direction recorded; needed for politician trade disclosures and cross-validation. |
+| STOCK Act filings | Apify Capitol Trades Scraper congressional trades path | Credential-bound v1 provider direction recorded; needed for politician trade disclosures and cross-validation. |
 
 ## Tier 4 - Wire Last Or Phase 2
 
@@ -117,7 +117,7 @@ Current practical missing data after this bridge:
   route is configured.
 - X/Twitter has API credentials, but Agent Reach's local cookie/browser route
   is not activated unless the operator sets it up separately.
-- Capitol Trades/STOCK Act and Kalshi still need their provider credentials.
+- Reddit still needs OAuth credentials. Direct Kalshi remains deferred because OddsPipe covers first-release read-only prediction-market data; Capitol Trades/STOCK Act is satisfied by the Apify Capitol Trades Scraper token when configured locally.
 - LinkedIn/Xiaohongshu/Xueqiu-style cookie channels should use dedicated
   low-risk accounts if ever activated.
 
@@ -127,7 +127,7 @@ The May 2026 source-registry blocker pass resolved the eight stale blockers into
 
 | Source | Decision | Remaining Gate |
 | --- | --- | --- |
-| `stock_act` | Use Capitol Trades or the selected STOCK Act provider path for v1 congressional trade disclosures. | Needs `CAPITOL_TRADES_API_KEY` and provider-confirmed `CAPITOL_TRADES_API_URL`; key-only setup stays endpoint-unconfirmed. |
+| `stock_act` | Use the Apify Capitol Trades Scraper path for v1 congressional trade disclosures. | Needs `CAPITOL_TRADES_API_KEY`; `CAPITOL_TRADES_API_URL` and `CAPITOL_TRADES_APIFY_ACTOR_ID` are optional overrides. |
 | `usgs` | Treat USGS as mineral/supply-chain context first, with the public earthquake API as event-driven physical-risk input. | Provider-specific minerals parsing still needs deeper research normalization. |
 | `space_track_celestrak` | Keep Space-Track as authenticated primary and CelesTrak GP JSON as public fallback. | Space-Track credentials only needed for the fuller authenticated path. |
 | `ais_maritime` | Use AISStream as the v1 read-only MVP; keep Spire/MarineTraffic as paid fallbacks. | Needs one AIS credential before live vessel data is available. |

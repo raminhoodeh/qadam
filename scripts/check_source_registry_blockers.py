@@ -31,8 +31,8 @@ from world_monitor.source_registry import (  # noqa: E402
 
 EXPECTED_DECISIONS = {
     "stock_act": {
-        "status": "adapter_live_requires_key",
-        "endpoint_contains": "capitoltrades.com/trades",
+        "status": "adapter_live_via_apify",
+        "endpoint_contains": "api.apify.com/v2/actors/saswave~capitol-trades-scraper",
         "promoted": True,
     },
     "usgs": {
@@ -81,7 +81,7 @@ EXPECTED_CLEANUP_CATEGORIES = {
     "github": ("needs_adapter", "not_selected", "needs_adapter"),
     "bookmap": ("local_bridge", "selected", "local_bridge_required"),
     "reddit": ("adapter_live_requires_key", "selected", "needs_credentials"),
-    "stock_act": ("adapter_live_requires_key", "selected", "needs_credentials"),
+    "stock_act": ("adapter_live_via_apify", "selected", "needs_credentials"),
     "kalshi": ("adapter_live_via_oddspipe", "selected", "needs_credentials"),
 }
 

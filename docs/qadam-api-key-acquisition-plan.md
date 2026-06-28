@@ -60,7 +60,7 @@ Still pending or replaced:
 - OddsPipe is now the selected Stage 0 read-only coverage route for normalized Kalshi/Polymarket data. It replaces direct Kalshi as a first-release monitoring dependency, but it does not add venue execution authority.
 - Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
 - ACLED token refresh automation now exists in `scripts/refresh_acled_token.py`. A 2026-05-19 refresh run succeeded with the refresh-token grant, but the ACLED read endpoint still returned HTTP 403, so ACLED still needs provider entitlement/account-scope confirmation before it counts as durable live.
-- BLS, Reddit, direct Kalshi, Capitol Trades/STOCK Act, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
+- BLS, Reddit, direct Kalshi, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. Capitol Trades/STOCK Act is now covered through the Apify Capitol Trades Scraper when the local Apify token is present. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
 
 ## 3. Batch A - Get These First
 
@@ -84,7 +84,7 @@ Minimum useful outcome after Batch A:
 - Telegram can be dry-run without sending.
 - All credentials remain local.
 
-Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, OddsPipe, and Telegram bot private/group delivery targets are locally configured. Direct Kalshi remains unavailable in Ramin's current regions, but OddsPipe now satisfies the first-release read-only Kalshi/Polymarket coverage need. The selected remaining data-source credential gaps are Reddit and Capitol Trades/STOCK Act; UnusualWhales is no longer a Batch A credential gap.
+Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, OddsPipe, Capitol Trades via Apify, and Telegram bot private/group delivery targets are locally configured. Direct Kalshi remains unavailable in Ramin's current regions, but OddsPipe now satisfies the first-release read-only Kalshi/Polymarket coverage need. The selected remaining data-source credential gap is Reddit; UnusualWhales is no longer a Batch A credential gap.
 
 ## 4. Batch B - Add Confirmation Feeds
 
@@ -114,7 +114,7 @@ Only buy these after Qadam shows that a source category genuinely improves trade
 | UnusualWhales | Paid | intentionally disabled | Re-select only if options flow becomes central to the strategy; do not buy as part of the current cleanup. |
 | AISStream / Spire / MarineTraffic | Free/cheap to expensive depending provider | `AISSTREAM_API_KEY`, `SPIRE_API_KEY`, `MARINETRAFFIC_API_KEY` | Start with AISStream if available. Upgrade to Spire/MarineTraffic only if vessel data becomes core to oil/logistics signals. |
 | Aviationstack | Free/freemium to paid depending usage | `AVIATIONSTACK_API_KEY` | Use as the v1 flight-data source instead of Wingbits. Keep it read-only and quota-aware. |
-| Capitol Trades / STOCK Act provider | Provider/account dependent | `CAPITOL_TRADES_API_KEY` | Use for congressional trade disclosures instead of routing STOCK Act through UnusualWhales. |
+| Capitol Trades / STOCK Act via Apify | Apify actor pricing | `CAPITOL_TRADES_API_KEY`; optional `CAPITOL_TRADES_API_URL` | Use for congressional trade disclosures instead of routing STOCK Act through UnusualWhales. The default actor path is `saswave~capitol-trades-scraper`. |
 | Coinglass | Paid/freemium | provider selected; no key request now | CoinGlass API is the selected provider if crypto/perps derivatives context is promoted later. Build the read-only adapter before requesting a key. |
 | Chainlink | Public feed plus optional RPC | provider selected; no key request now | Chainlink Data Feeds are the selected provider if price-integrity cross-checking is promoted later. Build the public read-only adapter before requesting `ETH_RPC_URL`. |
 | Bookmap | Local paid desktop/tooling dependency | local bridge selected; no hosted key | Use only when you want local order-flow confirmation from a read-only bridge running on the Mac. |
