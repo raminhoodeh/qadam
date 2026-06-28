@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_6_nonlinear_quantum_pattern_lab",
-  "generated_at": "2026-06-28T19:39:08.073142+00:00",
+  "active_phase": "qsase_7_strategy_foundry",
+  "generated_at": "2026-06-28T19:45:24.825828+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -194,6 +194,32 @@
       "reviewed_pattern_count": 8,
       "status": "qsase_nonlinear_quantum_pattern_lab_degraded",
       "tested_interaction_count": 16
+    },
+    "qsase_7_strategy_foundry": {
+      "artifact_path": "data/runtime/qsase_strategy_hypotheses.json",
+      "authority_flags_false": true,
+      "existing_family_match_count": 0,
+      "input_pattern_count": 16,
+      "later_qsase_phases_implemented": false,
+      "name": "QSASE-7: Strategy Foundry",
+      "new_family_proposal_count": 0,
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "paper_review_candidate_count": 0,
+      "proposal_first": true,
+      "public_safe": true,
+      "rejected_pattern_count": 16,
+      "rejected_strategy_hypotheses_path": "data/runtime/qsase_rejected_strategy_hypotheses.jsonl",
+      "research_only": true,
+      "shadow_only_monitor_count": 4,
+      "status": "qsase_strategy_foundry_degraded",
+      "strategy_family_map_path": "data/runtime/qsase_strategy_family_map.json",
+      "strategy_hypotheses_are_not_trades": true,
+      "strategy_hypotheses_path": "data/runtime/qsase_strategy_hypotheses.jsonl",
+      "strategy_hypothesis_count": 0,
+      "strategy_modification_proposal_count": 0
     }
   },
   "safety": {

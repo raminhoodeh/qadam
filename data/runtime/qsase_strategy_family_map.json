@@ -1,0 +1,393 @@
+{
+  "existing_family_mapping_count": 16,
+  "generated_at": "2026-06-28T19:45:24.825828+00:00",
+  "known_families": {
+    "crude_oil_energy_security_disruption": {
+      "allowed_proxy_set": [
+        "USO",
+        "XLE",
+        "energy_equities",
+        "crude_oil_proxy"
+      ],
+      "catalyst_class": "energy_security_disruption",
+      "instrument_keywords": [
+        "CL",
+        "USO",
+        "XLE",
+        "oil",
+        "crude",
+        "energy"
+      ],
+      "label": "Crude Oil Energy Security Disruption",
+      "source_keywords": [
+        "acled",
+        "ais_maritime",
+        "nasa_firms",
+        "conflict_tracker",
+        "ucdp"
+      ]
+    },
+    "defence_repricing_geopolitical_watch": {
+      "allowed_proxy_set": [
+        "ITA",
+        "XAR",
+        "defence_equities"
+      ],
+      "catalyst_class": "defence_geopolitical_repricing",
+      "instrument_keywords": [
+        "ITA",
+        "XAR",
+        "defence",
+        "defense"
+      ],
+      "label": "Defence Repricing Geopolitical Watch",
+      "source_keywords": [
+        "acled",
+        "gdelt",
+        "sec_edgar",
+        "stock_act",
+        "patents"
+      ]
+    },
+    "prediction_market_geopolitical_dislocation": {
+      "allowed_proxy_set": [
+        "prediction_markets",
+        "event_contracts"
+      ],
+      "catalyst_class": "event_probability_dislocation",
+      "instrument_keywords": [
+        "prediction",
+        "kalshi",
+        "polymarket"
+      ],
+      "label": "Prediction Market Geopolitical Dislocation",
+      "source_keywords": [
+        "kalshi",
+        "polymarket",
+        "gdelt",
+        "telegram",
+        "acled"
+      ]
+    },
+    "semiconductor_policy_options_asymmetry": {
+      "allowed_proxy_set": [
+        "SMH",
+        "SOXX",
+        "semiconductor_equities"
+      ],
+      "catalyst_class": "semiconductor_policy_asymmetry",
+      "instrument_keywords": [
+        "SMH",
+        "SOXX",
+        "NVDA",
+        "semiconductor",
+        "chip"
+      ],
+      "label": "Semiconductor Policy Options Asymmetry",
+      "source_keywords": [
+        "sec_edgar",
+        "patents",
+        "gdelt",
+        "rss",
+        "stock_act"
+      ]
+    },
+    "silver_macro_liquidity_stress": {
+      "allowed_proxy_set": [
+        "SLV",
+        "silver_proxy"
+      ],
+      "catalyst_class": "macro_liquidity_stress",
+      "instrument_keywords": [
+        "SLV",
+        "XAG",
+        "silver"
+      ],
+      "label": "Silver Macro Liquidity Stress",
+      "source_keywords": [
+        "fred",
+        "ecb",
+        "bis",
+        "usgs",
+        "un_comtrade"
+      ]
+    }
+  },
+  "new_family_active_count": 0,
+  "new_family_candidate_mapping_count": 0,
+  "pattern_family_mappings": [
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 9.5,
+        "defence_repricing_geopolitical_watch": 5.0,
+        "prediction_market_geopolitical_dislocation": 8.0,
+        "semiconductor_policy_options_asymmetry": 5.0,
+        "silver_macro_liquidity_stress": 5.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 9.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:456b3a921b15627475a0",
+      "source_pattern_id": "qsase-nonlinear:3f7d4fe26e3ce408b0fc",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 9.5,
+        "defence_repricing_geopolitical_watch": 5.0,
+        "prediction_market_geopolitical_dislocation": 8.0,
+        "semiconductor_policy_options_asymmetry": 5.0,
+        "silver_macro_liquidity_stress": 5.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 9.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:fec5145783f230114d12",
+      "source_pattern_id": "qsase-nonlinear:699637aeb70b57e426fd",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 9.5,
+        "defence_repricing_geopolitical_watch": 5.0,
+        "prediction_market_geopolitical_dislocation": 8.0,
+        "semiconductor_policy_options_asymmetry": 5.0,
+        "silver_macro_liquidity_stress": 5.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 9.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:c7cf577b85b6f82ee58e",
+      "source_pattern_id": "qsase-nonlinear:40e7225d53d780d98f05",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 9.5,
+        "defence_repricing_geopolitical_watch": 5.0,
+        "prediction_market_geopolitical_dislocation": 8.0,
+        "semiconductor_policy_options_asymmetry": 5.0,
+        "silver_macro_liquidity_stress": 5.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 9.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:52145873fa19d345f367",
+      "source_pattern_id": "qsase-nonlinear:02b8584b5120cf24a5a6",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 5.0,
+        "semiconductor_policy_options_asymmetry": 0.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "prediction_market_geopolitical_dislocation",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 5.0,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:f36b2aad8f91f1ec1706",
+      "source_pattern_id": "qsase-nonlinear:76c88ce093d3dbe10b7a",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 5.0,
+        "semiconductor_policy_options_asymmetry": 0.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "prediction_market_geopolitical_dislocation",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 5.0,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:0712c3c23a7b96f5c579",
+      "source_pattern_id": "qsase-nonlinear:201d273ba8889059b693",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 3.0,
+        "prediction_market_geopolitical_dislocation": 1.0,
+        "semiconductor_policy_options_asymmetry": 4.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 4.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:72606af8445e40e48bc4",
+      "source_pattern_id": "qsase-nonlinear:fa09ef5dbe53e6d0f94e",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 3.0,
+        "prediction_market_geopolitical_dislocation": 1.0,
+        "semiconductor_policy_options_asymmetry": 4.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 4.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:83c7dde100ce85d268f9",
+      "source_pattern_id": "qsase-nonlinear:79da16867ce27150c0ec",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 6.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 0.0,
+        "semiconductor_policy_options_asymmetry": 0.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 6.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:90c7f32f2267e8cc8ce4",
+      "source_pattern_id": "qsase-nonlinear:a7c11c2ee7f9387a09b0",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 6.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 0.0,
+        "semiconductor_policy_options_asymmetry": 0.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 6.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:9f12ed8de36d88a4c9e7",
+      "source_pattern_id": "qsase-nonlinear:a1d40a43f9ce23af8b8b",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 0.0,
+        "semiconductor_policy_options_asymmetry": 0.0,
+        "silver_macro_liquidity_stress": 5.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "silver_macro_liquidity_stress",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 5.0,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:d06d163dc0136ce2228a",
+      "source_pattern_id": "qsase-nonlinear:f94c03928f64ccce5893",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 0.0,
+        "semiconductor_policy_options_asymmetry": 0.0,
+        "silver_macro_liquidity_stress": 5.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "silver_macro_liquidity_stress",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 5.0,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:4e8e20f0f3e4566d3582",
+      "source_pattern_id": "qsase-nonlinear:4ea8cd014c1839c1a1d4",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 7.5,
+        "defence_repricing_geopolitical_watch": 2.0,
+        "prediction_market_geopolitical_dislocation": 2.0,
+        "semiconductor_policy_options_asymmetry": 1.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 7.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:fb74968ed839be40582f",
+      "source_pattern_id": "qsase-nonlinear:42fe909960ed8a471858",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 7.5,
+        "defence_repricing_geopolitical_watch": 2.0,
+        "prediction_market_geopolitical_dislocation": 2.0,
+        "semiconductor_policy_options_asymmetry": 1.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 7.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:1d4addca04fdf9b3ac02",
+      "source_pattern_id": "qsase-nonlinear:450fa92f032052704b34",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 0.0,
+        "semiconductor_policy_options_asymmetry": 1.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 4.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:e2f463aafbb9f0328046",
+      "source_pattern_id": "qsase-nonlinear:76034e4b1f024a21d050",
+      "strategy_collapse_review_required": true
+    },
+    {
+      "all_family_scores": {
+        "crude_oil_energy_security_disruption": 4.5,
+        "defence_repricing_geopolitical_watch": 0.0,
+        "prediction_market_geopolitical_dislocation": 0.0,
+        "semiconductor_policy_options_asymmetry": 1.0,
+        "silver_macro_liquidity_stress": 0.0
+      },
+      "known_family_count": 5,
+      "mapped_existing_family": "crude_oil_energy_security_disruption",
+      "mapping_decision": "existing_family_match",
+      "mapping_score": 4.5,
+      "proposed_new_family": null,
+      "source_linear_pattern_id": "qsase-linear:f8042271f34a9e423941",
+      "source_pattern_id": "qsase-nonlinear:f1fbae7c87edbaff457a",
+      "strategy_collapse_review_required": true
+    }
+  ],
+  "schema_version": "qsase_strategy_foundry.v1"
+}

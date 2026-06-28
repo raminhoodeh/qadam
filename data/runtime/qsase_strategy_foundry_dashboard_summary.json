@@ -1,0 +1,50 @@
+{
+  "artifact_type": "qsase_strategy_foundry_dashboard_summary",
+  "authority_flags_false": true,
+  "authority_state": "strategy_hypothesis_only_no_execution",
+  "command_disabled": true,
+  "generated_at": "2026-06-28T19:45:24.825828+00:00",
+  "latest_blocker": "no_strategy_hypotheses_promoted_current_inputs,nonlinear_quantum_lab_degraded,rejected_or_shadow_only_hypotheses_present",
+  "live_send_allowed": false,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_trade_candidates_created": true,
+  "public_safe": true,
+  "required_next_gate": "upstream evidence repair",
+  "schema_version": "qsase_strategy_foundry.v1",
+  "status": "qsase_strategy_foundry_degraded",
+  "strategy_hypotheses_are_not_trades": true,
+  "summary_rows": [
+    {
+      "label": "Foundry status",
+      "value": "qsase_strategy_foundry_degraded"
+    },
+    {
+      "label": "Hypotheses",
+      "value": 0
+    },
+    {
+      "label": "Existing-family matches",
+      "value": 0
+    },
+    {
+      "label": "New-family proposals",
+      "value": 0
+    },
+    {
+      "label": "Rejected records",
+      "value": 16
+    },
+    {
+      "label": "Paper-review candidates",
+      "value": 0
+    },
+    {
+      "label": "Authority",
+      "value": "strategy_hypothesis_only_no_execution"
+    }
+  ],
+  "top_hypothesis": null,
+  "top_hypothesis_type": null,
+  "top_rejection_reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route,nonlinear_not_incremental,quantum_did_not_upgrade_research_confidence"
+}

@@ -87,3 +87,16 @@
 - Quantum reviews: `8`
 - Quantum backend: `classical_fallback` / `deterministic_classical_shadow`
 - Safety: nonlinear and quantum success are research evidence only; no trade candidates, paper orders, broker writes, live capital, hardware jobs, or proof credit created.
+
+<!-- qsase_7_strategy_foundry -->
+## QSASE-7: Strategy Foundry
+
+- Generated at: `2026-06-28T19:45:24.825828+00:00`
+- Status: `qsase_strategy_foundry_degraded`
+- Runtime artifact: `data/runtime/qsase_strategy_hypotheses.json`
+- Input patterns: `16`
+- Strategy hypotheses: `0`
+- Shadow-only monitors: `4`
+- Rejected hypothesis records: `16`
+- Paper-review candidates: `0`
+- Safety: strategy hypotheses are not trades, qualified setups, paper orders, broker writes, live capital, or proof credit.
