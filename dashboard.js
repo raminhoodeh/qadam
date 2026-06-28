@@ -4087,7 +4087,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         usgs: "Adds minerals and resource context for metals, semiconductors, and industrial supply-chain hypotheses.",
         unusual_whales: "Optional options-flow context that is currently disabled unless reselected.",
         polymarket: "Tracks prediction-market probabilities and order-book context where public odds may diverge from Qadam's evidence.",
-        kalshi: "Kalshi/Polymarket context is covered through OddsPipe for read-only market monitoring; direct Kalshi account access remains deferred.",
+        kalshi: "Kalshi is connected through OddsPipe, which gives Qadam read-only normalized Kalshi/Polymarket markets, OHLCV context, and cross-platform spreads while direct Kalshi account access remains deferred.",
         hyperliquid: "Tracks crypto and perpetual-market stress where cross-asset risk can surface early.",
         alpaca: "Mirrors paper broker account, orders, positions, and market data for paper-only execution visibility.",
         rapidapi: "Optional marketplace source slot awaiting a specific provider decision.",
@@ -4101,7 +4101,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         twitter_x: "Tracks public social/news velocity that can corroborate or challenge live hypotheses.",
         reddit: "Optional retail-forum context awaiting Reddit OAuth credentials.",
         sec_edgar: "Reads company filings for semiconductor, defence, and market-sensitive disclosures.",
-        stock_act: "Optional political-trading context awaiting Capitol Trades or STOCK Act credentials.",
+        stock_act: "Reads Capitol Trades/STOCK Act congressional disclosures through the Apify Capitol Trades Scraper as political-trading context. It is evidence only, not trade authority.",
         patents: "Tracks patent activity for supply-chain, defence, and semiconductor innovation signals.",
         github: "Pending adapter for software and developer-activity context."
     };
