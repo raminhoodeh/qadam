@@ -1,0 +1,57 @@
+{
+  "artifact_type": "qsase_universal_source_price_matrix_dashboard_summary",
+  "authority_flags_false": true,
+  "command_disabled": true,
+  "coverage_gaps": [
+    {
+      "authority_impact": "cannot_satisfy_source_quorum",
+      "count": 1,
+      "gap_type": "credential_gated_sources"
+    },
+    {
+      "authority_impact": "research_only_until_qsase_3",
+      "count": 19,
+      "gap_type": "historical_price_windows_pending"
+    }
+  ],
+  "generated_at": "2026-06-28T19:10:34.445235+00:00",
+  "live_send_allowed": false,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_strategy_hypotheses_created": true,
+  "no_trade_candidates_created": true,
+  "public_safe": true,
+  "research_only": true,
+  "schema_version": "qsase_universal_source_price_matrix.v1",
+  "status": "qsase_source_price_matrix_degraded",
+  "summary_rows": [
+    {
+      "label": "Source universe",
+      "value": 41
+    },
+    {
+      "label": "Quorum-capable sources",
+      "value": 26
+    },
+    {
+      "label": "Credential-gated sources",
+      "value": 1
+    },
+    {
+      "label": "Watched instruments",
+      "value": 19
+    },
+    {
+      "label": "Paperable via guarded route",
+      "value": 13
+    },
+    {
+      "label": "Source-price rows",
+      "value": 6232
+    },
+    {
+      "label": "Matrix scope",
+      "value": "all_sources_x_all_watched_markets_x_time_windows"
+    }
+  ]
+}

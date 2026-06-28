@@ -1,0 +1,790 @@
+{
+  "artifact_type": "qsase_trading_universe",
+  "authority_flags": {
+    "broker_write_allowed": false,
+    "execution_allowed": false,
+    "live_capital_enabled": false,
+    "paper_order_allowed": false,
+    "prediction_market_write_allowed": false,
+    "proof_credit_allowed": false,
+    "quantum_job_authority": false,
+    "risk_approval_allowed": false,
+    "strategy_hypothesis_creation_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_creation_allowed": false
+  },
+  "command_disabled": true,
+  "coverage": {
+    "current_sample_price_count": 2,
+    "historical_price_window_status": "deferred_to_qsase_3_historical_source_price_memory",
+    "live_route_enabled_count": 0,
+    "paper_route_available_count": 13
+  },
+  "coverage_by_market_family": {
+    "crude_oil": 4,
+    "defence": 4,
+    "macro_watchlist": 2,
+    "prediction_markets": 2,
+    "semiconductors": 4,
+    "silver": 3
+  },
+  "generated_at": "2026-06-28T19:10:34.445235+00:00",
+  "instruments": [
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:bno",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "crude_oil",
+      "market_family_label": "crude_oil",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "conditional_paper_proxy_fit",
+      "symbol": "BNO",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:cl=f",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "crude_oil",
+      "market_family_label": "crude_oil",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "sample_closed",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+      "previous_price_or_odds_value": 78.81,
+      "price_data_state": "price_sample",
+      "price_or_odds_value": 79.42,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": 0.021,
+      "route_fit": "conditional_paper_proxy_fit",
+      "symbol": "CL=F",
+      "venue_or_provider": "yahoo_finance",
+      "volatility_context": "available",
+      "volume_context": "available"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "GLD",
+      "instrument_id": "qsase-instrument:gld",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_from_market_context_packet",
+      "market_family": "macro_watchlist",
+      "market_family_label": "macro_watchlist",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "paperability_unknown_context_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "not_recorded",
+      "rolling_volatility_20d": null,
+      "route_fit": "market_context_only",
+      "symbol": "GLD",
+      "venue_or_provider": "market_context_packet",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:ita",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "defence",
+      "market_family_label": "defence",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "open_paper_position_state": "open_position",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/paper_positions.jsonl",
+          "public_safe": true,
+          "role": "read_only_paper_position_mirror"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "ITA",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Prediction Market Geopolitical Dislocation",
+      "instrument_id": "qsase-instrument:kalshi:events",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "prediction_markets",
+      "market_family_label": "prediction_markets",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "blocked_until_prediction_market_route_is_ready",
+      "symbol": "KALSHI:EVENTS",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:lmt",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "defence",
+      "market_family_label": "defence",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "LMT",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:nvda",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "semiconductors",
+      "market_family_label": "semiconductors",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "NVDA",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Prediction Market Geopolitical Dislocation",
+      "instrument_id": "qsase-instrument:polymarket:events",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "prediction_markets",
+      "market_family_label": "prediction_markets",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "blocked_until_prediction_market_route_is_ready",
+      "symbol": "POLYMARKET:EVENTS",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:ppa",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "defence",
+      "market_family_label": "defence",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "PPA",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:qqq",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "semiconductors",
+      "market_family_label": "semiconductors",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "QQQ",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Silver Macro Liquidity Stress",
+      "instrument_id": "qsase-instrument:si=f",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "silver",
+      "market_family_label": "silver",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "clean_alpaca_paper_proxy_fit",
+      "symbol": "SI=F",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Silver Macro Liquidity Stress",
+      "instrument_id": "qsase-instrument:sil",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "silver",
+      "market_family_label": "silver",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "clean_alpaca_paper_proxy_fit",
+      "symbol": "SIL",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Silver Macro Liquidity Stress",
+      "instrument_id": "qsase-instrument:slv",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "silver",
+      "market_family_label": "silver",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "orderflow_sample",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "clean_alpaca_paper_proxy_fit",
+      "symbol": "SLV",
+      "venue_or_provider": "bookmap",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:smh",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "semiconductors",
+      "market_family_label": "semiconductors",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "open_paper_position_state": "open_position",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/paper_positions.jsonl",
+          "public_safe": true,
+          "role": "read_only_paper_position_mirror"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "SMH",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:soxx",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "semiconductors",
+      "market_family_label": "semiconductors",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "SOXX",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "SPY",
+      "instrument_id": "qsase-instrument:spy",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_from_market_context_packet",
+      "market_family": "macro_watchlist",
+      "market_family_label": "macro_watchlist",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "paperability_unknown_context_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "not_recorded",
+      "rolling_volatility_20d": null,
+      "route_fit": "market_context_only",
+      "symbol": "SPY",
+      "venue_or_provider": "market_context_packet",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:uso",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "crude_oil",
+      "market_family_label": "crude_oil",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "conditional_paper_proxy_fit",
+      "symbol": "USO",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:xar",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "defence",
+      "market_family_label": "defence",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        }
+      ],
+      "qualified_setup_state": "production_qualified",
+      "rolling_volatility_20d": null,
+      "route_fit": "strong_alpaca_paper_proxy_fit",
+      "symbol": "XAR",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    },
+    {
+      "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
+      "backtest_ready": false,
+      "broker_write_allowed": false,
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:xle",
+      "live_capital_enabled": false,
+      "live_route_enabled": false,
+      "mapping_state": "mapped_to_strategy_universe_family",
+      "market_family": "crude_oil",
+      "market_family_label": "crude_oil",
+      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_session_status": "not_recorded",
+      "observable_for_research": true,
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "previous_price_or_odds_value": null,
+      "price_data_state": "price_history_gap_explicit",
+      "price_or_odds_value": null,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.strategy.strategy_families",
+          "public_safe": true,
+          "role": "trading_universe_family"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.watched_instruments",
+          "public_safe": true,
+          "role": "market_context_watch"
+        }
+      ],
+      "qualified_setup_state": "blocked",
+      "rolling_volatility_20d": null,
+      "route_fit": "conditional_paper_proxy_fit",
+      "symbol": "XLE",
+      "venue_or_provider": "alpaca_paper_proxy_or_context",
+      "volatility_context": "missing",
+      "volume_context": "missing"
+    }
+  ],
+  "market_count_context_only": 6,
+  "market_count_with_only_current_price": 2,
+  "market_count_with_paper_route_availability": 13,
+  "market_count_with_price_history": 0,
+  "public_safe": true,
+  "schema_version": "qsase_universal_source_price_matrix.v1",
+  "status": "trading_universe_degraded",
+  "watched_market_count": 19
+}

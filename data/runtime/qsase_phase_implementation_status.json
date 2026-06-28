@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_1_self_model_artifact_validation",
-  "generated_at": "2026-06-28T19:03:29.604639+00:00",
+  "active_phase": "qsase_2_universal_source_price_pattern_matrix",
+  "generated_at": "2026-06-28T19:10:34.445235+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -76,6 +76,29 @@
         "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
         "repair_required": false
       }
+    },
+    "qsase_2_universal_source_price_pattern_matrix": {
+      "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json",
+      "authority_flags_false": true,
+      "credential_gated_source_count": 1,
+      "later_qsase_phases_implemented": false,
+      "name": "QSASE-2: Universal Source-Price Pattern Matrix",
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_strategy_hypotheses_created": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "paperable_instrument_count": 13,
+      "proposal_first": true,
+      "public_safe": true,
+      "research_only": true,
+      "source_count": 41,
+      "source_price_edge_count": 6232,
+      "source_price_edges_path": "data/runtime/qsase_source_price_edges.jsonl",
+      "source_universe_path": "data/runtime/qsase_source_universe.json",
+      "status": "qsase_source_price_matrix_degraded",
+      "trading_universe_path": "data/runtime/qsase_trading_universe.json",
+      "watched_market_count": 19
     }
   },
   "safety": {

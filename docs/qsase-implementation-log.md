@@ -30,3 +30,14 @@
 - Missing components: `1`
 - Why not trading now: `idempotency_guard_holding_duplicate_or_already_submitted_setup`
 - Safety: model and quantum outputs are not approvals; dashboard and Telegram remain non-authoritative; all self-model authority flags are false.
+
+<!-- qsase_2_universal_source_price_pattern_matrix -->
+## QSASE-2: Universal Source-Price Pattern Matrix
+
+- Generated at: `2026-06-28T19:10:34.445235+00:00`
+- Status: `qsase_source_price_matrix_degraded`
+- Runtime artifact: `data/runtime/qsase_universal_source_price_matrix.json`
+- Source universe: `41` sources
+- Trading universe: `19` watched instruments
+- Source-price rows: `6232`
+- Safety: research-only; no strategy hypotheses, trade candidates, paper orders, broker writes, live capital, or proof credit created.

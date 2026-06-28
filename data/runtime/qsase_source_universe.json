@@ -1,0 +1,1936 @@
+{
+  "artifact_type": "qsase_source_universe",
+  "authority_flags": {
+    "broker_write_allowed": false,
+    "execution_allowed": false,
+    "live_capital_enabled": false,
+    "paper_order_allowed": false,
+    "prediction_market_write_allowed": false,
+    "proof_credit_allowed": false,
+    "quantum_job_authority": false,
+    "risk_approval_allowed": false,
+    "strategy_hypothesis_creation_allowed": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_creation_allowed": false
+  },
+  "command_disabled": true,
+  "coverage": {
+    "coverage_by_source_class": {
+      "conflict": {
+        "credential_gated_count": 0,
+        "degraded_count": 0,
+        "family": "conflict",
+        "fresh_count": 5,
+        "provenance": [
+          "data/runtime/data_environment_map.json",
+          "data/runtime/cockpit-status.json:mission_control.data_sources.ledger"
+        ],
+        "quorum_contributing_count": 5,
+        "source_count": 5
+      },
+      "macro": {
+        "credential_gated_count": 0,
+        "degraded_count": 0,
+        "family": "macro",
+        "fresh_count": 6,
+        "provenance": [
+          "data/runtime/data_environment_map.json",
+          "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility"
+        ],
+        "quorum_contributing_count": 6,
+        "source_count": 6
+      },
+      "market": {
+        "credential_gated_count": 0,
+        "degraded_count": 0,
+        "family": "market",
+        "fresh_count": 11,
+        "provenance": [
+          "data/runtime/data_environment_map.json",
+          "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "data/runtime/source_heartbeats.jsonl"
+        ],
+        "quorum_contributing_count": 0,
+        "source_count": 11
+      },
+      "market_context_taxonomy": {
+        "credential_gated_count": 0,
+        "degraded_count": 0,
+        "family": "market_context_taxonomy",
+        "fresh_count": 4,
+        "provenance": [
+          "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
+        ],
+        "quorum_contributing_count": 2,
+        "source_count": 4
+      },
+      "physical": {
+        "credential_gated_count": 0,
+        "degraded_count": 0,
+        "family": "physical",
+        "fresh_count": 7,
+        "provenance": [
+          "data/runtime/data_environment_map.json",
+          "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
+        ],
+        "quorum_contributing_count": 7,
+        "source_count": 7
+      },
+      "social": {
+        "credential_gated_count": 1,
+        "degraded_count": 0,
+        "family": "social",
+        "fresh_count": 8,
+        "provenance": [
+          "data/runtime/data_environment_map.json",
+          "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "data/runtime/source_heartbeats.jsonl",
+          "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
+        ],
+        "quorum_contributing_count": 6,
+        "source_count": 8
+      }
+    },
+    "historical_coverage_note": "deferred_to_qsase_3_historical_source_price_memory",
+    "source_count_blocked_by_missing_credentials": 1,
+    "source_count_blocked_by_provider_limits": 0,
+    "source_count_with_historical_coverage": 0,
+    "source_count_with_live_only_coverage": 41,
+    "source_count_with_stale_data": 0,
+    "total_eligible_source_count": 41
+  },
+  "credential_gated_source_count": 1,
+  "degraded_source_count": 0,
+  "generated_at": "2026-06-28T19:10:34.445235+00:00",
+  "public_safe": true,
+  "schema_version": "qsase_universal_source_price_matrix.v1",
+  "source_count": 41,
+  "source_families": {
+    "conflict": {
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "conflict",
+      "fresh_count": 5,
+      "provenance": [
+        "data/runtime/data_environment_map.json",
+        "data/runtime/cockpit-status.json:mission_control.data_sources.ledger"
+      ],
+      "quorum_contributing_count": 5,
+      "source_count": 5
+    },
+    "macro": {
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "macro",
+      "fresh_count": 6,
+      "provenance": [
+        "data/runtime/data_environment_map.json",
+        "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+        "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+        "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility"
+      ],
+      "quorum_contributing_count": 6,
+      "source_count": 6
+    },
+    "market": {
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "market",
+      "fresh_count": 11,
+      "provenance": [
+        "data/runtime/data_environment_map.json",
+        "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+        "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+        "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+        "data/runtime/source_heartbeats.jsonl"
+      ],
+      "quorum_contributing_count": 0,
+      "source_count": 11
+    },
+    "market_context_taxonomy": {
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "market_context_taxonomy",
+      "fresh_count": 4,
+      "provenance": [
+        "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
+      ],
+      "quorum_contributing_count": 2,
+      "source_count": 4
+    },
+    "physical": {
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "physical",
+      "fresh_count": 7,
+      "provenance": [
+        "data/runtime/data_environment_map.json",
+        "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+        "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+        "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
+      ],
+      "quorum_contributing_count": 7,
+      "source_count": 7
+    },
+    "social": {
+      "credential_gated_count": 1,
+      "degraded_count": 0,
+      "family": "social",
+      "fresh_count": 8,
+      "provenance": [
+        "data/runtime/data_environment_map.json",
+        "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+        "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+        "data/runtime/source_heartbeats.jsonl",
+        "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
+      ],
+      "quorum_contributing_count": 6,
+      "source_count": 8
+    }
+  },
+  "source_quorum_contributing_count": 26,
+  "sources": [
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "conflict",
+      "source_key": "acled",
+      "source_name": "ACLED API",
+      "source_pipeline": "conflict",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.86
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "ais_maritime",
+      "source_name": "AIS Maritime",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.79
+    },
+    {
+      "adapter_status": "not_seen_in_current_cycle",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 0,
+      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market_context_taxonomy",
+      "source_key": "ais_or_shipping",
+      "source_name": "ais_or_shipping",
+      "source_pipeline": "market_context_taxonomy",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "not_seen_in_current_cycle",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.66
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "alpaca",
+      "source_name": "Alpaca Markets API",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "supplemental_context_cannot_satisfy_source_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": true,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.82
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "arcgis_usace",
+      "source_name": "ArcGIS / USACE Geospatial",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.58
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "aviationstack",
+      "source_name": "Aviationstack Flight Data",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.73
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "macro",
+      "source_key": "bis",
+      "source_name": "BIS Statistics",
+      "source_pipeline": "macro",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.78
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "macro",
+      "source_key": "bls",
+      "source_name": "BLS API",
+      "source_pipeline": "macro",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.88
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "bookmap",
+      "source_name": "Bookmap / Order Flow",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "supplemental_context_cannot_satisfy_source_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": true,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.52
+    },
+    {
+      "adapter_status": "pending",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "chainlink",
+      "source_name": "Chainlink Price Feeds",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "pending",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown",
+      "trust_score": null
+    },
+    {
+      "adapter_status": "pending",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "coinglass",
+      "source_name": "Coinglass",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "pending",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown",
+      "trust_score": null
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "conflict",
+      "source_key": "conflict_tracker",
+      "source_name": "Conflict Tracker",
+      "source_pipeline": "conflict",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.72
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "macro",
+      "source_key": "ecb",
+      "source_name": "ECB Data Portal",
+      "source_pipeline": "macro",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.86
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "macro",
+      "source_key": "fred",
+      "source_name": "FRED API",
+      "source_pipeline": "macro",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.9
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "conflict",
+      "source_key": "gdelt",
+      "source_name": "GDELT Project API",
+      "source_pipeline": "conflict",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.65
+    },
+    {
+      "adapter_status": "pending",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "github",
+      "source_name": "GitHub API",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "pending",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown",
+      "trust_score": null
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "gps_jamming",
+      "source_name": "GPS Jamming Monitors",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.57
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "hyperliquid",
+      "source_name": "Hyperliquid Perps",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.48
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "internet_outage",
+      "source_name": "Internet Outage / IODA",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.58
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/source_heartbeats.jsonl",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "kalshi",
+      "source_name": "Kalshi / OddsPipe",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "prediction_market_context_requires_governed_route_before_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.76
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "nasa_firms",
+      "source_name": "NASA FIRMS",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.88
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "conflict",
+      "source_key": "oref",
+      "source_name": "Oref API",
+      "source_pipeline": "conflict",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.95
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "patents",
+      "source_name": "Patent Filings",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.5
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "polymarket",
+      "source_name": "Polymarket",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "prediction_market_context_requires_governed_route_before_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.74
+    },
+    {
+      "adapter_status": "pending",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "rapidapi",
+      "source_name": "RapidAPI Hub",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "pending",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown",
+      "trust_score": null
+    },
+    {
+      "adapter_status": "degraded",
+      "credential_gated": true,
+      "credential_status": "missing",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/source_heartbeats.jsonl",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": false,
+      "source_family": "social",
+      "source_key": "reddit",
+      "source_name": "Reddit API",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "credential_gated_source_cannot_satisfy_source_quorum"
+      },
+      "state": "credential_gated",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.46
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "rss",
+      "source_name": "RSS / Atom Feeds",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.78
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "sec_edgar",
+      "source_name": "SEC EDGAR API",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.84
+    },
+    {
+      "adapter_status": "not_seen_in_current_cycle",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 0,
+      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market_context_taxonomy",
+      "source_key": "social.rss",
+      "source_name": "social.rss",
+      "source_pipeline": "market_context_taxonomy",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "not_seen_in_current_cycle",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.5
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "unknown",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "physical",
+      "source_key": "space_track_celestrak",
+      "source_name": "Space-Track / CelesTrak TLEs",
+      "source_pipeline": "physical",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.66
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/source_heartbeats.jsonl",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "stock_act",
+      "source_name": "Capitol Trades / STOCK Act Filings",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.72
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "telegram",
+      "source_name": "Telegram APIs / Scrapers",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.55
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 0,
+      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "tradingview_mcp",
+      "source_name": "TradingView MCP Technical Analysis",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "supplemental_context_cannot_satisfy_source_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": true,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.57
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "receiver_pending",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 0,
+      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "tradingview_paid_alerts",
+      "source_name": "TradingView Paid Alerts",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown",
+      "trust_score": null
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "social",
+      "source_key": "twitter_x",
+      "source_name": "Twitter / X API v2",
+      "source_pipeline": "social",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.52
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "conflict",
+      "source_key": "ucdp",
+      "source_name": "UCDP API",
+      "source_pipeline": "conflict",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.62
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "configured",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "macro",
+      "source_key": "un_comtrade",
+      "source_name": "UN Comtrade API",
+      "source_pipeline": "macro",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust",
+      "trust_score": 0.81
+    },
+    {
+      "adapter_status": "pending",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": false,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market",
+      "source_key": "unusual_whales",
+      "source_name": "UnusualWhales",
+      "source_pipeline": "market",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "source_not_eligible_for_signal_review"
+      },
+      "state": "pending",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown",
+      "trust_score": null
+    },
+    {
+      "adapter_status": "online",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 2711,
+      "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/data_environment_map.json",
+          "public_safe": true,
+          "role": "source_state"
+        },
+        {
+          "artifact": "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "macro",
+      "source_key": "usgs",
+      "source_name": "USGS",
+      "source_pipeline": "macro",
+      "source_quorum_contribution": {
+        "can_contribute": true,
+        "candidate_level_gate_required": true,
+        "reason": "canonical_research_source_available_for_candidate_level_quorum"
+      },
+      "state": "online",
+      "supplemental_context_only": false,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust",
+      "trust_score": 0.74
+    },
+    {
+      "adapter_status": "not_seen_in_current_cycle",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 0,
+      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market_context_taxonomy",
+      "source_key": "yahoo_finance",
+      "source_name": "yahoo_finance",
+      "source_pipeline": "market_context_taxonomy",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "supplemental_context_cannot_satisfy_source_quorum"
+      },
+      "state": "not_seen_in_current_cycle",
+      "supplemental_context_only": true,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.58
+    },
+    {
+      "adapter_status": "resolved_by_supplemental_context_if_available",
+      "credential_gated": false,
+      "credential_status": "not_required",
+      "durable_replay_reference": null,
+      "eligible_for_signal_review": true,
+      "execution_allowed": false,
+      "freshness_status": "fresh",
+      "observed_age_seconds": 0,
+      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "proof_credit_allowed": false,
+      "provenance": [
+        {
+          "artifact": "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
+          "public_safe": true,
+          "role": "source_state"
+        }
+      ],
+      "raw_payload_reference": null,
+      "research_context_allowed": true,
+      "source_family": "market_context_taxonomy",
+      "source_key": "yahoo_finance_or_tradingview",
+      "source_name": "yahoo_finance_or_tradingview",
+      "source_pipeline": "market_context_taxonomy",
+      "source_quorum_contribution": {
+        "can_contribute": false,
+        "candidate_level_gate_required": true,
+        "reason": "supplemental_context_cannot_satisfy_source_quorum"
+      },
+      "state": "resolved_by_supplemental_context_if_available",
+      "supplemental_context_only": true,
+      "telegram_command_authority": false,
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust",
+      "trust_score": 0.58
+    }
+  ],
+  "stale_or_unknown_freshness_count": 0,
+  "status": "source_universe_degraded",
+  "supplemental_source_count": 5
+}
