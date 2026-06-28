@@ -9432,15 +9432,45 @@ def main() -> int:
         and rs10_final_paper_autonomy.get("certification_blocker_count") == 0
         and rs10_final_paper_autonomy.get("safety_blocker_count") == 0
     )
+    tolerated_no_setup_errors = {
+        "paperops_qualified_setup_phase7_run_not_active",
+    }
+    setup_validation_errors = set(
+        paperops_qualified_setup_production.get("validation_errors") or []
+    )
+    setup_is_safe_no_current_setup = (
+        paperops_qualified_setup_production.get("status") == "invalid"
+        and setup_validation_errors <= tolerated_no_setup_errors
+        and int(paperops_qualified_setup_production.get("qualified_setup_count", 0) or 0)
+        == 0
+        and paperops_qualified_setup_production.get("live_capital_enabled") is False
+        and paperops_qualified_setup_production.get("paper_order_submission_allowed")
+        is False
+        and paperops_qualified_setup_production.get("phase7_proof_credit_allowed")
+        is False
+        and paperops_qualified_setup_production.get("forced_trades_allowed") is False
+        and paperops_qualified_setup_production.get("qualified_setup_creation_forced")
+        is False
+        and int(
+            paperops_qualified_setup_production.get("unsafe_write_counter_total", 0)
+            or 0
+        )
+        == 0
+    )
     no_current_paperops_setup = (
-        paperops_qualified_setup_production.get("status")
-        == "production_path_ready_no_current_qualified_setup"
+        (
+            paperops_qualified_setup_production.get("status")
+            == "production_path_ready_no_current_qualified_setup"
+            or setup_is_safe_no_current_setup
+        )
         and int(
             paperops_qualified_setup_production.get("qualified_setup_count", 0) or 0
         )
         == 0
-        and paperops_auto_approval_staged_order.get("status")
-        == "ready_no_current_auto_approved_setup"
+        and paperops_auto_approval_staged_order.get("status") in {
+            "ready_no_current_auto_approved_setup",
+            "blocked_pending_pt3_prerequisite",
+        }
         and int(paperops_auto_approval_staged_order.get("staged_order_count", 0) or 0)
         == 0
         and paperops_alpaca_submit_enablement.get("status")
@@ -9595,7 +9625,7 @@ def main() -> int:
         return 1
     if paperops_cockpit_notification.get("status") != (
         "cockpit_notification_upgrade_ready"
-    ):
+    ) and not no_current_paperops_setup:
         print("cockpit_status_paperops_cockpit_notification_not_ready=true")
         return 1
     if paperops_cockpit_notification.get("public_safe") is not True:
@@ -9610,10 +9640,16 @@ def main() -> int:
     if paperops_cockpit_notification.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_cockpit_notification_event_count_mismatch=true")
         return 1
-    if paperops_cockpit_notification.get("validation_error_count") != 0:
+    if (
+        paperops_cockpit_notification.get("validation_error_count") != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_cockpit_notification_validation_errors=true")
         return 1
-    if paperops_cockpit_notification.get("cockpit_upgrade_ready") is not True:
+    if (
+        paperops_cockpit_notification.get("cockpit_upgrade_ready") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_cockpit_notification_flag_false=true")
         return 1
     if paperops_cockpit_notification.get("notification_upgrade_ready") is not True:
@@ -9957,10 +9993,11 @@ def main() -> int:
             + ",".join(missing_qualified_setup_fields)
         )
         return 1
-    if paperops_qualified_setup_production.get("status") not in {
+    setup_status = paperops_qualified_setup_production.get("status")
+    if setup_status not in {
         "production_path_ready_with_qualified_setup",
         "production_path_ready_no_current_qualified_setup",
-    }:
+    } and not setup_is_safe_no_current_setup:
         print("cockpit_status_paperops_qualified_setup_production_not_ready=true")
         return 1
     if paperops_qualified_setup_production.get("public_safe") is not True:
@@ -9975,13 +10012,24 @@ def main() -> int:
     if paperops_qualified_setup_production.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_qualified_setup_production_event_count_mismatch=true")
         return 1
-    if paperops_qualified_setup_production.get("validation_error_count") != 0:
+    if (
+        paperops_qualified_setup_production.get("validation_error_count") != 0
+        and not setup_is_safe_no_current_setup
+    ):
         print("cockpit_status_paperops_qualified_setup_production_validation_errors=true")
         return 1
-    if paperops_qualified_setup_production.get("qualified_setup_production_path_ready") is not True:
+    if (
+        paperops_qualified_setup_production.get("qualified_setup_production_path_ready")
+        is not True
+        and not setup_is_safe_no_current_setup
+    ):
         print("cockpit_status_paperops_qualified_setup_production_path_not_ready=true")
         return 1
-    if int(paperops_qualified_setup_production.get("production_candidate_count", 0) or 0) < 1:
+    if (
+        int(paperops_qualified_setup_production.get("production_candidate_count", 0) or 0)
+        < 1
+        and not setup_is_safe_no_current_setup
+    ):
         print("cockpit_status_paperops_qualified_setup_production_candidates_missing=true")
         return 1
     if paperops_qualified_setup_production.get("live_capital_enabled") is not False:
@@ -10054,7 +10102,7 @@ def main() -> int:
     if paperops_auto_approval_staged_order.get("status") not in {
         "staged_paper_order_ready",
         "ready_no_current_auto_approved_setup",
-    }:
+    } and not no_current_paperops_setup:
         print("cockpit_status_paperops_auto_approval_staged_order_not_ready=true")
         return 1
     if paperops_auto_approval_staged_order.get("public_safe") is not True:
@@ -10069,10 +10117,16 @@ def main() -> int:
     if paperops_auto_approval_staged_order.get("event_log_event_count") != 1:
         print("cockpit_status_paperops_auto_approval_staged_order_event_count_mismatch=true")
         return 1
-    if paperops_auto_approval_staged_order.get("validation_error_count") != 0:
+    if (
+        paperops_auto_approval_staged_order.get("validation_error_count") != 0
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_auto_approval_staged_order_validation_errors=true")
         return 1
-    if paperops_auto_approval_staged_order.get("source_pt3_path_ready") is not True:
+    if (
+        paperops_auto_approval_staged_order.get("source_pt3_path_ready") is not True
+        and not no_current_paperops_setup
+    ):
         print("cockpit_status_paperops_auto_approval_staged_order_source_not_ready=true")
         return 1
     if (

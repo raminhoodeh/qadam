@@ -1,9 +1,9 @@
 """PaperOps-6 paper run operations contract.
 
-This stage binds the active paper growth trial to the recurring PaperOps
-operational pass. It records scheduler, cycle, calendar, and cockpit mirror
-state without creating orders, calling brokers, sending notifications, or
-granting proof credit.
+This stage binds the indefinite paper growth operation to the recurring
+PaperOps operational pass. It records scheduler, cycle, calendar, and cockpit
+mirror state without creating orders, calling brokers, sending notifications,
+or granting proof credit.
 """
 
 from __future__ import annotations
@@ -85,6 +85,10 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
     "run_state",
     "start_date",
     "end_date",
+    "operation_horizon",
+    "legacy_30_day_milestone_complete",
+    "actual_elapsed_calendar_day_count",
+    "paper_operation_day_number",
     "timezone",
     "local_observation_date",
     "actual_calendar_run",
@@ -220,17 +224,18 @@ PAPEROPS_30_DAY_PUBLIC_FIELDS: tuple[str, ...] = (
 )
 
 PAPEROPS_30_DAY_BOUNDARY = (
-    "PaperOps-6 operates the active paper growth trial "
+    "PaperOps-6 operates the active indefinite paper growth operation "
     "by verifying the hourly scheduler, PaperOps cycle, and public-safe "
     "dashboard mirror. It may bind the scheduler to the PT-8 active paper "
-    "runner, but only through Alpaca paper and the recorded PaperOps gates. It "
-    "cannot backfill days, cannot simulate elapsed time, cannot force trades, "
-    "cannot create trades without qualified setups, cannot submit broker "
-    "orders outside the guarded PaperOps gates, cannot call live endpoints, "
-    "cannot send live Telegram messages, cannot load live credentials, cannot "
-    "bypass the Q-CTRL paper consultation hold, cannot grant proof "
-    "credit, and cannot enable live capital. PT-9 cockpit and notification "
-    "visibility remains public-safe and review-only."
+    "runner, but only through Alpaca paper and the recorded PaperOps gates. "
+    "The original 30-day paper growth trial is retained as a legacy milestone "
+    "only and does not stop PaperOps. It cannot backfill days, cannot simulate "
+    "elapsed time, cannot force trades, cannot create trades without qualified "
+    "setups, cannot submit broker orders outside the guarded PaperOps gates, "
+    "cannot call live endpoints, cannot send live Telegram messages, cannot "
+    "load live credentials, cannot bypass the Q-CTRL paper consultation hold, "
+    "cannot grant proof credit, and cannot enable live capital. PT-9 cockpit "
+    "and notification visibility remains public-safe and review-only."
     " PT-10 paper-live certification may evaluate the state only; it cannot "
     "bypass Q-CTRL, certify an incomplete proof run, submit orders, or enable "
     "live capital."
@@ -552,12 +557,12 @@ def _recommended_next_action(artifact: dict[str, Any]) -> str:
     if artifact.get("status") == "operations_active":
         return "Keep the hourly PaperOps runner active and submit only fresh eligible Alpaca paper setups"
     if artifact.get("status") == "operations_complete_pending_certification":
-        return "Rerun paper-live certification after the preserved paper growth trial window"
+        return "Legacy state only: keep PaperOps running as an indefinite paper operation"
     if artifact.get("automation_prompt_paperops_bound") is not True:
         return "Update the existing hourly automation prompt to run the canonical PaperOps autonomous pass wrapper"
     if artifact.get("dashboard_mirror_public_safe") is not True:
         return "Refresh the public-safe cockpit mirror before continuing PaperOps operations"
-    return "Resolve PaperOps-6 blockers before relying on the scheduled 30-day run"
+    return "Resolve PaperOps-6 blockers before relying on the scheduled paper operation"
 
 
 def build_paperops_30_day_operations(
@@ -653,6 +658,16 @@ def build_paperops_30_day_operations(
         "run_state": demo_run.get("run_state", "missing"),
         "start_date": demo_run.get("start_date"),
         "end_date": demo_run.get("end_date"),
+        "operation_horizon": demo_run.get("operation_horizon", "indefinite"),
+        "legacy_30_day_milestone_complete": (
+            demo_run.get("legacy_30_day_milestone_complete") is True
+            or demo_run.get("phase7_30_day_run_complete") is True
+        ),
+        "actual_elapsed_calendar_day_count": _int(
+            demo_run.get("actual_elapsed_calendar_day_count")
+        ),
+        "paper_operation_day_number": demo_run.get("paper_operation_day_number")
+        or demo_run.get("active_day_number"),
         "timezone": demo_run.get("timezone"),
         "local_observation_date": demo_run.get("local_observation_date"),
         "actual_calendar_run": demo_run.get("actual_calendar_run") is True,
@@ -900,8 +915,6 @@ def build_paperops_30_day_operations(
     blockers = _blockers(artifact)
     if blockers:
         status = "blocked_pending_operations_enablement"
-    elif artifact["phase7_30_day_run_complete"]:
-        status = "operations_complete_pending_certification"
     else:
         status = "operations_active"
     artifact["blockers"] = blockers
@@ -1144,7 +1157,8 @@ def validate_paperops_30_day_operations(artifact: dict[str, Any]) -> list[str]:
             errors.append("paperops_30_day_operations_event_correlation_missing")
     boundary = str(artifact.get("boundary") or "")
     for phrase in (
-        "active paper growth trial",
+        "active indefinite paper growth operation",
+        "legacy milestone only",
         "cannot backfill days",
         "cannot simulate elapsed time",
         "cannot force trades",

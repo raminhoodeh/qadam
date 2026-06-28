@@ -116,7 +116,7 @@ PAPEROPS_QUALIFIED_SETUP_PUBLIC_FIELDS: tuple[str, ...] = (
 
 REQUIRED_PRODUCTION_GATES: tuple[tuple[str, str], ...] = (
     ("paper_operational_mode_effective", "PT-2 PaperOps runtime mode is effective."),
-    ("phase7_run_active", "The actual 30-day Phase 7 demo-proof run is active."),
+    ("phase7_run_active", "The actual Phase 7 paper-operation run is active."),
     ("canonical_source_posture", "Canonical replayable source posture is present."),
     (
         "supplemental_sources_context_only",
@@ -362,7 +362,7 @@ def _candidate_record(
             and demo_run.get("actual_calendar_run") is True,
             (
                 f"state={demo_run.get('run_state', 'missing')}; "
-                f"day={demo_run.get('active_day_number')}"
+                f"day={demo_run.get('paper_operation_day_number') or demo_run.get('active_day_number')}"
             ),
         ),
         _gate_record(
@@ -680,7 +680,7 @@ def build_paperops_qualified_setup_production(
     elif path_ready:
         status = "production_path_ready_no_current_qualified_setup"
         next_action = (
-            "Keep the 30-day harness running and wait for a candidate where all "
+            "Keep the indefinite paper operation running and wait for a candidate where all "
             "PT-3 production gates pass."
         )
         no_trade_rationale = "no_current_pt3_qualified_setup_detected"

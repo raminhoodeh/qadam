@@ -1,9 +1,11 @@
-"""Actual Phase 7 30-day demo-proof run ledger.
+"""Actual Phase 7 paper-operation run ledger.
 
 The Q7-0 through Q7-18 modules define and validate the Phase 7 structure. This
-module is the operational overlay that starts the real 30 consecutive calendar
-day clock and records each observation pass. It does not backfill days, force
-trades, grant proof credit, call brokers, or enable live capital.
+module is the operational overlay that starts the real calendar clock and
+records each observation pass. The original 30-day proof window is preserved as
+a legacy milestone, but paper operation remains active indefinitely after that
+milestone. It does not backfill days, force trades, grant proof credit, call
+brokers, or enable live capital.
 """
 
 from __future__ import annotations
@@ -41,6 +43,7 @@ PHASE7_DEMO_PROOF_RUN_EVENT_LOG = "phase7_demo_proof_run_events.jsonl"
 PHASE7_DEMO_PROOF_RUN_EVENT_TYPE = "phase7_demo_proof_run_recorded"
 PHASE7_DEMO_PROOF_RUN_COMPONENT = "phase7_demo_proof_run"
 PHASE7_DEMO_PROOF_TIMEZONE = "America/Chicago"
+PHASE7_OPERATION_HORIZON = "indefinite"
 
 SOURCE_REFS: dict[str, str] = {
     "calendar_harness": "data/runtime/phase7_calendar_harness.json",
@@ -61,17 +64,18 @@ SOURCE_REFS: dict[str, str] = {
 }
 
 PHASE7_DEMO_PROOF_RUN_BOUNDARY = (
-    "The Phase 7 demo-proof run ledger starts and tracks the actual 30 "
-    "consecutive calendar day observation period. It can record qualified "
-    "setup availability, no-trade rationale, and downstream proof lifecycle "
-    "counts from existing Q7 artifacts, but it cannot backfill calendar days, "
-    "cannot simulate elapsed time, cannot force trades, cannot create a proof "
-    "trade without a qualified setup, cannot grant Phase 7 proof credit, "
-    "cannot count Phase 5 test trades toward Phase 7 proof, cannot call broker "
-    "POST routes, cannot call Alpaca POST routes, cannot write prediction-"
-    "market or crypto-perps orders, cannot load live credentials, cannot "
-    "enable live capital, cannot permit manual trade-level overrides, and "
-    "cannot certify Phase 7."
+    "The Phase 7 paper-operation run ledger starts and tracks the actual "
+    "calendar observation period indefinitely. The original 30 consecutive "
+    "calendar day window is retained as a legacy milestone only. It can record "
+    "qualified setup availability, no-trade rationale, and downstream proof "
+    "lifecycle counts from existing Q7 artifacts, but it cannot backfill "
+    "calendar days, cannot simulate elapsed time, cannot force trades, cannot "
+    "create a proof trade without a qualified setup, cannot grant Phase 7 "
+    "proof credit, cannot count Phase 5 test trades toward Phase 7 proof, "
+    "cannot call broker POST routes, cannot call Alpaca POST routes, cannot "
+    "write prediction-market or crypto-perps orders, cannot load live "
+    "credentials, cannot enable live capital, cannot permit manual trade-level "
+    "overrides, and cannot certify Phase 7."
 )
 
 PUBLIC_STATUS_FIELDS: tuple[str, ...] = (
@@ -93,6 +97,10 @@ PUBLIC_STATUS_FIELDS: tuple[str, ...] = (
     "simulated_time_used",
     "start_date",
     "end_date",
+    "operation_horizon",
+    "legacy_30_day_milestone_complete",
+    "actual_elapsed_calendar_day_count",
+    "paper_operation_day_number",
     "scheduled_calendar_day_count",
     "completed_calendar_day_count",
     "active_day_number",
@@ -345,12 +353,6 @@ def _collection_state(
             ["start_date_not_reached"],
             "start_date_not_reached",
         )
-    if run_state == "complete_pending_certification":
-        return (
-            "complete_pending_q7_17_certification",
-            [],
-            "30_day_run_window_complete_pending_certification",
-        )
     if not counts["qualified_setup_count"]:
         return (
             "active_no_qualified_setups",
@@ -458,15 +460,13 @@ def build_phase7_demo_proof_run(
     if current < start:
         run_state = "scheduled_not_started"
         active_day_number = None
+        actual_elapsed_days = 0
         completed_days = 0
-    elif current > end:
-        run_state = "complete_pending_certification"
-        active_day_number = None
-        completed_days = PHASE7_HARNESS_DAY_COUNT
     else:
         run_state = "active"
         active_day_number = (current - start).days + 1
-        completed_days = max(0, (current - start).days)
+        actual_elapsed_days = max(0, (current - start).days)
+        completed_days = min(actual_elapsed_days, PHASE7_HARNESS_DAY_COUNT)
     collection_state, collection_blockers, no_trade_rationale = _collection_state(
         run_state=run_state,
         counts=counts,
@@ -536,6 +536,10 @@ def build_phase7_demo_proof_run(
         "simulated_time_used": False,
         "start_date": start.isoformat(),
         "end_date": end.isoformat(),
+        "operation_horizon": PHASE7_OPERATION_HORIZON,
+        "legacy_30_day_milestone_complete": completed_days >= PHASE7_HARNESS_DAY_COUNT,
+        "actual_elapsed_calendar_day_count": actual_elapsed_days,
+        "paper_operation_day_number": active_day_number,
         "scheduled_calendar_day_count": PHASE7_HARNESS_DAY_COUNT,
         "calendar_day_records": day_records,
         "completed_calendar_day_count": completed_days,
@@ -585,10 +589,8 @@ def build_phase7_demo_proof_run(
         "blockers": blockers,
         "blocker_count": len(blockers),
         "recommended_next_action": (
-            "Continue hourly Phase 7 proof observation until the 30-day window completes"
+            "Keep the hourly Phase 7 paper-operation observation running indefinitely"
             if run_state == "active"
-            else "Rerun Q7-17 certification and Q7-18 live-promotion review"
-            if run_state == "complete_pending_certification"
             else "Wait for the configured start date"
         ),
     }
@@ -747,7 +749,8 @@ def validate_phase7_demo_proof_run(artifact: dict[str, Any]) -> list[str]:
             errors.append("phase7_demo_run_event_log_count_mismatch")
     boundary = str(artifact.get("boundary") or "")
     for phrase in (
-        "actual 30 consecutive calendar day",
+        "actual calendar observation period indefinitely",
+        "legacy milestone only",
         "cannot backfill calendar days",
         "cannot simulate elapsed time",
         "cannot force trades",

@@ -184,8 +184,8 @@ def main() -> int:
     else:
         if "qctrl_hold_cleared_for_submit" in written["certification_blockers"]:
             errors.append("qctrl_hold_still_blocking_after_clear")
-    if written["phase7_30_day_run_complete"] is not False:
-        errors.append("legacy_30_day_unexpectedly_complete")
+    if written["phase7_30_day_run_complete"] is not True:
+        errors.append("legacy_30_day_milestone_not_recorded")
     if written["phase7_demo_proof_certified"] is not False:
         errors.append("legacy_proof_unexpectedly_certified")
     if written["paper_growth_trial_target_active"] is not True:

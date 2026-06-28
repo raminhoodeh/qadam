@@ -192,8 +192,10 @@ def _active_day_number_from_paperops_handoff(
             day_number = int(candidate or 0)
         except (TypeError, ValueError):
             continue
-        if 1 <= day_number <= PHASE7_HARNESS_DAY_COUNT:
-            return day_number
+        if day_number >= 1:
+            # The proof ledger keeps the original 30-day evidence shape, while
+            # PaperOps may continue indefinitely after that milestone.
+            return min(day_number, PHASE7_HARNESS_DAY_COUNT)
     return None
 
 

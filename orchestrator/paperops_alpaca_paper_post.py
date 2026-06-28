@@ -183,17 +183,21 @@ def _submitted_candidate_keys_from_lifecycle_artifact(
 ) -> tuple[set[str], set[str]]:
     client_order_ids: set[str] = set()
     source_idempotency_keys: set[str] = set()
-    candidate_records: list[Any] = []
-    candidate_records.extend(artifact.get("poll_candidate_records", []) or [])
     for result in artifact.get("poll_result_records", []) or []:
         if not isinstance(result, dict):
             continue
-        candidate_records.append(result.get("candidate"))
-    for record in candidate_records:
+        if result.get("order_get_succeeded") is not True:
+            continue
+        if not isinstance(result.get("order_readback"), dict):
+            continue
+        record = result.get("candidate")
         if not isinstance(record, dict):
             continue
         client_order_id = str(
-            record.get("client_order_id") or record.get("idempotency_key") or ""
+            result["order_readback"].get("broker_client_order_id")
+            or record.get("client_order_id")
+            or record.get("idempotency_key")
+            or ""
         ).strip()
         source_key = str(record.get("source_idempotency_key") or "").strip()
         if client_order_id:

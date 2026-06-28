@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the actual Phase 7 30-day demo-proof run ledger."""
+"""Validate the actual Phase 7 paper-operation run ledger."""
 
 from __future__ import annotations
 
@@ -40,22 +40,24 @@ def _expected_calendar_state(artifact: dict[str, object]) -> dict[str, object]:
     if current < start:
         run_state = "scheduled_not_started"
         active_day_number = None
+        actual_elapsed_days = 0
         completed_days = 0
-    elif current > end:
-        run_state = "complete_pending_certification"
-        active_day_number = None
-        completed_days = scheduled_days
     else:
         run_state = "active"
         active_day_number = (current - start).days + 1
-        completed_days = max(0, (current - start).days)
+        actual_elapsed_days = max(0, (current - start).days)
+        completed_days = min(actual_elapsed_days, scheduled_days)
 
     return {
         "run_state": run_state,
         "active_day_number": active_day_number,
+        "actual_elapsed_calendar_day_count": actual_elapsed_days,
+        "paper_operation_day_number": active_day_number,
         "completed_calendar_day_count": completed_days,
         "calendar_days_remaining": max(0, scheduled_days - completed_days),
         "phase7_30_day_run_complete": completed_days >= scheduled_days,
+        "legacy_30_day_milestone_complete": completed_days >= scheduled_days,
+        "operation_horizon": "indefinite",
     }
 
 

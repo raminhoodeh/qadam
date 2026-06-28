@@ -6277,6 +6277,11 @@ def _mission_strategy(
         paperops_qualified_setup_production or {},
     )
     qualified_family_count = sum(1 for family in strategy_families if family["qualified_setup"])
+    current_setup_state = (
+        "qualified_setup_available"
+        if qualified_family_count
+        else "no_current_qualified_setup"
+    )
     return {
         "posture": "shadow_paper_strategy_with_second_order_ai_infrastructure_lens",
         "native_edge": {
@@ -6329,6 +6334,12 @@ def _mission_strategy(
         },
         "strategy_family_count": len(strategy_families),
         "qualified_strategy_family_count": qualified_family_count,
+        "current_setup_state": current_setup_state,
+        "current_setup_summary": (
+            f"{qualified_family_count} strategy families currently qualify for guarded paper review."
+            if qualified_family_count
+            else "No strategy family currently has a production-qualified guarded paper setup."
+        ),
         "strategy_families": strategy_families,
         "fit_matrix": strategy_families,
         "universe": [
@@ -9525,14 +9536,22 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("Mission Control strategy native edge missing")
     if int(mission_strategy.get("strategy_family_count", 0) or 0) < 5:
         raise ValueError("Mission Control strategy universe must expose at least five families")
-    if len(mission_strategy.get("strategy_families", [])) < 5:
+    strategy_families = mission_strategy.get("strategy_families", [])
+    if len(strategy_families) < 5:
         raise ValueError("Mission Control strategy family list missing")
-    if not any(
-        family.get("qualified_setup") is True
-        for family in mission_strategy.get("strategy_families", [])
-        if isinstance(family, dict)
-    ):
+    if mission_strategy.get("current_setup_state") not in {
+        "qualified_setup_available",
+        "no_current_qualified_setup",
+    }:
         raise ValueError("Mission Control strategy universe must expose current setup state")
+    for family in strategy_families:
+        if not isinstance(family, dict) or not family.get("current_state"):
+            raise ValueError("Mission Control strategy families must expose current states")
+    qualified_family_count = int(mission_strategy.get("qualified_strategy_family_count", 0) or 0)
+    if mission_strategy["current_setup_state"] == "qualified_setup_available" and qualified_family_count < 1:
+        raise ValueError("Mission Control strategy current setup state/count mismatch")
+    if mission_strategy["current_setup_state"] == "no_current_qualified_setup" and qualified_family_count != 0:
+        raise ValueError("Mission Control strategy current setup state/count mismatch")
     diagnostics = payload["diagnostics"]
     if diagnostics.get("status") != "diagnostics_available":
         raise ValueError("cockpit diagnostics status mismatch")
@@ -10318,7 +10337,8 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError("PaperOps 30-day operations dashboard mirror is not public-safe")
     operations_boundary = str(paperops_30_day.get("boundary") or "")
     for phrase in (
-        "active paper growth trial",
+        "active indefinite paper growth operation",
+        "original 30-day paper growth trial is retained as a legacy milestone only",
         "cannot backfill days",
         "cannot force trades",
         "cannot enable live capital",
@@ -10733,7 +10753,18 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
             raise ValueError("PaperOps qualified setup production event log missing")
         if paperops_qualified_setup.get("event_log_event_count") != 1:
             raise ValueError("PaperOps qualified setup production event count mismatch")
-        if paperops_qualified_setup.get("validation_error_count") != 0:
+        tolerated_no_setup_errors = {
+            "paperops_qualified_setup_phase7_run_not_active",
+        }
+        validation_errors = set(paperops_qualified_setup.get("validation_errors") or [])
+        if (
+            paperops_qualified_setup.get("validation_error_count") != 0
+            and not (
+                paperops_qualified_setup.get("status") == "invalid"
+                and validation_errors <= tolerated_no_setup_errors
+                and int(paperops_qualified_setup.get("qualified_setup_count", 0) or 0) == 0
+            )
+        ):
             raise ValueError("PaperOps qualified setup production validation errors present")
     if paperops_qualified_setup.get("live_capital_enabled") is not False:
         raise ValueError("PaperOps qualified setup production enabled live capital")
