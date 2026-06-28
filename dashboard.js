@@ -21,7 +21,7 @@ const DASHBOARD_VIEWS = [
     { id: "operations", label: "Operations" }
 ];
 const DASHBOARD_VIEW_IDS = new Set(DASHBOARD_VIEWS.map((view) => view.id));
-const DASHBOARD_STATUS_REFRESH_MS = 60000;
+const DASHBOARD_STATUS_REFRESH_MS = 15000;
 let dashboardStatusRefreshTimer = null;
 const DASHBOARD_ADVANCED_DEBUG_KEY = "qadam.dashboard.advanced_debug";
 const DASHBOARD_LEGACY_HASH_TARGETS = {
@@ -4087,7 +4087,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         usgs: "Adds minerals and resource context for metals, semiconductors, and industrial supply-chain hypotheses.",
         unusual_whales: "Optional options-flow context that is currently disabled unless reselected.",
         polymarket: "Tracks prediction-market probabilities and order-book context where public odds may diverge from Qadam's evidence.",
-        kalshi: "Optional prediction-market context awaiting credentials and account availability.",
+        kalshi: "Kalshi/Polymarket context is covered through OddsPipe for read-only market monitoring; direct Kalshi account access remains deferred.",
         hyperliquid: "Tracks crypto and perpetual-market stress where cross-asset risk can surface early.",
         alpaca: "Mirrors paper broker account, orders, positions, and market data for paper-only execution visibility.",
         rapidapi: "Optional marketplace source slot awaiting a specific provider decision.",
@@ -4317,7 +4317,7 @@ function paperFundSleeveForInstrument(instrument = "") {
         "Crude Oil": ["CL", "CL=F", "BZ", "BZ=F", "USO", "XLE", "OIH"],
         Silver: ["SI", "SI=F", "SLV", "SIL", "PAAS", "AG"],
         Semiconductors: ["SMH", "SOXX", "NVDA", "AMD", "TSM", "ASML", "AVGO", "MU"],
-        "Prediction Markets": ["POLYMARKET", "KALSHI"],
+        "Prediction Markets": ["POLYMARKET", "ODDSPIPE", "KALSHI"],
         Defence: ["ITA", "XAR", "LMT", "RTX", "NOC", "GD", "BA", "HII"]
     };
     return Object.entries(sleeveMap).find(([_label, symbols]) => symbols.includes(symbol))?.[0] || "Other";
@@ -4473,7 +4473,7 @@ function stage7MarketSleeves(edge = {}, strategy = {}, context = {}) {
         "Crude Oil": ["CL=F", "BZ=F", "USO", "XLE"],
         Silver: ["SI=F", "SLV", "SIL", "PAAS"],
         Semiconductors: ["SMH", "SOXX", "NVDA", "AMD", "TSM", "ASML"],
-        "Prediction Markets": ["Polymarket CLOB", "Kalshi events"],
+        "Prediction Markets": ["Polymarket CLOB", "OddsPipe spreads", "Kalshi events"],
         Defence: ["ITA", "XAR", "LMT", "RTX", "NOC"]
     };
     const sleeves = asArray(edge.sleeves).length
