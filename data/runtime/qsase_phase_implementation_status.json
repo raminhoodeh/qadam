@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_9_shadow_strategy_simulator_upgrade",
-  "generated_at": "2026-06-28T19:59:15.161821+00:00",
+  "active_phase": "qsase_10_strategy_router",
+  "generated_at": "2026-06-28T20:06:07.093629+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -47,6 +47,37 @@
       "simulated_elapsed_time_detected": false,
       "status": "governance_safety_ready",
       "telegram_command_path_enabled": false
+    },
+    "qsase_10_strategy_router": {
+      "artifact_path": "data/runtime/qsase_strategy_router_decisions.json",
+      "authority_flags_false": true,
+      "blocked_safety_boundary_count": 16,
+      "decisions_path": "data/runtime/qsase_strategy_router_decisions.jsonl",
+      "hard_veto_count": 72,
+      "hard_vetoes_path": "data/runtime/qsase_strategy_router_hard_vetoes.jsonl",
+      "hold_count": 0,
+      "later_qsase_phases_implemented": false,
+      "name": "QSASE-10: Strategy Router",
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "paper_review_candidate_count": 0,
+      "paper_review_candidate_is_not_order": true,
+      "proposal_first": true,
+      "public_safe": true,
+      "reject_count": 0,
+      "repair_requested_count": 0,
+      "research_only": true,
+      "router_output_creates_no_orders": true,
+      "scoreboard_path": "data/runtime/qsase_strategy_router_scoreboard.json",
+      "shadow_only_count": 0,
+      "soft_blocker_count": 284,
+      "soft_blockers_path": "data/runtime/qsase_strategy_router_soft_blockers.jsonl",
+      "status": "qsase_strategy_router_degraded",
+      "strategy_input_count": 16,
+      "watchlist_only_count": 0,
+      "why_not_trading_now_path": "data/runtime/qsase_why_not_trading_now.json"
     },
     "qsase_1_self_model_artifact_validation": {
       "artifact_path": "data/runtime/qsase_self_model.json",

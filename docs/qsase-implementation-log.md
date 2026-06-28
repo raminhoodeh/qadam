@@ -124,3 +124,16 @@
 - Rejected variants: `48`
 - Router candidates: `0`
 - Safety: shadow success cannot become a paper order or paper proof ledger credit; no trade candidates, execution intents, broker writes, live capital, or proof credit created.
+
+<!-- qsase_10_strategy_router -->
+## QSASE-10: Strategy Router
+
+- Generated at: `2026-06-28T20:06:07.093629+00:00`
+- Status: `qsase_strategy_router_degraded`
+- Runtime artifact: `data/runtime/qsase_strategy_router_decisions.json`
+- Strategy inputs: `16`
+- Paper-review candidates: `0`
+- Blocked safety boundary / reject / hold / shadow-only / watchlist / repair: `16` / `0` / `0` / `0` / `0` / `0`
+- Hard vetoes / soft blockers: `72` / `284`
+- Why-not-trading-now: `Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route.`
+- Safety: router output is not execution approval; no trade candidates, risk approvals, execution intents, paper orders, broker writes, live capital, or proof credit created.
