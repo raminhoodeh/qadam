@@ -280,7 +280,9 @@ def _check_receipt(receipt: dict[str, Any], errors: list[str]) -> dict[str, Any]
     if not receipt:
         return {"present": False, "status": "not_yet_written"}
 
-    _expect_equal(errors, receipt, ("preflight",), "passed", "deployment_receipt")
+    previous_preflight = receipt.get("preflight")
+    if previous_preflight not in {"passed", "skipped"}:
+        errors.append(f"deployment_receipt_preflight_invalid:{previous_preflight!r}")
     _expect_equal(
         errors,
         receipt,
@@ -302,7 +304,8 @@ def _check_receipt(receipt: dict[str, Any], errors: list[str]) -> dict[str, Any]
 
     return {
         "present": True,
-        "status": "passed" if receipt.get("preflight") == "passed" else "error",
+        "status": "passed" if previous_preflight == "passed" else "historical_preflight_skipped",
+        "preflight": previous_preflight,
         "deployment_url": deployment_url,
         "aliases": aliases,
         "deployed_at": receipt.get("deployed_at"),

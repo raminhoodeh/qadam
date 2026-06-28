@@ -327,18 +327,26 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
     ),
     SourceSpec(
         "kalshi",
-        "Kalshi",
+        "Kalshi / OddsPipe",
         "market",
         1,
         "world_monitor_market_kalshi",
-        "API key",
-        ("https://trading-api.kalshi.com/trade-api/v2/markets",),
-        "5 minutes",
-        "100 requests/minute",
-        ("KALSHI_API_KEY", "KALSHI_API_SECRET"),
-        "adapter_live_region_deferred",
-        "Read-only market adapter is scaffolded; live usefulness depends on region/account eligibility and credentials.",
-        operator_action="add_kalshi_credentials_when_region_account_allows",
+        "OddsPipe API key; direct Kalshi API key only if region/account later allows",
+        (
+            "https://oddspipe.com/v1/spreads",
+            "https://oddspipe.com/v1/markets",
+            "https://oddspipe.com/v1/markets/search",
+            "https://trading-api.kalshi.com/trade-api/v2/markets",
+        ),
+        "1-5 minutes",
+        "OddsPipe free tier 100 requests/minute; direct Kalshi limit provider-dependent",
+        ("ODDSPIPE_API_KEY", "KALSHI_API_KEY", "KALSHI_API_SECRET"),
+        "adapter_live_via_oddspipe",
+        (
+            "Kalshi direct signup is region/identity gated for Ramin. OddsPipe is the selected v1 read-only "
+            "coverage route for normalized Kalshi and Polymarket markets, OHLCV, and cross-platform spreads."
+        ),
+        operator_action="use_oddspipe_for_prediction_market_coverage",
     ),
     SourceSpec(
         "hyperliquid",

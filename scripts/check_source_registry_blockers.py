@@ -63,8 +63,8 @@ EXPECTED_DECISIONS = {
         "promoted": True,
     },
     "kalshi": {
-        "status": "adapter_live_region_deferred",
-        "endpoint_contains": "trading-api.kalshi.com/trade-api/v2/markets",
+        "status": "adapter_live_via_oddspipe",
+        "endpoint_contains": "oddspipe.com/v1/spreads",
         "promoted": True,
     },
     "alpaca": {
@@ -82,7 +82,7 @@ EXPECTED_CLEANUP_CATEGORIES = {
     "bookmap": ("local_bridge", "selected", "local_bridge_required"),
     "reddit": ("adapter_live_requires_key", "selected", "needs_credentials"),
     "stock_act": ("adapter_live_requires_key", "selected", "needs_credentials"),
-    "kalshi": ("adapter_live_region_deferred", "selected", "needs_credentials"),
+    "kalshi": ("adapter_live_via_oddspipe", "selected", "needs_credentials"),
 }
 
 EXPECTED_PROVIDER_DECISION_STATUSES = {

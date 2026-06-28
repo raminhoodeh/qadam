@@ -169,7 +169,7 @@ Quantum remains a weekly oracle. It can upgrade, downgrade, or hold a signal, bu
 - Local founding Fund Manager governance comment store.
 - Phase 1 test-data ingestion spine for typed source observations without live API calls.
 - Phase 1 data-spine acceptance gate for all 35 sources, all 5 pipelines, promoted adapter coverage, heartbeat consistency, and full deterministic ingestion.
-- Phase 1 read-only live adapter promotion layer for ACLED, UnusualWhales, Polymarket, Kalshi, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- Phase 1 read-only live adapter promotion layer for ACLED, UnusualWhales, Polymarket, Kalshi/OddsPipe, Alpaca, AIS, Wingbits, BLS, ECB, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
 - Alpaca paper-account mirror with GET-only balance, positions, orders, and P&L refresh through `scripts/check_alpaca_paper_mirror.py --live`.
 - Local `yahoo-finance-api/` reference checkout accepted as a supplemental read-only market-data capability pending live dependencies for OHLCV, volume, options-chain, market-status, quote-search, sector, screener, and news context. It is not a broker or execution venue.
 - Historical backfill planning and local sample-run contract for 12 priority sources, with credential-aware blocked/ready states.
@@ -198,10 +198,10 @@ These are live or live-adjacent data feeds, not the full set of Qadam research/b
 - Conflict: ACLED, UCDP, GDELT, Oref, Conflict Tracker.
 - Physical: NASA FIRMS, Wingbits, AIS, ArcGIS/USACE, Space-Track/CelesTrak, GPS Jamming, Internet Outage.
 - Macro: FRED, BLS, BIS, ECB, UN Comtrade, USGS.
-- Market: UnusualWhales, Polymarket, Kalshi, Hyperliquid, Alpaca, RapidAPI, Coinglass, Chainlink, Bookmap.
+- Market: UnusualWhales, Polymarket, Kalshi/OddsPipe, Hyperliquid, Alpaca, RapidAPI, Coinglass, Chainlink, Bookmap.
 - Social: RSS, Telegram, X, Reddit, SEC EDGAR, STOCK Act, Patents, GitHub.
 
-The detailed source credential list lives in `docs/api-specs.md`. Qadam should onboard providers in batches: first NASA FIRMS, ACLED, UnusualWhales, Kalshi, Alpaca paper, Gemini, Supabase, and Telegram bot; then FRED, BLS, UN Comtrade, X, Reddit, Telegram MTProto, AIS, and Wingbits; then the lower-frequency physical, crypto, patent, GitHub, and quantum providers.
+The detailed source credential list lives in `docs/api-specs.md`. Qadam should onboard providers in batches: first NASA FIRMS, ACLED, OddsPipe for Kalshi/Polymarket coverage, Alpaca paper, Gemini, Supabase, and Telegram bot; then FRED, BLS, UN Comtrade, X, Reddit, Telegram MTProto, AIS, and Wingbits; then the lower-frequency physical, crypto, patent, GitHub, and quantum providers. Direct Kalshi remains deferred until account/region eligibility changes.
 
 Supplemental market confirmation: Yahoo Finance/yfinance from `yahoo-finance-api/` is accepted as `accepted_supplemental_pending_live_dependencies`. Treat it as a read-only market-data tool for price, volume, options-chain, market-status, and instrument metadata confirmation, not as a canonical 36th source unless the registry is deliberately changed.
 
@@ -322,7 +322,7 @@ Current ingestion state:
 - `scripts/check_test_ingestion.py` verifies the adapter contract without calling live APIs.
 - `scripts/check_source_heartbeat.py` verifies all 35 source readiness states, promoted adapter count, missing credential map, and local heartbeat store.
 - `scripts/check_phase1_data_spine.py` verifies the whole Phase 1 source contract: 35 sources, 5 pipelines, promoted adapters, heartbeat-map consistency, safe credential-status shape, and full deterministic ingestion.
-- `scripts/check_supplied_credentials.py` validates the currently supplied credentials and local model settings in one read-only pass: NASA FIRMS, FRED, ACLED, Alpaca paper, Telegram, Gemini, LM Studio, plus Kalshi deferred and UnusualWhales missing.
+- `scripts/check_supplied_credentials.py` validates the currently supplied credentials and local model settings in one read-only pass: NASA FIRMS, FRED, ACLED, Alpaca paper, Telegram, Gemini, LM Studio, OddsPipe prediction-market coverage, plus direct Kalshi deferred and UnusualWhales missing.
 - `scripts/check_alpaca_paper_mirror.py --live` refreshes the Alpaca paper-account mirror in read-only mode: account, positions, orders, and portfolio history only; no broker-write route exists.
 - `scripts/refresh_acled_token.py --write --validate-read` refreshes ACLED OAuth tokens into the ignored local secret file and writes a redacted local report; it cannot create signals or orders.
 - `scripts/run_phase2_shadow_cycle.py --live-sources --live-local-llm` feeds read-only observations into the Research Analyst queue, runs the local Gemma Research Analyst, and queues a Strategy Lead shadow handoff with no execution authority.

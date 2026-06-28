@@ -152,7 +152,7 @@ Phase 7 demo strategy generation should focus on Ranks 1-3, with Ranks 4-5 oppor
 
 | Rank | Instrument | Role |
 | --- | --- | --- |
-| 1 | Prediction Markets, Polymarket / Kalshi | Primary. Best cadence fit and binary feedback loop. |
+| 1 | Prediction Markets, Polymarket / OddsPipe / Kalshi | Primary. Best cadence fit and binary feedback loop. OddsPipe is the first-release normalized Kalshi/Polymarket monitoring route while direct Kalshi remains deferred. |
 | 2 | Crude Oil, USO / XLE options | Primary. Strongest physical-to-paper catalyst fit. |
 | 3 | Defence Equities, LMT / RTX / XAR options | Primary-secondary. Natural conflict escalation exposure. |
 | 4 | Silver, SLV options | Opportunistic. Strong when physical catalyst fires, not forced. |

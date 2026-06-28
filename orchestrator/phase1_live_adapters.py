@@ -102,10 +102,13 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
         source_label="market.kalshi",
         event_type="prediction_market",
         trust_score=0.76,
-        sample_summary="Kalshi market metadata available for a macro, election, rates, or geopolitical contract.",
-        primary_endpoint="https://trading-api.kalshi.com/trade-api/v2/markets",
-        required_any_secret_groups=(("KALSHI_API_KEY", "KALSHI_API_SECRET"),),
-        notes="Kalshi is region/account gated for Ramin; authenticated paths stay read-only when available.",
+        sample_summary="Kalshi/OddsPipe prediction-market spread context available for macro, election, rates, or geopolitical contracts.",
+        primary_endpoint="https://oddspipe.com/v1/spreads",
+        required_any_secret_groups=(("KALSHI_API_KEY", "KALSHI_API_SECRET"), ("ODDSPIPE_API_KEY",)),
+        notes=(
+            "Direct Kalshi remains region/account gated for Ramin. OddsPipe is the selected v1 read-only "
+            "coverage path for normalized Kalshi and Polymarket market data, spreads, and OHLCV context."
+        ),
     ),
     "hyperliquid": Phase1AdapterConfig(
         key="hyperliquid",
@@ -353,6 +356,22 @@ def _safe_endpoint(endpoint: str) -> str:
 
 
 def _event_summary(config: Phase1AdapterConfig, record: dict[str, Any]) -> str:
+    if config.key == "kalshi":
+        kalshi = record.get("kalshi")
+        polymarket = record.get("polymarket")
+        spread = record.get("spread")
+        if isinstance(kalshi, dict) or isinstance(polymarket, dict):
+            title = (
+                (kalshi or {}).get("title")
+                or (kalshi or {}).get("question")
+                or (polymarket or {}).get("title")
+                or (polymarket or {}).get("question")
+                or "OddsPipe matched prediction-market spread"
+            )
+            diff = (spread or {}).get("yes_diff") if isinstance(spread, dict) else None
+            if diff is not None:
+                return f"{title} | OddsPipe Kalshi/Polymarket YES spread {diff}"[:240]
+            return f"{title} | OddsPipe Kalshi/Polymarket matched market"[:240]
     properties = record.get("properties")
     if isinstance(properties, dict):
         for key in ("title", "place", "name", "event", "summary"):
@@ -399,6 +418,7 @@ def _records_from_payload(payload: Any) -> list[dict[str, Any]]:
         "data",
         "events",
         "markets",
+        "items",
         "results",
         "Result",
         "articles",
@@ -538,6 +558,10 @@ class Phase1ReadOnlyAdapter:
             token = secret_value("X_BEARER_TOKEN", self.settings)
             if token:
                 headers["Authorization"] = f"Bearer {token}"
+        elif key == "kalshi":
+            oddspipe_key = secret_value("ODDSPIPE_API_KEY", self.settings)
+            if oddspipe_key:
+                headers["x-api-key"] = oddspipe_key
         elif key == "sec_edgar":
             user_agent = secret_value("SEC_USER_AGENT", self.settings)
             if user_agent and "contact@example.com" not in user_agent:
@@ -632,6 +656,8 @@ class Phase1ReadOnlyAdapter:
         if key == "polymarket":
             return {"limit": 25}
         if key == "kalshi":
+            if secret_value("ODDSPIPE_API_KEY", self.settings):
+                return {"limit": 25, "min_score": 60, "top_n": 200}
             return {"limit": 25}
         if key in {"unusual_whales", "stock_act"}:
             return {"limit": 25}
@@ -686,6 +712,8 @@ class Phase1ReadOnlyAdapter:
         if self.config.key == "bookmap":
             return secret_value("BOOKMAP_BRIDGE_URL", self.settings) or self.config.primary_endpoint
         if self.config.key == "kalshi":
+            if secret_value("ODDSPIPE_API_KEY", self.settings):
+                return "https://oddspipe.com/v1/spreads"
             base_url = (secret_value("KALSHI_API_BASE_URL", self.settings) or "").rstrip("/")
             if base_url:
                 return f"{base_url}/trade-api/v2/markets"
@@ -802,21 +830,24 @@ class Phase1ReadOnlyAdapter:
                             degraded_reason=auth_error["error_type"],
                         )
                 elif self.config.key == "kalshi":
-                    headers, auth_error = self._kalshi_headers(method=self.config.method, url=url)
-                    if auth_error:
-                        return self.envelope_from_payload(
-                            {
-                                "records": [],
-                                "_qadam_request": {
-                                    "url": _safe_endpoint(url),
-                                    "method": self.config.method,
+                    if secret_value("ODDSPIPE_API_KEY", self.settings):
+                        headers = self._request_headers()
+                    else:
+                        headers, auth_error = self._kalshi_headers(method=self.config.method, url=url)
+                        if auth_error:
+                            return self.envelope_from_payload(
+                                {
+                                    "records": [],
+                                    "_qadam_request": {
+                                        "url": _safe_endpoint(url),
+                                        "method": self.config.method,
+                                    },
+                                    "_qadam_error_type": auth_error["error_type"],
+                                    "_qadam_error": auth_error["error"],
                                 },
-                                "_qadam_error_type": auth_error["error_type"],
-                                "_qadam_error": auth_error["error"],
-                            },
-                            degraded=True,
-                            degraded_reason=auth_error["error_type"],
-                        )
+                                degraded=True,
+                                degraded_reason=auth_error["error_type"],
+                            )
                 else:
                     headers = self._request_headers()
                 if self.config.method == "POST":

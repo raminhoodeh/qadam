@@ -356,11 +356,18 @@ def build_report(settings: Settings) -> dict[str, Any]:
         _telegram(settings, checked_at),
         _gemini(settings, checked_at),
         _lm_studio(settings, checked_at),
+        _phase1_provider(
+            "oddspipe",
+            source_key="kalshi",
+            role="prediction_market_aggregator",
+            settings=settings,
+            checked_at=checked_at,
+        ),
         _static_validation(
-            "kalshi",
-            role="prediction_market_regulated",
+            "kalshi_direct",
+            role="prediction_market_regulated_direct_account",
             status="deferred",
-            reason="deferred_due_to_current_location",
+            reason="region_identity_signup_deferred_oddspipe_used_for_readonly_coverage",
             checked_at=checked_at,
         ),
         _static_validation(
@@ -450,7 +457,7 @@ def main() -> int:
         print("supplied_credential_validation_secret_like_value_detected=true")
         return 1
     if args.require_live_core:
-        allowed_non_live = {"kalshi", "unusual_whales"}
+        allowed_non_live = {"kalshi_direct", "unusual_whales"}
         not_live = [
             validation["provider"]
             for validation in report["validations"]

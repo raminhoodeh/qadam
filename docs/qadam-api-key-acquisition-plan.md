@@ -40,7 +40,7 @@ Use four passes:
 3. Paid edge sources only if needed.
 4. Later specialist and execution keys.
 
-Do not buy all providers upfront. The first useful version of Qadam should work with free/public data, Alpaca paper, Kalshi/Polymarket public market data, NASA FIRMS, FRED, BLS, SEC EDGAR, RSS, GDELT, Oref, and the local LLM.
+Do not buy all providers upfront. The first useful version of Qadam should work with free/public data, Alpaca paper, Polymarket public data plus OddsPipe-normalized Kalshi/Polymarket market data, NASA FIRMS, FRED, BLS, SEC EDGAR, RSS, GDELT, Oref, and the local LLM.
 
 ## 2A. Current Local Credential State
 
@@ -54,12 +54,13 @@ As of 2026-05-18, the local MacBook secret file has configured values for these 
 - Telegram bot token and bot username.
 - Gemini/Google model keys and local LM Studio settings.
 
-Still pending:
+Still pending or replaced:
 
-- Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
+- Direct Kalshi is not available in the current UK/UAE account/location context, so keep it deferred.
+- OddsPipe is now the selected Stage 0 read-only coverage route for normalized Kalshi/Polymarket data. It replaces direct Kalshi as a first-release monitoring dependency, but it does not add venue execution authority.
 - Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
 - ACLED token refresh automation now exists in `scripts/refresh_acled_token.py`. A 2026-05-19 refresh run succeeded with the refresh-token grant, but the ACLED read endpoint still returned HTTP 403, so ACLED still needs provider entitlement/account-scope confirmation before it counts as durable live.
-- BLS, Reddit, Kalshi, Capitol Trades/STOCK Act, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
+- BLS, Reddit, direct Kalshi, Capitol Trades/STOCK Act, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
 
 ## 3. Batch A - Get These First
 
@@ -69,7 +70,7 @@ These are the highest-value keys for Phase 1 and the first paper proof.
 | --- | --- | --- | --- | --- | --- |
 | 1 | NASA FIRMS | Free | `NASA_FIRMS_API_KEY` | Request a FIRMS MAP_KEY from NASA. | `./scripts/check_nasa_firms_adapter.py --live` |
 | 2 | Alpaca Paper | Free to start | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Create an Alpaca account, open Paper Trading, generate paper API keys. Use paper keys only. | `./scripts/check_phase1_live_source_hardening.py --live` |
-| 3 | Kalshi | Usually free key; trading fees later | `KALSHI_API_KEY`, `KALSHI_API_SECRET` | Create a Kalshi account, generate API credentials, keep read-only/paper posture until execution policy exists. Current setup remains region/account gated. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 3 | OddsPipe prediction-market aggregator | Free tier | `ODDSPIPE_API_KEY` | Use OddsPipe as the first-release read-only route for normalized Kalshi/Polymarket markets, OHLCV context, and cross-platform spreads. Direct Kalshi remains region/account gated. | `./scripts/check_supplied_credentials.py` |
 | 4 | ACLED | Access/account dependent | `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN`, or `ACLED_EMAIL`, `ACLED_PASSWORD` | Create/sign into ACLED, request API access/token. Use `./scripts/refresh_acled_token.py --write --validate-read` to refresh local ignored tokens before live source checks. Current endpoint is `https://acleddata.com/api/acled/read`. | `./scripts/refresh_acled_token.py --write --validate-read && ./scripts/check_phase1_live_source_hardening.py --live` |
 | 5 | FRED | Free | `FRED_API_KEY` | Create a FRED API key. Qadam has CSV fallback, but a key improves reliability. | `./scripts/check_fred_adapter.py --live` |
 | 6 | Telegram Bot | Free | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_DEFAULT_CHAT_ID`, `TELEGRAM_GROUP_CHAT_ID` | Create a bot with BotFather. Keep `QADAM_TELEGRAM_DRY_RUN=true` first. | `./scripts/check_telegram_config.py && ./scripts/check_telegram_outbox.py` |
@@ -83,7 +84,7 @@ Minimum useful outcome after Batch A:
 - Telegram can be dry-run without sending.
 - All credentials remain local.
 
-Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, and Telegram bot private/group delivery targets are locally configured. Kalshi remains unavailable in Ramin's current regions. The selected remaining data-source credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act; UnusualWhales is no longer a Batch A credential gap.
+Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, OddsPipe, and Telegram bot private/group delivery targets are locally configured. Direct Kalshi remains unavailable in Ramin's current regions, but OddsPipe now satisfies the first-release read-only Kalshi/Polymarket coverage need. The selected remaining data-source credential gaps are Reddit and Capitol Trades/STOCK Act; UnusualWhales is no longer a Batch A credential gap.
 
 ## 4. Batch B - Add Confirmation Feeds
 
@@ -148,6 +149,7 @@ Use official pages where possible:
 - NASA FIRMS API: `https://firms.modaps.eosdis.nasa.gov/api/area/`
 - Alpaca paper trading: `https://docs.alpaca.markets/docs/trading/paper-trading/`
 - Alpaca authentication: `https://docs.alpaca.markets/reference/authentication-2`
+- OddsPipe docs: `https://oddspipe.com/docs`
 - Kalshi API keys: `https://docs.kalshi.com/getting_started/api_keys`
 - ACLED API documentation: `https://acleddata.com/api-documentation/getting-started`
 - FRED API keys: `https://fred.stlouisfed.org/docs/api/api_key.html`

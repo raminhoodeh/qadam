@@ -67,9 +67,16 @@ OPTIONAL_SOURCE_GAP_DEFINITIONS: tuple[dict[str, Any], ...] = (
     {
         "gap_key": "kalshi_credentials_missing",
         "source_key": "kalshi",
-        "source_name": "Kalshi",
+        "source_name": "Kalshi/OddsPipe prediction-market coverage",
         "coverage_role": "prediction_market_context",
-        "credential_groups": (("KALSHI_API_KEY", "KALSHI_API_SECRET"),),
+        "credential_groups": (
+            ("KALSHI_API_KEY", "KALSHI_API_SECRET"),
+            ("ODDSPIPE_API_KEY",),
+        ),
+        "resolution_note": (
+            "Direct Kalshi account access remains region/identity gated. "
+            "OddsPipe satisfies the read-only Kalshi/Polymarket market-data coverage path."
+        ),
     },
     {
         "gap_key": "stock_act_capitol_trades_api_key_missing",
@@ -139,6 +146,7 @@ def _source_gap_record(definition: dict[str, Any], settings: Settings) -> dict[s
         "credential_group_count": len(groups),
         "configured_credential_group_count": configured_group_count,
         "credential_status": "configured" if not gap_present else "missing_optional",
+        "resolution_note": definition.get("resolution_note"),
         "trade_blocking": False,
         "source_quorum_blocking": False,
         "paper_order_submission_blocking": False,

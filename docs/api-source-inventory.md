@@ -18,7 +18,7 @@ Key split decisions:
 - Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
-- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit, Kalshi, and Capitol Trades/STOCK Act. Their credential-bound read-only adapter contracts exist, but they stay disconnected until credentials are supplied. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
+- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gaps are Reddit and Capitol Trades/STOCK Act. Direct Kalshi remains deferred, but OddsPipe is now the selected read-only Kalshi/Polymarket coverage route for Stage 0. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
 
 ## Tier 1 - Wire First
 
@@ -29,7 +29,7 @@ Key split decisions:
 | NASA FIRMS | API key, FIRMS area CSV endpoint | Promoted as the first physical adapter; bbox-first, read-only, credential-gated, and paced conservatively. |
 | UnusualWhales | Intentionally disabled | Optional options-flow source; not a current credential request because Capitol Trades is the selected politician-trading path. |
 | Polymarket | Public CLOB plus wallet/execution later | Read-only CLOB adapter scaffolded; execution remains disabled. |
-| Kalshi | API key, RSA private key, trading API | Credential-bound read-only adapter scaffolded; region/account eligibility remains the practical gate. |
+| Kalshi / OddsPipe | OddsPipe API key now; direct Kalshi API key and RSA private key later | OddsPipe is the selected read-only normalized Kalshi/Polymarket coverage route. Direct Kalshi account eligibility remains deferred. |
 | Alpaca | API key + secret, data/trading APIs | Paper execution exists separately; registry row is the read-only account/market-data mirror contract. |
 
 ## Tier 2 - Wire Second

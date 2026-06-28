@@ -18,7 +18,7 @@ The artifact answers one practical question: what still needs setup or proof wor
 
 ## How To Resolve Remaining Items
 
-1. Add Reddit, Kalshi, and Capitol Trades credentials when available.
+1. Add Reddit and Capitol Trades credentials when available. Direct Kalshi remains deferred; OddsPipe now covers the read-only Kalshi/Polymarket monitoring route.
 2. Start a local Bookmap read-only bridge on a loopback endpoint only if order-flow context is needed.
 3. Run the explicit Fire Opal / IBM hardware path before changing the quantum label from deterministic classical fallback to confirmed hardware execution.
 4. Keep the PaperOps automation and cockpit status checks green before relying on unattended paper operation.

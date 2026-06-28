@@ -64,8 +64,9 @@ The acceptance gate proves:
 - legacy source-registry blockers are zero;
 - Phase 1 deterministic source observations cover all 35 sources;
 - selected optional credential gaps remain explicit and non-blocking;
-- Reddit, Kalshi, and Capitol Trades/STOCK Act remain credential-bound,
-  read-only adapters;
+- Reddit, Kalshi/OddsPipe, and Capitol Trades/STOCK Act remain credential-bound,
+  read-only adapters; OddsPipe satisfies first-release Kalshi/Polymarket
+  monitoring while direct Kalshi remains deferred;
 - RapidAPI, Coinglass, Chainlink, GitHub, and Bookmap provider decisions do not
   create credential pressure or trading authority;
 - TradingView MCP observes and analyzes only;

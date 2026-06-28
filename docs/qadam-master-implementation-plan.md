@@ -115,7 +115,7 @@ Qadam should not mix all inputs into one bucket.
 
 | Layer | What It Contains | What It Does |
 | --- | --- | --- |
-| Live Source Registry | ACLED, FIRMS, Oref, UnusualWhales, Polymarket, Kalshi, Alpaca, GDELT, Telegram, RSS, TradingView alerts, etc. | Feeds the machine with observable data and heartbeat status. |
+| Live Source Registry | ACLED, FIRMS, Oref, UnusualWhales, Polymarket, Kalshi/OddsPipe, Alpaca, GDELT, Telegram, RSS, TradingView alerts, etc. | Feeds the machine with observable data and heartbeat status. |
 | Resource Registry | Papers, open-source tools, product references, analytical frameworks, build inspiration. | Guides architecture, signal design, UX, and research methods. |
 | Private World-Model Corpus | `how-the-world-works/` | Quietly shapes Qadam's suspicion, hidden-incentive reasoning, scenario generation, and narrative analysis. Currently 4 markdown files. |
 
@@ -330,7 +330,7 @@ Current implementation start:
 - `scripts/start_postgres_timescale_ingestion.sh` now exists as the dedicated Postgres/Timescale durable-ingestion bootstrap. It starts only the Timescale-backed Postgres service, waits for connectivity, applies migrations, seeds durable reference/world-model data, writes all 35 deterministic source observations, runs the live-required ingestion contract, and verifies replay coverage.
 - `scripts/check_postgres_timescale_replay.py --require-full-source-coverage` verifies that durable observations can be replayed across the full 35-source registry without writing new rows.
 - Current local state as of 2026-05-21: OrbStack provides the Docker-compatible runtime, `qadam-postgres` is running locally, `scripts/start_postgres_timescale_ingestion.sh` completes with `postgres_timescale_durable_ingestion=ok`, and strict replay verification sees all 35 canonical sources in `source_observation`.
-- A read-only Phase 1 live adapter promotion layer now exists for ACLED, UnusualWhales, STOCK Act via UnusualWhales Congress, Polymarket, Kalshi, Alpaca, AIS, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
+- A read-only Phase 1 live adapter promotion layer now exists for ACLED, UnusualWhales, STOCK Act via UnusualWhales Congress, Polymarket, Kalshi/OddsPipe, Alpaca, AIS, Space-Track/CelesTrak, Wingbits, BLS, ECB, USGS, UN Comtrade, SEC EDGAR, Reddit, X, and Telegram.
 - These 17 adapter contracts join the already promoted GDELT, Oref, NASA FIRMS, FRED, and RSS adapters, taking promoted adapter coverage to 22 sources.
 - The new adapter layer has sample mode, masked credential status, raw payload archival, normalized events, degraded-state handling, and fail-closed live fetches.
 - `scripts/check_phase1_live_source_hardening.py` is now the Phase 1 live-source hardening gate. It validates each of the 22 promoted sources one by one, writes `data/runtime/phase1_live_source_validation.json`, appends a local history file, and classifies every source as `live`, `degraded`, `missing_credentials`, or `sample_ready`.
@@ -355,6 +355,7 @@ Current implementation start:
 - No promoted adapter is allowed to influence signal confidence without corroboration and Signal Integrity Gate approval.
 - TradingView note: a paid TradingView account does not provide a normal retail data API key. Treat TradingView MCP as read-only market/technical-analysis tooling that does not require a TradingView login, and treat the paid TradingView account as useful later for webhook alerts once Qadam has a secure receiver.
 - Yahoo Finance note: the local `yahoo-finance-api/` checkout is a useful `yfinance` capability for read-only market price, volume, options-chain, market-status, quote-search, sector, screener, and news context. It should backfill the current market-confirmation gap before Phase 3 depends on price context, but only through a Qadam wrapper with sample mode, rate limits, caching, raw archive, degraded-state handling, and public-safe status. It is not a broker, not an order source, not a fill/reconciliation source, and not automatically counted as a 36th canonical source.
+- OddsPipe note: direct Kalshi remains deferred because signup/account eligibility is region/identity gated for Ramin. OddsPipe is now the selected Stage 0 read-only coverage path for normalized Kalshi/Polymarket markets, OHLCV context, and cross-platform spreads. It fills the existing prediction-market monitoring slot; it does not create source 36, does not provide venue execution authority, and cannot approve or submit paper trades.
 
 Objective: make Qadam observe the world.
 

@@ -48,15 +48,18 @@ CREDENTIAL_BOUND_ADAPTERS: dict[str, CredentialBoundAdapterSpec] = {
     ),
     "kalshi": CredentialBoundAdapterSpec(
         source_key="kalshi",
-        provider_name="Kalshi",
+        provider_name="Kalshi / OddsPipe",
         required_env_vars=("KALSHI_API_KEY", "KALSHI_API_SECRET"),
-        optional_env_vars=("KALSHI_API_BASE_URL",),
-        credential_kind="key_id_and_rsa_private_key",
-        auth_flow="rsa_pss_signed_request_headers",
-        setup_url="https://kalshi.com/account/profile",
-        default_endpoint="https://trading-api.kalshi.com/trade-api/v2/markets",
+        optional_env_vars=("KALSHI_API_BASE_URL", "ODDSPIPE_API_KEY"),
+        credential_kind="key_id_and_rsa_private_key_or_aggregator_api_key",
+        auth_flow="kalshi_rsa_pss_or_oddspipe_api_key_readonly",
+        setup_url="https://oddspipe.com/docs",
+        default_endpoint="https://oddspipe.com/v1/spreads",
         evidence_packet_types=("prediction_market", "probability_context", "market_lifecycle_context"),
-        notes="Authenticated market reads only; no Kalshi spend, orders, or execution authority in this adapter.",
+        notes=(
+            "Authenticated market reads only. Direct Kalshi remains region/account gated; OddsPipe is the v1 "
+            "normalized Kalshi/Polymarket read-only route. No venue spend, orders, or execution authority."
+        ),
     ),
     "stock_act": CredentialBoundAdapterSpec(
         source_key="stock_act",
@@ -101,6 +104,37 @@ def credential_bound_adapter_state(source_key: str, settings: Settings | None = 
         raise KeyError(f"unknown credential-bound adapter: {source_key}")
     settings = settings or Settings.from_env()
     spec = CREDENTIAL_BOUND_ADAPTERS[source_key]
+    if source_key == "kalshi" and secret_status("ODDSPIPE_API_KEY", settings).configured:
+        payload = {
+            "schema_version": CREDENTIAL_BOUND_ADAPTER_SCHEMA_VERSION,
+            "source_key": spec.source_key,
+            "provider_name": spec.provider_name,
+            "credential_status": "configured",
+            "activation_state": "ready_for_live_readonly",
+            "activation_ready": True,
+            "can_fetch_live_readonly": True,
+            "configured_required_env_vars": ("ODDSPIPE_API_KEY",),
+            "missing_required_env_vars": (),
+            "configured_optional_env_vars": ("ODDSPIPE_API_KEY",),
+            "required_env_var_count": 1,
+            "optional_env_var_count": len(spec.optional_env_vars),
+            "credential_kind": "provider_api_key_aggregator",
+            "auth_flow": "oddspipe_x_api_key_readonly",
+            "setup_url": spec.setup_url,
+            "default_endpoint": spec.default_endpoint,
+            "endpoint_env_var": spec.endpoint_env_var,
+            "endpoint_status": "oddspipe_confirmed_endpoint_configured",
+            "provider_endpoint_required": False,
+            "evidence_packet_types": spec.evidence_packet_types,
+            "evidence_authority": "supplemental_readonly_context",
+            "signal_authority": "none_without_strategy_and_risk_gates",
+            "order_authority": "none",
+            "paper_trading_blocking": False,
+            "live_capital_authority": False,
+            "notes": spec.notes,
+            "boundary": "Credential-bound adapter state only. No secret values, signal approval, orders, broker writes, or live capital.",
+        }
+        return payload
     configured, missing = _configured_missing(spec.required_env_vars, settings)
     optional_configured = _configured_optional(spec.optional_env_vars, settings)
     endpoint_configured = bool(spec.endpoint_env_var and secret_value(spec.endpoint_env_var, settings))

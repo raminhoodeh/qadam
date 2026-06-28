@@ -77,12 +77,12 @@ If a key is ever pasted into a chat, committed, or shown publicly, rotate it at 
 
 ## Credential-Bound Adapter Pass
 
-As of 2026-06-14, Reddit, Kalshi, and Capitol Trades/STOCK Act have explicit credential-bound read-only adapter contracts. They are not counted as connected until their required credentials are present locally and, for Capitol Trades, a provider-confirmed API endpoint is supplied.
+As of 2026-06-28, Reddit, Kalshi/OddsPipe, and Capitol Trades/STOCK Act have explicit credential-bound read-only adapter contracts. OddsPipe is the selected first-release read-only route for Kalshi/Polymarket coverage while direct Kalshi remains deferred. Reddit and Capitol Trades are not counted as connected until their required credentials are present locally and, for Capitol Trades, a provider-confirmed API endpoint is supplied.
 
 | Source | Adapter state without credentials | Required local values | Activation behavior |
 | --- | --- | --- | --- |
 | Reddit | `missing_credentials` | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`; optional `REDDIT_USER_AGENT` | Exchanges client credentials for a read-only OAuth bearer token and reads Reddit context only. |
-| Kalshi | `missing_credentials` | `KALSHI_API_KEY`, `KALSHI_API_SECRET`; optional `KALSHI_API_BASE_URL` | Builds RSA-signed read-only request headers for Kalshi market metadata. |
+| Kalshi / OddsPipe | `missing_credentials` if neither route is configured | `ODDSPIPE_API_KEY`; later optional `KALSHI_API_KEY`, `KALSHI_API_SECRET`, `KALSHI_API_BASE_URL` | Uses OddsPipe for read-only normalized Kalshi/Polymarket market data, OHLCV context, and spreads. Direct Kalshi RSA signing remains a deferred future path. |
 | Capitol Trades / STOCK Act | `missing_credentials`, or `provider_endpoint_unconfirmed` if only the key is present | `CAPITOL_TRADES_API_KEY` and provider-confirmed `CAPITOL_TRADES_API_URL` | Reads congressional trading disclosures only after the provider endpoint contract is known. |
 
 Validate the credential-bound contract without using real secrets:
@@ -119,7 +119,7 @@ This check must show zero credentials required now and zero order, broker-write,
 | --- | --- | --- | --- | --- |
 | 1 | NASA FIRMS | `NASA_FIRMS_API_KEY` | Enables Phase 1D physical anomaly monitoring for ports, oil corridors, and chokepoints. | Request a free FIRMS MAP_KEY from the official FIRMS API page. |
 | 2 | Alpaca Paper | `ALPACA_API_KEY`, `ALPACA_API_SECRET`, `ALPACA_PAPER=true` | Required for the £100,000 paper-account proof rail once the execution adapter is built. | Create/sign in to Alpaca, open Paper Trading, generate paper API keys, and use the paper endpoint. |
-| 3 | Kalshi | `KALSHI_API_KEY`, `KALSHI_API_SECRET`, optional `KALSHI_API_BASE_URL` | Required for prediction-market monitoring and later guarded execution. | Create an API key from Kalshi account settings when the account and region are eligible. Store the private key immediately because it cannot be retrieved later. |
+| 3 | OddsPipe prediction-market aggregator | `ODDSPIPE_API_KEY` | Required for first-release normalized Kalshi/Polymarket market monitoring without direct Kalshi account eligibility. | Create an OddsPipe key and store it locally. Direct Kalshi credentials can be added later only when the account and region are eligible. |
 | 4 | ACLED | `ACLED_EMAIL`, `ACLED_PASSWORD`, `ACLED_ACCESS_TOKEN`, `ACLED_REFRESH_TOKEN` | High-value conflict and geopolitical event source. | Create a myACLED account, then request API auth and refresh tokens for `https://acleddata.com/api/acled/read`. Prefer token refresh automation over repeated password use. |
 | 5 | Capitol Trades / STOCK Act provider | `CAPITOL_TRADES_API_KEY`, `CAPITOL_TRADES_API_URL` | Congressional trading context for the STOCK Act source. | Use the provider/API path selected for Qadam and store the key plus the provider-confirmed endpoint locally. |
 | 6 | FRED | `FRED_API_KEY` | Better official macro API access. | Log into a FRED account and request a distinct API key for Qadam. Qadam can still use public CSV fallback without it. |
@@ -264,7 +264,8 @@ Official references:
 - NASA FIRMS API: https://firms.modaps.eosdis.nasa.gov/api/area/csv
 - Alpaca paper trading: https://docs.alpaca.markets/docs/trading/paper-trading/
 - Alpaca authentication: https://docs.alpaca.markets/reference/authentication-2
-- Kalshi API keys: https://docs.kalshi.com/getting_started/api_keys
+- OddsPipe docs: https://oddspipe.com/docs
+- Kalshi API keys, future direct route only: https://docs.kalshi.com/getting_started/api_keys
 - ACLED API getting started: https://acleddata.com/api-documentation/getting-started
 - Unusual Whales API docs: https://api.unusualwhales.com/docs
 - FRED API keys: https://fred.stlouisfed.org/docs/api/fred/v2/api_key.html
