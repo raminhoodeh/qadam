@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_3_historical_source_price_memory",
-  "generated_at": "2026-06-28T19:16:21.486696+00:00",
+  "active_phase": "qsase_4_full_universe_pattern_search",
+  "generated_at": "2026-06-28T19:23:23.034525+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -120,6 +120,27 @@
       "replay_manifest_path": "data/runtime/qsase_historical_replay_manifest.json",
       "research_only": true,
       "status": "qsase_historical_source_price_memory_degraded"
+    },
+    "qsase_4_full_universe_pattern_search": {
+      "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json",
+      "authority_flags_false": true,
+      "candidate_pattern_count": 16,
+      "candidate_patterns_path": "data/runtime/qsase_candidate_patterns.jsonl",
+      "later_qsase_phases_implemented": false,
+      "matrix_row_count": 6232,
+      "name": "QSASE-4: Full-Universe Pattern Search",
+      "new_strategy_candidate_count": 0,
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "patterns_are_not_strategies": true,
+      "proposal_first": true,
+      "public_safe": true,
+      "rejected_pattern_count": 103,
+      "rejected_patterns_path": "data/runtime/qsase_rejected_patterns.jsonl",
+      "research_only": true,
+      "status": "qsase_full_universe_pattern_search_degraded"
     }
   },
   "safety": {

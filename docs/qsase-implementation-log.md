@@ -52,3 +52,14 @@
 - Point-in-time safe records: `6232`
 - Missing windows: `6150`
 - Safety: historical replay cannot advance the 30-day paper growth trial, create paper proof ledger credit, submit orders, write brokers, or enable live capital.
+
+<!-- qsase_4_full_universe_pattern_search -->
+## QSASE-4: Full-Universe Pattern Search
+
+- Generated at: `2026-06-28T19:23:23.034525+00:00`
+- Status: `qsase_full_universe_pattern_search_degraded`
+- Runtime artifact: `data/runtime/qsase_full_universe_pattern_search.json`
+- Matrix rows scanned: `6232`
+- Candidate patterns: `16`
+- Rejected patterns: `103`
+- Safety: patterns are not strategies; no trade candidates, paper orders, broker writes, live capital, or proof credit created.

@@ -1,0 +1,46 @@
+{
+  "artifact_type": "qsase_full_universe_pattern_search_dashboard_summary",
+  "authority_flags_false": true,
+  "command_disabled": true,
+  "generated_at": "2026-06-28T19:23:23.034525+00:00",
+  "live_send_allowed": false,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_trade_candidates_created": true,
+  "patterns_are_not_strategies": true,
+  "public_safe": true,
+  "schema_version": "qsase_full_universe_pattern_search.v1",
+  "status": "qsase_full_universe_pattern_search_degraded",
+  "summary_rows": [
+    {
+      "label": "Matrix rows scanned",
+      "value": 6232
+    },
+    {
+      "label": "Candidate patterns",
+      "value": 16
+    },
+    {
+      "label": "Rejected patterns",
+      "value": 103
+    },
+    {
+      "label": "Coverage gaps",
+      "value": 3
+    },
+    {
+      "label": "New strategy candidates",
+      "value": 0
+    },
+    {
+      "label": "Trade candidates created",
+      "value": 0
+    },
+    {
+      "label": "Authority",
+      "value": "research_only_patterns_not_strategies"
+    }
+  ],
+  "top_candidate_pattern": "qsase-pattern:859efd37916736db8e6c",
+  "top_rejected_reason": "market_history_too_thin"
+}
