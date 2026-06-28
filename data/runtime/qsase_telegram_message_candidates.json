@@ -558,7 +558,7 @@
       "trade_candidate_created": false
     }
   ],
-  "generated_at": "2026-06-28T20:40:46.899829+00:00",
+  "generated_at": "2026-06-28T20:52:14.764356+00:00",
   "schema_version": "qsase_telegram_notification_boundary.v1",
   "status": "message_candidates_recorded"
 }

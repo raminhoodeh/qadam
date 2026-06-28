@@ -3,7 +3,7 @@
 <!-- appendix_a_operational_phase0_paperops_execution_reliability_baseline -->
 ## Appendix A: Operational Phase 0 - PaperOps Execution Reliability Baseline
 
-- Generated at: `2026-06-28T18:48:36.473098+00:00`
+- Generated at: `2026-06-28T20:52:06.904707+00:00`
 - Status: `ready_with_gaps`
 - Runtime artifact: `data/runtime/qsase_phase0_paperops_reliability_baseline.json`
 - Durable phase status: `data/runtime/qsase_phase_implementation_status.json`
@@ -13,7 +13,7 @@
 <!-- qsase_0_doctrine_document_hierarchy_safety_contract -->
 ## QSASE-0: Doctrine, Document Hierarchy, And Safety Contract
 
-- Generated at: `2026-06-28T18:54:33.200195+00:00`
+- Generated at: `2026-06-28T20:52:07.171395+00:00`
 - Status: `governance_safety_ready`
 - Runtime artifact: `data/runtime/qsase_governance_safety_contract.json`
 - Authority flags: `38`/`38` false
@@ -23,7 +23,7 @@
 <!-- qsase_1_self_model_artifact_validation -->
 ## QSASE-1: Self-Model Artifact And Validation
 
-- Generated at: `2026-06-28T19:03:29.604639+00:00`
+- Generated at: `2026-06-28T20:52:07.323335+00:00`
 - Status: `qsase_self_model_blocked`
 - Runtime artifact: `data/runtime/qsase_self_model.json`
 - Degraded components: `12`
@@ -34,7 +34,7 @@
 <!-- qsase_2_universal_source_price_pattern_matrix -->
 ## QSASE-2: Universal Source-Price Pattern Matrix
 
-- Generated at: `2026-06-28T19:10:34.445235+00:00`
+- Generated at: `2026-06-28T20:52:07.409667+00:00`
 - Status: `qsase_source_price_matrix_degraded`
 - Runtime artifact: `data/runtime/qsase_universal_source_price_matrix.json`
 - Source universe: `41` sources
@@ -45,7 +45,7 @@
 <!-- qsase_3_historical_source_price_memory -->
 ## QSASE-3: Historical Source-Price Memory
 
-- Generated at: `2026-06-28T19:16:21.486696+00:00`
+- Generated at: `2026-06-28T20:52:07.754017+00:00`
 - Status: `qsase_historical_source_price_memory_degraded`
 - Runtime artifact: `data/runtime/qsase_historical_source_price_memory.json`
 - Memory records: `6232`
@@ -56,7 +56,7 @@
 <!-- qsase_4_full_universe_pattern_search -->
 ## QSASE-4: Full-Universe Pattern Search
 
-- Generated at: `2026-06-28T19:23:23.034525+00:00`
+- Generated at: `2026-06-28T20:52:12.557326+00:00`
 - Status: `qsase_full_universe_pattern_search_degraded`
 - Runtime artifact: `data/runtime/qsase_full_universe_pattern_search.json`
 - Matrix rows scanned: `6232`
@@ -67,7 +67,7 @@
 <!-- qsase_5_linear_pattern_recognition_lab -->
 ## QSASE-5: Linear Pattern Recognition Lab
 
-- Generated at: `2026-06-28T19:31:24.535964+00:00`
+- Generated at: `2026-06-28T20:52:12.791954+00:00`
 - Status: `qsase_linear_pattern_lab_degraded`
 - Runtime artifact: `data/runtime/qsase_linear_pattern_lab.json`
 - Tested relationships: `16`
@@ -79,7 +79,7 @@
 <!-- qsase_6_nonlinear_quantum_pattern_lab -->
 ## QSASE-6: Nonlinear And Quantum Pattern Lab
 
-- Generated at: `2026-06-28T19:39:08.073142+00:00`
+- Generated at: `2026-06-28T20:52:13.068653+00:00`
 - Status: `qsase_nonlinear_quantum_pattern_lab_degraded`
 - Runtime artifact: `data/runtime/qsase_nonlinear_quantum_pattern_lab.json`
 - Tested interactions: `16`
@@ -91,7 +91,7 @@
 <!-- qsase_7_strategy_foundry -->
 ## QSASE-7: Strategy Foundry
 
-- Generated at: `2026-06-28T19:45:24.825828+00:00`
+- Generated at: `2026-06-28T20:52:13.422659+00:00`
 - Status: `qsase_strategy_foundry_degraded`
 - Runtime artifact: `data/runtime/qsase_strategy_hypotheses.json`
 - Input patterns: `16`
@@ -104,7 +104,7 @@
 <!-- qsase_8_akber_filter_backtest_integration -->
 ## QSASE-8: Akber Filter Backtest Integration
 
-- Generated at: `2026-06-28T19:51:59.940555+00:00`
+- Generated at: `2026-06-28T20:52:13.590278+00:00`
 - Status: `qsase_akber_filter_integration_degraded`
 - Runtime artifact: `data/runtime/qsase_akber_filter_integration.json`
 - Filter records: `16`
@@ -116,7 +116,7 @@
 <!-- qsase_9_shadow_strategy_simulator_upgrade -->
 ## QSASE-9: Shadow Strategy Simulator Upgrade
 
-- Generated at: `2026-06-28T19:59:15.161821+00:00`
+- Generated at: `2026-06-28T20:52:13.755953+00:00`
 - Status: `qsase_shadow_strategy_simulator_degraded`
 - Runtime artifact: `data/runtime/qsase_shadow_strategy_simulator.json`
 - Replay records: `48`
@@ -128,7 +128,7 @@
 <!-- qsase_10_strategy_router -->
 ## QSASE-10: Strategy Router
 
-- Generated at: `2026-06-28T20:06:07.093629+00:00`
+- Generated at: `2026-06-28T20:52:13.931400+00:00`
 - Status: `qsase_strategy_router_degraded`
 - Runtime artifact: `data/runtime/qsase_strategy_router_decisions.json`
 - Strategy inputs: `16`
@@ -141,7 +141,7 @@
 <!-- qsase_11_paperops_handoff_interface -->
 ## QSASE-11: PaperOps Handoff Interface
 
-- Generated at: `2026-06-28T20:12:29.063498+00:00`
+- Generated at: `2026-06-28T20:52:14.206243+00:00`
 - Status: `qsase_paperops_gate_interface_degraded`
 - Runtime artifact: `data/runtime/qsase_paperops_gate_interface.json`
 - Router candidates: `0`
@@ -153,7 +153,7 @@
 <!-- qsase_12_learning_attribution_ledger -->
 ## QSASE-12: Learning And Attribution Ledger
 
-- Generated at: `2026-06-28T20:23:46.049183+00:00`
+- Generated at: `2026-06-28T20:52:14.307811+00:00`
 - Status: `qsase_learning_attribution_ledger_degraded`
 - Runtime artifact: `data/runtime/qsase_component_attribution_ledger.json`
 - Attribution records: `109`
@@ -164,7 +164,7 @@
 <!-- qsase_13_dashboard_visibility -->
 ## QSASE-13: Dashboard Visibility
 
-- Generated at: `2026-06-28T20:32:55.326649+00:00`
+- Generated at: `2026-06-28T20:52:14.638653+00:00`
 - Status: `qsase_dashboard_visibility_ready`
 - Runtime artifact: `data/runtime/qsase_dashboard_status.json`
 - Portfolio series / positions / trading history rows: `120` / `2` / `80`
@@ -176,10 +176,21 @@
 <!-- qsase_14_telegram_summary_boundary -->
 ## QSASE-14: Telegram Summary Boundary
 
-- Generated at: `2026-06-28T20:40:46.899829+00:00`
+- Generated at: `2026-06-28T20:52:14.764356+00:00`
 - Status: `qsase_telegram_notification_boundary_degraded`
 - Runtime artifact: `data/runtime/qsase_telegram_notification_boundary.json`
 - Candidates ready / duplicate / generic / unsafe: `0` / `5` / `0` / `0`
 - Inbound records / commands ignored: `2` / `0`
 - Delivery failures / sent: `0` / `0`
 - Safety: Telegram candidates are dashboard-visible, review-only, command-disabled, deduped, and unable to create candidates, approvals, paper orders, broker writes, live capital, or paper proof ledger credit.
+<!-- qsase_15_end_to_end_certification -->
+## QSASE-15: End-To-End Certification
+
+- Generated at: `2026-06-28T20:52:06.881529+00:00`
+- Status: `degraded_research_only`
+- Runtime artifact: `data/runtime/qsase_end_to_end_certification.json`
+- Phases passed / failed: `16` / `0`
+- Checks passed / failed: `33` / `0`
+- Artifacts present / required: `71` / `71`
+- Authority / lineage / dashboard / Telegram failures: `0` / `0` / `0` / `0`
+- Safety: certification is read-only, paper-only, proposal-first, command-disabled, and cannot create candidates, approvals, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit.

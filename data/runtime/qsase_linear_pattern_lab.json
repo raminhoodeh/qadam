@@ -66,7 +66,7 @@
     "artifact_type": "qsase_linear_pattern_lab_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-06-28T19:31:24.535964+00:00",
+    "generated_at": "2026-06-28T20:52:12.791954+00:00",
     "linear_success_is_research_evidence_only": true,
     "live_send_allowed": false,
     "no_paper_orders_created": true,
@@ -115,7 +115,7 @@
     "historical_memory_degraded"
   ],
   "execution_allowed": false,
-  "generated_at": "2026-06-28T19:31:24.535964+00:00",
+  "generated_at": "2026-06-28T20:52:12.791954+00:00",
   "historical_memory": {
     "artifact": "data/runtime/qsase_historical_source_price_memory.json",
     "historical_record_count": 6232,

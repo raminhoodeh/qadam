@@ -109,7 +109,7 @@
   },
   "credential_gated_source_count": 1,
   "degraded_source_count": 0,
-  "generated_at": "2026-06-28T19:10:34.445235+00:00",
+  "generated_at": "2026-06-28T20:52:07.409667+00:00",
   "public_safe": true,
   "schema_version": "qsase_universal_source_price_matrix.v1",
   "source_count": 41,
@@ -206,7 +206,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -247,7 +247,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -294,7 +294,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "observed_timestamp": "2026-06-28T20:52:07.409667+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -329,7 +329,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -375,7 +375,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -416,7 +416,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -462,7 +462,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -503,7 +503,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -544,7 +544,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -590,7 +590,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -631,7 +631,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -672,7 +672,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -713,7 +713,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -754,7 +754,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -800,7 +800,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -841,7 +841,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -882,7 +882,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -923,7 +923,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -964,7 +964,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1005,7 +1005,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1056,7 +1056,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1102,7 +1102,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1143,7 +1143,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1184,7 +1184,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1225,7 +1225,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1266,7 +1266,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1317,7 +1317,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1363,7 +1363,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1405,7 +1405,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "observed_timestamp": "2026-06-28T20:52:07.409667+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1440,7 +1440,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1481,7 +1481,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1532,7 +1532,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1574,7 +1574,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "observed_timestamp": "2026-06-28T20:52:07.409667+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1615,7 +1615,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "observed_timestamp": "2026-06-28T20:52:07.409667+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1650,7 +1650,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1696,7 +1696,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1737,7 +1737,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1783,7 +1783,7 @@
       "eligible_for_signal_review": false,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1824,7 +1824,7 @@
       "eligible_for_signal_review": true,
       "execution_allowed": false,
       "freshness_status": "fresh",
-      "observed_age_seconds": 2711,
+      "observed_age_seconds": 8804,
       "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
       "proof_credit_allowed": false,
       "provenance": [
@@ -1866,7 +1866,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "observed_timestamp": "2026-06-28T20:52:07.409667+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1902,7 +1902,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-28T19:10:34.445235+00:00",
+      "observed_timestamp": "2026-06-28T20:52:07.409667+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {

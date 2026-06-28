@@ -151,7 +151,7 @@
       }
     ],
     "essay_free": true,
-    "generated_at": "2026-06-28T20:23:46.049183+00:00",
+    "generated_at": "2026-06-28T20:52:14.307811+00:00",
     "latest_attribution": "self_healing_repair_loop",
     "latest_attribution_state": "recorded_proposal_only",
     "latest_cause": "route_defect_prevented_evaluation",
@@ -214,7 +214,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:23:46.050422+00:00",
+    "generated_at": "2026-06-28T20:52:14.309436+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -280,7 +280,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "status": "proposal_recorded_not_applied"
   },
-  "generated_at": "2026-06-28T20:23:46.049183+00:00",
+  "generated_at": "2026-06-28T20:52:14.307811+00:00",
   "input_artifacts": {
     "akber_filter_ref": "data/runtime/qsase_akber_filter_integration.json",
     "akber_filter_results_ref": "data/runtime/qsase_akber_filter_results.jsonl",
@@ -307,80 +307,80 @@
   "input_snapshots": {
     "akber_filter": {
       "exists": true,
-      "mtime": "2026-06-28T19:51:59.948581+00:00",
-      "mtime_age_seconds": 1906,
+      "mtime": "2026-06-28T20:52:13.604117+00:00",
+      "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_akber_filter_integration.json"
     },
     "full_pattern_search": {
       "exists": true,
-      "mtime": "2026-06-28T19:23:23.055403+00:00",
-      "mtime_age_seconds": 3622,
+      "mtime": "2026-06-28T20:52:12.577278+00:00",
+      "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_full_universe_pattern_search.json"
     },
     "historical_memory": {
       "exists": true,
-      "mtime": "2026-06-28T19:16:21.566431+00:00",
-      "mtime_age_seconds": 4044,
+      "mtime": "2026-06-28T20:52:07.850842+00:00",
+      "mtime_age_seconds": 6,
       "path": "data/runtime/qsase_historical_source_price_memory.json"
     },
     "linear_lab": {
       "exists": true,
-      "mtime": "2026-06-28T19:31:24.549110+00:00",
-      "mtime_age_seconds": 3141,
+      "mtime": "2026-06-28T20:52:12.805798+00:00",
+      "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_linear_pattern_lab.json"
     },
     "nonlinear_lab": {
       "exists": true,
-      "mtime": "2026-06-28T19:39:08.163249+00:00",
-      "mtime_age_seconds": 2677,
+      "mtime": "2026-06-28T20:52:13.170435+00:00",
+      "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json"
     },
     "paperops_gate": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:29.064202+00:00",
-      "mtime_age_seconds": 676,
+      "mtime": "2026-06-28T20:52:14.207079+00:00",
+      "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_paperops_gate_interface.json"
     },
     "paperops_summary": {
       "exists": true,
       "mtime": "2026-06-28T20:13:09.991818+00:00",
-      "mtime_age_seconds": 636,
+      "mtime_age_seconds": 2344,
       "path": "data/runtime/paperops_autonomous_pass_summary.json"
     },
     "phase0": {
       "exists": true,
-      "mtime": "2026-06-28T18:48:36.481297+00:00",
-      "mtime_age_seconds": 5709,
+      "mtime": "2026-06-28T20:52:06.915892+00:00",
+      "mtime_age_seconds": 7,
       "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json"
     },
     "router": {
       "exists": true,
-      "mtime": "2026-06-28T20:06:07.096378+00:00",
-      "mtime_age_seconds": 1058,
+      "mtime": "2026-06-28T20:52:13.934126+00:00",
+      "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_strategy_router_decisions.json"
     },
     "self_model": {
       "exists": true,
-      "mtime": "2026-06-28T19:03:29.623977+00:00",
-      "mtime_age_seconds": 4816,
+      "mtime": "2026-06-28T20:52:07.355981+00:00",
+      "mtime_age_seconds": 6,
       "path": "data/runtime/qsase_self_model.json"
     },
     "shadow_simulator": {
       "exists": true,
-      "mtime": "2026-06-28T19:59:15.164932+00:00",
-      "mtime_age_seconds": 1470,
+      "mtime": "2026-06-28T20:52:13.759432+00:00",
+      "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_shadow_strategy_simulator.json"
     },
     "strategy_foundry": {
       "exists": true,
-      "mtime": "2026-06-28T19:45:24.827398+00:00",
-      "mtime_age_seconds": 2301,
+      "mtime": "2026-06-28T20:52:13.425684+00:00",
+      "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_strategy_hypotheses.json"
     },
     "universal_matrix": {
       "exists": true,
-      "mtime": "2026-06-28T19:10:34.485237+00:00",
-      "mtime_age_seconds": 4391,
+      "mtime": "2026-06-28T20:52:07.456121+00:00",
+      "mtime_age_seconds": 6,
       "path": "data/runtime/qsase_universal_source_price_matrix.json"
     }
   },
@@ -421,7 +421,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:23:46.050445+00:00",
+    "generated_at": "2026-06-28T20:52:14.309463+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -709,7 +709,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:23:46.050416+00:00",
+    "generated_at": "2026-06-28T20:52:14.309428+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -804,7 +804,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:23:46.050399+00:00",
+    "generated_at": "2026-06-28T20:52:14.309406+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -910,7 +910,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:23:46.050339+00:00",
+    "generated_at": "2026-06-28T20:52:14.309314+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,

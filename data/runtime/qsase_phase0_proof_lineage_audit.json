@@ -349,11 +349,11 @@
       "telegram_inbound_authoritative": false
     },
     "source_artifact": "phase7_proof_lifecycle_monitor.json",
-    "source_generated_at": "2026-06-28T18:24:55.674294+00:00",
+    "source_generated_at": "2026-06-28T20:12:05.281312+00:00",
     "source_status": "proof_lifecycle_events_recorded",
     "status": "ready_with_gaps"
   },
-  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "generated_at": "2026-06-28T20:52:06.904707+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

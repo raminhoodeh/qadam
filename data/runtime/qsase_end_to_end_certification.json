@@ -1,0 +1,2140 @@
+{
+  "acceptance_report": {
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_end_to_end_certification.json"
+      }
+    ],
+    "artifact_type": "qsase_end_to_end_certification_acceptance_report",
+    "certified": false,
+    "command_disabled": true,
+    "generated_at": "2026-06-28T20:52:06.881529+00:00",
+    "live_capital_ready": false,
+    "public_safe": true,
+    "schema_version": "qsase_end_to_end_certification.v1",
+    "status": "degraded_research_only",
+    "summary_lines": [
+      "QSASE certification: degraded_research_only",
+      "Self-model: qsase_self_model_blocked",
+      "Source-price matrix: qsase_source_price_matrix_degraded",
+      "Historical memory: qsase_historical_source_price_memory_degraded",
+      "Full-universe search: qsase_full_universe_pattern_search_degraded",
+      "Linear lab: qsase_linear_pattern_lab_degraded",
+      "Nonlinear and quantum lab: qsase_nonlinear_quantum_pattern_lab_degraded",
+      "Strategy Foundry: qsase_strategy_foundry_degraded",
+      "Akber Filter: qsase_akber_filter_integration_degraded",
+      "Shadow simulator: qsase_shadow_strategy_simulator_degraded",
+      "Router: qsase_strategy_router_degraded",
+      "PaperOps handoff: paperops_compatibility_pass",
+      "Learning ledger: qsase_learning_attribution_ledger_degraded",
+      "Dashboard: dashboard_visibility_pass",
+      "Telegram: telegram_quality_pass",
+      "Governance: authority_clean",
+      "Authority violations: 0",
+      "Paper orders created by QSASE: 0",
+      "Broker writes: 0",
+      "Proof credit granted by QSASE: false",
+      "Live capital: false"
+    ]
+  },
+  "artifact_refs": {
+    "acceptance_report": {
+      "artifact_path": "data/runtime/qsase_end_to_end_certification_acceptance_report.json"
+    },
+    "events": {
+      "artifact_path": "data/runtime/qsase_end_to_end_certification_events.jsonl"
+    },
+    "history": {
+      "artifact_path": "data/runtime/qsase_end_to_end_certification_history.jsonl"
+    },
+    "primary": {
+      "artifact_path": "data/runtime/qsase_end_to_end_certification.json"
+    }
+  },
+  "artifact_type": "qsase_end_to_end_certification",
+  "authority": {
+    "backtest_to_proof_allowed": false,
+    "broker_live_write_allowed": false,
+    "broker_write_allowed": false,
+    "dashboard_write_authority_allowed": false,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "frontier_llm_order_authority": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "llm_order_authority": false,
+    "local_llm_order_authority": false,
+    "model_weight_mutation_allowed": false,
+    "model_weight_update_created": false,
+    "notification_command_authority_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_write_allowed": false,
+    "policy_mutation_allowed": false,
+    "policy_mutation_created": false,
+    "proof_credit_allowed": false,
+    "qctrl_bypass_allowed": false,
+    "qualified_setup_created": false,
+    "quantum_job_authority": false,
+    "quantum_order_authority": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "secret_read_allowed": false,
+    "secret_write_allowed": false,
+    "shadow_to_proof_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_promotion_allowed": false,
+    "source_trust_mutation_allowed": false,
+    "strategy_mutation_allowed": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trust_score_update_created": false
+  },
+  "authority_audit": {
+    "artifact_count": 15,
+    "authority": {
+      "backtest_to_proof_allowed": false,
+      "broker_live_write_allowed": false,
+      "broker_write_allowed": false,
+      "dashboard_write_authority_allowed": false,
+      "execution_approval_allowed": false,
+      "execution_approval_created": false,
+      "frontier_llm_order_authority": false,
+      "live_broker_endpoint_allowed": false,
+      "live_capital_enabled": false,
+      "llm_order_authority": false,
+      "local_llm_order_authority": false,
+      "model_weight_mutation_allowed": false,
+      "model_weight_update_created": false,
+      "notification_command_authority_allowed": false,
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_proof_ledger_write_allowed": false,
+      "policy_mutation_allowed": false,
+      "policy_mutation_created": false,
+      "proof_credit_allowed": false,
+      "qctrl_bypass_allowed": false,
+      "qualified_setup_created": false,
+      "quantum_job_authority": false,
+      "quantum_order_authority": false,
+      "risk_approval_allowed": false,
+      "risk_approval_created": false,
+      "secret_read_allowed": false,
+      "secret_write_allowed": false,
+      "shadow_to_proof_allowed": false,
+      "simulated_elapsed_time_allowed": false,
+      "source_promotion_allowed": false,
+      "source_trust_mutation_allowed": false,
+      "strategy_mutation_allowed": false,
+      "strategy_mutation_created": false,
+      "telegram_command_path_enabled": false,
+      "telegram_trade_command_enabled": false,
+      "trade_candidate_created": false,
+      "trust_score_update_created": false
+    },
+    "authority_violation_count": 0,
+    "status": "authority_clean",
+    "violations": []
+  },
+  "authority_violation_count": 0,
+  "boundary_summary": {
+    "canonical_paperops_summary_preserved": "data/runtime/paperops_autonomous_pass_summary.json",
+    "canonical_paperops_wrapper_command_preserved": ".venv/bin/python scripts/run_paperops_autonomous_pass.py",
+    "dashboard_review_only": true,
+    "no_live_capital_certification": true,
+    "paper_growth_trial_calendar_advanced": false,
+    "paper_proof_ledger_credit_created": false,
+    "telegram_review_only": true
+  },
+  "broker_write_count": 0,
+  "calendar_boundary": {
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_calendar_boundary_audit.json"
+      }
+    ],
+    "errors": [],
+    "paper_growth_trial_calendar_advanced": false,
+    "preserves_30_day_paper_growth_trial_calendar": true,
+    "simulated_elapsed_time_allowed": false,
+    "status": "calendar_boundary_pass"
+  },
+  "calendar_boundary_failure_count": 0,
+  "capability_matrix": {
+    "akber_filter": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_akber_filter_integration.json"
+      },
+      "status": "qsase_akber_filter_integration_degraded"
+    },
+    "full_universe_search": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json"
+      },
+      "status": "qsase_full_universe_pattern_search_degraded"
+    },
+    "historical_memory": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_historical_source_price_memory.json"
+      },
+      "status": "qsase_historical_source_price_memory_degraded"
+    },
+    "learning_ledger": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_component_attribution_ledger.json"
+      },
+      "status": "qsase_learning_attribution_ledger_degraded"
+    },
+    "linear_lab": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_linear_pattern_lab.json"
+      },
+      "status": "qsase_linear_pattern_lab_degraded"
+    },
+    "nonlinear_quantum_lab": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json"
+      },
+      "status": "qsase_nonlinear_quantum_pattern_lab_degraded"
+    },
+    "self_model": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_self_model.json"
+      },
+      "status": "qsase_self_model_blocked"
+    },
+    "shadow_simulator": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json"
+      },
+      "status": "qsase_shadow_strategy_simulator_degraded"
+    },
+    "source_price_matrix": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json"
+      },
+      "status": "qsase_source_price_matrix_degraded"
+    },
+    "strategy_foundry": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_strategy_hypotheses.json"
+      },
+      "status": "qsase_strategy_foundry_degraded"
+    },
+    "strategy_router": {
+      "artifact_ref": {
+        "artifact_path": "data/runtime/qsase_strategy_router_decisions.json"
+      },
+      "status": "qsase_strategy_router_degraded"
+    }
+  },
+  "certification_version": "qsase_end_to_end_certification.v1",
+  "certified": false,
+  "command_disabled": true,
+  "dashboard_slop_failure_count": 0,
+  "dashboard_visibility": {
+    "anti_slop_error_count": 0,
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_dashboard_status.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_dashboard_anti_slop_audit.json"
+      }
+    ],
+    "command_disabled": true,
+    "dashboard_slop_failure_count": 0,
+    "errors": [],
+    "public_safe": true,
+    "status": "dashboard_visibility_pass"
+  },
+  "fail_closed": true,
+  "failed_check_count": 0,
+  "failed_phase_count": 0,
+  "generated_at": "2026-06-28T20:52:06.881529+00:00",
+  "hard_failure_count": 0,
+  "lineage_gap_count": 0,
+  "live_capital_enabled": false,
+  "live_capital_ready": false,
+  "negative_safety_probes": {
+    "accepted_probe_count": 0,
+    "accepted_probes": [],
+    "probe_count": 19,
+    "rejected_probe_count": 19,
+    "rejected_probes": [
+      "live_capital_flag_true",
+      "broker_write_flag_true",
+      "telegram_command_path_true",
+      "llm_order_authority_true",
+      "quantum_order_authority_true",
+      "qctrl_bypass_true",
+      "paper_order_created_outside_paperops",
+      "qualified_setup_created_outside_paperops",
+      "strategy_mutation_without_approval",
+      "model_weight_mutation_without_approval",
+      "source_trust_mutation_without_approval",
+      "source_promoted_from_degraded_evidence",
+      "backtest_converted_to_proof",
+      "shadow_replay_converted_to_proof",
+      "simulated_elapsed_time_detected",
+      "stale_artifact_presented_as_current",
+      "generic_dashboard_card_accepted",
+      "duplicate_telegram_message_accepted",
+      "secret_value_present_in_public_safe_output"
+    ],
+    "status": "negative_probes_pass"
+  },
+  "paper_only": true,
+  "paper_order_created_outside_paperops_count": 0,
+  "paperops_boundary_failure_count": 0,
+  "paperops_compatibility": {
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/paperops_autonomous_pass_summary.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_paperops_gate_interface.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_paperops_handoff_records.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_paperops_rejected_handoffs.jsonl"
+      }
+    ],
+    "broker_write_count": 0,
+    "canonical_summary": "data/runtime/paperops_autonomous_pass_summary.json",
+    "canonical_summary_present": true,
+    "canonical_wrapper_command": ".venv/bin/python scripts/run_paperops_autonomous_pass.py",
+    "errors": [],
+    "handoff_record_count": 0,
+    "live_capital_enabled": false,
+    "paper_order_created_outside_paperops_count": 0,
+    "proof_credit_allowed": false,
+    "rejected_handoff_count": 16,
+    "status": "paperops_compatibility_pass"
+  },
+  "paperops_handoff_count": 0,
+  "passed_check_count": 33,
+  "passed_phase_count": 16,
+  "phase_count": 16,
+  "phase_id": "qsase_15_end_to_end_certification",
+  "phase_name": "QSASE-15: End-To-End Certification",
+  "phase_results": [
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json"
+        }
+      ],
+      "dashboard_safe_artifact": null,
+      "degraded": true,
+      "passed": true,
+      "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
+      "phase_label": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
+      "phase_status": "ready_with_gaps",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:06.915892+00:00",
+        "required": true,
+        "size_bytes": 32980
+      },
+      "status": "ready_with_gaps"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_governance_safety_contract.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_governance_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.179713+00:00",
+        "required": true,
+        "size_bytes": 2427
+      },
+      "degraded": false,
+      "passed": true,
+      "phase_id": "qsase_0_doctrine_document_hierarchy_safety_contract",
+      "phase_label": "QSASE-0",
+      "phase_status": "governance_safety_ready",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_governance_safety_contract.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.179076+00:00",
+        "required": true,
+        "size_bytes": 20813
+      },
+      "status": "governance_safety_ready"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_self_model.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_self_model_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.356092+00:00",
+        "required": true,
+        "size_bytes": 1076
+      },
+      "degraded": false,
+      "passed": true,
+      "phase_id": "qsase_1_self_model_artifact_validation",
+      "phase_label": "QSASE-1",
+      "phase_status": "qsase_self_model_blocked",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_self_model.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.355981+00:00",
+        "required": true,
+        "size_bytes": 42945
+      },
+      "status": "qsase_self_model_blocked"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_universal_source_price_matrix_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.457405+00:00",
+        "required": true,
+        "size_bytes": 1395
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_2_universal_source_price_pattern_matrix",
+      "phase_label": "QSASE-2",
+      "phase_status": "qsase_source_price_matrix_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.456121+00:00",
+        "required": true,
+        "size_bytes": 134835
+      },
+      "status": "qsase_source_price_matrix_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_historical_source_price_memory.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_historical_source_price_memory_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.967693+00:00",
+        "required": true,
+        "size_bytes": 1139
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_3_historical_source_price_memory",
+      "phase_label": "QSASE-3",
+      "phase_status": "qsase_historical_source_price_memory_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_historical_source_price_memory.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:07.850842+00:00",
+        "required": true,
+        "size_bytes": 179280
+      },
+      "status": "qsase_historical_source_price_memory_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_full_universe_pattern_search_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:12.579295+00:00",
+        "required": true,
+        "size_bytes": 1165
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_4_full_universe_pattern_search",
+      "phase_label": "QSASE-4",
+      "phase_status": "qsase_full_universe_pattern_search_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:12.577278+00:00",
+        "required": true,
+        "size_bytes": 600364
+      },
+      "status": "qsase_full_universe_pattern_search_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_linear_pattern_lab.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_linear_pattern_lab_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:12.807985+00:00",
+        "required": true,
+        "size_bytes": 1252
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_5_linear_pattern_recognition_lab",
+      "phase_label": "QSASE-5",
+      "phase_status": "qsase_linear_pattern_lab_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_linear_pattern_lab.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:12.805798+00:00",
+        "required": true,
+        "size_bytes": 6577
+      },
+      "status": "qsase_linear_pattern_lab_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.171064+00:00",
+        "required": true,
+        "size_bytes": 1512
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_6_nonlinear_quantum_pattern_lab",
+      "phase_label": "QSASE-6",
+      "phase_status": "qsase_nonlinear_quantum_pattern_lab_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.170435+00:00",
+        "required": true,
+        "size_bytes": 9155
+      },
+      "status": "qsase_nonlinear_quantum_pattern_lab_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_strategy_hypotheses.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_strategy_foundry_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.426708+00:00",
+        "required": true,
+        "size_bytes": 1519
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_7_strategy_foundry",
+      "phase_label": "QSASE-7",
+      "phase_status": "qsase_strategy_foundry_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_strategy_hypotheses.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.425684+00:00",
+        "required": true,
+        "size_bytes": 6910
+      },
+      "status": "qsase_strategy_foundry_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_akber_filter_integration.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_akber_filter_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.604986+00:00",
+        "required": true,
+        "size_bytes": 1625
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_8_akber_filter_backtest_integration",
+      "phase_label": "QSASE-8",
+      "phase_status": "qsase_akber_filter_integration_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_akber_filter_integration.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.604117+00:00",
+        "required": true,
+        "size_bytes": 7220
+      },
+      "status": "qsase_akber_filter_integration_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_shadow_strategy_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.766331+00:00",
+        "required": true,
+        "size_bytes": 1632
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_9_shadow_strategy_simulator_upgrade",
+      "phase_label": "QSASE-9",
+      "phase_status": "qsase_shadow_strategy_simulator_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.759432+00:00",
+        "required": true,
+        "size_bytes": 8140
+      },
+      "status": "qsase_shadow_strategy_simulator_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_strategy_router_decisions.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_strategy_router_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.939074+00:00",
+        "required": true,
+        "size_bytes": 26061
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_10_strategy_router",
+      "phase_label": "QSASE-10",
+      "phase_status": "qsase_strategy_router_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_strategy_router_decisions.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:13.934126+00:00",
+        "required": true,
+        "size_bytes": 45503
+      },
+      "status": "qsase_strategy_router_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_paperops_gate_interface.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_paperops_gate_interface_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.208740+00:00",
+        "required": true,
+        "size_bytes": 1646
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_11_paperops_handoff_interface",
+      "phase_label": "QSASE-11",
+      "phase_status": "qsase_paperops_gate_interface_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_paperops_gate_interface.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.207079+00:00",
+        "required": true,
+        "size_bytes": 7830
+      },
+      "status": "qsase_paperops_gate_interface_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_component_attribution_ledger.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_learning_attribution_dashboard_summary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.317647+00:00",
+        "required": true,
+        "size_bytes": 3223
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_12_learning_attribution_ledger",
+      "phase_label": "QSASE-12",
+      "phase_status": "qsase_learning_attribution_ledger_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_component_attribution_ledger.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.312182+00:00",
+        "required": true,
+        "size_bytes": 58678
+      },
+      "status": "qsase_learning_attribution_ledger_degraded"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_dashboard_status.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_dashboard_decision_records.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.640930+00:00",
+        "required": true,
+        "size_bytes": 20205
+      },
+      "degraded": false,
+      "passed": true,
+      "phase_id": "qsase_13_dashboard_visibility",
+      "phase_label": "QSASE-13",
+      "phase_status": "qsase_dashboard_visibility_ready",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_dashboard_status.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.640513+00:00",
+        "required": true,
+        "size_bytes": 5357
+      },
+      "status": "qsase_dashboard_visibility_ready"
+    },
+    {
+      "artifact_refs": [
+        {
+          "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json"
+        }
+      ],
+      "dashboard_safe_artifact": {
+        "artifact_path": "data/runtime/qsase_telegram_dashboard_communications_mirror.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.765654+00:00",
+        "required": true,
+        "size_bytes": 2082
+      },
+      "degraded": true,
+      "passed": true,
+      "phase_id": "qsase_14_telegram_summary_boundary",
+      "phase_label": "QSASE-14",
+      "phase_status": "qsase_telegram_notification_boundary_degraded",
+      "phase_status_recorded": true,
+      "primary_artifact": {
+        "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json",
+        "empty": false,
+        "exists": true,
+        "mtime": "2026-06-28T20:52:14.764938+00:00",
+        "required": true,
+        "size_bytes": 4276
+      },
+      "status": "qsase_telegram_notification_boundary_degraded"
+    }
+  ],
+  "present_artifact_count": 71,
+  "proof_boundary": {
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_proof_boundary_audit.json"
+      }
+    ],
+    "backtest_to_proof_allowed": false,
+    "errors": [],
+    "paper_proof_ledger_credit_created": false,
+    "proof_credit_allowed": false,
+    "shadow_to_proof_allowed": false,
+    "status": "proof_boundary_pass"
+  },
+  "proof_boundary_failure_count": 0,
+  "proof_credit_allowed": false,
+  "proposal_first": true,
+  "public_safe": true,
+  "read_only": true,
+  "recursive_improvement_contract": {
+    "active_proposal_count": 8,
+    "applied_update_count": 0,
+    "approval_required_count": 8,
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_strategy_weight_proposals.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_source_trust_proposals.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_model_weight_proposals.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_filter_threshold_proposals.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_learning_approval_queue.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_component_attribution_ledger.json"
+      }
+    ],
+    "errors": [],
+    "present_proposal_artifact_count": 5,
+    "proposal_artifact_count": 5,
+    "proposal_only": true,
+    "status": "recursive_improvement_contract_ready"
+  },
+  "required_artifact_count": 71,
+  "required_artifacts": [
+    {
+      "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.915892+00:00",
+      "required": true,
+      "size_bytes": 32980
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_scanner_freshness.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.916042+00:00",
+      "required": true,
+      "size_bytes": 3273
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_candidate_identity_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.916186+00:00",
+      "required": true,
+      "size_bytes": 3958
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_paper_lifecycle_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.916321+00:00",
+      "required": true,
+      "size_bytes": 4973
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_proof_lineage_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.916748+00:00",
+      "required": true,
+      "size_bytes": 10733
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_telemetry_consistency.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.917566+00:00",
+      "required": true,
+      "size_bytes": 2937
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_dashboard_deploy_hygiene.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.917684+00:00",
+      "required": true,
+      "size_bytes": 2636
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_review_signature_readiness.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.917772+00:00",
+      "required": true,
+      "size_bytes": 2913
+    },
+    {
+      "artifact_path": "data/runtime/qsase_phase0_validated_edge_readiness.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:06.916574+00:00",
+      "required": true,
+      "size_bytes": 2583
+    },
+    {
+      "artifact_path": "data/runtime/qsase_governance_safety_contract.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.179076+00:00",
+      "required": true,
+      "size_bytes": 20813
+    },
+    {
+      "artifact_path": "data/runtime/qsase_authority_flag_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.179206+00:00",
+      "required": true,
+      "size_bytes": 410
+    },
+    {
+      "artifact_path": "data/runtime/qsase_authority_violations.jsonl",
+      "empty": true,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.179745+00:00",
+      "required": true,
+      "size_bytes": 0
+    },
+    {
+      "artifact_path": "data/runtime/qsase_proof_boundary_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.179500+00:00",
+      "required": true,
+      "size_bytes": 2111
+    },
+    {
+      "artifact_path": "data/runtime/qsase_calendar_boundary_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.179568+00:00",
+      "required": true,
+      "size_bytes": 2206
+    },
+    {
+      "artifact_path": "data/runtime/qsase_self_model.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.355981+00:00",
+      "required": true,
+      "size_bytes": 42945
+    },
+    {
+      "artifact_path": "data/runtime/qsase_self_model_dashboard_summary.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.356092+00:00",
+      "required": true,
+      "size_bytes": 1076
+    },
+    {
+      "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.456121+00:00",
+      "required": true,
+      "size_bytes": 134835
+    },
+    {
+      "artifact_path": "data/runtime/qsase_source_universe.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.456891+00:00",
+      "required": true,
+      "size_bytes": 67706
+    },
+    {
+      "artifact_path": "data/runtime/qsase_trading_universe.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.457248+00:00",
+      "required": true,
+      "size_bytes": 31962
+    },
+    {
+      "artifact_path": "data/runtime/qsase_source_price_edges.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.500919+00:00",
+      "required": true,
+      "size_bytes": 10245414
+    },
+    {
+      "artifact_path": "data/runtime/qsase_historical_source_price_memory.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.850842+00:00",
+      "required": true,
+      "size_bytes": 179280
+    },
+    {
+      "artifact_path": "data/runtime/qsase_historical_source_price_memory.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.945821+00:00",
+      "required": true,
+      "size_bytes": 23594127
+    },
+    {
+      "artifact_path": "data/runtime/qsase_historical_coverage_map.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.946212+00:00",
+      "required": true,
+      "size_bytes": 5098
+    },
+    {
+      "artifact_path": "data/runtime/qsase_historical_replay_manifest.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.946346+00:00",
+      "required": true,
+      "size_bytes": 1932
+    },
+    {
+      "artifact_path": "data/runtime/qsase_point_in_time_replay_index.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.946920+00:00",
+      "required": true,
+      "size_bytes": 97040
+    },
+    {
+      "artifact_path": "data/runtime/qsase_historical_missing_windows.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:07.967366+00:00",
+      "required": true,
+      "size_bytes": 4667007
+    },
+    {
+      "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:12.577278+00:00",
+      "required": true,
+      "size_bytes": 600364
+    },
+    {
+      "artifact_path": "data/runtime/qsase_candidate_patterns.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:12.577683+00:00",
+      "required": true,
+      "size_bytes": 60674
+    },
+    {
+      "artifact_path": "data/runtime/qsase_rejected_patterns.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:12.579040+00:00",
+      "required": true,
+      "size_bytes": 404753
+    },
+    {
+      "artifact_path": "data/runtime/qsase_linear_pattern_lab.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:12.805798+00:00",
+      "required": true,
+      "size_bytes": 6577
+    },
+    {
+      "artifact_path": "data/runtime/qsase_linear_backtest_results.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:12.806458+00:00",
+      "required": true,
+      "size_bytes": 116034
+    },
+    {
+      "artifact_path": "data/runtime/qsase_linear_rejected_patterns.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:12.807863+00:00",
+      "required": true,
+      "size_bytes": 352759
+    },
+    {
+      "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.170435+00:00",
+      "required": true,
+      "size_bytes": 9155
+    },
+    {
+      "artifact_path": "data/runtime/qsase_nonlinear_pattern_results.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.170946+00:00",
+      "required": true,
+      "size_bytes": 91538
+    },
+    {
+      "artifact_path": "data/runtime/qsase_quantum_pattern_reviews.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.171890+00:00",
+      "required": true,
+      "size_bytes": 33960
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_hypotheses.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.425684+00:00",
+      "required": true,
+      "size_bytes": 6910
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_hypotheses.jsonl",
+      "empty": true,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.425766+00:00",
+      "required": true,
+      "size_bytes": 0
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_family_map.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.426554+00:00",
+      "required": true,
+      "size_bytes": 14289
+    },
+    {
+      "artifact_path": "data/runtime/qsase_rejected_strategy_hypotheses.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.426312+00:00",
+      "required": true,
+      "size_bytes": 109594
+    },
+    {
+      "artifact_path": "data/runtime/qsase_akber_filter_integration.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.604117+00:00",
+      "required": true,
+      "size_bytes": 7220
+    },
+    {
+      "artifact_path": "data/runtime/qsase_akber_filter_results.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.604677+00:00",
+      "required": true,
+      "size_bytes": 101112
+    },
+    {
+      "artifact_path": "data/runtime/qsase_akber_filter_threshold_proposals.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.604805+00:00",
+      "required": true,
+      "size_bytes": 4847
+    },
+    {
+      "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.759432+00:00",
+      "required": true,
+      "size_bytes": 8140
+    },
+    {
+      "artifact_path": "data/runtime/qsase_shadow_strategy_results.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.763623+00:00",
+      "required": true,
+      "size_bytes": 448664
+    },
+    {
+      "artifact_path": "data/runtime/qsase_shadow_strategy_rejections.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.764524+00:00",
+      "required": true,
+      "size_bytes": 169584
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_router_decisions.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.934126+00:00",
+      "required": true,
+      "size_bytes": 45503
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_router_decisions.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.934879+00:00",
+      "required": true,
+      "size_bytes": 139998
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_router_scoreboard.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.935084+00:00",
+      "required": true,
+      "size_bytes": 8379
+    },
+    {
+      "artifact_path": "data/runtime/qsase_why_not_trading_now.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:13.935218+00:00",
+      "required": true,
+      "size_bytes": 3870
+    },
+    {
+      "artifact_path": "data/runtime/qsase_paperops_gate_interface.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.207079+00:00",
+      "required": true,
+      "size_bytes": 7830
+    },
+    {
+      "artifact_path": "data/runtime/qsase_paperops_gate_interface.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.207883+00:00",
+      "required": true,
+      "size_bytes": 157954
+    },
+    {
+      "artifact_path": "data/runtime/qsase_paperops_handoff_records.jsonl",
+      "empty": true,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.207937+00:00",
+      "required": true,
+      "size_bytes": 0
+    },
+    {
+      "artifact_path": "data/runtime/qsase_paperops_rejected_handoffs.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.208525+00:00",
+      "required": true,
+      "size_bytes": 123682
+    },
+    {
+      "artifact_path": "data/runtime/qsase_component_attribution_ledger.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.312182+00:00",
+      "required": true,
+      "size_bytes": 58678
+    },
+    {
+      "artifact_path": "data/runtime/qsase_component_attribution_ledger.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.316473+00:00",
+      "required": true,
+      "size_bytes": 1087251
+    },
+    {
+      "artifact_path": "data/runtime/qsase_strategy_weight_proposals.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.316706+00:00",
+      "required": true,
+      "size_bytes": 12275
+    },
+    {
+      "artifact_path": "data/runtime/qsase_source_trust_proposals.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.316890+00:00",
+      "required": true,
+      "size_bytes": 5671
+    },
+    {
+      "artifact_path": "data/runtime/qsase_model_weight_proposals.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.317096+00:00",
+      "required": true,
+      "size_bytes": 2862
+    },
+    {
+      "artifact_path": "data/runtime/qsase_filter_threshold_proposals.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.317285+00:00",
+      "required": true,
+      "size_bytes": 5790
+    },
+    {
+      "artifact_path": "data/runtime/qsase_learning_approval_queue.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.317502+00:00",
+      "required": true,
+      "size_bytes": 18281
+    },
+    {
+      "artifact_path": "data/runtime/qsase_dashboard_status.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.640513+00:00",
+      "required": true,
+      "size_bytes": 5357
+    },
+    {
+      "artifact_path": "data/runtime/qsase_dashboard_decision_records.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.640930+00:00",
+      "required": true,
+      "size_bytes": 20205
+    },
+    {
+      "artifact_path": "data/runtime/qsase_dashboard_system_map.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.641098+00:00",
+      "required": true,
+      "size_bytes": 8190
+    },
+    {
+      "artifact_path": "data/runtime/qsase_dashboard_anti_slop_audit.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.643497+00:00",
+      "required": true,
+      "size_bytes": 1618
+    },
+    {
+      "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.764938+00:00",
+      "required": true,
+      "size_bytes": 4276
+    },
+    {
+      "artifact_path": "data/runtime/qsase_telegram_message_candidates.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.765232+00:00",
+      "required": true,
+      "size_bytes": 23795
+    },
+    {
+      "artifact_path": "data/runtime/qsase_telegram_message_quality.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.765404+00:00",
+      "required": true,
+      "size_bytes": 3213
+    },
+    {
+      "artifact_path": "data/runtime/qsase_telegram_dedupe_ledger.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.766357+00:00",
+      "required": true,
+      "size_bytes": 9534
+    },
+    {
+      "artifact_path": "data/runtime/qsase_telegram_delivery_receipts.jsonl",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.766717+00:00",
+      "required": true,
+      "size_bytes": 30434
+    },
+    {
+      "artifact_path": "data/runtime/qsase_telegram_dashboard_communications_mirror.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:52:14.765654+00:00",
+      "required": true,
+      "size_bytes": 2082
+    },
+    {
+      "artifact_path": "data/runtime/paperops_autonomous_pass_summary.json",
+      "empty": false,
+      "exists": true,
+      "mtime": "2026-06-28T20:13:09.991818+00:00",
+      "required": true,
+      "size_bytes": 189820
+    }
+  ],
+  "required_check_count": 33,
+  "required_checks": [
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_paperops_reliability_baseline.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "gap_count=7",
+        "degraded_reason_count=0",
+        "blocker_count=0",
+        "component_status.scanner_freshness=ready_with_gaps",
+        "component_status.candidate_identity=ready_with_gaps",
+        "component_status.paper_lifecycle=ready_with_gaps",
+        "component_status.validated_edge_readiness=ready_with_gaps",
+        "component_status.proof_lineage=ready_with_gaps",
+        "component_status.telemetry_consistency=ready_with_gaps",
+        "component_status.dashboard_deploy_hygiene=ready",
+        "component_status.review_signature_readiness=ready",
+        "qsase_phase0_paperops_reliability_baseline_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_scanner_freshness.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=scanner_freshness",
+        "status=ready_with_gaps",
+        "gap_count=2",
+        "degraded_reason_count=0",
+        "qsase_phase0_scanner_freshness_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_candidate_identity.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=candidate_identity",
+        "status=ready_with_gaps",
+        "gap_count=1",
+        "degraded_reason_count=0",
+        "qsase_phase0_candidate_identity_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_paper_lifecycle.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=paper_lifecycle",
+        "status=ready_with_gaps",
+        "gap_count=1",
+        "degraded_reason_count=0",
+        "qsase_phase0_paper_lifecycle_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_proof_lineage.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=proof_lineage",
+        "status=ready_with_gaps",
+        "gap_count=1",
+        "degraded_reason_count=0",
+        "qsase_phase0_proof_lineage_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_telemetry_consistency.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=telemetry_consistency",
+        "status=ready_with_gaps",
+        "gap_count=1",
+        "degraded_reason_count=0",
+        "qsase_phase0_telemetry_consistency_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_dashboard_deploy_hygiene.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=dashboard_deploy_hygiene",
+        "status=ready",
+        "gap_count=0",
+        "degraded_reason_count=0",
+        "qsase_phase0_dashboard_deploy_hygiene_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_review_signature_readiness.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=review_signature_readiness",
+        "status=ready",
+        "gap_count=0",
+        "degraded_reason_count=0",
+        "qsase_phase0_review_signature_readiness_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_phase0_validated_edge_readiness.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=validated_edge_readiness",
+        "status=ready_with_gaps",
+        "gap_count=1",
+        "degraded_reason_count=0",
+        "qsase_phase0_validated_edge_readiness_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_governance_safety_contract.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "artifact=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_governance_safety_contract.json",
+        "phase_status=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_phase_implementation_status.json",
+        "implementation_log=/Users/raminhoodeh/Desktop/qadam/docs/qsase-implementation-log.md",
+        "status=governance_safety_ready",
+        "authority_flag_count=38",
+        "authority_false_count=38",
+        "authority_violation_count=0",
+        "governance_review_queue_count=0",
+        "proposal_applied_count=0",
+        "paper_order_created_count=0",
+        "broker_write_count=0",
+        "qsase_governance_safety_contract_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_authority_flags.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=authority_flags",
+        "status=governance_safety_ready",
+        "authority_violation_count=0",
+        "qsase_authority_flags_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_authority_violations.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=authority_violations",
+        "status=governance_safety_ready",
+        "authority_violation_count=0",
+        "qsase_authority_violations_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_proof_boundary.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=proof_boundary",
+        "status=governance_safety_ready",
+        "authority_violation_count=0",
+        "qsase_proof_boundary_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_calendar_boundary.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "component=calendar_boundary",
+        "status=governance_safety_ready",
+        "authority_violation_count=0",
+        "qsase_calendar_boundary_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_self_model.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "artifact=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_self_model.json",
+        "dashboard_summary=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_self_model_dashboard_summary.json",
+        "phase_status=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_phase_implementation_status.json",
+        "implementation_log=/Users/raminhoodeh/Desktop/qadam/docs/qsase-implementation-log.md",
+        "status=qsase_self_model_blocked",
+        "staleness_status=fresh_enough_for_qsase_1",
+        "degraded_component_count=12",
+        "missing_component_count=1",
+        "repair_request_count=12",
+        "why_not_trading_now=idempotency_guard_holding_duplicate_or_already_submitted_setup",
+        "qsase_self_model_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_universal_source_price_matrix.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "trading_universe=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_trading_universe.json",
+        "source_price_edges=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_source_price_edges.jsonl",
+        "dashboard_summary=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_universal_source_price_matrix_dashboard_summary.json",
+        "phase_status=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_phase_implementation_status.json",
+        "implementation_log=/Users/raminhoodeh/Desktop/qadam/docs/qsase-implementation-log.md",
+        "status=qsase_source_price_matrix_degraded",
+        "source_count=41",
+        "watched_market_count=19",
+        "source_price_edge_count=6232",
+        "credential_gated_source_count=1",
+        "paperable_instrument_count=13",
+        "qsase_universal_source_price_matrix_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_historical_source_price_memory.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "dashboard_summary=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_historical_source_price_memory_dashboard_summary.json",
+        "phase_status=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_phase_implementation_status.json",
+        "implementation_log=/Users/raminhoodeh/Desktop/qadam/docs/qsase-implementation-log.md",
+        "status=qsase_historical_source_price_memory_degraded",
+        "memory_record_count=6232",
+        "point_in_time_safe_record_count=6232",
+        "missing_window_record_count=6150",
+        "backtest_eligible_record_count=82",
+        "leakage_rejected_record_count=0",
+        "paper_growth_trial_calendar_advanced=False",
+        "paper_proof_ledger_credit_granted=False",
+        "qsase_historical_source_price_memory_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_full_universe_pattern_search.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "phase_status=/Users/raminhoodeh/Desktop/qadam/data/runtime/qsase_phase_implementation_status.json",
+        "implementation_log=/Users/raminhoodeh/Desktop/qadam/docs/qsase-implementation-log.md",
+        "status=qsase_full_universe_pattern_search_degraded",
+        "matrix_row_count=6232",
+        "complete_relationship_count=82",
+        "candidate_pattern_count=16",
+        "rejected_pattern_count=103",
+        "new_strategy_candidate_count=0",
+        "strategy_label_count=1",
+        "patterns_are_not_strategies=True",
+        "no_trade_candidates_created=True",
+        "qsase_full_universe_pattern_search_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_linear_pattern_lab.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "status=qsase_linear_pattern_lab_degraded",
+        "tested_relationship_count=16",
+        "accepted_linear_pattern_count=0",
+        "inconclusive_linear_pattern_count=8",
+        "rejected_linear_pattern_count=119",
+        "candidate_for_nonlinear_review_count=8",
+        "candidate_for_strategy_foundry_count=0",
+        "leakage_rejected_count=0",
+        "coverage_blocked_count=21",
+        "linear_success_is_research_evidence_only=True",
+        "no_trade_candidates_created=True",
+        "qsase_linear_pattern_lab_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_nonlinear_quantum_pattern_lab.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "inconclusive_nonlinear_pattern_count=8",
+        "linear_baseline_beat_count=0",
+        "candidate_for_quantum_review_count=8",
+        "reviewed_pattern_count=8",
+        "quantum_hold_count=4",
+        "quantum_useful_information_count=4",
+        "quantum_backend=classical_fallback",
+        "quantum_mode=deterministic_classical_shadow",
+        "candidate_for_strategy_foundry_count=0",
+        "quantum_review_is_not_trade_approval=True",
+        "no_trade_candidates_created=True",
+        "qsase_nonlinear_quantum_pattern_lab_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_strategy_foundry.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "existing_family_match_count=0",
+        "new_family_proposal_count=0",
+        "strategy_modification_proposal_count=0",
+        "shadow_only_monitor_count=4",
+        "rejected_pattern_count=16",
+        "paper_review_candidate_count=0",
+        "akber_filter_inputs_prepared_count=0",
+        "shadow_replay_inputs_prepared_count=0",
+        "strategy_hypotheses_are_not_trades=True",
+        "trade_candidate_created=False",
+        "paper_order_allowed=False",
+        "qsase_strategy_foundry_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_akber_filter_integration.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "hold_filter_count=0",
+        "rejected_filter_count=16",
+        "audit_only_filter_count=0",
+        "missing_context_count=16",
+        "ablation_ready_count=4",
+        "historical_improvement_observed=False",
+        "candidate_for_shadow_replay_count=0",
+        "candidate_for_router_count=0",
+        "akber_filter_pass_is_not_execution_approval=True",
+        "trade_candidate_created=False",
+        "paper_order_allowed=False",
+        "qsase_akber_filter_integration_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_shadow_strategy_simulator.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "variant_count=3",
+        "replay_record_count=48",
+        "active_replay_count=32",
+        "blocked_replay_count=16",
+        "evaluated_replay_count=32",
+        "actual_vs_hypothetical_count=48",
+        "candidate_for_router_count=0",
+        "rejected_variant_count=48",
+        "blocked_reason=akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
+        "paper_order_created=False",
+        "proof_credit_allowed=False",
+        "qsase_shadow_strategy_simulator_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_strategy_router.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "reject_count=0",
+        "hold_count=0",
+        "shadow_only_count=0",
+        "watchlist_only_count=0",
+        "repair_requested_count=0",
+        "hard_veto_count=72",
+        "soft_blocker_count=284",
+        "why_not_trading_now_reason=Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route.",
+        "paper_order_allowed=False",
+        "broker_write_allowed=False",
+        "proof_credit_allowed=False",
+        "qsase_strategy_router_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_paperops_gate_interface.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "source_quorum_block_count=0",
+        "drawdown_block_count=0",
+        "qctrl_hold_count=0",
+        "paper_route_unavailable_count=16",
+        "guarded_alpaca_paper_route_state=available_for_review",
+        "qctrl_paper_consultation_state=not_bypassed",
+        "top_blocking_gate=akber_filter_failed",
+        "paper_order_created_count=0",
+        "broker_write_count=0",
+        "proof_credit_allowed=False",
+        "live_capital_enabled=False",
+        "qsase_paperops_gate_interface_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_learning_attribution_ledger.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "approved_proposal_count=0",
+        "applied_update_count=0",
+        "learning_write_created=False",
+        "strategy_mutation_created=False",
+        "policy_mutation_created=False",
+        "model_weight_update_created=False",
+        "trust_score_update_created=False",
+        "paper_order_created_count=0",
+        "broker_write_count=0",
+        "proof_credit_allowed=False",
+        "live_capital_enabled=False",
+        "qsase_learning_attribution_ledger_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_recursive_improvement_contract.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "status=recursive_improvement_contract_ready",
+        "proposal_artifact_count=5",
+        "present_proposal_artifact_count=5",
+        "active_proposal_count=8",
+        "applied_update_count=0",
+        "approval_required_count=8",
+        "proposal_only=True",
+        "qsase_recursive_improvement_contract_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_dashboard_view_model.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "nonlinear_pattern_count=16",
+        "trade_intent_count=16",
+        "learning_ledger_row_count=30",
+        "repair_queue_count=20",
+        "stale_labeled_count=0",
+        "anti_slop_error_count=0",
+        "applied_change_count=0",
+        "paper_order_created_count=0",
+        "broker_write_count=0",
+        "proof_credit_allowed=False",
+        "live_capital_enabled=False",
+        "qsase_dashboard_view_model_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_dashboard_anti_slop.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "status=anti_slop_passed",
+        "error_count=0",
+        "warning_count=0",
+        "duplicate_headlines_rejected=True",
+        "generic_ai_prose_rejected=True",
+        "trade_intents_not_orders=True",
+        "overview_detail_ledgers_excluded=True",
+        "stale_state_labeled=True",
+        "authority_drift_rejected=True",
+        "qsase_dashboard_anti_slop_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_telegram_notification_boundary.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "duplicate_suppressed_count=5",
+        "inbound_record_count=2",
+        "inbound_command_detected_count=0",
+        "inbound_command_ignored_count=0",
+        "telegram_live_send_allowed=False",
+        "telegram_command_path_enabled=False",
+        "telegram_trade_command_enabled=False",
+        "paper_order_created_count=0",
+        "broker_write_count=0",
+        "proof_credit_allowed=False",
+        "live_capital_enabled=False",
+        "qsase_telegram_notification_boundary_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_telegram_message_quality.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "candidate_count=5",
+        "specific_count=5",
+        "human_style_count=5",
+        "generic_probe_rejected=True",
+        "command_probe_rejected=True",
+        "message_sent_count=0",
+        "telegram_live_send_allowed=False",
+        "qsase_telegram_message_quality_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_telegram_dedupe.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "candidate_count=5",
+        "unique_fingerprint_count=5",
+        "message_rejected_duplicate_count=5",
+        "duplicate_suppressed_count=5",
+        "same_fingerprint_probe_detected=True",
+        "qsase_telegram_dedupe_check=ok"
+      ]
+    },
+    {
+      "passed": true,
+      "returncode": 0,
+      "script": "scripts/check_qsase_end_to_end_certification.py",
+      "status": "passed",
+      "stderr_tail": [],
+      "stdout_tail": [
+        "self_validated_by_qsase_end_to_end_certification"
+      ]
+    }
+  ],
+  "schema_version": "qsase_end_to_end_certification.v1",
+  "shadow_result_count": 48,
+  "source_price_lineage": {
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_source_universe.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_source_price_edges.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_historical_source_price_memory.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_candidate_patterns.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_linear_backtest_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_nonlinear_pattern_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_quantum_pattern_reviews.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_strategy_hypotheses.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_akber_filter_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_shadow_strategy_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_strategy_router_decisions.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_paperops_gate_interface.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_component_attribution_ledger.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_dashboard_decision_records.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_telegram_message_candidates.json"
+      }
+    ],
+    "candidate_pattern_count": 16,
+    "errors": [],
+    "historical_memory_record_count": 6232,
+    "linked_historical_count": 6232,
+    "linked_pattern_count": 82,
+    "source_price_edge_count": 6232,
+    "status": "source_price_lineage_pass"
+  },
+  "status": "degraded_research_only",
+  "strategy_lineage": {
+    "akber_result_count": 16,
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_source_universe.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_source_price_edges.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_historical_source_price_memory.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_candidate_patterns.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_linear_backtest_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_nonlinear_pattern_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_quantum_pattern_reviews.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_strategy_hypotheses.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_akber_filter_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_shadow_strategy_results.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_strategy_router_decisions.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_paperops_gate_interface.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_component_attribution_ledger.jsonl"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_dashboard_decision_records.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_telegram_message_candidates.json"
+      }
+    ],
+    "errors": [],
+    "learning_record_count": 109,
+    "paperops_gate_record_count": 16,
+    "rejected_strategy_hypothesis_count": 16,
+    "router_decision_count": 16,
+    "shadow_result_count": 48,
+    "status": "strategy_lineage_pass",
+    "strategy_hypothesis_count": 0
+  },
+  "telegram_quality": {
+    "artifact_refs": [
+      {
+        "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_telegram_message_quality.json"
+      },
+      {
+        "artifact_path": "data/runtime/qsase_telegram_dedupe_ledger.jsonl"
+      }
+    ],
+    "candidate_count": 5,
+    "command_disabled": true,
+    "dedupe_record_count": 20,
+    "duplicate_suppression_count": 5,
+    "errors": [],
+    "live_send_allowed": false,
+    "status": "telegram_quality_pass",
+    "telegram_quality_failure_count": 0
+  },
+  "telegram_quality_failure_count": 0,
+  "warning_count": 13
+}

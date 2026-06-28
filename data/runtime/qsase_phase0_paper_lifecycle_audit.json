@@ -4,7 +4,7 @@
   "component": {
     "accepted_order_policy_records": [
       {
-        "age_seconds": 67243,
+        "age_seconds": 74653,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -12,7 +12,7 @@
         "symbol": "ITA"
       },
       {
-        "age_seconds": 67242,
+        "age_seconds": 74652,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -20,7 +20,7 @@
         "symbol": "SMH"
       },
       {
-        "age_seconds": 20615,
+        "age_seconds": 28025,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -28,7 +28,7 @@
         "symbol": "ITA"
       },
       {
-        "age_seconds": 20613,
+        "age_seconds": 28023,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -100,12 +100,12 @@
       "telegram_inbound_authoritative": false
     },
     "source_artifact": "paperops_paper_lifecycle_poller.json",
-    "source_generated_at": "2026-06-28T18:24:42.474947+00:00",
+    "source_generated_at": "2026-06-28T20:12:32.537320+00:00",
     "source_status": "paper_lifecycle_poll_recorded",
     "stale_accepted_order_count": 4,
     "status": "ready_with_gaps"
   },
-  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "generated_at": "2026-06-28T20:52:06.904707+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

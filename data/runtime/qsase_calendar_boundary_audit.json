@@ -43,7 +43,7 @@
   },
   "backfill_allowed": false,
   "calendar_boundary_violation_count": 0,
-  "generated_at": "2026-06-28T18:54:33.200195+00:00",
+  "generated_at": "2026-06-28T20:52:07.171395+00:00",
   "historical_backtests_remain_historical": true,
   "paper_growth_trial": {
     "actual_calendar_run": true,

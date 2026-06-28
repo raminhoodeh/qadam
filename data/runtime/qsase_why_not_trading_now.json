@@ -77,7 +77,7 @@
       "operational_phase0:no closed proof trades are available to validate observed edges"
     ]
   },
-  "generated_at": "2026-06-28T20:06:07.093629+00:00",
+  "generated_at": "2026-06-28T20:52:13.931400+00:00",
   "live_capital_enabled": false,
   "next_allowed_action": "clear_safety_boundary_or_remap_to_paperable_expression",
   "paper_order_created": false,

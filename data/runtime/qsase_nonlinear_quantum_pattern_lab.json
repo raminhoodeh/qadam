@@ -76,7 +76,7 @@
     "artifact_type": "qsase_nonlinear_quantum_pattern_lab_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-06-28T19:39:08.073142+00:00",
+    "generated_at": "2026-06-28T20:52:13.068653+00:00",
     "hardware_execution_claimed": false,
     "latest_blocker": "historical_memory_degraded,linear_pattern_lab_degraded,nonlinear_overfit_controls_holding",
     "live_send_allowed": false,
@@ -131,7 +131,7 @@
     "nonlinear_overfit_controls_holding"
   ],
   "execution_allowed": false,
-  "generated_at": "2026-06-28T19:39:08.073142+00:00",
+  "generated_at": "2026-06-28T20:52:13.068653+00:00",
   "inconclusive_nonlinear_pattern_count": 8,
   "input_artifacts": {
     "historical_memory": "data/runtime/qsase_historical_source_price_memory.json",
@@ -184,7 +184,7 @@
     "hardware_submitted": false,
     "lab_provider_call_allowed": false,
     "lab_provider_call_attempted": false,
-    "latest_oracle_created_at": "2026-06-28T19:12:00.177740+00:00",
+    "latest_oracle_created_at": "2026-06-28T20:12:02.786019+00:00",
     "local_validation_status": "passed",
     "paper_order_allowed": false,
     "proof_credit_allowed": false,
@@ -217,7 +217,7 @@
   },
   "quantum_summary": {
     "execution_allowed": false,
-    "generated_at": "2026-06-28T19:39:08.151687+00:00",
+    "generated_at": "2026-06-28T20:52:13.157931+00:00",
     "hardware_submission_allowed": false,
     "hardware_submitted": false,
     "local_validation_status": "passed",

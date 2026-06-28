@@ -11,7 +11,7 @@
   "command_disabled": true,
   "coverage_ref": "data/runtime/qsase_historical_coverage_map.json",
   "execution_allowed": false,
-  "generated_at": "2026-06-28T19:16:21.486696+00:00",
+  "generated_at": "2026-06-28T20:52:07.754017+00:00",
   "input_artifacts": [
     "data/runtime/qsase_universal_source_price_matrix.json",
     "data/runtime/qsase_source_price_edges.jsonl",

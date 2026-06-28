@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_14_telegram_summary_boundary",
-  "generated_at": "2026-06-28T20:40:46.899829+00:00",
+  "active_phase": "qsase_15_end_to_end_certification",
+  "generated_at": "2026-06-28T20:52:06.881529+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -206,6 +206,36 @@
       "public_safe": true,
       "review_only": true,
       "status": "qsase_telegram_notification_boundary_degraded"
+    },
+    "qsase_15_end_to_end_certification": {
+      "artifact_path": "data/runtime/qsase_end_to_end_certification.json",
+      "authority_violation_count": 0,
+      "broker_write_count": 0,
+      "calendar_boundary_failure_count": 0,
+      "certified": false,
+      "dashboard_slop_failure_count": 0,
+      "fail_closed": true,
+      "failed_check_count": 0,
+      "failed_phase_count": 0,
+      "later_qsase_phases_implemented": false,
+      "lineage_gap_count": 0,
+      "live_capital_enabled": false,
+      "name": "QSASE-15: End-To-End Certification",
+      "paper_only": true,
+      "paper_order_created_outside_paperops_count": 0,
+      "paperops_boundary_failure_count": 0,
+      "passed_check_count": 33,
+      "passed_phase_count": 16,
+      "phase_count": 16,
+      "present_artifact_count": 71,
+      "proof_boundary_failure_count": 0,
+      "proof_credit_allowed": false,
+      "proposal_first": true,
+      "read_only": true,
+      "required_artifact_count": 71,
+      "required_check_count": 33,
+      "status": "degraded_research_only",
+      "telegram_quality_failure_count": 0
     },
     "qsase_1_self_model_artifact_validation": {
       "artifact_path": "data/runtime/qsase_self_model.json",

@@ -29,7 +29,7 @@
     "semiconductors": 4,
     "silver": 3
   },
-  "generated_at": "2026-06-28T19:10:34.445235+00:00",
+  "generated_at": "2026-06-28T20:52:07.409667+00:00",
   "instruments": [
     {
       "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",

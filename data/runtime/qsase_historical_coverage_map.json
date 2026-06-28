@@ -177,7 +177,7 @@
   "credential_blocked_source_count": 1,
   "eligible_instrument_count": 19,
   "eligible_source_count": 41,
-  "generated_at": "2026-06-28T19:16:21.486696+00:00",
+  "generated_at": "2026-06-28T20:52:07.754017+00:00",
   "historical_backfill_blocked_count": 44,
   "historical_backfill_recorded_count": 65,
   "leakage_rejected_record_count": 0,

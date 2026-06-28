@@ -3,7 +3,7 @@
   "authority_flags_false": true,
   "authority_state": "strategy_hypothesis_only_no_execution",
   "command_disabled": true,
-  "generated_at": "2026-06-28T19:45:24.825828+00:00",
+  "generated_at": "2026-06-28T20:52:13.422659+00:00",
   "latest_blocker": "no_strategy_hypotheses_promoted_current_inputs,nonlinear_quantum_lab_degraded,rejected_or_shadow_only_hypotheses_present",
   "live_send_allowed": false,
   "no_paper_orders_created": true,

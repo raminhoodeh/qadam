@@ -88,7 +88,7 @@
     "authority_flags_false": true,
     "authority_state": "strategy_router_no_order_authority",
     "command_disabled": true,
-    "generated_at": "2026-06-28T20:06:07.093629+00:00",
+    "generated_at": "2026-06-28T20:52:13.931400+00:00",
     "hard_vetoes": [
       {
         "authority": {
@@ -705,7 +705,7 @@
   ],
   "execution_allowed": false,
   "execution_intent_created": false,
-  "generated_at": "2026-06-28T20:06:07.093629+00:00",
+  "generated_at": "2026-06-28T20:52:13.931400+00:00",
   "hard_veto_count": 72,
   "hold_count": 0,
   "hold_missing_evidence_count": 0,
@@ -786,7 +786,7 @@
       "trade_candidate_created": false,
       "trade_candidate_creation_allowed": false
     },
-    "generated_at": "2026-06-28T20:06:07.093629+00:00",
+    "generated_at": "2026-06-28T20:52:13.931400+00:00",
     "ranked_count": 16,
     "ranked_decisions": [
       {
@@ -1046,7 +1046,7 @@
         "operational_phase0:no closed proof trades are available to validate observed edges"
       ]
     },
-    "generated_at": "2026-06-28T20:06:07.093629+00:00",
+    "generated_at": "2026-06-28T20:52:13.931400+00:00",
     "live_capital_enabled": false,
     "next_allowed_action": "clear_safety_boundary_or_remap_to_paperable_expression",
     "paper_order_created": false,

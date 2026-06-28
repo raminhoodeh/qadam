@@ -29,7 +29,7 @@
   "command_disabled": true,
   "duplicate_suppression_count": 5,
   "failure_category": null,
-  "generated_at": "2026-06-28T20:40:46.899829+00:00",
+  "generated_at": "2026-06-28T20:52:14.764356+00:00",
   "inbound_command_ignored_count": 0,
   "inbound_record_count": 2,
   "latest_message_class": "qsase_why_not_trading_now",

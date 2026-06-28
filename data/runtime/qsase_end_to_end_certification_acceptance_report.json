@@ -1,0 +1,38 @@
+{
+  "artifact_refs": [
+    {
+      "artifact_path": "data/runtime/qsase_end_to_end_certification.json"
+    }
+  ],
+  "artifact_type": "qsase_end_to_end_certification_acceptance_report",
+  "certified": false,
+  "command_disabled": true,
+  "generated_at": "2026-06-28T20:52:06.881529+00:00",
+  "live_capital_ready": false,
+  "public_safe": true,
+  "schema_version": "qsase_end_to_end_certification.v1",
+  "status": "degraded_research_only",
+  "summary_lines": [
+    "QSASE certification: degraded_research_only",
+    "Self-model: qsase_self_model_blocked",
+    "Source-price matrix: qsase_source_price_matrix_degraded",
+    "Historical memory: qsase_historical_source_price_memory_degraded",
+    "Full-universe search: qsase_full_universe_pattern_search_degraded",
+    "Linear lab: qsase_linear_pattern_lab_degraded",
+    "Nonlinear and quantum lab: qsase_nonlinear_quantum_pattern_lab_degraded",
+    "Strategy Foundry: qsase_strategy_foundry_degraded",
+    "Akber Filter: qsase_akber_filter_integration_degraded",
+    "Shadow simulator: qsase_shadow_strategy_simulator_degraded",
+    "Router: qsase_strategy_router_degraded",
+    "PaperOps handoff: paperops_compatibility_pass",
+    "Learning ledger: qsase_learning_attribution_ledger_degraded",
+    "Dashboard: dashboard_visibility_pass",
+    "Telegram: telegram_quality_pass",
+    "Governance: authority_clean",
+    "Authority violations: 0",
+    "Paper orders created by QSASE: 0",
+    "Broker writes: 0",
+    "Proof credit granted by QSASE: false",
+    "Live capital: false"
+  ]
+}

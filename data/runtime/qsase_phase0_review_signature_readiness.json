@@ -50,7 +50,7 @@
     "status": "ready",
     "submit_enablement_status": "enabled_pending_explicit_submit"
   },
-  "generated_at": "2026-06-28T18:48:36.473098+00:00",
+  "generated_at": "2026-06-28T20:52:06.904707+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {
