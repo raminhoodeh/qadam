@@ -1,0 +1,58 @@
+{
+  "artifact_type": "qsase_akber_filter_dashboard_summary",
+  "authority_flags_false": true,
+  "authority_state": "akber_filter_not_execution_approval",
+  "command_disabled": true,
+  "filter_pass_is_not_execution_approval": true,
+  "generated_at": "2026-06-28T19:51:59.940555+00:00",
+  "historical_ablation_status": "ablation_degraded_proxy_only_no_promoted_hypotheses",
+  "latest_blocker": "missing_filter_context_present,no_promoted_strategy_hypotheses_to_filter,strategy_foundry_degraded",
+  "live_send_allowed": false,
+  "next_evidence_needed": [
+    "paperable_proxy_expression",
+    "volume_or_flow_confirmation"
+  ],
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_trade_candidates_created": true,
+  "public_safe": true,
+  "schema_version": "qsase_akber_filter_integration.v1",
+  "status": "qsase_akber_filter_integration_degraded",
+  "summary_rows": [
+    {
+      "label": "Akber filter status",
+      "value": "qsase_akber_filter_integration_degraded"
+    },
+    {
+      "label": "Filter records",
+      "value": 16
+    },
+    {
+      "label": "Pass",
+      "value": 0
+    },
+    {
+      "label": "Hold",
+      "value": 0
+    },
+    {
+      "label": "Veto",
+      "value": 16
+    },
+    {
+      "label": "Audit-only",
+      "value": 0
+    },
+    {
+      "label": "Router candidates",
+      "value": 0
+    },
+    {
+      "label": "Authority",
+      "value": "akber_filter_not_execution_approval"
+    }
+  ],
+  "top_filter_decision": "reject",
+  "top_filter_result": "qsase-akber:8ada8184beb0797a87be",
+  "top_reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route"
+}

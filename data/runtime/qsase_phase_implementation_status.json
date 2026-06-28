@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_7_strategy_foundry",
-  "generated_at": "2026-06-28T19:45:24.825828+00:00",
+  "active_phase": "qsase_8_akber_filter_backtest_integration",
+  "generated_at": "2026-06-28T19:51:59.940555+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -220,6 +220,33 @@
       "strategy_hypotheses_path": "data/runtime/qsase_strategy_hypotheses.jsonl",
       "strategy_hypothesis_count": 0,
       "strategy_modification_proposal_count": 0
+    },
+    "qsase_8_akber_filter_backtest_integration": {
+      "ablation_path": "data/runtime/qsase_akber_filter_ablation.json",
+      "ablation_ready_count": 4,
+      "artifact_path": "data/runtime/qsase_akber_filter_integration.json",
+      "audit_only_filter_count": 0,
+      "authority_flags_false": true,
+      "candidate_for_router_count": 0,
+      "filter_pass_is_not_execution_approval": true,
+      "filter_results_path": "data/runtime/qsase_akber_filter_results.jsonl",
+      "historical_improvement_observed": false,
+      "hold_filter_count": 0,
+      "input_hypothesis_count": 0,
+      "input_rejected_hypothesis_count": 16,
+      "later_qsase_phases_implemented": false,
+      "name": "QSASE-8: Akber Filter Backtest Integration",
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "passed_filter_count": 0,
+      "proposal_first": true,
+      "public_safe": true,
+      "rejected_filter_count": 16,
+      "research_only": true,
+      "status": "qsase_akber_filter_integration_degraded",
+      "threshold_proposals_path": "data/runtime/qsase_akber_filter_threshold_proposals.json"
     }
   },
   "safety": {

@@ -100,3 +100,15 @@
 - Rejected hypothesis records: `16`
 - Paper-review candidates: `0`
 - Safety: strategy hypotheses are not trades, qualified setups, paper orders, broker writes, live capital, or proof credit.
+
+<!-- qsase_8_akber_filter_backtest_integration -->
+## QSASE-8: Akber Filter Backtest Integration
+
+- Generated at: `2026-06-28T19:51:59.940555+00:00`
+- Status: `qsase_akber_filter_integration_degraded`
+- Runtime artifact: `data/runtime/qsase_akber_filter_integration.json`
+- Filter records: `16`
+- Pass / hold / veto / audit-only: `0` / `0` / `16` / `0`
+- Router candidates: `0`
+- Ablation ready: `4`
+- Safety: Akber filter pass is not execution approval; no trade candidates, risk handoffs, paper orders, broker writes, live capital, or proof credit created.
