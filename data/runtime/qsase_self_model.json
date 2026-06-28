@@ -1,0 +1,1119 @@
+{
+  "architecture_roles": [
+    {
+      "authority_boundary": "Can write QSASE diagnostic artifacts; cannot bypass guarded PaperOps, call brokers directly, or enable live capital.",
+      "current_function": "Deterministic orchestration, runtime artifacts, checks, schedulers, PaperOps wrapper compatibility, and fail-closed validation.",
+      "label": "Python COO",
+      "role_key": "python_coo"
+    },
+    {
+      "authority_boundary": "Model output is advisory research evidence only; it is not trade, risk, or execution approval.",
+      "current_function": "Triage, extraction, compression, clustering, and local shadow research packets.",
+      "label": "Local Gemma Research Analyst",
+      "role_key": "local_gemma_research_analyst"
+    },
+    {
+      "authority_boundary": "Strategy Lead output can challenge or propose; it cannot approve trades, size orders, or mutate strategy.",
+      "current_function": "Challenge, synthesis, contradiction review, and failure-mode critique where provider context exists.",
+      "label": "Frontier Gemini Strategy Lead",
+      "role_key": "frontier_gemini_strategy_lead"
+    },
+    {
+      "authority_boundary": "Quantum review can inform ambiguity; it cannot approve execution, create orders, or grant proof credit.",
+      "current_function": "Nonlinear ambiguity review, quantum gate state, and provider-readiness context.",
+      "label": "IBM Quantum Gates Oracle",
+      "role_key": "ibm_quantum_gates_oracle"
+    },
+    {
+      "authority_boundary": "Q-CTRL state must be respected; QSASE cannot submit jobs or bypass holds.",
+      "current_function": "Paper-consultation readiness and hold state for quantum-adjacent review.",
+      "label": "Q-CTRL Paper Consultation",
+      "role_key": "qctrl_paper_consultation"
+    },
+    {
+      "authority_boundary": "Sources can inform evidence; no source can create orders or satisfy authority by itself.",
+      "current_function": "Canonical, supplemental, and credential-gated observation sources.",
+      "label": "Source Adapter Layer",
+      "role_key": "source_adapter_layer"
+    },
+    {
+      "authority_boundary": "Historical records and shadow replays cannot advance the 30-day paper growth trial or paper proof ledger.",
+      "current_function": "Replay, learning, edge memory, and historical context when artifacts are present.",
+      "label": "Historical Memory Layer",
+      "role_key": "historical_memory_layer"
+    },
+    {
+      "authority_boundary": "Only existing guarded PaperOps may submit paper orders; QSASE cannot submit or stage orders.",
+      "current_function": "Guarded Alpaca Paper route, idempotency, risk, lifecycle, and paper proof ledger boundary.",
+      "label": "PaperOps Route",
+      "role_key": "paperops_route"
+    },
+    {
+      "authority_boundary": "Dashboard cannot create commands, approve trades, write brokers, or grant proof.",
+      "current_function": "Public-safe read-only cockpit visibility.",
+      "label": "Dashboard",
+      "role_key": "dashboard"
+    },
+    {
+      "authority_boundary": "Telegram cannot become command authority or live-capital authority.",
+      "current_function": "Review-only inbound intake and notification-only outbound summaries.",
+      "label": "Telegram",
+      "role_key": "telegram"
+    }
+  ],
+  "artifact_id": "qsase:1:self-model",
+  "artifact_type": "qsase_self_model",
+  "authority": {
+    "backtest_to_proof_allowed": false,
+    "broker_live_write_allowed": false,
+    "broker_write_allowed": false,
+    "dashboard_write_authority_allowed": false,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "frontier_llm_order_authority": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "llm_order_authority": false,
+    "local_llm_order_authority": false,
+    "model_weight_mutation_allowed": false,
+    "model_weight_update_created": false,
+    "notification_command_authority_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_write_allowed": false,
+    "policy_mutation_allowed": false,
+    "policy_mutation_created": false,
+    "proof_credit_allowed": false,
+    "qctrl_bypass_allowed": false,
+    "qualified_setup_created": false,
+    "quantum_job_authority": false,
+    "quantum_order_authority": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "secret_read_allowed": false,
+    "secret_write_allowed": false,
+    "shadow_to_proof_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_promotion_allowed": false,
+    "source_trust_mutation_allowed": false,
+    "strategy_mutation_allowed": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trust_score_update_created": false
+  },
+  "authority_flags": {
+    "broker_write_allowed": false,
+    "execution_allowed": false,
+    "live_capital_enabled": false,
+    "paper_order_allowed": false,
+    "prediction_market_write_allowed": false,
+    "proof_credit_allowed": false,
+    "quantum_hardware_submission_allowed": false,
+    "quantum_job_authority": false,
+    "quantum_provider_call_allowed": false,
+    "risk_approval_allowed": false,
+    "strategy_mutation_allowed": false,
+    "strategy_weight_update_applied": false,
+    "telegram_command_path_enabled": false,
+    "telegram_live_send_allowed": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_creation_allowed": false
+  },
+  "blocker_count": 0,
+  "blockers": [],
+  "boundary": "QSASE self-model is read-only routing context. It cannot create candidates, approvals, orders, broker writes, proof credit, or live-capital authority.",
+  "dashboard_and_telegram_are_authority": false,
+  "dashboard_safe_summary": {
+    "artifact_type": "qsase_self_model_dashboard_summary",
+    "authority_flags_false": true,
+    "command_disabled": true,
+    "degraded_component_count": 12,
+    "generated_at": "2026-06-28T19:03:29.604639+00:00",
+    "live_send_allowed": false,
+    "missing_component_count": 1,
+    "public_safe": true,
+    "repair_request_count": 12,
+    "schema_version": "qsase_self_model.v1",
+    "status": "qsase_self_model_blocked",
+    "summary_rows": [
+      {
+        "label": "Source state",
+        "value": "data_health_degraded"
+      },
+      {
+        "label": "Model stack",
+        "value": "model_health_degraded"
+      },
+      {
+        "label": "Quantum",
+        "value": "quantum_health_blocked"
+      },
+      {
+        "label": "PaperOps",
+        "value": "execution_health_degraded"
+      },
+      {
+        "label": "Risk",
+        "value": "risk_health_degraded"
+      },
+      {
+        "label": "Visibility",
+        "value": "visibility_health_ready"
+      },
+      {
+        "label": "Why not trading now",
+        "value": "idempotency_guard_holding_duplicate_or_already_submitted_setup"
+      }
+    ],
+    "title": "QSASE Self-Model"
+  },
+  "dashboard_state": {
+    "cockpit_status_age_seconds": 2082,
+    "cockpit_status_freshness": "fresh",
+    "cockpit_status_generated_at": "2026-06-28T18:28:47.340660+00:00",
+    "dashboard_export_freshness": "from_cockpit_status_runtime",
+    "dashboard_signature_exists": true,
+    "public_safe_redaction_status": "public_safe_no_secrets",
+    "qsase_dashboard_module_availability": "pending_qsase_13_dashboard_visibility",
+    "secret_exposure_checks": "no_secret_fields_exposed_by_self_model"
+  },
+  "data_health": {
+    "connected_source_count": 12,
+    "degraded_source_count": 1,
+    "degraded_sources": [
+      {
+        "pipeline": "social",
+        "readiness": "credential required",
+        "source_key": "reddit",
+        "source_name": "Reddit API",
+        "status": "degraded"
+      }
+    ],
+    "durable_replay_state": "partial",
+    "expected_canonical_source_count": 35,
+    "full_universe_scan_readiness": "pending_qsase_2_matrix",
+    "missing_credential_source_count": 1,
+    "missing_credential_sources": [
+      {
+        "operator_action": "add_reddit_oauth_credentials",
+        "pipeline": "social",
+        "source_key": "reddit",
+        "source_name": "Reddit API"
+      }
+    ],
+    "online_source_count": 31,
+    "optional_gap_count": 1,
+    "pipeline_summary": [
+      {
+        "adapter_ready_count": 5,
+        "degraded_count": 0,
+        "intentionally_disabled_count": 0,
+        "local_bridge_required_count": 0,
+        "local_only_count": 0,
+        "missing_credential_count": 0,
+        "needs_adapter_count": 0,
+        "online_count": 5,
+        "pending_count": 0,
+        "pipeline": "conflict",
+        "provider_decision_count": 0,
+        "provider_decision_local_bridge_count": 0,
+        "provider_decision_marketplace_disabled_count": 0,
+        "provider_decision_required_count": 0,
+        "provider_selected_pending_adapter_count": 0,
+        "source_count": 5
+      },
+      {
+        "adapter_ready_count": 6,
+        "degraded_count": 0,
+        "intentionally_disabled_count": 0,
+        "local_bridge_required_count": 0,
+        "local_only_count": 0,
+        "missing_credential_count": 0,
+        "needs_adapter_count": 0,
+        "online_count": 6,
+        "pending_count": 0,
+        "pipeline": "macro",
+        "provider_decision_count": 0,
+        "provider_decision_local_bridge_count": 0,
+        "provider_decision_marketplace_disabled_count": 0,
+        "provider_decision_required_count": 0,
+        "provider_selected_pending_adapter_count": 0,
+        "source_count": 6
+      },
+      {
+        "adapter_ready_count": 7,
+        "degraded_count": 0,
+        "intentionally_disabled_count": 2,
+        "local_bridge_required_count": 1,
+        "local_only_count": 0,
+        "missing_credential_count": 0,
+        "needs_adapter_count": 2,
+        "online_count": 7,
+        "pending_count": 4,
+        "pipeline": "market",
+        "provider_decision_count": 4,
+        "provider_decision_local_bridge_count": 1,
+        "provider_decision_marketplace_disabled_count": 1,
+        "provider_decision_required_count": 0,
+        "provider_selected_pending_adapter_count": 2,
+        "source_count": 11
+      },
+      {
+        "adapter_ready_count": 7,
+        "degraded_count": 0,
+        "intentionally_disabled_count": 0,
+        "local_bridge_required_count": 0,
+        "local_only_count": 0,
+        "missing_credential_count": 0,
+        "needs_adapter_count": 0,
+        "online_count": 7,
+        "pending_count": 0,
+        "pipeline": "physical",
+        "provider_decision_count": 0,
+        "provider_decision_local_bridge_count": 0,
+        "provider_decision_marketplace_disabled_count": 0,
+        "provider_decision_required_count": 0,
+        "provider_selected_pending_adapter_count": 0,
+        "source_count": 7
+      },
+      {
+        "adapter_ready_count": 7,
+        "degraded_count": 1,
+        "intentionally_disabled_count": 0,
+        "local_bridge_required_count": 0,
+        "local_only_count": 0,
+        "missing_credential_count": 1,
+        "needs_adapter_count": 1,
+        "online_count": 6,
+        "pending_count": 1,
+        "pipeline": "social",
+        "provider_decision_count": 1,
+        "provider_decision_local_bridge_count": 0,
+        "provider_decision_marketplace_disabled_count": 0,
+        "provider_decision_required_count": 0,
+        "provider_selected_pending_adapter_count": 1,
+        "source_count": 8
+      }
+    ],
+    "quarantined_source_count": 0,
+    "raw_archive_availability": "not_materialized_in_qsase_1",
+    "source_freshness": "from_cockpit_runtime_snapshot",
+    "source_latency": "latency_fields_sparse",
+    "source_quorum_availability": "candidate_level_source_quorum_enforced",
+    "source_quorum_blocking_gap_count": 0,
+    "source_trust_posture": "ledger_trust_scores_available",
+    "source_universe_count": 35,
+    "status": "data_health_degraded"
+  },
+  "degraded_component_count": 12,
+  "degraded_components": [
+    {
+      "component": "operational_phase0",
+      "reason": "20-minute local scheduler is not recorded active",
+      "severity": "gap"
+    },
+    {
+      "component": "operational_phase0",
+      "reason": "accepted paper orders are older than the Phase 0 stale-order visibility window",
+      "severity": "gap"
+    },
+    {
+      "component": "operational_phase0",
+      "reason": "no closed proof trades are available to validate observed edges",
+      "severity": "gap"
+    },
+    {
+      "component": "operational_phase0",
+      "reason": "one or more candidate records are missing full Phase 0 identity fields",
+      "severity": "gap"
+    },
+    {
+      "component": "operational_phase0",
+      "reason": "runtime artifacts disagree on core PaperOps counts",
+      "severity": "gap"
+    },
+    {
+      "component": "operational_phase0",
+      "reason": "scanner artifact is older than 25 minutes outside regular market hours",
+      "severity": "gap"
+    },
+    {
+      "component": "operational_phase0",
+      "reason": "some closed paper trades lack complete proof lineage",
+      "severity": "gap"
+    },
+    {
+      "component": "source_state",
+      "reason": "missing_optional_source_credentials",
+      "severity": "gap"
+    },
+    {
+      "component": "model_stack",
+      "reason": "llm_provider_probes_artifact_missing",
+      "severity": "gap"
+    },
+    {
+      "component": "quantum_state",
+      "reason": "qctrl_fire_opal_ibm_readiness_stale",
+      "severity": "gap"
+    },
+    {
+      "component": "risk_state",
+      "reason": "risk_reviews_blocked_or_shadow_only",
+      "severity": "gap"
+    },
+    {
+      "component": "learning_health",
+      "reason": "no_validated_edges_yet",
+      "severity": "gap"
+    }
+  ],
+  "execution_health": {
+    "active_automation_status": "active_automation_enabled_idle",
+    "closed_paper_trade_count": 78,
+    "duplicate_submit_count": 4,
+    "exit_path_state": "ready_no_exit_candidate",
+    "fresh_distinct_setup_count": 0,
+    "fresh_eligible_submit_count": 0,
+    "guarded_alpaca_paper_route_ready": true,
+    "lifecycle_poller_state": "paper_lifecycle_poll_recorded",
+    "live_endpoint_disabled": true,
+    "open_order_count": 8,
+    "open_position_count": 2,
+    "paper_endpoint_confirmed": true,
+    "paperops_readiness_status": "ready_for_full_paper_ops",
+    "phase0_gap_count": 7,
+    "phase0_status": "ready_with_gaps",
+    "status": "execution_health_degraded",
+    "submitted_paper_order_count": 0
+  },
+  "generated_at": "2026-06-28T19:03:29.604639+00:00",
+  "governance_status": "governance_safety_ready",
+  "learning_health": {
+    "artifact_statuses": {
+      "edge_memory_ledger": "edge_memory_active",
+      "edge_pattern_ledger": "candidate_edges_under_observation",
+      "hypothesis_lifecycle": "hypothesis_lifecycle_active",
+      "learning_approval_ledger": "deferred",
+      "pattern_recognition_engine": "pattern_engine_ready_for_quantum_oracle",
+      "quantum_meta_review": "quantum_meta_review_ready",
+      "shadow_strategy_replay": "blocked",
+      "strategy_update_record": "strategy_update_record_ready",
+      "strategy_weight_updates": "strategy_weight_updates_ready"
+    },
+    "backtests_are_not_proof": true,
+    "candidate_pattern_count": 5,
+    "edge_pattern_ledger_status": "candidate_edges_under_observation",
+    "hypothesis_lifecycle_status": "hypothesis_lifecycle_active",
+    "learning_entries_are_proposal_only": true,
+    "paper_proof_ledger": {
+      "closed_proof_trade_count": 0,
+      "qualified_setup_count": 2,
+      "submitted_paper_order_count": 2
+    },
+    "paper_proof_ledger_freshness": "from_paperops_autonomous_pass_summary",
+    "postmortem_readiness": "paper_proof_ledger_and_postmortem_artifacts_required",
+    "quantum_meta_review_status": "quantum_meta_review_ready",
+    "shadow_replays_are_not_proof": true,
+    "shadow_strategy_replay_status": "blocked",
+    "status": "learning_health_degraded",
+    "strategy_proposal_count": 0,
+    "strategy_update_record_status": "strategy_update_record_ready",
+    "strategy_weight_update_status": "strategy_weight_updates_ready",
+    "unresolved_blocker_count": 0,
+    "validated_edge_count": 0
+  },
+  "live_capital_enabled": false,
+  "missing_component_count": 1,
+  "missing_components": [
+    "llm_provider_probes"
+  ],
+  "model_health": {
+    "frontier_gemini_available": true,
+    "gaps": [
+      "llm_provider_probes_artifact_missing"
+    ],
+    "hallucination_or_unsupported_claim_risk": "requires_source_evidence_before_routing",
+    "latest_model_review_freshness": "2026-06-28T18:25:43.210115+00:00",
+    "local_gemma_available": true,
+    "model_disagreement_state": "not_recorded",
+    "model_failure_state": "probe_gap",
+    "model_latency": "not_materialized",
+    "model_output_advisory_only": true,
+    "model_output_can_approve_trades": false,
+    "status": "model_health_degraded"
+  },
+  "model_outputs_are_approvals": false,
+  "model_stack": {
+    "frontier_gemini": {
+      "advisory_only": true,
+      "availability": "strategy_lead_shadow_packet_recorded",
+      "latest_packet_at": "2026-06-28T18:25:43.210115+00:00",
+      "latest_status": "queued_shadow_only",
+      "output_is_approval": false,
+      "role": "challenge_synthesis_failure_mode_review"
+    },
+    "local_gemma": {
+      "advisory_only": true,
+      "availability": "shadow_assessment_recorded",
+      "latest_assessment_at": "2026-06-28T18:25:37.862618+00:00",
+      "latest_status": "shadow_only",
+      "model": "gemma-4-e4b",
+      "output_is_approval": false,
+      "provider": "lm_studio",
+      "raw_response_status": "not_called",
+      "role": "triage_extraction_compression_clustering"
+    },
+    "model_disagreement_state": "not_recorded",
+    "model_probe_artifact_present": false
+  },
+  "paperops_route": {
+    "active_automation_status": "active_automation_enabled_idle",
+    "duplicate_submit_state": {
+      "paperops2_duplicate_submit_record_count": 4,
+      "summary_duplicate_submit_count": 4
+    },
+    "exit_path_state": "ready_no_exit_candidate",
+    "guarded_alpaca_paper_route_readiness": "scripts/run_active_paper_trading_automation.py --execute-paper-automation",
+    "idempotency_ledger_state": true,
+    "lifecycle_poller_state": "paper_lifecycle_poll_recorded",
+    "live_endpoint_disabled": true,
+    "paper_endpoint_confirmed": true,
+    "paperops_readiness_status": "ready_for_full_paper_ops"
+  },
+  "phase_id": "qsase_1_self_model_artifact_validation",
+  "phase_name": "QSASE-1: Self-Model Artifact And Validation",
+  "proof_credit_allowed": false,
+  "public_safe": true,
+  "quantum_health": {
+    "gaps": [
+      "qctrl_fire_opal_ibm_readiness_stale"
+    ],
+    "hardware_submission_allowed_count": 0,
+    "hardware_submitted_count": 0,
+    "provider_call_count": 2,
+    "quantum_can_approve_execution": false,
+    "quantum_can_review_ambiguity": true,
+    "quantum_execution_authority": false,
+    "quantum_output_is_approval": false,
+    "quantum_paper_order_authority": false,
+    "quantum_provider_call_allowed_count": 1,
+    "status": "quantum_health_blocked"
+  },
+  "quantum_outputs_are_approvals": false,
+  "quantum_state": {
+    "aws_braket_readiness": "not_applicable_in_current_artifacts",
+    "ibm_quantum_readiness": {
+      "ibm_quantum_instance_configured": true,
+      "ibm_quantum_token_configured": true,
+      "qiskit_ibm_runtime_importable": true
+    },
+    "latest_oracle_job_status": "STARTED",
+    "latest_oracle_output_route": "review_only",
+    "latest_quantum_backend": "paper",
+    "latest_simulation_or_fallback_mode": {
+      "active_weights_unchanged": true,
+      "boundary": "Loop-level coherence can support later review only. It cannot apply strategy changes or create execution authority.",
+      "can_call_brokers": false,
+      "can_call_quantum_providers": false,
+      "can_change_order_sizing": false,
+      "can_mutate_strategy": false,
+      "can_send_live_telegram": false,
+      "can_submit_paper_orders": false,
+      "can_update_strategy_weights": false,
+      "meta_review_passed": false,
+      "recommendation_only": true,
+      "review_scope": "recursive_edge_learning_chain",
+      "status": "quantum_meta_review_completed_with_holds"
+    },
+    "local_simulator_availability": "not_explicitly_recorded",
+    "qctrl_paper_consultation_status": "consultation_recorded",
+    "qctrl_readiness": "device_probe_submitted",
+    "quantum_mandatory_review_gate_status": "quantum_review_gate_passed"
+  },
+  "repair_request_count": 12,
+  "repair_requests": [
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "20-minute local scheduler is not recorded active",
+      "repair_request_id": "qsase-1-repair-001",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "accepted paper orders are older than the Phase 0 stale-order visibility window",
+      "repair_request_id": "qsase-1-repair-002",
+      "repair_type": "stale_artifact_refresh_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "no closed proof trades are available to validate observed edges",
+      "repair_request_id": "qsase-1-repair-003",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "one or more candidate records are missing full Phase 0 identity fields",
+      "repair_request_id": "qsase-1-repair-004",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "runtime artifacts disagree on core PaperOps counts",
+      "repair_request_id": "qsase-1-repair-005",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "scanner artifact is older than 25 minutes outside regular market hours",
+      "repair_request_id": "qsase-1-repair-006",
+      "repair_type": "stale_artifact_refresh_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "operational_phase0",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "some closed paper trades lack complete proof lineage",
+      "repair_request_id": "qsase-1-repair-007",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "source_state",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "missing_optional_source_credentials",
+      "repair_request_id": "qsase-1-repair-008",
+      "repair_type": "missing_source_credential_review"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "model_stack",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "llm_provider_probes_artifact_missing",
+      "repair_request_id": "qsase-1-repair-009",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "quantum_state",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "qctrl_fire_opal_ibm_readiness_stale",
+      "repair_request_id": "qsase-1-repair-010",
+      "repair_type": "stale_artifact_refresh_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "risk_state",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "risk_reviews_blocked_or_shadow_only",
+      "repair_request_id": "qsase-1-repair-011",
+      "repair_type": "review_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "learning_health",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "no_validated_edges_yet",
+      "repair_request_id": "qsase-1-repair-012",
+      "repair_type": "review_request"
+    }
+  ],
+  "risk_health": {
+    "blocked_risk_review_count": 2,
+    "broker_write_allowed_count": 0,
+    "drawdown_state": "no_sample_within_cap",
+    "drawdown_status": "ready_no_drawdown_sample",
+    "execution_allowed_count": 0,
+    "live_capital_enabled_count": 0,
+    "paper_order_allowed_count": 0,
+    "qsase_can_size_orders": false,
+    "risk_context_can_route_to_paper_review": false,
+    "risk_review_count": 5,
+    "status": "risk_health_degraded"
+  },
+  "risk_state": {
+    "current_exposure": {
+      "drawdown_pct": 1.688,
+      "open_order_count": 86,
+      "open_position_count": 2,
+      "total_pnl_gbp": -821.24
+    },
+    "drawdown_state": "no_sample_within_cap",
+    "duplicate_exposure_risk": "managed_by_paperops_idempotency_and_duplicate_guard",
+    "execution_policy_availability": "cockpit_execution_policy_available",
+    "kill_switch_state": "not_materialized_in_self_model_source_set",
+    "open_order_and_position_constraints": "active",
+    "paper_account_state": "alpaca_paper_readonly_connected",
+    "paper_buying_power": "not_exposed_in_public_safe_snapshot",
+    "per_run_submit_attempt_cap": "guarded_submit_cap_per_paperops_run",
+    "per_strategy_risk_budget": "downstream_risk_agent_only",
+    "risk_agent_availability": "ok"
+  },
+  "schema_version": "qsase_self_model.v1",
+  "source_state": {
+    "source_artifacts": {
+      "alpaca_paper_mirror": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:51.179057+00:00",
+        "mtime_age_seconds": 2318,
+        "path": "data/runtime/alpaca_paper_mirror.json",
+        "size_bytes": 2576
+      },
+      "cockpit_status": {
+        "exists": true,
+        "mtime": "2026-06-28T18:28:52.105667+00:00",
+        "mtime_age_seconds": 2077,
+        "path": "data/runtime/cockpit-status.json",
+        "size_bytes": 2775769
+      },
+      "cockpit_status_signature": {
+        "exists": true,
+        "mtime": "2026-06-28T18:28:52.114244+00:00",
+        "mtime_age_seconds": 2077,
+        "path": "data/runtime/cockpit-status.signature.json",
+        "size_bytes": 576
+      },
+      "daily_telegram_learning_brief": {
+        "exists": true,
+        "mtime": "2026-06-28T18:28:02.747744+00:00",
+        "mtime_age_seconds": 2126,
+        "path": "data/runtime/daily_telegram_learning_brief.json",
+        "size_bytes": 5900
+      },
+      "edge_memory_ledger": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:24.086510+00:00",
+        "mtime_age_seconds": 2165,
+        "path": "data/runtime/edge_memory_ledger.json",
+        "size_bytes": 29958
+      },
+      "edge_pattern_ledger": {
+        "exists": true,
+        "mtime": "2026-06-28T18:26:06.421731+00:00",
+        "mtime_age_seconds": 2243,
+        "path": "data/runtime/edge_pattern_ledger.json",
+        "size_bytes": 16375
+      },
+      "governance_safety_contract": {
+        "exists": true,
+        "mtime": "2026-06-28T18:54:33.207605+00:00",
+        "mtime_age_seconds": 536,
+        "path": "data/runtime/qsase_governance_safety_contract.json",
+        "size_bytes": 20813
+      },
+      "hypothesis_lifecycle": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:33.760756+00:00",
+        "mtime_age_seconds": 2155,
+        "path": "data/runtime/hypothesis_lifecycle.json",
+        "size_bytes": 14034
+      },
+      "local_research_assessments": {
+        "exists": true,
+        "mtime": "2026-06-28T18:25:37.866222+00:00",
+        "mtime_age_seconds": 2271,
+        "path": "data/runtime/local_research_assessments.jsonl",
+        "size_bytes": 768603
+      },
+      "paper_live_qctrl_product_access": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:52.684927+00:00",
+        "mtime_age_seconds": 2316,
+        "path": "data/runtime/paper_live_qctrl_product_access.json",
+        "size_bytes": 6246
+      },
+      "paperops_30_day_operations": {
+        "exists": true,
+        "mtime": "2026-06-28T18:25:22.304083+00:00",
+        "mtime_age_seconds": 2287,
+        "path": "data/runtime/paperops_30_day_operations.json",
+        "size_bytes": 18887
+      },
+      "paperops_active_paper_trading_automation": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:55.123476+00:00",
+        "mtime_age_seconds": 2314,
+        "path": "data/runtime/paperops_active_paper_trading_automation.json",
+        "size_bytes": 9519
+      },
+      "paperops_autonomous_pass_summary": {
+        "exists": true,
+        "mtime": "2026-06-28T18:12:51.685510+00:00",
+        "mtime_age_seconds": 3037,
+        "path": "data/runtime/paperops_autonomous_pass_summary.json",
+        "size_bytes": 189840
+      },
+      "paperops_completion_gaps": {
+        "exists": true,
+        "mtime": "2026-06-28T18:25:22.435846+00:00",
+        "mtime_age_seconds": 2287,
+        "path": "data/runtime/paperops_completion_gaps.json",
+        "size_bytes": 5843
+      },
+      "paperops_paper_lifecycle_poller": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:54.948359+00:00",
+        "mtime_age_seconds": 2314,
+        "path": "data/runtime/paperops_paper_lifecycle_poller.json",
+        "size_bytes": 31594
+      },
+      "paperops_qctrl_paper_consultation": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:53.555033+00:00",
+        "mtime_age_seconds": 2316,
+        "path": "data/runtime/paperops_qctrl_paper_consultation.json",
+        "size_bytes": 4710
+      },
+      "pattern_recognition_engine": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:19.233199+00:00",
+        "mtime_age_seconds": 2170,
+        "path": "data/runtime/pattern_recognition_engine.json",
+        "size_bytes": 50675
+      },
+      "phase0_reliability_baseline": {
+        "exists": true,
+        "mtime": "2026-06-28T18:48:36.481297+00:00",
+        "mtime_age_seconds": 893,
+        "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
+        "size_bytes": 32980
+      },
+      "phase5_risk_sizing_reviews": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:54.058490+00:00",
+        "mtime_age_seconds": 2315,
+        "path": "data/runtime/phase5_risk_sizing_reviews.json",
+        "size_bytes": 119638
+      },
+      "phase6_learning_approval_ledger": {
+        "exists": true,
+        "mtime": "2026-05-25T09:12:39.870572+00:00",
+        "mtime_age_seconds": 2973049,
+        "path": "data/runtime/phase6_learning_approval_ledger.json",
+        "size_bytes": 34497
+      },
+      "phase6_shadow_strategy_replay": {
+        "exists": true,
+        "mtime": "2026-05-25T09:13:10.583606+00:00",
+        "mtime_age_seconds": 2973019,
+        "path": "data/runtime/phase6_shadow_strategy_replay.json",
+        "size_bytes": 29470
+      },
+      "phase7_drawdown_risk_sentinel": {
+        "exists": true,
+        "mtime": "2026-06-28T18:24:55.945868+00:00",
+        "mtime_age_seconds": 2313,
+        "path": "data/runtime/phase7_drawdown_risk_sentinel.json",
+        "size_bytes": 13511
+      },
+      "qctrl_fire_opal_ibm_readiness": {
+        "exists": true,
+        "mtime": "2026-05-28T06:07:01.107996+00:00",
+        "mtime_age_seconds": 2724988,
+        "path": "data/runtime/qctrl_fire_opal_ibm_readiness.json",
+        "size_bytes": 2541
+      },
+      "quantum_mandatory_review_gate": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:14.338919+00:00",
+        "mtime_age_seconds": 2175,
+        "path": "data/runtime/quantum_mandatory_review_gate.json",
+        "size_bytes": 10667
+      },
+      "quantum_meta_review": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:43.319865+00:00",
+        "mtime_age_seconds": 2146,
+        "path": "data/runtime/quantum_meta_review.json",
+        "size_bytes": 32436
+      },
+      "strategy_lead_shadow_packets": {
+        "exists": true,
+        "mtime": "2026-06-28T18:25:43.216363+00:00",
+        "mtime_age_seconds": 2266,
+        "path": "data/runtime/strategy_lead_shadow_packets.jsonl",
+        "size_bytes": 5189995
+      },
+      "strategy_update_record": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:28.910406+00:00",
+        "mtime_age_seconds": 2160,
+        "path": "data/runtime/strategy_update_record.json",
+        "size_bytes": 19164
+      },
+      "strategy_weight_updates": {
+        "exists": true,
+        "mtime": "2026-06-28T18:27:38.535921+00:00",
+        "mtime_age_seconds": 2151,
+        "path": "data/runtime/strategy_weight_updates.json",
+        "size_bytes": 26647
+      },
+      "telegram_codebase_upgrade_notification": {
+        "exists": true,
+        "mtime": "2026-06-28T18:32:16.089272+00:00",
+        "mtime_age_seconds": 1873,
+        "path": "data/runtime/telegram_codebase_upgrade_notification.json",
+        "size_bytes": 7571
+      },
+      "telegram_human_brief": {
+        "exists": true,
+        "mtime": "2026-06-28T18:28:02.707188+00:00",
+        "mtime_age_seconds": 2126,
+        "path": "data/runtime/telegram_human_brief.json",
+        "size_bytes": 5699
+      },
+      "telegram_inbound_intake_summary": {
+        "exists": true,
+        "mtime": "2026-06-28T18:28:34.125533+00:00",
+        "mtime_age_seconds": 2095,
+        "path": "data/runtime/telegram_inbound_intake_summary.json",
+        "size_bytes": 3665
+      },
+      "telegram_trade_notifications": {
+        "exists": true,
+        "mtime": "2026-06-28T18:32:16.172604+00:00",
+        "mtime_age_seconds": 1873,
+        "path": "data/runtime/telegram_trade_notifications.json",
+        "size_bytes": 3001
+      }
+    },
+    "source_state_contract": "runtime_artifacts_are_source_of_truth"
+  },
+  "staleness_status": {
+    "evaluated_at": "2026-06-28T19:03:29.604639+00:00",
+    "freshness_sla_seconds": 21600,
+    "missing_required_artifacts": [],
+    "required_artifact_count": 4,
+    "stale_required_artifacts": [],
+    "status": "fresh_enough_for_qsase_1"
+  },
+  "status": "qsase_self_model_blocked",
+  "strategy_readiness_summary": [
+    {
+      "akber_filter_readiness": "active_filter",
+      "blocked_reasons": [],
+      "broker_write_allowed": false,
+      "current_state": "qualified_for_guarded_paper_review",
+      "learning_readiness": "candidate_edge_under_observation",
+      "live_capital_enabled": false,
+      "market_readiness": "passed",
+      "model_readiness": "challenge_context_available",
+      "next_allowed_action": "paperops_review_only",
+      "paper_order_submission_allowed": false,
+      "paperops_readiness": "qualified_for_guarded_paper_review",
+      "quantum_readiness": "review_required_not_authority",
+      "risk_readiness": "ready_for_downstream_review",
+      "source_readiness": "passed",
+      "strategy_key": "semiconductor_policy_options_asymmetry",
+      "strategy_label": "Semiconductor Policy Options Asymmetry",
+      "strategy_type": "inherited_strategy_family"
+    },
+    {
+      "akber_filter_readiness": "active_filter",
+      "blocked_reasons": [],
+      "broker_write_allowed": false,
+      "current_state": "qualified_for_guarded_paper_review",
+      "learning_readiness": "candidate_edge_under_observation",
+      "live_capital_enabled": false,
+      "market_readiness": "passed",
+      "model_readiness": "challenge_context_available",
+      "next_allowed_action": "paperops_review_only",
+      "paper_order_submission_allowed": false,
+      "paperops_readiness": "qualified_for_guarded_paper_review",
+      "quantum_readiness": "review_required_not_authority",
+      "risk_readiness": "ready_for_downstream_review",
+      "source_readiness": "passed",
+      "strategy_key": "defence_repricing_geopolitical_watch",
+      "strategy_label": "Defence Repricing Geopolitical Watch",
+      "strategy_type": "inherited_strategy_family"
+    },
+    {
+      "akber_filter_readiness": "active_filter",
+      "blocked_reasons": [
+        "signal_integrity_passed",
+        "risk_agent_paper_sizing",
+        "paper_order_staged_not_submitted",
+        "notional_within_paperops_cap"
+      ],
+      "broker_write_allowed": false,
+      "current_state": "waiting_on_required_gates",
+      "learning_readiness": "candidate_edge_under_observation",
+      "live_capital_enabled": false,
+      "market_readiness": "needs_market_confirmation",
+      "model_readiness": "challenge_context_available",
+      "next_allowed_action": "watch_or_research",
+      "paper_order_submission_allowed": false,
+      "paperops_readiness": "blocked_or_waiting",
+      "quantum_readiness": "review_required_not_authority",
+      "risk_readiness": "not_ready",
+      "source_readiness": "needs_confirmation",
+      "strategy_key": "silver_macro_liquidity_stress",
+      "strategy_label": "Silver Macro Liquidity Stress",
+      "strategy_type": "inherited_strategy_family"
+    },
+    {
+      "akber_filter_readiness": "active_filter",
+      "blocked_reasons": [
+        "signal_integrity_passed",
+        "risk_agent_paper_sizing",
+        "paper_order_staged_not_submitted",
+        "notional_within_paperops_cap"
+      ],
+      "broker_write_allowed": false,
+      "current_state": "waiting_on_required_gates",
+      "learning_readiness": "candidate_edge_under_observation",
+      "live_capital_enabled": false,
+      "market_readiness": "needs_market_confirmation",
+      "model_readiness": "challenge_context_available",
+      "next_allowed_action": "watch_or_research",
+      "paper_order_submission_allowed": false,
+      "paperops_readiness": "blocked_or_waiting",
+      "quantum_readiness": "review_required_not_authority",
+      "risk_readiness": "not_ready",
+      "source_readiness": "needs_confirmation",
+      "strategy_key": "crude_oil_energy_security_disruption",
+      "strategy_label": "Crude Oil Energy Security Disruption",
+      "strategy_type": "inherited_strategy_family"
+    },
+    {
+      "akber_filter_readiness": "active_filter",
+      "blocked_reasons": [
+        "execution_adapter_read_ready",
+        "venue_read_available",
+        "paper_order_staged_not_submitted",
+        "notional_within_paperops_cap"
+      ],
+      "broker_write_allowed": false,
+      "current_state": "waiting_on_required_gates",
+      "learning_readiness": "candidate_edge_under_observation",
+      "live_capital_enabled": false,
+      "market_readiness": "needs_market_confirmation",
+      "model_readiness": "challenge_context_available",
+      "next_allowed_action": "watch_or_research",
+      "paper_order_submission_allowed": false,
+      "paperops_readiness": "blocked_or_waiting",
+      "quantum_readiness": "review_required_not_authority",
+      "risk_readiness": "not_ready",
+      "source_readiness": "needs_confirmation",
+      "strategy_key": "prediction_market_geopolitical_dislocation",
+      "strategy_label": "Prediction Market Geopolitical Dislocation",
+      "strategy_type": "inherited_strategy_family"
+    }
+  ],
+  "telegram_state": {
+    "generic_repetitive_message_checks": "handled_by_existing_telegram_quality_checks",
+    "inbound_read_only": true,
+    "inbound_record_count": 2,
+    "inbound_status": "ready",
+    "inbound_strategy_consideration_count": 1,
+    "inbound_world_event_datapoint_count": 1,
+    "latest_notification_failure_category": null,
+    "outbound_codebase_notice_status": "sent",
+    "outbound_daily_learning_status": "daily_telegram_learning_brief_ready_to_send",
+    "outbound_human_brief_status": "telegram_human_brief_ready_to_send",
+    "outbound_trade_notification_status": "idle_no_submitted_paper_orders",
+    "telegram_changes_trading_authority": false
+  },
+  "trading_universe_health": {
+    "available_market_data": "cockpit_market_and_technical_context_available",
+    "backtestable_instruments": "pending_qsase_3_historical_memory",
+    "calibration_only_instruments": [
+      "prediction_markets"
+    ],
+    "instrument_families": [
+      "prediction markets",
+      "crude oil",
+      "defence",
+      "silver",
+      "semiconductors"
+    ],
+    "market_confirmation_availability": "available_where_strategy_family_gate_passed",
+    "non_paperable_instrument_list": [
+      "prediction_markets"
+    ],
+    "observable_instruments": [
+      "prediction markets",
+      "crude oil",
+      "defence",
+      "silver",
+      "semiconductors"
+    ],
+    "options_or_volatility_context_availability": "context_only",
+    "paper_tradable_instruments": [
+      "semiconductors",
+      "defence",
+      "silver"
+    ],
+    "paper_tradable_proxy_availability": "partial",
+    "prediction_market_route_readiness": "context_only_until_governed_route_ready",
+    "status": "trading_universe_ready_with_context_gaps",
+    "supplemental_market_data_status": "supplemental_context_not_source_quorum",
+    "tradingview_or_technical_context_availability": "technical_context_recorded",
+    "watched_instrument_count": 5
+  },
+  "validation_errors": [],
+  "visibility_health": {
+    "cockpit_status_freshness": "fresh",
+    "dashboard_signature_freshness": "present",
+    "status": "visibility_health_ready",
+    "telegram_inbound_read_only": true,
+    "telegram_outbound_statuses": {
+      "codebase_upgrade": "sent",
+      "daily_learning": "daily_telegram_learning_brief_ready_to_send",
+      "human_brief": "telegram_human_brief_ready_to_send",
+      "trade_notifications": "idle_no_submitted_paper_orders"
+    },
+    "visibility_failure_changes_trading_authority": false
+  },
+  "why_not_trading_now": {
+    "blocking_layer": "paperops",
+    "category": "duplicate_or_idempotency_hold",
+    "details": {
+      "duplicate_submit_count": 4,
+      "fresh_eligible_submit_count": 0,
+      "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
+      "open_order_count": 8
+    },
+    "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
+    "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
+    "repair_required": false
+  }
+}

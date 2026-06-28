@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_0_doctrine_document_hierarchy_safety_contract",
-  "generated_at": "2026-06-28T18:54:33.200195+00:00",
+  "active_phase": "qsase_1_self_model_artifact_validation",
+  "generated_at": "2026-06-28T19:03:29.604639+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -47,6 +47,35 @@
       "simulated_elapsed_time_detected": false,
       "status": "governance_safety_ready",
       "telegram_command_path_enabled": false
+    },
+    "qsase_1_self_model_artifact_validation": {
+      "artifact_path": "data/runtime/qsase_self_model.json",
+      "authority_flags_false": true,
+      "dashboard_and_telegram_are_authority": false,
+      "degraded_component_count": 12,
+      "later_qsase_phases_implemented": false,
+      "missing_component_count": 1,
+      "model_outputs_are_approvals": false,
+      "name": "QSASE-1: Self-Model Artifact And Validation",
+      "paper_only": true,
+      "proposal_first": true,
+      "public_safe": true,
+      "quantum_outputs_are_approvals": false,
+      "repair_request_count": 12,
+      "status": "qsase_self_model_blocked",
+      "why_not_trading_now": {
+        "blocking_layer": "paperops",
+        "category": "duplicate_or_idempotency_hold",
+        "details": {
+          "duplicate_submit_count": 4,
+          "fresh_eligible_submit_count": 0,
+          "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
+          "open_order_count": 8
+        },
+        "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
+        "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
+        "repair_required": false
+      }
     }
   },
   "safety": {

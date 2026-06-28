@@ -1,0 +1,44 @@
+{
+  "artifact_type": "qsase_self_model_dashboard_summary",
+  "authority_flags_false": true,
+  "command_disabled": true,
+  "degraded_component_count": 12,
+  "generated_at": "2026-06-28T19:03:29.604639+00:00",
+  "live_send_allowed": false,
+  "missing_component_count": 1,
+  "public_safe": true,
+  "repair_request_count": 12,
+  "schema_version": "qsase_self_model.v1",
+  "status": "qsase_self_model_blocked",
+  "summary_rows": [
+    {
+      "label": "Source state",
+      "value": "data_health_degraded"
+    },
+    {
+      "label": "Model stack",
+      "value": "model_health_degraded"
+    },
+    {
+      "label": "Quantum",
+      "value": "quantum_health_blocked"
+    },
+    {
+      "label": "PaperOps",
+      "value": "execution_health_degraded"
+    },
+    {
+      "label": "Risk",
+      "value": "risk_health_degraded"
+    },
+    {
+      "label": "Visibility",
+      "value": "visibility_health_ready"
+    },
+    {
+      "label": "Why not trading now",
+      "value": "idempotency_guard_holding_duplicate_or_already_submitted_setup"
+    }
+  ],
+  "title": "QSASE Self-Model"
+}

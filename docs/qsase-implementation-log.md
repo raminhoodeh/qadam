@@ -19,3 +19,14 @@
 - Authority flags: `38`/`38` false
 - Authority violations: `0`
 - Boundaries: paper-only, proposal-first, read-only dashboard, review-only Telegram, no proof credit, no live capital, no broker writes, no simulated elapsed time.
+
+<!-- qsase_1_self_model_artifact_validation -->
+## QSASE-1: Self-Model Artifact And Validation
+
+- Generated at: `2026-06-28T19:03:29.604639+00:00`
+- Status: `qsase_self_model_blocked`
+- Runtime artifact: `data/runtime/qsase_self_model.json`
+- Degraded components: `12`
+- Missing components: `1`
+- Why not trading now: `idempotency_guard_holding_duplicate_or_already_submitted_setup`
+- Safety: model and quantum outputs are not approvals; dashboard and Telegram remain non-authoritative; all self-model authority flags are false.
