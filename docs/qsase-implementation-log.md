@@ -41,3 +41,14 @@
 - Trading universe: `19` watched instruments
 - Source-price rows: `6232`
 - Safety: research-only; no strategy hypotheses, trade candidates, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_3_historical_source_price_memory -->
+## QSASE-3: Historical Source-Price Memory
+
+- Generated at: `2026-06-28T19:16:21.486696+00:00`
+- Status: `qsase_historical_source_price_memory_degraded`
+- Runtime artifact: `data/runtime/qsase_historical_source_price_memory.json`
+- Memory records: `6232`
+- Point-in-time safe records: `6232`
+- Missing windows: `6150`
+- Safety: historical replay cannot advance the 30-day paper growth trial, create paper proof ledger credit, submit orders, write brokers, or enable live capital.

@@ -1,0 +1,199 @@
+{
+  "artifact_type": "qsase_historical_coverage_map",
+  "command_disabled": true,
+  "coverage_by_instrument": {
+    "BNO": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "CL=F": {
+      "missing_window_count": 246,
+      "record_count": 328,
+      "window_complete_count": 82
+    },
+    "GLD": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "ITA": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "KALSHI:EVENTS": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "LMT": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "NVDA": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "POLYMARKET:EVENTS": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "PPA": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "QQQ": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "SI=F": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "SIL": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "SLV": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "SMH": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "SOXX": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "SPY": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "USO": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "XAR": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    },
+    "XLE": {
+      "missing_window_count": 328,
+      "record_count": 328,
+      "window_complete_count": 0
+    }
+  },
+  "coverage_by_source_family": {
+    "conflict": {
+      "missing_window_count": 750,
+      "record_count": 760,
+      "window_complete_count": 10
+    },
+    "macro": {
+      "missing_window_count": 900,
+      "record_count": 912,
+      "window_complete_count": 12
+    },
+    "market": {
+      "missing_window_count": 1650,
+      "record_count": 1672,
+      "window_complete_count": 22
+    },
+    "market_context_taxonomy": {
+      "missing_window_count": 600,
+      "record_count": 608,
+      "window_complete_count": 8
+    },
+    "physical": {
+      "missing_window_count": 1050,
+      "record_count": 1064,
+      "window_complete_count": 14
+    },
+    "social": {
+      "missing_window_count": 1200,
+      "record_count": 1216,
+      "window_complete_count": 16
+    }
+  },
+  "coverage_by_time_window": {
+    "10d_forward": {
+      "missing_window_count": 779,
+      "record_count": 779,
+      "window_complete_count": 0
+    },
+    "1d_forward": {
+      "missing_window_count": 779,
+      "record_count": 779,
+      "window_complete_count": 0
+    },
+    "20d_forward": {
+      "missing_window_count": 779,
+      "record_count": 779,
+      "window_complete_count": 0
+    },
+    "3d_forward": {
+      "missing_window_count": 779,
+      "record_count": 779,
+      "window_complete_count": 0
+    },
+    "5d_forward": {
+      "missing_window_count": 779,
+      "record_count": 779,
+      "window_complete_count": 0
+    },
+    "60d_forward": {
+      "missing_window_count": 779,
+      "record_count": 779,
+      "window_complete_count": 0
+    },
+    "event_time_move": {
+      "missing_window_count": 738,
+      "record_count": 779,
+      "window_complete_count": 41
+    },
+    "pre_event_baseline": {
+      "missing_window_count": 738,
+      "record_count": 779,
+      "window_complete_count": 41
+    }
+  },
+  "covered_instrument_count": 19,
+  "covered_source_count": 41,
+  "credential_blocked_source_count": 1,
+  "eligible_instrument_count": 19,
+  "eligible_source_count": 41,
+  "generated_at": "2026-06-28T19:16:21.486696+00:00",
+  "historical_backfill_blocked_count": 44,
+  "historical_backfill_recorded_count": 65,
+  "leakage_rejected_record_count": 0,
+  "matrix_row_count": 6232,
+  "memory_record_count": 6232,
+  "missing_instrument_count": 0,
+  "missing_source_count": 0,
+  "missing_window_records_path": "data/runtime/qsase_historical_missing_windows.jsonl",
+  "paper_proof_ledger_eligible": false,
+  "point_in_time_safe_record_count": 6232,
+  "proof_credit_allowed": false,
+  "provider_stale_source_count": 0,
+  "public_safe": true,
+  "revision_aware_macro_record_count": 0,
+  "schema_version": "qsase_historical_source_price_memory.v1",
+  "status": "historical_coverage_degraded",
+  "window_complete_record_count": 82,
+  "window_incomplete_record_count": 6150
+}

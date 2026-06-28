@@ -1,0 +1,44 @@
+{
+  "artifact_type": "qsase_historical_source_price_memory_dashboard_summary",
+  "authority_flags_false": true,
+  "command_disabled": true,
+  "generated_at": "2026-06-28T19:16:21.486696+00:00",
+  "live_send_allowed": false,
+  "memory_state_language": "Historical memory informs research. It is not paper proof ledger credit.",
+  "paper_growth_trial_calendar_advanced": false,
+  "paper_proof_ledger_credit_granted": false,
+  "public_safe": true,
+  "research_only": true,
+  "schema_version": "qsase_historical_source_price_memory.v1",
+  "status": "qsase_historical_source_price_memory_degraded",
+  "summary_rows": [
+    {
+      "label": "Historical memory records",
+      "value": 6232
+    },
+    {
+      "label": "Point-in-time safe",
+      "value": 6232
+    },
+    {
+      "label": "Backtest eligible",
+      "value": 82
+    },
+    {
+      "label": "Missing windows",
+      "value": 6150
+    },
+    {
+      "label": "Leakage rejected",
+      "value": 0
+    },
+    {
+      "label": "Replay mode",
+      "value": "point_in_time_replay"
+    },
+    {
+      "label": "Proof boundary",
+      "value": "not_paper_proof_ledger_credit"
+    }
+  ]
+}
