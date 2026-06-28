@@ -11,30 +11,55 @@
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
-<body>
-    <header class="site-header">
-        <a class="logo-link" href="/" aria-label="Qadam home">
+<body class="qadam-whitepaper-page">
+    <a class="skip-link" href="#whitepaper-main">Skip to whitepaper content</a>
+    <header class="site-header qadam-whitepaper-header qadam-layout-header is-institutional">
+        <a class="logo-link qadam-layout-logo" href="/" aria-label="Qadam home">
             <img src="/logo.png" alt="QADAM Logo">
         </a>
-        <nav class="nav-links" aria-label="Whitepaper navigation">
-            <a class="nav-link secondary" href="/">Home</a>
-            <a class="nav-link secondary" href="/guide/">User Guide</a>
-            <a class="nav-link" href="https://wa.link/s1pqwy" target="_blank" rel="noreferrer">Join Waitlist</a>
+        <nav class="nav-links qadam-layout-actions qadam-global-nav qadam-whitepaper-utility" aria-label="Whitepaper navigation" data-qadam-global-nav data-qadam-nav-context="public-doc">
+            <a class="nav-link qadam-nav-link secondary" href="/dashboard/" data-qadam-nav-item="dashboard">Dashboard</a>
+            <a class="nav-link qadam-nav-link secondary" href="/guide/" data-qadam-nav-item="guide">User Guide</a>
+            <a class="nav-link qadam-nav-link" href="/whitepaper/" data-qadam-nav-item="whitepaper" aria-current="page">Whitepaper</a>
+            <a class="nav-link qadam-nav-link" href="/login/" data-qadam-nav-item="account">Account Sign In</a>
         </nav>
     </header>
 
-    <main class="page-shell">
-        <section class="hero">
-            <p class="eyebrow">Private founding whitepaper</p>
-            <h1>Qadam For The Founding Fund Managers</h1>
-            <p class="lede">
-                A trader-readable view of how Qadam watches the world, turns catalysts into research goals, runs them
-                through Akber's 6-stage process, and proves itself through guarded paper trading before live capital.
-            </p>
+    <nav class="qadam-whitepaper-section-nav qadam-section-nav qadam-layout-nav-bar" aria-label="Whitepaper sections" data-qadam-section-nav="whitepaper">
+        <a href="#short-version">Short Version</a>
+        <a href="#operating-map">Operating Map</a>
+        <a href="#trading-universe">Trading Universe</a>
+        <a href="#sources">What Qadam Watches</a>
+    </nav>
+
+    <main id="whitepaper-main" class="page-shell qadam-whitepaper-shell qadam-layout-shell" tabindex="-1">
+        <section class="hero qadam-whitepaper-hero qadam-layout-hero">
+            <div class="qadam-whitepaper-hero-copy">
+                <p class="eyebrow">Private founding whitepaper</p>
+                <h1>Qadam For The Founding Fund Managers</h1>
+                <p class="lede">
+                    A trader-readable view of how Qadam watches the world, turns catalysts into research goals, runs them
+                    through Akber's 6-stage process, and proves itself through guarded paper trading before live capital.
+                </p>
+            </div>
+            <dl class="qadam-whitepaper-hero-facts" aria-label="Whitepaper summary">
+                <div>
+                    <dt>Operating mode</dt>
+                    <dd>Paper-first proof system</dd>
+                </div>
+                <div>
+                    <dt>Trading lanes</dt>
+                    <dd>Prediction markets, crude oil, defence, silver, semiconductors</dd>
+                </div>
+                <div>
+                    <dt>Authority boundary</dt>
+                    <dd>Dashboard oversight, not order entry</dd>
+                </div>
+            </dl>
         </section>
 
-        <article class="article">
-            <section>
+        <article class="article qadam-whitepaper-article qadam-layout-article">
+            <section id="short-version">
                 <h2>The Short Version</h2>
                 <p>Qadam is a trading intelligence system built around Akber's core philosophy: high-conviction,
                     catalyst-driven opportunities, not random signals, hype, or overtrading.</p>
@@ -77,7 +102,7 @@
                     state. It is an oversight surface, not an order-entry terminal.</p>
             </section>
 
-            <section>
+            <section id="operating-map">
                 <h2>How The System Fits Together</h2>
                 <p>Read this top to bottom. It is designed to stay readable on a phone in portrait.</p>
 
@@ -228,7 +253,7 @@
                     first-release trading lanes or a future approved strategy expansion.</p>
             </section>
 
-            <section>
+            <section id="sources">
                 <h2>What Qadam Watches</h2>
                 <p>Qadam uses live and live-adjacent feeds across five intelligence pipelines:</p>
                 <ul>

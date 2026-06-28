@@ -10,31 +10,57 @@
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
-<body>
-    <header class="site-header">
-        <a class="logo-link" href="/" aria-label="Qadam home">
+<body class="qadam-guide-page">
+    <a class="skip-link" href="#guide-main">Skip to user guide content</a>
+    <header class="site-header qadam-guide-header qadam-layout-header is-institutional">
+        <a class="logo-link qadam-layout-logo" href="/" aria-label="Qadam home">
             <img src="/logo.png" alt="QADAM Logo">
         </a>
-        <nav class="nav-links" aria-label="Guide navigation">
-            <a class="nav-link secondary" href="/dashboard/">Dashboard</a>
-            <a class="nav-link secondary" href="/whitepaper/">Whitepaper</a>
-            <button class="nav-link" type="button" data-signout>Sign Out</button>
+        <nav class="nav-links qadam-layout-actions qadam-global-nav qadam-guide-utility" aria-label="Guide navigation" data-qadam-global-nav data-qadam-nav-context="protected-doc">
+            <a class="nav-link qadam-nav-link secondary" href="/dashboard/" data-qadam-nav-item="dashboard">Dashboard</a>
+            <a class="nav-link qadam-nav-link secondary" href="/guide/" data-qadam-nav-item="guide" aria-current="page">User Guide</a>
+            <a class="nav-link qadam-nav-link secondary" href="/whitepaper/" data-qadam-nav-item="whitepaper">Whitepaper</a>
+            <button class="nav-link qadam-nav-link qadam-nav-button" type="button" data-qadam-nav-item="signout" data-signout>Sign Out</button>
         </nav>
     </header>
 
-    <main class="page-shell guide-shell hidden" data-dashboard>
-        <section class="hero">
-            <p class="eyebrow">Private user guide</p>
-            <h1>How To Use Qadam</h1>
-            <p class="lede">
-                Logged in as <span data-user-email></span>. This guide explains what Qadam is, how to read the
-                cockpit, how paper trading works, what members can do, and which safety boundaries must never be
-                crossed.
-            </p>
+    <main id="guide-main" class="page-shell guide-shell qadam-guide-shell qadam-layout-shell hidden" data-dashboard tabindex="-1">
+        <nav class="qadam-guide-section-nav qadam-section-nav qadam-layout-nav-bar" aria-label="Guide sections" data-qadam-section-nav="guide">
+            <a href="#guide-start">Start Here</a>
+            <a href="#guide-dashboard">Dashboard</a>
+            <a href="#guide-states">States</a>
+            <a href="#guide-routine">Routine</a>
+            <a href="#guide-boundaries">Boundaries</a>
+        </nav>
+
+        <section class="hero qadam-guide-hero qadam-layout-hero">
+            <div class="qadam-guide-hero-copy">
+                <p class="eyebrow">Private user guide</p>
+                <h1>How To Use Qadam</h1>
+                <p class="lede">
+                    Logged in as <span data-user-email></span>. This guide explains what Qadam is, how to read the
+                    cockpit, how paper trading works, what members can do, and which safety boundaries must never be
+                    crossed.
+                </p>
+            </div>
+            <dl class="qadam-guide-hero-facts" aria-label="Guide summary">
+                <div>
+                    <dt>Read first</dt>
+                    <dd>Safety Status, then the seven Mission Control sections.</dd>
+                </div>
+                <div>
+                    <dt>Core rule</dt>
+                    <dd>A hypothesis is not a trade. A candidate is not an order.</dd>
+                </div>
+                <div>
+                    <dt>Authority</dt>
+                    <dd>The guide explains oversight; it cannot enable trading.</dd>
+                </div>
+            </dl>
         </section>
 
-        <article class="article">
-            <section>
+        <article class="article qadam-guide-article qadam-layout-article">
+            <section id="guide-start">
                 <h2>The Short Version</h2>
                 <p>Qadam is a local-first macro intelligence and paper-trading system. It watches world events and
                     markets, builds trade hypotheses, checks them against evidence and risk rules, runs paper
@@ -97,7 +123,7 @@
                 </div>
             </section>
 
-            <section>
+            <section id="guide-states">
                 <h2>The Five States</h2>
                 <p>Qadam separates the lifecycle so the dashboard does not exaggerate.</p>
                 <div class="guide-table">
@@ -149,7 +175,7 @@
                 </ol>
             </section>
 
-            <section>
+            <section id="guide-dashboard">
                 <h2>How To Read The Dashboard</h2>
                 <p>Start in the Overview view. Mission Control makes Overview the default paper-fund walkthrough instead
                     of a long stack of technical cards. It is organized around seven plain-language sections: Paper Fund
@@ -349,7 +375,7 @@
                 <p>If a day has no qualified setup, the correct action is to record the no-trade rationale.</p>
             </section>
 
-            <section>
+            <section id="guide-routine">
                 <h2>Daily Operating Routine</h2>
                 <ol>
                     <li>Start with Overview.</li>
@@ -363,7 +389,7 @@
                 </ol>
             </section>
 
-            <section>
+            <section id="guide-boundaries">
                 <h2>What Members Can And Cannot Do</h2>
                 <div class="guide-grid two">
                     <div class="guide-card">

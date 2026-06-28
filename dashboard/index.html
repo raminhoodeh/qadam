@@ -10,31 +10,32 @@
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
-<body>
+<body class="qadam-dashboard-page">
     <a class="skip-link" href="#dashboard-main">Skip to dashboard views</a>
-    <main class="dashboard-shell">
-        <header class="topbar">
+    <main class="dashboard-shell qadam-dashboard-shell qadam-layout-shell is-wide">
+        <header class="topbar qadam-dashboard-header qadam-layout-header is-institutional">
             <a class="logo-link" href="/" aria-label="Qadam home">
                 <img src="/logo.png" alt="QADAM Logo">
             </a>
             <div class="topbar-right">
-                <section class="balance-ticker pending" aria-label="Live paper account balance" data-balance-ticker>
+                <section class="balance-ticker pending" aria-label="Live paper account balance" data-balance-ticker aria-live="polite">
                     <span>Paper balance</span>
                     <strong>Loading</strong>
                     <em>Waiting for mirror</em>
                 </section>
-                <section class="trade-toast-rail" aria-label="Recent paper trade timeline" data-trade-toast-rail>
+                <section class="trade-toast-rail" aria-label="Recent paper trade timeline" data-trade-toast-rail aria-live="polite">
                     <span class="trade-toast-token pending">Loading trade timeline</span>
                 </section>
-                <nav class="nav-actions" aria-label="Dashboard navigation">
-                    <a class="button" href="/guide/">User Guide</a>
-                    <a class="button" href="/whitepaper/">Whitepaper</a>
-                    <button type="button" data-signout>Sign Out</button>
+                <nav class="nav-actions qadam-global-nav" aria-label="Dashboard navigation" data-qadam-global-nav data-qadam-nav-context="protected-dashboard">
+                    <a class="button qadam-nav-link" href="/dashboard/" data-qadam-nav-item="dashboard" aria-current="page">Dashboard</a>
+                    <a class="button qadam-nav-link" href="/guide/" data-qadam-nav-item="guide">User Guide</a>
+                    <a class="button qadam-nav-link" href="/whitepaper/" data-qadam-nav-item="whitepaper">Whitepaper</a>
+                    <button class="qadam-nav-link qadam-nav-button" type="button" data-qadam-nav-item="signout" data-signout>Sign Out</button>
                 </nav>
             </div>
         </header>
 
-        <section id="dashboard-main" class="dashboard-workspace hidden" data-dashboard tabindex="-1">
+        <section id="dashboard-main" class="dashboard-workspace qadam-dashboard-workspace hidden" data-dashboard tabindex="-1">
             <section class="dashboard-hero">
                 <div>
                     <p class="eyebrow">Qadam paper trading dashboard</p>
@@ -46,7 +47,24 @@
                 </div>
             </section>
 
-            <section class="dashboard-safety-strip pending" aria-label="Safety Status" data-dashboard-safety-strip>
+            <nav class="cockpit-nav dashboard-view-switcher qadam-dashboard-nav qadam-section-nav" aria-label="Dashboard sections" data-qadam-section-nav="dashboard" data-qadam-dashboard-section-nav>
+                <div class="cockpit-nav-head">
+                    <span>Mission Control</span>
+                    <strong data-dashboard-view-current>Overview</strong>
+                </div>
+                <div class="cockpit-nav-links" aria-label="Primary dashboard section">
+                    <a href="#overview" class="active" data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
+                </div>
+                <button class="dashboard-debug-toggle" type="button" data-dashboard-debug-toggle aria-label="Show advanced sections" aria-controls="dashboard-advanced-links" aria-pressed="false" aria-expanded="false">Advanced</button>
+                <div id="dashboard-advanced-links" class="dashboard-debug-links" data-dashboard-advanced-links hidden aria-hidden="true">
+                    <a href="#trades" data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
+                    <a href="#evidence" data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
+                    <a href="#reasoning" data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
+                    <a href="#operations" data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
+                </div>
+            </nav>
+
+            <section class="dashboard-safety-strip pending" aria-label="Safety Status" data-dashboard-safety-strip aria-live="polite">
                 <div class="dashboard-safety-strip-main">
                     <p class="label">Safety status</p>
                     <h2>Paper trading authorized</h2>
@@ -187,13 +205,13 @@
                             </dl>
                         </div>
                     </div>
-	                    <p class="mini" data-snapshot-meta>Loading dashboard status...</p>
-	                </div>
-	
-	                <div class="snapshot-banner" data-status-banner>
-	                    <span>Dashboard status loaded.</span>
-	                    <span>Read-only operating map. If the live bridge is unavailable, this page falls back to the sanitized status snapshot without implying control authority.</span>
-	                </div>
+                    <p class="mini" data-snapshot-meta>Loading dashboard status...</p>
+                </div>
+
+                <div class="snapshot-banner" data-status-banner>
+                    <span>Dashboard status loaded.</span>
+                    <span>Read-only operating map. If the live bridge is unavailable, this page falls back to the sanitized status snapshot without implying control authority.</span>
+                </div>
 
                 <div class="flow-map" data-flow-map>
                     <section class="operations-workspace" data-operations-workspace>

@@ -10,30 +10,48 @@
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
-<body>
-    <main class="auth-shell">
-        <header class="topbar">
-            <a class="logo-link" href="/" aria-label="Qadam home">
+<body class="qadam-auth-page">
+    <a class="skip-link" href="#signup-main">Skip to account creation form</a>
+    <main id="signup-main" class="auth-shell qadam-auth-shell qadam-layout-shell" data-auth-page="sign-up" tabindex="-1">
+        <header class="topbar qadam-auth-header qadam-layout-header is-institutional">
+            <a class="logo-link qadam-layout-logo" href="/" aria-label="Qadam home">
                 <img src="/logo.png" alt="QADAM Logo">
             </a>
-            <nav class="nav-actions" aria-label="Sign up navigation">
-                <a class="button" href="/login/">Login</a>
-                <a class="button" href="/">Home</a>
+            <nav class="nav-actions qadam-layout-actions qadam-global-nav qadam-auth-nav" aria-label="Sign up navigation" data-qadam-global-nav data-qadam-nav-context="public-auth">
+                <a class="button qadam-nav-link qadam-auth-nav-link" href="/dashboard/" data-qadam-nav-item="dashboard">Dashboard</a>
+                <a class="button qadam-nav-link qadam-auth-nav-link" href="/whitepaper/" data-qadam-nav-item="whitepaper">Whitepaper</a>
+                <a class="button qadam-nav-link qadam-auth-nav-link" href="/login/" data-qadam-nav-item="account">Account Sign In</a>
+                <a class="button qadam-nav-link qadam-auth-nav-link" href="/" data-qadam-nav-item="home">Home</a>
             </nav>
         </header>
 
-        <section class="hero">
-            <div>
-                <p class="eyebrow">Qadam Cockpit</p>
+        <section class="hero qadam-auth-hero qadam-layout-hero is-two-column">
+            <div class="qadam-auth-intro">
+                <p class="eyebrow">Qadam cockpit</p>
                 <h1>Create Founding Access</h1>
-                <p class="copy">Only allowlisted founding Fund Manager emails can create accounts for this first release.</p>
+                <p class="copy">Create access for the private Qadam paper-fund cockpit. The allowlist is checked before account creation and again before the dashboard opens.</p>
+                <dl class="qadam-auth-proof-list" aria-label="Access boundaries">
+                    <div>
+                        <dt>Allowlist required</dt>
+                        <dd>Only founding Fund Manager emails can create accounts.</dd>
+                    </div>
+                    <div>
+                        <dt>Governed access</dt>
+                        <dd>Authentication opens oversight, not broker control.</dd>
+                    </div>
+                    <div>
+                        <dt>Paper proof first</dt>
+                        <dd>The account leads to the paper trading dashboard only.</dd>
+                    </div>
+                </dl>
             </div>
 
-            <section class="panel">
-                <p class="label">Supabase Auth</p>
+            <section class="panel qadam-auth-panel qadam-card" aria-label="Founding account creation form">
+                <p class="label">Secure sign up</p>
                 <h2>Email and password</h2>
-                <p class="status" data-status></p>
-                <form class="auth-form" data-signup-form>
+                <p class="qadam-auth-panel-copy">Use an allowlisted email and a password of at least eight characters.</p>
+                <p id="signup-status" class="status" data-status aria-live="polite"></p>
+                <form class="auth-form" data-signup-form aria-describedby="signup-status">
                     <label>
                         <span>Email</span>
                         <input name="email" type="email" autocomplete="email" required>
@@ -42,7 +60,8 @@
                         <span>Password</span>
                         <input name="password" type="password" autocomplete="new-password" required minlength="8">
                     </label>
-                    <button class="primary" type="submit">Create Account</button>
+                    <button class="primary qadam-auth-submit" type="submit">Create Account</button>
+                    <p class="qadam-auth-form-note">Already have access? <a href="/login/">Return to login</a>.</p>
                 </form>
             </section>
         </section>

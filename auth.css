@@ -1,5 +1,9 @@
+@import url("/non-homepage-tokens.css?v=20260628-stage1");
+@import url("/non-homepage-layout.css?v=20260628-stage2");
+
 :root {
     color-scheme: dark;
+    --qadam-active-token-layer: var(--qadam-token-version);
     --bg: #0a0a0c;
     --bg-elevated: #0f1317;
     --panel: rgba(15, 19, 23, 0.78);
@@ -27,8 +31,13 @@
     --glow-green: 0 0 24px rgba(var(--green-rgb), 0.12);
     --glow-amber: 0 0 24px rgba(var(--amber-rgb), 0.12);
     --glow-coral: 0 0 24px rgba(var(--coral-rgb), 0.14);
-    --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
-    --font-mono: "SF Mono", "SFMono-Regular", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --font-sans: var(--qadam-font-ui);
+    --font-mono: var(--qadam-font-mono);
+    --institutional-page: var(--qadam-component-page-bg);
+    --institutional-canvas: var(--qadam-component-card-bg);
+    --institutional-brand: var(--qadam-color-brand);
+    --institutional-band: var(--qadam-color-section-band);
+    --institutional-footer: var(--qadam-color-footer);
 }
 
 * {
@@ -391,6 +400,233 @@ option {
     border-color: rgba(var(--green-rgb), 0.5);
     color: var(--green);
     box-shadow: var(--glow-green);
+}
+
+body.qadam-auth-page {
+    background: var(--qadam-component-page-bg);
+    color: var(--qadam-color-ink);
+}
+
+.qadam-auth-page .qadam-auth-shell {
+    min-height: 100vh;
+    padding: 0 var(--qadam-layout-gutter) var(--qadam-space-16);
+    width: var(--qadam-layout-page);
+}
+
+.qadam-auth-page .qadam-auth-header {
+    background: var(--qadam-component-header-bg);
+    border-bottom: 1px solid var(--qadam-color-rule);
+    margin-inline: calc(var(--qadam-layout-gutter) * -1);
+    padding: var(--qadam-space-5) var(--qadam-layout-gutter);
+}
+
+.qadam-auth-page .qadam-auth-header .logo-link img {
+    height: 40px;
+}
+
+.qadam-auth-page .qadam-auth-nav {
+    gap: var(--qadam-space-6);
+}
+
+.qadam-auth-page .qadam-auth-nav-link {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--qadam-color-brand);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--qadam-color-ink);
+    font-weight: 500;
+    min-height: 38px;
+    padding: 0 4px;
+}
+
+.qadam-auth-page .qadam-auth-nav-link:hover {
+    background: transparent;
+    border-color: var(--qadam-color-brand-dark);
+    box-shadow: none;
+    color: var(--qadam-color-brand);
+    transform: none;
+}
+
+.qadam-auth-page .qadam-auth-hero {
+    align-items: center;
+    background: var(--qadam-color-canvas);
+    border-top: 14px solid var(--qadam-component-nav-bg);
+    box-shadow: var(--qadam-shadow-card);
+    gap: clamp(28px, 5vw, 72px);
+    grid-template-columns: minmax(0, 0.92fr) minmax(340px, 0.72fr);
+    margin-top: var(--qadam-space-8);
+    min-height: auto;
+    padding: clamp(38px, 7vw, 76px);
+}
+
+.qadam-auth-page .qadam-auth-intro {
+    display: grid;
+    gap: var(--qadam-space-5);
+}
+
+.qadam-auth-page .eyebrow {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin: 0;
+}
+
+.qadam-auth-page h1 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(44px, 7vw, 72px);
+    font-weight: 500;
+    line-height: var(--qadam-leading-tight);
+    max-width: 760px;
+}
+
+.qadam-auth-page h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-xl);
+    font-weight: 500;
+}
+
+.qadam-auth-page .copy,
+.qadam-auth-page .qadam-auth-panel-copy,
+.qadam-auth-page .qadam-auth-form-note {
+    color: var(--qadam-color-muted);
+    font-size: var(--qadam-text-md);
+    line-height: var(--qadam-leading-body);
+}
+
+.qadam-auth-page .copy {
+    margin: 0;
+    max-width: 680px;
+}
+
+.qadam-auth-proof-list {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0;
+    margin: var(--qadam-space-3) 0 0;
+}
+
+.qadam-auth-proof-list div {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-2);
+    grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr);
+    padding: var(--qadam-space-4) 0;
+}
+
+.qadam-auth-proof-list dt {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-sm);
+    font-weight: 700;
+}
+
+.qadam-auth-proof-list dd {
+    color: var(--qadam-color-muted);
+    font-size: var(--qadam-text-sm);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+.qadam-auth-page .qadam-auth-panel {
+    align-self: center;
+    background: var(--qadam-component-card-bg);
+    border: 1px solid var(--qadam-color-border);
+    border-radius: var(--qadam-radius-none);
+    box-shadow: var(--qadam-shadow-card);
+    padding: clamp(24px, 4vw, 34px);
+}
+
+.qadam-auth-page .qadam-auth-panel .label {
+    color: var(--qadam-color-brand);
+    font-size: var(--qadam-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--qadam-space-2);
+}
+
+.qadam-auth-page .qadam-auth-panel-copy {
+    margin-top: var(--qadam-space-3);
+}
+
+.qadam-auth-page .auth-form {
+    gap: var(--qadam-space-4);
+    margin-top: var(--qadam-space-6);
+}
+
+.qadam-auth-page label {
+    gap: var(--qadam-space-2);
+}
+
+.qadam-auth-page label span {
+    color: var(--qadam-color-muted);
+    font-size: var(--qadam-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.qadam-auth-page input {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-border-strong);
+    border-radius: var(--qadam-radius-none);
+    color: var(--qadam-color-ink);
+    min-height: var(--qadam-touch-target);
+    padding: 12px 14px;
+}
+
+.qadam-auth-page input:focus {
+    background: var(--qadam-color-canvas);
+    border-color: var(--qadam-color-brand);
+    box-shadow: var(--qadam-component-focus);
+}
+
+.qadam-auth-page .qadam-auth-submit {
+    background: var(--qadam-component-button-bg);
+    border-color: var(--qadam-component-button-bg);
+    border-radius: var(--qadam-radius-none);
+    box-shadow: none;
+    color: var(--qadam-component-button-text);
+    font-weight: 700;
+    min-height: 48px;
+}
+
+.qadam-auth-page .qadam-auth-submit:hover {
+    background: var(--qadam-component-button-hover-bg);
+    border-color: var(--qadam-component-button-hover-bg);
+    box-shadow: none;
+}
+
+.qadam-auth-page .qadam-auth-form-note {
+    margin-top: var(--qadam-space-1);
+}
+
+.qadam-auth-page .qadam-auth-form-note a {
+    color: var(--qadam-component-link);
+    font-weight: 700;
+}
+
+.qadam-auth-page .status {
+    background: var(--qadam-color-surface);
+    border-color: var(--qadam-color-border);
+    border-radius: var(--qadam-radius-none);
+    color: var(--qadam-color-muted);
+    margin-top: var(--qadam-space-4);
+}
+
+.qadam-auth-page .status.error {
+    background: var(--qadam-color-risk-soft);
+    border-color: rgba(var(--qadam-rgb-risk), 0.38);
+    box-shadow: none;
+    color: var(--qadam-color-risk);
+}
+
+.qadam-auth-page .status.ok {
+    background: var(--qadam-color-ok-soft);
+    border-color: rgba(var(--qadam-rgb-ok), 0.38);
+    box-shadow: none;
+    color: var(--qadam-color-ok);
 }
 
 .status-band {
@@ -10330,5 +10566,865 @@ html[data-dashboard-debug="off"] .overview-mini-guide strong {
     .safety-strip-info {
         grid-column: auto;
         grid-row: auto;
+    }
+}
+
+@media (max-width: 760px) {
+    .qadam-auth-page .qadam-auth-shell {
+        padding-inline: 16px;
+        width: 100%;
+    }
+
+    .qadam-auth-page .qadam-auth-header {
+        margin-inline: -16px;
+        padding-inline: 16px;
+    }
+
+    .qadam-auth-page .qadam-auth-hero {
+        border-top-width: 10px;
+        grid-template-columns: 1fr;
+        margin-top: 18px;
+        padding: 28px 20px;
+    }
+
+    .qadam-auth-proof-list div {
+        grid-template-columns: 1fr;
+    }
+
+    .qadam-auth-page h1 {
+        font-size: clamp(38px, 13vw, 54px);
+    }
+
+    .qadam-auth-page .qadam-auth-panel {
+        width: 100%;
+    }
+}
+
+/* Stage 6: institutional dashboard redesign, scoped away from the homepage. */
+body.qadam-dashboard-page {
+    --bg: var(--qadam-color-page);
+    --bg-elevated: var(--qadam-color-canvas);
+    --panel: var(--qadam-color-canvas);
+    --panel-strong: var(--qadam-color-canvas);
+    --panel-soft: var(--qadam-color-surface);
+    --line: var(--qadam-color-rule);
+    --line-strong: var(--qadam-color-border-strong);
+    --line-quiet: var(--qadam-color-rule);
+    --text: var(--qadam-color-ink);
+    --muted: var(--qadam-color-muted);
+    --muted-soft: var(--qadam-color-faint);
+    --cyan: var(--qadam-color-section-band);
+    --cyan-rgb: var(--qadam-rgb-info);
+    --green: var(--qadam-color-ok);
+    --green-rgb: var(--qadam-rgb-ok);
+    --amber: var(--qadam-color-watch);
+    --amber-rgb: var(--qadam-rgb-watch);
+    --coral: var(--qadam-color-risk);
+    --coral-rgb: var(--qadam-rgb-risk);
+    --blue: var(--qadam-color-section-band);
+    --surface-page: var(--qadam-color-page);
+    --surface-rail: var(--qadam-color-canvas);
+    --surface-section: var(--qadam-color-surface);
+    --surface-panel: var(--qadam-color-canvas);
+    --surface-panel-quiet: var(--qadam-color-surface);
+    --shadow-panel: var(--qadam-shadow-card);
+    --shadow-soft: 0 14px 38px rgba(44, 38, 31, 0.1);
+    --shadow-quiet: 0 1px 0 rgba(255, 255, 255, 0.65), 0 12px 28px rgba(44, 38, 31, 0.06);
+    --glow-cyan: none;
+    --glow-green: none;
+    --glow-amber: none;
+    --glow-coral: none;
+    background: var(--qadam-color-page);
+    color: var(--qadam-color-ink);
+    color-scheme: light;
+}
+
+body.qadam-dashboard-page :where(.hidden, [hidden]) {
+    display: none !important;
+}
+
+body.qadam-dashboard-page :where(a, button, summary) {
+    touch-action: manipulation;
+}
+
+body.qadam-dashboard-page .skip-link {
+    background: var(--qadam-color-canvas);
+    border-color: var(--qadam-color-brand);
+    border-radius: var(--qadam-radius-sm);
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qadam-dashboard-shell {
+    background: var(--qadam-color-page);
+    gap: 0;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding: 0 0 var(--qadam-space-16);
+    width: min(100%, 1400px);
+}
+
+body.qadam-dashboard-page .qadam-dashboard-header {
+    background: var(--qadam-color-canvas);
+    border-bottom: 1px solid var(--qadam-color-rule);
+    box-shadow: none;
+    margin: 0;
+    padding: var(--qadam-space-5) var(--qadam-layout-gutter);
+}
+
+body.qadam-dashboard-page .qadam-dashboard-header .logo-link img {
+    height: clamp(2rem, 3.4vw, 3.125rem);
+}
+
+body.qadam-dashboard-page .topbar-right {
+    align-items: center;
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .nav-actions {
+    gap: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .nav-actions .button,
+body.qadam-dashboard-page .nav-actions button {
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid var(--qadam-color-brand);
+    border-radius: 0;
+    color: var(--qadam-color-heading);
+    font-size: var(--qadam-text-sm);
+    font-weight: 500;
+    min-height: 2.5rem;
+    padding: 0 var(--qadam-space-2) var(--qadam-space-2);
+}
+
+body.qadam-dashboard-page .nav-actions .button:hover,
+body.qadam-dashboard-page .nav-actions button:hover,
+body.qadam-dashboard-page .nav-actions .button:focus-visible,
+body.qadam-dashboard-page .nav-actions button:focus-visible {
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .balance-ticker {
+    background: var(--qadam-color-ok-soft);
+    border-color: rgba(var(--qadam-rgb-ok), 0.3);
+    border-radius: var(--qadam-radius-md);
+    box-shadow: none;
+    min-width: 15rem;
+}
+
+body.qadam-dashboard-page .balance-ticker strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .balance-ticker span,
+body.qadam-dashboard-page .balance-ticker em {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .trade-toast-rail {
+    max-width: min(32vw, 28rem);
+}
+
+body.qadam-dashboard-page .trade-toast-token {
+    background: var(--qadam-color-canvas);
+    border-color: var(--qadam-color-rule);
+    border-radius: var(--qadam-radius-pill);
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .trade-toast-token strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qadam-dashboard-workspace {
+    gap: var(--qadam-space-8);
+    padding: var(--qadam-space-8) var(--qadam-layout-gutter) 0;
+}
+
+body.qadam-dashboard-page .dashboard-hero {
+    align-items: end;
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-top: 10px solid var(--qadam-color-brand);
+    box-shadow: var(--qadam-shadow-card);
+    display: grid;
+    gap: var(--qadam-space-6);
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin: 0;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+body.qadam-dashboard-page .dashboard-hero h1,
+body.qadam-dashboard-page .stage7-hero h2,
+body.qadam-dashboard-page .stage7-section h2,
+body.qadam-dashboard-page .panel-heading h2,
+body.qadam-dashboard-page .map-title-row h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+body.qadam-dashboard-page .dashboard-hero h1 {
+    font-size: clamp(2.5rem, 5.8vw, 4.75rem);
+    line-height: var(--qadam-leading-tight);
+}
+
+body.qadam-dashboard-page .dashboard-hero .copy {
+    color: var(--qadam-color-muted);
+    font-size: var(--qadam-text-lg);
+    line-height: var(--qadam-leading-body);
+    max-width: 58rem;
+}
+
+body.qadam-dashboard-page .eyebrow,
+body.qadam-dashboard-page .label,
+body.qadam-dashboard-page .stage7-section-head > span,
+body.qadam-dashboard-page .mission-flow-lifecycle span {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-size: var(--qadam-text-xs);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .mode-stack {
+    min-width: 13rem;
+}
+
+body.qadam-dashboard-page .mode-stack > span {
+    background: var(--qadam-color-brand-soft);
+    border-color: rgba(var(--qadam-rgb-brand), 0.24);
+    border-radius: var(--qadam-radius-pill);
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+    font-weight: 700;
+}
+
+body.qadam-dashboard-page .qadam-dashboard-nav {
+    align-items: center;
+    background: var(--qadam-color-brand);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    gap: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, auto);
+    margin: 0;
+    min-height: var(--qadam-touch-target);
+    padding: 0;
+    position: static;
+    top: auto;
+    z-index: 30;
+}
+
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-head {
+    align-self: stretch;
+    background: var(--qadam-color-menu);
+    border: 0;
+    color: var(--qadam-color-brand);
+    display: grid;
+    gap: 0;
+    min-width: 11rem;
+    padding: var(--qadam-space-3) var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-head span,
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-head strong {
+    color: var(--qadam-color-brand);
+    font-family: var(--qadam-font-ui);
+}
+
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links,
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-links {
+    align-items: stretch;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    overflow: visible;
+}
+
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links a,
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-links a,
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    color: var(--qadam-color-inverse);
+    display: inline-flex;
+    font-size: var(--qadam-text-sm);
+    font-weight: 600;
+    justify-content: center;
+    min-height: 3.375rem;
+    padding: 0 var(--qadam-space-5);
+    text-decoration: none;
+}
+
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links a:hover,
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links a.active,
+body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links a[aria-current="page"],
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-links a:hover,
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-links a[aria-current="page"],
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-toggle:hover,
+body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-toggle.active {
+    background: var(--qadam-color-menu);
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .dashboard-safety-strip {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 8px solid var(--qadam-color-ok);
+    border-radius: 0;
+    box-shadow: var(--qadam-shadow-card);
+    gap: var(--qadam-space-5);
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: var(--qadam-space-5);
+    position: static;
+}
+
+body.qadam-dashboard-page .dashboard-safety-strip.blocked {
+    border-left-color: var(--qadam-color-risk);
+}
+
+body.qadam-dashboard-page .dashboard-safety-strip-main h2 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: var(--qadam-text-xl);
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .dashboard-safety-strip-main p,
+body.qadam-dashboard-page .dashboard-safety-strip-authority,
+body.qadam-dashboard-page .dashboard-safety-strip-authority span,
+body.qadam-dashboard-page .dashboard-safety-strip-authority small {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .dashboard-safety-strip-authority strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .inline-badge,
+body.qadam-dashboard-page .node-status,
+body.qadam-dashboard-page .mission-strategy-status,
+body.qadam-dashboard-page .mission-team-status,
+body.qadam-dashboard-page .mission-team-quant-badge,
+body.qadam-dashboard-page .mission-market-state,
+body.qadam-dashboard-page .mission-hypothesis-card-top strong,
+body.qadam-dashboard-page .mission-learning-item-top strong {
+    background: var(--qadam-color-info-soft);
+    border: 1px solid rgba(var(--qadam-rgb-info), 0.24);
+    border-radius: var(--qadam-radius-pill);
+    color: var(--qadam-color-info);
+    font-family: var(--qadam-font-ui);
+    font-weight: 700;
+}
+
+body.qadam-dashboard-page .inline-badge.online,
+body.qadam-dashboard-page .node-status.online,
+body.qadam-dashboard-page .online .inline-badge {
+    background: var(--qadam-color-ok-soft);
+    border-color: rgba(var(--qadam-rgb-ok), 0.28);
+    color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .inline-badge.pending,
+body.qadam-dashboard-page .node-status.pending,
+body.qadam-dashboard-page .pending .inline-badge {
+    background: var(--qadam-color-watch-soft);
+    border-color: rgba(var(--qadam-rgb-watch), 0.28);
+    color: var(--qadam-color-watch);
+}
+
+body.qadam-dashboard-page .inline-badge.blocked,
+body.qadam-dashboard-page .inline-badge.degraded,
+body.qadam-dashboard-page .node-status.blocked,
+body.qadam-dashboard-page .node-status.degraded,
+body.qadam-dashboard-page .blocked .inline-badge,
+body.qadam-dashboard-page .degraded .inline-badge {
+    background: var(--qadam-color-risk-soft);
+    border-color: rgba(var(--qadam-rgb-risk), 0.28);
+    color: var(--qadam-color-risk);
+}
+
+body.qadam-dashboard-page .mission-control-panel,
+body.qadam-dashboard-page .system-map-panel,
+body.qadam-dashboard-page .operating-review-panel,
+body.qadam-dashboard-page .panel-card,
+body.qadam-dashboard-page .comments-panel,
+body.qadam-dashboard-page .communications-panel {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .stage7-dashboard-visibility,
+body.qadam-dashboard-page .stage7-visibility-shell,
+body.qadam-dashboard-page .mission-control-walkthrough {
+    gap: var(--qadam-space-8);
+}
+
+body.qadam-dashboard-page .stage7-hero,
+body.qadam-dashboard-page .stage7-section,
+body.qadam-dashboard-page .overview-portfolio-hero,
+body.qadam-dashboard-page .panel-card,
+body.qadam-dashboard-page .system-map-panel,
+body.qadam-dashboard-page .operating-review-panel {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-radius: 0;
+    box-shadow: var(--qadam-shadow-card);
+}
+
+body.qadam-dashboard-page .stage7-hero {
+    border-top: 8px solid var(--qadam-color-section-band);
+    gap: var(--qadam-space-6);
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.62fr);
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+body.qadam-dashboard-page .stage7-section {
+    gap: var(--qadam-space-5);
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+body.qadam-dashboard-page .stage7-section-head {
+    border-bottom: 1px solid var(--qadam-color-rule);
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-bottom: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .stage7-section-head strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 500;
+    line-height: var(--qadam-leading-title);
+}
+
+body.qadam-dashboard-page .stage7-section-head > p,
+body.qadam-dashboard-page .stage7-section-summary,
+body.qadam-dashboard-page .stage7-boundary,
+body.qadam-dashboard-page .mission-flow-card p,
+body.qadam-dashboard-page .mission-market-card p,
+body.qadam-dashboard-page .mission-source-group p,
+body.qadam-dashboard-page .mission-pattern-explainer p,
+body.qadam-dashboard-page .mission-learning-definitions p,
+body.qadam-dashboard-page .mission-learning-item p,
+body.qadam-dashboard-page .mission-feedback-panel p,
+body.qadam-dashboard-page .mission-proposal-queue article p,
+body.qadam-dashboard-page .mission-readiness-map article p,
+body.qadam-dashboard-page .mission-completion-list article p {
+    color: var(--qadam-color-muted);
+    line-height: var(--qadam-leading-body);
+}
+
+body.qadam-dashboard-page .metric,
+body.qadam-dashboard-page .stage7-map-node,
+body.qadam-dashboard-page .mission-paper-exposure,
+body.qadam-dashboard-page .mission-paper-list,
+body.qadam-dashboard-page .mission-paper-timeline,
+body.qadam-dashboard-page .mission-source-category,
+body.qadam-dashboard-page .mission-market-card,
+body.qadam-dashboard-page .mission-strategy-card,
+body.qadam-dashboard-page .mission-team-card,
+body.qadam-dashboard-page .mission-hypothesis-card,
+body.qadam-dashboard-page .mission-learning-item,
+body.qadam-dashboard-page .mission-flow-card,
+body.qadam-dashboard-page .mission-source-group,
+body.qadam-dashboard-page .mission-pattern-explainer,
+body.qadam-dashboard-page .mission-feedback-panel,
+body.qadam-dashboard-page .mission-proposal-queue,
+body.qadam-dashboard-page .mission-readiness-map,
+body.qadam-dashboard-page .mission-learning-definitions article,
+body.qadam-dashboard-page .mission-completion-list article,
+body.qadam-dashboard-page .trade-review-group,
+body.qadam-dashboard-page .evidence-review-group,
+body.qadam-dashboard-page .reasoning-review-group,
+body.qadam-dashboard-page .operations-review-group,
+body.qadam-dashboard-page .overview-capacity-chart-card {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--qadam-color-ink);
+}
+
+body.qadam-dashboard-page .mission-source-category,
+body.qadam-dashboard-page .mission-market-card-button,
+body.qadam-dashboard-page .mission-strategy-card,
+body.qadam-dashboard-page .mission-team-card,
+body.qadam-dashboard-page .mission-hypothesis-card,
+body.qadam-dashboard-page .mission-learning-item,
+body.qadam-dashboard-page .mission-paper-row,
+body.qadam-dashboard-page .mission-paper-event {
+    background: var(--qadam-color-canvas);
+    color: var(--qadam-color-ink);
+}
+
+body.qadam-dashboard-page .mission-source-category:hover,
+body.qadam-dashboard-page .mission-source-category:focus-visible,
+body.qadam-dashboard-page .mission-market-card-button:hover,
+body.qadam-dashboard-page .mission-market-card-button:focus-visible,
+body.qadam-dashboard-page .mission-strategy-card:hover,
+body.qadam-dashboard-page .mission-strategy-card:focus-visible,
+body.qadam-dashboard-page .mission-team-card:hover,
+body.qadam-dashboard-page .mission-team-card:focus-visible,
+body.qadam-dashboard-page .mission-hypothesis-card:hover,
+body.qadam-dashboard-page .mission-hypothesis-card:focus-visible,
+body.qadam-dashboard-page .mission-learning-item:hover,
+body.qadam-dashboard-page .mission-learning-item:focus-visible,
+body.qadam-dashboard-page .mission-paper-row:hover,
+body.qadam-dashboard-page .mission-paper-row:focus-visible,
+body.qadam-dashboard-page .mission-paper-event:hover,
+body.qadam-dashboard-page .mission-paper-event:focus-visible {
+    background: var(--qadam-color-surface);
+    border-color: var(--qadam-color-brand);
+    box-shadow: inset 4px 0 0 var(--qadam-color-brand);
+    transform: none;
+}
+
+body.qadam-dashboard-page .stage7-kpi-strip.compact,
+body.qadam-dashboard-page .mission-paper-metrics,
+body.qadam-dashboard-page .mission-paper-exposure-grid,
+body.qadam-dashboard-page .mission-source-category-grid,
+body.qadam-dashboard-page .mission-market-grid,
+body.qadam-dashboard-page .mission-strategy-grid,
+body.qadam-dashboard-page .mission-team-grid,
+body.qadam-dashboard-page .mission-pattern-grid,
+body.qadam-dashboard-page .mission-learning-grid,
+body.qadam-dashboard-page .mission-learning-definitions {
+    gap: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .metric {
+    min-height: 5.25rem;
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .metric span,
+body.qadam-dashboard-page .mission-paper-exposure > header span,
+body.qadam-dashboard-page .mission-paper-timeline > header span,
+body.qadam-dashboard-page .mission-paper-list > header span,
+body.qadam-dashboard-page .mission-source-category > span,
+body.qadam-dashboard-page .mission-flow-card span,
+body.qadam-dashboard-page .mission-market-card span,
+body.qadam-dashboard-page .mission-source-group summary span,
+body.qadam-dashboard-page .mission-strategy-card-top em,
+body.qadam-dashboard-page .mission-strategy-card-facts em,
+body.qadam-dashboard-page .mission-team-card-top em,
+body.qadam-dashboard-page .mission-team-card-facts em,
+body.qadam-dashboard-page .mission-hypothesis-card-top em,
+body.qadam-dashboard-page .mission-hypothesis-metric-grid em,
+body.qadam-dashboard-page .mission-learning-definitions span,
+body.qadam-dashboard-page .mission-learning-item-top em {
+    color: var(--qadam-color-faint);
+    font-family: var(--qadam-font-ui);
+    font-size: var(--qadam-text-xs);
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .metric strong,
+body.qadam-dashboard-page .stage7-map-node strong,
+body.qadam-dashboard-page .stage7-board-column strong,
+body.qadam-dashboard-page .stage7-source-groups strong,
+body.qadam-dashboard-page .stage7-family-grid strong,
+body.qadam-dashboard-page .mission-paper-exposure-grid strong,
+body.qadam-dashboard-page .mission-paper-row strong,
+body.qadam-dashboard-page .mission-paper-event strong,
+body.qadam-dashboard-page .mission-source-category strong,
+body.qadam-dashboard-page .mission-market-card strong,
+body.qadam-dashboard-page .mission-flow-card strong,
+body.qadam-dashboard-page .mission-source-group strong,
+body.qadam-dashboard-page .mission-strategy-card strong,
+body.qadam-dashboard-page .mission-team-card strong,
+body.qadam-dashboard-page .mission-hypothesis-card strong,
+body.qadam-dashboard-page .mission-learning-item b,
+body.qadam-dashboard-page .mission-feedback-panel header strong,
+body.qadam-dashboard-page .mission-proposal-queue article strong,
+body.qadam-dashboard-page .mission-readiness-map article strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .metric strong {
+    font-family: var(--qadam-font-ui);
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+body.qadam-dashboard-page .mission-flow-lifecycle {
+    background: var(--qadam-color-section-band);
+    border: 0;
+    border-radius: 0;
+    gap: 1px;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .mission-flow-lifecycle li {
+    background: rgba(255, 255, 255, 0.08);
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .mission-flow-lifecycle span,
+body.qadam-dashboard-page .mission-flow-lifecycle strong {
+    color: var(--qadam-color-inverse);
+}
+
+body.qadam-dashboard-page .mission-paper-chart .overview-capacity-chart-card,
+body.qadam-dashboard-page .mission-paper-exposure,
+body.qadam-dashboard-page .mission-paper-timeline,
+body.qadam-dashboard-page .mission-pattern-explainer,
+body.qadam-dashboard-page .mission-akber-pipeline-wrap {
+    background: var(--qadam-color-surface);
+}
+
+body.qadam-dashboard-page .mission-paper-exposure-bar,
+body.qadam-dashboard-page .overview-capacity-line,
+body.qadam-dashboard-page .performance-progress-bar {
+    background: var(--qadam-color-surface-muted);
+}
+
+body.qadam-dashboard-page .mission-paper-exposure-bar span,
+body.qadam-dashboard-page .overview-capacity-progress,
+body.qadam-dashboard-page .performance-progress-bar span {
+    background: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .mission-akber-pipeline {
+    gap: 1px;
+}
+
+body.qadam-dashboard-page .mission-akber-pipeline li {
+    background: var(--qadam-color-canvas);
+    border-color: var(--qadam-color-rule);
+    border-radius: 0;
+}
+
+body.qadam-dashboard-page .mission-akber-pipeline span,
+body.qadam-dashboard-page .mission-strategy-markers em {
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .mission-source-category em,
+body.qadam-dashboard-page .mission-source-row em,
+body.qadam-dashboard-page .edge-source-dot,
+body.qadam-dashboard-page .edge-instrument-chip {
+    background: var(--qadam-color-surface);
+    border-color: var(--qadam-color-rule);
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .mission-market-card > a {
+    border-top-color: var(--qadam-color-rule);
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .mission-paper-drawer-backdrop,
+body.qadam-dashboard-page .mission-source-drawer-backdrop,
+body.qadam-dashboard-page .mission-market-drawer-backdrop,
+body.qadam-dashboard-page .mission-strategy-drawer-backdrop,
+body.qadam-dashboard-page .mission-team-drawer-backdrop,
+body.qadam-dashboard-page .mission-hypothesis-drawer-backdrop,
+body.qadam-dashboard-page .mission-learning-drawer-backdrop {
+    background: rgba(28, 48, 58, 0.32);
+}
+
+body.qadam-dashboard-page .mission-paper-drawer-panel,
+body.qadam-dashboard-page .mission-source-drawer-panel,
+body.qadam-dashboard-page .mission-market-drawer-panel,
+body.qadam-dashboard-page .mission-strategy-drawer-panel,
+body.qadam-dashboard-page .mission-team-drawer-panel,
+body.qadam-dashboard-page .mission-hypothesis-drawer-panel,
+body.qadam-dashboard-page .mission-learning-drawer-panel {
+    background: var(--qadam-color-canvas);
+    border-left: 8px solid var(--qadam-color-brand);
+    box-shadow: -24px 0 80px rgba(44, 38, 31, 0.22);
+    color: var(--qadam-color-ink);
+}
+
+body.qadam-dashboard-page .mission-paper-drawer-close,
+body.qadam-dashboard-page .mission-source-drawer-close,
+body.qadam-dashboard-page .mission-market-drawer-close,
+body.qadam-dashboard-page .mission-strategy-drawer-close,
+body.qadam-dashboard-page .mission-team-drawer-close,
+body.qadam-dashboard-page .mission-hypothesis-drawer-close,
+body.qadam-dashboard-page .mission-learning-drawer-close {
+    background: var(--qadam-color-brand);
+    border-color: var(--qadam-color-brand);
+    border-radius: 0;
+    color: var(--qadam-color-inverse);
+    font-weight: 700;
+}
+
+body.qadam-dashboard-page .mission-paper-drawer h3,
+body.qadam-dashboard-page .mission-source-drawer h3,
+body.qadam-dashboard-page .mission-market-drawer h3,
+body.qadam-dashboard-page .mission-strategy-drawer h3,
+body.qadam-dashboard-page .mission-team-drawer h3,
+body.qadam-dashboard-page .mission-hypothesis-drawer h3,
+body.qadam-dashboard-page .mission-learning-drawer h3 {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-weight: 500;
+}
+
+body.qadam-dashboard-page .mission-paper-drawer-facts div,
+body.qadam-dashboard-page .mission-source-drawer-intro,
+body.qadam-dashboard-page .mission-source-observation,
+body.qadam-dashboard-page .mission-source-row,
+body.qadam-dashboard-page .mission-market-drawer-card,
+body.qadam-dashboard-page .mission-market-drawer-section,
+body.qadam-dashboard-page .mission-strategy-drawer-grid article,
+body.qadam-dashboard-page .mission-strategy-drawer-section,
+body.qadam-dashboard-page .mission-strategy-gate-breakdown li,
+body.qadam-dashboard-page .mission-team-drawer-grid article,
+body.qadam-dashboard-page .mission-team-drawer-section,
+body.qadam-dashboard-page .mission-team-run-log li,
+body.qadam-dashboard-page .mission-team-cannot-list li,
+body.qadam-dashboard-page .mission-hypothesis-metric-grid span,
+body.qadam-dashboard-page .mission-hypothesis-flow article,
+body.qadam-dashboard-page .mission-hypothesis-drawer-grid article,
+body.qadam-dashboard-page .mission-hypothesis-drawer-section,
+body.qadam-dashboard-page .mission-hypothesis-source-list article,
+body.qadam-dashboard-page .mission-feedback-inputs article,
+body.qadam-dashboard-page .mission-proposal-queue article,
+body.qadam-dashboard-page .mission-readiness-map article,
+body.qadam-dashboard-page .mission-learning-drawer-grid article,
+body.qadam-dashboard-page .mission-learning-drawer-section {
+    background: var(--qadam-color-surface);
+    border-color: var(--qadam-color-rule);
+    border-radius: 0;
+    color: var(--qadam-color-ink);
+}
+
+body.qadam-dashboard-page .panel-heading {
+    border-bottom-color: var(--qadam-color-rule);
+    padding: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .panel-scroll {
+    padding: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .dashboard-detail-flow {
+    gap: var(--qadam-space-6);
+}
+
+body.qadam-dashboard-page .panel-brief,
+body.qadam-dashboard-page .trade-consolidated-snapshot,
+body.qadam-dashboard-page .evidence-consolidated-readout,
+body.qadam-dashboard-page .reasoning-consolidated-readout,
+body.qadam-dashboard-page .operations-consolidated-readout,
+body.qadam-dashboard-page .performance-workspace {
+    background: var(--qadam-color-surface);
+    border-color: var(--qadam-color-rule);
+    border-radius: 0;
+}
+
+body.qadam-dashboard-page .info-button {
+    background: var(--qadam-color-surface);
+    border-color: var(--qadam-color-rule);
+    color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .info-card,
+body.qadam-dashboard-page .section-explainer {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: var(--qadam-color-rule);
+    border-radius: 0;
+    box-shadow: var(--qadam-shadow-menu);
+    color: var(--qadam-color-ink);
+}
+
+body.qadam-dashboard-page :where(a, button, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--qadam-color-brand);
+    outline-offset: 3px;
+    box-shadow: var(--qadam-shadow-focus);
+}
+
+@media (max-width: 1020px) {
+    body.qadam-dashboard-page .qadam-dashboard-nav {
+        grid-template-columns: 1fr;
+        position: static;
+    }
+
+    body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-head,
+    body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links,
+    body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-links,
+    body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-toggle {
+        width: 100%;
+    }
+
+    body.qadam-dashboard-page .qadam-dashboard-nav .cockpit-nav-links a,
+    body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-links a,
+    body.qadam-dashboard-page .qadam-dashboard-nav .dashboard-debug-toggle {
+        border-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        justify-content: flex-start;
+    }
+
+    body.qadam-dashboard-page .dashboard-hero,
+    body.qadam-dashboard-page .dashboard-safety-strip,
+    body.qadam-dashboard-page .stage7-hero,
+    body.qadam-dashboard-page .mission-flow-lifecycle,
+    body.qadam-dashboard-page .mission-paper-metrics,
+    body.qadam-dashboard-page .mission-paper-exposure-grid,
+    body.qadam-dashboard-page .mission-source-category-grid,
+    body.qadam-dashboard-page .mission-learning-definitions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    body.qadam-dashboard-page .qadam-dashboard-header,
+    body.qadam-dashboard-page .qadam-dashboard-workspace {
+        padding-inline: 16px;
+    }
+
+    body.qadam-dashboard-page .qadam-dashboard-header {
+        align-items: flex-start;
+    }
+
+    body.qadam-dashboard-page .topbar-right,
+    body.qadam-dashboard-page .nav-actions,
+    body.qadam-dashboard-page .balance-ticker,
+    body.qadam-dashboard-page .trade-toast-rail {
+        width: 100%;
+    }
+
+    body.qadam-dashboard-page .nav-actions .button,
+    body.qadam-dashboard-page .nav-actions button {
+        justify-content: flex-start;
+    }
+
+    body.qadam-dashboard-page .dashboard-hero {
+        padding: 24px 20px;
+    }
+
+    body.qadam-dashboard-page .dashboard-hero h1 {
+        font-size: clamp(2.35rem, 13vw, 4rem);
+    }
+
+    body.qadam-dashboard-page .stage7-section,
+    body.qadam-dashboard-page .stage7-hero {
+        padding: 20px;
+    }
+
+    body.qadam-dashboard-page .mission-paper-columns,
+    body.qadam-dashboard-page .mission-hypothesis-flow,
+    body.qadam-dashboard-page .mission-feedback-inputs,
+    body.qadam-dashboard-page .mission-readiness-map > div,
+    body.qadam-dashboard-page .mission-market-drawer-grid,
+    body.qadam-dashboard-page .mission-strategy-drawer-grid,
+    body.qadam-dashboard-page .mission-team-drawer-grid,
+    body.qadam-dashboard-page .mission-hypothesis-drawer-grid,
+    body.qadam-dashboard-page .mission-learning-drawer-grid {
+        grid-template-columns: 1fr;
     }
 }
