@@ -1,0 +1,143 @@
+{
+  "approval_required_for_mutation": true,
+  "artifact_type": "qsase_policy_mutation_blockers",
+  "authority": {
+    "backtest_to_proof_allowed": false,
+    "broker_live_write_allowed": false,
+    "broker_write_allowed": false,
+    "dashboard_write_authority_allowed": false,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "frontier_llm_order_authority": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "llm_order_authority": false,
+    "local_llm_order_authority": false,
+    "model_weight_mutation_allowed": false,
+    "model_weight_update_created": false,
+    "notification_command_authority_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_write_allowed": false,
+    "policy_mutation_allowed": false,
+    "policy_mutation_created": false,
+    "proof_credit_allowed": false,
+    "qctrl_bypass_allowed": false,
+    "qualified_setup_created": false,
+    "quantum_job_authority": false,
+    "quantum_order_authority": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "secret_read_allowed": false,
+    "secret_write_allowed": false,
+    "shadow_to_proof_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_promotion_allowed": false,
+    "source_trust_mutation_allowed": false,
+    "strategy_mutation_allowed": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trust_score_update_created": false
+  },
+  "blocker_count": 10,
+  "blockers": [
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "strategy_weights"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "strategy_family_definitions"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "akber_filter_thresholds"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "model_weights"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "source_trust_scores"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "source_promotion"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "risk_policy"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "execution_policy"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "paperops_gates"
+    },
+    {
+      "applied": false,
+      "approval_required": true,
+      "mutation_allowed": false,
+      "proposal_allowed": true,
+      "separate_apply_module_required": true,
+      "status": "blocked_pending_governance_apply_module",
+      "surface": "proof_standards"
+    }
+  ],
+  "generated_at": "2026-06-28T18:54:33.200195+00:00",
+  "proposal_applied_count": 0,
+  "proposal_first": true,
+  "schema_version": "qsase_governance_safety_contract.v1",
+  "separate_apply_module_required": true,
+  "status": "policy_mutations_blocked_by_default"
+}

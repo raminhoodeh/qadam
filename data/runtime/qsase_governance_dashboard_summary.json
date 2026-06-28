@@ -1,0 +1,84 @@
+{
+  "artifact_type": "qsase_governance_dashboard_summary",
+  "authority": {
+    "backtest_to_proof_allowed": false,
+    "broker_live_write_allowed": false,
+    "broker_write_allowed": false,
+    "dashboard_write_authority_allowed": false,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "frontier_llm_order_authority": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "llm_order_authority": false,
+    "local_llm_order_authority": false,
+    "model_weight_mutation_allowed": false,
+    "model_weight_update_created": false,
+    "notification_command_authority_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_write_allowed": false,
+    "policy_mutation_allowed": false,
+    "policy_mutation_created": false,
+    "proof_credit_allowed": false,
+    "qctrl_bypass_allowed": false,
+    "qualified_setup_created": false,
+    "quantum_job_authority": false,
+    "quantum_order_authority": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "secret_read_allowed": false,
+    "secret_write_allowed": false,
+    "shadow_to_proof_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_promotion_allowed": false,
+    "source_trust_mutation_allowed": false,
+    "strategy_mutation_allowed": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trust_score_update_created": false
+  },
+  "command_disabled": true,
+  "generated_at": "2026-06-28T18:54:33.200195+00:00",
+  "live_send_allowed": false,
+  "public_safe": true,
+  "rows": [
+    {
+      "label": "Mode",
+      "value": "paper-only"
+    },
+    {
+      "label": "QSASE authority",
+      "value": "research and proposals only"
+    },
+    {
+      "label": "Dashboard",
+      "value": "read-only"
+    },
+    {
+      "label": "Telegram",
+      "value": "review-only"
+    },
+    {
+      "label": "Broker writes",
+      "value": "no"
+    },
+    {
+      "label": "Live capital",
+      "value": "off"
+    },
+    {
+      "label": "Proof",
+      "value": "paper proof ledger only"
+    },
+    {
+      "label": "Violations",
+      "value": "0"
+    }
+  ],
+  "schema_version": "qsase_governance_safety_contract.v1",
+  "status": "governance_safety_ready",
+  "title": "Safety Status"
+}

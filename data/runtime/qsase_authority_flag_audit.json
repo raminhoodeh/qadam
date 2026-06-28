@@ -1,0 +1,14 @@
+{
+  "artifact_type": "qsase_authority_flag_audit",
+  "authority_false_count": 38,
+  "authority_flag_count": 38,
+  "authority_missing_count": 0,
+  "authority_missing_flags": [],
+  "authority_true_count": 0,
+  "authority_true_flags": [],
+  "authority_violation_count": 0,
+  "fail_closed": true,
+  "schema_version": "qsase_governance_safety_contract.v1",
+  "status": "authority_flags_ready",
+  "violations": []
+}

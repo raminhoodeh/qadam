@@ -1,0 +1,53 @@
+{
+  "artifact_type": "qsase_doctrine_document_hierarchy",
+  "doctrine": {
+    "intelligence_expands_authority_does_not": true,
+    "operational_self_awareness_not_sentience": true,
+    "paper_only": true,
+    "paper_proof_ledger_requires_real_guarded_paper_lifecycle": true,
+    "proposal_first": true,
+    "qadam_evolution_not_separate_product": true,
+    "real_calendar_required": true
+  },
+  "document_hierarchy": [
+    {
+      "exists": true,
+      "hierarchy_level": 0,
+      "path": "docs/qadam-qsase-implementation-plan.md",
+      "role": "QSASE implementation source of truth and phase contract"
+    },
+    {
+      "exists": true,
+      "hierarchy_level": 1,
+      "path": "docs/qadam-user-guide.md",
+      "role": "User-facing dashboard and visibility contract"
+    },
+    {
+      "exists": true,
+      "hierarchy_level": 2,
+      "path": "docs/qadam-foundational-architecture-plan.md",
+      "role": "Qadam architecture and system-role doctrine"
+    },
+    {
+      "exists": true,
+      "hierarchy_level": 3,
+      "path": "docs/qadam-paper-operational-mode-plan.md",
+      "role": "Paper-only operating boundary"
+    },
+    {
+      "exists": true,
+      "hierarchy_level": 4,
+      "path": "docs/qadam-phase-7-demo-proof-implementation-plan.md",
+      "role": "30-day paper growth trial and paper proof ledger boundary"
+    },
+    {
+      "exists": true,
+      "hierarchy_level": 5,
+      "path": "docs/qadam-resource-registry.md",
+      "role": "Source and resource registry reference"
+    }
+  ],
+  "generated_at": "2026-06-28T18:54:33.200195+00:00",
+  "schema_version": "qsase_governance_safety_contract.v1",
+  "status": "document_hierarchy_ready"
+}

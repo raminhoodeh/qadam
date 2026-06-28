@@ -9,3 +9,13 @@
 - Durable phase status: `data/runtime/qsase_phase_implementation_status.json`
 - Components: scanner_freshness=ready_with_gaps, candidate_identity=ready_with_gaps, paper_lifecycle=ready_with_gaps, validated_edge_readiness=ready_with_gaps, proof_lineage=ready_with_gaps, telemetry_consistency=ready_with_gaps, dashboard_deploy_hygiene=ready, review_signature_readiness=ready
 - Safety: read-only, paper-only, proposal-first, fail-closed; no candidate creation, risk approval, execution approval, paper order, broker write, live-capital route, Q-CTRL job, simulated elapsed time, or proof credit.
+
+<!-- qsase_0_doctrine_document_hierarchy_safety_contract -->
+## QSASE-0: Doctrine, Document Hierarchy, And Safety Contract
+
+- Generated at: `2026-06-28T18:54:33.200195+00:00`
+- Status: `governance_safety_ready`
+- Runtime artifact: `data/runtime/qsase_governance_safety_contract.json`
+- Authority flags: `38`/`38` false
+- Authority violations: `0`
+- Boundaries: paper-only, proposal-first, read-only dashboard, review-only Telegram, no proof credit, no live capital, no broker writes, no simulated elapsed time.
