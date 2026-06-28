@@ -160,3 +160,15 @@
 - Evidence classes: real paper `0`, non-trade `1`, shadow `48`, backtest `16`, rejected `16`, blocked route `16`, system defect `12`
 - Proposals: strategy `5`, source `1`, model `1`, filter `1`, approval queue `8`
 - Safety: strategy, source, model, and filter changes are proposals only; no applied updates, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.
+
+<!-- qsase_13_dashboard_visibility -->
+## QSASE-13: Dashboard Visibility
+
+- Generated at: `2026-06-28T20:32:55.326649+00:00`
+- Status: `qsase_dashboard_visibility_ready`
+- Runtime artifact: `data/runtime/qsase_dashboard_status.json`
+- Portfolio series / positions / trading history rows: `120` / `2` / `80`
+- Source categories / sources / trading universe rows: `6` / `41` / `19`
+- Strategy families / in-play / linear / nonlinear / trade-intent rows: `5` / `3` / `16` / `16` / `16`
+- Learning / repair / anti-slop errors: `30` / `20` / `0`
+- Safety: dashboard artifacts are read-only decision records; no commands, trade candidates, qualified setups, approvals, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.

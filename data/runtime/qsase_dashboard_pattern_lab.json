@@ -1,0 +1,643 @@
+{
+  "artifact_refs": [
+    "data/runtime/qsase_linear_pattern_lab.json",
+    "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+    "data/runtime/qsase_quantum_pattern_reviews.jsonl"
+  ],
+  "artifact_type": "qsase_dashboard_pattern_lab",
+  "authority": {
+    "broker_write_allowed": false,
+    "dashboard_command_disabled": true,
+    "dashboard_mirror_only": true,
+    "dashboard_read_only": true,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "filter_threshold_update_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trade_intent_created": false
+  },
+  "command_disabled": true,
+  "generated_at": "2026-06-28T20:32:55.326649+00:00",
+  "linear_pattern_count": 16,
+  "linear_rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:456b3a921b15627475a0"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:456b3a921b15627475a0",
+      "pattern_type": "linear",
+      "reason": "Records are not spread across enough independent decision dates.",
+      "score": 0.452651,
+      "source_pattern_id": "qsase-pattern:859efd37916736db8e6c",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:fec5145783f230114d12"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:fec5145783f230114d12",
+      "pattern_type": "linear",
+      "reason": "Records are not spread across enough independent decision dates.",
+      "score": 0.452651,
+      "source_pattern_id": "qsase-pattern:3f439169082ee0eee180",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:c7cf577b85b6f82ee58e"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:c7cf577b85b6f82ee58e",
+      "pattern_type": "linear",
+      "reason": "Records are not spread across enough independent decision dates.",
+      "score": 0.452651,
+      "source_pattern_id": "qsase-pattern:d40998ecf829eb893973",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:52145873fa19d345f367"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:52145873fa19d345f367",
+      "pattern_type": "linear",
+      "reason": "Records are not spread across enough independent decision dates.",
+      "score": 0.452651,
+      "source_pattern_id": "qsase-pattern:13b663d141baed6557b2",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:f36b2aad8f91f1ec1706"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:f36b2aad8f91f1ec1706",
+      "pattern_type": "linear",
+      "reason": "Positive current-sample evidence exists, but out-of-sample validation is too thin.",
+      "score": 0.351401,
+      "source_pattern_id": "qsase-pattern:ac984d0856d96acf5898",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:0712c3c23a7b96f5c579"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:0712c3c23a7b96f5c579",
+      "pattern_type": "linear",
+      "reason": "Positive current-sample evidence exists, but out-of-sample validation is too thin.",
+      "score": 0.351401,
+      "source_pattern_id": "qsase-pattern:142addc338b73ccfa384",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:72606af8445e40e48bc4"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:72606af8445e40e48bc4",
+      "pattern_type": "linear",
+      "reason": "Positive current-sample evidence exists, but out-of-sample validation is too thin.",
+      "score": 0.347651,
+      "source_pattern_id": "qsase-pattern:4ab88c40c9af166f0aa1",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:83c7dde100ce85d268f9"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:83c7dde100ce85d268f9",
+      "pattern_type": "linear",
+      "reason": "Positive current-sample evidence exists, but out-of-sample validation is too thin.",
+      "score": 0.347651,
+      "source_pattern_id": "qsase-pattern:d3082799ed59abec18ce",
+      "state": "linear_inconclusive_candidate_for_nonlinear_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:90c7f32f2267e8cc8ce4"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:90c7f32f2267e8cc8ce4",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.1732,
+      "source_pattern_id": "qsase-pattern:407b67649fe8ae9be29a",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:9f12ed8de36d88a4c9e7"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:9f12ed8de36d88a4c9e7",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.1732,
+      "source_pattern_id": "qsase-pattern:5f182b3c6c8ca1d50673",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:d06d163dc0136ce2228a"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:d06d163dc0136ce2228a",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.172575,
+      "source_pattern_id": "qsase-pattern:f78a6e1e4fdfcc2aea0a",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:4e8e20f0f3e4566d3582"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:4e8e20f0f3e4566d3582",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.172575,
+      "source_pattern_id": "qsase-pattern:80f0c1360e46eb85c890",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:fb74968ed839be40582f"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:fb74968ed839be40582f",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.17195,
+      "source_pattern_id": "qsase-pattern:f2e86d4e9aed6c666273",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:1d4addca04fdf9b3ac02"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:1d4addca04fdf9b3ac02",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.17195,
+      "source_pattern_id": "qsase-pattern:041cdc40f71b52bb7532",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:e2f463aafbb9f0328046"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:e2f463aafbb9f0328046",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.171325,
+      "source_pattern_id": "qsase-pattern:103d6da6f1ec785f4073",
+      "state": "linear_reject"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_backtest_results.jsonl#qsase-linear:f8042271f34a9e423941"
+      ],
+      "candidate_for_strategy_foundry": false,
+      "direction": "long",
+      "instrument": "CL=F",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-linear:f8042271f34a9e423941",
+      "pattern_type": "linear",
+      "reason": "Complete forward-outcome sample is below the minimum linear threshold.",
+      "score": 0.171325,
+      "source_pattern_id": "qsase-pattern:30c47afe8ca1ee12d3e1",
+      "state": "linear_reject"
+    }
+  ],
+  "nonlinear_pattern_count": 16,
+  "nonlinear_rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:3f7d4fe26e3ce408b0fc"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:456b3a921b15627475a0",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:3f7d4fe26e3ce408b0fc",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:c3d0b36dbe3c357e59e9",
+      "quantum_review_state": "quantum_review_passed_for_research",
+      "score": 0.448274,
+      "source_pattern_id": "qsase-pattern:859efd37916736db8e6c",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:699637aeb70b57e426fd"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:fec5145783f230114d12",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:699637aeb70b57e426fd",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:1a0abe45df8916e87820",
+      "quantum_review_state": "quantum_review_passed_for_research",
+      "score": 0.448274,
+      "source_pattern_id": "qsase-pattern:3f439169082ee0eee180",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:40e7225d53d780d98f05"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:c7cf577b85b6f82ee58e",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:40e7225d53d780d98f05",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:9de5fa183a611448961b",
+      "quantum_review_state": "quantum_review_passed_for_research",
+      "score": 0.448274,
+      "source_pattern_id": "qsase-pattern:d40998ecf829eb893973",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:02b8584b5120cf24a5a6"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:52145873fa19d345f367",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:02b8584b5120cf24a5a6",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:b48b93487e3b2ef80ac5",
+      "quantum_review_state": "quantum_review_passed_for_research",
+      "score": 0.448274,
+      "source_pattern_id": "qsase-pattern:13b663d141baed6557b2",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:76c88ce093d3dbe10b7a"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:f36b2aad8f91f1ec1706",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:76c88ce093d3dbe10b7a",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:8a7dadb146d29f5a657e",
+      "quantum_review_state": "quantum_hold",
+      "score": 0.228531,
+      "source_pattern_id": "qsase-pattern:ac984d0856d96acf5898",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:201d273ba8889059b693"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:0712c3c23a7b96f5c579",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:201d273ba8889059b693",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:24a608a4d130e07c5a45",
+      "quantum_review_state": "quantum_hold",
+      "score": 0.228531,
+      "source_pattern_id": "qsase-pattern:142addc338b73ccfa384",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:fa09ef5dbe53e6d0f94e"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:72606af8445e40e48bc4",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:fa09ef5dbe53e6d0f94e",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:380d91b9d44799b243f5",
+      "quantum_review_state": "quantum_hold",
+      "score": 0.206617,
+      "source_pattern_id": "qsase-pattern:4ab88c40c9af166f0aa1",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:79da16867ce27150c0ec"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:83c7dde100ce85d268f9",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:79da16867ce27150c0ec",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": "qsase-quantum:9fdb8bda2e1665f872c6",
+      "quantum_review_state": "quantum_hold",
+      "score": 0.206617,
+      "source_pattern_id": "qsase-pattern:d3082799ed59abec18ce",
+      "state": "candidate_for_quantum_review"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:a7c11c2ee7f9387a09b0"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:90c7f32f2267e8cc8ce4",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:a7c11c2ee7f9387a09b0",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.140691,
+      "source_pattern_id": "qsase-pattern:407b67649fe8ae9be29a",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:a1d40a43f9ce23af8b8b"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:9f12ed8de36d88a4c9e7",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:a1d40a43f9ce23af8b8b",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.140691,
+      "source_pattern_id": "qsase-pattern:5f182b3c6c8ca1d50673",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:f94c03928f64ccce5893"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:d06d163dc0136ce2228a",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:f94c03928f64ccce5893",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.125628,
+      "source_pattern_id": "qsase-pattern:f78a6e1e4fdfcc2aea0a",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:4ea8cd014c1839c1a1d4"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:4e8e20f0f3e4566d3582",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:4ea8cd014c1839c1a1d4",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.125628,
+      "source_pattern_id": "qsase-pattern:80f0c1360e46eb85c890",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:42fe909960ed8a471858"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:fb74968ed839be40582f",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:42fe909960ed8a471858",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.118955,
+      "source_pattern_id": "qsase-pattern:f2e86d4e9aed6c666273",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:450fa92f032052704b34"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:1d4addca04fdf9b3ac02",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:450fa92f032052704b34",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.118955,
+      "source_pattern_id": "qsase-pattern:041cdc40f71b52bb7532",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:76034e4b1f024a21d050"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:e2f463aafbb9f0328046",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:76034e4b1f024a21d050",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.112282,
+      "source_pattern_id": "qsase-pattern:103d6da6f1ec785f4073",
+      "state": "nonlinear_rejected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_nonlinear_pattern_results.jsonl#qsase-nonlinear:f1fbae7c87edbaff457a"
+      ],
+      "instrument": "CL=F",
+      "linear_baseline_beaten": false,
+      "linear_pattern_id": "qsase-linear:f8042271f34a9e423941",
+      "paper_order_allowed": false,
+      "pattern_id": "qsase-nonlinear:f1fbae7c87edbaff457a",
+      "pattern_type": "nonlinear",
+      "quantum_review_id": null,
+      "quantum_review_state": "not_required_rejected_pre_quantum",
+      "score": 0.112282,
+      "source_pattern_id": "qsase-pattern:30c47afe8ca1ee12d3e1",
+      "state": "nonlinear_rejected"
+    }
+  ],
+  "paper_only": true,
+  "public_safe": true,
+  "quantum_review_count": 8,
+  "quantum_rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:c3d0b36dbe3c357e59e9"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "downgrade_or_hold",
+      "review_id": "qsase-quantum:c3d0b36dbe3c357e59e9",
+      "state": "quantum_review_passed_for_research",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_false_positive_demotion"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:1a0abe45df8916e87820"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "downgrade_or_hold",
+      "review_id": "qsase-quantum:1a0abe45df8916e87820",
+      "state": "quantum_review_passed_for_research",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_false_positive_demotion"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:9de5fa183a611448961b"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "downgrade_or_hold",
+      "review_id": "qsase-quantum:9de5fa183a611448961b",
+      "state": "quantum_review_passed_for_research",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_false_positive_demotion"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:b48b93487e3b2ef80ac5"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "downgrade_or_hold",
+      "review_id": "qsase-quantum:b48b93487e3b2ef80ac5",
+      "state": "quantum_review_passed_for_research",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_false_positive_demotion"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:8a7dadb146d29f5a657e"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "hold",
+      "review_id": "qsase-quantum:8a7dadb146d29f5a657e",
+      "state": "quantum_hold",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_ambiguity_hold"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:24a608a4d130e07c5a45"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "hold",
+      "review_id": "qsase-quantum:24a608a4d130e07c5a45",
+      "state": "quantum_hold",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_ambiguity_hold"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:380d91b9d44799b243f5"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "hold",
+      "review_id": "qsase-quantum:380d91b9d44799b243f5",
+      "state": "quantum_hold",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_ambiguity_hold"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl#qsase-quantum:9fdb8bda2e1665f872c6"
+      ],
+      "backend": "classical_fallback",
+      "quantum_mode": "deterministic_classical_shadow",
+      "recommendation": "hold",
+      "review_id": "qsase-quantum:9fdb8bda2e1665f872c6",
+      "state": "quantum_hold",
+      "trade_confirmation": false,
+      "usefulness_class": "useful_ambiguity_hold"
+    }
+  ],
+  "read_only": true,
+  "schema_version": "qsase_dashboard_view_model.v1",
+  "status": "pattern_lab_visible"
+}

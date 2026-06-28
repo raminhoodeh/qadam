@@ -1,0 +1,961 @@
+{
+  "artifact_refs": [
+    "data/runtime/qsase_universal_source_price_matrix.json"
+  ],
+  "artifact_type": "qsase_dashboard_source_network",
+  "authority": {
+    "broker_write_allowed": false,
+    "dashboard_command_disabled": true,
+    "dashboard_mirror_only": true,
+    "dashboard_read_only": true,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "filter_threshold_update_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trade_intent_created": false
+  },
+  "category_row_count": 6,
+  "category_rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.conflict"
+      ],
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "conflict",
+      "fresh_count": 5,
+      "quorum_contributing_count": 5,
+      "source_count": 5,
+      "state": "connected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.macro"
+      ],
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "macro",
+      "fresh_count": 6,
+      "quorum_contributing_count": 6,
+      "source_count": 6,
+      "state": "connected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.market"
+      ],
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "market",
+      "fresh_count": 11,
+      "quorum_contributing_count": 0,
+      "source_count": 11,
+      "state": "connected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.market_context_taxonomy"
+      ],
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "market_context_taxonomy",
+      "fresh_count": 4,
+      "quorum_contributing_count": 2,
+      "source_count": 4,
+      "state": "connected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.physical"
+      ],
+      "credential_gated_count": 0,
+      "degraded_count": 0,
+      "family": "physical",
+      "fresh_count": 7,
+      "quorum_contributing_count": 7,
+      "source_count": 7,
+      "state": "connected"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.social"
+      ],
+      "credential_gated_count": 1,
+      "degraded_count": 0,
+      "family": "social",
+      "fresh_count": 8,
+      "quorum_contributing_count": 6,
+      "source_count": 8,
+      "state": "connected"
+    }
+  ],
+  "command_disabled": true,
+  "generated_at": "2026-06-28T20:32:55.326649+00:00",
+  "paper_only": true,
+  "public_safe": true,
+  "read_only": true,
+  "schema_version": "qsase_dashboard_view_model.v1",
+  "source_row_count": 41,
+  "source_rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.0"
+      ],
+      "credential_gated": false,
+      "family": "conflict",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "acled",
+      "source_name": "ACLED API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.1"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "ais_maritime",
+      "source_name": "AIS Maritime",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.2"
+      ],
+      "credential_gated": false,
+      "family": "market_context_taxonomy",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "ais_or_shipping",
+      "source_name": "ais_or_shipping",
+      "state": "not_seen_in_current_cycle",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.3"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "alpaca",
+      "source_name": "Alpaca Markets API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.4"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "arcgis_usace",
+      "source_name": "ArcGIS / USACE Geospatial",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.5"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "aviationstack",
+      "source_name": "Aviationstack Flight Data",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.6"
+      ],
+      "credential_gated": false,
+      "family": "macro",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "bis",
+      "source_name": "BIS Statistics",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.7"
+      ],
+      "credential_gated": false,
+      "family": "macro",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "bls",
+      "source_name": "BLS API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.8"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "bookmap",
+      "source_name": "Bookmap / Order Flow",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.9"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "chainlink",
+      "source_name": "Chainlink Price Feeds",
+      "state": "pending",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.10"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "coinglass",
+      "source_name": "Coinglass",
+      "state": "pending",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.11"
+      ],
+      "credential_gated": false,
+      "family": "conflict",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "conflict_tracker",
+      "source_name": "Conflict Tracker",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.12"
+      ],
+      "credential_gated": false,
+      "family": "macro",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "ecb",
+      "source_name": "ECB Data Portal",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.13"
+      ],
+      "credential_gated": false,
+      "family": "macro",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "fred",
+      "source_name": "FRED API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.14"
+      ],
+      "credential_gated": false,
+      "family": "conflict",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "gdelt",
+      "source_name": "GDELT Project API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.15"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "github",
+      "source_name": "GitHub API",
+      "state": "pending",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.16"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "gps_jamming",
+      "source_name": "GPS Jamming Monitors",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.17"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "hyperliquid",
+      "source_name": "Hyperliquid Perps",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.18"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "internet_outage",
+      "source_name": "Internet Outage / IODA",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.19"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "kalshi",
+      "source_name": "Kalshi / OddsPipe",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.20"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "nasa_firms",
+      "source_name": "NASA FIRMS",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.21"
+      ],
+      "credential_gated": false,
+      "family": "conflict",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "oref",
+      "source_name": "Oref API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.22"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "patents",
+      "source_name": "Patent Filings",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.23"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "polymarket",
+      "source_name": "Polymarket",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.24"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "rapidapi",
+      "source_name": "RapidAPI Hub",
+      "state": "pending",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.25"
+      ],
+      "credential_gated": true,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "reddit",
+      "source_name": "Reddit API",
+      "state": "credential_gated",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.26"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "rss",
+      "source_name": "RSS / Atom Feeds",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.27"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "sec_edgar",
+      "source_name": "SEC EDGAR API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.28"
+      ],
+      "credential_gated": false,
+      "family": "market_context_taxonomy",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "social.rss",
+      "source_name": "social.rss",
+      "state": "not_seen_in_current_cycle",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.29"
+      ],
+      "credential_gated": false,
+      "family": "physical",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "space_track_celestrak",
+      "source_name": "Space-Track / CelesTrak TLEs",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.30"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "stock_act",
+      "source_name": "Capitol Trades / STOCK Act Filings",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.31"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "telegram",
+      "source_name": "Telegram APIs / Scrapers",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.32"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "tradingview_mcp",
+      "source_name": "TradingView MCP Technical Analysis",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.33"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "tradingview_paid_alerts",
+      "source_name": "TradingView Paid Alerts",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.34"
+      ],
+      "credential_gated": false,
+      "family": "social",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "twitter_x",
+      "source_name": "Twitter / X API v2",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.35"
+      ],
+      "credential_gated": false,
+      "family": "conflict",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "ucdp",
+      "source_name": "UCDP API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.36"
+      ],
+      "credential_gated": false,
+      "family": "macro",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "un_comtrade",
+      "source_name": "UN Comtrade API",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "high_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.37"
+      ],
+      "credential_gated": false,
+      "family": "market",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "unusual_whales",
+      "source_name": "UnusualWhales",
+      "state": "pending",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "trust_unknown"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.38"
+      ],
+      "credential_gated": false,
+      "family": "macro",
+      "freshness_status": "fresh",
+      "quorum_contribution": true,
+      "source_key": "usgs",
+      "source_name": "USGS",
+      "state": "online",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "moderate_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.39"
+      ],
+      "credential_gated": false,
+      "family": "market_context_taxonomy",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "yahoo_finance",
+      "source_name": "yahoo_finance",
+      "state": "not_seen_in_current_cycle",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.40"
+      ],
+      "credential_gated": false,
+      "family": "market_context_taxonomy",
+      "freshness_status": "fresh",
+      "quorum_contribution": false,
+      "source_key": "yahoo_finance_or_tradingview",
+      "source_name": "yahoo_finance_or_tradingview",
+      "state": "resolved_by_supplemental_context_if_available",
+      "trade_candidate_creation_allowed": false,
+      "trust_posture": "context_trust"
+    }
+  ],
+  "status": "source_network_visible",
+  "trading_universe_row_count": 19,
+  "trading_universe_rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.0"
+      ],
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:bno",
+      "live_route_enabled": false,
+      "market_family": "crude_oil",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "blocked",
+      "symbol": "BNO"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.1"
+      ],
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:cl=f",
+      "live_route_enabled": false,
+      "market_family": "crude_oil",
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+      "qualified_setup_state": "blocked",
+      "symbol": "CL=F"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.2"
+      ],
+      "display_name": "GLD",
+      "instrument_id": "qsase-instrument:gld",
+      "live_route_enabled": false,
+      "market_family": "macro_watchlist",
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "paperability_unknown_context_only",
+      "qualified_setup_state": "not_recorded",
+      "symbol": "GLD"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.3"
+      ],
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:ita",
+      "live_route_enabled": false,
+      "market_family": "defence",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "ITA"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.4"
+      ],
+      "display_name": "Prediction Market Geopolitical Dislocation",
+      "instrument_id": "qsase-instrument:kalshi:events",
+      "live_route_enabled": false,
+      "market_family": "prediction_markets",
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+      "qualified_setup_state": "blocked",
+      "symbol": "KALSHI:EVENTS"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.5"
+      ],
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:lmt",
+      "live_route_enabled": false,
+      "market_family": "defence",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "LMT"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.6"
+      ],
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:nvda",
+      "live_route_enabled": false,
+      "market_family": "semiconductors",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "NVDA"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.7"
+      ],
+      "display_name": "Prediction Market Geopolitical Dislocation",
+      "instrument_id": "qsase-instrument:polymarket:events",
+      "live_route_enabled": false,
+      "market_family": "prediction_markets",
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+      "qualified_setup_state": "blocked",
+      "symbol": "POLYMARKET:EVENTS"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.8"
+      ],
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:ppa",
+      "live_route_enabled": false,
+      "market_family": "defence",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "PPA"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.9"
+      ],
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:qqq",
+      "live_route_enabled": false,
+      "market_family": "semiconductors",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "QQQ"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.10"
+      ],
+      "display_name": "Silver Macro Liquidity Stress",
+      "instrument_id": "qsase-instrument:si=f",
+      "live_route_enabled": false,
+      "market_family": "silver",
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+      "qualified_setup_state": "blocked",
+      "symbol": "SI=F"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.11"
+      ],
+      "display_name": "Silver Macro Liquidity Stress",
+      "instrument_id": "qsase-instrument:sil",
+      "live_route_enabled": false,
+      "market_family": "silver",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "blocked",
+      "symbol": "SIL"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.12"
+      ],
+      "display_name": "Silver Macro Liquidity Stress",
+      "instrument_id": "qsase-instrument:slv",
+      "live_route_enabled": false,
+      "market_family": "silver",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "blocked",
+      "symbol": "SLV"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.13"
+      ],
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:smh",
+      "live_route_enabled": false,
+      "market_family": "semiconductors",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "SMH"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.14"
+      ],
+      "display_name": "Semiconductor Policy Options Asymmetry",
+      "instrument_id": "qsase-instrument:soxx",
+      "live_route_enabled": false,
+      "market_family": "semiconductors",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "SOXX"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.15"
+      ],
+      "display_name": "SPY",
+      "instrument_id": "qsase-instrument:spy",
+      "live_route_enabled": false,
+      "market_family": "macro_watchlist",
+      "paper_order_allowed": false,
+      "paper_route_available": false,
+      "paperability_state": "paperability_unknown_context_only",
+      "qualified_setup_state": "not_recorded",
+      "symbol": "SPY"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.16"
+      ],
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:uso",
+      "live_route_enabled": false,
+      "market_family": "crude_oil",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "blocked",
+      "symbol": "USO"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.17"
+      ],
+      "display_name": "Defence Repricing Geopolitical Watch",
+      "instrument_id": "qsase-instrument:xar",
+      "live_route_enabled": false,
+      "market_family": "defence",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "production_qualified",
+      "symbol": "XAR"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json#trading_universe.instruments.18"
+      ],
+      "display_name": "Crude Oil Energy Security Disruption",
+      "instrument_id": "qsase-instrument:xle",
+      "live_route_enabled": false,
+      "market_family": "crude_oil",
+      "paper_order_allowed": false,
+      "paper_route_available": true,
+      "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+      "qualified_setup_state": "blocked",
+      "symbol": "XLE"
+    }
+  ]
+}

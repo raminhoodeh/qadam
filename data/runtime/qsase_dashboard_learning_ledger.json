@@ -1,0 +1,467 @@
+{
+  "active_proposal_count": 8,
+  "applied_update_count": 0,
+  "artifact_refs": [
+    "data/runtime/qsase_component_attribution_ledger.json",
+    "data/runtime/qsase_component_attribution_ledger.jsonl"
+  ],
+  "artifact_type": "qsase_dashboard_learning_ledger",
+  "attribution_record_count": 109,
+  "authority": {
+    "broker_write_allowed": false,
+    "dashboard_command_disabled": true,
+    "dashboard_mirror_only": true,
+    "dashboard_read_only": true,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "filter_threshold_update_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trade_intent_created": false
+  },
+  "command_disabled": true,
+  "generated_at": "2026-06-28T20:32:55.326649+00:00",
+  "paper_only": true,
+  "public_safe": true,
+  "read_only": true,
+  "row_count": 30,
+  "rows": [
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2e40b5eed25f62f1a099"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:2e40b5eed25f62f1a099",
+      "cause": "blocked_correctly",
+      "evidence_class": "non_trade_decision",
+      "outcome": "non_trade_decision",
+      "proposal": "tighten_akber_filter",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fc452707f4dc923459f"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:0fc452707f4dc923459f",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac65a9d55e354eedc1c"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:dac65a9d55e354eedc1c",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f5869666bfbfc9766bc4"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:f5869666bfbfc9766bc4",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e9345e93d89bc54b2573"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:e9345e93d89bc54b2573",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fd31e5a1a248b063652"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:0fd31e5a1a248b063652",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3dd0bf513f1767b16bd1"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:3dd0bf513f1767b16bd1",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58fd625bf731432d3e2c"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:58fd625bf731432d3e2c",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:c1bb4872693831f64f1f"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:c1bb4872693831f64f1f",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58154269958668e7febd"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:58154269958668e7febd",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:98971e6918366aa1ad2e"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:98971e6918366aa1ad2e",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3789c5bb940e573d2de7"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:3789c5bb940e573d2de7",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:47f7a4b375016779c18a"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:47f7a4b375016779c18a",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ec7e05560f43876cf4f6"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:ec7e05560f43876cf4f6",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7e00dff1b21f6886b780"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:7e00dff1b21f6886b780",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:66f875d9dd0ed6df320a"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:66f875d9dd0ed6df320a",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:cf4bb2a95ae5adf78501"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:cf4bb2a95ae5adf78501",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1532ee348058eb200227"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:1532ee348058eb200227",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:97c3b2c7cb1f2c9f77b5"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:97c3b2c7cb1f2c9f77b5",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:16f6ecc9aa6f86101ed1"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:16f6ecc9aa6f86101ed1",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9ecf09ad4e73970b8753"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:9ecf09ad4e73970b8753",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:225618058cedece2026e"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:225618058cedece2026e",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:843d4fa26ce70da66b3f"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:843d4fa26ce70da66b3f",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:03243050557bb53a7b54"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:03243050557bb53a7b54",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9e71c58a82ee07376721"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:9e71c58a82ee07376721",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fae99f4928d8d4180eac"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:fae99f4928d8d4180eac",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4d7052cae186ad069099"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:4d7052cae186ad069099",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4ad35c7da5b6378574c3"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:4ad35c7da5b6378574c3",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:124a2b0f7429e63104aa"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:124a2b0f7429e63104aa",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    },
+    {
+      "applied": false,
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f12759dd8db94ce0d40d"
+      ],
+      "attribution": "source_universe",
+      "attribution_record_id": "qsase-attribution:f12759dd8db94ce0d40d",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight",
+      "row_type": "learning_decision_record",
+      "state": "recorded_proposal_only"
+    }
+  ],
+  "schema_version": "qsase_dashboard_view_model.v1",
+  "status": "learning_ledger_visible"
+}

@@ -1,0 +1,274 @@
+{
+  "artifact_refs": [
+    [
+      "data/runtime/qsase_self_model.json",
+      "data/runtime/qsase_strategy_router_decisions.json",
+      "data/runtime/qsase_paperops_gate_interface.json",
+      "data/runtime/qsase_component_attribution_ledger.json"
+    ],
+    [
+      "data/runtime/alpaca_paper_mirror.json",
+      "data/runtime/alpaca_paper_mirror.jsonl"
+    ],
+    [
+      "data/runtime/paper_positions.jsonl",
+      "data/runtime/alpaca_paper_mirror.json"
+    ],
+    [
+      "data/runtime/paper_closed_trades.jsonl",
+      "data/runtime/paper_orders.jsonl"
+    ],
+    [
+      "data/runtime/qsase_universal_source_price_matrix.json"
+    ],
+    [
+      "data/runtime/qsase_strategy_family_map.json",
+      "data/runtime/qsase_strategy_router_decisions.jsonl"
+    ],
+    [
+      "data/runtime/qsase_linear_pattern_lab.json",
+      "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+      "data/runtime/qsase_quantum_pattern_reviews.jsonl"
+    ],
+    [
+      "data/runtime/qsase_strategy_router_decisions.jsonl",
+      "data/runtime/qsase_akber_filter_results.jsonl"
+    ],
+    [
+      "data/runtime/qsase_component_attribution_ledger.json",
+      "data/runtime/qsase_component_attribution_ledger.jsonl"
+    ],
+    [
+      "data/runtime/qsase_self_model.json",
+      "data/runtime/qsase_learning_approval_queue.json"
+    ],
+    [
+      "data/runtime/qsase_dashboard_status.json"
+    ],
+    [
+      "data/runtime/qsase_strategy_router_decisions.json",
+      "data/runtime/qsase_paperops_gate_interface.json"
+    ]
+  ],
+  "artifact_type": "qsase_dashboard_system_map",
+  "authority": {
+    "broker_write_allowed": false,
+    "dashboard_command_disabled": true,
+    "dashboard_mirror_only": true,
+    "dashboard_read_only": true,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "filter_threshold_update_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trade_intent_created": false
+  },
+  "command_disabled": true,
+  "edges": [
+    {
+      "from": "qsase_snapshot",
+      "relationship": "dashboard_flow",
+      "to": "portfolio_value"
+    },
+    {
+      "from": "portfolio_value",
+      "relationship": "dashboard_flow",
+      "to": "current_portfolio"
+    },
+    {
+      "from": "current_portfolio",
+      "relationship": "dashboard_flow",
+      "to": "trading_history"
+    },
+    {
+      "from": "trading_history",
+      "relationship": "dashboard_flow",
+      "to": "source_network"
+    },
+    {
+      "from": "source_network",
+      "relationship": "dashboard_flow",
+      "to": "strategy_universe"
+    },
+    {
+      "from": "strategy_universe",
+      "relationship": "dashboard_flow",
+      "to": "pattern_lab"
+    },
+    {
+      "from": "pattern_lab",
+      "relationship": "dashboard_flow",
+      "to": "trade_intents"
+    },
+    {
+      "from": "trade_intents",
+      "relationship": "dashboard_flow",
+      "to": "router_paperops_state"
+    },
+    {
+      "from": "router_paperops_state",
+      "relationship": "dashboard_flow",
+      "to": "learning_ledger"
+    },
+    {
+      "from": "learning_ledger",
+      "relationship": "dashboard_flow",
+      "to": "repair_queue"
+    },
+    {
+      "from": "repair_queue",
+      "relationship": "dashboard_flow",
+      "to": "freshness"
+    }
+  ],
+  "generated_at": "2026-06-28T20:32:55.326649+00:00",
+  "node_count": 12,
+  "nodes": [
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_self_model.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json",
+        "data/runtime/qsase_component_attribution_ledger.json"
+      ],
+      "label": "Qsase Snapshot",
+      "node_id": "qsase_snapshot",
+      "overview_detail_level": "summary_only",
+      "state": "qsase_dashboard_snapshot_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/alpaca_paper_mirror.json",
+        "data/runtime/alpaca_paper_mirror.jsonl"
+      ],
+      "label": "Portfolio Value",
+      "node_id": "portfolio_value",
+      "overview_detail_level": "summary_only",
+      "state": "portfolio_value_series_available"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_positions.jsonl",
+        "data/runtime/alpaca_paper_mirror.json"
+      ],
+      "label": "Current Portfolio",
+      "node_id": "current_portfolio",
+      "overview_detail_level": "summary_only",
+      "state": "current_portfolio_present"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl",
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "label": "Trading History",
+      "node_id": "trading_history",
+      "overview_detail_level": "summary_only",
+      "state": "trading_history_present"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_universal_source_price_matrix.json"
+      ],
+      "label": "Source Network",
+      "node_id": "source_network",
+      "overview_detail_level": "summary_only",
+      "state": "source_network_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json",
+        "data/runtime/qsase_strategy_router_decisions.jsonl"
+      ],
+      "label": "Strategy Universe",
+      "node_id": "strategy_universe",
+      "overview_detail_level": "summary_only",
+      "state": "strategy_universe_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_linear_pattern_lab.json",
+        "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+        "data/runtime/qsase_quantum_pattern_reviews.jsonl"
+      ],
+      "label": "Pattern Lab",
+      "node_id": "pattern_lab",
+      "overview_detail_level": "summary_only",
+      "state": "pattern_lab_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_router_decisions.jsonl",
+        "data/runtime/qsase_akber_filter_results.jsonl"
+      ],
+      "label": "Trade Intents",
+      "node_id": "trade_intents",
+      "overview_detail_level": "summary_only",
+      "state": "trade_intents_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "label": "Router Paperops State",
+      "node_id": "router_paperops_state",
+      "overview_detail_level": "summary_only",
+      "state": "qsase_paperops_gate_interface_degraded"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_component_attribution_ledger.json",
+        "data/runtime/qsase_component_attribution_ledger.jsonl"
+      ],
+      "label": "Learning Ledger",
+      "node_id": "learning_ledger",
+      "overview_detail_level": "summary_only",
+      "state": "learning_ledger_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_self_model.json",
+        "data/runtime/qsase_learning_approval_queue.json"
+      ],
+      "label": "Repair Queue",
+      "node_id": "repair_queue",
+      "overview_detail_level": "summary_only",
+      "state": "repair_queue_visible"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/qsase_dashboard_status.json"
+      ],
+      "label": "Freshness",
+      "node_id": "freshness",
+      "overview_detail_level": "summary_only",
+      "state": "freshness_visible"
+    }
+  ],
+  "overview_detail_policy": {
+    "default_dashboard_keeps_core_sections_visible": true,
+    "detailed_ledgers_in_overview": false,
+    "overview_uses_decision_records": true
+  },
+  "paper_only": true,
+  "public_safe": true,
+  "read_only": true,
+  "schema_version": "qsase_dashboard_view_model.v1",
+  "status": "system_map_visible"
+}

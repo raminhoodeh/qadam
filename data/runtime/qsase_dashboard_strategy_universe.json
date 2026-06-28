@@ -1,0 +1,272 @@
+{
+  "all_strategy_count": 5,
+  "all_strategy_rows": [
+    {
+      "allowed_proxy_set": [
+        "USO",
+        "XLE",
+        "energy_equities",
+        "crude_oil_proxy"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.crude_oil_energy_security_disruption"
+      ],
+      "catalyst_class": "energy_security_disruption",
+      "current_state": "currently_in_play_blocked_or_rejected",
+      "currently_in_play": true,
+      "instrument_keywords": [
+        "CL",
+        "USO",
+        "XLE",
+        "oil",
+        "crude",
+        "energy"
+      ],
+      "label": "Crude Oil Energy Security Disruption",
+      "source_keywords": [
+        "acled",
+        "ais_maritime",
+        "nasa_firms",
+        "conflict_tracker",
+        "ucdp"
+      ],
+      "strategy_family_id": "crude_oil_energy_security_disruption"
+    },
+    {
+      "allowed_proxy_set": [
+        "ITA",
+        "XAR",
+        "defence_equities"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.defence_repricing_geopolitical_watch"
+      ],
+      "catalyst_class": "defence_geopolitical_repricing",
+      "current_state": "available_strategy_family",
+      "currently_in_play": false,
+      "instrument_keywords": [
+        "ITA",
+        "XAR",
+        "defence",
+        "defense"
+      ],
+      "label": "Defence Repricing Geopolitical Watch",
+      "source_keywords": [
+        "acled",
+        "gdelt",
+        "sec_edgar",
+        "stock_act",
+        "patents"
+      ],
+      "strategy_family_id": "defence_repricing_geopolitical_watch"
+    },
+    {
+      "allowed_proxy_set": [
+        "prediction_markets",
+        "event_contracts"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.prediction_market_geopolitical_dislocation"
+      ],
+      "catalyst_class": "event_probability_dislocation",
+      "current_state": "currently_in_play_blocked_or_rejected",
+      "currently_in_play": true,
+      "instrument_keywords": [
+        "prediction",
+        "kalshi",
+        "polymarket"
+      ],
+      "label": "Prediction Market Geopolitical Dislocation",
+      "source_keywords": [
+        "kalshi",
+        "polymarket",
+        "gdelt",
+        "telegram",
+        "acled"
+      ],
+      "strategy_family_id": "prediction_market_geopolitical_dislocation"
+    },
+    {
+      "allowed_proxy_set": [
+        "SMH",
+        "SOXX",
+        "semiconductor_equities"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.semiconductor_policy_options_asymmetry"
+      ],
+      "catalyst_class": "semiconductor_policy_asymmetry",
+      "current_state": "available_strategy_family",
+      "currently_in_play": false,
+      "instrument_keywords": [
+        "SMH",
+        "SOXX",
+        "NVDA",
+        "semiconductor",
+        "chip"
+      ],
+      "label": "Semiconductor Policy Options Asymmetry",
+      "source_keywords": [
+        "sec_edgar",
+        "patents",
+        "gdelt",
+        "rss",
+        "stock_act"
+      ],
+      "strategy_family_id": "semiconductor_policy_options_asymmetry"
+    },
+    {
+      "allowed_proxy_set": [
+        "SLV",
+        "silver_proxy"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.silver_macro_liquidity_stress"
+      ],
+      "catalyst_class": "macro_liquidity_stress",
+      "current_state": "currently_in_play_blocked_or_rejected",
+      "currently_in_play": true,
+      "instrument_keywords": [
+        "SLV",
+        "XAG",
+        "silver"
+      ],
+      "label": "Silver Macro Liquidity Stress",
+      "source_keywords": [
+        "fred",
+        "ecb",
+        "bis",
+        "usgs",
+        "un_comtrade"
+      ],
+      "strategy_family_id": "silver_macro_liquidity_stress"
+    }
+  ],
+  "artifact_refs": [
+    "data/runtime/qsase_strategy_family_map.json",
+    "data/runtime/qsase_strategy_router_decisions.jsonl"
+  ],
+  "artifact_type": "qsase_dashboard_strategy_universe",
+  "authority": {
+    "broker_write_allowed": false,
+    "dashboard_command_disabled": true,
+    "dashboard_mirror_only": true,
+    "dashboard_read_only": true,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "filter_threshold_update_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trade_intent_created": false
+  },
+  "command_disabled": true,
+  "currently_in_play_count": 3,
+  "currently_in_play_rows": [
+    {
+      "allowed_proxy_set": [
+        "USO",
+        "XLE",
+        "energy_equities",
+        "crude_oil_proxy"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.crude_oil_energy_security_disruption"
+      ],
+      "catalyst_class": "energy_security_disruption",
+      "current_state": "currently_in_play_blocked_or_rejected",
+      "currently_in_play": true,
+      "instrument_keywords": [
+        "CL",
+        "USO",
+        "XLE",
+        "oil",
+        "crude",
+        "energy"
+      ],
+      "label": "Crude Oil Energy Security Disruption",
+      "source_keywords": [
+        "acled",
+        "ais_maritime",
+        "nasa_firms",
+        "conflict_tracker",
+        "ucdp"
+      ],
+      "strategy_family_id": "crude_oil_energy_security_disruption"
+    },
+    {
+      "allowed_proxy_set": [
+        "prediction_markets",
+        "event_contracts"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.prediction_market_geopolitical_dislocation"
+      ],
+      "catalyst_class": "event_probability_dislocation",
+      "current_state": "currently_in_play_blocked_or_rejected",
+      "currently_in_play": true,
+      "instrument_keywords": [
+        "prediction",
+        "kalshi",
+        "polymarket"
+      ],
+      "label": "Prediction Market Geopolitical Dislocation",
+      "source_keywords": [
+        "kalshi",
+        "polymarket",
+        "gdelt",
+        "telegram",
+        "acled"
+      ],
+      "strategy_family_id": "prediction_market_geopolitical_dislocation"
+    },
+    {
+      "allowed_proxy_set": [
+        "SLV",
+        "silver_proxy"
+      ],
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_family_map.json#known_families.silver_macro_liquidity_stress"
+      ],
+      "catalyst_class": "macro_liquidity_stress",
+      "current_state": "currently_in_play_blocked_or_rejected",
+      "currently_in_play": true,
+      "instrument_keywords": [
+        "SLV",
+        "XAG",
+        "silver"
+      ],
+      "label": "Silver Macro Liquidity Stress",
+      "source_keywords": [
+        "fred",
+        "ecb",
+        "bis",
+        "usgs",
+        "un_comtrade"
+      ],
+      "strategy_family_id": "silver_macro_liquidity_stress"
+    }
+  ],
+  "generated_at": "2026-06-28T20:32:55.326649+00:00",
+  "paper_only": true,
+  "public_safe": true,
+  "read_only": true,
+  "rejected_hypothesis_count": 16,
+  "schema_version": "qsase_dashboard_view_model.v1",
+  "status": "strategy_universe_visible",
+  "strategy_hypothesis_count": 0
+}
