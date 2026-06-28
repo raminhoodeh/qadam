@@ -3,7 +3,7 @@
   "authority_flags_false": true,
   "authority_state": "strategy_router_no_order_authority",
   "command_disabled": true,
-  "generated_at": "2026-06-28T20:52:13.931400+00:00",
+  "generated_at": "2026-06-28T21:07:55.913215+00:00",
   "hard_vetoes": [
     {
       "authority": {
@@ -50,13 +50,13 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:8241a00240b6810bb3e3",
+      "hard_veto_id": "qsase-router-veto:e95042df32f7a3aebb9f",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101",
-      "veto": "akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route"
+      "strategy_key": "qsase-rejected-strategy:0f900d6fb68f8dfa0608",
+      "veto": "akber_filter_reject:quantum_ambiguity_too_high"
     },
     {
       "authority": {
@@ -103,13 +103,13 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:acee05da1b4b21e4f5cb",
+      "hard_veto_id": "qsase-router-veto:95e9d8f96ffc6395f63d",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101",
-      "veto": "idempotency_or_duplicate_submit_hold"
+      "strategy_key": "qsase-rejected-strategy:0f900d6fb68f8dfa0608",
+      "veto": "paperability:quantum_ambiguity_hold"
     },
     {
       "authority": {
@@ -156,13 +156,13 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:ed21c8030fc6f432c201",
+      "hard_veto_id": "qsase-router-veto:7d6c525ffd0d8af8be25",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101",
-      "veto": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route"
+      "strategy_key": "qsase-rejected-strategy:0f900d6fb68f8dfa0608",
+      "veto": "quantum_ambiguity_too_high"
     },
     {
       "authority": {
@@ -209,13 +209,13 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:a84d793da1bbd1babd7d",
+      "hard_veto_id": "qsase-router-veto:1c9db091b3d54d70042c",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:152c46c8b7f8fe91404f",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101",
-      "veto": "paperability:instrument_is_observable_or_futures_symbol_not_guarded_paper_route"
+      "strategy_key": "qsase-rejected-strategy:7ccfda435c39353fcb5c",
+      "veto": "akber_filter_reject:quantum_ambiguity_too_high"
     },
     {
       "authority": {
@@ -262,53 +262,53 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:4908a745164286da4e24",
+      "hard_veto_id": "qsase-router-veto:a2e24128c781f28da439",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:792809f2ae069977d6c2",
+      "router_decision_id": "qsase-router:152c46c8b7f8fe91404f",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:f473d9123b07d4b5bd5d",
-      "veto": "akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route"
+      "strategy_key": "qsase-rejected-strategy:7ccfda435c39353fcb5c",
+      "veto": "paperability:quantum_ambiguity_hold"
     }
   ],
   "live_send_allowed": false,
-  "next_required_action": "clear_safety_boundary_or_remap_to_paperable_expression",
+  "next_required_action": "watch_for_missing_confirmation",
   "no_paper_orders_created": true,
   "no_proof_credit_granted": true,
   "no_trade_candidates_created": true,
   "public_safe": true,
-  "router_output": "blocked_safety_boundary",
+  "router_output": "hold_missing_evidence",
   "schema_version": "qsase_strategy_router.v1",
   "score_components": [
     {
       "candidate_identity_key": "qsase-strategy-identity:f2dd9b1bccee36cad4b9",
-      "hard_veto_count": 4,
+      "hard_veto_count": 0,
       "primary_family": "crude_oil_energy_security_disruption",
       "rank": 1,
       "router_decision_id": "qsase-router:562b9a8186385c779193",
-      "router_output": "blocked_safety_boundary",
-      "router_total_score": 0.382117,
-      "soft_blocker_count": 16
+      "router_output": "hold_missing_evidence",
+      "router_total_score": 0.520334,
+      "soft_blocker_count": 15
     },
     {
       "candidate_identity_key": "qsase-strategy-identity:43e363327d116d219cad",
-      "hard_veto_count": 4,
+      "hard_veto_count": 0,
       "primary_family": "crude_oil_energy_security_disruption",
       "rank": 2,
       "router_decision_id": "qsase-router:792809f2ae069977d6c2",
-      "router_output": "blocked_safety_boundary",
-      "router_total_score": 0.382117,
-      "soft_blocker_count": 16
+      "router_output": "hold_missing_evidence",
+      "router_total_score": 0.520334,
+      "soft_blocker_count": 15
     },
     {
       "candidate_identity_key": "qsase-strategy-identity:8d3a3da96eea0cac9ef6",
-      "hard_veto_count": 4,
+      "hard_veto_count": 0,
       "primary_family": "crude_oil_energy_security_disruption",
       "rank": 3,
       "router_decision_id": "qsase-router:e031a63a39531680664b",
-      "router_output": "blocked_safety_boundary",
-      "router_total_score": 0.382117,
-      "soft_blocker_count": 16
+      "router_output": "hold_missing_evidence",
+      "router_total_score": 0.520334,
+      "soft_blocker_count": 15
     }
   ],
   "soft_blockers": [
@@ -357,7 +357,7 @@
         "trade_candidate_creation_allowed": false
       },
       "blocker": "akber_filter_artifact_degraded",
-      "next_required_action": "clear_safety_boundary_or_remap_to_paperable_expression",
+      "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
       "router_decision_id": "qsase-router:562b9a8186385c779193",
@@ -409,13 +409,13 @@
         "trade_candidate_created": false,
         "trade_candidate_creation_allowed": false
       },
-      "blocker": "missing_paperable_proxy_expression",
-      "next_required_action": "clear_safety_boundary_or_remap_to_paperable_expression",
+      "blocker": "learning_health:no_validated_edges_yet",
+      "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
       "router_decision_id": "qsase-router:562b9a8186385c779193",
       "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:fe9e42d164f964741c96",
+      "soft_blocker_id": "qsase-router-soft:51ad54ef2d0a9a02775a",
       "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
     },
     {
@@ -463,7 +463,7 @@
         "trade_candidate_creation_allowed": false
       },
       "blocker": "missing_volume_or_flow_confirmation",
-      "next_required_action": "clear_safety_boundary_or_remap_to_paperable_expression",
+      "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
       "router_decision_id": "qsase-router:562b9a8186385c779193",
@@ -515,13 +515,13 @@
         "trade_candidate_created": false,
         "trade_candidate_creation_allowed": false
       },
-      "blocker": "nonlinear_not_incremental",
-      "next_required_action": "clear_safety_boundary_or_remap_to_paperable_expression",
+      "blocker": "model_stack:llm_provider_probes_artifact_missing",
+      "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
       "router_decision_id": "qsase-router:562b9a8186385c779193",
       "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:9324f2349c1fae41a5f4",
+      "soft_blocker_id": "qsase-router-soft:a85b93d01d6c8af0248b",
       "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
     },
     {
@@ -568,13 +568,13 @@
         "trade_candidate_created": false,
         "trade_candidate_creation_allowed": false
       },
-      "blocker": "open_order_state_requires_downstream_duplicate_check",
-      "next_required_action": "clear_safety_boundary_or_remap_to_paperable_expression",
+      "blocker": "nonlinear_not_incremental",
+      "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
       "router_decision_id": "qsase-router:562b9a8186385c779193",
       "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:64fd858b838c058a6474",
+      "soft_blocker_id": "qsase-router-soft:9324f2349c1fae41a5f4",
       "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
     }
   ],
@@ -594,15 +594,15 @@
     },
     {
       "label": "Hard vetoes",
-      "value": 72
+      "value": 12
     },
     {
       "label": "Soft blockers",
-      "value": 284
+      "value": 276
     },
     {
       "label": "Top output",
-      "value": "blocked_safety_boundary"
+      "value": "hold_missing_evidence"
     },
     {
       "label": "Authority",
@@ -610,5 +610,5 @@
     }
   ],
   "top_strategy": "qsase-router:562b9a8186385c779193",
-  "why_not_trading_now": "Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route."
+  "why_not_trading_now": "Required evidence is missing: akber_filter_artifact_degraded."
 }

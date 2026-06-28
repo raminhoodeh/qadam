@@ -801,7 +801,7 @@ def build_qsase_telegram_notification_boundary(settings: Settings | None = None)
     status = "qsase_telegram_notification_boundary_ready"
     if status_counts.get("message_rejected_unsafe"):
         status = "qsase_telegram_notification_boundary_blocked"
-    elif status_counts.get("message_rejected_generic") or status_counts.get("message_rejected_duplicate"):
+    elif status_counts.get("message_rejected_generic"):
         status = "qsase_telegram_notification_boundary_degraded"
     payload = {
         "schema_version": SCHEMA_VERSION,
@@ -822,6 +822,7 @@ def build_qsase_telegram_notification_boundary(settings: Settings | None = None)
         "message_rejected_unsafe_count": status_counts.get("message_rejected_unsafe", 0),
         "delivery_failure_count": sum(1 for receipt in receipts if receipt.get("message_status") == "message_delivery_failed"),
         "duplicate_suppressed_count": status_counts.get("message_rejected_duplicate", 0),
+        "duplicate_suppression_is_healthy_quiet_state": True,
         "inbound_record_count": inbound["record_count"],
         "inbound_command_detected_count": inbound["command_detected_count"],
         "inbound_command_ignored_count": inbound["command_ignored_count"],

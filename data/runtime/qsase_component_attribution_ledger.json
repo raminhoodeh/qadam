@@ -5,7 +5,7 @@
   "approval_required_count": 8,
   "approved_proposal_count": 0,
   "artifact_type": "qsase_component_attribution_ledger",
-  "attribution_record_count": 109,
+  "attribution_record_count": 103,
   "authority": {
     "backtest_to_proof_allowed": false,
     "broker_live_write_allowed": false,
@@ -96,7 +96,7 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
@@ -104,7 +104,7 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
@@ -112,7 +112,7 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
@@ -120,7 +120,7 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
@@ -128,7 +128,7 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
@@ -136,7 +136,7 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
@@ -144,20 +144,20 @@
       {
         "applied": false,
         "attribution": "source_universe",
-        "cause": "rejected_correctly",
+        "cause": "insufficient_evidence",
         "evidence_class": "shadow_replay",
         "outcome": "shadow_replay",
         "proposal": "hold_strategy_weight"
       }
     ],
     "essay_free": true,
-    "generated_at": "2026-06-28T20:52:14.307811+00:00",
+    "generated_at": "2026-06-28T21:07:56.278740+00:00",
     "latest_attribution": "self_healing_repair_loop",
     "latest_attribution_state": "recorded_proposal_only",
     "latest_cause": "route_defect_prevented_evaluation",
     "latest_evidence_class": "system_defect",
     "latest_outcome": "system_defect",
-    "latest_proposal": "paperops_gate_precheck_review",
+    "latest_proposal": "source_coverage_repair_request",
     "live_capital_boundary": "live capital disabled",
     "live_send_allowed": false,
     "no_broker_writes": true,
@@ -172,7 +172,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "shadow_evidence_count": 48,
     "status": "qsase_learning_attribution_ledger_degraded",
-    "system_defect_record_count": 12,
+    "system_defect_record_count": 6,
     "top_blamed_component": "guarded_alpaca_paper_route",
     "top_credited_component": "source_universe"
   },
@@ -214,7 +214,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:52:14.309436+00:00",
+    "generated_at": "2026-06-28T21:07:56.280370+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -229,19 +229,6 @@
         "contradicting_record_count": 0,
         "current_value": "strict_paperability_confirmation",
         "evidence_refs": [
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2e40b5eed25f62f1a099",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fc452707f4dc923459f",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac65a9d55e354eedc1c",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f5869666bfbfc9766bc4",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e9345e93d89bc54b2573",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fd31e5a1a248b063652",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3dd0bf513f1767b16bd1",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58fd625bf731432d3e2c",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:c1bb4872693831f64f1f",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58154269958668e7febd",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:98971e6918366aa1ad2e",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3789c5bb940e573d2de7",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:47f7a4b375016779c18a",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ec7e05560f43876cf4f6",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7e00dff1b21f6886b780",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:66f875d9dd0ed6df320a",
@@ -254,25 +241,36 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:843d4fa26ce70da66b3f",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:03243050557bb53a7b54",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9e71c58a82ee07376721",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fae99f4928d8d4180eac",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4d7052cae186ad069099",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4ad35c7da5b6378574c3",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:124a2b0f7429e63104aa",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f12759dd8db94ce0d40d"
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:21bec34a5310f972f03d",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b1c451df3d07d77e9797",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e54e6dc6cee7784a2d9e",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1359d80bb7748fc89eec",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fe934a71fdda62372d8a",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6a0f48188a1bb45494f8",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:8e28981f1e9809685556",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:8951406a006e44a68b95",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ad52efb921616a9dd2f0",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:345087314ca838d71b02",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac92935646bc0b4716b",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b7a0e45da75d226ade6a",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:a52d4e67bd11b91c911c",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9a3356fafef1c0f0767c",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1e7aedc966a766394552",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:12d18c90abbabda6708e"
         ],
         "expected_effect": "filter_threshold_review_only_no_update",
         "overfit_risk": "medium",
-        "proposal_id": "qsase-proposal:d5d145dcfee486de9444",
+        "proposal_id": "qsase-proposal:e6ac0566a9a5f57d0755",
         "proposal_state": "ready_pending_learning_approval",
         "proposal_type": "tighten_akber_filter",
         "proposed_value": "strict_paperability_confirmation",
         "real_paper_evidence_count": 0,
         "regime_bias_risk": "medium",
         "schema_version": "qsase_component_attribution_ledger.v1",
-        "shadow_evidence_count": 48,
+        "shadow_evidence_count": 12,
         "source_noise_risk": "medium",
         "suggested_delta": 0.0,
-        "supporting_record_count": 81,
+        "supporting_record_count": 28,
         "target_id": "paperability_confirmation_threshold",
         "target_surface": "akber_filter"
       }
@@ -280,7 +278,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "status": "proposal_recorded_not_applied"
   },
-  "generated_at": "2026-06-28T20:52:14.307811+00:00",
+  "generated_at": "2026-06-28T21:07:56.278740+00:00",
   "input_artifacts": {
     "akber_filter_ref": "data/runtime/qsase_akber_filter_integration.json",
     "akber_filter_results_ref": "data/runtime/qsase_akber_filter_results.jsonl",
@@ -307,80 +305,80 @@
   "input_snapshots": {
     "akber_filter": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:13.604117+00:00",
+      "mtime": "2026-06-28T21:07:55.583278+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_akber_filter_integration.json"
     },
     "full_pattern_search": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:12.577278+00:00",
+      "mtime": "2026-06-28T21:07:54.486866+00:00",
       "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_full_universe_pattern_search.json"
     },
     "historical_memory": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:07.850842+00:00",
-      "mtime_age_seconds": 6,
+      "mtime": "2026-06-28T21:07:49.049533+00:00",
+      "mtime_age_seconds": 7,
       "path": "data/runtime/qsase_historical_source_price_memory.json"
     },
     "linear_lab": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:12.805798+00:00",
+      "mtime": "2026-06-28T21:07:54.735752+00:00",
       "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_linear_pattern_lab.json"
     },
     "nonlinear_lab": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:13.170435+00:00",
+      "mtime": "2026-06-28T21:07:55.157636+00:00",
       "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json"
     },
     "paperops_gate": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:14.207079+00:00",
+      "mtime": "2026-06-28T21:07:56.168485+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_paperops_gate_interface.json"
     },
     "paperops_summary": {
       "exists": true,
       "mtime": "2026-06-28T20:13:09.991818+00:00",
-      "mtime_age_seconds": 2344,
+      "mtime_age_seconds": 3286,
       "path": "data/runtime/paperops_autonomous_pass_summary.json"
     },
     "phase0": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:06.915892+00:00",
-      "mtime_age_seconds": 7,
+      "mtime": "2026-06-28T21:07:47.850687+00:00",
+      "mtime_age_seconds": 8,
       "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json"
     },
     "router": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:13.934126+00:00",
+      "mtime": "2026-06-28T21:07:55.916320+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_strategy_router_decisions.json"
     },
     "self_model": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:07.355981+00:00",
-      "mtime_age_seconds": 6,
+      "mtime": "2026-06-28T21:07:48.388082+00:00",
+      "mtime_age_seconds": 7,
       "path": "data/runtime/qsase_self_model.json"
     },
     "shadow_simulator": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:13.759432+00:00",
+      "mtime": "2026-06-28T21:07:55.734362+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_shadow_strategy_simulator.json"
     },
     "strategy_foundry": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:13.425684+00:00",
+      "mtime": "2026-06-28T21:07:55.424699+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_strategy_hypotheses.json"
     },
     "universal_matrix": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:07.456121+00:00",
-      "mtime_age_seconds": 6,
+      "mtime": "2026-06-28T21:07:48.506617+00:00",
+      "mtime_age_seconds": 7,
       "path": "data/runtime/qsase_universal_source_price_matrix.json"
     }
   },
@@ -421,7 +419,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:52:14.309463+00:00",
+    "generated_at": "2026-06-28T21:07:56.280391+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -511,7 +509,7 @@
       {
         "applied": false,
         "apply_allowed": false,
-        "approval_queue_id": "qsase-learning-approval:cc47cd5e262319fb1c80",
+        "approval_queue_id": "qsase-learning-approval:c5f985f4767bf2952bce",
         "approval_required": true,
         "approved": false,
         "evidence_refs": [
@@ -523,10 +521,10 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:97c3b2c7cb1f2c9f77b5",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3860c510229d6eed186b",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ea700b599fbc72435889",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:a4dcaeea26f4e2bbad03",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:99b8e4e1e429966903d6"
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fe934a71fdda62372d8a",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6a0f48188a1bb45494f8"
         ],
-        "proposal_id": "qsase-proposal:4ed2274006467721e0d0",
+        "proposal_id": "qsase-proposal:021d3eb97fdf1af4c594",
         "proposal_surface": "strategy_family",
         "proposal_type": "decrease_strategy_weight",
         "review_state": "pending_learning_approval",
@@ -536,7 +534,7 @@
       {
         "applied": false,
         "apply_allowed": false,
-        "approval_queue_id": "qsase-learning-approval:5f5446c0c63388ad4910",
+        "approval_queue_id": "qsase-learning-approval:6b491498e298cdbc600c",
         "approval_required": true,
         "approved": false,
         "evidence_refs": [
@@ -548,10 +546,10 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:89492053008486f7433a",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:87196d4d492f2a5a0aaf",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:68c551126dfe87fdff83",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:49a5545ff8d586dc642f",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:d7b4ff947ec25bad19cd"
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac92935646bc0b4716b",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b7a0e45da75d226ade6a"
         ],
-        "proposal_id": "qsase-proposal:b6b8f0f544cd32639a29",
+        "proposal_id": "qsase-proposal:32fcbd8bd12f0f582f12",
         "proposal_surface": "strategy_family",
         "proposal_type": "decrease_strategy_weight",
         "review_state": "pending_learning_approval",
@@ -561,7 +559,7 @@
       {
         "applied": false,
         "apply_allowed": false,
-        "approval_queue_id": "qsase-learning-approval:99cb3da464208fae1024",
+        "approval_queue_id": "qsase-learning-approval:0fcf5c2c22ba3e4716ce",
         "approval_required": true,
         "approved": false,
         "evidence_refs": [
@@ -582,20 +580,14 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9ab6d75f5c88ca1d6e7f",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:37cdbdf480a5598d1fc5",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:769deefad4ac47ed2315",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7ca7ca97edac26f6d469",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1e5cf244f38321a643f8",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0934d84e2061c2a7f03b"
         ],
-        "proposal_id": "qsase-proposal:0408ea3abce111a0a606",
+        "proposal_id": "qsase-proposal:b1b1ee002db9a7272ca4",
         "proposal_surface": "source_universe",
         "proposal_type": "source_coverage_repair_request",
         "review_state": "pending_learning_approval",
@@ -605,14 +597,15 @@
       {
         "applied": false,
         "apply_allowed": false,
-        "approval_queue_id": "qsase-learning-approval:014c3836006122e2c541",
+        "approval_queue_id": "qsase-learning-approval:4febdd1baf763f0f914c",
         "approval_required": true,
         "approved": false,
         "evidence_refs": [
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27"
         ],
-        "proposal_id": "qsase-proposal:a8cbd7525dfb034f97ad",
+        "proposal_id": "qsase-proposal:4ab5511ac56b5af5567b",
         "proposal_surface": "model_stack",
         "proposal_type": "hold_model_weight",
         "review_state": "pending_learning_approval",
@@ -622,23 +615,10 @@
       {
         "applied": false,
         "apply_allowed": false,
-        "approval_queue_id": "qsase-learning-approval:fd277194570911ea817d",
+        "approval_queue_id": "qsase-learning-approval:2289adfe07ed47271990",
         "approval_required": true,
         "approved": false,
         "evidence_refs": [
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2e40b5eed25f62f1a099",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fc452707f4dc923459f",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac65a9d55e354eedc1c",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f5869666bfbfc9766bc4",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e9345e93d89bc54b2573",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fd31e5a1a248b063652",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3dd0bf513f1767b16bd1",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58fd625bf731432d3e2c",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:c1bb4872693831f64f1f",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58154269958668e7febd",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:98971e6918366aa1ad2e",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3789c5bb940e573d2de7",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:47f7a4b375016779c18a",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ec7e05560f43876cf4f6",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7e00dff1b21f6886b780",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:66f875d9dd0ed6df320a",
@@ -651,13 +631,24 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:843d4fa26ce70da66b3f",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:03243050557bb53a7b54",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9e71c58a82ee07376721",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fae99f4928d8d4180eac",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4d7052cae186ad069099",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4ad35c7da5b6378574c3",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:124a2b0f7429e63104aa",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f12759dd8db94ce0d40d"
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:21bec34a5310f972f03d",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b1c451df3d07d77e9797",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e54e6dc6cee7784a2d9e",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1359d80bb7748fc89eec",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fe934a71fdda62372d8a",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6a0f48188a1bb45494f8",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:8e28981f1e9809685556",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:8951406a006e44a68b95",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ad52efb921616a9dd2f0",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:345087314ca838d71b02",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac92935646bc0b4716b",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b7a0e45da75d226ade6a",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:a52d4e67bd11b91c911c",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9a3356fafef1c0f0767c",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1e7aedc966a766394552",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:12d18c90abbabda6708e"
         ],
-        "proposal_id": "qsase-proposal:d5d145dcfee486de9444",
+        "proposal_id": "qsase-proposal:e6ac0566a9a5f57d0755",
         "proposal_surface": "akber_filter",
         "proposal_type": "tighten_akber_filter",
         "review_state": "pending_learning_approval",
@@ -709,7 +700,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:52:14.309428+00:00",
+    "generated_at": "2026-06-28T21:07:56.280361+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -725,11 +716,12 @@
         "current_value": "unchanged",
         "evidence_refs": [
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27"
         ],
         "expected_effect": "model_weight_review_only_no_update",
         "overfit_risk": "medium",
-        "proposal_id": "qsase-proposal:a8cbd7525dfb034f97ad",
+        "proposal_id": "qsase-proposal:4ab5511ac56b5af5567b",
         "proposal_state": "ready_pending_learning_approval",
         "proposal_type": "hold_model_weight",
         "proposed_value": "unchanged_until_provider_readiness_validated",
@@ -739,7 +731,7 @@
         "shadow_evidence_count": 0,
         "source_noise_risk": "medium",
         "suggested_delta": 0.0,
-        "supporting_record_count": 2,
+        "supporting_record_count": 3,
         "target_id": "local_gemma_frontier_gemini_quantum_review_stack",
         "target_surface": "model_stack"
       }
@@ -804,7 +796,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:52:14.309406+00:00",
+    "generated_at": "2026-06-28T21:07:56.280339+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -836,22 +828,16 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9ab6d75f5c88ca1d6e7f",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:37cdbdf480a5598d1fc5",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:769deefad4ac47ed2315",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:13a6c3f4fe2ee268d1fc",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7ca7ca97edac26f6d469",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1e5cf244f38321a643f8",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0934d84e2061c2a7f03b"
         ],
         "expected_effect": "source_trust_review_only_no_score_mutation",
         "overfit_risk": "medium",
-        "proposal_id": "qsase-proposal:0408ea3abce111a0a606",
+        "proposal_id": "qsase-proposal:b1b1ee002db9a7272ca4",
         "proposal_state": "ready_pending_learning_approval",
         "proposal_type": "source_coverage_repair_request",
         "proposed_value": "repair_or_hold_pending_approval",
@@ -861,7 +847,7 @@
         "shadow_evidence_count": 0,
         "source_noise_risk": "medium",
         "suggested_delta": 0.0,
-        "supporting_record_count": 29,
+        "supporting_record_count": 23,
         "target_id": "aggregate_source_trust_and_coverage",
         "target_surface": "source_universe"
       }
@@ -910,7 +896,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T20:52:14.309314+00:00",
+    "generated_at": "2026-06-28T21:07:56.280253+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -1045,12 +1031,12 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:97c3b2c7cb1f2c9f77b5",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3860c510229d6eed186b",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ea700b599fbc72435889",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:a4dcaeea26f4e2bbad03",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:99b8e4e1e429966903d6"
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fe934a71fdda62372d8a",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6a0f48188a1bb45494f8"
         ],
         "expected_effect": "proposal_only_strategy_review",
         "overfit_risk": "medium",
-        "proposal_id": "qsase-proposal:4ed2274006467721e0d0",
+        "proposal_id": "qsase-proposal:021d3eb97fdf1af4c594",
         "proposal_state": "ready_pending_learning_approval",
         "proposal_type": "decrease_strategy_weight",
         "proposed_value": "review_required_not_applied",
@@ -1080,12 +1066,12 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:89492053008486f7433a",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:87196d4d492f2a5a0aaf",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:68c551126dfe87fdff83",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:49a5545ff8d586dc642f",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:d7b4ff947ec25bad19cd"
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac92935646bc0b4716b",
+          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b7a0e45da75d226ade6a"
         ],
         "expected_effect": "proposal_only_strategy_review",
         "overfit_risk": "medium",
-        "proposal_id": "qsase-proposal:b6b8f0f544cd32639a29",
+        "proposal_id": "qsase-proposal:32fcbd8bd12f0f582f12",
         "proposal_state": "ready_pending_learning_approval",
         "proposal_type": "decrease_strategy_weight",
         "proposed_value": "review_required_not_applied",
@@ -1103,7 +1089,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "status": "proposal_recorded_not_applied"
   },
-  "system_defect_record_count": 12,
+  "system_defect_record_count": 6,
   "top_blamed_component": "guarded_alpaca_paper_route",
   "top_credited_component": "source_universe",
   "trust_score_update_created": false

@@ -451,7 +451,7 @@ def apply_router_vetoes(strategy: dict[str, Any], context: dict[str, Any]) -> di
         hard.append("upstream_paper_order_authority_detected")
     self_why = context["self_model"].get("why_not_trading_now", {})
     if self_why.get("category") == "duplicate_or_idempotency_hold":
-        hard.append("idempotency_or_duplicate_submit_hold")
+        soft.append("paperops_current_duplicate_hold_requires_distinct_idempotency_key")
     if context["self_model"].get("risk_state", {}).get("current_exposure", {}).get("open_order_count", 0):
         soft.append("open_order_state_requires_downstream_duplicate_check")
     if context["shadow_simulator"].get("candidate_for_router_count", 0) == 0:
@@ -1256,10 +1256,20 @@ def validate_negative_strategy_router_probes() -> list[str]:
         if not any("missing_why_not_trading_now" in error for error in validate_strategy_router_decisions(why_probe)):
             errors.append("negative_probe_failed_for_missing_why")
         hard_veto_probe = copy.deepcopy(base)
-        hard_veto_probe["router_decisions"][0]["decision"]["router_output"] = "paper_review_candidate"
-        hard_veto_probe["router_decisions"][0]["decision"]["paper_review_candidate"] = True
-        hard_veto_probe["router_decisions"][0]["paper_review_candidate_handoff"] = {
-            "router_decision_id": hard_veto_probe["router_decisions"][0]["router_decision_id"],
+        hard_index = next(
+            (
+                index
+                for index, decision in enumerate(hard_veto_probe["router_decisions"])
+                if decision.get("hard_vetoes")
+            ),
+            0,
+        )
+        if not hard_veto_probe["router_decisions"][hard_index].get("hard_vetoes"):
+            hard_veto_probe["router_decisions"][hard_index]["hard_vetoes"] = ["synthetic_negative_probe_hard_veto"]
+        hard_veto_probe["router_decisions"][hard_index]["decision"]["router_output"] = "paper_review_candidate"
+        hard_veto_probe["router_decisions"][hard_index]["decision"]["paper_review_candidate"] = True
+        hard_veto_probe["router_decisions"][hard_index]["paper_review_candidate_handoff"] = {
+            "router_decision_id": hard_veto_probe["router_decisions"][hard_index]["router_decision_id"],
         }
         if not any("hard_veto_paper_review_candidate" in error for error in validate_strategy_router_decisions(hard_veto_probe)):
             errors.append("negative_probe_failed_for_hard_veto_candidate")

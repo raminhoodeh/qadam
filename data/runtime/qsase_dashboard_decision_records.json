@@ -28,7 +28,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-28T20:52:14.638653+00:00",
+  "generated_at": "2026-06-28T21:07:56.601908+00:00",
   "public_safe": true,
   "read_only": true,
   "record_count": 9,
@@ -81,7 +81,7 @@
       "next_allowed_action": "render decision records and wait for a fresh distinct paperable setup",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_or_futures_symbol_not_guarded_paper_route.",
+      "reason": "Required evidence is missing: akber_filter_artifact_degraded.",
       "schema_version": "qsase_dashboard_view_model.v1",
       "state": "qsase_dashboard_snapshot_visible",
       "strategy_family": "aggregate"
@@ -465,7 +465,7 @@
       "next_allowed_action": "repair runtime/source gaps or review proposals before any change",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "20 repair or approval rows are visible.",
+      "reason": "14 repair or approval rows are visible.",
       "schema_version": "qsase_dashboard_view_model.v1",
       "state": "repair_queue_visible",
       "strategy_family": "aggregate"

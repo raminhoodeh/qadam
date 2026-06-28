@@ -92,7 +92,7 @@
     "authority_state": "shadow_replay_research_only_no_order",
     "candidate_for_router_count": 0,
     "command_disabled": true,
-    "generated_at": "2026-06-28T20:52:13.755953+00:00",
+    "generated_at": "2026-06-28T21:07:55.730794+00:00",
     "latest_blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
@@ -121,7 +121,7 @@
       },
       {
         "label": "Rejected variants",
-        "value": 48
+        "value": 40
       },
       {
         "label": "Router candidates",
@@ -136,8 +136,8 @@
         "value": "no order created"
       }
     ],
-    "top_rejected_variant": "baseline_current_strategy",
-    "top_shadow_replay_id": "qsase-shadow:1b77383e89ef7c18021d",
+    "top_rejected_variant": "forward_watch_only",
+    "top_shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800",
     "top_variant": "akber_strict_veto"
   },
   "degraded_reasons": [
@@ -156,7 +156,7 @@
   "execution_allowed": false,
   "execution_intent_created": false,
   "execution_intent_created_count": 0,
-  "generated_at": "2026-06-28T20:52:13.755953+00:00",
+  "generated_at": "2026-06-28T21:07:55.730794+00:00",
   "historical_memory_record_count": 6232,
   "historical_point_in_time_safe_record_count": 6232,
   "input_artifacts": {
@@ -184,7 +184,7 @@
   "proof_credit_allowed": false,
   "proposal_first": true,
   "public_safe": true,
-  "rejected_variant_count": 48,
+  "rejected_variant_count": 40,
   "replay_modes": [
     "counterfactual_strategy_replay",
     "forward_shadow_replay",
@@ -198,9 +198,9 @@
     "candidate_for_router_count": 0,
     "schema_version": "qsase_shadow_strategy_simulator.v1",
     "scored_record_count": 48,
-    "top_shadow_replay_id": "qsase-shadow:1b77383e89ef7c18021d",
+    "top_shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800",
     "top_shadow_status": "reject_after_shadow_replay",
-    "top_shadow_variant_score": 0.733776,
+    "top_shadow_variant_score": 0.617776,
     "top_variant_key": "akber_strict_veto"
   },
   "shadow_records_cannot_create_orders": true,

@@ -52,7 +52,7 @@
         "trade_candidate_created": false
       },
       "blocker": "akber_filter_failed",
-      "body": "Qadam no-trade note\nState: qsase_dashboard_snapshot_visible\nReason: Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_o\nNext: render decision records and wait for a fresh distinct paperable setup\nOrder: none submitted",
+      "body": "Qadam no-trade note\nState: qsase_dashboard_snapshot_visible\nReason: Required evidence is missing: akber_filter_artifact_degraded.\nNext: render decision records and wait for a fresh distinct paperable setup\nOrder: none submitted",
       "broker_write_allowed": false,
       "broker_write_created": false,
       "candidate_id": "qsase-dashboard:d27d748bea932175de7b",
@@ -92,7 +92,7 @@
       "qctrl_job_submitted": false,
       "qualified_setup_created": false,
       "quality": {
-        "character_count": 254,
+        "character_count": 227,
         "duplicate_rejected": true,
         "errors": [],
         "generic_hits": [],
@@ -112,7 +112,7 @@
         "unsafe_rejected": false
       },
       "quantum_provider_call_allowed": false,
-      "reason": "Hard safety boundary blocks paper review: akber_filter_reject:instrument_is_observable_o",
+      "reason": "Required evidence is missing: akber_filter_artifact_degraded.",
       "risk_approval_created": false,
       "schema_version": "qsase_telegram_notification_boundary.v1",
       "secret_read_allowed": false,
@@ -370,11 +370,11 @@
         "telegram_trade_command_enabled": false,
         "trade_candidate_created": false
       },
-      "blocker": "operational_phase0",
-      "body": "Qadam repair note\nState: repair_queue_visible\nReason: 20-minute local scheduler is not recorded active\nNext: repair runtime artifact or source state, then rerun QSASE checks\nOrder: none submitted",
+      "blocker": "source_state",
+      "body": "Qadam repair note\nState: repair_queue_visible\nReason: missing_optional_source_credentials\nNext: repair runtime artifact or source state, then rerun QSASE checks\nOrder: none submitted",
       "broker_write_allowed": false,
       "broker_write_created": false,
-      "candidate_id": "qsase-repair:b5ea6bb0d3fe3fd7ea82",
+      "candidate_id": "qsase-repair:5ecb723786c310f06214",
       "decision_record_ref": "data/runtime/qsase_dashboard_decision_records.json#repair_queue",
       "delivery": {
         "already_sent": false,
@@ -385,10 +385,10 @@
         "telegram_live_send_allowed": false
       },
       "execution_approval_created": false,
-      "fingerprint": "e839bbb45288ecf90218aa003a140142c0a680550ebaac629df15fb42353c1c6",
+      "fingerprint": "e3075d2b646f6f4bf9d477e024a3e52a2be02d2d70dffb4dd439ebbfa111d683",
       "fingerprint_input": {
-        "blocker": "operational_phase0",
-        "candidate_id": "qsase-repair:b5ea6bb0d3fe3fd7ea82",
+        "blocker": "source_state",
+        "candidate_id": "qsase-repair:5ecb723786c310f06214",
         "message_class": "qsase_repair_note",
         "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
         "order_state": "none submitted",
@@ -398,7 +398,7 @@
       },
       "live_capital_enabled": false,
       "live_send_attempted": false,
-      "message_candidate_id": "qsase-telegram-candidate:2e49999a27d3b986c7e1",
+      "message_candidate_id": "qsase-telegram-candidate:d7ab6ed03cc98e03a595",
       "message_class": "qsase_repair_note",
       "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
       "order_state": "none submitted",
@@ -411,7 +411,7 @@
       "qctrl_job_submitted": false,
       "qualified_setup_created": false,
       "quality": {
-        "character_count": 195,
+        "character_count": 182,
         "duplicate_rejected": true,
         "errors": [],
         "generic_hits": [],
@@ -431,7 +431,7 @@
         "unsafe_rejected": false
       },
       "quantum_provider_call_allowed": false,
-      "reason": "20-minute local scheduler is not recorded active",
+      "reason": "missing_optional_source_credentials",
       "risk_approval_created": false,
       "schema_version": "qsase_telegram_notification_boundary.v1",
       "secret_read_allowed": false,
@@ -558,7 +558,7 @@
       "trade_candidate_created": false
     }
   ],
-  "generated_at": "2026-06-28T20:52:14.764356+00:00",
+  "generated_at": "2026-06-28T21:07:56.728399+00:00",
   "schema_version": "qsase_telegram_notification_boundary.v1",
   "status": "message_candidates_recorded"
 }

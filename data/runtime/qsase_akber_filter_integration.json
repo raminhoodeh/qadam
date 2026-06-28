@@ -3,7 +3,7 @@
   "ablation_ready_count": 4,
   "akber_filter_pass_is_not_execution_approval": true,
   "artifact_type": "qsase_akber_filter_integration",
-  "audit_only_filter_count": 0,
+  "audit_only_filter_count": 4,
   "authority": {
     "backtest_to_proof_allowed": false,
     "broker_live_write_allowed": false,
@@ -74,7 +74,7 @@
   "broker_write_allowed": false,
   "candidate_for_paper_review_count": 0,
   "candidate_for_router_count": 0,
-  "candidate_for_shadow_replay_count": 0,
+  "candidate_for_shadow_replay_count": 4,
   "command_disabled": true,
   "dashboard_akber_stages": [
     "context",
@@ -90,12 +90,11 @@
     "authority_state": "akber_filter_not_execution_approval",
     "command_disabled": true,
     "filter_pass_is_not_execution_approval": true,
-    "generated_at": "2026-06-28T20:52:13.590278+00:00",
+    "generated_at": "2026-06-28T21:07:55.570305+00:00",
     "historical_ablation_status": "ablation_degraded_proxy_only_no_promoted_hypotheses",
     "latest_blocker": "missing_filter_context_present,no_promoted_strategy_hypotheses_to_filter,strategy_foundry_degraded",
     "live_send_allowed": false,
     "next_evidence_needed": [
-      "paperable_proxy_expression",
       "volume_or_flow_confirmation"
     ],
     "no_paper_orders_created": true,
@@ -119,15 +118,15 @@
       },
       {
         "label": "Hold",
-        "value": 0
+        "value": 8
       },
       {
         "label": "Veto",
-        "value": 16
+        "value": 4
       },
       {
         "label": "Audit-only",
-        "value": 0
+        "value": 4
       },
       {
         "label": "Router candidates",
@@ -138,9 +137,9 @@
         "value": "akber_filter_not_execution_approval"
       }
     ],
-    "top_filter_decision": "reject",
+    "top_filter_decision": "audit_only",
     "top_filter_result": "qsase-akber:8ada8184beb0797a87be",
-    "top_reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route"
+    "top_reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion."
   },
   "degraded_reasons": [
     "missing_filter_context_present",
@@ -149,9 +148,9 @@
   ],
   "execution_allowed": false,
   "filter_vetoes_become_learning_evidence": true,
-  "generated_at": "2026-06-28T20:52:13.590278+00:00",
+  "generated_at": "2026-06-28T21:07:55.570305+00:00",
   "historical_improvement_observed": false,
-  "hold_filter_count": 0,
+  "hold_filter_count": 8,
   "input_artifacts": {
     "historical_memory": "data/runtime/qsase_historical_source_price_memory.json",
     "market_confirmation": "data/runtime/phase5_market_confirmation_refresh.json",
@@ -188,7 +187,7 @@
   "proposal_first": true,
   "public_safe": true,
   "qualified_setup_created": false,
-  "rejected_filter_count": 16,
+  "rejected_filter_count": 4,
   "research_only": true,
   "risk_handoff_allowed": false,
   "router_ready_outputs_path": "data/runtime/qsase_akber_filter_results.jsonl",

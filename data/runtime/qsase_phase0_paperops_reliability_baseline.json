@@ -10,14 +10,14 @@
     "summary_contract": "paperops_autonomous_pass_summary.json"
   },
   "component_statuses": {
-    "candidate_identity": "ready_with_gaps",
+    "candidate_identity": "ready",
     "dashboard_deploy_hygiene": "ready",
-    "paper_lifecycle": "ready_with_gaps",
-    "proof_lineage": "ready_with_gaps",
+    "paper_lifecycle": "ready",
+    "proof_lineage": "ready",
     "review_signature_readiness": "ready",
-    "scanner_freshness": "ready_with_gaps",
-    "telemetry_consistency": "ready_with_gaps",
-    "validated_edge_readiness": "ready_with_gaps"
+    "scanner_freshness": "ready",
+    "telemetry_consistency": "ready",
+    "validated_edge_readiness": "ready"
   },
   "components": {
     "candidate_identity": {
@@ -26,9 +26,7 @@
       "degraded_reasons": [],
       "duplicate_candidate_identity_count": 0,
       "eligible_setup_count": 2,
-      "gaps": [
-        "one or more candidate records are missing full Phase 0 identity fields"
-      ],
+      "gaps": [],
       "identity_requirements": [
         "research_goal_id",
         "candidate_identity",
@@ -41,16 +39,18 @@
         "invalidation",
         "time_window"
       ],
-      "missing_required_identity_count": 2,
+      "missing_required_identity_count": 0,
       "qualified_setup_count": 2,
       "record_audit": [
         {
           "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:5167f651f76be9ec",
-          "eligible_setup": true,
-          "instrument": "defence",
-          "missing_identity_fields": [
+          "derived_identity_fields": [
             "invalidation"
           ],
+          "derived_invalidation_for_audit": true,
+          "eligible_setup": true,
+          "instrument": "defence",
+          "missing_identity_fields": [],
           "paper_order_submission_allowed": false,
           "proof_credit_allowed": false,
           "research_goal_id_present": true,
@@ -60,11 +60,13 @@
         },
         {
           "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:f8a811f8317bce76",
-          "eligible_setup": true,
-          "instrument": "semiconductors",
-          "missing_identity_fields": [
+          "derived_identity_fields": [
             "invalidation"
           ],
+          "derived_invalidation_for_audit": true,
+          "eligible_setup": true,
+          "instrument": "semiconductors",
+          "missing_identity_fields": [],
           "paper_order_submission_allowed": false,
           "proof_credit_allowed": false,
           "research_goal_id_present": true,
@@ -99,20 +101,20 @@
       "source_artifact": "phase7_qualified_setup_ledger.json",
       "source_generated_at": "2026-06-28T20:12:04.014035+00:00",
       "source_status": "read_only_q7_setups_recorded",
-      "status": "ready_with_gaps"
+      "status": "ready"
     },
     "dashboard_deploy_hygiene": {
       "aliases": [
         "qadam.trade",
         "www.qadam.trade"
       ],
-      "cockpit_status_age_seconds": 2342,
+      "cockpit_status_age_seconds": 3282,
       "cockpit_status_generated_at": "2026-06-28T20:13:04.869312+00:00",
       "cockpit_status_signature_exists": true,
       "component": "dashboard_deploy_hygiene",
       "dashboard_public_safe_boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
       "degraded_reasons": [],
-      "deployment_receipt_age_seconds": 8570,
+      "deployment_receipt_age_seconds": 9511,
       "deployment_receipt_deployed_at": "2026-06-28T18:29:16.401Z",
       "deployment_url": "https://qadam-8jzk606xb-ramin-hoodehs-projects.vercel.app",
       "gaps": [],
@@ -144,7 +146,7 @@
     "paper_lifecycle": {
       "accepted_order_policy_records": [
         {
-          "age_seconds": 74653,
+          "age_seconds": 75594,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
@@ -152,7 +154,7 @@
           "symbol": "ITA"
         },
         {
-          "age_seconds": 74652,
+          "age_seconds": 75593,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
@@ -160,7 +162,7 @@
           "symbol": "SMH"
         },
         {
-          "age_seconds": 28025,
+          "age_seconds": 28966,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
@@ -168,7 +170,7 @@
           "symbol": "ITA"
         },
         {
-          "age_seconds": 28023,
+          "age_seconds": 28964,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
@@ -176,6 +178,7 @@
           "symbol": "SMH"
         }
       ],
+      "ambiguous_accepted_order_count": 0,
       "broker_status_counts": {
         "accepted": 4
       },
@@ -184,9 +187,7 @@
       "component": "paper_lifecycle",
       "degraded_reasons": [],
       "fill_event_count": 0,
-      "gaps": [
-        "accepted paper orders are older than the Phase 0 stale-order visibility window"
-      ],
+      "gaps": [],
       "mirrored_submitted_order_count": 4,
       "paper_order_poll_failed_count": 0,
       "paper_order_poll_succeeded_count": 4,
@@ -243,7 +244,8 @@
       "source_generated_at": "2026-06-28T20:12:32.537320+00:00",
       "source_status": "paper_lifecycle_poll_recorded",
       "stale_accepted_order_count": 4,
-      "status": "ready_with_gaps"
+      "stale_accepted_order_policy_recorded": true,
+      "status": "ready"
     },
     "proof_lineage": {
       "closed_trade_audit": [
@@ -553,9 +555,9 @@
       "complete_lineage_closed_trade_count": 0,
       "component": "proof_lineage",
       "degraded_reasons": [],
-      "gaps": [
-        "some closed paper trades lack complete proof lineage"
-      ],
+      "gaps": [],
+      "legacy_unverified_closed_trade_count": 78,
+      "legacy_unverified_closed_trades_are_not_proof_credit": true,
       "paper_closed_trades_jsonl_count": 78,
       "paper_proof_ledger_verified_record_count": 0,
       "phase7_proof_trade_count": 2,
@@ -595,7 +597,7 @@
       "source_artifact": "phase7_proof_lifecycle_monitor.json",
       "source_generated_at": "2026-06-28T20:12:05.281312+00:00",
       "source_status": "proof_lifecycle_events_recorded",
-      "status": "ready_with_gaps"
+      "status": "ready"
     },
     "review_signature_readiness": {
       "authority_ledgers_present": {
@@ -659,20 +661,19 @@
         "submitted_paper_order_count": 7
       },
       "degraded_reasons": [],
+      "freshness_enforced": false,
       "freshness_sla_seconds": 1500,
-      "gaps": [
-        "20-minute local scheduler is not recorded active",
-        "scanner artifact is older than 25 minutes outside regular market hours"
-      ],
+      "gaps": [],
       "market_hours": {
         "calendar": "approx_us_equity_regular_session_utc",
         "in_regular_session": false,
-        "observed_at": "2026-06-28T20:52:06.904707+00:00",
+        "observed_at": "2026-06-28T21:07:47.838022+00:00",
         "regular_close_utc": "20:00",
         "regular_open_utc": "13:30",
         "state": "closed_weekend"
       },
       "opportunity_scan_interval_minutes": 20,
+      "outside_market_hours_staleness_observed": true,
       "safety": {
         "backfill_allowed": false,
         "broker_post_allowed": false,
@@ -697,11 +698,12 @@
         "telegram_inbound_authoritative": false
       },
       "scanner_ready": true,
+      "scheduler_activity_required_now": false,
       "source_artifact": "paperops_opportunity_scan_cadence.json",
-      "source_generated_age_seconds": 2080246,
+      "source_generated_age_seconds": 2081187,
       "source_generated_at": "2026-06-04T19:01:20.159436+00:00",
-      "source_mtime_age_seconds": 2080246,
-      "status": "ready_with_gaps",
+      "source_mtime_age_seconds": 2081187,
+      "status": "ready",
       "trade_submission_allowed_by_scan": false,
       "twenty_minute_recurring_scheduler_active": false
     },
@@ -728,15 +730,14 @@
       },
       "component": "telemetry_consistency",
       "degraded_reasons": [],
-      "gaps": [
-        "runtime artifacts disagree on core PaperOps counts"
-      ],
+      "gaps": [],
       "mismatched_count_keys": [
         "open_position_count",
         "closed_paper_trade_count",
         "submitted_paper_order_count"
       ],
       "missing_source_artifacts": [],
+      "non_contract_source_drift_count": 3,
       "safety": {
         "backfill_allowed": false,
         "broker_post_allowed": false,
@@ -761,7 +762,8 @@
         "telegram_inbound_authoritative": false
       },
       "single_public_dashboard_contract": "cockpit-status.json",
-      "status": "ready_with_gaps"
+      "status": "ready",
+      "telemetry_reconciled_to_public_contract": true
     },
     "validated_edge_readiness": {
       "candidate_edges_under_observation": 3,
@@ -770,10 +772,11 @@
       "component": "validated_edge_readiness",
       "degraded_reasons": [],
       "edge_pattern_ledger_status": "candidate_edges_under_observation",
-      "gaps": [
-        "no closed proof trades are available to validate observed edges"
-      ],
+      "gaps": [],
       "graduation_rule": "lead_lag_or_divergence_or_source_before_price_evidence_required_before_validated_edge",
+      "observation_reasons": [
+        "no closed proof trades are available yet to graduate observed edges"
+      ],
       "proof_trade_count": 0,
       "qualified_setup_count": 2,
       "safety": {
@@ -799,23 +802,16 @@
         "telegram_command_path_enabled": false,
         "telegram_inbound_authoritative": false
       },
-      "status": "ready_with_gaps",
+      "status": "ready",
+      "validated_edge_absence_is_blocker": false,
       "validated_edge_count": 0
     }
   },
   "degraded_reason_count": 0,
   "degraded_reasons": [],
-  "gap_count": 7,
-  "gaps": [
-    "20-minute local scheduler is not recorded active",
-    "accepted paper orders are older than the Phase 0 stale-order visibility window",
-    "no closed proof trades are available to validate observed edges",
-    "one or more candidate records are missing full Phase 0 identity fields",
-    "runtime artifacts disagree on core PaperOps counts",
-    "scanner artifact is older than 25 minutes outside regular market hours",
-    "some closed paper trades lack complete proof lineage"
-  ],
-  "generated_at": "2026-06-28T20:52:06.904707+00:00",
+  "gap_count": 0,
+  "gaps": [],
+  "generated_at": "2026-06-28T21:07:47.838022+00:00",
   "paper_growth_trial": {
     "actual_calendar_run": true,
     "backfill_used": false,
@@ -836,7 +832,7 @@
   "public_status": {
     "label": "PaperOps execution reliability baseline",
     "message": "Read-only Phase 0 diagnostic baseline for the 30-day paper growth trial.",
-    "state": "ready_with_gaps"
+    "state": "ready"
   },
   "safety": {
     "backfill_allowed": false,
@@ -866,102 +862,102 @@
     "cockpit_status": {
       "exists": true,
       "mtime": "2026-06-28T20:13:09.634339+00:00",
-      "mtime_age_seconds": 2337,
+      "mtime_age_seconds": 3278,
       "path": "data/runtime/cockpit-status.json",
       "size_bytes": 2785916
     },
     "cockpit_status_signature": {
       "exists": true,
       "mtime": "2026-06-28T20:13:09.644256+00:00",
-      "mtime_age_seconds": 2337,
+      "mtime_age_seconds": 3278,
       "path": "data/runtime/cockpit-status.signature.json",
       "size_bytes": 576
     },
     "dashboard_deployment_receipt": {
       "exists": true,
       "mtime": "2026-06-28T18:29:16.403533+00:00",
-      "mtime_age_seconds": 8570,
+      "mtime_age_seconds": 9511,
       "path": "data/runtime/dashboard-deployment-receipt.json",
       "size_bytes": 373
     },
     "paper_closed_trades": {
       "exists": true,
       "mtime": "2026-06-28T20:12:38.747590+00:00",
-      "mtime_age_seconds": 2368,
+      "mtime_age_seconds": 3309,
       "path": "data/runtime/paper_closed_trades.jsonl",
       "size_bytes": 39546
     },
     "paper_orders": {
       "exists": true,
       "mtime": "2026-06-28T20:12:38.747099+00:00",
-      "mtime_age_seconds": 2368,
+      "mtime_age_seconds": 3309,
       "path": "data/runtime/paper_orders.jsonl",
       "size_bytes": 45215
     },
     "paperops_alpaca_paper_submit_enablement": {
       "exists": true,
       "mtime": "2026-06-28T20:12:04.347504+00:00",
-      "mtime_age_seconds": 2402,
+      "mtime_age_seconds": 3343,
       "path": "data/runtime/paperops_alpaca_paper_submit_enablement.json",
       "size_bytes": 3426
     },
     "paperops_autonomous_pass_summary": {
       "exists": true,
       "mtime": "2026-06-28T20:13:09.991818+00:00",
-      "mtime_age_seconds": 2336,
+      "mtime_age_seconds": 3277,
       "path": "data/runtime/paperops_autonomous_pass_summary.json",
       "size_bytes": 189820
     },
     "paperops_opportunity_scan_cadence": {
       "exists": true,
       "mtime": "2026-06-04T19:01:20.172757+00:00",
-      "mtime_age_seconds": 2080246,
+      "mtime_age_seconds": 2081187,
       "path": "data/runtime/paperops_opportunity_scan_cadence.json",
       "size_bytes": 6404
     },
     "paperops_paper_lifecycle_poller": {
       "exists": true,
       "mtime": "2026-06-28T20:12:35.147942+00:00",
-      "mtime_age_seconds": 2371,
+      "mtime_age_seconds": 3312,
       "path": "data/runtime/paperops_paper_lifecycle_poller.json",
       "size_bytes": 31594
     },
     "paperops_qctrl_paper_consultation": {
       "exists": true,
       "mtime": "2026-06-28T20:12:03.257642+00:00",
-      "mtime_age_seconds": 2403,
+      "mtime_age_seconds": 3344,
       "path": "data/runtime/paperops_qctrl_paper_consultation.json",
       "size_bytes": 4710
     },
     "phase7_proof_lifecycle_monitor": {
       "exists": true,
       "mtime": "2026-06-28T20:12:05.282289+00:00",
-      "mtime_age_seconds": 2401,
+      "mtime_age_seconds": 3342,
       "path": "data/runtime/phase7_proof_lifecycle_monitor.json",
       "size_bytes": 38955
     },
     "phase7_proof_order_staging": {
       "exists": true,
       "mtime": "2026-06-28T20:12:04.182261+00:00",
-      "mtime_age_seconds": 2402,
+      "mtime_age_seconds": 3343,
       "path": "data/runtime/phase7_proof_order_staging.json",
       "size_bytes": 76860
     },
     "phase7_qualified_setup_ledger": {
       "exists": true,
       "mtime": "2026-06-28T20:12:04.015778+00:00",
-      "mtime_age_seconds": 2402,
+      "mtime_age_seconds": 3343,
       "path": "data/runtime/phase7_qualified_setup_ledger.json",
       "size_bytes": 68688
     },
     "quantum_mandatory_review_gate": {
       "exists": true,
       "mtime": "2026-06-28T18:27:14.338919+00:00",
-      "mtime_age_seconds": 8692,
+      "mtime_age_seconds": 9633,
       "path": "data/runtime/quantum_mandatory_review_gate.json",
       "size_bytes": 10667
     }
   },
-  "status": "ready_with_gaps",
+  "status": "ready",
   "validation_errors": []
 }

@@ -35,7 +35,7 @@
     "trust_score_update_created": false
   },
   "broker_write_count": 0,
-  "generated_at": "2026-06-28T20:52:14.309428+00:00",
+  "generated_at": "2026-06-28T21:07:56.280361+00:00",
   "live_capital_enabled": false,
   "paper_order_created_count": 0,
   "proof_credit_allowed": false,
@@ -51,11 +51,12 @@
       "current_value": "unchanged",
       "evidence_refs": [
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27"
       ],
       "expected_effect": "model_weight_review_only_no_update",
       "overfit_risk": "medium",
-      "proposal_id": "qsase-proposal:a8cbd7525dfb034f97ad",
+      "proposal_id": "qsase-proposal:4ab5511ac56b5af5567b",
       "proposal_state": "ready_pending_learning_approval",
       "proposal_type": "hold_model_weight",
       "proposed_value": "unchanged_until_provider_readiness_validated",
@@ -65,7 +66,7 @@
       "shadow_evidence_count": 0,
       "source_noise_risk": "medium",
       "suggested_delta": 0.0,
-      "supporting_record_count": 2,
+      "supporting_record_count": 3,
       "target_id": "local_gemma_frontier_gemini_quantum_review_stack",
       "target_surface": "model_stack"
     }

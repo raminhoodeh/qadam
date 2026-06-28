@@ -32,103 +32,12 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-28T20:52:14.638653+00:00",
+  "generated_at": "2026-06-28T21:07:56.601908+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
-  "repair_queue_count": 20,
+  "repair_queue_count": 14,
   "rows": [
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "20-minute local scheduler is not recorded active",
-      "repair_queue_id": "qsase-repair:b5ea6bb0d3fe3fd7ea82",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "accepted paper orders are older than the Phase 0 stale-order visibility window",
-      "repair_queue_id": "qsase-repair:de227cb2a65baec008cd",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "no closed proof trades are available to validate observed edges",
-      "repair_queue_id": "qsase-repair:89db492913620e28c256",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "one or more candidate records are missing full Phase 0 identity fields",
-      "repair_queue_id": "qsase-repair:97f21dd125153d594591",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "runtime artifacts disagree on core PaperOps counts",
-      "repair_queue_id": "qsase-repair:5494d969561f29796b26",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "scanner artifact is older than 25 minutes outside regular market hours",
-      "repair_queue_id": "qsase-repair:ed59a66d36be64a53fed",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "operational_phase0",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "some closed paper trades lack complete proof lineage",
-      "repair_queue_id": "qsase-repair:57edcdf47b646600d917",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
     {
       "applied_strategy_change": false,
       "artifact_refs": [
@@ -164,6 +73,19 @@
       "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
       "reason": "qctrl_fire_opal_ibm_readiness_stale",
       "repair_queue_id": "qsase-repair:ab4b08ee861452409f92",
+      "severity": "gap",
+      "source": "qsase_self_model",
+      "state": "repair_or_review_needed"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qsase_self_model.json#degraded_components"
+      ],
+      "component": "quantum_state",
+      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
+      "reason": "quantum_provider_call_readiness_recorded_context_only",
+      "repair_queue_id": "qsase-repair:586f1a8c4ccd23806dd1",
       "severity": "gap",
       "source": "qsase_self_model",
       "state": "repair_or_review_needed"
@@ -236,12 +158,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:cc47cd5e262319fb1c80"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:c5f985f4767bf2952bce"
       ],
       "component": "strategy_family",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "decrease_strategy_weight",
-      "repair_queue_id": "qsase-learning-approval:cc47cd5e262319fb1c80",
+      "repair_queue_id": "qsase-learning-approval:c5f985f4767bf2952bce",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -249,12 +171,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:5f5446c0c63388ad4910"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:6b491498e298cdbc600c"
       ],
       "component": "strategy_family",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "decrease_strategy_weight",
-      "repair_queue_id": "qsase-learning-approval:5f5446c0c63388ad4910",
+      "repair_queue_id": "qsase-learning-approval:6b491498e298cdbc600c",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -262,12 +184,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:99cb3da464208fae1024"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:0fcf5c2c22ba3e4716ce"
       ],
       "component": "source_universe",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "source_coverage_repair_request",
-      "repair_queue_id": "qsase-learning-approval:99cb3da464208fae1024",
+      "repair_queue_id": "qsase-learning-approval:0fcf5c2c22ba3e4716ce",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -275,12 +197,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:014c3836006122e2c541"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:4febdd1baf763f0f914c"
       ],
       "component": "model_stack",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "hold_model_weight",
-      "repair_queue_id": "qsase-learning-approval:014c3836006122e2c541",
+      "repair_queue_id": "qsase-learning-approval:4febdd1baf763f0f914c",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -288,12 +210,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:fd277194570911ea817d"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:2289adfe07ed47271990"
       ],
       "component": "akber_filter",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "tighten_akber_filter",
-      "repair_queue_id": "qsase-learning-approval:fd277194570911ea817d",
+      "repair_queue_id": "qsase-learning-approval:2289adfe07ed47271990",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"

@@ -4,7 +4,7 @@
   "component": {
     "accepted_order_policy_records": [
       {
-        "age_seconds": 74653,
+        "age_seconds": 75594,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -12,7 +12,7 @@
         "symbol": "ITA"
       },
       {
-        "age_seconds": 74652,
+        "age_seconds": 75593,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -20,7 +20,7 @@
         "symbol": "SMH"
       },
       {
-        "age_seconds": 28025,
+        "age_seconds": 28966,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -28,7 +28,7 @@
         "symbol": "ITA"
       },
       {
-        "age_seconds": 28023,
+        "age_seconds": 28964,
         "client_order_id_present": true,
         "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
         "stale_after_seconds": 14400,
@@ -36,6 +36,7 @@
         "symbol": "SMH"
       }
     ],
+    "ambiguous_accepted_order_count": 0,
     "broker_status_counts": {
       "accepted": 4
     },
@@ -44,9 +45,7 @@
     "component": "paper_lifecycle",
     "degraded_reasons": [],
     "fill_event_count": 0,
-    "gaps": [
-      "accepted paper orders are older than the Phase 0 stale-order visibility window"
-    ],
+    "gaps": [],
     "mirrored_submitted_order_count": 4,
     "paper_order_poll_failed_count": 0,
     "paper_order_poll_succeeded_count": 4,
@@ -103,9 +102,10 @@
     "source_generated_at": "2026-06-28T20:12:32.537320+00:00",
     "source_status": "paper_lifecycle_poll_recorded",
     "stale_accepted_order_count": 4,
-    "status": "ready_with_gaps"
+    "stale_accepted_order_policy_recorded": true,
+    "status": "ready"
   },
-  "generated_at": "2026-06-28T20:52:06.904707+00:00",
+  "generated_at": "2026-06-28T21:07:47.838022+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {
@@ -132,5 +132,5 @@
     "telegram_inbound_authoritative": false
   },
   "schema_version": 1,
-  "status": "ready_with_gaps"
+  "status": "ready"
 }

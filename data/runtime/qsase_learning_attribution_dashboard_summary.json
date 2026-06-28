@@ -18,7 +18,7 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
@@ -26,7 +26,7 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
@@ -34,7 +34,7 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
@@ -42,7 +42,7 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
@@ -50,7 +50,7 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
@@ -58,7 +58,7 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
@@ -66,20 +66,20 @@
     {
       "applied": false,
       "attribution": "source_universe",
-      "cause": "rejected_correctly",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight"
     }
   ],
   "essay_free": true,
-  "generated_at": "2026-06-28T20:52:14.307811+00:00",
+  "generated_at": "2026-06-28T21:07:56.278740+00:00",
   "latest_attribution": "self_healing_repair_loop",
   "latest_attribution_state": "recorded_proposal_only",
   "latest_cause": "route_defect_prevented_evaluation",
   "latest_evidence_class": "system_defect",
   "latest_outcome": "system_defect",
-  "latest_proposal": "paperops_gate_precheck_review",
+  "latest_proposal": "source_coverage_repair_request",
   "live_capital_boundary": "live capital disabled",
   "live_send_allowed": false,
   "no_broker_writes": true,
@@ -94,7 +94,7 @@
   "schema_version": "qsase_component_attribution_ledger.v1",
   "shadow_evidence_count": 48,
   "status": "qsase_learning_attribution_ledger_degraded",
-  "system_defect_record_count": 12,
+  "system_defect_record_count": 6,
   "top_blamed_component": "guarded_alpaca_paper_route",
   "top_credited_component": "source_universe"
 }

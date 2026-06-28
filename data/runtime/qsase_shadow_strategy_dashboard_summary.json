@@ -5,7 +5,7 @@
   "authority_state": "shadow_replay_research_only_no_order",
   "candidate_for_router_count": 0,
   "command_disabled": true,
-  "generated_at": "2026-06-28T20:52:13.755953+00:00",
+  "generated_at": "2026-06-28T21:07:55.730794+00:00",
   "latest_blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
@@ -34,7 +34,7 @@
     },
     {
       "label": "Rejected variants",
-      "value": 48
+      "value": 40
     },
     {
       "label": "Router candidates",
@@ -49,7 +49,7 @@
       "value": "no order created"
     }
   ],
-  "top_rejected_variant": "baseline_current_strategy",
-  "top_shadow_replay_id": "qsase-shadow:1b77383e89ef7c18021d",
+  "top_rejected_variant": "forward_watch_only",
+  "top_shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800",
   "top_variant": "akber_strict_veto"
 }

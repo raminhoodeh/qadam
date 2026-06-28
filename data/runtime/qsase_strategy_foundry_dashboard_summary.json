@@ -3,7 +3,7 @@
   "authority_flags_false": true,
   "authority_state": "strategy_hypothesis_only_no_execution",
   "command_disabled": true,
-  "generated_at": "2026-06-28T20:52:13.422659+00:00",
+  "generated_at": "2026-06-28T21:07:55.422714+00:00",
   "latest_blocker": "no_strategy_hypotheses_promoted_current_inputs,nonlinear_quantum_lab_degraded,rejected_or_shadow_only_hypotheses_present",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
@@ -46,5 +46,5 @@
   ],
   "top_hypothesis": null,
   "top_hypothesis_type": null,
-  "top_rejection_reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route,nonlinear_not_incremental,quantum_did_not_upgrade_research_confidence"
+  "top_rejection_reason": "nonlinear_not_incremental,quantum_did_not_upgrade_research_confidence"
 }

@@ -119,7 +119,7 @@
     },
     "backfill_allowed": false,
     "calendar_boundary_violation_count": 0,
-    "generated_at": "2026-06-28T20:52:07.171395+00:00",
+    "generated_at": "2026-06-28T21:07:48.161754+00:00",
     "historical_backtests_remain_historical": true,
     "paper_growth_trial": {
       "actual_calendar_run": true,
@@ -178,7 +178,7 @@
       "trust_score_update_created": false
     },
     "command_disabled": true,
-    "generated_at": "2026-06-28T20:52:07.171395+00:00",
+    "generated_at": "2026-06-28T21:07:48.161754+00:00",
     "live_send_allowed": false,
     "public_safe": true,
     "rows": [
@@ -266,7 +266,7 @@
       "role": "Source and resource registry reference"
     }
   ],
-  "generated_at": "2026-06-28T20:52:07.171395+00:00",
+  "generated_at": "2026-06-28T21:07:48.161754+00:00",
   "governance_review_queue": {
     "artifact_type": "qsase_governance_review_queue",
     "authority": {
@@ -309,7 +309,7 @@
       "trade_candidate_created": false,
       "trust_score_update_created": false
     },
-    "generated_at": "2026-06-28T20:52:07.171395+00:00",
+    "generated_at": "2026-06-28T21:07:48.161754+00:00",
     "governance_review_queue_count": 0,
     "proposal_applied_count": 0,
     "proposal_approved_count": 0,
@@ -466,7 +466,7 @@
         "surface": "proof_standards"
       }
     ],
-    "generated_at": "2026-06-28T20:52:07.171395+00:00",
+    "generated_at": "2026-06-28T21:07:48.161754+00:00",
     "proposal_applied_count": 0,
     "proposal_first": true,
     "schema_version": "qsase_governance_safety_contract.v1",
@@ -517,7 +517,7 @@
       "trust_score_update_created": false
     },
     "backtest_to_proof_allowed": false,
-    "generated_at": "2026-06-28T20:52:07.171395+00:00",
+    "generated_at": "2026-06-28T21:07:48.161754+00:00",
     "paper_proof_ledger": {
       "closed_proof_trade_count": 0,
       "qualified_setup_count": 2,
@@ -579,9 +579,9 @@
     },
     "qsase_phase0_paperops_reliability_baseline": {
       "exists": true,
-      "mtime": "2026-06-28T20:52:06.915892+00:00",
+      "mtime": "2026-06-28T21:07:47.850687+00:00",
       "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
-      "size_bytes": 32980
+      "size_bytes": 32600
     }
   },
   "status": "governance_safety_ready",

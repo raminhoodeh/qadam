@@ -2,14 +2,14 @@
   "artifact_type": "qsase_self_model_dashboard_summary",
   "authority_flags_false": true,
   "command_disabled": true,
-  "degraded_component_count": 12,
-  "generated_at": "2026-06-28T20:52:07.323335+00:00",
+  "degraded_component_count": 6,
+  "generated_at": "2026-06-28T21:07:48.347680+00:00",
   "live_send_allowed": false,
-  "missing_component_count": 1,
+  "missing_component_count": 0,
   "public_safe": true,
-  "repair_request_count": 12,
+  "repair_request_count": 6,
   "schema_version": "qsase_self_model.v1",
-  "status": "qsase_self_model_blocked",
+  "status": "qsase_self_model_ready_with_gaps",
   "summary_rows": [
     {
       "label": "Source state",
@@ -21,11 +21,11 @@
     },
     {
       "label": "Quantum",
-      "value": "quantum_health_blocked"
+      "value": "quantum_health_degraded"
     },
     {
       "label": "PaperOps",
-      "value": "execution_health_degraded"
+      "value": "execution_health_ready"
     },
     {
       "label": "Risk",

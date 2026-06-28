@@ -83,6 +83,27 @@ KNOWN_STRATEGY_FAMILIES = {
     },
 }
 
+PAPERABLE_PROXY_EXPRESSIONS = {
+    "CL=F": {
+        "primary_proxy": "USO",
+        "alternate_proxies": ["XLE"],
+        "proxy_set": ["USO", "XLE", "crude_oil_proxy"],
+        "reason": "CL=F is observed as crude-oil context; guarded paper review must express through paperable crude/energy proxies.",
+    },
+    "SI=F": {
+        "primary_proxy": "SLV",
+        "alternate_proxies": [],
+        "proxy_set": ["SLV", "silver_proxy"],
+        "reason": "SI=F is observed as silver context; guarded paper review must express through SLV.",
+    },
+    "GC=F": {
+        "primary_proxy": "GLD",
+        "alternate_proxies": [],
+        "proxy_set": ["GLD", "gold_proxy"],
+        "reason": "GC=F is observed as gold context; guarded paper review must express through GLD.",
+    },
+}
+
 FOUNDRY_AUTHORITY_FLAGS = {
     "strategy_approved": False,
     "strategy_family_active": False,
@@ -383,10 +404,13 @@ def _paperability(pattern: dict[str, Any], family_map: dict[str, Any]) -> dict[s
     blockers: list[str] = []
     state = "paper_review_possible_after_router"
     allowed_proxy_set = []
+    proxy_expression = PAPERABLE_PROXY_EXPRESSIONS.get(instrument)
     family_key = family_map.get("mapped_existing_family")
     if family_key and family_key in KNOWN_STRATEGY_FAMILIES:
         allowed_proxy_set = KNOWN_STRATEGY_FAMILIES[family_key]["allowed_proxy_set"]
-    if "observable_not_paper_route_ready" in route_fit or instrument.endswith("=F"):
+    if proxy_expression:
+        allowed_proxy_set = sorted(set(allowed_proxy_set + list(proxy_expression["proxy_set"])))
+    elif "observable_not_paper_route_ready" in route_fit or instrument.endswith("=F"):
         state = "blocked_observable_only"
         blockers.append("instrument_is_observable_or_futures_symbol_not_guarded_paper_route")
     if not instrument:
@@ -398,6 +422,11 @@ def _paperability(pattern: dict[str, Any], family_map: dict[str, Any]) -> dict[s
     return {
         "paperability_state": state,
         "primary_instrument": instrument,
+        "observed_market_expression": instrument,
+        "paperable_execution_expression": proxy_expression.get("primary_proxy") if proxy_expression else instrument,
+        "paperable_proxy_expression": proxy_expression,
+        "proxy_review_required": bool(proxy_expression),
+        "proxy_review_only_no_order_authority": True,
         "paper_route_required": True,
         "allowed_proxy_set": allowed_proxy_set,
         "paper_review_candidate": state == "paper_review_possible_after_router",
@@ -649,9 +678,13 @@ def _build_hypothesis(
             "minimum_source_quorum": 2,
         },
         "market_expression": {
-            "primary_instrument": pattern.get("market_expression", {}).get("instrument"),
+            "primary_instrument": paperability.get("paperable_execution_expression")
+            or pattern.get("market_expression", {}).get("instrument"),
+            "observed_market_expression": pattern.get("market_expression", {}).get("instrument"),
             "asset_class": pattern.get("market_expression", {}).get("asset_class"),
             "allowed_proxy_set": paperability["allowed_proxy_set"],
+            "paperable_execution_expression": paperability.get("paperable_execution_expression"),
+            "proxy_review_required": paperability.get("proxy_review_required"),
             "excluded_instruments": [],
             "paper_route_required": True,
         },

@@ -34,13 +34,13 @@
     "trade_candidate_creation_allowed": false
   },
   "filter_contribution_attribution": {
-    "audit_only_count": 0,
+    "audit_only_count": 4,
     "claim_quality": "no_performance_claim_current_inputs",
-    "hold_count": 0,
+    "hold_count": 8,
     "pass_count": 0,
-    "veto_count": 16
+    "veto_count": 4
   },
-  "generated_at": "2026-06-28T20:52:13.591294+00:00",
+  "generated_at": "2026-06-28T21:07:55.571660+00:00",
   "historical_filter_replay_exists": true,
   "historical_improvement_observed": false,
   "historical_memory_status": "qsase_historical_source_price_memory_degraded",

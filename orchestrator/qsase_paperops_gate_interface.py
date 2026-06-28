@@ -403,14 +403,17 @@ def _idempotency_material(router_decision: dict[str, Any], context: dict[str, An
     key = _hash_id([SCHEMA_VERSION, seed], "qsase-paperops-review")
     why = context["self_model"].get("why_not_trading_now", {})
     router_hard_vetoes = router_decision.get("hard_vetoes", [])
-    duplicate_runtime = why.get("category") == "duplicate_or_idempotency_hold"
     duplicate_router = any("idempotency" in str(veto) or "duplicate" in str(veto) for veto in router_hard_vetoes)
+    runtime_duplicate_context = why.get("category") == "duplicate_or_idempotency_hold"
     return {
         "idempotency_namespace": "qsase_paperops_review",
         "idempotency_seed": seed,
         "idempotency_key": key,
-        "duplicate_idempotency_detected": bool(duplicate_runtime or duplicate_router),
-        "duplicate_idempotency_state": why.get("reason") if duplicate_runtime else "not_detected_in_qsase_gate",
+        "duplicate_idempotency_detected": bool(duplicate_router),
+        "duplicate_idempotency_state": "router_duplicate_veto" if duplicate_router else "not_detected_in_qsase_gate",
+        "runtime_duplicate_context_recorded": runtime_duplicate_context,
+        "runtime_duplicate_context_reason": why.get("reason") if runtime_duplicate_context else None,
+        "candidate_specific_duplicate_check_required_downstream": True,
         "idempotency_source": "qsase_router_plus_self_model",
     }
 

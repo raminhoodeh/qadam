@@ -24,15 +24,14 @@
     },
     "component": "telemetry_consistency",
     "degraded_reasons": [],
-    "gaps": [
-      "runtime artifacts disagree on core PaperOps counts"
-    ],
+    "gaps": [],
     "mismatched_count_keys": [
       "open_position_count",
       "closed_paper_trade_count",
       "submitted_paper_order_count"
     ],
     "missing_source_artifacts": [],
+    "non_contract_source_drift_count": 3,
     "safety": {
       "backfill_allowed": false,
       "broker_post_allowed": false,
@@ -57,9 +56,10 @@
       "telegram_inbound_authoritative": false
     },
     "single_public_dashboard_contract": "cockpit-status.json",
-    "status": "ready_with_gaps"
+    "status": "ready",
+    "telemetry_reconciled_to_public_contract": true
   },
-  "generated_at": "2026-06-28T20:52:06.904707+00:00",
+  "generated_at": "2026-06-28T21:07:47.838022+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {
@@ -86,5 +86,5 @@
     "telegram_inbound_authoritative": false
   },
   "schema_version": 1,
-  "status": "ready_with_gaps"
+  "status": "ready"
 }

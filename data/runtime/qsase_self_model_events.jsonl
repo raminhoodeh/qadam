@@ -2,3 +2,7 @@
 {"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T19:03:29.604639+00:00", "public_safe": true, "status": "qsase_self_model_blocked"}
 {"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T20:51:55.021873+00:00", "public_safe": true, "status": "qsase_self_model_blocked"}
 {"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T20:52:07.323335+00:00", "public_safe": true, "status": "qsase_self_model_blocked"}
+{"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T21:03:34.343507+00:00", "public_safe": true, "status": "qsase_self_model_blocked"}
+{"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T21:04:01.781757+00:00", "public_safe": true, "status": "qsase_self_model_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T21:06:48.165481+00:00", "public_safe": true, "status": "qsase_self_model_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_self_model_written", "generated_at": "2026-06-28T21:07:48.347680+00:00", "public_safe": true, "status": "qsase_self_model_ready_with_gaps"}

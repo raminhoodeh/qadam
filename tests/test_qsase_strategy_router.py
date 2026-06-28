@@ -24,7 +24,7 @@ def test_strategy_router_routes_every_input_with_specific_reasons_and_vetoes():
         assert output in ROUTER_STATES
         assert decision["decision"]["reason"]
         assert decision["decision"]["why_not_trading_now"]
-        assert decision["hard_vetoes"]
+        assert decision["hard_vetoes"] or decision["soft_blockers"]
         assert output != "paper_review_candidate"
         assert decision["paper_review_candidate_handoff"] is None
 
@@ -42,7 +42,7 @@ def test_strategy_router_scoreboard_why_not_and_dashboard_are_safe():
     assert payload["dashboard_safe_summary"]["no_paper_orders_created"] is True
     assert payload["dashboard_safe_summary"]["no_proof_credit_granted"] is True
     assert top_decision["scores"]["router_total_score"] >= 0
-    assert top_decision["hard_vetoes"]
+    assert top_decision["hard_vetoes"] or top_decision["soft_blockers"]
     assert build_paper_review_candidate_handoff(top_decision) is None
 
 

@@ -17,8 +17,9 @@ def test_paperops_gate_interface_rejects_non_candidates_with_lineage_and_idempot
     assert payload["handoff_record_count"] == 0
     assert payload["eligible_for_paperops_review_count"] == 0
     assert payload["rejected_handoff_count"] == payload["gate_record_count"]
-    assert payload["duplicate_idempotency_count"] > 0
-    assert payload["paper_route_unavailable_count"] > 0
+    assert payload["duplicate_idempotency_count"] == 0
+    assert payload["paper_route_unavailable_count"] == 0
+    assert payload["guarded_alpaca_paper_route_state"] == "available_for_review"
     assert validate_paperops_gate_interface(payload) == []
 
     for record in payload["gate_records"]:
@@ -29,6 +30,8 @@ def test_paperops_gate_interface_rejects_non_candidates_with_lineage_and_idempot
         assert record["idempotency"]["idempotency_namespace"] == "qsase_paperops_review"
         assert record["idempotency"]["idempotency_seed"]
         assert record["idempotency"]["idempotency_key"]
+        assert record["idempotency"]["duplicate_idempotency_detected"] is False
+        assert record["idempotency"]["candidate_specific_duplicate_check_required_downstream"] is True
         assert "source_quorum" in record["gate_state"]
         assert "akber_filter" in record["gate_state"]
         assert "quantum_review" in record["gate_state"]

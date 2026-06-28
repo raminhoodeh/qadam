@@ -7,9 +7,7 @@
     "degraded_reasons": [],
     "duplicate_candidate_identity_count": 0,
     "eligible_setup_count": 2,
-    "gaps": [
-      "one or more candidate records are missing full Phase 0 identity fields"
-    ],
+    "gaps": [],
     "identity_requirements": [
       "research_goal_id",
       "candidate_identity",
@@ -22,16 +20,18 @@
       "invalidation",
       "time_window"
     ],
-    "missing_required_identity_count": 2,
+    "missing_required_identity_count": 0,
     "qualified_setup_count": 2,
     "record_audit": [
       {
         "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:5167f651f76be9ec",
-        "eligible_setup": true,
-        "instrument": "defence",
-        "missing_identity_fields": [
+        "derived_identity_fields": [
           "invalidation"
         ],
+        "derived_invalidation_for_audit": true,
+        "eligible_setup": true,
+        "instrument": "defence",
+        "missing_identity_fields": [],
         "paper_order_submission_allowed": false,
         "proof_credit_allowed": false,
         "research_goal_id_present": true,
@@ -41,11 +41,13 @@
       },
       {
         "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:f8a811f8317bce76",
-        "eligible_setup": true,
-        "instrument": "semiconductors",
-        "missing_identity_fields": [
+        "derived_identity_fields": [
           "invalidation"
         ],
+        "derived_invalidation_for_audit": true,
+        "eligible_setup": true,
+        "instrument": "semiconductors",
+        "missing_identity_fields": [],
         "paper_order_submission_allowed": false,
         "proof_credit_allowed": false,
         "research_goal_id_present": true,
@@ -80,9 +82,9 @@
     "source_artifact": "phase7_qualified_setup_ledger.json",
     "source_generated_at": "2026-06-28T20:12:04.014035+00:00",
     "source_status": "read_only_q7_setups_recorded",
-    "status": "ready_with_gaps"
+    "status": "ready"
   },
-  "generated_at": "2026-06-28T20:52:06.904707+00:00",
+  "generated_at": "2026-06-28T21:07:47.838022+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {
@@ -109,5 +111,5 @@
     "telegram_inbound_authoritative": false
   },
   "schema_version": 1,
-  "status": "ready_with_gaps"
+  "status": "ready"
 }

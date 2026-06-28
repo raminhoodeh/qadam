@@ -129,14 +129,14 @@
     "artifact_type": "qsase_self_model_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "degraded_component_count": 12,
-    "generated_at": "2026-06-28T20:52:07.323335+00:00",
+    "degraded_component_count": 6,
+    "generated_at": "2026-06-28T21:07:48.347680+00:00",
     "live_send_allowed": false,
-    "missing_component_count": 1,
+    "missing_component_count": 0,
     "public_safe": true,
-    "repair_request_count": 12,
+    "repair_request_count": 6,
     "schema_version": "qsase_self_model.v1",
-    "status": "qsase_self_model_blocked",
+    "status": "qsase_self_model_ready_with_gaps",
     "summary_rows": [
       {
         "label": "Source state",
@@ -148,11 +148,11 @@
       },
       {
         "label": "Quantum",
-        "value": "quantum_health_blocked"
+        "value": "quantum_health_degraded"
       },
       {
         "label": "PaperOps",
-        "value": "execution_health_degraded"
+        "value": "execution_health_ready"
       },
       {
         "label": "Risk",
@@ -170,7 +170,7 @@
     "title": "QSASE Self-Model"
   },
   "dashboard_state": {
-    "cockpit_status_age_seconds": 2342,
+    "cockpit_status_age_seconds": 3283,
     "cockpit_status_freshness": "fresh",
     "cockpit_status_generated_at": "2026-06-28T20:13:04.869312+00:00",
     "dashboard_export_freshness": "from_cockpit_status_runtime",
@@ -307,43 +307,8 @@
     "source_universe_count": 35,
     "status": "data_health_degraded"
   },
-  "degraded_component_count": 12,
+  "degraded_component_count": 6,
   "degraded_components": [
-    {
-      "component": "operational_phase0",
-      "reason": "20-minute local scheduler is not recorded active",
-      "severity": "gap"
-    },
-    {
-      "component": "operational_phase0",
-      "reason": "accepted paper orders are older than the Phase 0 stale-order visibility window",
-      "severity": "gap"
-    },
-    {
-      "component": "operational_phase0",
-      "reason": "no closed proof trades are available to validate observed edges",
-      "severity": "gap"
-    },
-    {
-      "component": "operational_phase0",
-      "reason": "one or more candidate records are missing full Phase 0 identity fields",
-      "severity": "gap"
-    },
-    {
-      "component": "operational_phase0",
-      "reason": "runtime artifacts disagree on core PaperOps counts",
-      "severity": "gap"
-    },
-    {
-      "component": "operational_phase0",
-      "reason": "scanner artifact is older than 25 minutes outside regular market hours",
-      "severity": "gap"
-    },
-    {
-      "component": "operational_phase0",
-      "reason": "some closed paper trades lack complete proof lineage",
-      "severity": "gap"
-    },
     {
       "component": "source_state",
       "reason": "missing_optional_source_credentials",
@@ -357,6 +322,11 @@
     {
       "component": "quantum_state",
       "reason": "qctrl_fire_opal_ibm_readiness_stale",
+      "severity": "gap"
+    },
+    {
+      "component": "quantum_state",
+      "reason": "quantum_provider_call_readiness_recorded_context_only",
       "severity": "gap"
     },
     {
@@ -384,12 +354,12 @@
     "open_position_count": 2,
     "paper_endpoint_confirmed": true,
     "paperops_readiness_status": "ready_for_full_paper_ops",
-    "phase0_gap_count": 7,
-    "phase0_status": "ready_with_gaps",
-    "status": "execution_health_degraded",
+    "phase0_gap_count": 0,
+    "phase0_status": "ready",
+    "status": "execution_health_ready",
     "submitted_paper_order_count": 0
   },
-  "generated_at": "2026-06-28T20:52:07.323335+00:00",
+  "generated_at": "2026-06-28T21:07:48.347680+00:00",
   "governance_status": "governance_safety_ready",
   "learning_health": {
     "artifact_statuses": {
@@ -426,10 +396,8 @@
     "validated_edge_count": 0
   },
   "live_capital_enabled": false,
-  "missing_component_count": 1,
-  "missing_components": [
-    "llm_provider_probes"
-  ],
+  "missing_component_count": 0,
+  "missing_components": [],
   "model_health": {
     "frontier_gemini_available": true,
     "gaps": [
@@ -489,7 +457,8 @@
   "public_safe": true,
   "quantum_health": {
     "gaps": [
-      "qctrl_fire_opal_ibm_readiness_stale"
+      "qctrl_fire_opal_ibm_readiness_stale",
+      "quantum_provider_call_readiness_recorded_context_only"
     ],
     "hardware_submission_allowed_count": 0,
     "hardware_submitted_count": 0,
@@ -500,7 +469,7 @@
     "quantum_output_is_approval": false,
     "quantum_paper_order_authority": false,
     "quantum_provider_call_allowed_count": 1,
-    "status": "quantum_health_blocked"
+    "status": "quantum_health_degraded"
   },
   "quantum_outputs_are_approvals": false,
   "quantum_state": {
@@ -533,78 +502,8 @@
     "qctrl_readiness": "device_probe_submitted",
     "quantum_mandatory_review_gate_status": "quantum_review_gate_passed"
   },
-  "repair_request_count": 12,
+  "repair_request_count": 6,
   "repair_requests": [
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "20-minute local scheduler is not recorded active",
-      "repair_request_id": "qsase-1-repair-001",
-      "repair_type": "review_request"
-    },
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "accepted paper orders are older than the Phase 0 stale-order visibility window",
-      "repair_request_id": "qsase-1-repair-002",
-      "repair_type": "stale_artifact_refresh_request"
-    },
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "no closed proof trades are available to validate observed edges",
-      "repair_request_id": "qsase-1-repair-003",
-      "repair_type": "review_request"
-    },
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "one or more candidate records are missing full Phase 0 identity fields",
-      "repair_request_id": "qsase-1-repair-004",
-      "repair_type": "review_request"
-    },
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "runtime artifacts disagree on core PaperOps counts",
-      "repair_request_id": "qsase-1-repair-005",
-      "repair_type": "review_request"
-    },
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "scanner artifact is older than 25 minutes outside regular market hours",
-      "repair_request_id": "qsase-1-repair-006",
-      "repair_type": "stale_artifact_refresh_request"
-    },
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "operational_phase0",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "some closed paper trades lack complete proof lineage",
-      "repair_request_id": "qsase-1-repair-007",
-      "repair_type": "review_request"
-    },
     {
       "broker_write_allowed": false,
       "command_authority": false,
@@ -612,7 +511,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "missing_optional_source_credentials",
-      "repair_request_id": "qsase-1-repair-008",
+      "repair_request_id": "qsase-1-repair-001",
       "repair_type": "missing_source_credential_review"
     },
     {
@@ -622,7 +521,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "llm_provider_probes_artifact_missing",
-      "repair_request_id": "qsase-1-repair-009",
+      "repair_request_id": "qsase-1-repair-002",
       "repair_type": "review_request"
     },
     {
@@ -632,8 +531,18 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "qctrl_fire_opal_ibm_readiness_stale",
-      "repair_request_id": "qsase-1-repair-010",
+      "repair_request_id": "qsase-1-repair-003",
       "repair_type": "stale_artifact_refresh_request"
+    },
+    {
+      "broker_write_allowed": false,
+      "command_authority": false,
+      "component": "quantum_state",
+      "live_capital_enabled": false,
+      "next_allowed_action": "queue_human_or_approved_self_healing_review",
+      "reason": "quantum_provider_call_readiness_recorded_context_only",
+      "repair_request_id": "qsase-1-repair-004",
+      "repair_type": "quantum_readiness_repair_request"
     },
     {
       "broker_write_allowed": false,
@@ -642,7 +551,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "risk_reviews_blocked_or_shadow_only",
-      "repair_request_id": "qsase-1-repair-011",
+      "repair_request_id": "qsase-1-repair-005",
       "repair_type": "review_request"
     },
     {
@@ -652,7 +561,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "no_validated_edges_yet",
-      "repair_request_id": "qsase-1-repair-012",
+      "repair_request_id": "qsase-1-repair-006",
       "repair_type": "review_request"
     }
   ],
@@ -693,48 +602,48 @@
       "alpaca_paper_mirror": {
         "exists": true,
         "mtime": "2026-06-28T20:12:38.774649+00:00",
-        "mtime_age_seconds": 2368,
+        "mtime_age_seconds": 3309,
         "path": "data/runtime/alpaca_paper_mirror.json",
         "size_bytes": 2574
       },
       "cockpit_status": {
         "exists": true,
         "mtime": "2026-06-28T20:13:09.634339+00:00",
-        "mtime_age_seconds": 2337,
+        "mtime_age_seconds": 3278,
         "path": "data/runtime/cockpit-status.json",
         "size_bytes": 2785916
       },
       "cockpit_status_signature": {
         "exists": true,
         "mtime": "2026-06-28T20:13:09.644256+00:00",
-        "mtime_age_seconds": 2337,
+        "mtime_age_seconds": 3278,
         "path": "data/runtime/cockpit-status.signature.json",
         "size_bytes": 576
       },
       "daily_telegram_learning_brief": {
         "exists": true,
         "mtime": "2026-06-28T18:28:02.747744+00:00",
-        "mtime_age_seconds": 8644,
+        "mtime_age_seconds": 9585,
         "path": "data/runtime/daily_telegram_learning_brief.json",
         "size_bytes": 5900
       },
       "edge_memory_ledger": {
         "exists": true,
         "mtime": "2026-06-28T18:27:24.086510+00:00",
-        "mtime_age_seconds": 8683,
+        "mtime_age_seconds": 9624,
         "path": "data/runtime/edge_memory_ledger.json",
         "size_bytes": 29958
       },
       "edge_pattern_ledger": {
         "exists": true,
         "mtime": "2026-06-28T20:12:56.887322+00:00",
-        "mtime_age_seconds": 2350,
+        "mtime_age_seconds": 3291,
         "path": "data/runtime/edge_pattern_ledger.json",
         "size_bytes": 16375
       },
       "governance_safety_contract": {
         "exists": true,
-        "mtime": "2026-06-28T20:52:07.179076+00:00",
+        "mtime": "2026-06-28T21:07:48.172215+00:00",
         "mtime_age_seconds": 0,
         "path": "data/runtime/qsase_governance_safety_contract.json",
         "size_bytes": 20813
@@ -742,175 +651,175 @@
       "hypothesis_lifecycle": {
         "exists": true,
         "mtime": "2026-06-28T18:27:33.760756+00:00",
-        "mtime_age_seconds": 8673,
+        "mtime_age_seconds": 9614,
         "path": "data/runtime/hypothesis_lifecycle.json",
         "size_bytes": 14034
       },
       "local_research_assessments": {
         "exists": true,
         "mtime": "2026-06-28T18:25:37.866222+00:00",
-        "mtime_age_seconds": 8789,
+        "mtime_age_seconds": 9730,
         "path": "data/runtime/local_research_assessments.jsonl",
         "size_bytes": 768603
       },
       "paper_live_qctrl_product_access": {
         "exists": true,
         "mtime": "2026-06-28T20:12:02.310464+00:00",
-        "mtime_age_seconds": 2405,
+        "mtime_age_seconds": 3346,
         "path": "data/runtime/paper_live_qctrl_product_access.json",
         "size_bytes": 6246
       },
       "paperops_30_day_operations": {
         "exists": true,
         "mtime": "2026-06-28T20:12:39.089592+00:00",
-        "mtime_age_seconds": 2368,
+        "mtime_age_seconds": 3309,
         "path": "data/runtime/paperops_30_day_operations.json",
         "size_bytes": 18887
       },
       "paperops_active_paper_trading_automation": {
         "exists": true,
         "mtime": "2026-06-28T20:12:32.452597+00:00",
-        "mtime_age_seconds": 2374,
+        "mtime_age_seconds": 3315,
         "path": "data/runtime/paperops_active_paper_trading_automation.json",
         "size_bytes": 15490
       },
       "paperops_autonomous_pass_summary": {
         "exists": true,
         "mtime": "2026-06-28T20:13:09.991818+00:00",
-        "mtime_age_seconds": 2337,
+        "mtime_age_seconds": 3278,
         "path": "data/runtime/paperops_autonomous_pass_summary.json",
         "size_bytes": 189820
       },
       "paperops_completion_gaps": {
         "exists": true,
         "mtime": "2026-06-28T18:25:22.435846+00:00",
-        "mtime_age_seconds": 8804,
+        "mtime_age_seconds": 9745,
         "path": "data/runtime/paperops_completion_gaps.json",
         "size_bytes": 5843
       },
       "paperops_paper_lifecycle_poller": {
         "exists": true,
         "mtime": "2026-06-28T20:12:35.147942+00:00",
-        "mtime_age_seconds": 2372,
+        "mtime_age_seconds": 3313,
         "path": "data/runtime/paperops_paper_lifecycle_poller.json",
         "size_bytes": 31594
       },
       "paperops_qctrl_paper_consultation": {
         "exists": true,
         "mtime": "2026-06-28T20:12:03.257642+00:00",
-        "mtime_age_seconds": 2404,
+        "mtime_age_seconds": 3345,
         "path": "data/runtime/paperops_qctrl_paper_consultation.json",
         "size_bytes": 4710
       },
       "pattern_recognition_engine": {
         "exists": true,
         "mtime": "2026-06-28T18:27:19.233199+00:00",
-        "mtime_age_seconds": 8688,
+        "mtime_age_seconds": 9629,
         "path": "data/runtime/pattern_recognition_engine.json",
         "size_bytes": 50675
       },
       "phase0_reliability_baseline": {
         "exists": true,
-        "mtime": "2026-06-28T20:52:06.915892+00:00",
+        "mtime": "2026-06-28T21:07:47.850687+00:00",
         "mtime_age_seconds": 0,
         "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
-        "size_bytes": 32980
+        "size_bytes": 32600
       },
       "phase5_risk_sizing_reviews": {
         "exists": true,
         "mtime": "2026-06-28T20:12:03.750846+00:00",
-        "mtime_age_seconds": 2403,
+        "mtime_age_seconds": 3344,
         "path": "data/runtime/phase5_risk_sizing_reviews.json",
         "size_bytes": 119637
       },
       "phase6_learning_approval_ledger": {
         "exists": true,
         "mtime": "2026-05-25T09:12:39.870572+00:00",
-        "mtime_age_seconds": 2979567,
+        "mtime_age_seconds": 2980508,
         "path": "data/runtime/phase6_learning_approval_ledger.json",
         "size_bytes": 34497
       },
       "phase6_shadow_strategy_replay": {
         "exists": true,
         "mtime": "2026-05-25T09:13:10.583606+00:00",
-        "mtime_age_seconds": 2979536,
+        "mtime_age_seconds": 2980477,
         "path": "data/runtime/phase6_shadow_strategy_replay.json",
         "size_bytes": 29470
       },
       "phase7_drawdown_risk_sentinel": {
         "exists": true,
         "mtime": "2026-06-28T20:12:05.531981+00:00",
-        "mtime_age_seconds": 2401,
+        "mtime_age_seconds": 3342,
         "path": "data/runtime/phase7_drawdown_risk_sentinel.json",
         "size_bytes": 13511
       },
       "qctrl_fire_opal_ibm_readiness": {
         "exists": true,
         "mtime": "2026-05-28T06:07:01.107996+00:00",
-        "mtime_age_seconds": 2731506,
+        "mtime_age_seconds": 2732447,
         "path": "data/runtime/qctrl_fire_opal_ibm_readiness.json",
         "size_bytes": 2541
       },
       "quantum_mandatory_review_gate": {
         "exists": true,
         "mtime": "2026-06-28T18:27:14.338919+00:00",
-        "mtime_age_seconds": 8692,
+        "mtime_age_seconds": 9634,
         "path": "data/runtime/quantum_mandatory_review_gate.json",
         "size_bytes": 10667
       },
       "quantum_meta_review": {
         "exists": true,
         "mtime": "2026-06-28T18:27:43.319865+00:00",
-        "mtime_age_seconds": 8664,
+        "mtime_age_seconds": 9605,
         "path": "data/runtime/quantum_meta_review.json",
         "size_bytes": 32436
       },
       "strategy_lead_shadow_packets": {
         "exists": true,
         "mtime": "2026-06-28T18:25:43.216363+00:00",
-        "mtime_age_seconds": 8784,
+        "mtime_age_seconds": 9725,
         "path": "data/runtime/strategy_lead_shadow_packets.jsonl",
         "size_bytes": 5189995
       },
       "strategy_update_record": {
         "exists": true,
         "mtime": "2026-06-28T18:27:28.910406+00:00",
-        "mtime_age_seconds": 8678,
+        "mtime_age_seconds": 9619,
         "path": "data/runtime/strategy_update_record.json",
         "size_bytes": 19164
       },
       "strategy_weight_updates": {
         "exists": true,
         "mtime": "2026-06-28T18:27:38.535921+00:00",
-        "mtime_age_seconds": 8668,
+        "mtime_age_seconds": 9609,
         "path": "data/runtime/strategy_weight_updates.json",
         "size_bytes": 26647
       },
       "telegram_codebase_upgrade_notification": {
         "exists": true,
         "mtime": "2026-06-28T18:32:16.089272+00:00",
-        "mtime_age_seconds": 8391,
+        "mtime_age_seconds": 9332,
         "path": "data/runtime/telegram_codebase_upgrade_notification.json",
         "size_bytes": 7571
       },
       "telegram_human_brief": {
         "exists": true,
         "mtime": "2026-06-28T18:28:02.707188+00:00",
-        "mtime_age_seconds": 8644,
+        "mtime_age_seconds": 9585,
         "path": "data/runtime/telegram_human_brief.json",
         "size_bytes": 5699
       },
       "telegram_inbound_intake_summary": {
         "exists": true,
         "mtime": "2026-06-28T20:13:04.869268+00:00",
-        "mtime_age_seconds": 2342,
+        "mtime_age_seconds": 3283,
         "path": "data/runtime/telegram_inbound_intake_summary.json",
         "size_bytes": 3665
       },
       "telegram_trade_notifications": {
         "exists": true,
         "mtime": "2026-06-28T20:12:32.436199+00:00",
-        "mtime_age_seconds": 2374,
+        "mtime_age_seconds": 3315,
         "path": "data/runtime/telegram_trade_notifications.json",
         "size_bytes": 3000
       }
@@ -918,14 +827,14 @@
     "source_state_contract": "runtime_artifacts_are_source_of_truth"
   },
   "staleness_status": {
-    "evaluated_at": "2026-06-28T20:52:07.323335+00:00",
+    "evaluated_at": "2026-06-28T21:07:48.347680+00:00",
     "freshness_sla_seconds": 21600,
     "missing_required_artifacts": [],
     "required_artifact_count": 4,
     "stale_required_artifacts": [],
     "status": "fresh_enough_for_qsase_1"
   },
-  "status": "qsase_self_model_blocked",
+  "status": "qsase_self_model_ready_with_gaps",
   "strategy_readiness_summary": [
     {
       "akber_filter_readiness": "active_filter",

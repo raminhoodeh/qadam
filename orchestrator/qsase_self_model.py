@@ -525,7 +525,9 @@ def _build_quantum_health(context: dict[str, Any]) -> tuple[dict[str, Any], dict
         gaps.append("quantum_mandatory_review_gate_missing")
     if not qctrl_consultation:
         gaps.append("paperops_qctrl_paper_consultation_missing")
-    unsafe_quantum_count = int(hardware_submission_allowed) + int(hardware_submitted) + int(provider_call_allowed)
+    if provider_call_allowed:
+        gaps.append("quantum_provider_call_readiness_recorded_context_only")
+    unsafe_quantum_count = int(hardware_submission_allowed) + int(hardware_submitted)
     quantum_health = {
         "status": "quantum_health_blocked" if unsafe_quantum_count else (
             "quantum_health_degraded" if gaps else "quantum_health_ready"
@@ -820,8 +822,6 @@ def _build_degraded_and_repairs(
     if payload_parts["model_health"].get("gaps"):
         for gap in payload_parts["model_health"]["gaps"]:
             add_degraded("model_stack", gap, "gap")
-            if gap == "llm_provider_probes_artifact_missing":
-                missing.append("llm_provider_probes")
     if payload_parts["quantum_health"].get("gaps"):
         for gap in payload_parts["quantum_health"]["gaps"]:
             add_degraded("quantum_state", gap, "gap")
@@ -945,8 +945,10 @@ def build_qsase_self_model(
         status = "qsase_self_model_blocked"
     elif staleness_status["status"] == "stale_required_artifact":
         status = "qsase_self_model_stale"
-    elif any(item["severity"] == "degraded" for item in degraded_components) or degraded_components:
+    elif any(item["severity"] == "degraded" for item in degraded_components):
         status = "qsase_self_model_degraded"
+    elif degraded_components:
+        status = "qsase_self_model_ready_with_gaps"
     if quantum_health["status"] == "quantum_health_blocked":
         status = "qsase_self_model_blocked"
 
@@ -1050,6 +1052,7 @@ def validate_qsase_self_model(payload: dict[str, Any]) -> list[str]:
         errors.append("phase_id_mismatch")
     if payload.get("status") not in {
         "qsase_self_model_ready",
+        "qsase_self_model_ready_with_gaps",
         "qsase_self_model_degraded",
         "qsase_self_model_blocked",
         "qsase_self_model_stale",

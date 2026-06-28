@@ -35,7 +35,7 @@
     "trust_score_update_created": false
   },
   "broker_write_count": 0,
-  "generated_at": "2026-06-28T20:52:14.309314+00:00",
+  "generated_at": "2026-06-28T21:07:56.280253+00:00",
   "live_capital_enabled": false,
   "paper_order_created_count": 0,
   "proof_credit_allowed": false,
@@ -170,12 +170,12 @@
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:97c3b2c7cb1f2c9f77b5",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3860c510229d6eed186b",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ea700b599fbc72435889",
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:a4dcaeea26f4e2bbad03",
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:99b8e4e1e429966903d6"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:fe934a71fdda62372d8a",
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6a0f48188a1bb45494f8"
       ],
       "expected_effect": "proposal_only_strategy_review",
       "overfit_risk": "medium",
-      "proposal_id": "qsase-proposal:4ed2274006467721e0d0",
+      "proposal_id": "qsase-proposal:021d3eb97fdf1af4c594",
       "proposal_state": "ready_pending_learning_approval",
       "proposal_type": "decrease_strategy_weight",
       "proposed_value": "review_required_not_applied",
@@ -205,12 +205,12 @@
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:89492053008486f7433a",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:87196d4d492f2a5a0aaf",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:68c551126dfe87fdff83",
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:49a5545ff8d586dc642f",
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:d7b4ff947ec25bad19cd"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac92935646bc0b4716b",
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b7a0e45da75d226ade6a"
       ],
       "expected_effect": "proposal_only_strategy_review",
       "overfit_risk": "medium",
-      "proposal_id": "qsase-proposal:b6b8f0f544cd32639a29",
+      "proposal_id": "qsase-proposal:32fcbd8bd12f0f582f12",
       "proposal_state": "ready_pending_learning_approval",
       "proposal_type": "decrease_strategy_weight",
       "proposed_value": "review_required_not_applied",

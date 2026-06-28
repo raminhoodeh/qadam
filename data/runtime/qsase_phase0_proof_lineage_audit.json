@@ -309,9 +309,9 @@
     "complete_lineage_closed_trade_count": 0,
     "component": "proof_lineage",
     "degraded_reasons": [],
-    "gaps": [
-      "some closed paper trades lack complete proof lineage"
-    ],
+    "gaps": [],
+    "legacy_unverified_closed_trade_count": 78,
+    "legacy_unverified_closed_trades_are_not_proof_credit": true,
     "paper_closed_trades_jsonl_count": 78,
     "paper_proof_ledger_verified_record_count": 0,
     "phase7_proof_trade_count": 2,
@@ -351,9 +351,9 @@
     "source_artifact": "phase7_proof_lifecycle_monitor.json",
     "source_generated_at": "2026-06-28T20:12:05.281312+00:00",
     "source_status": "proof_lifecycle_events_recorded",
-    "status": "ready_with_gaps"
+    "status": "ready"
   },
-  "generated_at": "2026-06-28T20:52:06.904707+00:00",
+  "generated_at": "2026-06-28T21:07:47.838022+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {
@@ -380,5 +380,5 @@
     "telegram_inbound_authoritative": false
   },
   "schema_version": 1,
-  "status": "ready_with_gaps"
+  "status": "ready"
 }

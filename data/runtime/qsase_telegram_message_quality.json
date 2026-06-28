@@ -25,7 +25,7 @@
     "trade_candidate_created": false
   },
   "candidate_count": 5,
-  "generated_at": "2026-06-28T20:52:14.764356+00:00",
+  "generated_at": "2026-06-28T21:07:56.728399+00:00",
   "generic_rejected_count": 0,
   "human_style_count": 5,
   "quality_rows": [
@@ -66,7 +66,7 @@
       "duplicate_rejected": true,
       "generic_rejected": false,
       "human_style_status": "human",
-      "message_candidate_id": "qsase-telegram-candidate:2e49999a27d3b986c7e1",
+      "message_candidate_id": "qsase-telegram-candidate:d7ab6ed03cc98e03a595",
       "message_class": "qsase_repair_note",
       "specificity_score": 100,
       "specificity_status": "specific",

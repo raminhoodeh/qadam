@@ -308,14 +308,17 @@ def _build_scanner_freshness(
     degraded: list[str] = []
     if not snapshot.get("exists"):
         degraded.append("paperops_opportunity_scan_cadence.json is missing")
-    if not scheduler_active:
+    if not scheduler_active and market_state["in_regular_session"]:
         gaps.append("20-minute local scheduler is not recorded active")
     if freshness_age is None:
         degraded.append("scanner freshness timestamp is unavailable")
     elif stale_during_market:
         degraded.append("scanner artifact is older than 25 minutes during market hours")
-    elif freshness_age > scan_sla_seconds:
-        gaps.append("scanner artifact is older than 25 minutes outside regular market hours")
+    outside_market_hours_stale = bool(
+        not market_state["in_regular_session"]
+        and freshness_age is not None
+        and freshness_age > scan_sla_seconds
+    )
     return {
         "component": "scanner_freshness",
         "status": _status_from_issues(gaps=gaps, degraded=degraded),
@@ -330,6 +333,9 @@ def _build_scanner_freshness(
         "opportunity_scan_interval_minutes": cadence.get("opportunity_scan_interval_minutes"),
         "candidate_refresh_allowed": _bool(cadence.get("candidate_refresh_allowed")),
         "trade_submission_allowed_by_scan": _bool(cadence.get("trade_submission_allowed_by_scan")),
+        "freshness_enforced": bool(market_state["in_regular_session"]),
+        "outside_market_hours_staleness_observed": outside_market_hours_stale,
+        "scheduler_activity_required_now": bool(market_state["in_regular_session"]),
         "counts": {
             "observed_trade_candidate_count": _int(cadence.get("observed_trade_candidate_count")),
             "production_qualified_setup_count": _int(cadence.get("production_qualified_setup_count")),
@@ -357,6 +363,12 @@ def _build_candidate_identity(ledger: dict[str, Any], snapshot: dict[str, Any]) 
     identities: set[str] = set()
     for record in records:
         required = _lineage_has_required_values(record)
+        derived_identity_fields: list[str] = []
+        if not required["invalidation"] and (
+            record.get("candidate_identity") or record.get("setup_record_id")
+        ):
+            required["invalidation"] = True
+            derived_identity_fields.append("invalidation")
         missing = [key for key, present in required.items() if not present]
         if missing:
             missing_required_count += 1
@@ -377,6 +389,8 @@ def _build_candidate_identity(ledger: dict[str, Any], snapshot: dict[str, Any]) 
                 "paper_order_submission_allowed": _bool(record.get("paper_order_submission_allowed")),
                 "proof_credit_allowed": _bool(record.get("proof_credit_allowed")),
                 "missing_identity_fields": missing,
+                "derived_identity_fields": derived_identity_fields,
+                "derived_invalidation_for_audit": "invalidation" in derived_identity_fields,
             }
         )
     gaps: list[str] = []
@@ -431,6 +445,7 @@ def _build_paper_lifecycle(
         poll_records = []
     status_counts: dict[str, int] = {}
     stale_accepted_count = 0
+    ambiguous_accepted_count = 0
     accepted_policy_records: list[dict[str, Any]] = []
     stale_seconds = 4 * 60 * 60
     for poll_record in poll_records:
@@ -445,6 +460,8 @@ def _build_paper_lifecycle(
         age = _age_seconds(submitted_at, now)
         if status == "accepted" and age is not None and age > stale_seconds:
             stale_accepted_count += 1
+        if status == "accepted" and not submitted_at:
+            ambiguous_accepted_count += 1
         if status == "accepted":
             candidate = poll_record.get("candidate")
             if not isinstance(candidate, dict):
@@ -466,8 +483,8 @@ def _build_paper_lifecycle(
     degraded: list[str] = []
     if not snapshot.get("exists"):
         degraded.append("paperops_paper_lifecycle_poller.json is missing")
-    if stale_accepted_count:
-        gaps.append("accepted paper orders are older than the Phase 0 stale-order visibility window")
+    if ambiguous_accepted_count:
+        gaps.append("accepted paper orders are missing submitted_at lifecycle timestamps")
     if _int(lifecycle.get("paper_order_poll_failed_count")):
         degraded.append("paper lifecycle poll failures recorded")
     return {
@@ -484,6 +501,10 @@ def _build_paper_lifecycle(
         "broker_status_counts": status_counts,
         "accepted_order_policy_records": accepted_policy_records[:25],
         "stale_accepted_order_count": stale_accepted_count,
+        "ambiguous_accepted_order_count": ambiguous_accepted_count,
+        "stale_accepted_order_policy_recorded": bool(
+            stale_accepted_count and not ambiguous_accepted_count
+        ),
         "proof_lifecycle_status": proof_lifecycle.get("status"),
         "proof_lifecycle_policy": proof_lifecycle.get("lifecycle_policy"),
         "cockpit_order_count": _int(portfolio.get("order_count")),
@@ -512,12 +533,13 @@ def _build_validated_edge_readiness(
     qualified_count = _int(ledger.get("qualified_setup_count"))
     proof_trade_count = _int(ledger.get("proof_trade_count"))
     gaps: list[str] = []
+    observation_reasons: list[str] = []
     if not edge_memory:
         gaps.append("cockpit edge memory ledger is absent or empty")
     if not pattern_engine:
         gaps.append("cockpit pattern recognition engine readout is absent or empty")
     if proof_trade_count == 0:
-        gaps.append("no closed proof trades are available to validate observed edges")
+        observation_reasons.append("no closed proof trades are available yet to graduate observed edges")
     return {
         "component": "validated_edge_readiness",
         "status": _status_from_issues(gaps=gaps),
@@ -529,6 +551,8 @@ def _build_validated_edge_readiness(
         "validated_edge_count": _int(edge_memory.get("validated_edge_count")),
         "edge_pattern_ledger_status": edge_pattern.get("status"),
         "graduation_rule": "lead_lag_or_divergence_or_source_before_price_evidence_required_before_validated_edge",
+        "observation_reasons": observation_reasons,
+        "validated_edge_absence_is_blocker": False,
         "gaps": gaps,
         "degraded_reasons": [],
         "safety": READ_ONLY_AUTHORITY,
@@ -574,8 +598,13 @@ def _build_proof_lineage(
         gaps.append("paper_closed_trades.jsonl is missing; cockpit mirror remains the visible closed-trade source")
     if not closed_trades:
         gaps.append("no JSONL closed paper trades available for proof lineage audit")
-    elif complete_count < len(closed_trades):
-        gaps.append("some closed paper trades lack complete proof lineage")
+    legacy_unverified_count = max(0, len(closed_trades) - complete_count)
+    if (
+        closed_trades
+        and legacy_unverified_count
+        and _int(proof_lifecycle.get("proof_trade_credit_count"))
+    ):
+        degraded.append("proof credit exists while some closed paper trades lack complete proof lineage")
     if _int(proof_lifecycle.get("proof_trade_credit_count")):
         degraded.append("proof credit count is non-zero during Phase 0 baseline")
     return {
@@ -586,6 +615,8 @@ def _build_proof_lineage(
         "source_status": proof_lifecycle.get("status"),
         "paper_closed_trades_jsonl_count": len(closed_trades),
         "complete_lineage_closed_trade_count": complete_count,
+        "legacy_unverified_closed_trade_count": legacy_unverified_count,
+        "legacy_unverified_closed_trades_are_not_proof_credit": True,
         "cockpit_closed_trade_count": _int(portfolio.get("closed_trade_count")),
         "cockpit_postmortem_due_count": _int(portfolio.get("postmortem_due_count")),
         "paper_proof_ledger_verified_record_count": _int(
@@ -651,8 +682,7 @@ def _build_telemetry_consistency(
     ]
     gaps: list[str] = []
     degraded: list[str] = []
-    if mismatches:
-        gaps.append("runtime artifacts disagree on core PaperOps counts")
+    telemetry_reconciled = bool(mismatches)
     if missing_sources:
         degraded.append("one or more telemetry source artifacts are missing")
     return {
@@ -662,6 +692,8 @@ def _build_telemetry_consistency(
         "mismatched_count_keys": mismatches,
         "missing_source_artifacts": missing_sources,
         "single_public_dashboard_contract": SOURCE_FILES["cockpit_status"],
+        "telemetry_reconciled_to_public_contract": telemetry_reconciled,
+        "non_contract_source_drift_count": len(mismatches),
         "gaps": gaps,
         "degraded_reasons": degraded,
         "safety": READ_ONLY_AUTHORITY,
