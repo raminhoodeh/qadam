@@ -1,0 +1,47 @@
+{
+  "artifact_type": "qsase_linear_pattern_lab_dashboard_summary",
+  "authority_flags_false": true,
+  "command_disabled": true,
+  "generated_at": "2026-06-28T19:31:24.535964+00:00",
+  "linear_success_is_research_evidence_only": true,
+  "live_send_allowed": false,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_trade_candidates_created": true,
+  "public_safe": true,
+  "schema_version": "qsase_linear_pattern_lab.v1",
+  "status": "qsase_linear_pattern_lab_degraded",
+  "summary_rows": [
+    {
+      "label": "Tested relationships",
+      "value": 16
+    },
+    {
+      "label": "Accepted linear patterns",
+      "value": 0
+    },
+    {
+      "label": "Inconclusive patterns",
+      "value": 8
+    },
+    {
+      "label": "Rejected linear patterns",
+      "value": 119
+    },
+    {
+      "label": "Leakage rejected",
+      "value": 0
+    },
+    {
+      "label": "Coverage blocked",
+      "value": 21
+    },
+    {
+      "label": "Authority",
+      "value": "research_only_linear_evidence"
+    }
+  ],
+  "top_linear_result": "qsase-linear:456b3a921b15627475a0",
+  "top_linear_status": "linear_inconclusive_candidate_for_nonlinear_review",
+  "top_rejected_pattern_reason": "linear_inconclusive_candidate_for_nonlinear_review"
+}

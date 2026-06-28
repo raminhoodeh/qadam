@@ -63,3 +63,15 @@
 - Candidate patterns: `16`
 - Rejected patterns: `103`
 - Safety: patterns are not strategies; no trade candidates, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_5_linear_pattern_recognition_lab -->
+## QSASE-5: Linear Pattern Recognition Lab
+
+- Generated at: `2026-06-28T19:31:24.535964+00:00`
+- Status: `qsase_linear_pattern_lab_degraded`
+- Runtime artifact: `data/runtime/qsase_linear_pattern_lab.json`
+- Tested relationships: `16`
+- Accepted linear patterns: `0`
+- Inconclusive linear patterns: `8`
+- Rejected linear patterns: `119`
+- Safety: linear success is research evidence only; no trade candidates, paper orders, broker writes, live capital, or proof credit created.

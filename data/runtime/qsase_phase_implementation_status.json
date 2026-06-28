@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_4_full_universe_pattern_search",
-  "generated_at": "2026-06-28T19:23:23.034525+00:00",
+  "active_phase": "qsase_5_linear_pattern_recognition_lab",
+  "generated_at": "2026-06-28T19:31:24.535964+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -141,6 +141,29 @@
       "rejected_patterns_path": "data/runtime/qsase_rejected_patterns.jsonl",
       "research_only": true,
       "status": "qsase_full_universe_pattern_search_degraded"
+    },
+    "qsase_5_linear_pattern_recognition_lab": {
+      "accepted_linear_pattern_count": 0,
+      "artifact_path": "data/runtime/qsase_linear_pattern_lab.json",
+      "authority_flags_false": true,
+      "candidate_for_nonlinear_review_count": 8,
+      "candidate_for_strategy_foundry_count": 0,
+      "inconclusive_linear_pattern_count": 8,
+      "later_qsase_phases_implemented": false,
+      "linear_rejected_patterns_path": "data/runtime/qsase_linear_rejected_patterns.jsonl",
+      "linear_results_path": "data/runtime/qsase_linear_backtest_results.jsonl",
+      "linear_success_is_research_evidence_only": true,
+      "name": "QSASE-5: Linear Pattern Recognition Lab",
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "proposal_first": true,
+      "public_safe": true,
+      "rejected_linear_pattern_count": 119,
+      "research_only": true,
+      "status": "qsase_linear_pattern_lab_degraded",
+      "tested_relationship_count": 16
     }
   },
   "safety": {
