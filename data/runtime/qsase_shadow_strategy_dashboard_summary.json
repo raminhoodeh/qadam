@@ -1,0 +1,55 @@
+{
+  "actual_vs_hypothetical_count": 48,
+  "artifact_type": "qsase_shadow_strategy_dashboard_summary",
+  "authority_flags_false": true,
+  "authority_state": "shadow_replay_research_only_no_order",
+  "candidate_for_router_count": 0,
+  "command_disabled": true,
+  "generated_at": "2026-06-28T19:59:15.161821+00:00",
+  "latest_blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
+  "live_send_allowed": false,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_trade_candidates_created": true,
+  "proof_boundary": "shadow replay is not paper proof ledger credit",
+  "public_safe": true,
+  "schema_version": "qsase_shadow_strategy_simulator.v1",
+  "status": "qsase_shadow_strategy_simulator_degraded",
+  "summary_rows": [
+    {
+      "label": "Shadow simulator",
+      "value": "qsase_shadow_strategy_simulator_degraded"
+    },
+    {
+      "label": "Variants",
+      "value": 3
+    },
+    {
+      "label": "Active replays",
+      "value": 32
+    },
+    {
+      "label": "Blocked replays",
+      "value": 16
+    },
+    {
+      "label": "Rejected variants",
+      "value": 48
+    },
+    {
+      "label": "Router candidates",
+      "value": 0
+    },
+    {
+      "label": "Proof",
+      "value": "research-only; no paper proof ledger credit"
+    },
+    {
+      "label": "Authority",
+      "value": "no order created"
+    }
+  ],
+  "top_rejected_variant": "baseline_current_strategy",
+  "top_shadow_replay_id": "qsase-shadow:1b77383e89ef7c18021d",
+  "top_variant": "akber_strict_veto"
+}

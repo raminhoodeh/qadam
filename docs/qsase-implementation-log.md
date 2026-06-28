@@ -112,3 +112,15 @@
 - Router candidates: `0`
 - Ablation ready: `4`
 - Safety: Akber filter pass is not execution approval; no trade candidates, risk handoffs, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_9_shadow_strategy_simulator_upgrade -->
+## QSASE-9: Shadow Strategy Simulator Upgrade
+
+- Generated at: `2026-06-28T19:59:15.161821+00:00`
+- Status: `qsase_shadow_strategy_simulator_degraded`
+- Runtime artifact: `data/runtime/qsase_shadow_strategy_simulator.json`
+- Replay records: `48`
+- Active / blocked / evaluated: `32` / `16` / `32`
+- Rejected variants: `48`
+- Router candidates: `0`
+- Safety: shadow success cannot become a paper order or paper proof ledger credit; no trade candidates, execution intents, broker writes, live capital, or proof credit created.

@@ -1,0 +1,1730 @@
+{
+  "actual_lifecycle_mutated": false,
+  "actual_vs_hypothetical_count": 48,
+  "artifact_type": "qsase_shadow_actual_vs_hypothetical",
+  "authority_flags": {
+    "alpaca_post_allowed": false,
+    "broker_write_allowed": false,
+    "execution_allowed": false,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "execution_intent_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_allowed": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "paper_proof_ledger_write_allowed": false,
+    "paperops_direct_handoff_allowed": false,
+    "policy_mutation_allowed": false,
+    "policy_mutation_created": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "risk_handoff_allowed": false,
+    "shadow_to_proof_allowed": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_allowed": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "threshold_change_applied": false,
+    "trade_candidate_created": false,
+    "trade_candidate_creation_allowed": false
+  },
+  "comparisons": [
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:1a95b5421d308f0c2d4d"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:0ce9287225b238e59e85"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:1b77383e89ef7c18021d"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:6dbb4780779e87e14c45"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:225e7f56cab22c09916b"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:91bc9793815ee909d22c"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:782ad2b17476eae89e23"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:fdf482935f383dee912a"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:018517415cff46ea000c"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:51d71cec74aa96e81ee9"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:bfc3883fb8690928c722"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:5833e85b3078db74883e"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:06748ec50c6677595ab3"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:c34b36c36e13f3e44a06"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:0b9e6c4081b70fe0b807"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:72e4c5ee44314f9860ee"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:f88d958bb752f88d4458"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:a7af11ac8fbf0b10f4f1"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:96064dfa216f7d3dc8dc"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:55a73e3d685b742211ed"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:c9a7768e1c7fa983591e"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:bddb7105a8475789bd5c"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:5024f58fa29913736b59"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:c6f846ba21baf689bdbc"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:aec3726fff460cbc96cd"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:f428d7d1a730133d6273"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:db3c4cc2f62d4843f71b"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:d8cdf6c4eef62614428d"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:e2d5f4ec3b81a87aaabb"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:e925bb220c74a883f813"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:385cfa0b9dfbc240bcb2"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:8ba9f9036dcca522851f"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:43589b8586ad1af13f1e"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:8b72705c5f30d2a588b7"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:437b41bd5c5d3583805d"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:a1afa3cb2ab85b7d1d68"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:4ef3447da63314a8c54a"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:47be68bae7e8c18f3124"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:5bf8b447c289f635f751"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:427870bad001e6824c90"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:dc0e80f1a8de8d5f249f"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:12bdc5b2a9f0020dd221"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:a104d43f47f457b7edc9"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:0fad786ff5340ecd3d60"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "baseline_current_strategy",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "historical_hypothesis_replay",
+      "shadow_replay_id": "qsase-shadow:e99cfcca3c5e2d7755c5"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": false
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "forward_watch_only",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "forward_shadow_replay",
+      "shadow_replay_id": "qsase-shadow:0502ed7d6eb0bc953c95"
+    },
+    {
+      "actual_decision": {
+        "actual_lifecycle_mutated": false,
+        "decision_type": "no_actual_paper_order",
+        "paper_lifecycle_ref": "data/runtime/paperops_autonomous_pass_summary.json",
+        "paper_order_ref": null,
+        "reference_only": true,
+        "submitted_paper_order_count": 0
+      },
+      "actual_lifecycle_mutated": false,
+      "comparison": {
+        "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
+        "delta_drawdown": 0.0,
+        "delta_expectancy": 0.0,
+        "delta_false_positive_rate": -0.02,
+        "performance_claim_allowed": false,
+        "variant_added_value": true
+      },
+      "evidence_class": "actual_vs_hypothetical_reference",
+      "hypothetical_decision": {
+        "decision_type": "would_have_rejected_or_held",
+        "reason": "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "variant_key": "akber_strict_veto",
+        "would_have_created_execution_intent": false,
+        "would_have_created_paper_order": false,
+        "would_have_created_trade_candidate": false,
+        "would_have_granted_proof_credit": false,
+        "would_have_written_broker": false
+      },
+      "paper_order_created": false,
+      "paper_proof_ledger_mutated": false,
+      "proof_credit_allowed": false,
+      "replay_mode": "counterfactual_strategy_replay",
+      "shadow_replay_id": "qsase-shadow:28dc548381c3ecbbf9c4"
+    }
+  ],
+  "evaluated_comparison_count": 48,
+  "generated_at": "2026-06-28T19:59:15.163869+00:00",
+  "paper_order_created": false,
+  "paper_proof_ledger_mutated": false,
+  "proof_credit_allowed": false,
+  "schema_version": "qsase_shadow_strategy_simulator.v1",
+  "status": "actual_vs_hypothetical_reference_ready"
+}

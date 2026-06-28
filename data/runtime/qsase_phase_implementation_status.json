@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_8_akber_filter_backtest_integration",
-  "generated_at": "2026-06-28T19:51:59.940555+00:00",
+  "active_phase": "qsase_9_shadow_strategy_simulator_upgrade",
+  "generated_at": "2026-06-28T19:59:15.161821+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -247,6 +247,36 @@
       "research_only": true,
       "status": "qsase_akber_filter_integration_degraded",
       "threshold_proposals_path": "data/runtime/qsase_akber_filter_threshold_proposals.json"
+    },
+    "qsase_9_shadow_strategy_simulator_upgrade": {
+      "active_replay_count": 32,
+      "actual_vs_hypothetical_count": 48,
+      "actual_vs_hypothetical_path": "data/runtime/qsase_shadow_actual_vs_hypothetical.json",
+      "akber_filter_record_count": 16,
+      "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json",
+      "authority_flags_false": true,
+      "blocked_replay_count": 16,
+      "candidate_for_router_count": 0,
+      "evaluated_replay_count": 32,
+      "input_hypothesis_count": 0,
+      "later_qsase_phases_implemented": false,
+      "name": "QSASE-9: Shadow Strategy Simulator Upgrade",
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "paper_only": true,
+      "proposal_first": true,
+      "public_safe": true,
+      "rejected_variant_count": 48,
+      "rejections_path": "data/runtime/qsase_shadow_strategy_rejections.jsonl",
+      "replay_record_count": 48,
+      "research_only": true,
+      "results_path": "data/runtime/qsase_shadow_strategy_results.jsonl",
+      "shadow_success_cannot_be_paper_order": true,
+      "shadow_success_cannot_be_paper_proof_ledger_credit": true,
+      "status": "qsase_shadow_strategy_simulator_degraded",
+      "variant_count": 3,
+      "variant_matrix_path": "data/runtime/qsase_shadow_strategy_variant_matrix.json"
     }
   },
   "safety": {
