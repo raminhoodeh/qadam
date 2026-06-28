@@ -1,0 +1,53 @@
+{
+  "artifact_type": "qsase_nonlinear_quantum_pattern_lab_dashboard_summary",
+  "authority_flags_false": true,
+  "command_disabled": true,
+  "generated_at": "2026-06-28T19:39:08.073142+00:00",
+  "hardware_execution_claimed": false,
+  "latest_blocker": "historical_memory_degraded,linear_pattern_lab_degraded,nonlinear_overfit_controls_holding",
+  "live_send_allowed": false,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "no_trade_candidates_created": true,
+  "public_safe": true,
+  "quantum_review_is_not_trade_confirmation": true,
+  "schema_version": "qsase_nonlinear_quantum_pattern_lab.v1",
+  "status": "qsase_nonlinear_quantum_pattern_lab_degraded",
+  "summary_rows": [
+    {
+      "label": "Nonlinear lab status",
+      "value": "qsase_nonlinear_quantum_pattern_lab_degraded"
+    },
+    {
+      "label": "Tested interactions",
+      "value": 16
+    },
+    {
+      "label": "Linear baseline beats",
+      "value": 0
+    },
+    {
+      "label": "Quantum reviews",
+      "value": 8
+    },
+    {
+      "label": "Quantum backend",
+      "value": "classical_fallback"
+    },
+    {
+      "label": "Quantum mode",
+      "value": "deterministic_classical_shadow"
+    },
+    {
+      "label": "Strategy Foundry candidates",
+      "value": 0
+    },
+    {
+      "label": "Authority",
+      "value": "research_only_no_execution"
+    }
+  ],
+  "top_advanced_pattern": "qsase-nonlinear:3f7d4fe26e3ce408b0fc",
+  "top_advanced_status": "candidate_for_quantum_review",
+  "top_ambiguity_hold": null
+}

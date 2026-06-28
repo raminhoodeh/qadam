@@ -1,6 +1,6 @@
 {
-  "active_phase": "qsase_5_linear_pattern_recognition_lab",
-  "generated_at": "2026-06-28T19:31:24.535964+00:00",
+  "active_phase": "qsase_6_nonlinear_quantum_pattern_lab",
+  "generated_at": "2026-06-28T19:39:08.073142+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -164,6 +164,36 @@
       "research_only": true,
       "status": "qsase_linear_pattern_lab_degraded",
       "tested_relationship_count": 16
+    },
+    "qsase_6_nonlinear_quantum_pattern_lab": {
+      "accepted_nonlinear_pattern_count": 0,
+      "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
+      "authority_flags_false": true,
+      "candidate_for_quantum_review_count": 8,
+      "candidate_for_strategy_foundry_count": 0,
+      "candidate_input_count": 16,
+      "inconclusive_nonlinear_pattern_count": 8,
+      "later_qsase_phases_implemented": false,
+      "linear_baseline_beat_count": 0,
+      "name": "QSASE-6: Nonlinear And Quantum Pattern Lab",
+      "no_paper_orders_created": true,
+      "no_proof_credit_granted": true,
+      "no_trade_candidates_created": true,
+      "nonlinear_results_path": "data/runtime/qsase_nonlinear_pattern_results.jsonl",
+      "paper_only": true,
+      "proposal_first": true,
+      "public_safe": true,
+      "quantum_backend": "classical_fallback",
+      "quantum_hold_count": 4,
+      "quantum_mode": "deterministic_classical_shadow",
+      "quantum_review_is_not_trade_approval": true,
+      "quantum_reviews_path": "data/runtime/qsase_quantum_pattern_reviews.jsonl",
+      "quantum_useful_information_count": 4,
+      "rejected_nonlinear_pattern_count": 8,
+      "research_only": true,
+      "reviewed_pattern_count": 8,
+      "status": "qsase_nonlinear_quantum_pattern_lab_degraded",
+      "tested_interaction_count": 16
     }
   },
   "safety": {

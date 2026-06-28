@@ -75,3 +75,15 @@
 - Inconclusive linear patterns: `8`
 - Rejected linear patterns: `119`
 - Safety: linear success is research evidence only; no trade candidates, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_6_nonlinear_quantum_pattern_lab -->
+## QSASE-6: Nonlinear And Quantum Pattern Lab
+
+- Generated at: `2026-06-28T19:39:08.073142+00:00`
+- Status: `qsase_nonlinear_quantum_pattern_lab_degraded`
+- Runtime artifact: `data/runtime/qsase_nonlinear_quantum_pattern_lab.json`
+- Tested interactions: `16`
+- Linear baseline beats: `0`
+- Quantum reviews: `8`
+- Quantum backend: `classical_fallback` / `deterministic_classical_shadow`
+- Safety: nonlinear and quantum success are research evidence only; no trade candidates, paper orders, broker writes, live capital, hardware jobs, or proof credit created.
