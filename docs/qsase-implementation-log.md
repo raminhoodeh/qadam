@@ -149,3 +149,14 @@
 - Duplicate idempotency / duplicate exposure / drawdown / Q-CTRL / route blocks: `16` / `0` / `0` / `0` / `16`
 - Top blocking gate: `akber_filter_failed`
 - Safety: handoff records are upstream context only; no qualified setups, trade candidates, risk approvals, execution intents, paper orders, broker writes, live capital, or proof credit created.
+
+<!-- qsase_12_learning_attribution_ledger -->
+## QSASE-12: Learning And Attribution Ledger
+
+- Generated at: `2026-06-28T20:23:46.049183+00:00`
+- Status: `qsase_learning_attribution_ledger_degraded`
+- Runtime artifact: `data/runtime/qsase_component_attribution_ledger.json`
+- Attribution records: `109`
+- Evidence classes: real paper `0`, non-trade `1`, shadow `48`, backtest `16`, rejected `16`, blocked route `16`, system defect `12`
+- Proposals: strategy `5`, source `1`, model `1`, filter `1`, approval queue `8`
+- Safety: strategy, source, model, and filter changes are proposals only; no applied updates, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.

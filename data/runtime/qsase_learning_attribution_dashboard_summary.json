@@ -1,0 +1,100 @@
+{
+  "active_proposal_count": 8,
+  "applied_update_count": 0,
+  "approval_required_count": 8,
+  "artifact_type": "qsase_learning_attribution_dashboard_summary",
+  "backtest_evidence_count": 16,
+  "command_disabled": true,
+  "decision_record_based": true,
+  "decision_records": [
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "blocked_correctly",
+      "evidence_class": "non_trade_decision",
+      "outcome": "non_trade_decision",
+      "proposal": "tighten_akber_filter"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    },
+    {
+      "applied": false,
+      "attribution": "source_universe",
+      "cause": "rejected_correctly",
+      "evidence_class": "shadow_replay",
+      "outcome": "shadow_replay",
+      "proposal": "hold_strategy_weight"
+    }
+  ],
+  "essay_free": true,
+  "generated_at": "2026-06-28T20:23:46.049183+00:00",
+  "latest_attribution": "self_healing_repair_loop",
+  "latest_attribution_state": "recorded_proposal_only",
+  "latest_cause": "route_defect_prevented_evaluation",
+  "latest_evidence_class": "system_defect",
+  "latest_outcome": "system_defect",
+  "latest_proposal": "paperops_gate_precheck_review",
+  "live_capital_boundary": "live capital disabled",
+  "live_send_allowed": false,
+  "no_broker_writes": true,
+  "no_paper_orders_created": true,
+  "no_proof_credit_granted": true,
+  "non_trade_learning_count": 1,
+  "proof_boundary": "ledger references but cannot create paper proof ledger credit",
+  "proposal_applied": false,
+  "public_safe": true,
+  "real_paper_evidence_count": 0,
+  "rejected_hypothesis_learning_count": 16,
+  "schema_version": "qsase_component_attribution_ledger.v1",
+  "shadow_evidence_count": 48,
+  "status": "qsase_learning_attribution_ledger_degraded",
+  "system_defect_record_count": 12,
+  "top_blamed_component": "guarded_alpaca_paper_route",
+  "top_credited_component": "source_universe"
+}
