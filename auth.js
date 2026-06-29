@@ -268,6 +268,10 @@ function showLoginQueryError() {
     }
 }
 
+function dashboardIsPublicReadOnly() {
+    return document.body?.classList.contains("qadam-dashboard-page");
+}
+
 async function wireLogin() {
     const form = document.querySelector("[data-login-form]");
     if (!form) return;
@@ -363,6 +367,22 @@ async function wireDashboard() {
 
     const { data } = await qadamAuth.auth.getSession();
     const session = data.session;
+    if (dashboardIsPublicReadOnly()) {
+        const emailTarget = document.querySelector("[data-user-email]");
+        if (emailTarget) {
+            emailTarget.textContent = session?.user?.email || "public read-only visitor";
+        }
+
+        dashboard.classList.remove("hidden");
+        if (window.renderQadamDashboardStatus) {
+            await window.renderQadamDashboardStatus(session || null);
+        }
+        if (session && emailIsAllowed(session.user.email)) {
+            await wireFundManagerForum(session);
+        }
+        return;
+    }
+
     if (!session) {
         const currentPath = cleanNext(`${window.location.pathname}${window.location.search}`);
         window.location.replace(`/login/?next=${encodeURIComponent(currentPath)}`);

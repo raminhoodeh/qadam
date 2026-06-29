@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
-    <meta name="description" content="Private Qadam paper trading dashboard.">
+    <meta name="description" content="Public read-only Qadam paper trading dashboard.">
     <link rel="stylesheet" href="/auth.css?v=20260629-qsase-dashboard">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
@@ -26,11 +26,10 @@
                 <section class="trade-toast-rail" aria-label="Recent paper trade timeline" data-trade-toast-rail aria-live="polite">
                     <span class="trade-toast-token pending">Loading trade timeline</span>
                 </section>
-                <nav class="nav-actions qadam-global-nav" aria-label="Dashboard navigation" data-qadam-global-nav data-qadam-nav-context="protected-dashboard">
+                <nav class="nav-actions qadam-global-nav" aria-label="Dashboard navigation" data-qadam-global-nav data-qadam-nav-context="public-dashboard">
                     <a class="button qadam-nav-link" href="/dashboard/" data-qadam-nav-item="dashboard" aria-current="page">Dashboard</a>
                     <a class="button qadam-nav-link" href="/guide/" data-qadam-nav-item="guide">User Guide</a>
                     <a class="button qadam-nav-link" href="/whitepaper/" data-qadam-nav-item="whitepaper">Whitepaper</a>
-                    <button class="qadam-nav-link qadam-nav-button" type="button" data-qadam-nav-item="signout" data-signout>Sign Out</button>
                 </nav>
             </div>
         </header>
@@ -40,7 +39,7 @@
                 <div>
                     <p class="eyebrow">Qadam paper trading dashboard</p>
                     <h1>Qadam Mission Control</h1>
-                    <p class="copy">Logged in as <span data-user-email></span>. Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.</p>
+                    <p class="copy">Public read-only view. Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.</p>
                 </div>
                 <div class="mode-stack" aria-label="Dashboard status">
                     <span>Paper trading mode</span>
