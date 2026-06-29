@@ -11862,20 +11862,154 @@ function qsaseNearestSeriesPoint(series = [], timestamp) {
 
 function qsaseDecisionClass(value) {
     const text = String(value || "").toLowerCase();
-    if (text.includes("blocked") || text.includes("reject") || text.includes("hold")) return "blocked";
+    if (text.includes("safety") || text.includes("reject") || text.includes("veto")) return "blocked";
+    if (text.includes("blocked") || text.includes("hold") || text.includes("held") || text.includes("degraded") || text.includes("stale") || text.includes("missing") || text.includes("incomplete") || text.includes("needs attention")) return "degraded";
     if (text.includes("ready") || text.includes("pass") || text.includes("available") || text.includes("connected")) return "online";
-    if (text.includes("degraded") || text.includes("stale") || text.includes("missing")) return "degraded";
     return "pending";
+}
+
+const QSASE_HUMAN_COPY_RULES = [
+    [/Required evidence is missing:\s*akber_filter_artifact_degraded\.?/gi, "Akber confirmation evidence is incomplete."],
+    [/Required evidence is missing:\s*akber filter artifact degraded\.?/gi, "Akber confirmation evidence is incomplete."],
+    [/Required evidence is needed:\s*akber filter artifact needs attention\.?/gi, "Akber confirmation evidence is incomplete."],
+    [/akber_filter_artifact_degraded/gi, "Akber evidence incomplete"],
+    [/akber filter artifact degraded/gi, "Akber evidence incomplete"],
+    [/akber_filter_failed/gi, "Akber filter did not pass"],
+    [/akber filter failed/gi, "Akber filter did not pass"],
+    [/akber_filter_reject:quantum_ambiguity_too_high/gi, "Akber veto: quantum review is too ambiguous"],
+    [/akber filter reject:quantum ambiguity too high/gi, "Akber veto: quantum review is too ambiguous"],
+    [/qsase_akber_filter_integration_degraded/gi, "Akber filter waiting for confirmation"],
+    [/qsase_strategy_router_degraded/gi, "Strategy router waiting for stronger evidence"],
+    [/qsase_strategy_foundry_degraded/gi, "Strategy Foundry waiting for stronger evidence"],
+    [/qsase_nonlinear_quantum_pattern_lab_degraded/gi, "Nonlinear and quantum review holding for stronger evidence"],
+    [/hold_missing_evidence/gi, "held for more evidence"],
+    [/hold missing evidence/gi, "held for more evidence"],
+    [/hold_missing_context/gi, "held for missing context"],
+    [/hold missing context/gi, "held for missing context"],
+    [/blocked_safety_boundary/gi, "stopped by safety boundary"],
+    [/blocked safety boundary/gi, "stopped by safety boundary"],
+    [/hard safety boundary blocks paper review/gi, "Safety boundary stops paper review"],
+    [/hard practical veto prevents router promotion/gi, "A practical veto prevents router promotion"],
+    [/Foundry marked this as shadow-only\/audit evidence/gi, "Strategy Foundry marked this as audit-only evidence"],
+    [/Akber cannot pass because required practical context is missing/gi, "Akber needs more practical confirmation before this can pass"],
+    [/missing_volume_or_flow_confirmation/gi, "Needs volume or flow confirmation"],
+    [/volume_or_flow_confirmation/gi, "Volume or flow confirmation"],
+    [/model_stack:llm_provider_probes_artifact_missing/gi, "LLM provider probe evidence not loaded"],
+    [/learning_health:no_validated_edges_yet/gi, "No validated edge yet"],
+    [/nonlinear_not_incremental/gi, "Nonlinear review did not add enough signal"],
+    [/quantum_did_not_upgrade_research_confidence/gi, "Quantum review did not raise confidence"],
+    [/quantum_ambiguity_too_high/gi, "Quantum review is too ambiguous"],
+    [/quantum_ambiguity_hold/gi, "Quantum review is holding for clarity"],
+    [/missing_required_quantum_review/gi, "Required quantum review is not complete"],
+    [/historical_memory_degraded/gi, "Historical memory needs better coverage"],
+    [/linear_pattern_lab_degraded/gi, "Linear pattern lab needs better evidence"],
+    [/nonlinear_overfit_controls_holding/gi, "Overfit controls are holding this pattern"],
+    [/no_strategy_hypotheses_promoted_current_inputs/gi, "No current strategy hypothesis was strong enough to promote"],
+    [/no_promoted_strategy_hypotheses_to_filter/gi, "No promoted strategy hypothesis reached the filter"],
+    [/strategy_foundry_degraded/gi, "Strategy Foundry is waiting for stronger evidence"],
+    [/rejected_or_shadow_only_hypotheses_present/gi, "Only rejected or audit-only hypotheses are present"],
+    [/paperops_current_duplicate_hold_requires_distinct_idempotency_key/gi, "PaperOps is waiting for a distinct setup and idempotency key"],
+    [/open_order_state_requires_downstream_duplicate_check/gi, "Open orders need a duplicate-exposure check"],
+    [/idempotency_guard_holding_duplicate_or_already_submitted_setup/gi, "Idempotency guard is holding a duplicate or already-submitted setup"],
+    [/watch_for_missing_confirmation/gi, "watch for confirmation evidence"],
+    [/watch for missing confirmation/gi, "watch for confirmation evidence"],
+    [/clear_safety_boundary_or_remap_to_paperable_expression/gi, "clear the safety concern or remap to a paperable expression"],
+    [/clear safety boundary or remap to paperable expression/gi, "clear the safety concern or remap to a paperable expression"],
+    [/router_blocked_by_akber_filter/gi, "Router is waiting on Akber confirmation"],
+    [/candidate_for_router/gi, "router candidate"],
+    [/candidate_for_paper_review/gi, "paper-review candidate"],
+    [/paper_review_candidate/gi, "paper-review candidate"],
+    [/audit_only/gi, "audit-only"],
+    [/paper_order_allowed/gi, "paper order allowed"],
+    [/paper_order_created/gi, "paper order created"],
+    [/broker_write/gi, "broker write"],
+    [/live_capital/gi, "live capital"],
+    [/source_quorum/gi, "source quorum"],
+    [/paperops/gi, "PaperOps"],
+    [/qctrl/gi, "Q-CTRL"],
+    [/qsase/gi, "QSASE"]
+];
+
+function qsaseHumanText(value, fallback = "Not exported") {
+    let text = dashboardText(value, fallback);
+    QSASE_HUMAN_COPY_RULES.forEach(([pattern, replacement]) => {
+        text = text.replace(pattern, replacement);
+    });
+    return text
+        .replace(/\bdegraded\b/gi, "needs attention")
+        .replace(/\bfailed\b/gi, "did not pass")
+        .replace(/\bfailure\b/gi, "issue")
+        .replace(/\bvetoed\b/gi, "vetoed")
+        .replace(/\bveto\b/gi, "veto")
+        .replace(/\breject(ed|ion)?\b/gi, "vetoed")
+        .replace(/\bblocked\b/gi, "held")
+        .replace(/\bmissing\b/gi, "needed")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function qsaseHtmlText(value, fallback = "Not exported") {
+    return qsaseHumanText(value, fallback).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+function qsaseOutcomeText(value, fallback = "Not exported") {
+    const token = String(value ?? "").trim().toLowerCase();
+    if (!token) return fallback;
+    if (token === "pass") return "passed";
+    if (token === "hold") return "holding";
+    if (token === "reject") return "vetoed";
+    if (token === "audit_only") return "audit-only review";
+    if (token === "downgrade_or_hold") return "holding for stronger evidence";
+    return qsaseHumanText(value, fallback);
+}
+
+function qsaseBadgeText(value) {
+    return qsaseHumanText(value, "Not exported");
+}
+
+function renderQsaseInlineBadge(value, status = "pending") {
+    return `<span class="inline-badge ${statusClass(status)}">${qsaseHtmlText(qsaseBadgeText(value))}</span>`;
+}
+
+function qsaseRouterDecisionCounts(router = {}) {
+    const ranked = asArray(router.scoreboard?.ranked_decisions);
+    const outputCounts = ranked.reduce((counts, decision) => {
+        const output = decision.router_output || "unknown";
+        counts[output] = (counts[output] || 0) + 1;
+        return counts;
+    }, {});
+    return {
+        held: firstPresent(router.hold_count, outputCounts.hold_missing_evidence, outputCounts.hold, outputCounts.watchlist, 0),
+        safetyBlocks: firstPresent(router.blocked_safety_boundary_count, outputCounts.blocked_safety_boundary, 0),
+        paperReview: firstPresent(router.paper_review_candidate_count, outputCounts.paper_review_candidate, 0),
+        ranked: firstPresent(router.decision_count, router.scoreboard?.ranked_count, ranked.length, 0)
+    };
+}
+
+function qsaseRouterHeadline(router = {}, gate = {}) {
+    const why = router.why_not_trading_now || {};
+    const rawReason = why.reason || router.scoreboard?.top_reason || gate.top_blocking_gate || "No current router decision exported.";
+    if (/akber_filter_artifact_degraded/i.test(String(rawReason || ""))) {
+        const counts = qsaseRouterDecisionCounts(router);
+        return `${counts.held} held: Akber confirmation evidence is incomplete; ${counts.paperReview} passed; ${counts.safetyBlocks} vetoed.`;
+    }
+    return qsaseHumanText(rawReason);
 }
 
 function renderQsaseSectionHeader(label, headline, meta = "", tone = "pending") {
     return `
         <div class="qsase-section-head">
             <div>
-                <span>${htmlText(label)}</span>
-                <strong>${htmlText(headline)}</strong>
+                <span>${qsaseHtmlText(label)}</span>
+                <strong>${qsaseHtmlText(headline)}</strong>
             </div>
-            ${meta ? renderInlineBadge(meta, tone) : ""}
+            ${meta ? renderQsaseInlineBadge(meta, tone) : ""}
         </div>
     `;
 }
@@ -11947,7 +12081,7 @@ function renderQsasePortfolioValue(qsase = {}) {
                 <text class="chart-axis-label" x="4" y="${yFor(minRaw).toFixed(2)}">${literalHtmlText(formatMoney(minRaw, currency))}</text>
                 <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(latest.timestamp || latest.observed_at))}</text>
             </svg>
-            <p class="qsase-boundary-note">${htmlText(section.status)} · trade markers are read-only history, not proof credit.</p>
+            <p class="qsase-boundary-note">${qsaseHtmlText(section.status)} · trade markers are read-only history, not proof credit.</p>
         </section>
     `;
 }
@@ -11961,14 +12095,14 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
-                        <span>${htmlText(row.instrument || row.symbol, "Instrument")}</span>
-                        <strong>${htmlText(row.size || row.quantity || row.position_qty, "size n/a")}</strong>
-                        <p>${htmlText(row.strategy_family || row.strategy || "Strategy lineage pending")}</p>
+                        <span>${qsaseHtmlText(row.instrument || row.symbol, "Instrument")}</span>
+                        <strong>${qsaseHtmlText(row.size || row.quantity || row.position_qty, "size n/a")}</strong>
+                        <p>${qsaseHtmlText(row.strategy_family || row.strategy || "Strategy lineage pending")}</p>
                         <dl>
-                            <div><dt>Entry</dt><dd>${htmlText(row.entry_price || row.opened_at || "n/a")}</dd></div>
-                            <div><dt>Value</dt><dd>${htmlText(row.current_value || row.market_value || "n/a")}</dd></div>
-                            <div><dt>P&L</dt><dd>${htmlText(row.unrealized_pnl || row.unrealized_pnl_gbp || "n/a")}</dd></div>
-                            <div><dt>Next</dt><dd>${htmlText(row.next_lifecycle_action || row.lifecycle_action || "monitor lifecycle")}</dd></div>
+                            <div><dt>Entry</dt><dd>${qsaseHtmlText(row.entry_price || row.opened_at || "n/a")}</dd></div>
+                            <div><dt>Value</dt><dd>${qsaseHtmlText(row.current_value || row.market_value || "n/a")}</dd></div>
+                            <div><dt>P&L</dt><dd>${qsaseHtmlText(row.unrealized_pnl || row.unrealized_pnl_gbp || "n/a")}</dd></div>
+                            <div><dt>Next</dt><dd>${qsaseHtmlText(row.next_lifecycle_action || row.lifecycle_action || "monitor lifecycle")}</dd></div>
                         </dl>
                     </article>
                 `).join("") : `
@@ -11995,10 +12129,10 @@ function renderQsaseTradingHistory(qsase = {}) {
                     <tbody>
                         ${rows.length ? rows.map((row) => `
                             <tr>
-                                <td><strong>${htmlText(row.instrument, "Instrument")}</strong><span>${htmlText(row.direction, "direction n/a")}</span></td>
-                                <td>${htmlText(row.row_type || row.status, "recorded")}<span>${formatTime(row.closed_at || row.opened_at || row.submitted_at)}</span></td>
-                                <td>${htmlText(row.realized_pnl ?? row.unrealized_pnl ?? "n/a")}</td>
-                                <td>${htmlText(row.postmortem_status || row.reason || row.boundary, "paper proof ledger pending")}</td>
+                                <td><strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong><span>${qsaseHtmlText(row.direction, "direction n/a")}</span></td>
+                                <td>${qsaseHtmlText(row.row_type || row.status, "recorded")}<span>${formatTime(row.closed_at || row.opened_at || row.submitted_at)}</span></td>
+                                <td>${qsaseHtmlText(row.realized_pnl ?? row.unrealized_pnl ?? "n/a")}</td>
+                                <td>${qsaseHtmlText(row.postmortem_status || row.reason || row.boundary, "paper proof ledger pending")}</td>
                             </tr>
                         `).join("") : `<tr><td colspan="4">No trading-history rows exported.</td></tr>`}
                     </tbody>
@@ -12019,9 +12153,9 @@ function renderQsaseSourceNetwork(qsase = {}) {
             <div class="qsase-category-grid">
                 ${categories.map((row) => `
                     <article class="${statusClass(row.state)}">
-                        <span>${htmlText(row.family)}</span>
-                        <strong>${htmlText(row.fresh_count || 0)}/${htmlText(row.source_count || 0)} fresh</strong>
-                        <p>${htmlText(row.quorum_contributing_count || 0)} quorum contributors · ${htmlText(row.credential_gated_count || 0)} credential gated.</p>
+                        <span>${qsaseHtmlText(row.family)}</span>
+                        <strong>${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(row.source_count || 0)} fresh</strong>
+                        <p>${qsaseHtmlText(row.quorum_contributing_count || 0)} quorum contributors · ${qsaseHtmlText(row.credential_gated_count || 0)} credential-gated.</p>
                     </article>
                 `).join("")}
             </div>
@@ -12031,8 +12165,8 @@ function renderQsaseSourceNetwork(qsase = {}) {
                     <ul class="qsase-compact-list">
                         ${sources.map((source) => `
                             <li class="${statusClass(source.state)}">
-                                <strong>${htmlText(source.source_name || source.source_key)}</strong>
-                                <span>${htmlText(source.family)} · ${htmlText(source.freshness_status)} · ${htmlText(source.trust_posture)}</span>
+                                <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
+                                <span>${qsaseHtmlText(source.family)} · ${qsaseHtmlText(source.freshness_status)} · ${qsaseHtmlText(source.trust_posture)}</span>
                             </li>
                         `).join("")}
                     </ul>
@@ -12042,8 +12176,8 @@ function renderQsaseSourceNetwork(qsase = {}) {
                     <ul class="qsase-compact-list">
                         ${markets.map((market) => `
                             <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
-                                <strong>${htmlText(market.symbol)}</strong>
-                                <span>${htmlText(market.display_name)} · ${htmlText(market.paperability_state)}</span>
+                                <strong>${qsaseHtmlText(market.symbol)}</strong>
+                                <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.paperability_state)}</span>
                             </li>
                         `).join("")}
                     </ul>
@@ -12062,10 +12196,10 @@ function renderQsaseStrategyUniverse(qsase = {}) {
             <div class="qsase-card-grid">
                 ${rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.current_state)}">
-                        <span>${htmlText(row.catalyst_class || "strategy")}</span>
-                        <strong>${htmlText(row.label || row.strategy_family_id)}</strong>
-                        <p>${htmlText(row.current_state)} · proxies: ${htmlText(asArray(row.allowed_proxy_set).join(", "), "none")}</p>
-                        <small>Sources: ${htmlText(asArray(row.source_keywords).join(", "), "source family pending")}</small>
+                        <span>${qsaseHtmlText(row.catalyst_class || "strategy")}</span>
+                        <strong>${qsaseHtmlText(row.label || row.strategy_family_id)}</strong>
+                        <p>${qsaseHtmlText(row.current_state)} · proxies: ${qsaseHtmlText(asArray(row.allowed_proxy_set).join(", "), "none")}</p>
+                        <small>Sources: ${qsaseHtmlText(asArray(row.source_keywords).join(", "), "source family pending")}</small>
                     </article>
                 `).join("") || `<article class="qsase-record-card pending"><strong>No strategy rows exported</strong></article>`}
             </div>
@@ -12082,9 +12216,9 @@ function renderQsasePatternLab(qsase = {}) {
             <div class="qsase-card-grid pattern">
                 ${rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state)}">
-                        <span>${htmlText(row.pattern_type)} · ${htmlText(row.instrument)}</span>
-                        <strong>${htmlText(row.score ?? "score pending")}</strong>
-                        <p>${htmlText(row.state || row.reason)} ${row.linear_baseline_beaten === false ? "Linear baseline not beaten." : ""}</p>
+                        <span>${qsaseHtmlText(row.pattern_type)} · ${qsaseHtmlText(row.instrument)}</span>
+                        <strong>${qsaseHtmlText(row.score ?? "score pending")}</strong>
+                        <p>${qsaseHtmlText(row.state || row.reason)} ${row.linear_baseline_beaten === false ? "Linear baseline did not add enough confidence yet." : ""}</p>
                         <small>Strategy Foundry: ${row.candidate_for_strategy_foundry ? "candidate" : "not yet"} · paper order allowed: ${row.paper_order_allowed ? "yes" : "no"}</small>
                     </article>
                 `).join("") || `<article class="qsase-record-card pending"><strong>No pattern rows exported</strong></article>`}
@@ -12102,16 +12236,16 @@ function renderQsaseTradeIntents(qsase = {}) {
             <div class="qsase-card-grid">
                 ${rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state)}">
-                        <span>${htmlText(row.instrument)} · ${htmlText(row.state)}</span>
-                        <strong>${htmlText(row.strategy_family)}</strong>
-                        <p>${htmlText(row.thesis)}</p>
+                        <span>${qsaseHtmlText(row.instrument)} · ${qsaseHtmlText(row.state)}</span>
+                        <strong>${qsaseHtmlText(row.strategy_family)}</strong>
+                        <p>${qsaseHtmlText(row.thesis)}</p>
                         <dl>
-                            <div><dt>Source quorum</dt><dd>${htmlText(row.source_quorum)}</dd></div>
-                            <div><dt>Akber</dt><dd>${htmlText(row.akber_filter)}</dd></div>
-                            <div><dt>Quantum</dt><dd>${htmlText(row.quantum_review)}</dd></div>
-                            <div><dt>Next</dt><dd>${htmlText(row.next_allowed_action)}</dd></div>
+                            <div><dt>Source quorum</dt><dd>${qsaseHtmlText(qsaseOutcomeText(row.source_quorum))}</dd></div>
+                            <div><dt>Akber</dt><dd>${qsaseHtmlText(qsaseOutcomeText(row.akber_filter))}</dd></div>
+                            <div><dt>Quantum</dt><dd>${qsaseHtmlText(qsaseOutcomeText(row.quantum_review))}</dd></div>
+                            <div><dt>Next</dt><dd>${qsaseHtmlText(row.next_allowed_action)}</dd></div>
                         </dl>
-                        <small>${htmlText(row.reason)} · order: ${row.is_order ? "yes" : "no"}</small>
+                        <small>${qsaseHtmlText(row.reason)} · ${row.is_order ? "Order record" : "No order created"}</small>
                     </article>
                 `).join("") || `<article class="qsase-record-card online"><strong>No trade intent rows</strong><p>Nothing is currently being considered by QSASE.</p></article>`}
             </div>
@@ -12122,22 +12256,24 @@ function renderQsaseTradeIntents(qsase = {}) {
 function renderQsaseRouterPaperOps(qsase = {}) {
     const router = qsase.router || {};
     const gate = qsase.paperops_gate || {};
-    const why = router.why_not_trading_now || {};
-    const decision = why.reason || gate.top_blocking_gate || "No current router decision exported.";
+    const counts = qsaseRouterDecisionCounts(router);
+    const decision = qsaseRouterHeadline(router, gate);
+    const decisionTone = counts.held ? "degraded" : qsaseDecisionClass(decision);
     return `
         <section class="qsase-section qsase-final-decision ${statusClass(router.status || gate.status)}" data-qsase-section="router_paperops_gate">
-            ${renderQsaseSectionHeader("Router & PaperOps Gate", decision, router.status || gate.status, qsaseDecisionClass(decision))}
+            ${renderQsaseSectionHeader("Router & PaperOps Gate", decision, router.status || gate.status, decisionTone)}
             <div class="qsase-final-grid">
-                ${renderMetric("Paper review", router.paper_review_candidate_count || 0)}
-                ${renderMetric("Held", router.hold_count || 0)}
-                ${renderMetric("Safety blocks", router.blocked_safety_boundary_count || 0)}
+                ${renderMetric("Paper review", counts.paperReview)}
+                ${renderMetric("Held for evidence", counts.held)}
+                ${renderMetric("Safety vetoes", counts.safetyBlocks)}
+                ${renderMetric("Reviewed ideas", counts.ranked)}
                 ${renderMetric("Handoffs", gate.handoff_record_count || 0)}
-                ${renderMetric("Top gate", gate.top_blocking_gate || "none")}
-                ${renderMetric("Guarded route", gate.guarded_alpaca_paper_route_state || "unknown")}
+                ${renderMetric("Top gate", qsaseHumanText(gate.top_blocking_gate || "none"))}
+                ${renderMetric("Guarded route", qsaseHumanText(gate.guarded_alpaca_paper_route_state || "unknown"))}
                 ${renderMetric("Orders created", gate.paper_order_created_count || 0)}
                 ${renderMetric("Broker writes", gate.broker_write_count || 0)}
             </div>
-            <p class="qsase-boundary-note">${htmlText(gate.boundary || qsase.boundary || "Router and PaperOps visibility only. No order authority.")}</p>
+            <p class="qsase-boundary-note">${qsaseHtmlText(gate.boundary || qsase.boundary || "Router and PaperOps visibility only. No order authority.")}</p>
         </section>
     `;
 }
@@ -12167,7 +12303,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             ${renderQsasePatternLab(qsase)}
             ${renderQsaseTradeIntents(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}
-            <p class="qsase-boundary-note">${htmlText(qsase.boundary)}</p>
+            <p class="qsase-boundary-note">${qsaseHtmlText(qsase.boundary)}</p>
         </div>
     `;
 }
