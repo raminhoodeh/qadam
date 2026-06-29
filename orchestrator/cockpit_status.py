@@ -370,6 +370,20 @@ from world_monitor.source_registry import EXPECTED_SOURCE_COUNT
 
 COCKPIT_STATUS_SCHEMA_VERSION = 1
 COCKPIT_STATUS_FILENAME = "cockpit-status.json"
+QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
+    "status": "qsase_dashboard_status.json",
+    "portfolio_value": "qsase_dashboard_portfolio_value_series.json",
+    "current_portfolio": "qsase_dashboard_current_portfolio.json",
+    "trading_history": "qsase_dashboard_trading_history.json",
+    "source_network": "qsase_dashboard_source_network.json",
+    "strategy_universe": "qsase_dashboard_strategy_universe.json",
+    "pattern_lab": "qsase_dashboard_pattern_lab.json",
+    "trade_intents": "qsase_dashboard_trade_intents.json",
+    "learning_ledger": "qsase_dashboard_learning_ledger.json",
+    "repair_queue": "qsase_dashboard_repair_queue.json",
+    "router": "qsase_strategy_router_decisions.json",
+    "paperops_gate": "qsase_paperops_gate_interface.json",
+}
 PAPER_ACCOUNT_MIRROR_STALE_AFTER_SECONDS = 45 * 60
 
 PROHIBITED_KEYS = {
@@ -2136,6 +2150,72 @@ def _read_public_runtime_artifact(path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError):
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
+    runtime = Path(settings.runtime_dir)
+    artifacts = {
+        key: _read_public_runtime_artifact(runtime / filename)
+        for key, filename in QSASE_DASHBOARD_PUBLIC_ARTIFACTS.items()
+    }
+    primary = artifacts.get("status", {})
+    sections = {
+        key: value
+        for key, value in artifacts.items()
+        if key != "status" and value.get("public_safe") is True
+    }
+    missing_sections = sorted(
+        key
+        for key in QSASE_DASHBOARD_PUBLIC_ARTIFACTS
+        if key != "status" and key not in sections
+    )
+    status = primary.get("status") or (
+        "qsase_dashboard_visibility_missing" if not primary else "qsase_dashboard_visibility_unavailable"
+    )
+    return {
+        "schema_version": 1,
+        "artifact_type": "qsase_public_dashboard_contract",
+        "status": status,
+        "generated_at": primary.get("generated_at"),
+        "public_safe": True,
+        "read_only": True,
+        "command_disabled": True,
+        "paper_only": True,
+        "source_artifact": "data/runtime/qsase_dashboard_status.json",
+        "section_artifacts": {
+            key: f"data/runtime/{filename}"
+            for key, filename in QSASE_DASHBOARD_PUBLIC_ARTIFACTS.items()
+        },
+        "sections": sections,
+        "missing_section_count": len(missing_sections),
+        "missing_sections": missing_sections,
+        "portfolio_value_series_count": int(primary.get("portfolio_value_series_count", 0) or 0),
+        "current_position_count": int(primary.get("current_position_count", 0) or 0),
+        "trading_history_row_count": int(primary.get("trading_history_row_count", 0) or 0),
+        "source_row_count": int(primary.get("source_row_count", 0) or 0),
+        "all_strategy_count": int(primary.get("all_strategy_count", 0) or 0),
+        "currently_in_play_count": int(primary.get("currently_in_play_count", 0) or 0),
+        "linear_pattern_count": int(primary.get("linear_pattern_count", 0) or 0),
+        "nonlinear_pattern_count": int(primary.get("nonlinear_pattern_count", 0) or 0),
+        "trade_intent_count": int(primary.get("trade_intent_count", 0) or 0),
+        "live_capital_enabled": False,
+        "broker_write_allowed": False,
+        "paper_order_allowed": False,
+        "proof_credit_allowed": False,
+        "authority_flags": {
+            "creates_trade_candidates": False,
+            "creates_paper_orders": False,
+            "grants_proof_credit": False,
+            "enables_live_capital": False,
+            "sends_broker_writes": False,
+            "telegram_command_path_enabled": False,
+        },
+        "boundary": (
+            "QSASE dashboard contract is public-safe, read-only visibility. It renders portfolio, "
+            "source, strategy, pattern, intent, router, and PaperOps state but cannot create "
+            "orders, approvals, broker writes, proof credit, Telegram commands, or live capital."
+        ),
+    }
 
 
 def _preference_last_successful_at(artifact: dict[str, Any], allowed_statuses: set[str]) -> str | None:
@@ -9160,6 +9240,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         "paperops_qctrl_consultation": paperops_qctrl_public_status(settings),
         "trade_layer": _trade_layer(settings),
         "communications": _communications(settings),
+        "qsase_dashboard": _qsase_dashboard_public_status(settings),
         "live_bridge": live_bridge_contract(settings, generated_at),
         "durable_ingestion": durable_ingestion_status(settings),
         "phase4_strategy": _phase4_strategy_status(settings),

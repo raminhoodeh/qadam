@@ -32,68 +32,14 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-28T21:07:56.601908+00:00",
-  "latest_value": 98312.29,
+  "generated_at": "2026-06-29T02:58:55.037460+00:00",
+  "latest_value": 98292.77,
   "line_graph_available": true,
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
   "schema_version": "qsase_dashboard_view_model.v1",
   "series": [
-    {
-      "cash": 78389.1,
-      "display_currency": "USD",
-      "drawdown_pct": 0.152,
-      "equity": 99847.8,
-      "portfolio_value": 99847.8,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-06-20T22:52:40.125147+00:00"
-    },
-    {
-      "cash": 78389.1,
-      "display_currency": "USD",
-      "drawdown_pct": 0.152,
-      "equity": 99847.8,
-      "portfolio_value": 99847.8,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-06-20T23:44:18.892852+00:00"
-    },
-    {
-      "cash": 78389.1,
-      "display_currency": "USD",
-      "drawdown_pct": 0.152,
-      "equity": 99847.8,
-      "portfolio_value": 99847.8,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-06-21T00:45:49.125700+00:00"
-    },
-    {
-      "cash": 78389.1,
-      "display_currency": "USD",
-      "drawdown_pct": 0.152,
-      "equity": 99847.8,
-      "portfolio_value": 99847.8,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-06-21T01:46:56.319655+00:00"
-    },
-    {
-      "cash": 78389.1,
-      "display_currency": "USD",
-      "drawdown_pct": 0.152,
-      "equity": 99847.8,
-      "portfolio_value": 99847.8,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-06-21T02:47:50.668483+00:00"
-    },
-    {
-      "cash": 78389.1,
-      "display_currency": "USD",
-      "drawdown_pct": 0.152,
-      "equity": 99847.8,
-      "portfolio_value": 99847.8,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-06-21T03:49:21.580412+00:00"
-    },
     {
       "cash": 78389.1,
       "display_currency": "USD",
@@ -1119,6 +1065,60 @@
       "portfolio_value": 98312.29,
       "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
       "timestamp": "2026-06-28T20:12:38.741671+00:00"
+    },
+    {
+      "cash": 73768.39,
+      "display_currency": "USD",
+      "drawdown_pct": 1.688,
+      "equity": 98312.29,
+      "portfolio_value": 98312.29,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-06-28T21:12:21.979574+00:00"
+    },
+    {
+      "cash": 73768.39,
+      "display_currency": "USD",
+      "drawdown_pct": 1.688,
+      "equity": 98312.29,
+      "portfolio_value": 98312.29,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-06-28T22:13:11.653782+00:00"
+    },
+    {
+      "cash": 73768.39,
+      "display_currency": "USD",
+      "drawdown_pct": 1.688,
+      "equity": 98312.29,
+      "portfolio_value": 98312.29,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-06-28T23:13:37.917785+00:00"
+    },
+    {
+      "cash": 73768.39,
+      "display_currency": "USD",
+      "drawdown_pct": 1.572,
+      "equity": 98428.45,
+      "portfolio_value": 98428.45,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-06-29T00:14:43.351190+00:00"
+    },
+    {
+      "cash": 73768.39,
+      "display_currency": "USD",
+      "drawdown_pct": 1.679,
+      "equity": 98320.93,
+      "portfolio_value": 98320.93,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-06-29T01:14:44.479971+00:00"
+    },
+    {
+      "cash": 73768.39,
+      "display_currency": "USD",
+      "drawdown_pct": 1.707,
+      "equity": 98292.77,
+      "portfolio_value": 98292.77,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-06-29T02:14:32.443047+00:00"
     }
   ],
   "series_count": 120,

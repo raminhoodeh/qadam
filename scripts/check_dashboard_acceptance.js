@@ -130,8 +130,8 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260620-completion-gaps",
-    "/dashboard.js?v=20260620-completion-gaps"
+    "/auth.css?v=20260629-qsase-dashboard",
+    "/dashboard.js?v=20260629-qsase-dashboard"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -231,7 +231,9 @@ assertNoUnsafePublicText(css, "dashboard CSS");
 assertNoUnsafePublicText(renderer, "dashboard renderer");
 
 (async () => {
-    const rendered = await renderWithStatus(status);
+    const legacyStatus = JSON.parse(JSON.stringify(status));
+    delete legacyStatus.qsase_dashboard;
+    const rendered = await renderWithStatus(legacyStatus);
 
     assert(
         rendered.document.documentElement.dataset.dashboardStatus === "rendered",

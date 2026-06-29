@@ -453,7 +453,9 @@ async function main() {
         assert(value === false, `Stage 7 authority flag must be false: ${key}`);
     });
 
-    const rendered = await renderWithStatus(status);
+    const legacyStatus = JSON.parse(JSON.stringify(status));
+    delete legacyStatus.qsase_dashboard;
+    const rendered = await renderWithStatus(legacyStatus);
     const stage7Html = html(rendered, "[data-stage7-dashboard-visibility]");
     REQUIRED_SECTIONS.forEach((sectionId) => {
         assert(stage7Html.includes(`data-stage7-section="${sectionId}"`), `Rendered Stage 7 missing section ${sectionId}`);

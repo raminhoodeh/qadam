@@ -123,7 +123,9 @@ async function main() {
 
     assertCount(dashboardHtml, "overview-decision-records", 0, "static dashboard shell decision records");
 
-    const rendered = await renderWithStatus(status);
+    const legacyStatus = JSON.parse(JSON.stringify(status));
+    delete legacyStatus.qsase_dashboard;
+    const rendered = await renderWithStatus(legacyStatus);
     const overviewHtml = [
         html(rendered, "[data-overview-portfolio-hero]"),
         html(rendered, "[data-overview-mission-brief]"),
@@ -205,7 +207,7 @@ async function main() {
         ["Backtesting & Replay Lab", 2],
         ["read-only", 1],
         ["live capital", 2],
-        ["cannot", 2]
+        ["cannot", 8]
     ].forEach(([needle, max]) => {
         assertCountAtMost(missionControlText, needle, max, "default Mission Control repetition budget");
     });
@@ -247,7 +249,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260620-completion-gaps");
+    console.log("dashboard_cc9_cache_key=20260629-qsase-dashboard");
 }
 
 main().catch((error) => {

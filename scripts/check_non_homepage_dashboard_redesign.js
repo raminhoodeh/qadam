@@ -45,7 +45,7 @@ includesAll(html, [
     "data-dashboard",
     "data-user-email",
     "data-signout",
-    "/dashboard.js?v=20260620-completion-gaps",
+    "/dashboard.js?v=20260629-qsase-dashboard",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 

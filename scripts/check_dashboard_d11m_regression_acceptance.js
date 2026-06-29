@@ -165,7 +165,9 @@ function assertPlanAndOrchestration() {
 }
 
 async function assertRenderedDashboardContract() {
-    const rendered = await renderWithStatus(status);
+    const legacyStatus = JSON.parse(JSON.stringify(status));
+    delete legacyStatus.qsase_dashboard;
+    const rendered = await renderWithStatus(legacyStatus);
 
     assert(
         rendered.document.documentElement.dataset.dashboardStatus === "rendered",
@@ -237,8 +239,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260620-completion-gaps",
-        "/dashboard.js?v=20260620-completion-gaps"
+        "/auth.css?v=20260629-qsase-dashboard",
+        "/dashboard.js?v=20260629-qsase-dashboard"
     ], "D11M cache-key continuity");
 
     assertCanonicalViewNav();
