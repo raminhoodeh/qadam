@@ -4099,7 +4099,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         rss: "Collects news and public feeds for broad event coverage.",
         telegram: "Captures user-submitted observations and bot communications as read-only context.",
         twitter_x: "Tracks public social/news velocity that can corroborate or challenge live hypotheses.",
-        reddit: "Optional retail-forum context awaiting Reddit OAuth credentials.",
+        reddit: "Reddit Narrative Proxy reads ApeWisdom aggregate retail/forum attention while Reddit OAuth remains an optional upgrade.",
         sec_edgar: "Reads company filings for semiconductor, defence, and market-sensitive disclosures.",
         stock_act: "Reads Capitol Trades/STOCK Act congressional disclosures through the Apify Capitol Trades Scraper as political-trading context. It is evidence only, not trade authority.",
         patents: "Tracks patent activity for supply-chain, defence, and semiconductor innovation signals.",
@@ -4108,6 +4108,8 @@ function stage7SourceGroups(status = {}, sources = {}) {
     const watchingByKey = new Map(asArray(status.watching).map((source) => [source.source_key || source.key, source]));
     const optionalGapByKey = new Map(asArray(status.mission_control?.data_sources?.optional_source_gap_records)
         .map((gap) => [gap.source_key || gap.key, gap]));
+    const coveredProxyByKey = new Map(asArray(status.mission_control?.data_sources?.covered_proxy_source_records)
+        .map((record) => [record.source_key || record.key, record]));
     const candidatePatterns = asArray(status.daily_edge_findings_brief?.patterns_observed).length
         ? asArray(status.daily_edge_findings_brief.patterns_observed)
         : asArray(status.edge_pattern_ledger?.patterns || status.pattern_recognition_engine?.candidate_patterns);
@@ -4137,6 +4139,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
         const registryStatus = String(source.registry_status || source.raw_status || "").toLowerCase();
         const providerStatus = String(source.provider_decision_status || source.provider_activation_state || "").toLowerCase();
         const providerDecisionText = `${readiness} ${registryStatus} ${providerStatus} ${selectionStatus} ${actionCategory}`;
+        if (coveredProxyByKey.has(sourceKey)) return "Connected";
         if (actionCategory === "intentionally_disabled" || selectionStatus === "optional_disabled" || /marketplace disabled|intentionally disabled/.test(providerDecisionText)) return "Optional Disabled";
         if (actionCategory === "needs_adapter" || registryStatus === "needs_adapter" || /adapter not built|pending adapter|pending public adapter|optional adapter/.test(providerDecisionText)) return "Future Adapter";
         if (/provider decision required|provider selected/.test(providerDecisionText) && credentialStatus === "not_required") return "Provider Decision";
@@ -4164,6 +4167,8 @@ function stage7SourceGroups(status = {}, sources = {}) {
         }
         const gap = optionalGapByKey.get(source.source_key || source.key);
         if (gap) return `${dashboardText(source.source_name || source.name || source.source_key)} is an optional gap: ${dashboardText(gap.next_action, "credentials or provider access are still needed before it can contribute.")}`;
+        const proxyCoverage = coveredProxyByKey.get(source.source_key || source.key);
+        if (proxyCoverage) return `${dashboardText(proxyCoverage.proxy_coverage_name, "Reddit Narrative Proxy")} is connected as aggregate retail-attention context. ${dashboardText(proxyCoverage.next_action, "Reddit OAuth remains optional.")}`;
         const label = sourceStatusLabel(source);
         if (label === "Optional Disabled") return `${dashboardText(source.source_name || source.name || source.source_key)} is intentionally disabled. It is not a failed connection and does not need credentials for the current paper-trading core.`;
         if (label === "Future Adapter") return `${dashboardText(source.source_name || source.name || source.source_key)} is a future optional adapter. It is not connected because Qadam has not promoted this source into the live evidence set yet.`;
@@ -4201,7 +4206,7 @@ function stage7SourceGroups(status = {}, sources = {}) {
                 currently_influencing: influenceRecords.length ? influenceRecords[0].label : "",
                 influencing_hypotheses: [...new Set(influenceRecords.map((item) => item.label))],
                 recent_observation: sourceObservation(source, influenceRecords),
-                operator_action: source.operator_action || optionalGapByKey.get(sourceKey)?.next_action || "none",
+                operator_action: source.operator_action || coveredProxyByKey.get(sourceKey)?.next_action || optionalGapByKey.get(sourceKey)?.next_action || "none",
                 eligible_for_signal_review: source.eligible_for_signal_review === true,
                 usable_for_research_context: source.usable_for_research_context !== false
             };
