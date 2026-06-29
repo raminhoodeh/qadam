@@ -211,6 +211,27 @@ RESOURCE_ENTRIES: tuple[ResourceEntry, ...] = (
         ),
     ),
     ResourceEntry(
+        "stock_trading_reddit_reference",
+        "Stock_Trading_Reddit Reference",
+        "social_narrative_reference",
+        "https://github.com/Sam120204/Stock_Trading_Reddit",
+        "Reference pattern for ApeWisdom aggregate retail-attention collection and later Reddit OAuth enrichment ideas.",
+        (
+            "source_registry",
+            "research_analyst",
+            "strategy_lead",
+            "signal_integrity",
+            "fund_manager_cockpit",
+        ),
+        validation_status="reference_reviewed",
+        production_active=False,
+        decision_notes=(
+            "MIT reference only; Qadam implements a native Reddit Narrative Proxy. "
+            "PRAW, raw Reddit scraping, MongoDB, Streamlit, and model code are deferred "
+            "and not imported into runtime."
+        ),
+    ),
+    ResourceEntry(
         "tradingview_mcp",
         "TradingView MCP",
         "supplemental_data_plane",

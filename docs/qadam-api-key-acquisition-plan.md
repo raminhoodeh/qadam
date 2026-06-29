@@ -60,7 +60,7 @@ Still pending or replaced:
 - OddsPipe is now the selected Stage 0 read-only coverage route for normalized Kalshi/Polymarket data. It replaces direct Kalshi as a first-release monitoring dependency, but it does not add venue execution authority.
 - Telegram now has local private and group delivery targets configured; it remains dry-run and send-disabled until explicit send testing is approved.
 - ACLED token refresh automation now exists in `scripts/refresh_acled_token.py`. A 2026-05-19 refresh run succeeded with the refresh-token grant, but the ACLED read endpoint still returned HTTP 403, so ACLED still needs provider entitlement/account-scope confirmation before it counts as durable live.
-- BLS, Reddit, direct Kalshi, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. Capitol Trades/STOCK Act is now covered through the Apify Capitol Trades Scraper when the local Apify token is present. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
+- BLS, Reddit OAuth, direct Kalshi, SEC user agent, IBM Quantum, and AWS Braket remain future or optional credentials. Capitol Trades/STOCK Act is now covered through the Apify Capitol Trades Scraper when the local Apify token is present. Reddit-like retail attention is covered for first release by the no-key Reddit Narrative Proxy / ApeWisdom aggregate bridge. AIS, Aviationstack, UN Comtrade, and X now have local credential placeholders when supplied. UnusualWhales is intentionally disabled unless re-selected.
 
 ## 3. Batch A - Get These First
 
@@ -84,7 +84,7 @@ Minimum useful outcome after Batch A:
 - Telegram can be dry-run without sending.
 - All credentials remain local.
 
-Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, OddsPipe, Capitol Trades via Apify, and Telegram bot private/group delivery targets are locally configured. Direct Kalshi remains unavailable in Ramin's current regions, but OddsPipe now satisfies the first-release read-only Kalshi/Polymarket coverage need. The selected remaining data-source credential gap is Reddit; UnusualWhales is no longer a Batch A credential gap.
+Current Batch A note: NASA FIRMS, Alpaca paper, ACLED, FRED, OddsPipe, Capitol Trades via Apify, and Telegram bot private/group delivery targets are locally configured. Direct Kalshi remains unavailable in Ramin's current regions, but OddsPipe now satisfies the first-release read-only Kalshi/Polymarket coverage need. Reddit OAuth is no longer a first-release blocker because the selected bridge is the no-key Reddit Narrative Proxy / ApeWisdom aggregate path. UnusualWhales is no longer a Batch A credential gap.
 
 ## 4. Batch B - Add Confirmation Feeds
 
@@ -95,7 +95,7 @@ These improve signal quality but should not block the first proof.
 | 7 | BLS | Free with key / public limits | `BLS_API_KEY` | Register for a BLS API key. | `./scripts/check_phase1_live_source_hardening.py --live` |
 | 8 | SEC EDGAR | Free, no secret | `SEC_USER_AGENT` | Set a real user-agent string with contact email. Do not leave the placeholder. | `./scripts/check_phase1_live_source_hardening.py --live` |
 | 9 | UN Comtrade | Free/plan dependent | `COMTRADE_API_KEY` | Create a UN Comtrade account/API subscription key. | `./scripts/check_phase1_live_source_hardening.py --live` |
-| 10 | Reddit | Usually free at low scale; terms-sensitive | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Create a Reddit developer app for read-only monitoring. Keep usage low and compliant. | `./scripts/check_phase1_live_source_hardening.py --live` |
+| 10 | Reddit Narrative Proxy now; Reddit OAuth later | No key for ApeWisdom aggregate proxy; Reddit OAuth usually free at low scale but terms-sensitive | none now; later `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Use ApeWisdom aggregate retail-attention data now. Keep Reddit OAuth as a later upgrade for raw post/comment access if approved. | Future `./scripts/check_reddit_narrative_proxy.py`; later `./scripts/check_phase1_live_source_hardening.py --live` |
 | 11 | X API | Paid/credit-based | `X_BEARER_TOKEN` | Only buy if RSS/GDELT/Reddit cannot cover the narrative edge. Start with the lowest useful tier. | `./scripts/check_phase1_live_source_hardening.py --live` |
 
 Minimum useful outcome after Batch B:

@@ -127,25 +127,44 @@ def main() -> int:
         observed["missing_registry"] = registry
         if registry.get("adapter_count") != 3:
             errors.append("credential_bound_adapter_count_mismatch")
-        if registry.get("missing_credentials_count") != 3:
+        if registry.get("missing_credentials_count") != 2:
             errors.append("missing_credentials_count_mismatch")
         for key in CHECKED_KEYS:
             state = credential_bound_adapter_state(key, settings)
             observed[f"{key}_missing"] = state
-            if state.get("activation_state") != "missing_credentials":
+            if key == "reddit":
+                if state.get("activation_state") != "ready_for_live_readonly":
+                    errors.append("reddit_proxy_state_not_ready_without_oauth")
+                if state.get("credential_status") != "proxy_active_oauth_optional":
+                    errors.append("reddit_proxy_credential_status_invalid")
+                if state.get("source_quorum_credit_allowed") is not False:
+                    errors.append("reddit_proxy_source_quorum_credit_allowed")
+                if state.get("missing_required_env_vars"):
+                    errors.append("reddit_proxy_required_env_vars_reported_missing")
+            elif state.get("activation_state") != "missing_credentials":
                 errors.append(f"missing_state_not_missing:{key}")
             _assert_authority_boundary(state, errors)
             status = phase1_live_adapter_status(key, settings)
             if status.get("credential_bound") is not True:
                 errors.append(f"phase1_status_not_credential_bound:{key}")
-            live_result = asyncio.run(_fetch_live_state(key, settings))
-            if not live_result.get("degraded"):
-                errors.append(f"missing_credential_live_fetch_not_degraded:{key}")
-            if live_result.get("degraded_reason") != "missing_credentials":
-                errors.append(f"missing_credential_live_fetch_reason_mismatch:{key}")
-            events = live_result.get("events", [])
-            if isinstance(events, list) and events:
-                errors.append(f"missing_credential_live_fetch_created_events:{key}")
+            if key == "reddit":
+                sample_result = Phase1ReadOnlyAdapter(key, settings=settings).fetch_sample().to_dict()
+                if sample_result.get("degraded"):
+                    errors.append("reddit_proxy_sample_degraded_without_oauth")
+                if sample_result.get("source") != "social.reddit_narrative_proxy":
+                    errors.append("reddit_proxy_sample_source_mismatch")
+                events = sample_result.get("events", [])
+                if not isinstance(events, list) or not events:
+                    errors.append("reddit_proxy_sample_events_missing")
+            else:
+                live_result = asyncio.run(_fetch_live_state(key, settings))
+                if not live_result.get("degraded"):
+                    errors.append(f"missing_credential_live_fetch_not_degraded:{key}")
+                if live_result.get("degraded_reason") != "missing_credentials":
+                    errors.append(f"missing_credential_live_fetch_reason_mismatch:{key}")
+                events = live_result.get("events", [])
+                if isinstance(events, list) and events:
+                    errors.append(f"missing_credential_live_fetch_created_events:{key}")
 
     scenarios: tuple[tuple[str, tuple[str, ...], str], ...] = (
         (

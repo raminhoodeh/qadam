@@ -172,6 +172,7 @@ from orchestrator.paperops_submit_regression_guard import (
 from orchestrator.paperops_source_gap_visibility import (
     paperops_source_gap_visibility_public_status,
 )
+from orchestrator.reddit_narrative_proxy import reddit_narrative_proxy_public_status
 from orchestrator.paperops_completion_gaps import (
     paperops_completion_gaps_public_status,
     validate_paperops_completion_gaps,
@@ -1798,6 +1799,11 @@ def _d1_snapshot_contract(generated_at: str) -> dict[str, Any]:
 
 
 def _credential_status(source: dict[str, Any]) -> str:
+    if (
+        source.get("source_key") == "reddit"
+        and source.get("registry_status") == "adapter_live_via_reddit_narrative_proxy"
+    ):
+        return "covered_by_proxy_oauth_optional"
     if source.get("selection_status") in {"optional_disabled", "not_selected"}:
         return "not_required"
     if source.get("action_category") in {
@@ -7149,6 +7155,14 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
                 "optional_gap_records",
                 [],
             ),
+            "covered_proxy_source_count": paperops_source_gap_visibility.get(
+                "covered_proxy_count",
+                0,
+            ),
+            "covered_proxy_source_records": paperops_source_gap_visibility.get(
+                "covered_proxy_records",
+                [],
+            ),
             "required_source_gap_count": paperops_source_gap_visibility.get(
                 "required_gap_count",
                 0,
@@ -9130,6 +9144,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
     watching = _build_watching(data_map, settings)
     bookmap_public_status = _bookmap_local_bridge_status(settings)
     source_gap_public_status = paperops_source_gap_visibility_public_status(settings)
+    reddit_narrative_proxy_status = reddit_narrative_proxy_public_status(settings)
     paperops_30_day_public_status = paperops_30_day_operations_public_status(settings)
     paper_live_certification_status = paper_live_certification_public_status(settings)
     paperops_active_automation_status = (
@@ -9211,6 +9226,7 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
             paperops_submit_regression_guard_public_status(settings)
         ),
         "paperops_source_gap_visibility": source_gap_public_status,
+        "reddit_narrative_proxy": reddit_narrative_proxy_status,
         "paperops_completion_gaps": paperops_completion_gaps_public_status(
             settings,
             generated_at=generated_at,

@@ -35,9 +35,18 @@ OPTIONAL_SOURCE_GAP_DEFINITIONS: tuple[dict[str, Any], ...] = (
     {
         "gap_key": "reddit_credentials_missing",
         "source_key": "reddit",
-        "source_name": "Reddit",
+        "source_name": "Reddit Narrative Proxy / Reddit OAuth",
         "coverage_role": "retail_forum_context",
         "credential_groups": (("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),),
+        "proxy_coverage_active": True,
+        "proxy_coverage_key": "reddit_narrative_proxy",
+        "proxy_coverage_name": "Reddit Narrative Proxy via ApeWisdom aggregate data",
+        "source_variant": "apewisdom_public_aggregate",
+        "oauth_upgrade_state": "optional_upgrade_pending",
+        "resolution_note": (
+            "The first-release social narrative gap is covered by the no-key Reddit Narrative Proxy. "
+            "Reddit OAuth remains an optional later enrichment path and is not a PaperOps blocker."
+        ),
     },
     {
         "gap_key": "ais_maritime_credential_missing",
@@ -135,17 +144,29 @@ def _configured_group_count(
 def _source_gap_record(definition: dict[str, Any], settings: Settings) -> dict[str, Any]:
     groups = tuple(tuple(group) for group in definition["credential_groups"])
     configured_group_count = _configured_group_count(settings, groups)
-    gap_present = configured_group_count == 0
+    proxy_coverage_active = definition.get("proxy_coverage_active") is True
+    gap_present = configured_group_count == 0 and not proxy_coverage_active
+    if configured_group_count:
+        credential_status = "configured"
+    elif proxy_coverage_active:
+        credential_status = "covered_by_proxy_oauth_optional"
+    else:
+        credential_status = "missing_optional"
     return {
         "gap_key": definition["gap_key"],
         "source_key": definition["source_key"],
         "source_name": definition["source_name"],
         "coverage_role": definition["coverage_role"],
+        "proxy_coverage_active": proxy_coverage_active,
+        "proxy_coverage_key": definition.get("proxy_coverage_key"),
+        "proxy_coverage_name": definition.get("proxy_coverage_name"),
+        "source_variant": definition.get("source_variant"),
+        "oauth_upgrade_state": definition.get("oauth_upgrade_state"),
         "severity": "optional",
         "gap_present": gap_present,
         "credential_group_count": len(groups),
         "configured_credential_group_count": configured_group_count,
-        "credential_status": "configured" if not gap_present else "missing_optional",
+        "credential_status": credential_status,
         "resolution_note": definition.get("resolution_note"),
         "trade_blocking": False,
         "source_quorum_blocking": False,
@@ -153,7 +174,9 @@ def _source_gap_record(definition: dict[str, Any], settings: Settings) -> dict[s
         "paper_exit_blocking": False,
         "proof_credit_blocking": False,
         "next_action": (
-            "Configure optional source credentials to expand context coverage."
+            "No trading action required; Reddit OAuth remains an optional upgrade."
+            if proxy_coverage_active and not configured_group_count
+            else "Configure optional source credentials to expand context coverage."
             if gap_present
             else "No action required."
         ),
@@ -192,6 +215,11 @@ def build_paperops_source_gap_visibility(
     ]
     optional_gap_records = [record for record in records if record["gap_present"]]
     optional_gap_keys = [record["gap_key"] for record in optional_gap_records]
+    covered_proxy_records = [
+        record
+        for record in records
+        if record.get("proxy_coverage_active") is True and not record.get("gap_present")
+    ]
     trade_blocking_gap_count = sum(1 for record in records if record["trade_blocking"])
     artifact = {
         "schema_version": PAPEROPS_SOURCE_GAP_VISIBILITY_SCHEMA_VERSION,
@@ -219,6 +247,8 @@ def build_paperops_source_gap_visibility(
         "optional_gap_count": len(optional_gap_records),
         "optional_gap_keys": optional_gap_keys,
         "optional_gap_records": optional_gap_records,
+        "covered_proxy_count": len(covered_proxy_records),
+        "covered_proxy_records": covered_proxy_records,
         "non_blocking_gap_count": len(optional_gap_records),
         "non_blocking_gap_keys": optional_gap_keys,
         "required_gap_count": 0,
@@ -493,5 +523,7 @@ def paperops_source_gap_visibility_public_status(
         "next_required_action",
         "boundary",
         "validation_error_count",
+        "covered_proxy_count",
+        "covered_proxy_records",
     )
     return {key: deepcopy(artifact.get(key)) for key in keys}

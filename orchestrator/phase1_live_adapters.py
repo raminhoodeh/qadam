@@ -22,6 +22,11 @@ from orchestrator.adapters import RawPayloadArchive, SourceEnvelope, UnifiedEven
 from orchestrator.config import Settings
 from orchestrator.credential_bound_adapters import credential_bound_adapter_state, credential_bound_adapter_keys
 from orchestrator.event_log import EventLog
+from orchestrator.reddit_narrative_proxy import (
+    fetch_reddit_narrative_proxy_live_envelope,
+    fetch_reddit_narrative_proxy_sample_envelope,
+    sample_reddit_narrative_proxy_payload,
+)
 from orchestrator.secrets import secret_status, secret_value
 from world_monitor.source_registry import get_source
 
@@ -280,12 +285,17 @@ PHASE1_LIVE_ADAPTERS: dict[str, Phase1AdapterConfig] = {
     ),
     "reddit": Phase1AdapterConfig(
         key="reddit",
-        source_label="social.reddit",
-        event_type="narrative_signal",
+        source_label="social.reddit_narrative_proxy",
+        event_type="social_signal",
         trust_score=0.46,
-        sample_summary="Reddit narrative observation requiring corroboration before any research weight.",
-        primary_endpoint="https://oauth.reddit.com/r/worldnews/new",
+        sample_summary="Reddit Narrative Proxy aggregate attention observation requiring corroboration.",
+        primary_endpoint="https://apewisdom.io/api/v1.0/filter/all-stocks/page/1",
+        public_live=True,
         required_any_secret_groups=(("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),),
+        notes=(
+            "No-key ApeWisdom aggregate bridge fills the existing Reddit slot for read-only "
+            "retail-attention context. Reddit OAuth remains an optional later enrichment path."
+        ),
     ),
     "twitter_x": Phase1AdapterConfig(
         key="twitter_x",
@@ -477,6 +487,8 @@ class Phase1ReadOnlyAdapter:
         self.event_log = event_log or EventLog(echo=False)
 
     def sample_payload(self) -> dict[str, Any]:
+        if self.config.key == "reddit":
+            return sample_reddit_narrative_proxy_payload()
         return {
             "sample": True,
             "source_key": self.config.key,
@@ -558,6 +570,12 @@ class Phase1ReadOnlyAdapter:
         return envelope
 
     def fetch_sample(self) -> SourceEnvelope:
+        if self.config.key == "reddit":
+            return fetch_reddit_narrative_proxy_sample_envelope(
+                settings=self.settings,
+                archive=self.archive,
+                event_log=self.event_log,
+            )
         return self.envelope_from_payload(self.sample_payload())
 
     def _request_headers(self) -> dict[str, str]:
@@ -757,6 +775,14 @@ class Phase1ReadOnlyAdapter:
         return self.config.primary_endpoint
 
     async def fetch_live(self, *, timeout_seconds: float = 12.0) -> SourceEnvelope:
+        if self.config.key == "reddit":
+            return await fetch_reddit_narrative_proxy_live_envelope(
+                settings=self.settings,
+                archive=self.archive,
+                event_log=self.event_log,
+                timeout_seconds=timeout_seconds,
+            )
+
         if self.config.key == "bookmap":
             from orchestrator.bookmap_local_bridge import fetch_bookmap_local_bridge_live_envelope_async
 

@@ -18,7 +18,7 @@ Key split decisions:
 - Spire and MarineTraffic remain one AIS source because the tool contract is identical. AISStream is the v1 read-only MVP provider; Spire and MarineTraffic remain paid fallback candidates.
 - Yahoo Finance / yfinance is an accepted supplemental market-confirmation capability from the local `yahoo-finance-api/` checkout, currently classified as `accepted_supplemental_pending_live_dependencies`. It is not counted in the current 35-source registry unless the master plan deliberately promotes it.
 - Preference/PREF MCP is a registered supplemental multi-source data capability plane. It is not counted as a 36th canonical source; individual upstream sources discovered through Preference require separate registry decisions before promotion.
-- Source registry cleanup now separates selected missing credentials from unselected optional sources. The current selected optional credential gap is Reddit. Direct Kalshi remains deferred, but OddsPipe is now the selected read-only Kalshi/Polymarket coverage route for Stage 0. Capitol Trades/STOCK Act is connected through the Apify Capitol Trades Scraper when the local Apify token is present. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
+- Source registry cleanup now separates selected missing credentials from unselected optional sources. Reddit OAuth is no longer a first-release blocker because the selected bridge is the Reddit Narrative Proxy / ApeWisdom aggregate retail-attention route. Direct Kalshi remains deferred, but OddsPipe is now the selected read-only Kalshi/Polymarket coverage route for Stage 0. Capitol Trades/STOCK Act is connected through the Apify Capitol Trades Scraper when the local Apify token is present. UnusualWhales and RapidAPI are intentionally disabled. Coinglass, Chainlink, GitHub, and Bookmap now have provider decisions recorded, but remain unconnected until their read-only adapters or local bridge are explicitly built/started.
 
 ## Tier 1 - Wire First
 
@@ -52,7 +52,7 @@ Key split decisions:
 | UN Comtrade | API key | Weekly/monthly context source. |
 | BIS | Public stats API | Weekly systemic-risk context. |
 | USGS | Public minerals data and earthquake API | Scope decision recorded: minerals/supply-chain context is the strategic role; the public earthquake API is the event-driven physical-risk adapter path. |
-| Reddit | OAuth app | Credential-bound confirmation source, not primary. |
+| Reddit Narrative Proxy / Reddit OAuth | no key for ApeWisdom aggregate bridge; OAuth app later | Aggregate retail/forum attention source now; credential-bound raw Reddit confirmation source later, not primary. |
 | Telegram | Bot API plus Telethon/MTProto user session | World Monitor has strong channel polling logic. |
 | SEC EDGAR | Public API, User-Agent required | High-trust corporate filing source. |
 | STOCK Act filings | Apify Capitol Trades Scraper congressional trades path | Credential-bound v1 provider direction recorded; needed for politician trade disclosures and cross-validation. |
@@ -117,7 +117,7 @@ Current practical missing data after this bridge:
   route is configured.
 - X/Twitter has API credentials, but Agent Reach's local cookie/browser route
   is not activated unless the operator sets it up separately.
-- Reddit still needs OAuth credentials. Direct Kalshi remains deferred because OddsPipe covers first-release read-only prediction-market data; Capitol Trades/STOCK Act is satisfied by the Apify Capitol Trades Scraper token when configured locally.
+- Reddit OAuth remains optional, but Reddit-like retail attention is covered by the selected no-key ApeWisdom aggregate proxy. Direct Kalshi remains deferred because OddsPipe covers first-release read-only prediction-market data; Capitol Trades/STOCK Act is satisfied by the Apify Capitol Trades Scraper token when configured locally.
 - LinkedIn/Xiaohongshu/Xueqiu-style cookie channels should use dedicated
   low-risk accounts if ever activated.
 

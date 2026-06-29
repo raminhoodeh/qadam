@@ -495,18 +495,28 @@ SOURCE_SPECS: tuple[SourceSpec, ...] = (
     ),
     SourceSpec(
         "reddit",
-        "Reddit API",
+        "Reddit Narrative Proxy / Reddit API",
         "social",
         3,
         "world_monitor_social_reddit",
-        "OAuth 2.0",
-        ("https://oauth.reddit.com/r/{subreddit}/new",),
-        "30 minutes",
-        "100 requests/min authenticated",
+        "none for ApeWisdom aggregate; OAuth 2.0 optional later",
+        (
+            "https://apewisdom.io/api/v1.0/filter/all-stocks/page/{page}",
+            "https://apewisdom.io/api/v1.0/filter/all-crypto/page/{page}",
+            "https://apewisdom.io/api/v1.0/filter/4chan/page/{page}",
+            "https://oauth.reddit.com/r/{subreddit}/new",
+        ),
+        "20-30 minutes",
+        "ApeWisdom public aggregate; Reddit OAuth 100 requests/min authenticated if later approved",
         ("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),
-        status="adapter_live_requires_key",
-        notes="Selected narrative source. Needs Reddit OAuth credentials before live read-only activation.",
-        operator_action="add_reddit_oauth_credentials",
+        status="adapter_live_via_reddit_narrative_proxy",
+        notes=(
+            "Selected narrative source is covered by the no-key Reddit Narrative Proxy using "
+            "ApeWisdom aggregate attention data. Reddit OAuth remains an optional later enrichment "
+            "path for raw post/comment access if approved. Proxy evidence is read-only, "
+            "secondary-only, and cannot create trades or satisfy source quorum alone."
+        ),
+        operator_action="oauth_optional_upgrade_pending",
     ),
     SourceSpec(
         "sec_edgar",
@@ -602,6 +612,8 @@ def source_registry_action_category(source: SourceSpec) -> str:
         return "local_bridge_required"
     if source.status == "intentionally_disabled":
         return "intentionally_disabled"
+    if source.status == "adapter_live_via_reddit_narrative_proxy":
+        return "no_user_action"
     if source.status in {"needs_adapter", "needs_new_adapter"}:
         return "needs_adapter"
     if source.status in {"needs_clarity", "needs_choice"}:

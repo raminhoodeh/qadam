@@ -74,6 +74,7 @@ These resources guide Qadam's agent architecture, swarm simulation, and continuo
 | Fincept Terminal | Reference pattern for financial-terminal taxonomy, broad connector maps, portfolio analytics, and market-context UX. Treat code and license as restricted until reviewed; use architecture lessons only. |
 | LibreChat | Reference pattern for multi-model operator chat, MCP configuration UX, tool visibility, and multi-user operator workflows. Qadam should keep commands read-only and structured-record backed. |
 | Cloudflare Agents / durable inbox patterns | Reference pattern for durable agent state, alert workflows, human-in-the-loop approvals, retries, and acknowledgements. Qadam should keep canonical state local while using the workflow pattern for cockpit and Telegram visibility. |
+| Sam120204/Stock_Trading_Reddit | Reference pattern for no-key Reddit-like aggregate retail attention through ApeWisdom, ticker mention/rank deltas, sentiment/correlation feature ideas, and later Reddit OAuth enrichment. Qadam should implement a native `Reddit Narrative Proxy` and avoid importing PRAW/raw Reddit scraping for the first release. |
 
 Foundation implication:
 
@@ -157,6 +158,7 @@ These are build and integration resources beyond the 35 live World Monitor feeds
 | Wispr Flow | Build workflow reference for working with generative coding tools. |
 | Discord trading bot group | Community observation reference for bot iteration patterns. |
 | 9 Wall Street analyst prompts | Role templates for Qadam's analysis output layer. |
+| ApeWisdom aggregate endpoints | No-key public aggregate route for Reddit/4Chan stock and crypto attention. Useful for filling Qadam's Reddit API gap as a low-trust, secondary-only social narrative proxy. |
 
 Foundation implication:
 

@@ -101,7 +101,12 @@ async function main() {
     }
 
     assert(sourceKeys.has("tradingview_paid_alerts"), "TradingView paid alerts source row is missing");
-    assert(watching.some((source) => source.credential_status === "missing"), "missing-credential state is not represented");
+    const coveredProxySourceCount = Number(status.mission_control?.data_sources?.covered_proxy_source_count || 0);
+    const allOptionalSourcesConfigured = status.paperops_source_gap_visibility?.status === "all_optional_sources_configured";
+    assert(
+        watching.some((source) => source.credential_status === "missing") || (allOptionalSourcesConfigured && coveredProxySourceCount > 0),
+        "missing-credential or covered-proxy state is not represented"
+    );
     assert(watching.some((source) => source.promoted_adapter), "promoted-adapter state is not represented");
     assert(watching.some((source) => source.auth_class === "credential_required"), "credential-required auth state is not represented");
     assert(watching.some((source) => source.usable_for_research_context), "research-usable source state is not represented");

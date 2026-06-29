@@ -62,6 +62,8 @@ MATRIX_AUTHORITY_FLAGS = {
 SUPPLEMENTAL_SOURCE_KEYS = {
     "alpaca",
     "bookmap",
+    "reddit",
+    "reddit_narrative_proxy",
     "tradingview",
     "tradingview_mcp",
     "yahoo_finance",
@@ -310,6 +312,16 @@ def _trust_posture(score: Any) -> str:
 
 
 def _credential_status(record: dict[str, Any]) -> str:
+    source_key = _clean_key(record.get("source_key"))
+    registry_status = str(record.get("registry_status") or record.get("readiness") or "").lower()
+    source_name = str(record.get("source_name") or "").lower()
+    if record.get("proxy_coverage_active") is True:
+        return "covered_by_proxy_oauth_optional"
+    if source_key == "reddit" and (
+        "adapter_live_via_reddit_narrative_proxy" in registry_status
+        or "reddit narrative proxy" in source_name
+    ):
+        return "covered_by_proxy_oauth_optional"
     explicit = record.get("credential_status")
     if isinstance(explicit, str) and explicit:
         return explicit

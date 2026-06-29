@@ -17,6 +17,7 @@ These plans remain useful but are subordinate to the master implementation plan:
 - `qadam-dashboard-navigation-ux-plan.md`
 - `qadam-dashboard-overhaul-master-implementation-plan.md`
 - `qadam-oss-reference-implementation-plan.md`
+- `qadam-reddit-narrative-proxy-implementation-plan.md`
 - `qadam-telegram-bot-implementation-plan.md`
 - `qadam-paper-operational-mode-plan.md`
 - `qadam-operational-consistency-reconciliation-plan.md`

@@ -36,15 +36,18 @@ class CredentialBoundAdapterSpec:
 CREDENTIAL_BOUND_ADAPTERS: dict[str, CredentialBoundAdapterSpec] = {
     "reddit": CredentialBoundAdapterSpec(
         source_key="reddit",
-        provider_name="Reddit API",
+        provider_name="Reddit Narrative Proxy / Reddit API",
         required_env_vars=("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"),
         optional_env_vars=("REDDIT_USER_AGENT",),
-        credential_kind="oauth_client_credentials",
-        auth_flow="client_credentials_token_exchange",
+        credential_kind="no_key_proxy_with_optional_oauth_upgrade",
+        auth_flow="apewisdom_public_aggregate_first_release; optional_reddit_oauth_later",
         setup_url="https://www.reddit.com/prefs/apps",
-        default_endpoint="https://oauth.reddit.com/r/worldnews/new",
-        evidence_packet_types=("narrative_signal", "retail_attention_context", "edge_decay_context"),
-        notes="Uses read-only OAuth client credentials; subreddit posts require corroboration before research weight.",
+        default_endpoint="https://apewisdom.io/api/v1.0/filter/all-stocks/page/1",
+        evidence_packet_types=("social_signal", "retail_attention_context", "edge_decay_context"),
+        notes=(
+            "First-release live-read path uses no-key ApeWisdom aggregate data through Qadam's "
+            "native Reddit Narrative Proxy. Reddit OAuth remains an optional later enrichment path."
+        ),
     ),
     "kalshi": CredentialBoundAdapterSpec(
         source_key="kalshi",
@@ -104,6 +107,45 @@ def credential_bound_adapter_state(source_key: str, settings: Settings | None = 
         raise KeyError(f"unknown credential-bound adapter: {source_key}")
     settings = settings or Settings.from_env()
     spec = CREDENTIAL_BOUND_ADAPTERS[source_key]
+    if source_key == "reddit":
+        configured, missing = _configured_missing(spec.required_env_vars, settings)
+        optional_configured = _configured_optional(spec.optional_env_vars, settings)
+        return {
+            "schema_version": CREDENTIAL_BOUND_ADAPTER_SCHEMA_VERSION,
+            "source_key": spec.source_key,
+            "provider_name": spec.provider_name,
+            "credential_status": "oauth_configured_proxy_still_active" if not missing else "proxy_active_oauth_optional",
+            "activation_state": "ready_for_live_readonly",
+            "activation_ready": True,
+            "can_fetch_live_readonly": True,
+            "configured_required_env_vars": configured,
+            "missing_required_env_vars": (),
+            "missing_optional_oauth_env_vars": missing,
+            "configured_optional_env_vars": optional_configured,
+            "required_env_var_count": 0,
+            "optional_env_var_count": len(spec.required_env_vars) + len(spec.optional_env_vars),
+            "credential_kind": spec.credential_kind,
+            "auth_flow": spec.auth_flow,
+            "setup_url": spec.setup_url,
+            "default_endpoint": spec.default_endpoint,
+            "endpoint_env_var": spec.endpoint_env_var,
+            "endpoint_status": "reddit_narrative_proxy_active_oauth_optional",
+            "provider_endpoint_required": False,
+            "evidence_packet_types": spec.evidence_packet_types,
+            "evidence_authority": "supplemental_readonly_context",
+            "social_context_role": "secondary_retail_attention_only",
+            "signal_authority": "none_without_strategy_and_risk_gates",
+            "source_quorum_credit_allowed": False,
+            "order_authority": "none",
+            "paper_trading_blocking": False,
+            "live_capital_authority": False,
+            "notes": spec.notes,
+            "boundary": (
+                "Reddit Narrative Proxy is read-only aggregate context. Missing Reddit OAuth is optional "
+                "upgrade metadata and cannot block PaperOps, create signals, approve risk, write brokers, "
+                "or enable live capital."
+            ),
+        }
     if source_key == "kalshi" and secret_status("ODDSPIPE_API_KEY", settings).configured:
         payload = {
             "schema_version": CREDENTIAL_BOUND_ADAPTER_SCHEMA_VERSION,
