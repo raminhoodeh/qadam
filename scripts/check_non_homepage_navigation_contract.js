@@ -64,7 +64,7 @@ Object.entries(pages).forEach(([name, html]) => {
     ["signup", "public-auth", ["dashboard", "whitepaper", "account", "home"]],
     ["whitepaper", "public-doc", ["dashboard", "guide", "whitepaper", "account"]],
     ["guide", "protected-doc", ["dashboard", "guide", "whitepaper", "signout"]],
-    ["dashboard", "protected-dashboard", ["dashboard", "guide", "whitepaper", "signout"]]
+    ["dashboard", "public-dashboard", ["dashboard", "guide", "whitepaper"]]
 ].forEach(([name, context, expectedItems]) => {
     const html = pages[name];
     assert(html.includes(`data-qadam-nav-context="${context}"`), `${name} nav context mismatch`);
@@ -96,11 +96,10 @@ includesAll(pages.dashboard, [
     'data-dashboard-view-target="evidence" data-target-section="evidence"',
     'data-dashboard-view-target="reasoning" data-target-section="reasoning"',
     'data-dashboard-view-target="operations" data-target-section="operations"',
-    'hidden" data-dashboard',
-    'data-signout'
+    'hidden" data-dashboard'
 ], "dashboard nav contract");
 
-excludesAll(`${pages.login}\n${pages.signup}\n${pages.whitepaper}`, [
+excludesAll(`${pages.login}\n${pages.signup}\n${pages.whitepaper}\n${pages.dashboard}`, [
     "data-signout"
 ], "public pages");
 

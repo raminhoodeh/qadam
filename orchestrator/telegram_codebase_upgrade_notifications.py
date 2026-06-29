@@ -152,6 +152,11 @@ def _telegram_body_safe_fragment(value: Any) -> bool:
 
 
 def _area_change_text(areas: set[str]) -> tuple[str, str]:
+    if "dashboard overview experience" in areas or "dashboard web app" in areas or "public cockpit status snapshot" in areas:
+        return (
+            "The dashboard access path was changed so people can open the public read-only dashboard without a password, the homepage now points to Dashboard instead of Login, and the dashboard no longer shows a Sign Out control.",
+            "a non-technical viewer can open Mission Control directly while the page remains review-only",
+        )
     if "Telegram communication runtime" in areas or "Telegram regression checks" in areas:
         return (
             "Telegram updates were tightened so the group gets shorter, more specific notes instead of repeated system copy.",
@@ -161,11 +166,6 @@ def _area_change_text(areas: set[str]) -> tuple[str, str]:
         return (
             "PaperOps messaging was updated so trade and portfolio updates are easier to read in the group.",
             "paper-trading updates can focus on the trade, portfolio value, and what Qadam is watching next",
-        )
-    if "dashboard overview experience" in areas or "public cockpit status snapshot" in areas:
-        return (
-            "The dashboard view was refreshed so the public status page matches the latest operating state.",
-            "the dashboard should be easier to scan when checking Qadam's current position",
         )
     if "source provider decisions" in areas or "source registry" in areas:
         return (
@@ -345,12 +345,33 @@ def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
         for item in repo_state.get("change_areas", [])
         if isinstance(item, dict)
     }
+    root_repo = source.get("root_repo", {})
+    dashboard_repo = source.get("dashboard_repo", {})
+    changed_file_count = _int(root_repo.get("changed_file_count")) + _int(
+        dashboard_repo.get("changed_file_count")
+    )
+    if not changed_file_count:
+        changed_file_count = _int(root_repo.get("last_commit_file_count")) + _int(
+            dashboard_repo.get("last_commit_file_count")
+        )
+    area_count = len([area for area in areas if area])
+    scope_sentence = ""
+    if changed_file_count and area_count:
+        scope_sentence = (
+            f"It covers {changed_file_count} changed files across {area_count} update areas, "
+            "with the public dashboard kept read-only and paper-only."
+        )
+    elif changed_file_count:
+        scope_sentence = (
+            f"It covers {changed_file_count} changed files, with the public dashboard kept read-only and paper-only."
+        )
 
     generic_summaries = {
         "Qadam codebase and dashboard were upgraded.",
         "Qadam has been updated.",
         "It has been updated and the live dashboard is ready for review.",
     }
+    area_change, fallback_benefit = _area_change_text(areas)
     if summary and summary not in generic_summaries:
         change = summary.rstrip(".") + "."
         if safe_details:
@@ -358,8 +379,14 @@ def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
             if detail:
                 detail = detail[0].upper() + detail[1:]
             change = f"{change} {detail}."
+        if scope_sentence:
+            change = f"{change} {scope_sentence}"
+        elif area_change:
+            change = f"{change} {area_change}"
     else:
-        change, fallback_benefit = _area_change_text(areas)
+        change = area_change
+        if scope_sentence:
+            change = f"{change} {scope_sentence}"
 
     benefit_reason = (
         _sentence_fragment(safe_benefits[0], limit=180)

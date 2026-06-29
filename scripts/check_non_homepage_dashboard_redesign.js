@@ -43,11 +43,13 @@ includesAll(html, [
     "data-dashboard-safety-strip",
     "data-stage7-dashboard-visibility",
     "data-dashboard",
-    "data-user-email",
-    "data-signout",
+    "data-qadam-nav-context=\"public-dashboard\"",
+    "Public read-only view.",
     "/dashboard.js?v=20260629-qsase-dashboard",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
+
+assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");
 
 includesAll(css, [
     "Stage 6: institutional dashboard redesign",

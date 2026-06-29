@@ -297,10 +297,16 @@ async function main() {
         assert(Number.isFinite(sleeve.active_hypothesis_count), `Mission Control sleeve hypothesis count missing: ${sleeve.label}`);
     });
     const sleevesByLabel = new Map(stage7.watched_markets_universe.sleeves.map((sleeve) => [sleeve.label, sleeve]));
-    assert(sleevesByLabel.get("Semiconductors")?.current_state === "Holding", "Mission Control semiconductors sleeve should show holding state");
-    assert(sleevesByLabel.get("Defence")?.current_state === "Holding", "Mission Control defence sleeve should show holding state");
-    ["Crude Oil", "Silver", "Prediction Markets"].forEach((label) => {
-        assert(sleevesByLabel.get(label)?.current_state === "Watching", `Mission Control ${label} sleeve should show watching state`);
+    const sleevesWithExposure = new Set(stage7.paper_fund_status.exposure_by_sleeve
+        .filter((sleeve) => sleeve.position_count > 0 || sleeve.deployed_gbp > 0)
+        .map((sleeve) => sleeve.label));
+    sleevesWithExposure.forEach((label) => {
+        assert(sleevesByLabel.get(label)?.current_state === "Holding", `Mission Control ${label} sleeve should show holding state when portfolio exposure exists`);
+    });
+    stage7.watched_markets_universe.sleeves
+        .filter((sleeve) => !sleevesWithExposure.has(sleeve.label))
+        .forEach((sleeve) => {
+            assert(sleeve.current_state !== "Holding", `Mission Control ${sleeve.label} sleeve should not show holding state without portfolio exposure`);
     });
     assert(stage7.watched_markets_universe.sleeves.every((sleeve) => sleeve.active_hypothesis_count >= 1), "Mission Control every watched sleeve should expose active hypothesis count");
     assert(stage7.watched_markets_universe.sleeves.every((sleeve) => sleeve.watched_instruments.length >= 2), "Mission Control market drawers need full instrument lists");

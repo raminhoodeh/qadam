@@ -159,11 +159,15 @@ includesAll(pages.dashboard, [
     'aria-pressed="false"',
     'aria-expanded="false"',
     'hidden" data-dashboard tabindex="-1"',
-    'data-signout'
+    'data-qadam-nav-context="public-dashboard"'
 ], "dashboard accessibility");
+
+assert(!pages.dashboard.includes("data-signout"), "public dashboard must not expose a sign-out control");
 
 includesAll(authJs, [
     'document.querySelector("[data-status]")',
+    'function dashboardIsPublicReadOnly()',
+    'window.renderQadamDashboardStatus(session || null)',
     'dashboard.classList.remove("hidden");',
     'window.location.replace(`/login/?next=${encodeURIComponent(currentPath)}`);'
 ], "auth js accessibility contract");
