@@ -1,9 +1,11 @@
 # Qadam
 
 A hedge fund team that fits inside your laptop.
-Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. 500+ live data feeds across 5 intelligence pipelines. One overseeing Fund Manager [you].
+Qadam is a boutique macro intelligence fund running on a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum/classical Head of Quant. It watches a broad source universe, searches for source-price patterns across a defined trading universe, tests those patterns, and routes only eligible paper ideas through guarded PaperOps.
 
-Qadam operates on a self-imposed trading strategy based on a deep and continuous understanding of its own cognition, latency and data quality. Phase 1 is optimised for prediction markets, crude oil, defence, silver, and semiconductors. Join the waitlist and be the first to install the system on your machine, tailoring it to your needs over time.
+The current evolution is the Qadam Self-Aware Strategy Engine [QSASE]. "Self-aware" does not mean sentient. It means Qadam maintains a machine-readable self-model of its own sources, data quality, model stack, quantum state, PaperOps route, risk posture, dashboard state, blockers, and learning history, then uses that self-model to decide what kind of strategies it is actually suited to run.
+
+Qadam's first operating universe remains focused: prediction markets, crude oil, defence, silver, semiconductors, and second-order AI infrastructure exposure. The public dashboard now starts with commercial proof: portfolio value, current holdings, trading history, source network, strategy universe, pattern lab, trade intents, and the final Router/PaperOps decision.
 
 Primary spec: `specs/qadam-specs.md`.
 
@@ -29,10 +31,10 @@ Planning docs:
 
 ## Product Identity
 
-Qadam is an autonomous intelligence engine with a transparent recommendation interface.
+Qadam is an autonomous paper-intelligence engine with a transparent portfolio and decision interface.
 
-- Autonomous underneath: observe, reason, size risk, paper/live trade under guardrails, log outcomes, and run postmortems.
-- Advisory on top: the cockpit at `qadam.trade` shows the founding Fund Managers what Qadam is watching, why a recommendation exists, the evidence behind it, how the autonomous engine would act, and how similar signals historically performed.
+- Autonomous underneath: observe, build source-price memory, search for linear and non-linear patterns, form strategy hypotheses, route them through Akber's filter, simulate/shadow-test them, hand eligible records to PaperOps, log outcomes, and run postmortems.
+- Advisory on top: the cockpit at `qadam.trade` shows the founding Fund Managers portfolio value, holdings, trading history, source health, strategy state, pattern evidence, current trade intents, why Qadam did or did not trade, and what is being learned.
 - Internal first: no public community tier, no external broker-connected autopilot, and no signal publishing in v1.
 
 First-release cockpit access is limited to Ramin, Troy, Akber, Ion, Dan, and pending Anas. The cockpit includes a private comments/forum area where the founding Fund Managers can suggest improvements, debate signals, flag issues, and leave governance notes.
@@ -54,6 +56,9 @@ Qadam is not HFT, copy trading, a general stock screener, a financial advisor, a
 
 Qadam's potential edge is architectural rather than a single indicator. It combines noisy cross-domain signals into a disciplined, replayable decision chain that can explain why a trade idea exists, why it is blocked, or why it deserves guarded paper execution.
 
+- Self-model discipline: QSASE knows when its source coverage, latency, model state, quantum state, PaperOps route, or risk posture is degraded, and should not pretend to have edge when its own machinery is weak.
+- Full-universe pattern search: source observations and watched instruments are evaluated as one source-price matrix, not as isolated mini-dashboards.
+- Linear and non-linear labs: transparent lag/event/factor tests establish simple evidence first; nonlinear and quantum/classical review then search for regime, interaction, and path-dependent relationships without granting trade authority.
 - Cross-domain fusion: conflict, physical infrastructure, logistics, macro, prediction markets, market structure, news, social context, and broker readouts are evaluated together.
 - Worldview as a question engine: the private world-model helps Qadam ask where incentives, power, scarcity, and narrative may be mispriced, but it remains a prior and cannot replace evidence.
 - Second-order infrastructure focus: Qadam can look past obvious AI leaders toward power generation, data-centre electrical systems, semiconductor capacity, memory, connectivity, and networking constraints.
@@ -107,27 +112,42 @@ Cross-cutting:
 
 ## qadam.trade Cockpit
 
-`qadam.trade` is the login surface and command cockpit. After Supabase login, the first view is a system map showing how the fund is wired together:
+`qadam.trade` is the login surface and read-only cockpit. After Supabase login, the default dashboard is now the QSASE public dashboard:
+
+1. Portfolio Value & Return.
+2. Current Portfolio.
+3. Trading History.
+4. Source Intelligence Network.
+5. Trading Strategy Universe.
+6. Pattern & Opportunity Lab.
+7. Trade Intents / What Qadam Is Thinking.
+8. Router & PaperOps Gate.
+
+That order is deliberate: money first, then holdings, then history, then intelligence, then strategy, then current trade decisions. The dashboard remains an oversight surface, not order entry.
+
+The operating team behind that view is:
 
 - Python script [COO]
 - Local LLM [Research Analyst]
 - Frontier LLM [Strategy Lead]
-- Quantum computer [Head of Quant]
+- Quantum/classical Head of Quant
 - World Monitor intelligence pipelines and active data sources
 - Event Log, Knowledge Graph, Risk Agent, broker adapters, notifications, and kill-switches
 - Telegram Bot communications rail for founding-member alerts, trade lifecycle updates, insight digests, and system warnings
 
-The dashboard should show health, uptime, heartbeat, degraded-state, and process status for every major module. It is a map of the system first, and a trading dashboard second. The detailed dashboard build path lives in `docs/qadam-dashboard-implementation-plan.md`.
+The dashboard should show health, uptime, heartbeat, degraded-state, and process status for every major module, but it should not bury the commercial readout under technical ceremony. The detailed dashboard build path lives in `docs/qadam-dashboard-implementation-plan.md`.
 
 The dashboard must eventually answer, from real status data:
 
-- What Qadam is watching.
-- Which modules are alive, pending, blocked, degraded, or local-only.
-- What Qadam is thinking about and how it is analyzing sources and news.
-- Which trades are candidates, blocked, staged, submitted, open, closed, or ready for postmortem.
-- What Qadam is forbidden from doing.
-- How the £1000 paper account is performing over time.
-- What Telegram communications were sent, queued, failed, suppressed, or pending delivery to founding members.
+- Is the paper portfolio going up or down?
+- What does Qadam currently hold?
+- What has Qadam traded, rejected, held, or closed?
+- Which source categories and data sources are connected?
+- Which strategies exist overall and which are currently in play?
+- Which linear and non-linear patterns has Qadam found?
+- Which trades is Qadam thinking about now?
+- Why did Router/PaperOps allow, hold, reject, shadow, or repair-request the current setup?
+- What is Qadam forbidden from doing?
 
 Current local cockpit state:
 
@@ -135,12 +155,12 @@ Current local cockpit state:
 - `/` renders a public cockpit entry page with a Login action.
 - `/login` renders Supabase email/password login.
 - `/sign-in` redirects to `/login`; `/sign-up` creates allowlisted Supabase Auth accounts.
-- `/dashboard` renders the health-driven System Map and is protected by Supabase session cookies plus Qadam's founding-manager allowlist.
+- `/dashboard` renders the QSASE portfolio-first dashboard and is protected by Supabase session cookies plus Qadam's founding-manager allowlist.
 - `/guide` renders the protected Qadam User Guide and is linked from the dashboard.
 - `/dashboard` and `/settings` enforce Qadam's founding Fund Manager email allowlist after sign-in.
 - `/api/health` proxies the Python COO health payload when `QADAM_ORCHESTRATOR_URL` is set.
 - If the COO is offline, the cockpit falls back to a degraded local shell instead of crashing.
-- Promoted adapters, source counts, unresolved sources, local-store status, execution venues, and Fund Manager access are rendered from the health contract.
+- Promoted adapters, source counts, unresolved sources, local-store status, execution venues, Fund Manager access, and QSASE dashboard sections are rendered from the public-safe status contract.
 
 The dashboard should also include a small private comments/forum area for Ramin, Troy, Akber, Ion, Dan, and pending Anas. Comments are saved locally and linked to the relevant signal, module, strategy, or postmortem.
 
@@ -390,8 +410,9 @@ Current dashboard status-contract state:
 - `orchestrator/cockpit_status.py` builds the public-safe cockpit status contract and includes the D9 Secure Live Bridge status.
 - `scripts/export_cockpit_status.py` writes `data/runtime/cockpit-status.json`, `cockpit-status.signature.json`, and, when the static site repo exists, matching files in `landing-page-repo/status/`.
 - `scripts/check_cockpit_status.py` validates that D0 is frozen, Qadam is in paper mode, live capital is disabled, module/source status exists, and the public snapshot contains no raw token-like values, allowlist emails, local absolute paths, secret lists, or broker authority.
-- `landing-page-repo/dashboard.js` now tries the authenticated `/api/cockpit-status` live bridge first, then falls back to `/status/cockpit-status.json`, and renders a top Mission Control surface before the detailed panels: connected/configured sources, durable replay readiness, Qadam's current trading philosophy, API/model/quant stack, current thinking, trade intent, paper holdings, P&L, safety boundaries, modules, source groups, cognition, forbidden actions, trade state, communications, comments, and process console from the contract.
-- Mission Control now includes a public-safe durable spine readout from `durable_ingestion`: Postgres/Timescale service state, replay status, replayed source count versus the 35-source target, next step, and explicit zero authority for source observations to create signals, candidates, orders, broker writes, or live-capital access.
+- `landing-page-repo/dashboard.js` now tries the authenticated `/api/cockpit-status` live bridge first, then falls back to `/status/cockpit-status.json`, and renders the QSASE public dashboard when `qsase_dashboard` is present: portfolio value line graph, current portfolio, trading history, source network, strategy universe, pattern lab, trade intents, Router/PaperOps gate, and explicit zero-authority flags.
+- The legacy overview walkthrough remains as a fallback renderer for old snapshots and regression checks, but the live public dashboard uses the QSASE money-first flow.
+- The public QSASE contract is exported by `orchestrator/cockpit_status.py` from `data/runtime/qsase_dashboard_*.json` artifacts. It is public-safe, read-only, paper-only, command-disabled, and cannot create trade candidates, paper orders, proof credit, Telegram commands, broker writes, or live-capital authority.
 - Dashboard Plan D3 is implemented locally: the Watching panel renders all 35 registered sources under 5 pipeline groups with readiness, credential state, adapter state, degraded reason, trust placeholder, and heartbeat time; D7 appends TradingView paid alerts as an observed market alert source.
 - Dashboard Plan D4 is implemented locally: the Cognition panel renders current focus, read-only paper-account context, Signal Integrity Gate state, recent Signal Integrity reviews, Head of Quant oracle state, model activity, shadow packets, hypotheses, evidence packets, missing corroboration, analysis timeline, and blocked-by-reason state from the public-safe snapshot.
 - Dashboard Plan D5 is implemented locally: `orchestrator/trade_intent.py`, `orchestrator/risk_agent.py`, `orchestrator/execution_policy.py`, `orchestrator/staged_paper_order.py`, `orchestrator/broker_reconciliation.py`, `orchestrator/paper_submit_receipt.py`, `scripts/check_trade_intent.py`, `scripts/check_risk_agent_policy_router.py`, `scripts/check_execution_policy_router.py`, `scripts/check_staged_paper_order_contract.py`, `scripts/check_broker_reconciliation_contract.py`, and `scripts/check_paper_submit_receipt_contract.py` create a local Trade Intent Store plus read-only Risk Agent, Execution Policy, disabled staged paper-order, read-only broker reconciliation, and dry-run paper-submit receipt review layers. The cockpit renders one candidate, one blocked D5 test intent, current Risk Agent policy reviews, current Execution Policy / kill-switch reviews, disabled staged paper-order reviews, broker reconciliation reviews, and dry-run paper-submit receipt reviews from those stores.

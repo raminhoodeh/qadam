@@ -220,19 +220,19 @@ async function main() {
     ], "Mission Control dashboard renderer");
 
     [guideDoc, guideHtml].forEach((guideText, index) => {
-        const label = index === 0 ? "Mission Control guide markdown" : "Mission Control guide HTML";
+        const label = index === 0 ? "QSASE guide markdown" : "QSASE guide HTML";
         includesAll(guideText, [
-            "Seven Mission Control Sections",
-            "Paper Fund Status",
+            "QSASE Dashboard Sections",
+            index === 0 ? "Portfolio Value & Return" : "Portfolio Value &amp; Return",
+            "Current Portfolio",
+            "Trading History",
             "Source Intelligence Network",
-            "Watched Markets Universe",
-            "Strategy Playbook",
-            "Hedge Fund Investment Team",
-            index === 0 ? "Hypotheses & Pattern Recognition" : "Hypotheses &amp; Pattern Recognition",
-            index === 0 ? "Backtesting & Replay Lab" : "Backtesting &amp; Replay Lab",
+            "Trading Strategy Universe",
+            index === 0 ? "Pattern & Opportunity Lab" : "Pattern &amp; Opportunity Lab",
+            "Trade Intents / What Qadam Is Thinking",
+            index === 0 ? "Router & PaperOps Gate" : "Router &amp; PaperOps Gate",
             "Advanced / Debug Mode",
-            "GBP 100,000",
-            "GBP 200,000",
+            "paper portfolio value line graph",
             "hidden chain-of-thought"
         ], label);
     });

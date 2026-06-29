@@ -31,6 +31,7 @@ assertIncludes(whitepaperHtml, [
     'qadam-whitepaper-utility',
     'qadam-whitepaper-section-nav',
     'href="#short-version"',
+    'href="#qsase"',
     'href="#operating-map"',
     'href="#trading-universe"',
     'href="#sources"',
@@ -40,10 +41,23 @@ assertIncludes(whitepaperHtml, [
     'qadam-whitepaper-hero-facts',
     'qadam-whitepaper-article',
     '<section id="short-version">',
+    '<section id="qsase">',
     '<section id="operating-map">',
     '<section id="trading-universe">',
     '<section id="sources">'
 ], "whitepaper html");
+
+assertIncludes(whitepaperHtml, [
+    "Qadam Self-Aware Strategy Engine",
+    "QSASE",
+    "Universal source-price matrix",
+    "Pattern labs",
+    "Strategy Foundry",
+    "Router and PaperOps",
+    "Learning ledger",
+    "portfolio value first",
+    "QSASE dashboard"
+], "whitepaper QSASE copy");
 
 assertIncludes(css, [
     "body.qadam-whitepaper-page",
