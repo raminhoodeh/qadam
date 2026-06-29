@@ -43,7 +43,7 @@
       "qualified_setup_count": 2,
       "record_audit": [
         {
-          "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:5167f651f76be9ec",
+          "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:46fe7f9e4a84118d",
           "derived_identity_fields": [
             "invalidation"
           ],
@@ -59,7 +59,7 @@
           "strategy_family_key": "defence_repricing_geopolitical_watch"
         },
         {
-          "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:f8a811f8317bce76",
+          "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:4d205462dd54aabe",
           "derived_identity_fields": [
             "invalidation"
           ],
@@ -99,7 +99,7 @@
         "telegram_inbound_authoritative": false
       },
       "source_artifact": "phase7_qualified_setup_ledger.json",
-      "source_generated_at": "2026-06-28T20:12:04.014035+00:00",
+      "source_generated_at": "2026-06-29T06:34:26.813828+00:00",
       "source_status": "read_only_q7_setups_recorded",
       "status": "ready"
     },
@@ -108,15 +108,15 @@
         "qadam.trade",
         "www.qadam.trade"
       ],
-      "cockpit_status_age_seconds": 3282,
-      "cockpit_status_generated_at": "2026-06-28T20:13:04.869312+00:00",
+      "cockpit_status_age_seconds": 1045,
+      "cockpit_status_generated_at": "2026-06-29T06:39:56.285703+00:00",
       "cockpit_status_signature_exists": true,
       "component": "dashboard_deploy_hygiene",
       "dashboard_public_safe_boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
       "degraded_reasons": [],
-      "deployment_receipt_age_seconds": 9511,
-      "deployment_receipt_deployed_at": "2026-06-28T18:29:16.401Z",
-      "deployment_url": "https://qadam-8jzk606xb-ramin-hoodehs-projects.vercel.app",
+      "deployment_receipt_age_seconds": 1012,
+      "deployment_receipt_deployed_at": "2026-06-29T06:40:29.112Z",
+      "deployment_url": "https://qadam-pmu77yt8b-ramin-hoodehs-projects.vercel.app",
       "gaps": [],
       "safety": {
         "backfill_allowed": false,
@@ -146,35 +146,35 @@
     "paper_lifecycle": {
       "accepted_order_policy_records": [
         {
-          "age_seconds": 75594,
+          "age_seconds": 24167,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-28T00:07:53.148863Z",
+          "submitted_at": "2026-06-29T00:14:34.884822035Z",
           "symbol": "ITA"
         },
         {
-          "age_seconds": 75593,
+          "age_seconds": 24166,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-28T00:07:53.965503Z",
+          "submitted_at": "2026-06-29T00:14:35.712759574Z",
           "symbol": "SMH"
         },
         {
-          "age_seconds": 28966,
+          "age_seconds": 13278,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-28T13:05:01.218579586Z",
+          "submitted_at": "2026-06-29T03:16:03.36711304Z",
           "symbol": "ITA"
         },
         {
-          "age_seconds": 28964,
+          "age_seconds": 13277,
           "client_order_id_present": true,
           "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
           "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-28T13:05:02.918177236Z",
+          "submitted_at": "2026-06-29T03:16:04.261516499Z",
           "symbol": "SMH"
         }
       ],
@@ -183,7 +183,7 @@
         "accepted": 4
       },
       "cockpit_open_position_count": 2,
-      "cockpit_order_count": 86,
+      "cockpit_order_count": 92,
       "component": "paper_lifecycle",
       "degraded_reasons": [],
       "fill_event_count": 0,
@@ -241,9 +241,9 @@
         "telegram_inbound_authoritative": false
       },
       "source_artifact": "paperops_paper_lifecycle_poller.json",
-      "source_generated_at": "2026-06-28T20:12:32.537320+00:00",
+      "source_generated_at": "2026-06-29T06:34:17.027203+00:00",
       "source_status": "paper_lifecycle_poll_recorded",
-      "stale_accepted_order_count": 4,
+      "stale_accepted_order_count": 2,
       "stale_accepted_order_policy_recorded": true,
       "status": "ready"
     },
@@ -595,7 +595,7 @@
         "telegram_inbound_authoritative": false
       },
       "source_artifact": "phase7_proof_lifecycle_monitor.json",
-      "source_generated_at": "2026-06-28T20:12:05.281312+00:00",
+      "source_generated_at": "2026-06-29T06:34:28.175948+00:00",
       "source_status": "proof_lifecycle_events_recorded",
       "status": "ready"
     },
@@ -619,7 +619,7 @@
       },
       "qctrl_consultation_generated_at": "2026-05-26T23:01:00.843967+00:00",
       "qctrl_consultation_status": "consultation_recorded",
-      "quantum_review_gate_generated_at": "2026-06-28T18:27:14.333900+00:00",
+      "quantum_review_gate_generated_at": "2026-06-29T06:37:44.200215+00:00",
       "quantum_review_gate_status": "quantum_review_gate_passed",
       "review_readiness_only": true,
       "safety": {
@@ -667,10 +667,10 @@
       "market_hours": {
         "calendar": "approx_us_equity_regular_session_utc",
         "in_regular_session": false,
-        "observed_at": "2026-06-28T21:07:47.838022+00:00",
+        "observed_at": "2026-06-29T06:57:21.916277+00:00",
         "regular_close_utc": "20:00",
         "regular_open_utc": "13:30",
-        "state": "closed_weekend"
+        "state": "outside_regular_session"
       },
       "opportunity_scan_interval_minutes": 20,
       "outside_market_hours_staleness_observed": true,
@@ -700,9 +700,9 @@
       "scanner_ready": true,
       "scheduler_activity_required_now": false,
       "source_artifact": "paperops_opportunity_scan_cadence.json",
-      "source_generated_age_seconds": 2081187,
+      "source_generated_age_seconds": 2116561,
       "source_generated_at": "2026-06-04T19:01:20.159436+00:00",
-      "source_mtime_age_seconds": 2081187,
+      "source_mtime_age_seconds": 2116561,
       "status": "ready",
       "trade_submission_allowed_by_scan": false,
       "twenty_minute_recurring_scheduler_active": false
@@ -722,7 +722,7 @@
           "scanner_cadence": 7
         },
         "submitted_paper_order_count": {
-          "cockpit_portfolio": 86,
+          "cockpit_portfolio": 92,
           "lifecycle_poller": 4,
           "paperops_summary": 0,
           "scanner_cadence": 7
@@ -811,11 +811,11 @@
   "degraded_reasons": [],
   "gap_count": 0,
   "gaps": [],
-  "generated_at": "2026-06-28T21:07:47.838022+00:00",
+  "generated_at": "2026-06-29T06:57:21.916277+00:00",
   "paper_growth_trial": {
     "actual_calendar_run": true,
     "backfill_used": false,
-    "run_day": 35,
+    "run_day": 36,
     "simulated_time_used": false
   },
   "paper_runtime": {
@@ -823,7 +823,7 @@
     "duplicate_submit_count": 4,
     "fresh_eligible_submit_count": 0,
     "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-    "open_order_count": 8,
+    "open_order_count": 14,
     "open_position_count": 2,
     "submitted_paper_order_count": 0
   },
@@ -861,99 +861,99 @@
   "source_artifacts": {
     "cockpit_status": {
       "exists": true,
-      "mtime": "2026-06-28T20:13:09.634339+00:00",
-      "mtime_age_seconds": 3278,
+      "mtime": "2026-06-29T06:40:02.999473+00:00",
+      "mtime_age_seconds": 1038,
       "path": "data/runtime/cockpit-status.json",
-      "size_bytes": 2785916
+      "size_bytes": 3073218
     },
     "cockpit_status_signature": {
       "exists": true,
-      "mtime": "2026-06-28T20:13:09.644256+00:00",
-      "mtime_age_seconds": 3278,
+      "mtime": "2026-06-29T06:40:03.011267+00:00",
+      "mtime_age_seconds": 1038,
       "path": "data/runtime/cockpit-status.signature.json",
       "size_bytes": 576
     },
     "dashboard_deployment_receipt": {
       "exists": true,
-      "mtime": "2026-06-28T18:29:16.403533+00:00",
-      "mtime_age_seconds": 9511,
+      "mtime": "2026-06-29T06:40:29.114660+00:00",
+      "mtime_age_seconds": 1012,
       "path": "data/runtime/dashboard-deployment-receipt.json",
       "size_bytes": 373
     },
     "paper_closed_trades": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:38.747590+00:00",
-      "mtime_age_seconds": 3309,
+      "mtime": "2026-06-29T06:34:23.602669+00:00",
+      "mtime_age_seconds": 1378,
       "path": "data/runtime/paper_closed_trades.jsonl",
       "size_bytes": 39546
     },
     "paper_orders": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:38.747099+00:00",
-      "mtime_age_seconds": 3309,
+      "mtime": "2026-06-29T06:34:23.600749+00:00",
+      "mtime_age_seconds": 1378,
       "path": "data/runtime/paper_orders.jsonl",
-      "size_bytes": 45215
+      "size_bytes": 48222
     },
     "paperops_alpaca_paper_submit_enablement": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:04.347504+00:00",
-      "mtime_age_seconds": 3343,
+      "mtime": "2026-06-29T06:34:27.168581+00:00",
+      "mtime_age_seconds": 1374,
       "path": "data/runtime/paperops_alpaca_paper_submit_enablement.json",
       "size_bytes": 3426
     },
     "paperops_autonomous_pass_summary": {
       "exists": true,
-      "mtime": "2026-06-28T20:13:09.991818+00:00",
-      "mtime_age_seconds": 3277,
+      "mtime": "2026-06-29T06:18:17.066524+00:00",
+      "mtime_age_seconds": 2344,
       "path": "data/runtime/paperops_autonomous_pass_summary.json",
-      "size_bytes": 189820
+      "size_bytes": 191684
     },
     "paperops_opportunity_scan_cadence": {
       "exists": true,
       "mtime": "2026-06-04T19:01:20.172757+00:00",
-      "mtime_age_seconds": 2081187,
+      "mtime_age_seconds": 2116561,
       "path": "data/runtime/paperops_opportunity_scan_cadence.json",
       "size_bytes": 6404
     },
     "paperops_paper_lifecycle_poller": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:35.147942+00:00",
-      "mtime_age_seconds": 3312,
+      "mtime": "2026-06-29T06:34:27.442183+00:00",
+      "mtime_age_seconds": 1374,
       "path": "data/runtime/paperops_paper_lifecycle_poller.json",
-      "size_bytes": 31594
+      "size_bytes": 31599
     },
     "paperops_qctrl_paper_consultation": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:03.257642+00:00",
-      "mtime_age_seconds": 3344,
+      "mtime": "2026-06-29T06:34:26.004641+00:00",
+      "mtime_age_seconds": 1375,
       "path": "data/runtime/paperops_qctrl_paper_consultation.json",
       "size_bytes": 4710
     },
     "phase7_proof_lifecycle_monitor": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:05.282289+00:00",
-      "mtime_age_seconds": 3342,
+      "mtime": "2026-06-29T06:34:28.176991+00:00",
+      "mtime_age_seconds": 1373,
       "path": "data/runtime/phase7_proof_lifecycle_monitor.json",
       "size_bytes": 38955
     },
     "phase7_proof_order_staging": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:04.182261+00:00",
-      "mtime_age_seconds": 3343,
+      "mtime": "2026-06-29T06:34:26.991030+00:00",
+      "mtime_age_seconds": 1374,
       "path": "data/runtime/phase7_proof_order_staging.json",
       "size_bytes": 76860
     },
     "phase7_qualified_setup_ledger": {
       "exists": true,
-      "mtime": "2026-06-28T20:12:04.015778+00:00",
-      "mtime_age_seconds": 3343,
+      "mtime": "2026-06-29T06:34:26.815775+00:00",
+      "mtime_age_seconds": 1375,
       "path": "data/runtime/phase7_qualified_setup_ledger.json",
-      "size_bytes": 68688
+      "size_bytes": 68680
     },
     "quantum_mandatory_review_gate": {
       "exists": true,
-      "mtime": "2026-06-28T18:27:14.338919+00:00",
-      "mtime_age_seconds": 9633,
+      "mtime": "2026-06-29T06:37:44.205436+00:00",
+      "mtime_age_seconds": 1177,
       "path": "data/runtime/quantum_mandatory_review_gate.json",
       "size_bytes": 10667
     }

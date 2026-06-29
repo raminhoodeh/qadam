@@ -5,7 +5,7 @@
   "approval_required_count": 8,
   "approved_proposal_count": 0,
   "artifact_type": "qsase_component_attribution_ledger",
-  "attribution_record_count": 103,
+  "attribution_record_count": 102,
   "authority": {
     "backtest_to_proof_allowed": false,
     "broker_live_write_allowed": false,
@@ -151,13 +151,13 @@
       }
     ],
     "essay_free": true,
-    "generated_at": "2026-06-28T21:07:56.278740+00:00",
+    "generated_at": "2026-06-29T06:57:28.760222+00:00",
     "latest_attribution": "self_healing_repair_loop",
     "latest_attribution_state": "recorded_proposal_only",
     "latest_cause": "route_defect_prevented_evaluation",
     "latest_evidence_class": "system_defect",
     "latest_outcome": "system_defect",
-    "latest_proposal": "source_coverage_repair_request",
+    "latest_proposal": "hold_model_weight",
     "live_capital_boundary": "live capital disabled",
     "live_send_allowed": false,
     "no_broker_writes": true,
@@ -172,7 +172,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "shadow_evidence_count": 48,
     "status": "qsase_learning_attribution_ledger_degraded",
-    "system_defect_record_count": 6,
+    "system_defect_record_count": 5,
     "top_blamed_component": "guarded_alpaca_paper_route",
     "top_credited_component": "source_universe"
   },
@@ -214,7 +214,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T21:07:56.280370+00:00",
+    "generated_at": "2026-06-29T06:57:28.761473+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -278,7 +278,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "status": "proposal_recorded_not_applied"
   },
-  "generated_at": "2026-06-28T21:07:56.278740+00:00",
+  "generated_at": "2026-06-29T06:57:28.760222+00:00",
   "input_artifacts": {
     "akber_filter_ref": "data/runtime/qsase_akber_filter_integration.json",
     "akber_filter_results_ref": "data/runtime/qsase_akber_filter_results.jsonl",
@@ -305,80 +305,80 @@
   "input_snapshots": {
     "akber_filter": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.583278+00:00",
+      "mtime": "2026-06-29T06:57:28.149038+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_akber_filter_integration.json"
     },
     "full_pattern_search": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.486866+00:00",
+      "mtime": "2026-06-29T06:57:27.271703+00:00",
       "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_full_universe_pattern_search.json"
     },
     "historical_memory": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.049533+00:00",
-      "mtime_age_seconds": 7,
+      "mtime": "2026-06-29T06:57:22.811554+00:00",
+      "mtime_age_seconds": 5,
       "path": "data/runtime/qsase_historical_source_price_memory.json"
     },
     "linear_lab": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.735752+00:00",
+      "mtime": "2026-06-29T06:57:27.480537+00:00",
       "mtime_age_seconds": 1,
       "path": "data/runtime/qsase_linear_pattern_lab.json"
     },
     "nonlinear_lab": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.157636+00:00",
-      "mtime_age_seconds": 1,
+      "mtime": "2026-06-29T06:57:27.812429+00:00",
+      "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json"
     },
     "paperops_gate": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.168485+00:00",
+      "mtime": "2026-06-29T06:57:28.672333+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_paperops_gate_interface.json"
     },
     "paperops_summary": {
       "exists": true,
-      "mtime": "2026-06-28T20:13:09.991818+00:00",
-      "mtime_age_seconds": 3286,
+      "mtime": "2026-06-29T06:18:17.066524+00:00",
+      "mtime_age_seconds": 2351,
       "path": "data/runtime/paperops_autonomous_pass_summary.json"
     },
     "phase0": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.850687+00:00",
-      "mtime_age_seconds": 8,
+      "mtime": "2026-06-29T06:57:21.928962+00:00",
+      "mtime_age_seconds": 6,
       "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json"
     },
     "router": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.916320+00:00",
+      "mtime": "2026-06-29T06:57:28.459065+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_strategy_router_decisions.json"
     },
     "self_model": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.388082+00:00",
-      "mtime_age_seconds": 7,
+      "mtime": "2026-06-29T06:57:22.361935+00:00",
+      "mtime_age_seconds": 6,
       "path": "data/runtime/qsase_self_model.json"
     },
     "shadow_simulator": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.734362+00:00",
+      "mtime": "2026-06-29T06:57:28.270623+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_shadow_strategy_simulator.json"
     },
     "strategy_foundry": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.424699+00:00",
+      "mtime": "2026-06-29T06:57:28.022819+00:00",
       "mtime_age_seconds": 0,
       "path": "data/runtime/qsase_strategy_hypotheses.json"
     },
     "universal_matrix": {
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.506617+00:00",
-      "mtime_age_seconds": 7,
+      "mtime": "2026-06-29T06:57:22.451885+00:00",
+      "mtime_age_seconds": 6,
       "path": "data/runtime/qsase_universal_source_price_matrix.json"
     }
   },
@@ -419,7 +419,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T21:07:56.280391+00:00",
+    "generated_at": "2026-06-29T06:57:28.761492+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -559,7 +559,7 @@
       {
         "applied": false,
         "apply_allowed": false,
-        "approval_queue_id": "qsase-learning-approval:0fcf5c2c22ba3e4716ce",
+        "approval_queue_id": "qsase-learning-approval:8afe1fee311d2e59403d",
         "approval_required": true,
         "approved": false,
         "evidence_refs": [
@@ -580,16 +580,15 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9ab6d75f5c88ca1d6e7f",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:37cdbdf480a5598d1fc5",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:769deefad4ac47ed2315",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7ca7ca97edac26f6d469",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1e5cf244f38321a643f8",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0934d84e2061c2a7f03b"
         ],
-        "proposal_id": "qsase-proposal:b1b1ee002db9a7272ca4",
+        "proposal_id": "qsase-proposal:6a732023bbc3d5222bf8",
         "proposal_surface": "source_universe",
-        "proposal_type": "source_coverage_repair_request",
+        "proposal_type": "hold_source_trust",
         "review_state": "pending_learning_approval",
         "source_artifact": "source_trust_proposals",
         "target_id": "aggregate_source_trust_and_coverage"
@@ -700,7 +699,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T21:07:56.280361+00:00",
+    "generated_at": "2026-06-29T06:57:28.761467+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -796,7 +795,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T21:07:56.280339+00:00",
+    "generated_at": "2026-06-29T06:57:28.761450+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -828,7 +827,6 @@
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9ab6d75f5c88ca1d6e7f",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:37cdbdf480a5598d1fc5",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:769deefad4ac47ed2315",
-          "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7ca7ca97edac26f6d469",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
           "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
@@ -837,9 +835,9 @@
         ],
         "expected_effect": "source_trust_review_only_no_score_mutation",
         "overfit_risk": "medium",
-        "proposal_id": "qsase-proposal:b1b1ee002db9a7272ca4",
+        "proposal_id": "qsase-proposal:6a732023bbc3d5222bf8",
         "proposal_state": "ready_pending_learning_approval",
-        "proposal_type": "source_coverage_repair_request",
+        "proposal_type": "hold_source_trust",
         "proposed_value": "repair_or_hold_pending_approval",
         "real_paper_evidence_count": 0,
         "regime_bias_risk": "medium",
@@ -847,7 +845,7 @@
         "shadow_evidence_count": 0,
         "source_noise_risk": "medium",
         "suggested_delta": 0.0,
-        "supporting_record_count": 23,
+        "supporting_record_count": 22,
         "target_id": "aggregate_source_trust_and_coverage",
         "target_surface": "source_universe"
       }
@@ -896,7 +894,7 @@
       "trust_score_update_created": false
     },
     "broker_write_count": 0,
-    "generated_at": "2026-06-28T21:07:56.280253+00:00",
+    "generated_at": "2026-06-29T06:57:28.761384+00:00",
     "live_capital_enabled": false,
     "paper_order_created_count": 0,
     "proof_credit_allowed": false,
@@ -1089,7 +1087,7 @@
     "schema_version": "qsase_component_attribution_ledger.v1",
     "status": "proposal_recorded_not_applied"
   },
-  "system_defect_record_count": 6,
+  "system_defect_record_count": 5,
   "top_blamed_component": "guarded_alpaca_paper_route",
   "top_credited_component": "source_universe",
   "trust_score_update_created": false

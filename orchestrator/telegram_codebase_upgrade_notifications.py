@@ -145,9 +145,46 @@ def _sentence_fragment(value: Any, fallback: str = "", *, limit: int = 180) -> s
 def _telegram_body_safe_fragment(value: Any) -> bool:
     text = str(value or "")
     return not re.search(
-        r"\b(?:commit|branch|git|vercel|deployment|delivery key|fingerprint|schema|artifact|runtime|repo|repository|alias(?:es)?)\b|https?://|qadam\.trade/",
+        r"\b(?:commit|branch|git|vercel|deployment|delivery key|fingerprint|schema|artifact|runtime|repo|repository|alias(?:es)?)\b|qadam-(?:core|dashboard):|\(\d+ files?\)|https?://|qadam\.trade/",
         text,
         re.IGNORECASE,
+    )
+
+
+def _area_change_text(areas: set[str]) -> tuple[str, str]:
+    if "Telegram communication runtime" in areas or "Telegram regression checks" in areas:
+        return (
+            "Telegram updates were tightened so the group gets shorter, more specific notes instead of repeated system copy.",
+            "the team can understand the update without decoding internal labels",
+        )
+    if "PaperOps trading control plane" in areas:
+        return (
+            "PaperOps messaging was updated so trade and portfolio updates are easier to read in the group.",
+            "paper-trading updates can focus on the trade, portfolio value, and what Qadam is watching next",
+        )
+    if "dashboard overview experience" in areas or "public cockpit status snapshot" in areas:
+        return (
+            "The dashboard view was refreshed so the public status page matches the latest operating state.",
+            "the dashboard should be easier to scan when checking Qadam's current position",
+        )
+    if "source provider decisions" in areas or "source registry" in areas:
+        return (
+            "The data-source layer was cleaned up so Qadam can describe connected and pending sources more clearly.",
+            "source coverage is easier to review without turning optional credentials into false blockers",
+        )
+    if "source provider regression checks" in areas:
+        return (
+            "Source-provider checks were tightened so Qadam can catch weak or unclear data-source states earlier.",
+            "provider issues should be easier to spot before they affect research",
+        )
+    if "operator documentation" in areas:
+        return (
+            "The operator notes were updated so Qadam's current setup is easier to follow.",
+            "setup and review steps are easier to verify",
+        )
+    return (
+        "The operating dashboard and background checks were refreshed.",
+        "the group gets a clearer update without opening local logs",
     )
 
 
@@ -301,6 +338,7 @@ def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
     benefits = _clean_list(source.get("benefits"), [], limit=180, count=3)
     safe_details = [detail for detail in details if _telegram_body_safe_fragment(detail)]
     safe_benefits = [benefit for benefit in benefits if _telegram_body_safe_fragment(benefit)]
+    fallback_benefit = "the group gets a clearer update without opening local logs"
     areas = {
         str(item.get("area") or "")
         for repo_state in (source.get("root_repo", {}), source.get("dashboard_repo", {}))
@@ -308,46 +346,27 @@ def _plain_update_explanation(source: dict[str, Any]) -> tuple[str, str]:
         if isinstance(item, dict)
     }
 
-    if summary and summary not in {"Qadam codebase and dashboard were upgraded.", "Qadam has been updated."}:
+    generic_summaries = {
+        "Qadam codebase and dashboard were upgraded.",
+        "Qadam has been updated.",
+        "It has been updated and the live dashboard is ready for review.",
+    }
+    if summary and summary not in generic_summaries:
         change = summary.rstrip(".") + "."
         if safe_details:
-            detail = _sentence_fragment(safe_details[0], limit=160)
-            change = f"{change} In plain terms, {detail}."
-    elif "Telegram communication runtime" in areas or "Telegram regression checks" in areas:
-        change = (
-            "Qadam now rewrites its Telegram updates into plain language before they go out, "
-            "so the group gets a short explanation instead of an engineering-style status note."
-        )
-    elif "dashboard overview experience" in areas or "public cockpit status snapshot" in areas:
-        change = (
-            "Qadam's live dashboard has been refreshed so the operating picture is easier to read "
-            "and the latest system state is reflected in public-safe form."
-        )
-    elif "source provider decisions" in areas or "source registry" in areas:
-        change = (
-            "Qadam's data-source layer has been cleaned up, which makes it clearer which inputs are "
-            "connected now and which ones still need credentials or provider approval."
-        )
-    elif "PaperOps trading control plane" in areas:
-        change = (
-            "Qadam's paper-trading control plane has been updated, so the system can explain its "
-            "paper portfolio state and trading decisions more clearly."
-        )
+            detail = _clean_text(safe_details[0], "", limit=160).rstrip(".")
+            if detail:
+                detail = detail[0].upper() + detail[1:]
+            change = f"{change} {detail}."
     else:
-        change = _clean_text(
-            source.get("summary"),
-            "Qadam has been updated and the live operating dashboard has been refreshed.",
-            limit=180,
-        )
-        change = change.replace("committed ", "").replace("runtime ", "operating ")
+        change, fallback_benefit = _area_change_text(areas)
 
-    benefit_reason = _sentence_fragment(safe_benefits[0], limit=180) if safe_benefits else (
-        "the group can understand why the update matters without checking local logs"
+    benefit_reason = (
+        _sentence_fragment(safe_benefits[0], limit=180)
+        if safe_benefits
+        else fallback_benefit
     )
-    benefit = (
-        f"This helps because {benefit_reason}. Telegram still has no trading power and it does not "
-        "switch on live capital; it is just the place where Qadam explains what changed in plain English."
-    )
+    benefit = f"This helps because {benefit_reason}."
     return change, benefit
 
 
@@ -568,13 +587,12 @@ def _deployment_context(
 
 def _render_upgrade_message(source: dict[str, Any]) -> tuple[str, str]:
     change, benefit = _plain_update_explanation(source)
-    action = "has just gone live" if source.get("source") == "production_deploy" else "has a new update"
     title = "Qadam"
     if change.startswith("Qadam's "):
         change = "Its " + change[8:]
     elif change.startswith("Qadam "):
         change = "It " + change[6:]
-    body = f"Qadam {action}. {change}\n\n{benefit}"
+    body = f"Qadam update. {change}\n\n{benefit}"
     return title, body
 
 

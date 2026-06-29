@@ -96,7 +96,7 @@
       "artifact_refs": [
         "data/runtime/qsase_universal_source_price_matrix.json#source_universe.source_families.social"
       ],
-      "credential_gated_count": 1,
+      "credential_gated_count": 0,
       "degraded_count": 0,
       "family": "social",
       "fresh_count": 8,
@@ -106,7 +106,7 @@
     }
   ],
   "command_disabled": true,
-  "generated_at": "2026-06-29T02:58:55.037460+00:00",
+  "generated_at": "2026-06-29T06:57:29.005470+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
@@ -467,13 +467,13 @@
       "artifact_refs": [
         "data/runtime/qsase_universal_source_price_matrix.json#source_universe.sources.25"
       ],
-      "credential_gated": true,
+      "credential_gated": false,
       "family": "social",
       "freshness_status": "fresh",
       "quorum_contribution": false,
       "source_key": "reddit",
-      "source_name": "Reddit API",
-      "state": "credential_gated",
+      "source_name": "Reddit Narrative Proxy / Reddit API",
+      "state": "online",
       "trade_candidate_creation_allowed": false,
       "trust_posture": "context_trust"
     },

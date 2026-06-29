@@ -8,7 +8,7 @@
     "artifact_type": "qsase_end_to_end_certification_acceptance_report",
     "certified": false,
     "command_disabled": true,
-    "generated_at": "2026-06-28T21:07:47.811796+00:00",
+    "generated_at": "2026-06-29T06:57:21.889595+00:00",
     "live_capital_ready": false,
     "public_safe": true,
     "schema_version": "qsase_end_to_end_certification.v1",
@@ -253,7 +253,7 @@
   "fail_closed": true,
   "failed_check_count": 0,
   "failed_phase_count": 0,
-  "generated_at": "2026-06-28T21:07:47.811796+00:00",
+  "generated_at": "2026-06-29T06:57:21.889595+00:00",
   "hard_failure_count": 0,
   "lineage_gap_count": 0,
   "live_capital_enabled": false,
@@ -340,9 +340,9 @@
         "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:47.850687+00:00",
+        "mtime": "2026-06-29T06:57:21.928962+00:00",
         "required": true,
-        "size_bytes": 32600
+        "size_bytes": 32615
       },
       "status": "ready"
     },
@@ -356,7 +356,7 @@
         "artifact_path": "data/runtime/qsase_governance_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.174736+00:00",
+        "mtime": "2026-06-29T06:57:22.192425+00:00",
         "required": true,
         "size_bytes": 2427
       },
@@ -370,7 +370,7 @@
         "artifact_path": "data/runtime/qsase_governance_safety_contract.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.172215+00:00",
+        "mtime": "2026-06-29T06:57:22.190591+00:00",
         "required": true,
         "size_bytes": 20813
       },
@@ -386,9 +386,9 @@
         "artifact_path": "data/runtime/qsase_self_model_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.388377+00:00",
+        "mtime": "2026-06-29T06:57:22.362092+00:00",
         "required": true,
-        "size_bytes": 1080
+        "size_bytes": 1077
       },
       "degraded": false,
       "passed": true,
@@ -400,9 +400,9 @@
         "artifact_path": "data/runtime/qsase_self_model.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.388082+00:00",
+        "mtime": "2026-06-29T06:57:22.361935+00:00",
         "required": true,
-        "size_bytes": 39539
+        "size_bytes": 38656
       },
       "status": "qsase_self_model_ready_with_gaps"
     },
@@ -416,9 +416,9 @@
         "artifact_path": "data/runtime/qsase_universal_source_price_matrix_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.508803+00:00",
+        "mtime": "2026-06-29T06:57:22.453370+00:00",
         "required": true,
-        "size_bytes": 1395
+        "size_bytes": 1261
       },
       "degraded": true,
       "passed": true,
@@ -430,9 +430,9 @@
         "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.506617+00:00",
+        "mtime": "2026-06-29T06:57:22.451885+00:00",
         "required": true,
-        "size_bytes": 134843
+        "size_bytes": 134085
       },
       "status": "qsase_source_price_matrix_degraded"
     },
@@ -446,7 +446,7 @@
         "artifact_path": "data/runtime/qsase_historical_source_price_memory_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:49.199428+00:00",
+        "mtime": "2026-06-29T06:57:22.923906+00:00",
         "required": true,
         "size_bytes": 1139
       },
@@ -460,7 +460,7 @@
         "artifact_path": "data/runtime/qsase_historical_source_price_memory.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:49.049533+00:00",
+        "mtime": "2026-06-29T06:57:22.811554+00:00",
         "required": true,
         "size_bytes": 179280
       },
@@ -476,7 +476,7 @@
         "artifact_path": "data/runtime/qsase_full_universe_pattern_search_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:54.489656+00:00",
+        "mtime": "2026-06-29T06:57:27.273991+00:00",
         "required": true,
         "size_bytes": 1165
       },
@@ -490,9 +490,9 @@
         "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:54.486866+00:00",
+        "mtime": "2026-06-29T06:57:27.271703+00:00",
         "required": true,
-        "size_bytes": 600372
+        "size_bytes": 600238
       },
       "status": "qsase_full_universe_pattern_search_degraded"
     },
@@ -506,7 +506,7 @@
         "artifact_path": "data/runtime/qsase_linear_pattern_lab_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:54.739909+00:00",
+        "mtime": "2026-06-29T06:57:27.483124+00:00",
         "required": true,
         "size_bytes": 1252
       },
@@ -520,7 +520,7 @@
         "artifact_path": "data/runtime/qsase_linear_pattern_lab.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:54.735752+00:00",
+        "mtime": "2026-06-29T06:57:27.480537+00:00",
         "required": true,
         "size_bytes": 6577
       },
@@ -536,7 +536,7 @@
         "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.158635+00:00",
+        "mtime": "2026-06-29T06:57:27.813617+00:00",
         "required": true,
         "size_bytes": 1512
       },
@@ -550,7 +550,7 @@
         "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.157636+00:00",
+        "mtime": "2026-06-29T06:57:27.812429+00:00",
         "required": true,
         "size_bytes": 9155
       },
@@ -566,7 +566,7 @@
         "artifact_path": "data/runtime/qsase_strategy_foundry_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.426122+00:00",
+        "mtime": "2026-06-29T06:57:28.024456+00:00",
         "required": true,
         "size_bytes": 1452
       },
@@ -580,7 +580,7 @@
         "artifact_path": "data/runtime/qsase_strategy_hypotheses.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.424699+00:00",
+        "mtime": "2026-06-29T06:57:28.022819+00:00",
         "required": true,
         "size_bytes": 6843
       },
@@ -596,7 +596,7 @@
         "artifact_path": "data/runtime/qsase_akber_filter_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.584264+00:00",
+        "mtime": "2026-06-29T06:57:28.150365+00:00",
         "required": true,
         "size_bytes": 1633
       },
@@ -610,7 +610,7 @@
         "artifact_path": "data/runtime/qsase_akber_filter_integration.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.583278+00:00",
+        "mtime": "2026-06-29T06:57:28.149038+00:00",
         "required": true,
         "size_bytes": 7225
       },
@@ -626,7 +626,7 @@
         "artifact_path": "data/runtime/qsase_shadow_strategy_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.739159+00:00",
+        "mtime": "2026-06-29T06:57:28.274600+00:00",
         "required": true,
         "size_bytes": 1625
       },
@@ -640,7 +640,7 @@
         "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.734362+00:00",
+        "mtime": "2026-06-29T06:57:28.270623+00:00",
         "required": true,
         "size_bytes": 8133
       },
@@ -656,7 +656,7 @@
         "artifact_path": "data/runtime/qsase_strategy_router_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.920919+00:00",
+        "mtime": "2026-06-29T06:57:28.464085+00:00",
         "required": true,
         "size_bytes": 25674
       },
@@ -670,9 +670,9 @@
         "artifact_path": "data/runtime/qsase_strategy_router_decisions.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:55.916320+00:00",
+        "mtime": "2026-06-29T06:57:28.459065+00:00",
         "required": true,
-        "size_bytes": 44520
+        "size_bytes": 44521
       },
       "status": "qsase_strategy_router_degraded"
     },
@@ -686,7 +686,7 @@
         "artifact_path": "data/runtime/qsase_paperops_gate_interface_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.170213+00:00",
+        "mtime": "2026-06-29T06:57:28.674523+00:00",
         "required": true,
         "size_bytes": 1654
       },
@@ -700,7 +700,7 @@
         "artifact_path": "data/runtime/qsase_paperops_gate_interface.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.168485+00:00",
+        "mtime": "2026-06-29T06:57:28.672333+00:00",
         "required": true,
         "size_bytes": 7844
       },
@@ -716,9 +716,9 @@
         "artifact_path": "data/runtime/qsase_learning_attribution_dashboard_summary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.290344+00:00",
+        "mtime": "2026-06-29T06:57:28.769037+00:00",
         "required": true,
-        "size_bytes": 3244
+        "size_bytes": 3231
       },
       "degraded": true,
       "passed": true,
@@ -730,9 +730,9 @@
         "artifact_path": "data/runtime/qsase_component_attribution_ledger.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.282397+00:00",
+        "mtime": "2026-06-29T06:57:28.763391+00:00",
         "required": true,
-        "size_bytes": 57214
+        "size_bytes": 56963
       },
       "status": "qsase_learning_attribution_ledger_degraded"
     },
@@ -746,9 +746,9 @@
         "artifact_path": "data/runtime/qsase_dashboard_decision_records.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.605623+00:00",
+        "mtime": "2026-06-29T06:57:29.007499+00:00",
         "required": true,
-        "size_bytes": 20137
+        "size_bytes": 20109
       },
       "degraded": false,
       "passed": true,
@@ -760,7 +760,7 @@
         "artifact_path": "data/runtime/qsase_dashboard_status.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.604057+00:00",
+        "mtime": "2026-06-29T06:57:29.007184+00:00",
         "required": true,
         "size_bytes": 5357
       },
@@ -776,7 +776,7 @@
         "artifact_path": "data/runtime/qsase_telegram_dashboard_communications_mirror.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.730077+00:00",
+        "mtime": "2026-06-29T06:57:29.109200+00:00",
         "required": true,
         "size_bytes": 2055
       },
@@ -790,7 +790,7 @@
         "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json",
         "empty": false,
         "exists": true,
-        "mtime": "2026-06-28T21:07:56.729012+00:00",
+        "mtime": "2026-06-29T06:57:29.107891+00:00",
         "required": true,
         "size_bytes": 4329
       },
@@ -852,23 +852,23 @@
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.850687+00:00",
+      "mtime": "2026-06-29T06:57:21.928962+00:00",
       "required": true,
-      "size_bytes": 32600
+      "size_bytes": 32615
     },
     {
       "artifact_path": "data/runtime/qsase_phase0_scanner_freshness.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.852220+00:00",
+      "mtime": "2026-06-29T06:57:21.929289+00:00",
       "required": true,
-      "size_bytes": 3243
+      "size_bytes": 3252
     },
     {
       "artifact_path": "data/runtime/qsase_phase0_candidate_identity_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.853215+00:00",
+      "mtime": "2026-06-29T06:57:21.929433+00:00",
       "required": true,
       "size_bytes": 4028
     },
@@ -876,15 +876,15 @@
       "artifact_path": "data/runtime/qsase_phase0_paper_lifecycle_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.853576+00:00",
+      "mtime": "2026-06-29T06:57:21.929750+00:00",
       "required": true,
-      "size_bytes": 4952
+      "size_bytes": 4957
     },
     {
       "artifact_path": "data/runtime/qsase_phase0_proof_lineage_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.854263+00:00",
+      "mtime": "2026-06-29T06:57:21.930259+00:00",
       "required": true,
       "size_bytes": 10761
     },
@@ -892,7 +892,7 @@
       "artifact_path": "data/runtime/qsase_phase0_telemetry_consistency.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.854616+00:00",
+      "mtime": "2026-06-29T06:57:21.930706+00:00",
       "required": true,
       "size_bytes": 2948
     },
@@ -900,7 +900,7 @@
       "artifact_path": "data/runtime/qsase_phase0_dashboard_deploy_hygiene.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.854957+00:00",
+      "mtime": "2026-06-29T06:57:21.931030+00:00",
       "required": true,
       "size_bytes": 2636
     },
@@ -908,7 +908,7 @@
       "artifact_path": "data/runtime/qsase_phase0_review_signature_readiness.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.855260+00:00",
+      "mtime": "2026-06-29T06:57:21.931152+00:00",
       "required": true,
       "size_bytes": 2913
     },
@@ -916,7 +916,7 @@
       "artifact_path": "data/runtime/qsase_phase0_validated_edge_readiness.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:47.853954+00:00",
+      "mtime": "2026-06-29T06:57:21.929902+00:00",
       "required": true,
       "size_bytes": 2646
     },
@@ -924,7 +924,7 @@
       "artifact_path": "data/runtime/qsase_governance_safety_contract.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.172215+00:00",
+      "mtime": "2026-06-29T06:57:22.190591+00:00",
       "required": true,
       "size_bytes": 20813
     },
@@ -932,7 +932,7 @@
       "artifact_path": "data/runtime/qsase_authority_flag_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.172574+00:00",
+      "mtime": "2026-06-29T06:57:22.190841+00:00",
       "required": true,
       "size_bytes": 410
     },
@@ -940,7 +940,7 @@
       "artifact_path": "data/runtime/qsase_authority_violations.jsonl",
       "empty": true,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.174827+00:00",
+      "mtime": "2026-06-29T06:57:22.192466+00:00",
       "required": true,
       "size_bytes": 0
     },
@@ -948,7 +948,7 @@
       "artifact_path": "data/runtime/qsase_proof_boundary_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.174014+00:00",
+      "mtime": "2026-06-29T06:57:22.191775+00:00",
       "required": true,
       "size_bytes": 2111
     },
@@ -956,7 +956,7 @@
       "artifact_path": "data/runtime/qsase_calendar_boundary_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.174262+00:00",
+      "mtime": "2026-06-29T06:57:22.191973+00:00",
       "required": true,
       "size_bytes": 2206
     },
@@ -964,39 +964,39 @@
       "artifact_path": "data/runtime/qsase_self_model.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.388082+00:00",
+      "mtime": "2026-06-29T06:57:22.361935+00:00",
       "required": true,
-      "size_bytes": 39539
+      "size_bytes": 38656
     },
     {
       "artifact_path": "data/runtime/qsase_self_model_dashboard_summary.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.388377+00:00",
+      "mtime": "2026-06-29T06:57:22.362092+00:00",
       "required": true,
-      "size_bytes": 1080
+      "size_bytes": 1077
     },
     {
       "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.506617+00:00",
+      "mtime": "2026-06-29T06:57:22.451885+00:00",
       "required": true,
-      "size_bytes": 134843
+      "size_bytes": 134085
     },
     {
       "artifact_path": "data/runtime/qsase_source_universe.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.507822+00:00",
+      "mtime": "2026-06-29T06:57:22.452904+00:00",
       "required": true,
-      "size_bytes": 67706
+      "size_bytes": 67344
     },
     {
       "artifact_path": "data/runtime/qsase_trading_universe.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.508505+00:00",
+      "mtime": "2026-06-29T06:57:22.453264+00:00",
       "required": true,
       "size_bytes": 31962
     },
@@ -1004,15 +1004,15 @@
       "artifact_path": "data/runtime/qsase_source_price_edges.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:48.573725+00:00",
+      "mtime": "2026-06-29T06:57:22.496711+00:00",
       "required": true,
-      "size_bytes": 10245414
+      "size_bytes": 10248606
     },
     {
       "artifact_path": "data/runtime/qsase_historical_source_price_memory.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.049533+00:00",
+      "mtime": "2026-06-29T06:57:22.811554+00:00",
       "required": true,
       "size_bytes": 179280
     },
@@ -1020,15 +1020,15 @@
       "artifact_path": "data/runtime/qsase_historical_source_price_memory.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.168041+00:00",
+      "mtime": "2026-06-29T06:57:22.899638+00:00",
       "required": true,
-      "size_bytes": 23594127
+      "size_bytes": 23597623
     },
     {
       "artifact_path": "data/runtime/qsase_historical_coverage_map.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.168548+00:00",
+      "mtime": "2026-06-29T06:57:22.903090+00:00",
       "required": true,
       "size_bytes": 5098
     },
@@ -1036,7 +1036,7 @@
       "artifact_path": "data/runtime/qsase_historical_replay_manifest.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.168716+00:00",
+      "mtime": "2026-06-29T06:57:22.904199+00:00",
       "required": true,
       "size_bytes": 1932
     },
@@ -1044,7 +1044,7 @@
       "artifact_path": "data/runtime/qsase_point_in_time_replay_index.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.172724+00:00",
+      "mtime": "2026-06-29T06:57:22.904746+00:00",
       "required": true,
       "size_bytes": 97040
     },
@@ -1052,7 +1052,7 @@
       "artifact_path": "data/runtime/qsase_historical_missing_windows.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:49.198817+00:00",
+      "mtime": "2026-06-29T06:57:22.923641+00:00",
       "required": true,
       "size_bytes": 4667007
     },
@@ -1060,15 +1060,15 @@
       "artifact_path": "data/runtime/qsase_full_universe_pattern_search.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.486866+00:00",
+      "mtime": "2026-06-29T06:57:27.271703+00:00",
       "required": true,
-      "size_bytes": 600372
+      "size_bytes": 600238
     },
     {
       "artifact_path": "data/runtime/qsase_candidate_patterns.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.487471+00:00",
+      "mtime": "2026-06-29T06:57:27.272183+00:00",
       "required": true,
       "size_bytes": 60674
     },
@@ -1076,7 +1076,7 @@
       "artifact_path": "data/runtime/qsase_rejected_patterns.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.489187+00:00",
+      "mtime": "2026-06-29T06:57:27.273599+00:00",
       "required": true,
       "size_bytes": 404753
     },
@@ -1084,7 +1084,7 @@
       "artifact_path": "data/runtime/qsase_linear_pattern_lab.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.735752+00:00",
+      "mtime": "2026-06-29T06:57:27.480537+00:00",
       "required": true,
       "size_bytes": 6577
     },
@@ -1092,7 +1092,7 @@
       "artifact_path": "data/runtime/qsase_linear_backtest_results.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.737199+00:00",
+      "mtime": "2026-06-29T06:57:27.481353+00:00",
       "required": true,
       "size_bytes": 116034
     },
@@ -1100,7 +1100,7 @@
       "artifact_path": "data/runtime/qsase_linear_rejected_patterns.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:54.739203+00:00",
+      "mtime": "2026-06-29T06:57:27.482842+00:00",
       "required": true,
       "size_bytes": 352759
     },
@@ -1108,7 +1108,7 @@
       "artifact_path": "data/runtime/qsase_nonlinear_quantum_pattern_lab.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.157636+00:00",
+      "mtime": "2026-06-29T06:57:27.812429+00:00",
       "required": true,
       "size_bytes": 9155
     },
@@ -1116,7 +1116,7 @@
       "artifact_path": "data/runtime/qsase_nonlinear_pattern_results.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.158334+00:00",
+      "mtime": "2026-06-29T06:57:27.813161+00:00",
       "required": true,
       "size_bytes": 91538
     },
@@ -1124,7 +1124,7 @@
       "artifact_path": "data/runtime/qsase_quantum_pattern_reviews.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.160026+00:00",
+      "mtime": "2026-06-29T06:57:27.815319+00:00",
       "required": true,
       "size_bytes": 33960
     },
@@ -1132,7 +1132,7 @@
       "artifact_path": "data/runtime/qsase_strategy_hypotheses.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.424699+00:00",
+      "mtime": "2026-06-29T06:57:28.022819+00:00",
       "required": true,
       "size_bytes": 6843
     },
@@ -1140,7 +1140,7 @@
       "artifact_path": "data/runtime/qsase_strategy_hypotheses.jsonl",
       "empty": true,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.424783+00:00",
+      "mtime": "2026-06-29T06:57:28.023047+00:00",
       "required": true,
       "size_bytes": 0
     },
@@ -1148,7 +1148,7 @@
       "artifact_path": "data/runtime/qsase_strategy_family_map.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.425840+00:00",
+      "mtime": "2026-06-29T06:57:28.024098+00:00",
       "required": true,
       "size_bytes": 14289
     },
@@ -1156,7 +1156,7 @@
       "artifact_path": "data/runtime/qsase_rejected_strategy_hypotheses.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.425314+00:00",
+      "mtime": "2026-06-29T06:57:28.023686+00:00",
       "required": true,
       "size_bytes": 114286
     },
@@ -1164,7 +1164,7 @@
       "artifact_path": "data/runtime/qsase_akber_filter_integration.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.583278+00:00",
+      "mtime": "2026-06-29T06:57:28.149038+00:00",
       "required": true,
       "size_bytes": 7225
     },
@@ -1172,7 +1172,7 @@
       "artifact_path": "data/runtime/qsase_akber_filter_results.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.583889+00:00",
+      "mtime": "2026-06-29T06:57:28.149762+00:00",
       "required": true,
       "size_bytes": 101220
     },
@@ -1180,7 +1180,7 @@
       "artifact_path": "data/runtime/qsase_akber_filter_threshold_proposals.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.584038+00:00",
+      "mtime": "2026-06-29T06:57:28.150036+00:00",
       "required": true,
       "size_bytes": 4847
     },
@@ -1188,7 +1188,7 @@
       "artifact_path": "data/runtime/qsase_shadow_strategy_simulator.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.734362+00:00",
+      "mtime": "2026-06-29T06:57:28.270623+00:00",
       "required": true,
       "size_bytes": 8133
     },
@@ -1196,7 +1196,7 @@
       "artifact_path": "data/runtime/qsase_shadow_strategy_results.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.736691+00:00",
+      "mtime": "2026-06-29T06:57:28.272500+00:00",
       "required": true,
       "size_bytes": 446928
     },
@@ -1204,7 +1204,7 @@
       "artifact_path": "data/runtime/qsase_shadow_strategy_rejections.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.737611+00:00",
+      "mtime": "2026-06-29T06:57:28.273271+00:00",
       "required": true,
       "size_bytes": 140960
     },
@@ -1212,23 +1212,23 @@
       "artifact_path": "data/runtime/qsase_strategy_router_decisions.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.916320+00:00",
+      "mtime": "2026-06-29T06:57:28.459065+00:00",
       "required": true,
-      "size_bytes": 44520
+      "size_bytes": 44521
     },
     {
       "artifact_path": "data/runtime/qsase_strategy_router_decisions.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.917166+00:00",
+      "mtime": "2026-06-29T06:57:28.459780+00:00",
       "required": true,
-      "size_bytes": 129476
+      "size_bytes": 128644
     },
     {
       "artifact_path": "data/runtime/qsase_strategy_router_scoreboard.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.917340+00:00",
+      "mtime": "2026-06-29T06:57:28.460015+00:00",
       "required": true,
       "size_bytes": 8283
     },
@@ -1236,15 +1236,15 @@
       "artifact_path": "data/runtime/qsase_why_not_trading_now.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:55.917485+00:00",
+      "mtime": "2026-06-29T06:57:28.460385+00:00",
       "required": true,
-      "size_bytes": 3379
+      "size_bytes": 3380
     },
     {
       "artifact_path": "data/runtime/qsase_paperops_gate_interface.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.168485+00:00",
+      "mtime": "2026-06-29T06:57:28.672333+00:00",
       "required": true,
       "size_bytes": 7844
     },
@@ -1252,7 +1252,7 @@
       "artifact_path": "data/runtime/qsase_paperops_gate_interface.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.169271+00:00",
+      "mtime": "2026-06-29T06:57:28.673418+00:00",
       "required": true,
       "size_bytes": 159618
     },
@@ -1260,7 +1260,7 @@
       "artifact_path": "data/runtime/qsase_paperops_handoff_records.jsonl",
       "empty": true,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.169338+00:00",
+      "mtime": "2026-06-29T06:57:28.673490+00:00",
       "required": true,
       "size_bytes": 0
     },
@@ -1268,7 +1268,7 @@
       "artifact_path": "data/runtime/qsase_paperops_rejected_handoffs.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.170033+00:00",
+      "mtime": "2026-06-29T06:57:28.674134+00:00",
       "required": true,
       "size_bytes": 125370
     },
@@ -1276,23 +1276,23 @@
       "artifact_path": "data/runtime/qsase_component_attribution_ledger.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.282397+00:00",
+      "mtime": "2026-06-29T06:57:28.763391+00:00",
       "required": true,
-      "size_bytes": 57214
+      "size_bytes": 56963
     },
     {
       "artifact_path": "data/runtime/qsase_component_attribution_ledger.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.286930+00:00",
+      "mtime": "2026-06-29T06:57:28.767092+00:00",
       "required": true,
-      "size_bytes": 1031200
+      "size_bytes": 1021948
     },
     {
       "artifact_path": "data/runtime/qsase_strategy_weight_proposals.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.289026+00:00",
+      "mtime": "2026-06-29T06:57:28.767448+00:00",
       "required": true,
       "size_bytes": 12275
     },
@@ -1300,15 +1300,15 @@
       "artifact_path": "data/runtime/qsase_source_trust_proposals.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.289251+00:00",
+      "mtime": "2026-06-29T06:57:28.767678+00:00",
       "required": true,
-      "size_bytes": 5047
+      "size_bytes": 4930
     },
     {
       "artifact_path": "data/runtime/qsase_model_weight_proposals.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.289436+00:00",
+      "mtime": "2026-06-29T06:57:28.767955+00:00",
       "required": true,
       "size_bytes": 2966
     },
@@ -1316,7 +1316,7 @@
       "artifact_path": "data/runtime/qsase_filter_threshold_proposals.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.289606+00:00",
+      "mtime": "2026-06-29T06:57:28.768259+00:00",
       "required": true,
       "size_bytes": 5582
     },
@@ -1324,15 +1324,15 @@
       "artifact_path": "data/runtime/qsase_learning_approval_queue.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.290083+00:00",
+      "mtime": "2026-06-29T06:57:28.768701+00:00",
       "required": true,
-      "size_bytes": 17553
+      "size_bytes": 17436
     },
     {
       "artifact_path": "data/runtime/qsase_dashboard_status.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.604057+00:00",
+      "mtime": "2026-06-29T06:57:29.007184+00:00",
       "required": true,
       "size_bytes": 5357
     },
@@ -1340,15 +1340,15 @@
       "artifact_path": "data/runtime/qsase_dashboard_decision_records.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.605623+00:00",
+      "mtime": "2026-06-29T06:57:29.007499+00:00",
       "required": true,
-      "size_bytes": 20137
+      "size_bytes": 20109
     },
     {
       "artifact_path": "data/runtime/qsase_dashboard_system_map.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.605881+00:00",
+      "mtime": "2026-06-29T06:57:29.007691+00:00",
       "required": true,
       "size_bytes": 8190
     },
@@ -1356,7 +1356,7 @@
       "artifact_path": "data/runtime/qsase_dashboard_anti_slop_audit.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.610447+00:00",
+      "mtime": "2026-06-29T06:57:29.010476+00:00",
       "required": true,
       "size_bytes": 1618
     },
@@ -1364,7 +1364,7 @@
       "artifact_path": "data/runtime/qsase_telegram_notification_boundary.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.729012+00:00",
+      "mtime": "2026-06-29T06:57:29.107891+00:00",
       "required": true,
       "size_bytes": 4329
     },
@@ -1372,39 +1372,39 @@
       "artifact_path": "data/runtime/qsase_telegram_message_candidates.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.729584+00:00",
+      "mtime": "2026-06-29T06:57:29.108445+00:00",
       "required": true,
-      "size_bytes": 23703
+      "size_bytes": 23711
     },
     {
       "artifact_path": "data/runtime/qsase_telegram_message_quality.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.729855+00:00",
+      "mtime": "2026-06-29T06:57:29.108772+00:00",
       "required": true,
-      "size_bytes": 3213
+      "size_bytes": 3220
     },
     {
       "artifact_path": "data/runtime/qsase_telegram_dedupe_ledger.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.730881+00:00",
+      "mtime": "2026-06-29T06:57:29.109996+00:00",
       "required": true,
-      "size_bytes": 16679
+      "size_bytes": 19062
     },
     {
       "artifact_path": "data/runtime/qsase_telegram_delivery_receipts.jsonl",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.732339+00:00",
+      "mtime": "2026-06-29T06:57:29.110442+00:00",
       "required": true,
-      "size_bytes": 53243
+      "size_bytes": 60850
     },
     {
       "artifact_path": "data/runtime/qsase_telegram_dashboard_communications_mirror.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T21:07:56.730077+00:00",
+      "mtime": "2026-06-29T06:57:29.109200+00:00",
       "required": true,
       "size_bytes": 2055
     },
@@ -1412,9 +1412,9 @@
       "artifact_path": "data/runtime/paperops_autonomous_pass_summary.json",
       "empty": false,
       "exists": true,
-      "mtime": "2026-06-28T20:13:09.991818+00:00",
+      "mtime": "2026-06-29T06:18:17.066524+00:00",
       "required": true,
-      "size_bytes": 189820
+      "size_bytes": 191684
     }
   ],
   "required_check_count": 33,
@@ -1638,9 +1638,9 @@
         "implementation_log=/Users/raminhoodeh/Desktop/qadam/docs/qsase-implementation-log.md",
         "status=qsase_self_model_ready_with_gaps",
         "staleness_status=fresh_enough_for_qsase_1",
-        "degraded_component_count=6",
+        "degraded_component_count=5",
         "missing_component_count=0",
-        "repair_request_count=6",
+        "repair_request_count=5",
         "why_not_trading_now=idempotency_guard_holding_duplicate_or_already_submitted_setup",
         "qsase_self_model_check=ok"
       ]
@@ -1661,7 +1661,7 @@
         "source_count=41",
         "watched_market_count=19",
         "source_price_edge_count=6232",
-        "credential_gated_source_count=1",
+        "credential_gated_source_count=0",
         "paperable_instrument_count=13",
         "qsase_universal_source_price_matrix_check=ok"
       ]
@@ -1826,7 +1826,7 @@
         "watchlist_only_count=0",
         "repair_requested_count=0",
         "hard_veto_count=12",
-        "soft_blocker_count=276",
+        "soft_blocker_count=260",
         "why_not_trading_now_reason=Required evidence is missing: akber_filter_artifact_degraded.",
         "paper_order_allowed=False",
         "broker_write_allowed=False",
@@ -1903,7 +1903,7 @@
         "nonlinear_pattern_count=16",
         "trade_intent_count=16",
         "learning_ledger_row_count=30",
-        "repair_queue_count=14",
+        "repair_queue_count=13",
         "stale_labeled_count=0",
         "anti_slop_error_count=0",
         "applied_change_count=0",
@@ -1940,7 +1940,7 @@
       "status": "passed",
       "stderr_tail": [],
       "stdout_tail": [
-        "duplicate_suppressed_count=5",
+        "duplicate_suppressed_count=4",
         "inbound_record_count=2",
         "inbound_command_detected_count=0",
         "inbound_command_ignored_count=0",
@@ -2106,7 +2106,7 @@
       }
     ],
     "errors": [],
-    "learning_record_count": 103,
+    "learning_record_count": 102,
     "paperops_gate_record_count": 16,
     "rejected_strategy_hypothesis_count": 16,
     "router_decision_count": 16,
@@ -2128,8 +2128,8 @@
     ],
     "candidate_count": 5,
     "command_disabled": true,
-    "dedupe_record_count": 35,
-    "duplicate_suppression_count": 5,
+    "dedupe_record_count": 40,
+    "duplicate_suppression_count": 4,
     "errors": [],
     "live_send_allowed": false,
     "status": "telegram_quality_pass",

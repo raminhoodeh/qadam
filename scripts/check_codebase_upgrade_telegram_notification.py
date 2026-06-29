@@ -231,12 +231,18 @@ def main() -> int:
         if marker not in probe_errors:
             errors.append(f"telegram_codebase_upgrade_probe_not_rejected:{marker}")
     preview_body = forced_preview.get("message_preview", {}).get("body", "")
-    if "Qadam" not in preview_body:
-        errors.append("telegram_codebase_upgrade_preview_missing:Qadam")
-    if "In plain terms" not in preview_body or "This helps because" not in preview_body:
+    if not preview_body.startswith("Qadam update."):
+        errors.append("telegram_codebase_upgrade_preview_missing:qadam_update_intro")
+    if "This helps because" not in preview_body:
         errors.append("telegram_codebase_upgrade_preview_missing:plain_explanation")
-    if "trading power" not in preview_body or "live capital" not in preview_body:
-        errors.append("telegram_codebase_upgrade_preview_missing:safety_boundary")
+    for marker in (
+        "Qadam has just gone live",
+        "Qadam has gone live",
+        "Telegram still has no trading power",
+        "live capital",
+    ):
+        if marker in preview_body:
+            errors.append(f"telegram_codebase_upgrade_preview_repetitive_disclaimer:{marker}")
     for marker in (
         "Upgrade:",
         "What changed:",

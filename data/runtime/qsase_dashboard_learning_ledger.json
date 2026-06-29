@@ -6,7 +6,7 @@
     "data/runtime/qsase_component_attribution_ledger.jsonl"
   ],
   "artifact_type": "qsase_dashboard_learning_ledger",
-  "attribution_record_count": 103,
+  "attribution_record_count": 102,
   "authority": {
     "broker_write_allowed": false,
     "dashboard_command_disabled": true,
@@ -35,7 +35,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-29T02:58:55.037460+00:00",
+  "generated_at": "2026-06-29T06:57:29.005470+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,

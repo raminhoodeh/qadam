@@ -370,25 +370,25 @@
         "telegram_trade_command_enabled": false,
         "trade_candidate_created": false
       },
-      "blocker": "source_state",
-      "body": "Qadam repair note\nState: repair_queue_visible\nReason: missing_optional_source_credentials\nNext: repair runtime artifact or source state, then rerun QSASE checks\nOrder: none submitted",
+      "blocker": "model_stack",
+      "body": "Qadam repair note\nState: repair_queue_visible\nReason: llm_provider_probes_artifact_missing\nNext: repair runtime artifact or source state, then rerun QSASE checks\nOrder: none submitted",
       "broker_write_allowed": false,
       "broker_write_created": false,
-      "candidate_id": "qsase-repair:5ecb723786c310f06214",
+      "candidate_id": "qsase-repair:b2b5c56dfe75ea9b156e",
       "decision_record_ref": "data/runtime/qsase_dashboard_decision_records.json#repair_queue",
       "delivery": {
         "already_sent": false,
         "delivery_failure_category": null,
         "live_send_attempted": false,
         "live_send_succeeded": false,
-        "send_state": "message_rejected_duplicate",
+        "send_state": "dashboard_only_no_live_send",
         "telegram_live_send_allowed": false
       },
       "execution_approval_created": false,
-      "fingerprint": "e3075d2b646f6f4bf9d477e024a3e52a2be02d2d70dffb4dd439ebbfa111d683",
+      "fingerprint": "65445d3bece882c03e2943bf8716f8ecd0f41e1fee41b0aff96755de3ce935bd",
       "fingerprint_input": {
-        "blocker": "source_state",
-        "candidate_id": "qsase-repair:5ecb723786c310f06214",
+        "blocker": "model_stack",
+        "candidate_id": "qsase-repair:b2b5c56dfe75ea9b156e",
         "message_class": "qsase_repair_note",
         "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
         "order_state": "none submitted",
@@ -398,7 +398,7 @@
       },
       "live_capital_enabled": false,
       "live_send_attempted": false,
-      "message_candidate_id": "qsase-telegram-candidate:d7ab6ed03cc98e03a595",
+      "message_candidate_id": "qsase-telegram-candidate:bf1d7d783b27e55f3bdd",
       "message_class": "qsase_repair_note",
       "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
       "order_state": "none submitted",
@@ -411,8 +411,8 @@
       "qctrl_job_submitted": false,
       "qualified_setup_created": false,
       "quality": {
-        "character_count": 182,
-        "duplicate_rejected": true,
+        "character_count": 183,
+        "duplicate_rejected": false,
         "errors": [],
         "generic_hits": [],
         "generic_rejected": false,
@@ -431,7 +431,7 @@
         "unsafe_rejected": false
       },
       "quantum_provider_call_allowed": false,
-      "reason": "missing_optional_source_credentials",
+      "reason": "llm_provider_probes_artifact_missing",
       "risk_approval_created": false,
       "schema_version": "qsase_telegram_notification_boundary.v1",
       "secret_read_allowed": false,
@@ -442,7 +442,7 @@
         "data/runtime/qsase_dashboard_status.json"
       ],
       "state": "repair_queue_visible",
-      "status": "message_rejected_duplicate",
+      "status": "message_ready_for_dashboard_only",
       "strategy_family": "aggregate",
       "telegram_command_path_enabled": false,
       "telegram_live_send_allowed": false,
@@ -558,7 +558,7 @@
       "trade_candidate_created": false
     }
   ],
-  "generated_at": "2026-06-28T21:07:56.728399+00:00",
+  "generated_at": "2026-06-29T06:57:29.105845+00:00",
   "schema_version": "qsase_telegram_notification_boundary.v1",
   "status": "message_candidates_recorded"
 }

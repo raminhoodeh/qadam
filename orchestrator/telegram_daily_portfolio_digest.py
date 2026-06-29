@@ -445,13 +445,21 @@ def _render_digest_message(
     daily_trades: list[dict[str, Any]],
     paperops_context: dict[str, Any],
 ) -> tuple[str, str]:
-    trade_lines = [str(trade.get("summary") or "").strip() for trade in daily_trades[:8]]
+    trade_lines = [str(trade.get("summary") or "").strip() for trade in daily_trades]
+    trade_lines = [line for line in trade_lines if line]
     if not trade_lines:
         trade_summary = "none recorded"
     else:
-        trade_summary = "; ".join(line for line in trade_lines if line)
-    if len(daily_trades) > 8:
-        trade_summary = f"{trade_summary}; +{len(daily_trades) - 8} more"
+        grouped: dict[str, int] = {}
+        for line in trade_lines:
+            grouped[line] = grouped.get(line, 0) + 1
+        parts = [
+            f"{count} x {line}" if count > 1 else line
+            for line, count in grouped.items()
+        ]
+        trade_summary = "; ".join(parts[:5])
+        if len(parts) > 5:
+            trade_summary = f"{trade_summary}; +{len(parts) - 5} more types"
 
     title = "Qadam"
     body = (
@@ -463,8 +471,7 @@ def _render_digest_message(
         f"{portfolio['closed_trade_count']} closed paper trades in the ledger."
         "\n\n"
         f"Today Qadam recorded {trade_summary}. For now, it is not forcing another order because "
-        f"{paperops_context['idle_reason']}. This is only a paper-trading update; Telegram can report "
-        "what happened, but it cannot approve, place, change, or close trades, and live capital remains off."
+        f"{paperops_context['idle_reason']}. I will keep watching for the next setup that clears the gates."
     )
     return title, body
 

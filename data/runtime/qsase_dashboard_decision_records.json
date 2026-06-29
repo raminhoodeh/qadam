@@ -28,7 +28,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-29T02:58:55.037460+00:00",
+  "generated_at": "2026-06-29T06:57:29.005470+00:00",
   "public_safe": true,
   "read_only": true,
   "record_count": 9,
@@ -167,7 +167,7 @@
         "trade_intent_created": false
       },
       "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
-      "blocker": "credential_gated_sources_labeled",
+      "blocker": "none",
       "decision_record_id": "qsase-dashboard:975b28e66b7a9bff2663",
       "evidence": [],
       "headline": "Source network exposes categories and sources.",
@@ -465,7 +465,7 @@
       "next_allowed_action": "repair runtime/source gaps or review proposals before any change",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "14 repair or approval rows are visible.",
+      "reason": "13 repair or approval rows are visible.",
       "schema_version": "qsase_dashboard_view_model.v1",
       "state": "repair_queue_visible",
       "strategy_family": "aggregate"

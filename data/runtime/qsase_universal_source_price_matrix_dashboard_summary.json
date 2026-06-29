@@ -4,17 +4,12 @@
   "command_disabled": true,
   "coverage_gaps": [
     {
-      "authority_impact": "cannot_satisfy_source_quorum",
-      "count": 1,
-      "gap_type": "credential_gated_sources"
-    },
-    {
       "authority_impact": "research_only_until_qsase_3",
       "count": 19,
       "gap_type": "historical_price_windows_pending"
     }
   ],
-  "generated_at": "2026-06-28T21:07:48.451404+00:00",
+  "generated_at": "2026-06-29T06:57:22.410804+00:00",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
   "no_proof_credit_granted": true,
@@ -35,7 +30,7 @@
     },
     {
       "label": "Credential-gated sources",
-      "value": 1
+      "value": 0
     },
     {
       "label": "Watched instruments",

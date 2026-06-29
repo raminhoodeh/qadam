@@ -129,18 +129,18 @@
     "artifact_type": "qsase_self_model_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "degraded_component_count": 6,
-    "generated_at": "2026-06-28T21:07:48.347680+00:00",
+    "degraded_component_count": 5,
+    "generated_at": "2026-06-29T06:57:22.333537+00:00",
     "live_send_allowed": false,
     "missing_component_count": 0,
     "public_safe": true,
-    "repair_request_count": 6,
+    "repair_request_count": 5,
     "schema_version": "qsase_self_model.v1",
     "status": "qsase_self_model_ready_with_gaps",
     "summary_rows": [
       {
         "label": "Source state",
-        "value": "data_health_degraded"
+        "value": "data_health_ready"
       },
       {
         "label": "Model stack",
@@ -170,9 +170,9 @@
     "title": "QSASE Self-Model"
   },
   "dashboard_state": {
-    "cockpit_status_age_seconds": 3283,
+    "cockpit_status_age_seconds": 1046,
     "cockpit_status_freshness": "fresh",
-    "cockpit_status_generated_at": "2026-06-28T20:13:04.869312+00:00",
+    "cockpit_status_generated_at": "2026-06-29T06:39:56.285703+00:00",
     "dashboard_export_freshness": "from_cockpit_status_runtime",
     "dashboard_signature_exists": true,
     "public_safe_redaction_status": "public_safe_no_secrets",
@@ -181,30 +181,15 @@
   },
   "data_health": {
     "connected_source_count": 12,
-    "degraded_source_count": 1,
-    "degraded_sources": [
-      {
-        "pipeline": "social",
-        "readiness": "credential required",
-        "source_key": "reddit",
-        "source_name": "Reddit API",
-        "status": "degraded"
-      }
-    ],
+    "degraded_source_count": 0,
+    "degraded_sources": [],
     "durable_replay_state": "partial",
     "expected_canonical_source_count": 35,
     "full_universe_scan_readiness": "pending_qsase_2_matrix",
-    "missing_credential_source_count": 1,
-    "missing_credential_sources": [
-      {
-        "operator_action": "add_reddit_oauth_credentials",
-        "pipeline": "social",
-        "source_key": "reddit",
-        "source_name": "Reddit API"
-      }
-    ],
-    "online_source_count": 31,
-    "optional_gap_count": 1,
+    "missing_credential_source_count": 0,
+    "missing_credential_sources": [],
+    "online_source_count": 32,
+    "optional_gap_count": 0,
     "pipeline_summary": [
       {
         "adapter_ready_count": 5,
@@ -280,13 +265,13 @@
       },
       {
         "adapter_ready_count": 7,
-        "degraded_count": 1,
+        "degraded_count": 0,
         "intentionally_disabled_count": 0,
         "local_bridge_required_count": 0,
         "local_only_count": 0,
-        "missing_credential_count": 1,
+        "missing_credential_count": 0,
         "needs_adapter_count": 1,
-        "online_count": 6,
+        "online_count": 7,
         "pending_count": 1,
         "pipeline": "social",
         "provider_decision_count": 1,
@@ -305,15 +290,10 @@
     "source_quorum_blocking_gap_count": 0,
     "source_trust_posture": "ledger_trust_scores_available",
     "source_universe_count": 35,
-    "status": "data_health_degraded"
+    "status": "data_health_ready"
   },
-  "degraded_component_count": 6,
+  "degraded_component_count": 5,
   "degraded_components": [
-    {
-      "component": "source_state",
-      "reason": "missing_optional_source_credentials",
-      "severity": "gap"
-    },
     {
       "component": "model_stack",
       "reason": "llm_provider_probes_artifact_missing",
@@ -350,7 +330,7 @@
     "guarded_alpaca_paper_route_ready": true,
     "lifecycle_poller_state": "paper_lifecycle_poll_recorded",
     "live_endpoint_disabled": true,
-    "open_order_count": 8,
+    "open_order_count": 14,
     "open_position_count": 2,
     "paper_endpoint_confirmed": true,
     "paperops_readiness_status": "ready_for_full_paper_ops",
@@ -359,7 +339,7 @@
     "status": "execution_health_ready",
     "submitted_paper_order_count": 0
   },
-  "generated_at": "2026-06-28T21:07:48.347680+00:00",
+  "generated_at": "2026-06-29T06:57:22.333537+00:00",
   "governance_status": "governance_safety_ready",
   "learning_health": {
     "artifact_statuses": {
@@ -404,7 +384,7 @@
       "llm_provider_probes_artifact_missing"
     ],
     "hallucination_or_unsupported_claim_risk": "requires_source_evidence_before_routing",
-    "latest_model_review_freshness": "2026-06-28T18:25:43.210115+00:00",
+    "latest_model_review_freshness": "2026-06-29T06:35:30.677020+00:00",
     "local_gemma_available": true,
     "model_disagreement_state": "not_recorded",
     "model_failure_state": "probe_gap",
@@ -418,7 +398,7 @@
     "frontier_gemini": {
       "advisory_only": true,
       "availability": "strategy_lead_shadow_packet_recorded",
-      "latest_packet_at": "2026-06-28T18:25:43.210115+00:00",
+      "latest_packet_at": "2026-06-29T06:35:30.677020+00:00",
       "latest_status": "queued_shadow_only",
       "output_is_approval": false,
       "role": "challenge_synthesis_failure_mode_review"
@@ -426,7 +406,7 @@
     "local_gemma": {
       "advisory_only": true,
       "availability": "shadow_assessment_recorded",
-      "latest_assessment_at": "2026-06-28T18:25:37.862618+00:00",
+      "latest_assessment_at": "2026-06-29T06:35:23.842497+00:00",
       "latest_status": "shadow_only",
       "model": "gemma-4-e4b",
       "output_is_approval": false,
@@ -502,18 +482,8 @@
     "qctrl_readiness": "device_probe_submitted",
     "quantum_mandatory_review_gate_status": "quantum_review_gate_passed"
   },
-  "repair_request_count": 6,
+  "repair_request_count": 5,
   "repair_requests": [
-    {
-      "broker_write_allowed": false,
-      "command_authority": false,
-      "component": "source_state",
-      "live_capital_enabled": false,
-      "next_allowed_action": "queue_human_or_approved_self_healing_review",
-      "reason": "missing_optional_source_credentials",
-      "repair_request_id": "qsase-1-repair-001",
-      "repair_type": "missing_source_credential_review"
-    },
     {
       "broker_write_allowed": false,
       "command_authority": false,
@@ -521,7 +491,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "llm_provider_probes_artifact_missing",
-      "repair_request_id": "qsase-1-repair-002",
+      "repair_request_id": "qsase-1-repair-001",
       "repair_type": "review_request"
     },
     {
@@ -531,7 +501,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "qctrl_fire_opal_ibm_readiness_stale",
-      "repair_request_id": "qsase-1-repair-003",
+      "repair_request_id": "qsase-1-repair-002",
       "repair_type": "stale_artifact_refresh_request"
     },
     {
@@ -541,7 +511,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "quantum_provider_call_readiness_recorded_context_only",
-      "repair_request_id": "qsase-1-repair-004",
+      "repair_request_id": "qsase-1-repair-003",
       "repair_type": "quantum_readiness_repair_request"
     },
     {
@@ -551,7 +521,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "risk_reviews_blocked_or_shadow_only",
-      "repair_request_id": "qsase-1-repair-005",
+      "repair_request_id": "qsase-1-repair-004",
       "repair_type": "review_request"
     },
     {
@@ -561,7 +531,7 @@
       "live_capital_enabled": false,
       "next_allowed_action": "queue_human_or_approved_self_healing_review",
       "reason": "no_validated_edges_yet",
-      "repair_request_id": "qsase-1-repair-006",
+      "repair_request_id": "qsase-1-repair-005",
       "repair_type": "review_request"
     }
   ],
@@ -580,8 +550,8 @@
   },
   "risk_state": {
     "current_exposure": {
-      "drawdown_pct": 1.688,
-      "open_order_count": 86,
+      "drawdown_pct": 1.441,
+      "open_order_count": 92,
       "open_position_count": 2,
       "total_pnl_gbp": -821.24
     },
@@ -601,233 +571,233 @@
     "source_artifacts": {
       "alpaca_paper_mirror": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:38.774649+00:00",
-        "mtime_age_seconds": 3309,
+        "mtime": "2026-06-29T06:34:23.605824+00:00",
+        "mtime_age_seconds": 1378,
         "path": "data/runtime/alpaca_paper_mirror.json",
-        "size_bytes": 2574
+        "size_bytes": 2652
       },
       "cockpit_status": {
         "exists": true,
-        "mtime": "2026-06-28T20:13:09.634339+00:00",
-        "mtime_age_seconds": 3278,
+        "mtime": "2026-06-29T06:40:02.999473+00:00",
+        "mtime_age_seconds": 1039,
         "path": "data/runtime/cockpit-status.json",
-        "size_bytes": 2785916
+        "size_bytes": 3073218
       },
       "cockpit_status_signature": {
         "exists": true,
-        "mtime": "2026-06-28T20:13:09.644256+00:00",
-        "mtime_age_seconds": 3278,
+        "mtime": "2026-06-29T06:40:03.011267+00:00",
+        "mtime_age_seconds": 1039,
         "path": "data/runtime/cockpit-status.signature.json",
         "size_bytes": 576
       },
       "daily_telegram_learning_brief": {
         "exists": true,
-        "mtime": "2026-06-28T18:28:02.747744+00:00",
-        "mtime_age_seconds": 9585,
+        "mtime": "2026-06-29T06:38:54.285871+00:00",
+        "mtime_age_seconds": 1108,
         "path": "data/runtime/daily_telegram_learning_brief.json",
-        "size_bytes": 5900
+        "size_bytes": 5899
       },
       "edge_memory_ledger": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:24.086510+00:00",
-        "mtime_age_seconds": 9624,
+        "mtime": "2026-06-29T06:37:58.117740+00:00",
+        "mtime_age_seconds": 1164,
         "path": "data/runtime/edge_memory_ledger.json",
-        "size_bytes": 29958
+        "size_bytes": 31803
       },
       "edge_pattern_ledger": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:56.887322+00:00",
-        "mtime_age_seconds": 3291,
+        "mtime": "2026-06-29T06:36:05.694035+00:00",
+        "mtime_age_seconds": 1276,
         "path": "data/runtime/edge_pattern_ledger.json",
         "size_bytes": 16375
       },
       "governance_safety_contract": {
         "exists": true,
-        "mtime": "2026-06-28T21:07:48.172215+00:00",
+        "mtime": "2026-06-29T06:57:22.190591+00:00",
         "mtime_age_seconds": 0,
         "path": "data/runtime/qsase_governance_safety_contract.json",
         "size_bytes": 20813
       },
       "hypothesis_lifecycle": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:33.760756+00:00",
-        "mtime_age_seconds": 9614,
+        "mtime": "2026-06-29T06:38:12.568039+00:00",
+        "mtime_age_seconds": 1149,
         "path": "data/runtime/hypothesis_lifecycle.json",
-        "size_bytes": 14034
+        "size_bytes": 14078
       },
       "local_research_assessments": {
         "exists": true,
-        "mtime": "2026-06-28T18:25:37.866222+00:00",
-        "mtime_age_seconds": 9730,
+        "mtime": "2026-06-29T06:35:23.866201+00:00",
+        "mtime_age_seconds": 1318,
         "path": "data/runtime/local_research_assessments.jsonl",
-        "size_bytes": 768603
+        "size_bytes": 826103
       },
       "paper_live_qctrl_product_access": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:02.310464+00:00",
-        "mtime_age_seconds": 3346,
+        "mtime": "2026-06-29T06:34:25.326260+00:00",
+        "mtime_age_seconds": 1377,
         "path": "data/runtime/paper_live_qctrl_product_access.json",
         "size_bytes": 6246
       },
       "paperops_30_day_operations": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:39.089592+00:00",
-        "mtime_age_seconds": 3309,
+        "mtime": "2026-06-29T06:35:01.552529+00:00",
+        "mtime_age_seconds": 1340,
         "path": "data/runtime/paperops_30_day_operations.json",
-        "size_bytes": 18887
+        "size_bytes": 18815
       },
       "paperops_active_paper_trading_automation": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:32.452597+00:00",
-        "mtime_age_seconds": 3315,
+        "mtime": "2026-06-29T06:34:27.625761+00:00",
+        "mtime_age_seconds": 1374,
         "path": "data/runtime/paperops_active_paper_trading_automation.json",
-        "size_bytes": 15490
+        "size_bytes": 9519
       },
       "paperops_autonomous_pass_summary": {
         "exists": true,
-        "mtime": "2026-06-28T20:13:09.991818+00:00",
-        "mtime_age_seconds": 3278,
+        "mtime": "2026-06-29T06:18:17.066524+00:00",
+        "mtime_age_seconds": 2345,
         "path": "data/runtime/paperops_autonomous_pass_summary.json",
-        "size_bytes": 189820
+        "size_bytes": 191684
       },
       "paperops_completion_gaps": {
         "exists": true,
-        "mtime": "2026-06-28T18:25:22.435846+00:00",
-        "mtime_age_seconds": 9745,
+        "mtime": "2026-06-29T06:35:01.818338+00:00",
+        "mtime_age_seconds": 1340,
         "path": "data/runtime/paperops_completion_gaps.json",
-        "size_bytes": 5843
+        "size_bytes": 4869
       },
       "paperops_paper_lifecycle_poller": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:35.147942+00:00",
-        "mtime_age_seconds": 3313,
+        "mtime": "2026-06-29T06:34:27.442183+00:00",
+        "mtime_age_seconds": 1374,
         "path": "data/runtime/paperops_paper_lifecycle_poller.json",
-        "size_bytes": 31594
+        "size_bytes": 31599
       },
       "paperops_qctrl_paper_consultation": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:03.257642+00:00",
-        "mtime_age_seconds": 3345,
+        "mtime": "2026-06-29T06:34:26.004641+00:00",
+        "mtime_age_seconds": 1376,
         "path": "data/runtime/paperops_qctrl_paper_consultation.json",
         "size_bytes": 4710
       },
       "pattern_recognition_engine": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:19.233199+00:00",
-        "mtime_age_seconds": 9629,
+        "mtime": "2026-06-29T06:37:50.654984+00:00",
+        "mtime_age_seconds": 1171,
         "path": "data/runtime/pattern_recognition_engine.json",
-        "size_bytes": 50675
+        "size_bytes": 50695
       },
       "phase0_reliability_baseline": {
         "exists": true,
-        "mtime": "2026-06-28T21:07:47.850687+00:00",
+        "mtime": "2026-06-29T06:57:21.928962+00:00",
         "mtime_age_seconds": 0,
         "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
-        "size_bytes": 32600
+        "size_bytes": 32615
       },
       "phase5_risk_sizing_reviews": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:03.750846+00:00",
-        "mtime_age_seconds": 3344,
+        "mtime": "2026-06-29T06:34:26.527794+00:00",
+        "mtime_age_seconds": 1375,
         "path": "data/runtime/phase5_risk_sizing_reviews.json",
-        "size_bytes": 119637
+        "size_bytes": 119635
       },
       "phase6_learning_approval_ledger": {
         "exists": true,
         "mtime": "2026-05-25T09:12:39.870572+00:00",
-        "mtime_age_seconds": 2980508,
+        "mtime_age_seconds": 3015882,
         "path": "data/runtime/phase6_learning_approval_ledger.json",
         "size_bytes": 34497
       },
       "phase6_shadow_strategy_replay": {
         "exists": true,
         "mtime": "2026-05-25T09:13:10.583606+00:00",
-        "mtime_age_seconds": 2980477,
+        "mtime_age_seconds": 3015851,
         "path": "data/runtime/phase6_shadow_strategy_replay.json",
         "size_bytes": 29470
       },
       "phase7_drawdown_risk_sentinel": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:05.531981+00:00",
-        "mtime_age_seconds": 3342,
+        "mtime": "2026-06-29T06:34:28.436583+00:00",
+        "mtime_age_seconds": 1373,
         "path": "data/runtime/phase7_drawdown_risk_sentinel.json",
         "size_bytes": 13511
       },
       "qctrl_fire_opal_ibm_readiness": {
         "exists": true,
         "mtime": "2026-05-28T06:07:01.107996+00:00",
-        "mtime_age_seconds": 2732447,
+        "mtime_age_seconds": 2767821,
         "path": "data/runtime/qctrl_fire_opal_ibm_readiness.json",
         "size_bytes": 2541
       },
       "quantum_mandatory_review_gate": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:14.338919+00:00",
-        "mtime_age_seconds": 9634,
+        "mtime": "2026-06-29T06:37:44.205436+00:00",
+        "mtime_age_seconds": 1178,
         "path": "data/runtime/quantum_mandatory_review_gate.json",
         "size_bytes": 10667
       },
       "quantum_meta_review": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:43.319865+00:00",
-        "mtime_age_seconds": 9605,
+        "mtime": "2026-06-29T06:38:26.395249+00:00",
+        "mtime_age_seconds": 1135,
         "path": "data/runtime/quantum_meta_review.json",
-        "size_bytes": 32436
+        "size_bytes": 32429
       },
       "strategy_lead_shadow_packets": {
         "exists": true,
-        "mtime": "2026-06-28T18:25:43.216363+00:00",
-        "mtime_age_seconds": 9725,
+        "mtime": "2026-06-29T06:35:30.679941+00:00",
+        "mtime_age_seconds": 1311,
         "path": "data/runtime/strategy_lead_shadow_packets.jsonl",
-        "size_bytes": 5189995
+        "size_bytes": 5684265
       },
       "strategy_update_record": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:28.910406+00:00",
-        "mtime_age_seconds": 9619,
+        "mtime": "2026-06-29T06:38:05.157545+00:00",
+        "mtime_age_seconds": 1157,
         "path": "data/runtime/strategy_update_record.json",
         "size_bytes": 19164
       },
       "strategy_weight_updates": {
         "exists": true,
-        "mtime": "2026-06-28T18:27:38.535921+00:00",
-        "mtime_age_seconds": 9609,
+        "mtime": "2026-06-29T06:38:19.502619+00:00",
+        "mtime_age_seconds": 1142,
         "path": "data/runtime/strategy_weight_updates.json",
         "size_bytes": 26647
       },
       "telegram_codebase_upgrade_notification": {
         "exists": true,
-        "mtime": "2026-06-28T18:32:16.089272+00:00",
-        "mtime_age_seconds": 9332,
+        "mtime": "2026-06-29T06:57:22.175271+00:00",
+        "mtime_age_seconds": 0,
         "path": "data/runtime/telegram_codebase_upgrade_notification.json",
-        "size_bytes": 7571
+        "size_bytes": 7425
       },
       "telegram_human_brief": {
         "exists": true,
-        "mtime": "2026-06-28T18:28:02.707188+00:00",
-        "mtime_age_seconds": 9585,
+        "mtime": "2026-06-29T06:38:54.210878+00:00",
+        "mtime_age_seconds": 1108,
         "path": "data/runtime/telegram_human_brief.json",
-        "size_bytes": 5699
+        "size_bytes": 5698
       },
       "telegram_inbound_intake_summary": {
         "exists": true,
-        "mtime": "2026-06-28T20:13:04.869268+00:00",
-        "mtime_age_seconds": 3283,
+        "mtime": "2026-06-29T06:39:37.355531+00:00",
+        "mtime_age_seconds": 1064,
         "path": "data/runtime/telegram_inbound_intake_summary.json",
         "size_bytes": 3665
       },
       "telegram_trade_notifications": {
         "exists": true,
-        "mtime": "2026-06-28T20:12:32.436199+00:00",
-        "mtime_age_seconds": 3315,
+        "mtime": "2026-06-29T06:57:21.941328+00:00",
+        "mtime_age_seconds": 0,
         "path": "data/runtime/telegram_trade_notifications.json",
-        "size_bytes": 3000
+        "size_bytes": 3001
       }
     },
     "source_state_contract": "runtime_artifacts_are_source_of_truth"
   },
   "staleness_status": {
-    "evaluated_at": "2026-06-28T21:07:48.347680+00:00",
+    "evaluated_at": "2026-06-29T06:57:22.333537+00:00",
     "freshness_sla_seconds": 21600,
     "missing_required_artifacts": [],
     "required_artifact_count": 4,
@@ -955,7 +925,7 @@
     "inbound_strategy_consideration_count": 1,
     "inbound_world_event_datapoint_count": 1,
     "latest_notification_failure_category": null,
-    "outbound_codebase_notice_status": "sent",
+    "outbound_codebase_notice_status": "ready_to_send",
     "outbound_daily_learning_status": "daily_telegram_learning_brief_ready_to_send",
     "outbound_human_brief_status": "telegram_human_brief_ready_to_send",
     "outbound_trade_notification_status": "idle_no_submitted_paper_orders",
@@ -1005,7 +975,7 @@
     "status": "visibility_health_ready",
     "telegram_inbound_read_only": true,
     "telegram_outbound_statuses": {
-      "codebase_upgrade": "sent",
+      "codebase_upgrade": "ready_to_send",
       "daily_learning": "daily_telegram_learning_brief_ready_to_send",
       "human_brief": "telegram_human_brief_ready_to_send",
       "trade_notifications": "idle_no_submitted_paper_orders"
@@ -1019,7 +989,7 @@
       "duplicate_submit_count": 4,
       "fresh_eligible_submit_count": 0,
       "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-      "open_order_count": 8
+      "open_order_count": 14
     },
     "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
     "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",

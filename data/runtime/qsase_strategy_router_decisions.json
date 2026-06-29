@@ -88,7 +88,7 @@
     "authority_flags_false": true,
     "authority_state": "strategy_router_no_order_authority",
     "command_disabled": true,
-    "generated_at": "2026-06-28T21:07:55.913215+00:00",
+    "generated_at": "2026-06-29T06:57:28.456300+00:00",
     "hard_vetoes": [
       {
         "authority": {
@@ -373,7 +373,7 @@
         "router_decision_id": "qsase-router:562b9a8186385c779193",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:43e363327d116d219cad",
@@ -383,7 +383,7 @@
         "router_decision_id": "qsase-router:792809f2ae069977d6c2",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:8d3a3da96eea0cac9ef6",
@@ -393,7 +393,7 @@
         "router_decision_id": "qsase-router:e031a63a39531680664b",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       }
     ],
     "soft_blockers": [
@@ -683,7 +683,7 @@
       },
       {
         "label": "Soft blockers",
-        "value": 276
+        "value": 260
       },
       {
         "label": "Top output",
@@ -705,7 +705,7 @@
   ],
   "execution_allowed": false,
   "execution_intent_created": false,
-  "generated_at": "2026-06-28T21:07:55.913215+00:00",
+  "generated_at": "2026-06-29T06:57:28.456300+00:00",
   "hard_veto_count": 12,
   "hold_count": 12,
   "hold_missing_evidence_count": 12,
@@ -786,7 +786,7 @@
       "trade_candidate_created": false,
       "trade_candidate_creation_allowed": false
     },
-    "generated_at": "2026-06-28T21:07:55.913215+00:00",
+    "generated_at": "2026-06-29T06:57:28.456300+00:00",
     "ranked_count": 16,
     "ranked_decisions": [
       {
@@ -797,7 +797,7 @@
         "router_decision_id": "qsase-router:562b9a8186385c779193",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:43e363327d116d219cad",
@@ -807,7 +807,7 @@
         "router_decision_id": "qsase-router:792809f2ae069977d6c2",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:8d3a3da96eea0cac9ef6",
@@ -817,7 +817,7 @@
         "router_decision_id": "qsase-router:e031a63a39531680664b",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:5c9d3f55f552a6cbc7ab",
@@ -827,7 +827,7 @@
         "router_decision_id": "qsase-router:d60c7e3e2fc8cef76749",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.520334,
-        "soft_blocker_count": 15
+        "soft_blocker_count": 14
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:077621d2af62001ccecf",
@@ -837,7 +837,7 @@
         "router_decision_id": "qsase-router:4a291ae7820ec6d3c34a",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.49316,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:59548cbec1f9b786b52a",
@@ -847,7 +847,7 @@
         "router_decision_id": "qsase-router:34305a0480836c21f049",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.49316,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:d52ae8c11691c7a7cecf",
@@ -857,7 +857,7 @@
         "router_decision_id": "qsase-router:9b53efa8da076058ff24",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.492075,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:9c5e120186ca46c515c3",
@@ -867,7 +867,7 @@
         "router_decision_id": "qsase-router:2394735eaf9b3f331402",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.492075,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:ee91d01d257afbd1c50c",
@@ -877,7 +877,7 @@
         "router_decision_id": "qsase-router:dfe2faad9fef812df62f",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.491493,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:41887af345c73e1715ea",
@@ -887,7 +887,7 @@
         "router_decision_id": "qsase-router:c66be67dad359bdb478c",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.491493,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:4709df7f7d1d171867d0",
@@ -897,7 +897,7 @@
         "router_decision_id": "qsase-router:5daa70dacf96ac8e8297",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.490911,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:d1225ca087332f3fbc5b",
@@ -907,7 +907,7 @@
         "router_decision_id": "qsase-router:5b91fb962586a5a2af5c",
         "router_output": "hold_missing_evidence",
         "router_total_score": 0.490911,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:3be5974ce6fd18182c8c",
@@ -917,7 +917,7 @@
         "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
         "router_output": "blocked_safety_boundary",
         "router_total_score": 0.371481,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:ebc5c79f6c3628404423",
@@ -927,7 +927,7 @@
         "router_decision_id": "qsase-router:152c46c8b7f8fe91404f",
         "router_output": "blocked_safety_boundary",
         "router_total_score": 0.371481,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:35fa4cdda1b97db269df",
@@ -937,7 +937,7 @@
         "router_decision_id": "qsase-router:a048501840641749dd64",
         "router_output": "blocked_safety_boundary",
         "router_total_score": 0.36951,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       },
       {
         "candidate_identity_key": "qsase-strategy-identity:ef5ec0ebf136ed14ad69",
@@ -947,7 +947,7 @@
         "router_decision_id": "qsase-router:889ac4e6e702a8e1a45a",
         "router_output": "blocked_safety_boundary",
         "router_total_score": 0.36951,
-        "soft_blocker_count": 18
+        "soft_blocker_count": 17
       }
     ],
     "schema_version": "qsase_strategy_router.v1",
@@ -959,7 +959,7 @@
   "shadow_only_count": 0,
   "shadow_replay_count": 0,
   "simulated_elapsed_time_allowed": false,
-  "soft_blocker_count": 276,
+  "soft_blocker_count": 260,
   "status": "qsase_strategy_router_degraded",
   "strategy_foundry_review_count": 0,
   "strategy_input_count": 16,
@@ -1023,7 +1023,7 @@
           "duplicate_submit_count": 4,
           "fresh_eligible_submit_count": 0,
           "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-          "open_order_count": 8
+          "open_order_count": 14
         },
         "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
         "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
@@ -1041,7 +1041,7 @@
         "quantum_did_not_upgrade_research_confidence"
       ]
     },
-    "generated_at": "2026-06-28T21:07:55.913215+00:00",
+    "generated_at": "2026-06-29T06:57:28.456300+00:00",
     "live_capital_enabled": false,
     "next_allowed_action": "watch_for_missing_confirmation",
     "paper_order_created": false,

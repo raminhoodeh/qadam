@@ -42,7 +42,7 @@
     "trust_score_update_created": false
   },
   "backtest_to_proof_allowed": false,
-  "generated_at": "2026-06-28T21:07:48.161754+00:00",
+  "generated_at": "2026-06-29T06:57:22.182401+00:00",
   "paper_proof_ledger": {
     "closed_proof_trade_count": 0,
     "qualified_setup_count": 2,

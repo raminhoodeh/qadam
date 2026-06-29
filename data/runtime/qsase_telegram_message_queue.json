@@ -24,7 +24,7 @@
     "telegram_trade_command_enabled": false,
     "trade_candidate_created": false
   },
-  "generated_at": "2026-06-28T21:07:56.728399+00:00",
+  "generated_at": "2026-06-29T06:57:29.105845+00:00",
   "queue_count": 5,
   "queued_messages": [
     {
@@ -72,13 +72,13 @@
         "data/runtime/qsase_dashboard_repair_queue.json",
         "data/runtime/qsase_dashboard_status.json"
       ],
-      "fingerprint": "e3075d2b646f6f4bf9d477e024a3e52a2be02d2d70dffb4dd439ebbfa111d683",
-      "message_candidate_id": "qsase-telegram-candidate:d7ab6ed03cc98e03a595",
+      "fingerprint": "65445d3bece882c03e2943bf8716f8ecd0f41e1fee41b0aff96755de3ce935bd",
+      "message_candidate_id": "qsase-telegram-candidate:bf1d7d783b27e55f3bdd",
       "message_class": "qsase_repair_note",
-      "ready_for_dashboard": false,
+      "ready_for_dashboard": true,
       "ready_to_send": false,
       "send_allowed": false,
-      "status": "message_rejected_duplicate"
+      "status": "message_ready_for_dashboard_only"
     },
     {
       "artifact_refs": [

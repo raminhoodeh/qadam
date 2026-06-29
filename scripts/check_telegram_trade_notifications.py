@@ -335,7 +335,7 @@ def main() -> int:
     if record:
         preview = record.get("message_preview", {})
         body = str(preview.get("body") or "") if isinstance(preview, dict) else ""
-        for marker in ("Qadam has placed a paper trade", "paper portfolio", "only paper trading", "live capital remains off"):
+        for marker in ("Qadam placed a paper", "paper portfolio", "I will keep tracking the order"):
             if marker not in body:
                 errors.append(f"telegram_trade_notifications_message_marker_missing:{marker}")
         for marker in (
@@ -350,6 +350,13 @@ def main() -> int:
         ):
             if marker in body:
                 errors.append(f"telegram_trade_notifications_message_too_verbose:{marker}")
+        for marker in (
+            "Telegram is reporting",
+            "live capital remains off",
+            "cannot approve",
+        ):
+            if marker in body:
+                errors.append(f"telegram_trade_notifications_message_repetitive_disclaimer:{marker}")
         if len([line for line in body.splitlines() if line.strip()]) > 3:
             errors.append("telegram_trade_notifications_message_too_many_lines")
         if "%" not in body:
@@ -375,7 +382,7 @@ def main() -> int:
     for marker in (
         "Qadam placed a paper BUY order for 1 SMH",
         "paper portfolio",
-        "live capital remains off",
+        "I will keep tracking the order",
     ):
         if marker not in synthetic_body:
             errors.append(f"telegram_trade_notifications_synthetic_message_missing:{marker}")

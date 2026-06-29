@@ -92,11 +92,6 @@
     },
     "coverage_gaps": [
       {
-        "authority_impact": "cannot_satisfy_source_quorum",
-        "count": 1,
-        "gap_type": "credential_gated_sources"
-      },
-      {
         "authority_impact": "research_only_until_qsase_3",
         "count": 19,
         "gap_type": "historical_price_windows_pending"
@@ -108,8 +103,8 @@
       "live_route_enabled_count": 0,
       "paper_route_available_count": 13
     },
-    "maximum_observation_timestamp": "2026-06-28T21:07:48.451404+00:00",
-    "minimum_observation_timestamp": "2026-06-28T18:25:22.880528+00:00",
+    "maximum_observation_timestamp": "2026-06-29T06:57:22.410804+00:00",
+    "minimum_observation_timestamp": "2026-06-29T06:35:02.326059+00:00",
     "source_coverage": {
       "coverage_by_source_class": {
         "conflict": {
@@ -147,8 +142,7 @@
             "data/runtime/data_environment_map.json",
             "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
             "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
-            "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-            "data/runtime/source_heartbeats.jsonl"
+            "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility"
           ],
           "quorum_contributing_count": 0,
           "source_count": 11
@@ -179,7 +173,7 @@
           "source_count": 7
         },
         "social": {
-          "credential_gated_count": 1,
+          "credential_gated_count": 0,
           "degraded_count": 0,
           "family": "social",
           "fresh_count": 8,
@@ -195,7 +189,7 @@
         }
       },
       "historical_coverage_note": "deferred_to_qsase_3_historical_source_price_memory",
-      "source_count_blocked_by_missing_credentials": 1,
+      "source_count_blocked_by_missing_credentials": 0,
       "source_count_blocked_by_provider_limits": 0,
       "source_count_with_historical_coverage": 0,
       "source_count_with_live_only_coverage": 41,
@@ -209,17 +203,12 @@
     "command_disabled": true,
     "coverage_gaps": [
       {
-        "authority_impact": "cannot_satisfy_source_quorum",
-        "count": 1,
-        "gap_type": "credential_gated_sources"
-      },
-      {
         "authority_impact": "research_only_until_qsase_3",
         "count": 19,
         "gap_type": "historical_price_windows_pending"
       }
     ],
-    "generated_at": "2026-06-28T21:07:48.451404+00:00",
+    "generated_at": "2026-06-29T06:57:22.410804+00:00",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
     "no_proof_credit_granted": true,
@@ -240,7 +229,7 @@
       },
       {
         "label": "Credential-gated sources",
-        "value": 1
+        "value": 0
       },
       {
         "label": "Watched instruments",
@@ -261,10 +250,9 @@
     ]
   },
   "degraded_reasons": [
-    "credential_gated_sources",
     "historical_price_windows_pending"
   ],
-  "generated_at": "2026-06-28T21:07:48.451404+00:00",
+  "generated_at": "2026-06-29T06:57:22.410804+00:00",
   "matrix_scope": {
     "all_sources_cross_all_markets": true,
     "expected_row_count": 6232,
@@ -308,7 +296,7 @@
   "research_only": true,
   "schema_version": "qsase_universal_source_price_matrix.v1",
   "self_model_ref": {
-    "generated_at": "2026-06-28T21:07:48.347680+00:00",
+    "generated_at": "2026-06-29T06:57:22.333537+00:00",
     "path": "data/runtime/qsase_self_model.json",
     "present": true,
     "status": "qsase_self_model_ready_with_gaps"
@@ -321,12 +309,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:2741fccdeacf2815e811",
       "paper_order_allowed": false,
@@ -340,8 +328,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -364,12 +352,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:17ec67fb07de5e8f9097",
       "paper_order_allowed": false,
@@ -383,8 +371,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -407,12 +395,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:f0f5ac9fb813df33ee90",
       "paper_order_allowed": false,
@@ -426,8 +414,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -450,12 +438,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:014883b66e2a2c772292",
       "paper_order_allowed": false,
@@ -469,8 +457,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -493,12 +481,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:84172bb0bc0ae0dfc7fa",
       "paper_order_allowed": false,
@@ -512,8 +500,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -536,12 +524,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:86f6e62cff39184a6e55",
       "paper_order_allowed": false,
@@ -555,8 +543,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -579,12 +567,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:921ea982a284b8be3f82",
       "paper_order_allowed": false,
@@ -598,8 +586,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -622,12 +610,12 @@
       "data_completeness_score": 0.1,
       "execution_allowed": false,
       "forward_return": null,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "price_history_gap_explicit",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:bno",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "BNO",
       "matrix_row_id": "qsase-matrix:c4dfb0612956e6191d15",
       "paper_order_allowed": false,
@@ -641,8 +629,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -665,12 +653,12 @@
       "data_completeness_score": 0.35,
       "execution_allowed": false,
       "forward_return": 0.007740134500697874,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "current_sample_available",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:cl=f",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "CL=F",
       "matrix_row_id": "qsase-matrix:464196f177377e432dec",
       "paper_order_allowed": false,
@@ -684,8 +672,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -708,12 +696,12 @@
       "data_completeness_score": 0.35,
       "execution_allowed": false,
       "forward_return": 0.007740134500697874,
-      "generated_at": "2026-06-28T21:07:48.451404+00:00",
+      "generated_at": "2026-06-29T06:57:22.410804+00:00",
       "live_capital_enabled": false,
       "market_confirmation_status": "current_sample_available",
       "market_family": "crude_oil",
       "market_instrument_id": "qsase-instrument:cl=f",
-      "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "market_symbol": "CL=F",
       "matrix_row_id": "qsase-matrix:9d4bee23449202ad115f",
       "paper_order_allowed": false,
@@ -727,8 +715,8 @@
       "relationship_type": "source_to_asset",
       "schema_version": "qsase_universal_source_price_matrix.v1",
       "source_credential_status": "configured",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
-      "source_event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
+      "source_event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "source_event_type": "source_state_snapshot",
       "source_freshness_status": "fresh",
       "source_key": "acled",
@@ -801,8 +789,7 @@
             "data/runtime/data_environment_map.json",
             "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
             "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
-            "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-            "data/runtime/source_heartbeats.jsonl"
+            "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility"
           ],
           "quorum_contributing_count": 0,
           "source_count": 11
@@ -833,7 +820,7 @@
           "source_count": 7
         },
         "social": {
-          "credential_gated_count": 1,
+          "credential_gated_count": 0,
           "degraded_count": 0,
           "family": "social",
           "fresh_count": 8,
@@ -849,16 +836,16 @@
         }
       },
       "historical_coverage_note": "deferred_to_qsase_3_historical_source_price_memory",
-      "source_count_blocked_by_missing_credentials": 1,
+      "source_count_blocked_by_missing_credentials": 0,
       "source_count_blocked_by_provider_limits": 0,
       "source_count_with_historical_coverage": 0,
       "source_count_with_live_only_coverage": 41,
       "source_count_with_stale_data": 0,
       "total_eligible_source_count": 41
     },
-    "credential_gated_source_count": 1,
+    "credential_gated_source_count": 0,
     "degraded_source_count": 0,
-    "generated_at": "2026-06-28T21:07:48.451404+00:00",
+    "generated_at": "2026-06-29T06:57:22.410804+00:00",
     "public_safe": true,
     "schema_version": "qsase_universal_source_price_matrix.v1",
     "source_count": 41,
@@ -898,8 +885,7 @@
           "data/runtime/data_environment_map.json",
           "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
           "data/runtime/market_context_packet.json:recent_packets.source_taxonomy",
-          "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-          "data/runtime/source_heartbeats.jsonl"
+          "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility"
         ],
         "quorum_contributing_count": 0,
         "source_count": 11
@@ -930,7 +916,7 @@
         "source_count": 7
       },
       "social": {
-        "credential_gated_count": 1,
+        "credential_gated_count": 0,
         "degraded_count": 0,
         "family": "social",
         "fresh_count": 8,
@@ -955,8 +941,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -996,8 +982,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1043,7 +1029,7 @@
         "execution_allowed": false,
         "freshness_status": "fresh",
         "observed_age_seconds": 0,
-        "observed_timestamp": "2026-06-28T21:07:48.451404+00:00",
+        "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1078,8 +1064,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1124,8 +1110,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1165,8 +1151,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1211,8 +1197,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1252,8 +1238,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1293,8 +1279,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1339,8 +1325,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1380,8 +1366,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1421,8 +1407,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1462,8 +1448,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1503,8 +1489,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1549,8 +1535,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1590,8 +1576,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1631,8 +1617,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1672,8 +1658,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1713,8 +1699,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1754,8 +1740,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1770,11 +1756,6 @@
           },
           {
             "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-            "public_safe": true,
-            "role": "source_state"
-          },
-          {
-            "artifact": "data/runtime/source_heartbeats.jsonl",
             "public_safe": true,
             "role": "source_state"
           }
@@ -1805,8 +1786,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1851,8 +1832,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1892,8 +1873,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1933,8 +1914,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -1974,8 +1955,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2008,15 +1989,15 @@
         "trust_score": null
       },
       {
-        "adapter_status": "degraded",
-        "credential_gated": true,
-        "credential_status": "missing",
+        "adapter_status": "online",
+        "credential_gated": false,
+        "credential_status": "covered_by_proxy_oauth_optional",
         "durable_replay_reference": null,
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2041,18 +2022,18 @@
           }
         ],
         "raw_payload_reference": null,
-        "research_context_allowed": false,
+        "research_context_allowed": true,
         "source_family": "social",
         "source_key": "reddit",
-        "source_name": "Reddit API",
+        "source_name": "Reddit Narrative Proxy / Reddit API",
         "source_pipeline": "social",
         "source_quorum_contribution": {
           "can_contribute": false,
           "candidate_level_gate_required": true,
-          "reason": "credential_gated_source_cannot_satisfy_source_quorum"
+          "reason": "supplemental_context_cannot_satisfy_source_quorum"
         },
-        "state": "credential_gated",
-        "supplemental_context_only": false,
+        "state": "online",
+        "supplemental_context_only": true,
         "telegram_command_authority": false,
         "trade_candidate_creation_allowed": false,
         "trust_posture": "context_trust",
@@ -2066,8 +2047,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2112,8 +2093,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2154,7 +2135,7 @@
         "execution_allowed": false,
         "freshness_status": "fresh",
         "observed_age_seconds": 0,
-        "observed_timestamp": "2026-06-28T21:07:48.451404+00:00",
+        "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2189,8 +2170,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2230,8 +2211,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2246,11 +2227,6 @@
           },
           {
             "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-            "public_safe": true,
-            "role": "source_state"
-          },
-          {
-            "artifact": "data/runtime/source_heartbeats.jsonl",
             "public_safe": true,
             "role": "source_state"
           }
@@ -2281,8 +2257,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2323,7 +2299,7 @@
         "execution_allowed": false,
         "freshness_status": "fresh",
         "observed_age_seconds": 0,
-        "observed_timestamp": "2026-06-28T21:07:48.451404+00:00",
+        "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2364,7 +2340,7 @@
         "execution_allowed": false,
         "freshness_status": "fresh",
         "observed_age_seconds": 0,
-        "observed_timestamp": "2026-06-28T21:07:48.451404+00:00",
+        "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2399,8 +2375,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2445,8 +2421,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2486,8 +2462,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2532,8 +2508,8 @@
         "eligible_for_signal_review": false,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2573,8 +2549,8 @@
         "eligible_for_signal_review": true,
         "execution_allowed": false,
         "freshness_status": "fresh",
-        "observed_age_seconds": 9745,
-        "observed_timestamp": "2026-06-28T18:25:22.880528+00:00",
+        "observed_age_seconds": 1340,
+        "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2615,7 +2591,7 @@
         "execution_allowed": false,
         "freshness_status": "fresh",
         "observed_age_seconds": 0,
-        "observed_timestamp": "2026-06-28T21:07:48.451404+00:00",
+        "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2651,7 +2627,7 @@
         "execution_allowed": false,
         "freshness_status": "fresh",
         "observed_age_seconds": 0,
-        "observed_timestamp": "2026-06-28T21:07:48.451404+00:00",
+        "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
         "proof_credit_allowed": false,
         "provenance": [
           {
@@ -2680,8 +2656,8 @@
       }
     ],
     "stale_or_unknown_freshness_count": 0,
-    "status": "source_universe_degraded",
-    "supplemental_source_count": 5
+    "status": "source_universe_ready",
+    "supplemental_source_count": 6
   },
   "status": "qsase_source_price_matrix_degraded",
   "trading_universe": {
@@ -2715,7 +2691,7 @@
       "semiconductors": 4,
       "silver": 3
     },
-    "generated_at": "2026-06-28T21:07:48.451404+00:00",
+    "generated_at": "2026-06-29T06:57:22.410804+00:00",
     "instruments": [
       {
         "backtest_gap_reason": "historical_price_windows_deferred_to_qsase_3",
@@ -2728,7 +2704,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "crude_oil",
         "market_family_label": "crude_oil",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -2778,7 +2754,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "crude_oil",
         "market_family_label": "crude_oil",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "sample_closed",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -2828,7 +2804,7 @@
         "mapping_state": "mapped_from_market_context_packet",
         "market_family": "macro_watchlist",
         "market_family_label": "macro_watchlist",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -2863,7 +2839,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "defence",
         "market_family_label": "defence",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "open_paper_position_state": "open_position",
@@ -2904,7 +2880,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "prediction_markets",
         "market_family_label": "prediction_markets",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -2939,7 +2915,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "defence",
         "market_family_label": "defence",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -2974,7 +2950,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "semiconductors",
         "market_family_label": "semiconductors",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3009,7 +2985,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "prediction_markets",
         "market_family_label": "prediction_markets",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3044,7 +3020,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "defence",
         "market_family_label": "defence",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3079,7 +3055,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "semiconductors",
         "market_family_label": "semiconductors",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3119,7 +3095,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "silver",
         "market_family_label": "silver",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3154,7 +3130,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "silver",
         "market_family_label": "silver",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3189,7 +3165,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "silver",
         "market_family_label": "silver",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3224,7 +3200,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "semiconductors",
         "market_family_label": "semiconductors",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "open_paper_position_state": "open_position",
@@ -3265,7 +3241,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "semiconductors",
         "market_family_label": "semiconductors",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3300,7 +3276,7 @@
         "mapping_state": "mapped_from_market_context_packet",
         "market_family": "macro_watchlist",
         "market_family_label": "macro_watchlist",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3335,7 +3311,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "crude_oil",
         "market_family_label": "crude_oil",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3390,7 +3366,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "defence",
         "market_family_label": "defence",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,
@@ -3425,7 +3401,7 @@
         "mapping_state": "mapped_to_strategy_universe_family",
         "market_family": "crude_oil",
         "market_family_label": "crude_oil",
-        "market_observation_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "market_observation_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "market_session_status": "not_recorded",
         "observable_for_research": true,
         "paper_order_allowed": false,

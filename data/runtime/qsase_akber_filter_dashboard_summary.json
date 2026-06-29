@@ -4,7 +4,7 @@
   "authority_state": "akber_filter_not_execution_approval",
   "command_disabled": true,
   "filter_pass_is_not_execution_approval": true,
-  "generated_at": "2026-06-28T21:07:55.570305+00:00",
+  "generated_at": "2026-06-29T06:57:28.138657+00:00",
   "historical_ablation_status": "ablation_degraded_proxy_only_no_promoted_hypotheses",
   "latest_blocker": "missing_filter_context_present,no_promoted_strategy_hypotheses_to_filter,strategy_foundry_degraded",
   "live_send_allowed": false,

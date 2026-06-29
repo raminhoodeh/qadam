@@ -21,7 +21,7 @@
     },
     "qctrl_consultation_generated_at": "2026-05-26T23:01:00.843967+00:00",
     "qctrl_consultation_status": "consultation_recorded",
-    "quantum_review_gate_generated_at": "2026-06-28T18:27:14.333900+00:00",
+    "quantum_review_gate_generated_at": "2026-06-29T06:37:44.200215+00:00",
     "quantum_review_gate_status": "quantum_review_gate_passed",
     "review_readiness_only": true,
     "safety": {
@@ -50,7 +50,7 @@
     "status": "ready",
     "submit_enablement_status": "enabled_pending_explicit_submit"
   },
-  "generated_at": "2026-06-28T21:07:47.838022+00:00",
+  "generated_at": "2026-06-29T06:57:21.916277+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

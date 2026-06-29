@@ -338,9 +338,8 @@ def _render_trade_message(
         "\n\n"
         f"The paper portfolio is now {_format_money(portfolio['portfolio_value_gbp'])}, "
         f"with total paper profit/loss of {_format_money(portfolio['total_pnl_gbp'])} "
-        f"({_format_pct(portfolio['performance_pct'])}). This is still only paper trading; "
-        "Telegram is reporting what happened and cannot approve, change, or close the trade, "
-        "and live capital remains off."
+        f"({_format_pct(portfolio['performance_pct'])}). I will keep tracking the order and update the group "
+        "if the position changes."
     )
     return title, body
 

@@ -92,7 +92,7 @@
     "authority_state": "shadow_replay_research_only_no_order",
     "candidate_for_router_count": 0,
     "command_disabled": true,
-    "generated_at": "2026-06-28T21:07:55.730794+00:00",
+    "generated_at": "2026-06-29T06:57:28.267353+00:00",
     "latest_blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
@@ -156,7 +156,7 @@
   "execution_allowed": false,
   "execution_intent_created": false,
   "execution_intent_created_count": 0,
-  "generated_at": "2026-06-28T21:07:55.730794+00:00",
+  "generated_at": "2026-06-29T06:57:28.267353+00:00",
   "historical_memory_record_count": 6232,
   "historical_point_in_time_safe_record_count": 6232,
   "input_artifacts": {

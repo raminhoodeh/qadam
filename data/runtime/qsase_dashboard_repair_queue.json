@@ -32,25 +32,12 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-29T02:58:55.037460+00:00",
+  "generated_at": "2026-06-29T06:57:29.005470+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
-  "repair_queue_count": 14,
+  "repair_queue_count": 13,
   "rows": [
-    {
-      "applied_strategy_change": false,
-      "artifact_refs": [
-        "data/runtime/qsase_self_model.json#degraded_components"
-      ],
-      "component": "source_state",
-      "next_allowed_action": "repair runtime artifact or source state, then rerun QSASE checks",
-      "reason": "missing_optional_source_credentials",
-      "repair_queue_id": "qsase-repair:5ecb723786c310f06214",
-      "severity": "gap",
-      "source": "qsase_self_model",
-      "state": "repair_or_review_needed"
-    },
     {
       "applied_strategy_change": false,
       "artifact_refs": [
@@ -184,12 +171,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:0fcf5c2c22ba3e4716ce"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:8afe1fee311d2e59403d"
       ],
       "component": "source_universe",
       "next_allowed_action": "human or governance review required before any change",
-      "reason": "source_coverage_repair_request",
-      "repair_queue_id": "qsase-learning-approval:0fcf5c2c22ba3e4716ce",
+      "reason": "hold_source_trust",
+      "repair_queue_id": "qsase-learning-approval:8afe1fee311d2e59403d",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"

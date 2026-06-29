@@ -6,3 +6,6 @@
 {"anti_slop_passed": true, "event_type": "qsase_dashboard_view_model_written", "generated_at": "2026-06-28T21:06:56.155440+00:00", "public_safe": true, "read_only": true, "status": "qsase_dashboard_visibility_ready"}
 {"anti_slop_passed": true, "event_type": "qsase_dashboard_view_model_written", "generated_at": "2026-06-28T21:07:56.601908+00:00", "public_safe": true, "read_only": true, "status": "qsase_dashboard_visibility_ready"}
 {"anti_slop_passed": true, "event_type": "qsase_dashboard_view_model_written", "generated_at": "2026-06-29T02:58:55.037460+00:00", "public_safe": true, "read_only": true, "status": "qsase_dashboard_visibility_degraded"}
+{"anti_slop_passed": true, "event_type": "qsase_dashboard_view_model_written", "generated_at": "2026-06-29T05:08:39.322222+00:00", "public_safe": true, "read_only": true, "status": "qsase_dashboard_visibility_degraded"}
+{"anti_slop_passed": true, "event_type": "qsase_dashboard_view_model_written", "generated_at": "2026-06-29T06:57:22.015917+00:00", "public_safe": true, "read_only": true, "status": "qsase_dashboard_visibility_degraded"}
+{"anti_slop_passed": true, "event_type": "qsase_dashboard_view_model_written", "generated_at": "2026-06-29T06:57:29.005470+00:00", "public_safe": true, "read_only": true, "status": "qsase_dashboard_visibility_ready"}

@@ -35,7 +35,7 @@
     "trust_score_update_created": false
   },
   "broker_write_count": 0,
-  "generated_at": "2026-06-28T21:07:56.280339+00:00",
+  "generated_at": "2026-06-29T06:57:28.761450+00:00",
   "live_capital_enabled": false,
   "paper_order_created_count": 0,
   "proof_credit_allowed": false,
@@ -67,7 +67,6 @@
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9ab6d75f5c88ca1d6e7f",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:37cdbdf480a5598d1fc5",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:769deefad4ac47ed2315",
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7ca7ca97edac26f6d469",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b99f2ad4ed87511e7224",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
         "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:2bfa7fd13ed8ed7abc27",
@@ -76,9 +75,9 @@
       ],
       "expected_effect": "source_trust_review_only_no_score_mutation",
       "overfit_risk": "medium",
-      "proposal_id": "qsase-proposal:b1b1ee002db9a7272ca4",
+      "proposal_id": "qsase-proposal:6a732023bbc3d5222bf8",
       "proposal_state": "ready_pending_learning_approval",
-      "proposal_type": "source_coverage_repair_request",
+      "proposal_type": "hold_source_trust",
       "proposed_value": "repair_or_hold_pending_approval",
       "real_paper_evidence_count": 0,
       "regime_bias_risk": "medium",
@@ -86,7 +85,7 @@
       "shadow_evidence_count": 0,
       "source_noise_risk": "medium",
       "suggested_delta": 0.0,
-      "supporting_record_count": 23,
+      "supporting_record_count": 22,
       "target_id": "aggregate_source_trust_and_coverage",
       "target_surface": "source_universe"
     }

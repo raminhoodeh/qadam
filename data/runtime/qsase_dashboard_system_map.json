@@ -136,7 +136,7 @@
       "to": "freshness"
     }
   ],
-  "generated_at": "2026-06-29T02:58:55.037460+00:00",
+  "generated_at": "2026-06-29T06:57:29.005470+00:00",
   "node_count": 12,
   "nodes": [
     {
@@ -258,7 +258,7 @@
       "label": "Freshness",
       "node_id": "freshness",
       "overview_detail_level": "summary_only",
-      "state": "freshness_visible_with_stale_labels"
+      "state": "freshness_visible"
     }
   ],
   "overview_detail_policy": {

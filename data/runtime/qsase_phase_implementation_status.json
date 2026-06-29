@@ -1,6 +1,6 @@
 {
   "active_phase": "qsase_15_end_to_end_certification",
-  "generated_at": "2026-06-28T21:07:47.811796+00:00",
+  "generated_at": "2026-06-29T06:57:21.889595+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -72,7 +72,7 @@
       "router_output_creates_no_orders": true,
       "scoreboard_path": "data/runtime/qsase_strategy_router_scoreboard.json",
       "shadow_only_count": 0,
-      "soft_blocker_count": 276,
+      "soft_blocker_count": 260,
       "soft_blockers_path": "data/runtime/qsase_strategy_router_soft_blockers.jsonl",
       "status": "qsase_strategy_router_degraded",
       "strategy_input_count": 16,
@@ -115,7 +115,7 @@
       "applied_update_count": 0,
       "approval_required_count": 8,
       "artifact_path": "data/runtime/qsase_component_attribution_ledger.json",
-      "attribution_record_count": 103,
+      "attribution_record_count": 102,
       "authority_flags_false": true,
       "backtest_record_count": 16,
       "blocked_route_record_count": 16,
@@ -144,7 +144,7 @@
       "source_trust_proposals_path": "data/runtime/qsase_source_trust_proposals.json",
       "status": "qsase_learning_attribution_ledger_degraded",
       "strategy_weight_proposals_path": "data/runtime/qsase_strategy_weight_proposals.json",
-      "system_defect_record_count": 6
+      "system_defect_record_count": 5
     },
     "qsase_13_dashboard_visibility": {
       "all_strategy_count": 5,
@@ -170,7 +170,7 @@
       "portfolio_value_series_path": "data/runtime/qsase_dashboard_portfolio_value_series.json",
       "public_safe": true,
       "read_only": true,
-      "repair_queue_count": 14,
+      "repair_queue_count": 13,
       "source_category_row_count": 6,
       "source_network_path": "data/runtime/qsase_dashboard_source_network.json",
       "source_row_count": 41,
@@ -193,8 +193,8 @@
       "message_candidate_count": 5,
       "message_candidates_path": "data/runtime/qsase_telegram_message_candidates.json",
       "message_quality_path": "data/runtime/qsase_telegram_message_quality.json",
-      "message_ready_count": 0,
-      "message_rejected_duplicate_count": 5,
+      "message_ready_count": 1,
+      "message_rejected_duplicate_count": 4,
       "message_rejected_generic_count": 0,
       "message_rejected_unsafe_count": 0,
       "name": "QSASE-14: Telegram Summary Boundary",
@@ -241,7 +241,7 @@
       "artifact_path": "data/runtime/qsase_self_model.json",
       "authority_flags_false": true,
       "dashboard_and_telegram_are_authority": false,
-      "degraded_component_count": 6,
+      "degraded_component_count": 5,
       "later_qsase_phases_implemented": false,
       "missing_component_count": 0,
       "model_outputs_are_approvals": false,
@@ -250,7 +250,7 @@
       "proposal_first": true,
       "public_safe": true,
       "quantum_outputs_are_approvals": false,
-      "repair_request_count": 6,
+      "repair_request_count": 5,
       "status": "qsase_self_model_ready_with_gaps",
       "why_not_trading_now": {
         "blocking_layer": "paperops",
@@ -259,7 +259,7 @@
           "duplicate_submit_count": 4,
           "fresh_eligible_submit_count": 0,
           "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-          "open_order_count": 8
+          "open_order_count": 14
         },
         "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
         "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
@@ -269,7 +269,7 @@
     "qsase_2_universal_source_price_pattern_matrix": {
       "artifact_path": "data/runtime/qsase_universal_source_price_matrix.json",
       "authority_flags_false": true,
-      "credential_gated_source_count": 1,
+      "credential_gated_source_count": 0,
       "later_qsase_phases_implemented": false,
       "name": "QSASE-2: Universal Source-Price Pattern Matrix",
       "no_paper_orders_created": true,

@@ -20,10 +20,10 @@
     "market_hours": {
       "calendar": "approx_us_equity_regular_session_utc",
       "in_regular_session": false,
-      "observed_at": "2026-06-28T21:07:47.838022+00:00",
+      "observed_at": "2026-06-29T06:57:21.916277+00:00",
       "regular_close_utc": "20:00",
       "regular_open_utc": "13:30",
-      "state": "closed_weekend"
+      "state": "outside_regular_session"
     },
     "opportunity_scan_interval_minutes": 20,
     "outside_market_hours_staleness_observed": true,
@@ -53,14 +53,14 @@
     "scanner_ready": true,
     "scheduler_activity_required_now": false,
     "source_artifact": "paperops_opportunity_scan_cadence.json",
-    "source_generated_age_seconds": 2081187,
+    "source_generated_age_seconds": 2116561,
     "source_generated_at": "2026-06-04T19:01:20.159436+00:00",
-    "source_mtime_age_seconds": 2081187,
+    "source_mtime_age_seconds": 2116561,
     "status": "ready",
     "trade_submission_allowed_by_scan": false,
     "twenty_minute_recurring_scheduler_active": false
   },
-  "generated_at": "2026-06-28T21:07:47.838022+00:00",
+  "generated_at": "2026-06-29T06:57:21.916277+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

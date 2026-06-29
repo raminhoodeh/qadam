@@ -242,10 +242,10 @@
     },
     "covered_instrument_count": 19,
     "covered_source_count": 41,
-    "credential_blocked_source_count": 1,
+    "credential_blocked_source_count": 0,
     "eligible_instrument_count": 19,
     "eligible_source_count": 41,
-    "generated_at": "2026-06-28T21:07:48.935891+00:00",
+    "generated_at": "2026-06-29T06:57:22.726092+00:00",
     "historical_backfill_blocked_count": 44,
     "historical_backfill_recorded_count": 65,
     "leakage_rejected_record_count": 0,
@@ -270,7 +270,7 @@
     "artifact_type": "qsase_historical_source_price_memory_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-06-28T21:07:48.935891+00:00",
+    "generated_at": "2026-06-29T06:57:22.726092+00:00",
     "live_send_allowed": false,
     "memory_state_language": "Historical memory informs research. It is not paper proof ledger credit.",
     "paper_growth_trial_calendar_advanced": false,
@@ -324,7 +324,7 @@
       "requires_actual_guarded_paper_route": true
     }
   },
-  "generated_at": "2026-06-28T21:07:48.935891+00:00",
+  "generated_at": "2026-06-29T06:57:22.726092+00:00",
   "historical_backfill_ref": {
     "path": "data/runtime/historical_backfill_runs.jsonl",
     "read_only": true,
@@ -343,16 +343,16 @@
   "memory_record_count": 6232,
   "memory_record_sample": [
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -363,7 +363,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -391,7 +391,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -438,8 +438,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -456,16 +456,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -476,7 +476,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -504,7 +504,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -551,8 +551,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -569,16 +569,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -589,7 +589,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -617,7 +617,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -664,8 +664,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -682,16 +682,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -702,7 +702,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -730,7 +730,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -777,8 +777,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -795,16 +795,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -815,7 +815,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -843,7 +843,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -890,8 +890,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -908,16 +908,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -928,7 +928,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -956,7 +956,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -1003,8 +1003,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -1021,16 +1021,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -1041,7 +1041,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -1069,7 +1069,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -1116,8 +1116,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -1134,16 +1134,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": false,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": false,
@@ -1154,7 +1154,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.1,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -1182,7 +1182,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -1229,8 +1229,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -1247,16 +1247,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": true,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": true,
@@ -1267,7 +1267,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.35,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -1295,7 +1295,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -1317,7 +1317,7 @@
       ],
       "memory_record_id": "qsase-memory:e2dad4469bcdcfe2f1a8",
       "missing_window_record_id": null,
-      "outcome_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "outcome_available_at": "2026-06-29T06:35:27.846136+00:00",
       "paper_growth_trial_calendar_advance_allowed": false,
       "paper_order_allowed": false,
       "paper_proof_ledger_credit_allowed": false,
@@ -1342,8 +1342,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -1360,16 +1360,16 @@
       "strategy_labels": []
     },
     {
-      "as_of_timestamp": "2026-06-28T18:25:41.001625+00:00",
+      "as_of_timestamp": "2026-06-29T06:35:27.846136+00:00",
       "backtest_eligible": true,
       "broker_write_allowed": false,
-      "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-      "event_timestamp": "2026-06-28T18:25:22.880528+00:00",
+      "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+      "event_timestamp": "2026-06-29T06:35:02.326059+00:00",
       "evidence_class": "historical_backfill_evidence",
       "execution_allowed": false,
       "feature_availability": {
-        "decision_timestamp": "2026-06-28T18:25:41.001625+00:00",
-        "feature_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "decision_timestamp": "2026-06-29T06:35:27.846136+00:00",
+        "feature_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "forbidden_future_features_detected": false,
         "macro_features_available": false,
         "market_features_available": true,
@@ -1380,7 +1380,7 @@
         "source_features_available": true
       },
       "features": {
-        "availability_timestamp": "2026-06-28T18:25:41.001625+00:00",
+        "availability_timestamp": "2026-06-29T06:35:27.846136+00:00",
         "data_completeness_score": 0.35,
         "feature_version": "qsase_3_initial_point_in_time_features",
         "leakage_check_status": "passed_no_outcome_features",
@@ -1408,7 +1408,7 @@
       "leakage_check_status": "passed",
       "live_capital_enabled": false,
       "lookahead_safe": true,
-      "market_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "market_available_at": "2026-06-29T06:35:27.846136+00:00",
       "market_snapshot": {
         "asset_class": "crude_oil",
         "broker_write_allowed": false,
@@ -1430,7 +1430,7 @@
       ],
       "memory_record_id": "qsase-memory:3388a6be4366dfa68860",
       "missing_window_record_id": null,
-      "outcome_available_at": "2026-06-28T18:25:41.001625+00:00",
+      "outcome_available_at": "2026-06-29T06:35:27.846136+00:00",
       "paper_growth_trial_calendar_advance_allowed": false,
       "paper_order_allowed": false,
       "paper_proof_ledger_credit_allowed": false,
@@ -1455,8 +1455,8 @@
       "schema_version": "qsase_historical_source_price_memory.v1",
       "shadow_replay_eligible": false,
       "simulated_elapsed_time_allowed": false,
-      "source_available_at": "2026-06-28T18:25:22.880528+00:00",
-      "source_event_id": "qsase-source-event:29ffd7560283f91586b8",
+      "source_available_at": "2026-06-29T06:35:02.326059+00:00",
+      "source_event_id": "qsase-source-event:f3ce18ee97737e3a0674",
       "source_snapshot": {
         "credential_status": "configured",
         "event_type": "source_state_snapshot",
@@ -1874,7 +1874,7 @@
     "artifact_type": "qsase_point_in_time_replay_index",
     "command_disabled": true,
     "execution_allowed": false,
-    "generated_at": "2026-06-28T21:07:48.935891+00:00",
+    "generated_at": "2026-06-29T06:57:22.726092+00:00",
     "indices": {
       "by_asset_class": {
         "crude_oil": {
@@ -4253,7 +4253,7 @@
     "command_disabled": true,
     "coverage_ref": "data/runtime/qsase_historical_coverage_map.json",
     "execution_allowed": false,
-    "generated_at": "2026-06-28T21:07:48.935891+00:00",
+    "generated_at": "2026-06-29T06:57:22.726092+00:00",
     "input_artifacts": [
       "data/runtime/qsase_universal_source_price_matrix.json",
       "data/runtime/qsase_source_price_edges.jsonl",
@@ -4300,7 +4300,7 @@
   "schema_version": "qsase_historical_source_price_memory.v1",
   "shadow_replay_eligible_record_count": 0,
   "source_price_matrix_ref": {
-    "generated_at": "2026-06-28T21:07:48.451404+00:00",
+    "generated_at": "2026-06-29T06:57:22.410804+00:00",
     "matrix_row_count": 6232,
     "path": "data/runtime/qsase_universal_source_price_matrix.json",
     "status": "qsase_source_price_matrix_degraded"
