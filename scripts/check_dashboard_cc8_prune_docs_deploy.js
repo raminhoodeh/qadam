@@ -80,35 +80,38 @@ includesAll(checker, [
 ], "cockpit status checker");
 
 includesAll(guideHtml, [
-    "Six Founder Decision Blocks",
-    "System/team map",
+    "Founder Decision Blocks",
+    "Portfolio",
+    "History",
     "Sources",
     "Strategy",
-    "Portfolio",
-    "Trades",
+    "Patterns",
     "Thinking",
+    "Control",
     "Diagnostics are not a seventh operating block"
 ], "guide HTML");
 includesAll(guideDoc, [
-    "Six Founder Decision Blocks",
-    "System/team map",
+    "Founder Decision Blocks",
+    "Portfolio",
+    "History",
     "Sources",
     "Strategy",
-    "Portfolio",
-    "Trades",
+    "Patterns",
     "Thinking",
+    "Control",
     "Diagnostics are not a seventh operating block"
 ], "guide markdown");
 assert(!guideHtml.includes("five primary views"), "guide HTML still mentions old five-primary-view IA");
 assert(!guideDoc.includes("five primary views"), "guide markdown still mentions old five-primary-view IA");
 
 includesAll(whitepaper, [
-    "System/team map",
+    "Portfolio value first",
     "Data source posture",
-    "Trading philosophy",
-    "Paper account state",
-    "Trade lifecycle",
+    "Strategy universe",
+    "Pattern and opportunity lab",
+    "Trade intents and PaperOps",
     "Research and reasoning",
+    "Worldview as prior",
     "Audit drawer",
     "How Qadam Finds Edge Over Time",
     "edge is not one signal",
