@@ -11353,6 +11353,10 @@ body.qadam-dashboard-page .qsase-dashboard-shell {
     gap: var(--qadam-space-8);
 }
 
+body.qadam-dashboard-page .qsase-dashboard-v2 {
+    gap: clamp(1rem, 2vw, 1.6rem);
+}
+
 body.qadam-dashboard-page .qsase-dashboard-hero,
 body.qadam-dashboard-page .qsase-section {
     background: var(--qadam-color-canvas);
@@ -11362,11 +11366,21 @@ body.qadam-dashboard-page .qsase-section {
 }
 
 body.qadam-dashboard-page .qsase-dashboard-hero {
+    background:
+        linear-gradient(135deg, rgba(var(--qadam-rgb-info), 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(var(--qadam-rgb-ok), 0.06), transparent 70%),
+        var(--qadam-color-canvas);
     border-top: 8px solid var(--qadam-color-section-band);
     display: grid;
     gap: var(--qadam-space-6);
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.68fr);
     padding: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-dashboard-hero {
+    border-color: rgba(var(--qadam-rgb-info), 0.28);
+    border-left: 8px solid var(--qadam-color-brand);
+    border-top: 0;
 }
 
 body.qadam-dashboard-page .qsase-dashboard-hero h2,
@@ -11385,6 +11399,10 @@ body.qadam-dashboard-page .qsase-dashboard-hero h2 {
     max-width: 14ch;
 }
 
+body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-dashboard-hero h2 {
+    max-width: 10ch;
+}
+
 body.qadam-dashboard-page .qsase-dashboard-hero p,
 body.qadam-dashboard-page .qsase-money-hero p,
 body.qadam-dashboard-page .qsase-record-card p,
@@ -11400,6 +11418,42 @@ body.qadam-dashboard-page .qsase-section {
     display: grid;
     gap: var(--qadam-space-5);
     padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-section {
+    border-left: 4px solid rgba(var(--qadam-rgb-info), 0.18);
+}
+
+body.qadam-dashboard-page .qsase-jump-row {
+    align-items: stretch;
+    background: var(--qadam-color-heading);
+    border: 1px solid rgba(var(--qadam-rgb-info), 0.24);
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    margin-top: calc(var(--qadam-space-3) * -1);
+}
+
+body.qadam-dashboard-page .qsase-jump-row a {
+    align-items: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--qadam-color-canvas);
+    display: flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 800;
+    justify-content: center;
+    letter-spacing: 0.08em;
+    min-height: 3rem;
+    padding: 0.8rem;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-jump-row a:hover,
+body.qadam-dashboard-page .qsase-jump-row a:focus-visible {
+    background: var(--qadam-color-brand);
+    color: var(--qadam-color-canvas);
 }
 
 body.qadam-dashboard-page .qsase-section-head {
@@ -11609,6 +11663,30 @@ body.qadam-dashboard-page .qsase-compact-list li {
     padding: 0.9rem 1rem;
 }
 
+body.qadam-dashboard-page .qsase-detail-ledger {
+    border: 1px solid var(--qadam-color-rule);
+    background: rgba(var(--qadam-rgb-info), 0.035);
+}
+
+body.qadam-dashboard-page .qsase-detail-ledger summary {
+    color: var(--qadam-color-heading);
+    cursor: pointer;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.76rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    padding: 0.95rem 1rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-detail-ledger[open] summary {
+    border-bottom: 1px solid var(--qadam-color-rule);
+}
+
+body.qadam-dashboard-page .qsase-detail-ledger .qsase-compact-list {
+    padding: var(--qadam-space-3);
+}
+
 body.qadam-dashboard-page .qsase-two-column h3 {
     color: var(--qadam-color-heading);
     font-family: var(--qadam-font-display);
@@ -11651,6 +11729,10 @@ body.qadam-dashboard-page .qsase-boundary-note {
         border-left: 0;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
         justify-content: flex-start;
+    }
+
+    body.qadam-dashboard-page .qsase-jump-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     body.qadam-dashboard-page .dashboard-hero,
@@ -11708,6 +11790,7 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .mission-paper-columns,
     body.qadam-dashboard-page .qsase-money-metrics,
     body.qadam-dashboard-page .qsase-final-grid,
+    body.qadam-dashboard-page .qsase-jump-row,
     body.qadam-dashboard-page .qsase-record-card dl,
     body.qadam-dashboard-page .mission-hypothesis-flow,
     body.qadam-dashboard-page .mission-feedback-inputs,

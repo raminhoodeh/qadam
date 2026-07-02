@@ -12185,7 +12185,7 @@ function renderQsasePortfolioValue(qsase = {}) {
     const freshnessCopy = dashboardFreshnessCopy(portfolio.public_snapshot_freshness || {});
     const consistencyCopy = portfolio.portfolio_consistency?.status === "ok" ? "portfolio values match" : "portfolio values need review";
     return `
-        <section class="qsase-section qsase-portfolio-value ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
+        <section id="qsase-portfolio" class="qsase-section qsase-portfolio-value ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
             <div class="qsase-money-hero">
                 <div>
                     <p class="label">Portfolio Value &amp; Return</p>
@@ -12221,7 +12221,7 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
     const rows = asArray(portfolio.positions).length ? asArray(portfolio.positions) : asArray(section.rows);
     const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
     return `
-        <section class="qsase-section" data-qsase-section="current_portfolio">
+        <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
             ${renderQsaseSectionHeader("Current Portfolio", `${portfolio.open_position_count || section.position_count || rows.length || 0} current holdings`, portfolio.status || section.status, rows.length ? "online" : "pending")}
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
@@ -12250,9 +12250,11 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
 
 function renderQsaseTradingHistory(qsase = {}) {
     const section = qsase.trading_history || {};
-    const rows = asArray(section.rows).slice(0, 18);
+    const allRows = asArray(section.rows);
+    const rows = allRows.slice(0, 8);
+    const extraRows = allRows.slice(8, 24);
     return `
-        <section class="qsase-section" data-qsase-section="trading_history">
+        <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
             ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, section.status, rows.length ? "online" : "pending")}
             <div class="qsase-table-wrap">
                 <table class="qsase-table">
@@ -12269,6 +12271,19 @@ function renderQsaseTradingHistory(qsase = {}) {
                     </tbody>
                 </table>
             </div>
+            ${extraRows.length ? `
+                <details class="qsase-detail-ledger">
+                    <summary>Show ${extraRows.length} more trade records</summary>
+                    <ul class="qsase-compact-list">
+                        ${extraRows.map((row) => `
+                            <li class="${statusClass(row.row_type || row.status)}">
+                                <strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong>
+                                <span>${qsaseHtmlText(row.row_type || row.status, "recorded")} · ${formatTime(row.closed_at || row.opened_at || row.submitted_at)} · ${qsaseHtmlText(row.postmortem_status || row.reason || "paper proof ledger pending")}</span>
+                            </li>
+                        `).join("")}
+                    </ul>
+                </details>
+            ` : ""}
         </section>
     `;
 }
@@ -12276,10 +12291,14 @@ function renderQsaseTradingHistory(qsase = {}) {
 function renderQsaseSourceNetwork(qsase = {}) {
     const section = qsase.source_network || {};
     const categories = asArray(section.category_rows);
-    const sources = asArray(section.source_rows).slice(0, 24);
-    const markets = asArray(section.trading_universe_rows).slice(0, 12);
+    const allSources = asArray(section.source_rows);
+    const allMarkets = asArray(section.trading_universe_rows);
+    const sources = allSources.slice(0, 10);
+    const markets = allMarkets.slice(0, 8);
+    const hiddenSources = allSources.slice(10);
+    const hiddenMarkets = allMarkets.slice(8);
     return `
-        <section class="qsase-section" data-qsase-section="source_intelligence_network">
+        <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
             ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || sources.length} sources · ${section.trading_universe_row_count || markets.length} markets`, section.status, "online")}
             <div class="qsase-category-grid">
                 ${categories.map((row) => `
@@ -12301,6 +12320,19 @@ function renderQsaseSourceNetwork(qsase = {}) {
                             </li>
                         `).join("")}
                     </ul>
+                    ${hiddenSources.length ? `
+                        <details class="qsase-detail-ledger">
+                            <summary>Show all remaining data sources (${hiddenSources.length})</summary>
+                            <ul class="qsase-compact-list">
+                                ${hiddenSources.map((source) => `
+                                    <li class="${statusClass(source.state)}">
+                                        <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
+                                        <span>${qsaseHtmlText(source.family)} · ${qsaseHtmlText(source.freshness_status)} · ${qsaseHtmlText(source.trust_posture)}</span>
+                                    </li>
+                                `).join("")}
+                            </ul>
+                        </details>
+                    ` : ""}
                 </div>
                 <div>
                     <h3>Watched Trading Universe</h3>
@@ -12312,6 +12344,19 @@ function renderQsaseSourceNetwork(qsase = {}) {
                             </li>
                         `).join("")}
                     </ul>
+                    ${hiddenMarkets.length ? `
+                        <details class="qsase-detail-ledger">
+                            <summary>Show all remaining watched markets (${hiddenMarkets.length})</summary>
+                            <ul class="qsase-compact-list">
+                                ${hiddenMarkets.map((market) => `
+                                    <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
+                                        <strong>${qsaseHtmlText(market.symbol)}</strong>
+                                        <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.paperability_state)}</span>
+                                    </li>
+                                `).join("")}
+                            </ul>
+                        </details>
+                    ` : ""}
                 </div>
             </div>
         </section>
@@ -12322,7 +12367,7 @@ function renderQsaseStrategyUniverse(qsase = {}) {
     const section = qsase.strategy_universe || {};
     const rows = asArray(section.all_strategy_rows);
     return `
-        <section class="qsase-section" data-qsase-section="trading_strategy_universe">
+        <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
             ${renderQsaseSectionHeader("Trading Strategy Universe", `${section.all_strategy_count || rows.length} known · ${section.currently_in_play_count || 0} in play`, section.status, rows.length ? "online" : "pending")}
             <div class="qsase-card-grid">
                 ${rows.map((row) => `
@@ -12340,9 +12385,11 @@ function renderQsaseStrategyUniverse(qsase = {}) {
 
 function renderQsasePatternLab(qsase = {}) {
     const section = qsase.pattern_lab || {};
-    const rows = [...asArray(section.linear_rows).slice(0, 8), ...asArray(section.nonlinear_rows).slice(0, 8)];
+    const allRows = [...asArray(section.linear_rows), ...asArray(section.nonlinear_rows)];
+    const rows = allRows.slice(0, 6);
+    const hiddenRows = allRows.slice(6, 24);
     return `
-        <section class="qsase-section" data-qsase-section="pattern_opportunity_lab">
+        <section id="qsase-patterns" class="qsase-section" data-qsase-section="pattern_opportunity_lab">
             ${renderQsaseSectionHeader("Pattern & Opportunity Lab", `${section.linear_pattern_count || 0} linear · ${section.nonlinear_pattern_count || 0} nonlinear · ${section.quantum_review_count || 0} quantum reviews`, section.status, rows.length ? "online" : "pending")}
             <div class="qsase-card-grid pattern">
                 ${rows.map((row) => `
@@ -12354,15 +12401,30 @@ function renderQsasePatternLab(qsase = {}) {
                     </article>
                 `).join("") || `<article class="qsase-record-card pending"><strong>No pattern rows exported</strong></article>`}
             </div>
+            ${hiddenRows.length ? `
+                <details class="qsase-detail-ledger">
+                    <summary>Show ${hiddenRows.length} more pattern records</summary>
+                    <ul class="qsase-compact-list">
+                        ${hiddenRows.map((row) => `
+                            <li class="${statusClass(row.state)}">
+                                <strong>${qsaseHtmlText(row.pattern_type)} · ${qsaseHtmlText(row.instrument)}</strong>
+                                <span>${qsaseHtmlText(row.state || row.reason)} · score ${qsaseHtmlText(row.score ?? "pending")}</span>
+                            </li>
+                        `).join("")}
+                    </ul>
+                </details>
+            ` : ""}
         </section>
     `;
 }
 
 function renderQsaseTradeIntents(qsase = {}) {
     const section = qsase.trade_intents || {};
-    const rows = asArray(section.rows).slice(0, 12);
+    const allRows = asArray(section.rows);
+    const rows = allRows.slice(0, 4);
+    const hiddenRows = allRows.slice(4, 24);
     return `
-        <section class="qsase-section" data-qsase-section="trade_intents">
+        <section id="qsase-thinking" class="qsase-section" data-qsase-section="trade_intents">
             ${renderQsaseSectionHeader("Trade Intents / What Qadam Is Thinking", `${section.intent_count || rows.length} review records`, section.status, rows.length ? "pending" : "online")}
             <div class="qsase-card-grid">
                 ${rows.map((row) => `
@@ -12380,6 +12442,19 @@ function renderQsaseTradeIntents(qsase = {}) {
                     </article>
                 `).join("") || `<article class="qsase-record-card online"><strong>No trade intent rows</strong><p>Nothing is currently being considered by QSASE.</p></article>`}
             </div>
+            ${hiddenRows.length ? `
+                <details class="qsase-detail-ledger">
+                    <summary>Show ${hiddenRows.length} more review records</summary>
+                    <ul class="qsase-compact-list">
+                        ${hiddenRows.map((row) => `
+                            <li class="${statusClass(row.state)}">
+                                <strong>${qsaseHtmlText(row.instrument)} · ${qsaseHtmlText(row.strategy_family)}</strong>
+                                <span>${qsaseHtmlText(row.state)} · ${qsaseHtmlText(row.next_allowed_action)} · ${qsaseHtmlText(row.reason)}</span>
+                            </li>
+                        `).join("")}
+                    </ul>
+                </details>
+            ` : ""}
         </section>
     `;
 }
@@ -12391,7 +12466,7 @@ function renderQsaseRouterPaperOps(qsase = {}) {
     const decision = qsaseRouterHeadline(router, gate);
     const decisionTone = counts.held ? "degraded" : qsaseDecisionClass(decision);
     return `
-        <section class="qsase-section qsase-final-decision ${statusClass(router.status || gate.status)}" data-qsase-section="router_paperops_gate">
+        <section id="qsase-decision" class="qsase-section qsase-final-decision ${statusClass(router.status || gate.status)}" data-qsase-section="router_paperops_gate">
             ${renderQsaseSectionHeader("Router & PaperOps Gate", decision, router.status || gate.status, decisionTone)}
             <div class="qsase-final-grid">
                 ${renderMetric("Paper review", counts.paperReview)}
@@ -12410,22 +12485,45 @@ function renderQsaseRouterPaperOps(qsase = {}) {
 }
 
 function renderQsaseDashboardVisibility(qsase = {}) {
+    const portfolio = qsase.dashboard_portfolio || {};
+    const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
+    const router = qsase.router || {};
+    const gate = qsase.paperops_gate || {};
+    const decision = qsaseRouterHeadline(router, gate);
+    const decisionCounts = qsaseRouterDecisionCounts(router);
+    const decisionLabel = decisionCounts.paperReview
+        ? "Paper review"
+        : decisionCounts.held
+            ? "Holding"
+            : decisionCounts.safetyBlocks
+                ? "Safety veto"
+                : "Idle";
     return `
-        <div class="qsase-dashboard-shell" data-qsase-dashboard-rendered data-qsase-dashboard-contract="qsase_public_dashboard_v1">
+        <div class="qsase-dashboard-shell qsase-dashboard-v2" data-qsase-dashboard-rendered data-qsase-dashboard-contract="qsase_public_dashboard_v2">
             <div class="qsase-dashboard-hero">
                 <div>
-                    <p class="label">QSASE Public Dashboard</p>
-                    <h2>Portfolio first. Intelligence second. PaperOps decision last.</h2>
-                    <p>Qadam now renders the QSASE view-model directly: money, holdings, trade history, sources, strategies, patterns, current trade intents, and the final guarded PaperOps decision.</p>
+                    <p class="label">Public paper fund dashboard · refreshed layout</p>
+                    <h2>Money first. Decisions last.</h2>
+                    <p>One readable path through the system: portfolio value, current holdings, trading history, source network, strategy universe, patterns, live trade thinking, and the final PaperOps gate.</p>
                 </div>
                 <div class="stage7-kpi-strip compact">
-                    ${renderMetric("Portfolio points", qsase.portfolio_value_series_count || qsase.portfolio_value?.series_count || 0)}
-                    ${renderMetric("Sources", qsase.source_row_count || qsase.source_network?.source_row_count || 0)}
-                    ${renderMetric("Strategies", qsase.all_strategy_count || qsase.strategy_universe?.all_strategy_count || 0)}
+                    ${renderMetric("Paper value", formatMoney(portfolio.current_value_gbp, currency))}
+                    ${renderMetric("Holdings", portfolio.open_position_count || qsase.current_position_count || 0)}
+                    ${renderMetric("Closed trades", portfolio.closed_trade_count || qsase.trading_history?.closed_trade_row_count || 0)}
                     ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
-                    ${renderMetric("Trade intents", qsase.trade_intent_count || qsase.trade_intents?.intent_count || 0)}
+                    ${renderMetric("Decision", decisionLabel)}
                 </div>
             </div>
+            <nav class="qsase-jump-row" aria-label="Public dashboard sections">
+                <a href="#qsase-portfolio">Portfolio value</a>
+                <a href="#qsase-holdings">Holdings</a>
+                <a href="#qsase-history">History</a>
+                <a href="#qsase-sources">Sources</a>
+                <a href="#qsase-strategies">Strategies</a>
+                <a href="#qsase-patterns">Patterns</a>
+                <a href="#qsase-thinking">Thinking</a>
+                <a href="#qsase-decision">PaperOps gate</a>
+            </nav>
             ${renderQsasePortfolioValue(qsase)}
             ${renderQsaseCurrentPortfolio(qsase)}
             ${renderQsaseTradingHistory(qsase)}
