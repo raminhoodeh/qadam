@@ -45,7 +45,7 @@ includesAll(html, [
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
     "Public read-only view.",
-    "/dashboard.js?v=20260629-qsase-dashboard",
+    "/dashboard.js?v=20260702-public-fund-v2",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 

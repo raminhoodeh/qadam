@@ -86,7 +86,7 @@ function assertStaticContract() {
         "qsase_dashboard_model",
         "function renderQsaseDashboardVisibility(qsase = {})",
         "data-qsase-dashboard-rendered",
-        "data-qsase-dashboard-contract=\"qsase_public_dashboard_v1\"",
+        "data-qsase-dashboard-contract=\"qsase_public_dashboard_v2\"",
         "data-qsase-section=\"portfolio_value_return\"",
         "data-qsase-section=\"current_portfolio\"",
         "data-qsase-section=\"trading_history\"",
@@ -104,7 +104,9 @@ function assertStaticContract() {
         "Trade Intents / What Qadam Is Thinking",
         "Router & PaperOps Gate",
         "trade markers are read-only history, not proof credit",
-        "No order authority"
+        "No order authority",
+        "qsase-detail-ledger",
+        "qsase-jump-row"
     ], "QSASE renderer");
 
     assertIncludesAll(css, [
@@ -114,12 +116,15 @@ function assertStaticContract() {
         ".qsase-card-grid",
         ".qsase-table",
         ".qsase-category-grid",
-        ".qsase-final-decision"
+        ".qsase-final-decision",
+        ".qsase-dashboard-v2",
+        ".qsase-jump-row",
+        ".qsase-detail-ledger"
     ], "QSASE stylesheet");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260629-qsase-dashboard",
-        "/dashboard.js?v=20260629-qsase-dashboard",
+        "/auth.css?v=20260702-public-fund-v2",
+        "/dashboard.js?v=20260702-public-fund-v2",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
 
@@ -140,7 +145,7 @@ async function assertRenderedContract() {
     const stageHtml = html(rendered, "[data-stage7-dashboard-visibility]");
 
     [
-        "QSASE Public Dashboard",
+        "Public paper fund dashboard",
         "Portfolio Value &amp; Return",
         "Current Portfolio",
         "Trading History",
