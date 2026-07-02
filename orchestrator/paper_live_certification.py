@@ -750,7 +750,11 @@ def build_paper_live_certification(settings: Settings | None = None) -> dict[str
         ),
         "paper_live_submission_delegation_allowed": paper_live_certified
         and submit_allowed
-        and not qctrl_hold,
+        and not qctrl_hold
+        and (
+            not rs10_bridge_ready
+            or rs10.get("autonomy_currently_actionable") is True
+        ),
         "paper_live_certification_blocked": not paper_live_certified,
         "paper_live_certification_source": (
             "rs10_final_paper_autonomy"

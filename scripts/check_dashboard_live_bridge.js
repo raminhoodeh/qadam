@@ -19,7 +19,7 @@ async function main() {
         live.document.documentElement.dataset.dashboardStatusSource === "live_bridge",
         "live bridge source was not recorded"
     );
-    assertIncludes(live, "[data-snapshot-meta]", "read-only live status");
+    assertIncludes(live, "[data-snapshot-meta]", "read-only status API");
 
     const fallback = await renderWithStatus(status, { liveFetchOk: false, statusCode: 503 });
     assert(fallback.requests.length === 2, "static fallback should be requested after live bridge failure");

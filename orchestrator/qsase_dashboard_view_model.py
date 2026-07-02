@@ -397,40 +397,236 @@ def _section_base(artifact_type: str, generated_at: str) -> dict[str, Any]:
     }
 
 
-def build_portfolio_value_series(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
-    artifact = _section_base("qsase_dashboard_portfolio_value_series", generated_at)
+def _round_money(value: Any) -> float | None:
+    if value is None:
+        return None
+    return round(_float(value), 2)
+
+
+def _latest_alpaca_snapshot(context: dict[str, Any]) -> dict[str, Any]:
+    mirror = context.get("alpaca_mirror", {})
+    snapshot = mirror.get("snapshot") if isinstance(mirror.get("snapshot"), dict) else {}
+    if snapshot:
+        return snapshot
+    for item in reversed(context.get("alpaca_history", [])):
+        history_snapshot = item.get("snapshot")
+        if isinstance(history_snapshot, dict):
+            return history_snapshot
+    return {}
+
+
+def _portfolio_series_from_history(context: dict[str, Any], current_snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for item in context.get("alpaca_history", []):
         snapshot = item.get("snapshot", {})
-        observed_at = snapshot.get("observed_at") or item.get("generated_at")
-        value = snapshot.get("current_balance_gbp") or snapshot.get("equity_gbp") or item.get("snapshot", {}).get("source_equity")
-        if value is None:
+        if not isinstance(snapshot, dict):
             continue
+        observed_at = snapshot.get("observed_at") or item.get("generated_at")
+        value = snapshot.get("current_balance_gbp") or snapshot.get("equity_gbp") or snapshot.get("source_equity")
+        if observed_at is None or value is None:
+            continue
+        seen.add(str(observed_at))
         rows.append(
             {
                 "timestamp": observed_at,
-                "portfolio_value": value,
-                "equity": snapshot.get("equity_gbp"),
-                "cash": snapshot.get("cash_gbp"),
+                "observed_at": observed_at,
+                "portfolio_value": _round_money(value),
+                "equity": _round_money(snapshot.get("equity_gbp") or value),
+                "equity_gbp": _round_money(snapshot.get("equity_gbp") or value),
+                "cash": _round_money(snapshot.get("cash_gbp")),
+                "cash_gbp": _round_money(snapshot.get("cash_gbp")),
                 "display_currency": snapshot.get("display_currency") or item.get("display_currency"),
                 "drawdown_pct": snapshot.get("drawdown_pct"),
                 "read_only_source": _artifact_ref(ALPACA_PAPER_MIRROR_HISTORY_ARTIFACT),
             }
         )
-    if not rows:
-        mirror_snapshot = context.get("alpaca_mirror", {}).get("snapshot", {})
-        if mirror_snapshot.get("current_balance_gbp") is not None:
-            rows.append(
-                {
-                    "timestamp": mirror_snapshot.get("observed_at"),
-                    "portfolio_value": mirror_snapshot.get("current_balance_gbp"),
-                    "equity": mirror_snapshot.get("equity_gbp"),
-                    "cash": mirror_snapshot.get("cash_gbp"),
-                    "display_currency": mirror_snapshot.get("display_currency"),
-                    "drawdown_pct": mirror_snapshot.get("drawdown_pct"),
-                    "read_only_source": _artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT),
-                }
-            )
+    observed_at = current_snapshot.get("observed_at")
+    current_value = current_snapshot.get("current_balance_gbp") or current_snapshot.get("equity_gbp")
+    if observed_at and current_value is not None and str(observed_at) not in seen:
+        rows.append(
+            {
+                "timestamp": observed_at,
+                "observed_at": observed_at,
+                "portfolio_value": _round_money(current_value),
+                "equity": _round_money(current_snapshot.get("equity_gbp") or current_value),
+                "equity_gbp": _round_money(current_snapshot.get("equity_gbp") or current_value),
+                "cash": _round_money(current_snapshot.get("cash_gbp")),
+                "cash_gbp": _round_money(current_snapshot.get("cash_gbp")),
+                "display_currency": current_snapshot.get("display_currency"),
+                "drawdown_pct": current_snapshot.get("drawdown_pct"),
+                "read_only_source": _artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT),
+            }
+        )
+    return rows[-160:]
+
+
+def _portfolio_consistency(
+    *,
+    current_snapshot: dict[str, Any],
+    series: list[dict[str, Any]],
+    positions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    current_value = _round_money(
+        current_snapshot.get("current_balance_gbp") or current_snapshot.get("equity_gbp")
+    )
+    latest_chart_value = _round_money(series[-1].get("portfolio_value")) if series else None
+    realized = _round_money(current_snapshot.get("realized_pnl_gbp")) or 0.0
+    unrealized = _round_money(current_snapshot.get("unrealized_pnl_gbp")) or 0.0
+    total = _round_money(realized + unrealized)
+    reported_total = _round_money(current_snapshot.get("total_pnl_gbp"))
+    if reported_total is None:
+        reported_total = total
+    reported_positions = int(current_snapshot.get("open_position_count") or len(positions) or 0)
+    row_count = len(positions)
+    value_delta = None
+    if current_value is not None and latest_chart_value is not None:
+        value_delta = _round_money(current_value - latest_chart_value)
+    pnl_delta = _round_money((reported_total or 0) - (total or 0))
+    position_count_delta = reported_positions - row_count
+    errors = []
+    if value_delta is None:
+        errors.append("portfolio_value_or_chart_point_missing")
+    elif abs(value_delta) > 0.01:
+        errors.append("portfolio_value_chart_mismatch")
+    if abs(pnl_delta or 0) > 0.01:
+        errors.append("portfolio_pnl_reconciliation_mismatch")
+    if position_count_delta != 0:
+        errors.append("open_position_count_mismatch")
+    return {
+        "status": "ok" if not errors else "mismatch",
+        "errors": errors,
+        "current_value": current_value,
+        "latest_chart_value": latest_chart_value,
+        "value_delta": value_delta,
+        "realized_pnl": realized,
+        "unrealized_pnl": unrealized,
+        "calculated_total_pnl": total,
+        "reported_total_pnl": reported_total,
+        "pnl_delta": pnl_delta,
+        "reported_open_position_count": reported_positions,
+        "holding_row_count": row_count,
+        "position_count_delta": position_count_delta,
+    }
+
+
+def build_dashboard_portfolio_contract(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
+    current_snapshot = _latest_alpaca_snapshot(context)
+    positions = [
+        {
+            "row_type": "open_paper_position_mirror",
+            "position_id": row.get("position_id"),
+            "instrument": row.get("instrument"),
+            "symbol": row.get("instrument"),
+            "status": row.get("status"),
+            "direction": row.get("direction"),
+            "quantity": row.get("quantity"),
+            "entry_price": row.get("entry_price"),
+            "current_price": row.get("current_price"),
+            "current_value_gbp": _round_money(row.get("risk_size_gbp")),
+            "market_value_gbp": _round_money(row.get("risk_size_gbp")),
+            "unrealized_pnl_gbp": _round_money(row.get("unrealized_pnl_gbp")),
+            "source_intent_id": row.get("source_intent_id"),
+            "invalidation": row.get("invalidation"),
+            "next_lifecycle_action": "monitor paper position mirror",
+            "boundary": "read_only_paper_position_mirror_no_close_or_modify",
+            "artifact_refs": [_artifact_ref(PAPER_POSITIONS_ARTIFACT)],
+            "paper_order_created": False,
+            "broker_write_allowed": False,
+        }
+        for row in context.get("paper_positions", [])
+    ]
+    series = _portfolio_series_from_history(context, current_snapshot)
+    consistency = _portfolio_consistency(
+        current_snapshot=current_snapshot,
+        series=series,
+        positions=positions,
+    )
+    observed_at = current_snapshot.get("observed_at")
+    observed_dt = _parse_timestamp(observed_at)
+    generated_dt = _parse_timestamp(generated_at) or _now()
+    broker_age = int((_now() - observed_dt).total_seconds()) if observed_dt else None
+    public_age = int((_now() - generated_dt).total_seconds())
+    broker_threshold = 2700
+    public_threshold = 1800
+    current_value = _round_money(
+        current_snapshot.get("current_balance_gbp") or current_snapshot.get("equity_gbp")
+    )
+    starting_value = _round_money(current_snapshot.get("starting_balance_gbp")) or current_value
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_type": "dashboard_portfolio_canonical_contract",
+        "generated_at": generated_at,
+        "status": "dashboard_portfolio_consistent" if consistency["status"] == "ok" else "dashboard_portfolio_mismatch",
+        "public_safe": True,
+        "read_only": True,
+        "paper_only": True,
+        "command_disabled": True,
+        "source_of_truth": "data/runtime/alpaca_paper_mirror.json:snapshot",
+        "history_source": "data/runtime/alpaca_paper_mirror.jsonl",
+        "position_source": "data/runtime/paper_positions.jsonl",
+        "account_scope": current_snapshot.get("account_scope"),
+        "broker": current_snapshot.get("broker"),
+        "connection_status": current_snapshot.get("connection_status"),
+        "observed_at": observed_at,
+        "current_value_gbp": current_value,
+        "current_balance_gbp": current_value,
+        "equity_gbp": _round_money(current_snapshot.get("equity_gbp") or current_value),
+        "cash_gbp": _round_money(current_snapshot.get("cash_gbp")),
+        "starting_balance_gbp": starting_value,
+        "realized_pnl_gbp": _round_money(current_snapshot.get("realized_pnl_gbp")),
+        "unrealized_pnl_gbp": _round_money(current_snapshot.get("unrealized_pnl_gbp")),
+        "total_pnl_gbp": consistency["reported_total_pnl"],
+        "delta_pct": (
+            round(((current_value - starting_value) / starting_value) * 100, 4)
+            if current_value is not None and starting_value
+            else 0
+        ),
+        "drawdown_pct": current_snapshot.get("drawdown_pct"),
+        "open_position_count": len(positions),
+        "closed_trade_count": int(current_snapshot.get("closed_trade_count") or 0),
+        "order_count": int(context.get("alpaca_mirror", {}).get("order_count") or 0),
+        "postmortem_due_count": int(current_snapshot.get("postmortem_due_count") or 0),
+        "display_currency": current_snapshot.get("display_currency") or "USD",
+        "account_currency": current_snapshot.get("account_currency") or "USD",
+        "portfolio_value_source": "alpaca_paper_account_mirror",
+        "positions": positions,
+        "equity_curve": series,
+        "equity_curve_count": len(series),
+        "latest_curve_point": series[-1] if series else None,
+        "portfolio_consistency": consistency,
+        "broker_mirror_freshness": {
+            "status": "fresh" if broker_age is not None and broker_age <= broker_threshold else "stale",
+            "age_seconds": broker_age,
+            "threshold_seconds": broker_threshold,
+            "observed_at": observed_at,
+        },
+        "public_snapshot_freshness": {
+            "status": "fresh" if public_age <= public_threshold else "stale",
+            "age_seconds": public_age,
+            "threshold_seconds": public_threshold,
+            "generated_at": generated_at,
+        },
+        "live_capital_enabled": False,
+        "write_authority": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "boundary": (
+            "Canonical public dashboard portfolio. It mirrors Alpaca paper account state "
+            "and cannot create, cancel, replace, close, or approve orders."
+        ),
+        "artifact_refs": [
+            _artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT),
+            _artifact_ref(ALPACA_PAPER_MIRROR_HISTORY_ARTIFACT),
+            _artifact_ref(PAPER_POSITIONS_ARTIFACT),
+        ],
+    }
+
+
+def build_portfolio_value_series(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
+    artifact = _section_base("qsase_dashboard_portfolio_value_series", generated_at)
+    portfolio = context.get("dashboard_portfolio", {})
+    rows = _safe_list(portfolio.get("equity_curve"))
     artifact.update(
         {
             "status": "portfolio_value_series_available" if rows else "portfolio_value_series_unavailable",
@@ -439,6 +635,12 @@ def build_portfolio_value_series(context: dict[str, Any], generated_at: str) -> 
             "series_count": len(rows),
             "series": rows,
             "latest_value": rows[-1]["portfolio_value"] if rows else None,
+            "current_value": portfolio.get("current_value_gbp"),
+            "current_value_gbp": portfolio.get("current_value_gbp"),
+            "cash_gbp": portfolio.get("cash_gbp"),
+            "portfolio_consistency": portfolio.get("portfolio_consistency", {}),
+            "broker_mirror_freshness": portfolio.get("broker_mirror_freshness", {}),
+            "public_snapshot_freshness": portfolio.get("public_snapshot_freshness", {}),
             "artifact_refs": [_artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT), _artifact_ref(ALPACA_PAPER_MIRROR_HISTORY_ARTIFACT)],
             "write_authority": False,
         }
@@ -448,32 +650,16 @@ def build_portfolio_value_series(context: dict[str, Any], generated_at: str) -> 
 
 def build_current_portfolio(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
     artifact = _section_base("qsase_dashboard_current_portfolio", generated_at)
-    rows = [
-        {
-            "row_type": "open_paper_position_mirror",
-            "position_id": row.get("position_id"),
-            "instrument": row.get("instrument"),
-            "status": row.get("status"),
-            "direction": row.get("direction"),
-            "quantity": row.get("quantity"),
-            "entry_price": row.get("entry_price"),
-            "current_price": row.get("current_price"),
-            "risk_size": row.get("risk_size_gbp"),
-            "unrealized_pnl": row.get("unrealized_pnl_gbp"),
-            "source_intent_id": row.get("source_intent_id"),
-            "boundary": "read_only_paper_position_mirror_no_close_or_modify",
-            "artifact_refs": [_artifact_ref(PAPER_POSITIONS_ARTIFACT)],
-            "paper_order_created": False,
-            "broker_write_allowed": False,
-        }
-        for row in context.get("paper_positions", [])
-    ]
+    portfolio = context.get("dashboard_portfolio", {})
+    rows = _safe_list(portfolio.get("positions"))
     artifact.update(
         {
             "status": "current_portfolio_present" if rows else "current_portfolio_explicitly_empty",
             "position_count": len(rows),
             "rows": rows,
             "explicitly_empty": not rows,
+            "portfolio_consistency": portfolio.get("portfolio_consistency", {}),
+            "broker_mirror_freshness": portfolio.get("broker_mirror_freshness", {}),
             "artifact_refs": [_artifact_ref(PAPER_POSITIONS_ARTIFACT), _artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT)],
         }
     )
@@ -1147,6 +1333,7 @@ def run_dashboard_anti_slop_checks(payload: dict[str, Any]) -> dict[str, Any]:
 def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, Any]:
     context = _load_context(settings)
     generated_at = _iso(_now())
+    context["dashboard_portfolio"] = build_dashboard_portfolio_contract(context, generated_at)
     sections: dict[str, dict[str, Any]] = {}
     sections["qsase_snapshot"] = _build_snapshot_section(context, generated_at)
     sections["portfolio_value"] = build_portfolio_value_series(context, generated_at)
@@ -1190,6 +1377,8 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "learning_ledger_state": sections["learning_ledger"]["status"],
         "repair_queue_state": sections["repair_queue"]["status"],
         "freshness_state": sections["freshness"]["status"],
+        "dashboard_portfolio": context["dashboard_portfolio"],
+        "portfolio_consistency_status": context["dashboard_portfolio"]["portfolio_consistency"]["status"],
         "portfolio_value_series_count": sections["portfolio_value"]["series_count"],
         "current_position_count": sections["current_portfolio"]["position_count"],
         "trading_history_row_count": len(sections["trading_history"]["rows"]),
@@ -1226,6 +1415,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
             "anti_slop": _artifact_ref(ANTI_SLOP_ARTIFACT),
         },
         "qsase_snapshot": sections["qsase_snapshot"],
+        "dashboard_portfolio": context["dashboard_portfolio"],
         "portfolio_value": sections["portfolio_value"],
         "current_portfolio": sections["current_portfolio"],
         "trading_history": sections["trading_history"],
@@ -1276,6 +1466,8 @@ def _status_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "learning_ledger_state",
         "repair_queue_state",
         "freshness_state",
+        "dashboard_portfolio",
+        "portfolio_consistency_status",
         "portfolio_value_series_count",
         "current_position_count",
         "trading_history_row_count",
@@ -1355,6 +1547,21 @@ def validate_dashboard_view_model(payload: dict[str, Any]) -> list[str]:
     for field in FALSE_AUTHORITY_FIELDS:
         if payload.get("authority_flags", {}).get(field) is not False:
             errors.append(f"dashboard_authority_{field}_must_be_false")
+    portfolio = payload.get("dashboard_portfolio", {})
+    if portfolio.get("artifact_type") != "dashboard_portfolio_canonical_contract":
+        errors.append("dashboard_portfolio_contract_missing")
+    if portfolio.get("portfolio_consistency", {}).get("status") != "ok":
+        errors.append("dashboard_portfolio_consistency_mismatch")
+    if payload.get("portfolio_consistency_status") != "ok":
+        errors.append("portfolio_consistency_status_not_ok")
+    portfolio_latest = _round_money(portfolio.get("current_value_gbp"))
+    chart_latest = _round_money(payload.get("portfolio_value", {}).get("latest_value"))
+    if portfolio_latest is None or chart_latest is None or abs(portfolio_latest - chart_latest) > 0.01:
+        errors.append("portfolio_value_latest_chart_mismatch")
+    portfolio_position_count = int(portfolio.get("open_position_count") or 0)
+    current_position_count = int(payload.get("current_portfolio", {}).get("position_count") or 0)
+    if portfolio_position_count != current_position_count:
+        errors.append("portfolio_position_count_mismatch")
     if payload.get("portfolio_value", {}).get("line_graph_available") is not True and not payload.get("portfolio_value", {}).get("unavailable_reason"):
         errors.append("portfolio_value_line_graph_missing_without_reason")
     if not isinstance(payload.get("current_portfolio", {}).get("rows"), list):

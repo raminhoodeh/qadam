@@ -2195,6 +2195,8 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
         "sections": sections,
         "missing_section_count": len(missing_sections),
         "missing_sections": missing_sections,
+        "dashboard_portfolio": primary.get("dashboard_portfolio", {}),
+        "portfolio_consistency_status": primary.get("portfolio_consistency_status"),
         "portfolio_value_series_count": int(primary.get("portfolio_value_series_count", 0) or 0),
         "current_position_count": int(primary.get("current_position_count", 0) or 0),
         "trading_history_row_count": int(primary.get("trading_history_row_count", 0) or 0),
@@ -8915,6 +8917,128 @@ def _mission_control(payload: dict[str, Any], source_label: str = "status_contra
     }
 
 
+def _dashboard_portfolio_public_status(
+    capital: dict[str, Any],
+    generated_at: str,
+    qsase_dashboard: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    qsase_dashboard = qsase_dashboard or {}
+    equity_curve = capital.get("equity_curve", []) if isinstance(capital.get("equity_curve"), list) else []
+    positions = capital.get("open_positions", []) if isinstance(capital.get("open_positions"), list) else []
+    current_value = capital.get("equity_gbp") or capital.get("current_balance_gbp")
+    latest_curve = equity_curve[-1] if equity_curve else {}
+    latest_curve_value = latest_curve.get("equity_gbp") or latest_curve.get("portfolio_value")
+    realized = float(capital.get("realized_pnl_gbp") or 0)
+    unrealized = float(capital.get("unrealized_pnl_gbp") or 0)
+    reported_total = capital.get("total_pnl_gbp")
+    calculated_total = round(realized + unrealized, 2)
+    if reported_total is None:
+        reported_total = calculated_total
+    value_delta = None
+    if current_value is not None and latest_curve_value is not None:
+        value_delta = round(float(current_value) - float(latest_curve_value), 2)
+    pnl_delta = round(float(reported_total or 0) - calculated_total, 2)
+    reported_position_count = int(capital.get("open_position_count") or len(positions) or 0)
+    position_count_delta = reported_position_count - len(positions)
+    errors = []
+    if value_delta is None:
+        errors.append("portfolio_value_or_curve_point_missing")
+    elif abs(value_delta) > 0.01:
+        errors.append("portfolio_value_curve_mismatch")
+    if abs(pnl_delta) > 0.01:
+        errors.append("portfolio_pnl_reconciliation_mismatch")
+    if position_count_delta != 0:
+        errors.append("open_position_count_mismatch")
+    qsase_portfolio = qsase_dashboard.get("dashboard_portfolio") if isinstance(qsase_dashboard.get("dashboard_portfolio"), dict) else {}
+    qsase_current_value = qsase_portfolio.get("current_value_gbp")
+    qsase_value_delta = None
+    if current_value is not None and qsase_current_value is not None:
+        qsase_value_delta = round(float(current_value) - float(qsase_current_value), 2)
+        if abs(qsase_value_delta) > 0.01:
+            errors.append("qsase_dashboard_portfolio_value_mismatch")
+    qsase_position_count = qsase_portfolio.get("open_position_count")
+    if qsase_position_count is not None and int(qsase_position_count or 0) != reported_position_count:
+        errors.append("qsase_dashboard_position_count_mismatch")
+    sync_age = capital.get("last_broker_sync_age_seconds")
+    stale_after = int(capital.get("stale_after_seconds") or 2700)
+    snapshot_age = _iso_age_seconds(generated_at)
+    snapshot_threshold = 1800
+    return {
+        "schema_version": 1,
+        "artifact_type": "dashboard_portfolio_canonical_contract",
+        "generated_at": generated_at,
+        "status": "dashboard_portfolio_consistent" if not errors else "dashboard_portfolio_mismatch",
+        "public_safe": True,
+        "read_only": True,
+        "paper_only": True,
+        "command_disabled": True,
+        "source_of_truth": "capital_from_alpaca_paper_account_mirror",
+        "portfolio_value_source": capital.get("portfolio_value_source", "alpaca_paper_account_mirror"),
+        "account_scope": capital.get("account_scope", PAPER_ACCOUNT_SCOPE),
+        "broker": capital.get("broker"),
+        "connection_status": capital.get("connection_status"),
+        "observed_at": capital.get("observed_at"),
+        "current_value_gbp": current_value,
+        "current_balance_gbp": capital.get("current_balance_gbp"),
+        "equity_gbp": capital.get("equity_gbp"),
+        "cash_gbp": capital.get("cash_gbp"),
+        "starting_balance_gbp": capital.get("starting_balance_gbp"),
+        "realized_pnl_gbp": capital.get("realized_pnl_gbp"),
+        "unrealized_pnl_gbp": capital.get("unrealized_pnl_gbp"),
+        "total_pnl_gbp": reported_total,
+        "drawdown_pct": capital.get("drawdown_pct"),
+        "open_position_count": reported_position_count,
+        "closed_trade_count": int(capital.get("closed_trade_count") or 0),
+        "order_count": int(capital.get("order_count") or 0),
+        "postmortem_due_count": int(capital.get("postmortem_due_count") or 0),
+        "display_currency": capital.get("display_currency") or "USD",
+        "account_currency": capital.get("account_currency") or "USD",
+        "positions": positions,
+        "orders": capital.get("orders", []) if isinstance(capital.get("orders"), list) else [],
+        "closed_trades": capital.get("closed_trades", []) if isinstance(capital.get("closed_trades"), list) else [],
+        "equity_curve": equity_curve,
+        "equity_curve_count": len(equity_curve),
+        "latest_curve_point": latest_curve,
+        "portfolio_consistency": {
+            "status": "ok" if not errors else "mismatch",
+            "errors": errors,
+            "current_value": current_value,
+            "latest_curve_value": latest_curve_value,
+            "value_delta": value_delta,
+            "realized_pnl": round(realized, 2),
+            "unrealized_pnl": round(unrealized, 2),
+            "calculated_total_pnl": calculated_total,
+            "reported_total_pnl": reported_total,
+            "pnl_delta": pnl_delta,
+            "reported_open_position_count": reported_position_count,
+            "holding_row_count": len(positions),
+            "position_count_delta": position_count_delta,
+            "qsase_current_value": qsase_current_value,
+            "qsase_value_delta": qsase_value_delta,
+        },
+        "broker_mirror_freshness": {
+            "status": "fresh" if sync_age is not None and int(sync_age) <= stale_after else "stale",
+            "age_seconds": sync_age,
+            "threshold_seconds": stale_after,
+            "observed_at": capital.get("observed_at"),
+        },
+        "public_snapshot_freshness": {
+            "status": "fresh" if snapshot_age is not None and snapshot_age <= snapshot_threshold else "stale",
+            "age_seconds": snapshot_age,
+            "threshold_seconds": snapshot_threshold,
+            "generated_at": generated_at,
+        },
+        "live_capital_enabled": False,
+        "write_authority": False,
+        "paper_order_allowed": False,
+        "broker_write_allowed": False,
+        "boundary": (
+            "Canonical dashboard portfolio mirror. It is read-only and cannot "
+            "create, cancel, replace, close, or approve orders."
+        ),
+    }
+
+
 def _risk_agent_status(settings: Settings) -> dict[str, Any]:
     summary = risk_agent_summary(settings)
     reviews = _safe_risk_policy_reviews(settings)
@@ -9294,6 +9418,11 @@ def build_cockpit_status(settings: Settings | None = None) -> dict[str, Any]:
         ],
         "boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
     }
+    payload["dashboard_portfolio"] = _dashboard_portfolio_public_status(
+        payload["capital"],
+        generated_at,
+        payload.get("qsase_dashboard", {}),
+    )
     payload["edge_tracker"] = build_edge_tracker_status(
         watching=watching,
         quantum_oracle=quantum_oracle,
@@ -9572,6 +9701,7 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         "daily_telegram_learning_brief",
         "daily_learning_automation",
         "capital",
+        "dashboard_portfolio",
         "mission_control",
         "watching",
         "modules",
@@ -9610,6 +9740,18 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         raise ValueError("local orchestrator must not be exposed in D1")
     if payload["capital"].get("live_capital_enabled") is not False:
         raise ValueError("cockpit status must keep live capital disabled")
+    dashboard_portfolio = payload["dashboard_portfolio"]
+    if dashboard_portfolio.get("artifact_type") != "dashboard_portfolio_canonical_contract":
+        raise ValueError("dashboard portfolio canonical contract missing")
+    if dashboard_portfolio.get("read_only") is not True:
+        raise ValueError("dashboard portfolio must remain read-only")
+    if dashboard_portfolio.get("live_capital_enabled") is not False:
+        raise ValueError("dashboard portfolio must keep live capital disabled")
+    if dashboard_portfolio.get("portfolio_consistency", {}).get("status") != "ok":
+        raise ValueError(
+            "dashboard portfolio consistency mismatch: "
+            f"{dashboard_portfolio.get('portfolio_consistency', {}).get('errors', [])}"
+        )
     mission_control = payload["mission_control"]
     for key in (
         "team",

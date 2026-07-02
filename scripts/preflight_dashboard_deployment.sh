@@ -7,6 +7,20 @@ say() {
   printf '[qadam-preflight] %s\n' "$*"
 }
 
+run_with_retry() {
+  local attempts="$1"
+  shift
+  local attempt=1
+  until "$@"; do
+    if (( attempt >= attempts )); then
+      return 1
+    fi
+    say "Retrying failed command (${attempt}/${attempts}): $*"
+    sleep 10
+    attempt=$((attempt + 1))
+  done
+}
+
 cd "$ROOT"
 
 PYTHON_BIN="${QADAM_PYTHON:-python3}"
@@ -16,13 +30,15 @@ fi
 
 say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paper_submit_receipt_contract.py
+run_with_retry 5 "$PYTHON_BIN" scripts/check_alpaca_paper_mirror.py --live
 "$PYTHON_BIN" scripts/check_paperops_paper_lifecycle_poller.py --poll-paper-orders
-"$PYTHON_BIN" scripts/check_alpaca_paper_mirror.py --live
 "$PYTHON_BIN" scripts/check_paperops_paper_exit_path.py
+"$PYTHON_BIN" scripts/check_paper_live_certification.py
 "$PYTHON_BIN" scripts/check_paper_operational_cycle.py
 "$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
 "$PYTHON_BIN" scripts/check_paperops_completion_gaps.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
+"$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_reddit_narrative_proxy.py --live
 "$PYTHON_BIN" scripts/check_edge_tracker.py
@@ -41,7 +57,9 @@ say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_daily_learning_automation.py
 "$PYTHON_BIN" scripts/check_daily_edge_learning_acceptance.py
 "$PYTHON_BIN" scripts/check_daily_edge_learning_safety_boundary.py
+"$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
+"$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
 
 say "Checking dashboard acceptance gate"
@@ -84,12 +102,16 @@ node scripts/check_dashboard_d11m_regression_acceptance.js
 node scripts/check_dashboard_d11n_documentation_guide_alignment.js
 
 say "Checking status exporters"
+"$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
+"$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_live_bridge.py
 
 say "Checking dashboard syntax and whitespace"
+node --check landing-page-repo/api/cockpit-status.js
 node --check landing-page-repo/dashboard.js
 git diff --check -- \
+  landing-page-repo/api/cockpit-status.js \
   landing-page-repo/auth.css \
   landing-page-repo/auth.js \
   landing-page-repo/dashboard/index.html \
@@ -178,6 +200,7 @@ git diff --check -- \
   scripts/check_dashboard_rs10_final_paper_autonomy.js \
   scripts/check_dashboard_cc6_real_portfolio_timeline.js \
   scripts/check_dashboard_edge_tracker.js \
+  scripts/check_dashboard_live_bridge.js \
   scripts/check_dashboard_cc7_visual_a11y.js \
   scripts/check_dashboard_cc8_prune_docs_deploy.js \
   scripts/check_dashboard_cc9_slop_repetition.js \
@@ -235,6 +258,8 @@ git diff --check -- \
   scripts/check_daily_learning_automation.py \
   scripts/check_daily_edge_learning_acceptance.py \
   scripts/check_daily_edge_learning_safety_boundary.py \
+  scripts/check_dashboard_portfolio_consistency.py \
+  scripts/check_live_bridge.py \
   scripts/check_edge_tracker.py \
   scripts/check_edge_pattern_ledger.py \
   scripts/check_edge_memory_ledger.py \

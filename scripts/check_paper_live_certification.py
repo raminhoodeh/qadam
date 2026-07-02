@@ -60,6 +60,10 @@ def _paper_live_submission_delegation_error(written: dict) -> str | None:
         written["paper_live_certified"] is True
         and written["paper_submit_step_allowed"] is True
         and written["qctrl_hold_active"] is not True
+        and (
+            written.get("rs10_bridge_applied") is not True
+            or written.get("rs10_autonomy_currently_actionable") is True
+        )
     )
     actual = written["paper_live_submission_delegation_allowed"] is True
     if actual == expected:
@@ -184,8 +188,13 @@ def main() -> int:
     else:
         if "qctrl_hold_cleared_for_submit" in written["certification_blockers"]:
             errors.append("qctrl_hold_still_blocking_after_clear")
-    if written["phase7_30_day_run_complete"] is not True:
-        errors.append("legacy_30_day_milestone_not_recorded")
+    if not isinstance(written["phase7_30_day_run_complete"], bool):
+        errors.append("legacy_30_day_milestone_state_invalid")
+    if (
+        written["phase7_30_day_run_complete"] is True
+        and written["phase7_demo_proof_certified"] is not True
+    ):
+        errors.append("legacy_30_day_complete_without_demo_proof")
     if written["phase7_demo_proof_certified"] is not False:
         errors.append("legacy_proof_unexpectedly_certified")
     if written["paper_growth_trial_target_active"] is not True:
