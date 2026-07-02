@@ -1,7 +1,7 @@
 const STATUS_SOURCES = [
     {
         key: "live_bridge",
-        label: "read-only live status",
+        label: "read-only status API",
         url: "/api/cockpit-status",
         requiresAuth: true
     },
@@ -6317,10 +6317,13 @@ function buildEdgeTrackerModel(status = {}) {
 function buildQsaseDashboardModel(status = {}) {
     const contract = status.qsase_dashboard || {};
     const sections = contract.sections || {};
+    const dashboardPortfolio = dashboardPortfolioModel(status);
     return {
         ...contract,
         available: Boolean(contract && contract.status && sections.portfolio_value),
         sections,
+        dashboard_portfolio: dashboardPortfolio,
+        portfolio_consistency_status: dashboardPortfolio.portfolio_consistency?.status || contract.portfolio_consistency_status || "unknown",
         portfolio_value: sections.portfolio_value || {},
         current_portfolio: sections.current_portfolio || {},
         trading_history: sections.trading_history || {},
@@ -6332,6 +6335,92 @@ function buildQsaseDashboardModel(status = {}) {
         repair_queue: sections.repair_queue || {},
         router: sections.router || {},
         paperops_gate: sections.paperops_gate || {}
+    };
+}
+
+function firstDefined(...values) {
+    return values.find((value) => value !== undefined && value !== null && value !== "");
+}
+
+function dashboardPortfolioModel(status = {}) {
+    const canonical = status.dashboard_portfolio || {};
+    const qsase = status.qsase_dashboard || {};
+    const qsasePortfolio = qsase.dashboard_portfolio || {};
+    const sections = qsase.sections || {};
+    const qsaseValue = sections.portfolio_value || {};
+    const qsaseCurrent = sections.current_portfolio || {};
+    const capital = status.capital || {};
+    const missionPortfolio = status.mission_control?.portfolio || {};
+    const equityCurve = asArray(
+        firstDefined(canonical.equity_curve, qsasePortfolio.equity_curve, qsaseValue.series, capital.equity_curve)
+    );
+    const latestCurvePoint = canonical.latest_curve_point
+        || qsasePortfolio.latest_curve_point
+        || equityCurve.at(-1)
+        || {};
+    const positions = asArray(firstDefined(canonical.positions, qsasePortfolio.positions, qsaseCurrent.rows, capital.open_positions));
+    const currentValue = modelNumber(firstDefined(
+        canonical.current_value_gbp,
+        qsasePortfolio.current_value_gbp,
+        qsaseValue.current_value_gbp,
+        latestCurvePoint.portfolio_value,
+        latestCurvePoint.equity_gbp,
+        capital.equity_gbp,
+        capital.current_balance_gbp,
+        missionPortfolio.current_balance_gbp
+    ), 0);
+    const cash = modelNumber(firstDefined(canonical.cash_gbp, qsasePortfolio.cash_gbp, capital.cash_gbp, latestCurvePoint.cash), 0);
+    const starting = modelNumber(firstDefined(
+        canonical.starting_balance_gbp,
+        qsasePortfolio.starting_balance_gbp,
+        capital.starting_balance_gbp,
+        missionPortfolio.starting_balance_gbp,
+        equityCurve[0]?.portfolio_value,
+        equityCurve[0]?.equity_gbp
+    ), currentValue);
+    const realized = modelNumber(firstDefined(canonical.realized_pnl_gbp, qsasePortfolio.realized_pnl_gbp, capital.realized_pnl_gbp), 0);
+    const unrealized = modelNumber(firstDefined(canonical.unrealized_pnl_gbp, qsasePortfolio.unrealized_pnl_gbp, capital.unrealized_pnl_gbp), 0);
+    const totalPnl = modelNumber(firstDefined(canonical.total_pnl_gbp, qsasePortfolio.total_pnl_gbp, capital.total_pnl_gbp), realized + unrealized);
+    const currency = normaliseCurrencyCode(firstDefined(
+        canonical.display_currency,
+        canonical.currency,
+        qsasePortfolio.display_currency,
+        qsasePortfolio.currency,
+        qsaseValue.display_currency,
+        capital.display_currency,
+        capital.currency,
+        latestCurvePoint.display_currency,
+        "GBP"
+    ));
+    const portfolioConsistency = canonical.portfolio_consistency || qsasePortfolio.portfolio_consistency || {
+        status: "unknown",
+        value_delta: null,
+        latest_curve_value: firstDefined(latestCurvePoint.portfolio_value, latestCurvePoint.equity_gbp, qsaseValue.latest_value)
+    };
+    return {
+        ...qsasePortfolio,
+        ...canonical,
+        artifact_type: canonical.artifact_type || qsasePortfolio.artifact_type || "dashboard_portfolio_canonical_contract",
+        status: canonical.status || qsasePortfolio.status || "dashboard_portfolio_missing",
+        current_value_gbp: currentValue,
+        current_value: currentValue,
+        starting_balance_gbp: starting,
+        cash_gbp: cash,
+        exposure_gbp: modelNumber(firstDefined(canonical.exposure_gbp, qsasePortfolio.exposure_gbp, currentValue - cash), 0),
+        realized_pnl_gbp: realized,
+        unrealized_pnl_gbp: unrealized,
+        total_pnl_gbp: totalPnl,
+        open_position_count: modelNumber(firstDefined(canonical.open_position_count, qsasePortfolio.open_position_count, qsaseCurrent.position_count, positions.length, capital.open_position_count), positions.length),
+        closed_trade_count: modelNumber(firstDefined(canonical.closed_trade_count, qsasePortfolio.closed_trade_count, capital.closed_trade_count), 0),
+        paper_order_count: modelNumber(firstDefined(canonical.paper_order_count, qsasePortfolio.paper_order_count, capital.paper_order_count), 0),
+        display_currency: currency,
+        equity_curve: equityCurve,
+        latest_curve_point: latestCurvePoint,
+        positions,
+        portfolio_consistency: portfolioConsistency,
+        broker_mirror_freshness: canonical.broker_mirror_freshness || qsasePortfolio.broker_mirror_freshness || {},
+        public_snapshot_freshness: canonical.public_snapshot_freshness || qsasePortfolio.public_snapshot_freshness || {},
+        boundary: canonical.boundary || qsasePortfolio.boundary || "Read-only paper account mirror."
     };
 }
 
@@ -6465,7 +6554,7 @@ async function fetchDashboardStatus(session) {
                 continue;
             }
             return {
-                source,
+                source: { ...source, prior_failures: failures.slice() },
                 status: await response.json()
             };
         } catch (error) {
@@ -7667,6 +7756,7 @@ function buildTradeTimelineTokens(status = {}) {
 
 function buildBalanceTickerModel(status = {}, viewModels = {}) {
     const capital = status.capital || {};
+    const operations = status.paperops_30_day_operations || status.phase7_demo_proof || {};
     const performance = viewModels.performance_model || buildPerformanceModel(status);
     const account = performance.paper_account || {};
     const equity = modelNumber(
@@ -7684,6 +7774,8 @@ function buildBalanceTickerModel(status = {}, viewModels = {}) {
     const openPositions = modelNumber(capital.open_position_count, asArray(capital.open_positions).length);
     const orders = modelNumber(capital.order_count, asArray(capital.orders).length);
     const closedTrades = modelNumber(capital.closed_trade_count, asArray(capital.closed_trades).length);
+    const trialDay = modelNumber(operations.active_day_number ?? operations.paper_operation_day_number, 0);
+    const trialDaysRemaining = modelNumber(operations.calendar_days_remaining, 0);
     const liveCapitalEnabled = Boolean(capital.live_capital_enabled);
     const writeAuthority = Boolean(capital.write_authority);
     const tone = liveCapitalEnabled || writeAuthority
@@ -7700,6 +7792,8 @@ function buildBalanceTickerModel(status = {}, viewModels = {}) {
         open_position_count: openPositions,
         order_count: orders,
         closed_trade_count: closedTrades,
+        trial_day: trialDay,
+        trial_days_remaining: trialDaysRemaining,
         observed_at: capital.observed_at || status.generated_at,
         tone,
         timeline: buildTradeTimelineTokens(status),
@@ -7717,10 +7811,11 @@ function renderBalanceTicker(status, viewModels = {}) {
             <span>Paper balance</span>
             <strong>${htmlText(formatMoney(model.equity, model.display_currency))}</strong>
             <em>${htmlText(formatMoney(model.total_pnl_gbp, model.display_currency))} P&L · ${htmlText(formatPercent(model.drawdown_pct))} DD · ${htmlText(model.closed_trade_count)} closed</em>
+            <em>Reset base ${htmlText(formatMoney(model.starting, model.display_currency))} · ${model.trial_day ? `day ${htmlText(model.trial_day)} of the 30-day paper growth trial` : "trial day pending"}${model.trial_days_remaining ? ` · ${htmlText(model.trial_days_remaining)} days left` : ""}</em>
         `;
         ticker.setAttribute(
             "title",
-            `${formatMoney(model.equity, model.display_currency)} equity; ${formatMoney(model.total_pnl_gbp, model.display_currency)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; observed ${formatTime(model.observed_at)}.`
+            `${formatMoney(model.equity, model.display_currency)} current equity from the rebased paper mirror; reset base ${formatMoney(model.starting, model.display_currency)}; ${model.trial_day ? `day ${model.trial_day} of the 30-day paper growth trial; ` : ""}${formatMoney(model.total_pnl_gbp, model.display_currency)} P&L; ${formatPercent(model.drawdown_pct)} drawdown; observed ${formatTime(model.observed_at)}.`
         );
     }
 
@@ -7738,31 +7833,56 @@ function renderBalanceTicker(status, viewModels = {}) {
         : `<span class="trade-toast-token pending">No paper trade timeline yet</span>`;
 }
 
+function dashboardFreshnessCopy(freshness = {}) {
+    const status = freshness.status || "unknown";
+    const ageHours = freshness.age_hours ?? freshness.age;
+    const ageCopy = ageHours === undefined || ageHours === null
+        ? "age unknown"
+        : `${modelNumber(ageHours, 0).toFixed(1)}h old`;
+    if (status === "fresh") return `Snapshot fresh (${ageCopy})`;
+    if (status === "stale") return `Snapshot stale (${ageCopy})`;
+    return `Snapshot freshness unknown (${ageCopy})`;
+}
+
 function renderSnapshotMeta(status, source) {
     const capital = status.capital || {};
     const d1Snapshot = status.d1_snapshot || {};
     const liveBridge = status.live_bridge || {};
+    const portfolio = dashboardPortfolioModel(status);
+    const freshness = portfolio.public_snapshot_freshness || {};
+    const fallbackAttempts = asArray(source?.prior_failures);
     const generatedAt = formatTime(status.generated_at);
     const sourceLabel = source?.label || "static snapshot";
     const bridgeSourceLabel = source?.key === "live_bridge"
         ? "Live status connected"
         : "Sanitized status loaded";
-    const paperBalance = capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
+    const paperBalance = portfolio.current_value_gbp ?? capital.equity_gbp ?? capital.current_balance_gbp ?? capital.starting_balance_gbp;
+    const freshnessCopy = dashboardFreshnessCopy(freshness);
+    const consistencyCopy = portfolio.portfolio_consistency?.status === "ok"
+        ? "Portfolio values match"
+        : "Portfolio values need review";
     setText("[data-mode-label]", `${dashboardText(status.mode).toUpperCase()} MODE`);
     setText("[data-capital-label]", `${formatCapitalMoney(paperBalance, capital)} paper account`);
     setText(
         "[data-live-capital-label]",
         capital.live_capital_enabled ? "Live capital enabled" : "OK - live capital off"
     );
-    setText("[data-snapshot-meta]", `Snapshot ${generatedAt} · schema ${status.schema_version} · ${sourceLabel}`);
+    setText("[data-snapshot-meta]", `Snapshot ${generatedAt} · schema ${status.schema_version} · ${sourceLabel} · ${freshnessCopy}`);
 
     const banner = dashboardQuery("[data-status-banner]");
     if (banner) {
-        banner.classList.remove("snapshot-error");
+        const bannerNeedsAttention = freshness.status === "stale" || portfolio.portfolio_consistency?.status !== "ok";
+        if (bannerNeedsAttention) {
+            banner.classList.add("snapshot-error");
+        } else {
+            banner.classList.remove("snapshot-error");
+        }
         banner.innerHTML = `
             <span>${status.d0_shell?.status === "frozen" ? "D0 shell frozen" : "D0 shell unknown"}</span>
             <span>${d1Snapshot.public_safe ? "Dashboard status loaded" : "Dashboard metadata missing"}</span>
             <span>${liveBridge.status === "read_only_ready" ? bridgeSourceLabel : "Live status pending"}</span>
+            <span>${htmlText(formatMoney(portfolio.current_value_gbp, portfolio.display_currency))} paper value · ${htmlText(consistencyCopy)}</span>
+            <span>${htmlText(freshnessCopy)}${fallbackAttempts.length ? ` · fallback after ${htmlText(fallbackAttempts.join(", "))}` : ""}</span>
             <span>${status.boundary || "Dashboard status snapshot."}</span>
         `;
     }
@@ -12015,23 +12135,29 @@ function renderQsaseSectionHeader(label, headline, meta = "", tone = "pending") 
 }
 
 function renderQsasePortfolioValue(qsase = {}) {
+    const portfolio = qsase.dashboard_portfolio || {};
     const section = qsase.portfolio_value || {};
     const history = qsase.trading_history || {};
-    const series = asArray(section.series);
-    const currency = normaliseCurrencyCode(series.at(-1)?.display_currency || series[0]?.display_currency || "USD");
-    const latest = series.at(-1) || {};
+    const contractSeries = asArray(portfolio.equity_curve);
+    const sectionSeries = asArray(section.series);
+    const series = contractSeries.length ? contractSeries : sectionSeries;
+    const latest = portfolio.latest_curve_point || series.at(-1) || {};
     const first = series[0] || latest;
-    const latestValue = qsaseSeriesValue(latest);
-    const firstValue = qsaseSeriesValue(first);
+    const currency = normaliseCurrencyCode(portfolio.display_currency || latest.display_currency || first.display_currency || "GBP");
+    const latestValue = modelNumber(portfolio.current_value_gbp ?? qsaseSeriesValue(latest), 0);
+    const firstValue = modelNumber(portfolio.starting_balance_gbp ?? qsaseSeriesValue(first), latestValue);
     const delta = latestValue - firstValue;
     const deltaPct = firstValue ? ((delta / firstValue) * 100).toFixed(2) : "0.00";
+    const chartSeries = series.length
+        ? series
+        : [{ ...latest, portfolio_value: latestValue, timestamp: portfolio.generated_at || qsase.generated_at }];
     const width = 920;
     const height = 260;
     const left = 74;
     const right = 26;
     const top = 26;
     const bottom = 34;
-    const values = series.map(qsaseSeriesValue);
+    const values = chartSeries.map((point) => modelNumber(point.portfolio_value ?? point.equity_gbp ?? point.current_value_gbp ?? qsaseSeriesValue(point), latestValue));
     const minRaw = values.length ? Math.min(...values) : 0;
     const maxRaw = values.length ? Math.max(...values) : 1;
     const padding = Math.max((maxRaw - minRaw) * 0.16, Math.abs(maxRaw || 1) * 0.005, 1);
@@ -12040,35 +12166,38 @@ function renderQsasePortfolioValue(qsase = {}) {
     const plotWidth = width - left - right;
     const plotHeight = height - top - bottom;
     const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
-    const xFor = (index) => left + (series.length <= 1 ? plotWidth / 2 : (index / (series.length - 1)) * plotWidth);
-    const linePath = series.map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(qsaseSeriesValue(point)).toFixed(2)}`).join(" ");
+    const xFor = (index) => left + (chartSeries.length <= 1 ? plotWidth / 2 : (index / (chartSeries.length - 1)) * plotWidth);
+    const linePath = chartSeries.map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(modelNumber(point.portfolio_value ?? point.equity_gbp ?? point.current_value_gbp ?? qsaseSeriesValue(point), latestValue)).toFixed(2)}`).join(" ");
     const tradeRows = asArray(history.rows).slice(0, 18);
     const markers = tradeRows.map((row) => {
-        const markerPoint = qsaseNearestSeriesPoint(series, row.closed_at || row.opened_at || row.submitted_at);
-        const index = Math.max(0, series.indexOf(markerPoint));
-        if (!series.length) return "";
+        const markerPoint = qsaseNearestSeriesPoint(chartSeries, row.closed_at || row.opened_at || row.submitted_at);
+        const index = Math.max(0, chartSeries.indexOf(markerPoint));
+        if (!chartSeries.length) return "";
+        const markerValue = modelNumber(markerPoint.portfolio_value ?? markerPoint.equity_gbp ?? markerPoint.current_value_gbp ?? qsaseSeriesValue(markerPoint), latestValue);
         return `
             <g class="qsase-trade-marker ${statusClass(row.row_type || row.postmortem_status || "pending")}">
-                <circle cx="${xFor(index).toFixed(2)}" cy="${yFor(qsaseSeriesValue(markerPoint)).toFixed(2)}" r="4.5"></circle>
+                <circle cx="${xFor(index).toFixed(2)}" cy="${yFor(markerValue).toFixed(2)}" r="4.5"></circle>
                 <title>${literalHtmlText(`${row.instrument || "trade"} · ${row.row_type || "history"} · ${formatTime(row.closed_at || row.opened_at || row.submitted_at)}`)}</title>
             </g>
         `;
     }).join("");
     const tone = delta >= 0 ? "online" : "blocked";
+    const freshnessCopy = dashboardFreshnessCopy(portfolio.public_snapshot_freshness || {});
+    const consistencyCopy = portfolio.portfolio_consistency?.status === "ok" ? "portfolio values match" : "portfolio values need review";
     return `
         <section class="qsase-section qsase-portfolio-value ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
             <div class="qsase-money-hero">
                 <div>
                     <p class="label">Portfolio Value &amp; Return</p>
                     <h2>${formatMoney(latestValue, currency)}</h2>
-                    <p>${formatMoney(delta, currency)} since first QSASE point · ${deltaPct}% return · ${series.length} paper-account snapshots.</p>
+                    <p>${formatMoney(delta, currency)} since reset-base/first point · ${deltaPct}% return · ${chartSeries.length} paper-account snapshots.</p>
                 </div>
                 <div class="qsase-money-metrics">
-                    ${renderMetric("Cash", formatMoney(latest.cash, currency))}
-                    ${renderMetric("Exposure", formatMoney(latestValue - modelNumber(latest.cash, 0), currency))}
-                    ${renderMetric("Drawdown", formatPercent(latest.drawdown_pct))}
-                    ${renderMetric("Open P&L", "tracked in positions")}
-                    ${renderMetric("Closed P&L", "tracked in history")}
+                    ${renderMetric("Cash", formatMoney(portfolio.cash_gbp, currency))}
+                    ${renderMetric("Exposure", formatMoney(portfolio.exposure_gbp, currency))}
+                    ${renderMetric("Drawdown", formatPercent(portfolio.drawdown_pct))}
+                    ${renderMetric("Open P&L", formatMoney(portfolio.unrealized_pnl_gbp, currency))}
+                    ${renderMetric("Closed P&L", formatMoney(portfolio.realized_pnl_gbp, currency))}
                 </div>
             </div>
             <svg class="qsase-portfolio-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="QSASE paper portfolio value over time" preserveAspectRatio="none" data-qsase-portfolio-line>
@@ -12079,29 +12208,31 @@ function renderQsasePortfolioValue(qsase = {}) {
                 ${markers}
                 <text class="chart-axis-label" x="4" y="${yFor(maxRaw).toFixed(2)}">${literalHtmlText(formatMoney(maxRaw, currency))}</text>
                 <text class="chart-axis-label" x="4" y="${yFor(minRaw).toFixed(2)}">${literalHtmlText(formatMoney(minRaw, currency))}</text>
-                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(latest.timestamp || latest.observed_at))}</text>
+                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(latest.timestamp || latest.observed_at || portfolio.generated_at))}</text>
             </svg>
-            <p class="qsase-boundary-note">${qsaseHtmlText(section.status)} · trade markers are read-only history, not proof credit.</p>
+            <p class="qsase-boundary-note">${qsaseHtmlText(portfolio.status || section.status)} · ${qsaseHtmlText(consistencyCopy)} · ${qsaseHtmlText(freshnessCopy)} · trade markers are read-only history, not proof credit.</p>
         </section>
     `;
 }
 
 function renderQsaseCurrentPortfolio(qsase = {}) {
+    const portfolio = qsase.dashboard_portfolio || {};
     const section = qsase.current_portfolio || {};
-    const rows = asArray(section.rows);
+    const rows = asArray(portfolio.positions).length ? asArray(portfolio.positions) : asArray(section.rows);
+    const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
     return `
         <section class="qsase-section" data-qsase-section="current_portfolio">
-            ${renderQsaseSectionHeader("Current Portfolio", `${section.position_count || rows.length || 0} current holdings`, section.status, rows.length ? "online" : "pending")}
+            ${renderQsaseSectionHeader("Current Portfolio", `${portfolio.open_position_count || section.position_count || rows.length || 0} current holdings`, portfolio.status || section.status, rows.length ? "online" : "pending")}
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
                         <span>${qsaseHtmlText(row.instrument || row.symbol, "Instrument")}</span>
-                        <strong>${qsaseHtmlText(row.size || row.quantity || row.position_qty, "size n/a")}</strong>
+                        <strong>${qsaseHtmlText(row.size || row.quantity || row.position_qty, "size n/a")} ${qsaseHtmlText(row.direction || "")}</strong>
                         <p>${qsaseHtmlText(row.strategy_family || row.strategy || "Strategy lineage pending")}</p>
                         <dl>
                             <div><dt>Entry</dt><dd>${qsaseHtmlText(row.entry_price || row.opened_at || "n/a")}</dd></div>
-                            <div><dt>Value</dt><dd>${qsaseHtmlText(row.current_value || row.market_value || "n/a")}</dd></div>
-                            <div><dt>P&L</dt><dd>${qsaseHtmlText(row.unrealized_pnl || row.unrealized_pnl_gbp || "n/a")}</dd></div>
+                            <div><dt>Value</dt><dd>${qsaseHtmlText(formatMoney(row.current_value_gbp ?? row.current_value ?? row.market_value_gbp ?? row.market_value, currency))}</dd></div>
+                            <div><dt>P&L</dt><dd>${qsaseHtmlText(formatMoney(row.unrealized_pnl_gbp ?? row.unrealized_pnl, currency))}</dd></div>
                             <div><dt>Next</dt><dd>${qsaseHtmlText(row.next_lifecycle_action || row.lifecycle_action || "monitor lifecycle")}</dd></div>
                         </dl>
                     </article>
