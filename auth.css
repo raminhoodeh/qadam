@@ -11540,6 +11540,10 @@ body.qadam-dashboard-page .qsase-card-grid.pattern {
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
 }
 
+body.qadam-dashboard-page .qsase-workflow-message {
+    margin: var(--qadam-space-4) 0;
+}
+
 body.qadam-dashboard-page .qsase-category-grid {
     grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
