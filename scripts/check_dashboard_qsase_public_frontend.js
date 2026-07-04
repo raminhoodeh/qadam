@@ -32,6 +32,7 @@ const artifactMap = {
     strategy_universe: "qsase_dashboard_strategy_universe.json",
     pattern_lab: "qsase_dashboard_pattern_lab.json",
     trade_intents: "qsase_dashboard_trade_intents.json",
+    pattern_to_paper_workflow: "qsase_pattern_to_paper_workflow.json",
     learning_ledger: "qsase_dashboard_learning_ledger.json",
     repair_queue: "qsase_dashboard_repair_queue.json",
     router: "qsase_strategy_router_decisions.json",
@@ -94,6 +95,7 @@ function assertStaticContract() {
         "data-qsase-section=\"trading_strategy_universe\"",
         "data-qsase-section=\"pattern_opportunity_lab\"",
         "data-qsase-section=\"trade_intents\"",
+        "data-qsase-section=\"pattern_to_paper_workflow\"",
         "data-qsase-section=\"router_paperops_gate\"",
         "Portfolio Value &amp; Return",
         "Current Portfolio",
@@ -102,6 +104,7 @@ function assertStaticContract() {
         "Trading Strategy Universe",
         "Pattern & Opportunity Lab",
         "Trade Intents / What Qadam Is Thinking",
+        "Pattern-To-Paper Workflow",
         "Router & PaperOps Gate",
         "trade markers are read-only history, not proof credit",
         "No order authority",
@@ -117,19 +120,21 @@ function assertStaticContract() {
         ".qsase-table",
         ".qsase-category-grid",
         ".qsase-final-decision",
+        ".qsase-workflow-message",
         ".qsase-dashboard-v2",
         ".qsase-jump-row",
         ".qsase-detail-ledger"
     ], "QSASE stylesheet");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260702-public-fund-v2",
-        "/dashboard.js?v=20260702-public-fund-v2",
+        "/auth.css?v=20260704-pattern-workflow-v1",
+        "/dashboard.js?v=20260704-pattern-workflow-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
 
     assertIncludesAll(cockpitStatus, [
         "QSASE_DASHBOARD_PUBLIC_ARTIFACTS",
+        "\"pattern_to_paper_workflow\": \"qsase_pattern_to_paper_workflow.json\"",
         "def _qsase_dashboard_public_status",
         "\"qsase_dashboard\": _qsase_dashboard_public_status(settings)",
         "\"creates_paper_orders\": False",
@@ -153,6 +158,7 @@ async function assertRenderedContract() {
         "Trading Strategy Universe",
         "Pattern &amp; Opportunity Lab",
         "Trade Intents / What Qadam Is Thinking",
+        "Pattern-To-Paper Workflow",
         "Router &amp; PaperOps Gate"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
@@ -164,6 +170,7 @@ async function assertRenderedContract() {
         "trading_strategy_universe",
         "pattern_opportunity_lab",
         "trade_intents",
+        "pattern_to_paper_workflow",
         "router_paperops_gate"
     ].forEach((section) => {
         assert(stageHtml.includes(`data-qsase-section="${section}"`), `rendered QSASE dashboard missing section ${section}`);
@@ -177,6 +184,7 @@ async function assertRenderedContract() {
         "Trading Strategy Universe",
         "Pattern &amp; Opportunity Lab",
         "Trade Intents / What Qadam Is Thinking",
+        "Pattern-To-Paper Workflow",
         "Router &amp; PaperOps Gate"
     ].map((label) => stageHtml.indexOf(label));
     assert(order.every((index) => index >= 0), "rendered QSASE dashboard missing required labels");

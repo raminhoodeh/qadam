@@ -249,7 +249,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260702-public-fund-v2");
+    console.log("dashboard_cc9_cache_key=20260704-pattern-workflow-v1");
 }
 
 main().catch((error) => {

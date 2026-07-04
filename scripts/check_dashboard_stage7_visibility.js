@@ -537,7 +537,6 @@ async function main() {
         "data-learning-detail=",
         "data-learning-drawer",
         "Current State",
-        "Holding",
         "Watching",
         "Active Hypotheses",
         "Strategy currently applied",
@@ -563,7 +562,6 @@ async function main() {
         "Fit Score",
         "Trend",
         "Why not ready?",
-        "In paper position",
         "data-strategy-detail=",
         "data-strategy-drawer",
         "Prediction markets",
@@ -577,6 +575,10 @@ async function main() {
     ].forEach((needle) => {
         assert(stage7Html.includes(needle), `Rendered Stage 7 missing visible copy: ${needle}`);
     });
+    if (sleevesWithExposure.size > 0) {
+        assert(stage7Html.includes("Holding"), "Rendered Stage 7 missing Holding copy despite portfolio exposure");
+        assert(stage7Html.includes("In paper position"), "Rendered Stage 7 missing paper-position copy despite portfolio exposure");
+    }
     assert(stage7Html.includes("data-paper-fund-detail="), "Rendered Stage 7 missing paper-fund detail payload buttons");
     assert(stage7Html.includes("data-paper-fund-drawer"), "Rendered Stage 7 missing shared paper-fund drawer");
     assert(stage7Html.includes("data-source-category-detail="), "Rendered Stage 7 missing source category drawer payload buttons");

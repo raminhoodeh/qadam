@@ -44,6 +44,7 @@ QSASE_DASHBOARD_STATUS_ARTIFACT = "qsase_dashboard_status.json"
 QSASE_DASHBOARD_DECISION_RECORDS_ARTIFACT = "qsase_dashboard_decision_records.json"
 QSASE_DASHBOARD_REPAIR_QUEUE_ARTIFACT = "qsase_dashboard_repair_queue.json"
 QSASE_DASHBOARD_LEARNING_LEDGER_ARTIFACT = "qsase_dashboard_learning_ledger.json"
+QSASE_PATTERN_TO_PAPER_WORKFLOW_ARTIFACT = "qsase_pattern_to_paper_workflow.json"
 QSASE_PAPEROPS_GATE_ARTIFACT = "qsase_paperops_gate_interface.json"
 QSASE_STRATEGY_ROUTER_ARTIFACT = "qsase_strategy_router_decisions.json"
 PAPEROPS_SUMMARY_ARTIFACT = "paperops_autonomous_pass_summary.json"
@@ -260,6 +261,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "dashboard_decision_records": _read_json(runtime / QSASE_DASHBOARD_DECISION_RECORDS_ARTIFACT),
         "dashboard_repair_queue": _read_json(runtime / QSASE_DASHBOARD_REPAIR_QUEUE_ARTIFACT),
         "dashboard_learning_ledger": _read_json(runtime / QSASE_DASHBOARD_LEARNING_LEDGER_ARTIFACT),
+        "pattern_to_paper_workflow": _read_json(runtime / QSASE_PATTERN_TO_PAPER_WORKFLOW_ARTIFACT),
         "paperops_gate": _read_json(runtime / QSASE_PAPEROPS_GATE_ARTIFACT),
         "strategy_router": _read_json(runtime / QSASE_STRATEGY_ROUTER_ARTIFACT),
         "paperops_summary": _read_json(runtime / PAPEROPS_SUMMARY_ARTIFACT),
@@ -354,6 +356,11 @@ def build_qsase_telegram_message_candidates(context: dict[str, Any]) -> list[dic
     dashboard = context.get("dashboard_status", {})
     repair_rows = context.get("dashboard_repair_queue", {}).get("rows", [])
     latest_repair = repair_rows[0] if repair_rows else {}
+    pattern_workflow = context.get("pattern_to_paper_workflow", {})
+    pattern_records = pattern_workflow.get("records", []) if isinstance(pattern_workflow.get("records"), list) else []
+    pattern_labels = [str(record.get("market_sleeve")) for record in pattern_records[:3] if record.get("market_sleeve")]
+    first_missing = pattern_records[0].get("missing_criteria", []) if pattern_records else []
+    missing_text = ", ".join(str(item).replace("_", " ") for item in first_missing) or "final review gates"
     candidates = [
         _candidate_template(
             message_class="qsase_why_not_trading_now",
@@ -368,6 +375,26 @@ def build_qsase_telegram_message_candidates(context: dict[str, Any]) -> list[dic
             decision_record_ref=_artifact_ref(QSASE_DASHBOARD_DECISION_RECORDS_ARTIFACT, "qsase_snapshot"),
             source_artifact_refs=[
                 _artifact_ref(QSASE_DASHBOARD_STATUS_ARTIFACT),
+                _artifact_ref(QSASE_STRATEGY_ROUTER_ARTIFACT),
+                _artifact_ref(QSASE_PAPEROPS_GATE_ARTIFACT),
+            ],
+        ),
+        _candidate_template(
+            message_class="qsase_pattern_to_paper_workflow",
+            title="Qadam pattern note",
+            state=(
+                f"{pattern_workflow.get('recognized_pattern_count', 0)} patterns documented; "
+                f"{pattern_workflow.get('paperops_handoff_candidate_count', 0)} ready for PaperOps"
+            ),
+            reason=f"{', '.join(pattern_labels) or 'Pattern workflow'} need {missing_text} before paper review",
+            next_action="keep shadow review; handoff only after gates pass",
+            order_line="none submitted",
+            strategy_family="pattern_to_paper_workflow",
+            candidate_id="qsase_pattern_to_paper_workflow",
+            blocker=pattern_workflow.get("paperops_top_blocking_gate") or "validated_edge_pending",
+            decision_record_ref=_artifact_ref(QSASE_DASHBOARD_DECISION_RECORDS_ARTIFACT, "pattern_to_paper_workflow"),
+            source_artifact_refs=[
+                _artifact_ref(QSASE_PATTERN_TO_PAPER_WORKFLOW_ARTIFACT),
                 _artifact_ref(QSASE_STRATEGY_ROUTER_ARTIFACT),
                 _artifact_ref(QSASE_PAPEROPS_GATE_ARTIFACT),
             ],

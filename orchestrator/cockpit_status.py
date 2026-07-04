@@ -380,6 +380,7 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "strategy_universe": "qsase_dashboard_strategy_universe.json",
     "pattern_lab": "qsase_dashboard_pattern_lab.json",
     "trade_intents": "qsase_dashboard_trade_intents.json",
+    "pattern_to_paper_workflow": "qsase_pattern_to_paper_workflow.json",
     "learning_ledger": "qsase_dashboard_learning_ledger.json",
     "repair_queue": "qsase_dashboard_repair_queue.json",
     "router": "qsase_strategy_router_decisions.json",
@@ -2206,6 +2207,13 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
         "linear_pattern_count": int(primary.get("linear_pattern_count", 0) or 0),
         "nonlinear_pattern_count": int(primary.get("nonlinear_pattern_count", 0) or 0),
         "trade_intent_count": int(primary.get("trade_intent_count", 0) or 0),
+        "pattern_workflow_record_count": int(primary.get("pattern_workflow_record_count", 0) or 0),
+        "pattern_workflow_handoff_candidate_count": int(
+            primary.get("pattern_workflow_handoff_candidate_count", 0) or 0
+        ),
+        "pattern_workflow_telegram_candidate_count": int(
+            primary.get("pattern_workflow_telegram_candidate_count", 0) or 0
+        ),
         "live_capital_enabled": False,
         "broker_write_allowed": False,
         "paper_order_allowed": False,
@@ -2220,7 +2228,7 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
         },
         "boundary": (
             "QSASE dashboard contract is public-safe, read-only visibility. It renders portfolio, "
-            "source, strategy, pattern, intent, router, and PaperOps state but cannot create "
+            "source, strategy, pattern, pattern-workflow, intent, router, and PaperOps state but cannot create "
             "orders, approvals, broker writes, proof credit, Telegram commands, or live capital."
         ),
     }

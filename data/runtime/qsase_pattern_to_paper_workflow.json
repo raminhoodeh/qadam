@@ -1,0 +1,601 @@
+{
+  "artifact_refs": [
+    "data/runtime/pattern_recognition_engine.json",
+    "data/runtime/edge_pattern_ledger.json",
+    "data/runtime/qsase_strategy_router_decisions.json",
+    "data/runtime/qsase_paperops_gate_interface.json"
+  ],
+  "artifact_type": "qsase_pattern_to_paper_workflow",
+  "authority": {
+    "broker_write_allowed": false,
+    "dashboard_command_disabled": true,
+    "dashboard_mirror_only": true,
+    "dashboard_read_only": true,
+    "execution_approval_allowed": false,
+    "execution_approval_created": false,
+    "filter_threshold_update_created": false,
+    "live_broker_endpoint_allowed": false,
+    "live_capital_enabled": false,
+    "model_weight_update_created": false,
+    "paper_growth_trial_calendar_advance_allowed": false,
+    "paper_order_allowed": false,
+    "paper_order_created": false,
+    "paper_proof_ledger_credit_allowed": false,
+    "proof_credit_allowed": false,
+    "qualified_setup_created": false,
+    "risk_approval_allowed": false,
+    "risk_approval_created": false,
+    "simulated_elapsed_time_allowed": false,
+    "source_trust_update_created": false,
+    "strategy_mutation_created": false,
+    "telegram_command_path_enabled": false,
+    "telegram_trade_command_enabled": false,
+    "trade_candidate_created": false,
+    "trade_intent_created": false
+  },
+  "boundary": "Pattern workflow documents evidence and prepares guarded PaperOps review context only; it cannot create orders, approvals, broker writes, proof credit, Telegram commands, or live capital.",
+  "broker_write_allowed": false,
+  "broker_write_count": 0,
+  "command_disabled": true,
+  "documented_thesis_count": 5,
+  "generated_at": "2026-07-04T11:46:01.063138+00:00",
+  "live_capital_enabled": false,
+  "paper_only": true,
+  "paper_order_allowed": false,
+  "paper_order_created_count": 0,
+  "paperops_gate_status": "qsase_paperops_gate_interface_degraded",
+  "paperops_handoff_candidate_count": 0,
+  "paperops_top_blocking_gate": "akber_filter_failed",
+  "proof_credit_allowed": false,
+  "public_safe": true,
+  "qualified_setup_created": false,
+  "read_only": true,
+  "recognized_pattern_count": 5,
+  "records": [
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.0",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "broker_write_allowed": false,
+      "broker_write_count": 0,
+      "evidence_scores": {
+        "ambiguity_score": 0.264,
+        "edge_readiness_score": 0.878,
+        "signal_review_coverage_score": 0.73,
+        "source_pressure_score": 0.851
+      },
+      "instrument_symbols": [
+        "CL=F",
+        "BZ=F",
+        "USO",
+        "XLE"
+      ],
+      "invalidation": "Invalidate if thirty day persistence remains unresolved, source pressure fades, or market confirmation fails.",
+      "linear_state": "source_price_lead_lag_or_divergence_observed",
+      "live_capital_enabled": false,
+      "market_sleeve": "Oil",
+      "missing_criteria": [
+        "thirty_day_persistence"
+      ],
+      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "nonlinear_state": "quantum_review_dependency_satisfied",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_review_eligible": false,
+      "paperops_handoff_candidate": false,
+      "paperops_state": "documented_research_pattern",
+      "passed_criteria": [
+        "all_source_price_cross_scan",
+        "lead_lag_or_divergence",
+        "llm_adversarial_review",
+        "market_confirmation",
+        "multi_source_corroboration",
+        "paper_safety_route",
+        "quantum_nonlinear_review"
+      ],
+      "pattern_question": "Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
+      "pattern_thesis": "Oil: Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
+      "proof_credit_allowed": false,
+      "qualified_setup_created": false,
+      "qualitative_summary": "Energy disruption setup, supply shock confirmation, and risk-sizing context.",
+      "quantum_state": {
+        "gate_dependency_satisfied": true,
+        "hardware_submission_allowed": false,
+        "oracle_execution_status": "job_previews_only_no_oracle_run",
+        "provider_call_allowed": false
+      },
+      "source_packet_summary": {
+        "primary_lens_source_keys": [
+          "acled",
+          "gdelt",
+          "nasa_firms",
+          "ais_maritime",
+          "aviationstack",
+          "gps_jamming",
+          "fred",
+          "un_comtrade"
+        ],
+        "source_application": "all_qadam_sources_cross_scanned_for_this_pattern",
+        "source_count": 37,
+        "source_health": {
+          "degraded_source_count": 0,
+          "online_source_count": 32,
+          "research_usable_source_count": 32,
+          "signal_review_eligible_source_count": 27
+        }
+      },
+      "source_pattern_id": "edge-pattern:2d4f1d20e8d458244f",
+      "telegram_summary": {
+        "command_disabled": true,
+        "live_send_allowed": false,
+        "review_only": true,
+        "text": "Oil: watching CL=F, BZ=F, USO, XLE; needs thirty day persistence before guarded PaperOps review."
+      },
+      "trade_candidate_created": false,
+      "workflow_id": "qsase-pattern-workflow:8ef12f9e90acafdc2e1d"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.1",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "broker_write_allowed": false,
+      "broker_write_count": 0,
+      "evidence_scores": {
+        "ambiguity_score": 0.264,
+        "edge_readiness_score": 0.878,
+        "signal_review_coverage_score": 0.73,
+        "source_pressure_score": 0.851
+      },
+      "instrument_symbols": [
+        "SI=F",
+        "SLV",
+        "SIL",
+        "PAAS"
+      ],
+      "invalidation": "Invalidate if thirty day persistence remains unresolved, source pressure fades, or market confirmation fails.",
+      "linear_state": "source_price_lead_lag_or_divergence_observed",
+      "live_capital_enabled": false,
+      "market_sleeve": "Silver",
+      "missing_criteria": [
+        "thirty_day_persistence"
+      ],
+      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "nonlinear_state": "quantum_review_dependency_satisfied",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_review_eligible": false,
+      "paperops_handoff_candidate": false,
+      "paperops_state": "documented_research_pattern",
+      "passed_criteria": [
+        "all_source_price_cross_scan",
+        "lead_lag_or_divergence",
+        "llm_adversarial_review",
+        "market_confirmation",
+        "multi_source_corroboration",
+        "paper_safety_route",
+        "quantum_nonlinear_review"
+      ],
+      "pattern_question": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
+      "pattern_thesis": "Silver: Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
+      "proof_credit_allowed": false,
+      "qualified_setup_created": false,
+      "qualitative_summary": "Precious-metals stress, liquidity repricing, and breakout confirmation.",
+      "quantum_state": {
+        "gate_dependency_satisfied": true,
+        "hardware_submission_allowed": false,
+        "oracle_execution_status": "job_previews_only_no_oracle_run",
+        "provider_call_allowed": false
+      },
+      "source_packet_summary": {
+        "primary_lens_source_keys": [
+          "fred",
+          "bis",
+          "ecb",
+          "un_comtrade",
+          "usgs",
+          "rss",
+          "twitter_x",
+          "reddit"
+        ],
+        "source_application": "all_qadam_sources_cross_scanned_for_this_pattern",
+        "source_count": 37,
+        "source_health": {
+          "degraded_source_count": 0,
+          "online_source_count": 32,
+          "research_usable_source_count": 32,
+          "signal_review_eligible_source_count": 27
+        }
+      },
+      "source_pattern_id": "edge-pattern:675c51cd2e391ef945",
+      "telegram_summary": {
+        "command_disabled": true,
+        "live_send_allowed": false,
+        "review_only": true,
+        "text": "Silver: watching SI=F, SLV, SIL, PAAS; needs thirty day persistence before guarded PaperOps review."
+      },
+      "trade_candidate_created": false,
+      "workflow_id": "qsase-pattern-workflow:1d9a413fad1a098f7c19"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.2",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "broker_write_allowed": false,
+      "broker_write_count": 0,
+      "evidence_scores": {
+        "ambiguity_score": 0.264,
+        "edge_readiness_score": 0.878,
+        "signal_review_coverage_score": 0.73,
+        "source_pressure_score": 0.851
+      },
+      "instrument_symbols": [
+        "SMH",
+        "SOXX",
+        "NVDA",
+        "AMD",
+        "TSM",
+        "ASML"
+      ],
+      "invalidation": "Invalidate if thirty day persistence remains unresolved, source pressure fades, or market confirmation fails.",
+      "linear_state": "source_price_lead_lag_or_divergence_observed",
+      "live_capital_enabled": false,
+      "market_sleeve": "Semiconductors",
+      "missing_criteria": [
+        "thirty_day_persistence"
+      ],
+      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "nonlinear_state": "quantum_review_dependency_satisfied",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_review_eligible": false,
+      "paperops_handoff_candidate": false,
+      "paperops_state": "documented_research_pattern",
+      "passed_criteria": [
+        "all_source_price_cross_scan",
+        "lead_lag_or_divergence",
+        "llm_adversarial_review",
+        "market_confirmation",
+        "multi_source_corroboration",
+        "paper_safety_route",
+        "quantum_nonlinear_review"
+      ],
+      "pattern_question": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
+      "pattern_thesis": "Semiconductors: Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
+      "proof_credit_allowed": false,
+      "qualified_setup_created": false,
+      "qualitative_summary": "AI infrastructure, export-control, and supply-chain asymmetry.",
+      "quantum_state": {
+        "gate_dependency_satisfied": true,
+        "hardware_submission_allowed": false,
+        "oracle_execution_status": "job_previews_only_no_oracle_run",
+        "provider_call_allowed": false
+      },
+      "source_packet_summary": {
+        "primary_lens_source_keys": [
+          "gdelt",
+          "rss",
+          "sec_edgar",
+          "patents",
+          "github",
+          "un_comtrade",
+          "aviationstack",
+          "tradingview_mcp"
+        ],
+        "source_application": "all_qadam_sources_cross_scanned_for_this_pattern",
+        "source_count": 37,
+        "source_health": {
+          "degraded_source_count": 0,
+          "online_source_count": 32,
+          "research_usable_source_count": 32,
+          "signal_review_eligible_source_count": 27
+        }
+      },
+      "source_pattern_id": "edge-pattern:58a947672bc4bef280",
+      "telegram_summary": {
+        "command_disabled": true,
+        "live_send_allowed": false,
+        "review_only": true,
+        "text": "Semiconductors: watching SMH, SOXX, NVDA, AMD, TSM, ASML; needs thirty day persistence before guarded PaperOps review."
+      },
+      "trade_candidate_created": false,
+      "workflow_id": "qsase-pattern-workflow:623827ba16cf8e7df76c"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.3",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "broker_write_allowed": false,
+      "broker_write_count": 0,
+      "evidence_scores": {
+        "ambiguity_score": 0.264,
+        "edge_readiness_score": 0.878,
+        "signal_review_coverage_score": 0.73,
+        "source_pressure_score": 0.851
+      },
+      "instrument_symbols": [
+        "Polymarket CLOB",
+        "Kalshi events"
+      ],
+      "invalidation": "Invalidate if thirty day persistence remains unresolved, source pressure fades, or market confirmation fails.",
+      "linear_state": "source_price_lead_lag_or_divergence_observed",
+      "live_capital_enabled": false,
+      "market_sleeve": "Prediction markets",
+      "missing_criteria": [
+        "thirty_day_persistence"
+      ],
+      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "nonlinear_state": "quantum_review_dependency_satisfied",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_review_eligible": false,
+      "paperops_handoff_candidate": false,
+      "paperops_state": "documented_research_pattern",
+      "passed_criteria": [
+        "all_source_price_cross_scan",
+        "lead_lag_or_divergence",
+        "llm_adversarial_review",
+        "market_confirmation",
+        "multi_source_corroboration",
+        "paper_safety_route",
+        "quantum_nonlinear_review"
+      ],
+      "pattern_question": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
+      "pattern_thesis": "Prediction markets: Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
+      "proof_credit_allowed": false,
+      "qualified_setup_created": false,
+      "qualitative_summary": "Probability-mispricing research against source evidence and market proxies.",
+      "quantum_state": {
+        "gate_dependency_satisfied": true,
+        "hardware_submission_allowed": false,
+        "oracle_execution_status": "job_previews_only_no_oracle_run",
+        "provider_call_allowed": false
+      },
+      "source_packet_summary": {
+        "primary_lens_source_keys": [
+          "polymarket",
+          "kalshi",
+          "rss",
+          "twitter_x",
+          "reddit",
+          "acled",
+          "gdelt",
+          "telegram"
+        ],
+        "source_application": "all_qadam_sources_cross_scanned_for_this_pattern",
+        "source_count": 37,
+        "source_health": {
+          "degraded_source_count": 0,
+          "online_source_count": 32,
+          "research_usable_source_count": 32,
+          "signal_review_eligible_source_count": 27
+        }
+      },
+      "source_pattern_id": "edge-pattern:38fe4c75576c6bf36c",
+      "telegram_summary": {
+        "command_disabled": true,
+        "live_send_allowed": false,
+        "review_only": true,
+        "text": "Prediction markets: watching Polymarket CLOB, Kalshi events; needs thirty day persistence before guarded PaperOps review."
+      },
+      "trade_candidate_created": false,
+      "workflow_id": "qsase-pattern-workflow:a20b89efe4065c8fd381"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.4",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "broker_write_allowed": false,
+      "broker_write_count": 0,
+      "evidence_scores": {
+        "ambiguity_score": 0.264,
+        "edge_readiness_score": 0.878,
+        "signal_review_coverage_score": 0.73,
+        "source_pressure_score": 0.851
+      },
+      "instrument_symbols": [
+        "ITA",
+        "XAR",
+        "LMT",
+        "RTX",
+        "NOC"
+      ],
+      "invalidation": "Invalidate if thirty day persistence remains unresolved, source pressure fades, or market confirmation fails.",
+      "linear_state": "source_price_lead_lag_or_divergence_observed",
+      "live_capital_enabled": false,
+      "market_sleeve": "Defence stocks",
+      "missing_criteria": [
+        "thirty_day_persistence"
+      ],
+      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "nonlinear_state": "quantum_review_dependency_satisfied",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_review_eligible": false,
+      "paperops_handoff_candidate": false,
+      "paperops_state": "documented_research_pattern",
+      "passed_criteria": [
+        "all_source_price_cross_scan",
+        "lead_lag_or_divergence",
+        "llm_adversarial_review",
+        "market_confirmation",
+        "multi_source_corroboration",
+        "paper_safety_route",
+        "quantum_nonlinear_review"
+      ],
+      "pattern_question": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
+      "pattern_thesis": "Defence stocks: Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
+      "proof_credit_allowed": false,
+      "qualified_setup_created": false,
+      "qualitative_summary": "Geopolitical escalation, procurement, and second-order defence exposure.",
+      "quantum_state": {
+        "gate_dependency_satisfied": true,
+        "hardware_submission_allowed": false,
+        "oracle_execution_status": "job_previews_only_no_oracle_run",
+        "provider_call_allowed": false
+      },
+      "source_packet_summary": {
+        "primary_lens_source_keys": [
+          "acled",
+          "ucdp",
+          "gdelt",
+          "ais_maritime",
+          "aviationstack",
+          "gps_jamming",
+          "sec_edgar",
+          "stock_act"
+        ],
+        "source_application": "all_qadam_sources_cross_scanned_for_this_pattern",
+        "source_count": 37,
+        "source_health": {
+          "degraded_source_count": 0,
+          "online_source_count": 32,
+          "research_usable_source_count": 32,
+          "signal_review_eligible_source_count": 27
+        }
+      },
+      "source_pattern_id": "edge-pattern:0c2881fea17617c503",
+      "telegram_summary": {
+        "command_disabled": true,
+        "live_send_allowed": false,
+        "review_only": true,
+        "text": "Defence stocks: watching ITA, XAR, LMT, RTX, NOC; needs thirty day persistence before guarded PaperOps review."
+      },
+      "trade_candidate_created": false,
+      "workflow_id": "qsase-pattern-workflow:932e7ffb4f30ea5d98fb"
+    }
+  ],
+  "router_status": "qsase_strategy_router_degraded",
+  "router_why_not_trading_now": {
+    "artifact_type": "qsase_why_not_trading_now",
+    "authority": {
+      "broker_write_allowed": false,
+      "daily_drawdown_override_allowed": false,
+      "duplicate_exposure_override_allowed": false,
+      "execution_allowed": false,
+      "execution_approval_allowed": false,
+      "execution_approval_created": false,
+      "execution_intent_created": false,
+      "idempotency_override_allowed": false,
+      "live_broker_endpoint_allowed": false,
+      "live_capital_enabled": false,
+      "model_weight_update_allowed": false,
+      "model_weight_update_created": false,
+      "no_broker_or_execution_authority": true,
+      "paper_growth_trial_calendar_advance_allowed": false,
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "paper_proof_ledger_credit_allowed": false,
+      "paper_proof_ledger_write_allowed": false,
+      "paper_review_candidate_is_not_order": true,
+      "paperops_bypass_allowed": false,
+      "paperops_direct_call_allowed": false,
+      "paperops_handoff_created": false,
+      "policy_mutation_allowed": false,
+      "policy_mutation_created": false,
+      "proof_credit_allowed": false,
+      "qctrl_bypass_allowed": false,
+      "qualified_setup_created": false,
+      "risk_approval_allowed": false,
+      "risk_approval_created": false,
+      "risk_budget_override_allowed": false,
+      "risk_handoff_allowed": false,
+      "router_decision_only": true,
+      "simulated_elapsed_time_allowed": false,
+      "source_trust_update_allowed": false,
+      "source_trust_update_created": false,
+      "strategy_mutation_allowed": false,
+      "strategy_mutation_created": false,
+      "telegram_command_path_enabled": false,
+      "telegram_trade_command_enabled": false,
+      "trade_candidate_created": false,
+      "trade_candidate_creation_allowed": false
+    },
+    "blocking_layer": "strategy_router",
+    "category": "hold_missing_evidence",
+    "details": {
+      "hard_vetoes": [],
+      "paperops_why_not_trading_now": {
+        "blocking_layer": "paperops",
+        "category": "duplicate_or_idempotency_hold",
+        "details": {
+          "duplicate_submit_count": 4,
+          "fresh_eligible_submit_count": 0,
+          "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
+          "open_order_count": 14
+        },
+        "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
+        "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
+        "repair_required": false
+      },
+      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "soft_blockers": [
+        "akber_filter_artifact_degraded",
+        "learning_health:no_validated_edges_yet",
+        "missing_volume_or_flow_confirmation",
+        "model_stack:llm_provider_probes_artifact_missing",
+        "nonlinear_not_incremental",
+        "open_order_state_requires_downstream_duplicate_check",
+        "paperops_current_duplicate_hold_requires_distinct_idempotency_key",
+        "quantum_did_not_upgrade_research_confidence"
+      ]
+    },
+    "generated_at": "2026-06-29T06:57:28.456300+00:00",
+    "live_capital_enabled": false,
+    "next_allowed_action": "watch_for_missing_confirmation",
+    "paper_order_created": false,
+    "paper_review_candidate_count": 0,
+    "proof_credit_allowed": false,
+    "reason": "Required evidence is missing: akber_filter_artifact_degraded.",
+    "repair_required": false,
+    "schema_version": "qsase_strategy_router.v1",
+    "status": "why_not_trading_now_recorded"
+  },
+  "schema_version": "qsase_dashboard_view_model.v1",
+  "status": "pattern_to_paper_workflow_ready",
+  "telegram_candidate": {
+    "body": "Qadam pattern note\nState: 5 patterns documented; 0 ready for PaperOps\nReason: Oil, Silver, Semiconductors need thirty day persistence\nNext: keep shadow review; handoff only after gates pass\nOrder: none submitted",
+    "command_disabled": true,
+    "contains_broker_instruction": false,
+    "contains_command": false,
+    "message_class": "qsase_pattern_to_paper_workflow",
+    "review_only": true,
+    "telegram_command_path_enabled": false,
+    "telegram_live_send_allowed": false
+  },
+  "telegram_candidate_count": 1,
+  "trade_candidate_created": false,
+  "workflow_state": "research_only_waiting_for_validated_pattern",
+  "workflow_steps": [
+    {
+      "state": "5 patterns recognized from the source-price universe",
+      "step": "Recognize"
+    },
+    {
+      "state": "5 thesis records written with source and instrument lineage",
+      "step": "Document"
+    },
+    {
+      "state": "review-only Telegram candidate prepared",
+      "step": "Communicate"
+    },
+    {
+      "state": "0 guarded PaperOps handoff candidates; no direct orders",
+      "step": "Paper review"
+    }
+  ]
+}

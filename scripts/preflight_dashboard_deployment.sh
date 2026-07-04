@@ -39,6 +39,7 @@ run_with_retry 5 "$PYTHON_BIN" scripts/check_alpaca_paper_mirror.py --live
 "$PYTHON_BIN" scripts/check_paperops_completion_gaps.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
 "$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
+"$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
 "$PYTHON_BIN" scripts/check_source_evidence_acceptance.py
 "$PYTHON_BIN" scripts/check_reddit_narrative_proxy.py --live
 "$PYTHON_BIN" scripts/check_edge_tracker.py
@@ -58,6 +59,7 @@ run_with_retry 5 "$PYTHON_BIN" scripts/check_alpaca_paper_mirror.py --live
 "$PYTHON_BIN" scripts/check_daily_edge_learning_acceptance.py
 "$PYTHON_BIN" scripts/check_daily_edge_learning_safety_boundary.py
 "$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
+"$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_source_evidence_deployment_discipline.py
@@ -103,6 +105,7 @@ node scripts/check_dashboard_d11n_documentation_guide_alignment.js
 
 say "Checking status exporters"
 "$PYTHON_BIN" scripts/check_qsase_dashboard_view_model.py
+"$PYTHON_BIN" scripts/check_qsase_pattern_to_paper_workflow.py
 "$PYTHON_BIN" scripts/check_cockpit_status.py
 "$PYTHON_BIN" scripts/check_dashboard_portfolio_consistency.py
 "$PYTHON_BIN" scripts/check_live_bridge.py
