@@ -97,6 +97,7 @@ function assertStaticContract() {
         "data-qsase-section=\"pattern_intelligence_findings\"",
         "data-qsase-section=\"trade_intents\"",
         "data-qsase-section=\"router_paperops_gate\"",
+        "data-qsase-section=\"pulse_terminal\"",
         "Portfolio Value &amp; Return",
         "Current Portfolio",
         "Trading History",
@@ -105,10 +106,19 @@ function assertStaticContract() {
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
+        "Qadam Pulse Terminal",
         "Public truth layer",
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=",
+        "pulse_terminal",
+        "Python COO",
+        "Local LLM",
+        "Frontier LLM",
+        "Head of Quant",
+        "QADAM HEARTBEAT",
+        "matrix-rain",
+        "qsase-terminal-line",
         "current_portfolio",
         "pattern_intelligence_findings",
         "trade markers are read-only history, not proof credit",
@@ -150,13 +160,18 @@ function assertStaticContract() {
         ".qsase-callout-head",
         ".qsase-workflow-message",
         ".qsase-dashboard-v2",
-        ".qsase-detail-ledger"
+        ".qsase-detail-ledger",
+        ".qsase-pulse-terminal",
+        ".qsase-terminal-frame",
+        ".matrix-rain",
+        ".qsase-terminal-line",
+        "@keyframes qadamMatrixFall"
     ], "QSASE stylesheet");
     assert(!css.includes(".qsase-jump-row"), "QSASE stylesheet still styles removed jump row");
 
     assertIncludesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-guide-markers-v1",
+        "/dashboard.js?v=20260705-pulse-terminal-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -196,7 +211,8 @@ async function assertRenderedContract() {
         "Trading Strategy Universe",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Final Paper-Trade Gate"
+        "Final Paper-Trade Gate",
+        "Qadam Pulse Terminal"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
     [
@@ -207,7 +223,8 @@ async function assertRenderedContract() {
         "trading_strategy_universe",
         "pattern_intelligence_findings",
         "trade_intents",
-        "router_paperops_gate"
+        "router_paperops_gate",
+        "pulse_terminal"
     ].forEach((section) => {
         assert(stageHtml.includes(`data-qsase-section="${section}"`), `rendered QSASE dashboard missing section ${section}`);
     });
@@ -220,7 +237,8 @@ async function assertRenderedContract() {
         "Trading Strategy Universe",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Final Paper-Trade Gate"
+        "Final Paper-Trade Gate",
+        "Qadam Pulse Terminal"
     ].map((label) => stageHtml.indexOf(label));
     assert(order.every((index) => index >= 0), "rendered QSASE dashboard missing required labels");
     assert(order.every((index, position) => position === 0 || index > order[position - 1]), "rendered QSASE dashboard order is not money-first");
@@ -263,6 +281,13 @@ async function assertRenderedContract() {
         "How to read pattern recognition",
         "Guide: How to read pattern recognition",
         "What a trade intent means",
+        "How to read the pulse terminal",
+        "QADAM HEARTBEAT",
+        "Python COO",
+        "Local LLM",
+        "Frontier LLM",
+        "Head of Quant",
+        "Public thought stream refreshes with the dashboard status file",
         "What blocks the trade",
         "Technical evidence ledger",
         "These sources can inform hypotheses, but none of them can place trades."
