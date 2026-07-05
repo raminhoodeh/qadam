@@ -6332,6 +6332,7 @@ function buildQsaseDashboardModel(status = {}) {
         pattern_lab: sections.pattern_lab || {},
         trade_intents: sections.trade_intents || {},
         pattern_to_paper_workflow: sections.pattern_to_paper_workflow || {},
+        pattern_intelligence: sections.pattern_intelligence || {},
         learning_ledger: sections.learning_ledger || {},
         repair_queue: sections.repair_queue || {},
         router: sections.router || {},
@@ -12397,37 +12398,121 @@ function renderQsaseStrategyUniverse(qsase = {}) {
 }
 
 function renderQsasePatternLab(qsase = {}) {
-    const section = qsase.pattern_lab || {};
-    const allRows = [...asArray(section.linear_rows), ...asArray(section.nonlinear_rows)];
-    const rows = allRows.slice(0, 6);
-    const hiddenRows = allRows.slice(6, 24);
+    const section = qsase.pattern_intelligence || {};
+    const diagnostics = section.technical_diagnostics || {};
+    const legacyLab = qsase.pattern_lab || {};
+    const findings = asArray(section.findings);
+    const rows = findings.slice(0, 5);
+    const hiddenRows = findings.slice(5, 20);
+    const humanBrief = section.human_brief || {};
+    const stageCounts = section.stage_counts || {};
+    const technicalRows = [
+        ...asArray(diagnostics.linear_rows || legacyLab.linear_rows),
+        ...asArray(diagnostics.nonlinear_rows || legacyLab.nonlinear_rows),
+        ...asArray(diagnostics.quantum_rows || legacyLab.quantum_rows)
+    ];
+    const summary = section.summary || `${findings.length} pattern findings available. These are research findings, not orders.`;
     return `
-        <section id="qsase-patterns" class="qsase-section" data-qsase-section="pattern_opportunity_lab">
-            ${renderQsaseSectionHeader("Pattern & Opportunity Lab", `${section.linear_pattern_count || 0} linear · ${section.nonlinear_pattern_count || 0} nonlinear · ${section.quantum_review_count || 0} quantum reviews`, section.status, rows.length ? "online" : "pending")}
-            <div class="qsase-card-grid pattern">
-                ${rows.map((row) => `
-                    <article class="qsase-record-card ${statusClass(row.state)}">
-                        <span>${qsaseHtmlText(row.pattern_type)} · ${qsaseHtmlText(row.instrument)}</span>
-                        <strong>${qsaseHtmlText(row.score ?? "score pending")}</strong>
-                        <p>${qsaseHtmlText(row.state || row.reason)} ${row.linear_baseline_beaten === false ? "Linear baseline did not add enough confidence yet." : ""}</p>
-                        <small>Strategy Foundry: ${row.candidate_for_strategy_foundry ? "candidate" : "not yet"} · paper order allowed: ${row.paper_order_allowed ? "yes" : "no"}</small>
-                    </article>
-                `).join("") || `<article class="qsase-record-card pending"><strong>No pattern rows exported</strong></article>`}
+        <section id="qsase-patterns" class="qsase-section qsase-pattern-intelligence" data-qsase-section="pattern_intelligence_findings">
+            ${renderQsaseSectionHeader("Pattern Recognition Findings", summary, section.status, rows.length ? "pending" : "degraded")}
+            <article class="qsase-pattern-brief">
+                <span>Qadam's current read</span>
+                <p>${qsaseHtmlText(humanBrief.body || "Qadam has not exported a human-readable pattern brief yet.").replace(/\n/g, "<br><br>")}</p>
+                <small>Dashboard-only explanation. No Telegram command path, broker instruction, paper order, or live-capital authority.</small>
+            </article>
+            <div class="qsase-readiness-ladder" aria-label="Pattern readiness ladder">
+                ${[
+                    ["Found", stageCounts.found || 0],
+                    ["Documented", stageCounts.documented || 0],
+                    ["Validated", stageCounts.validated || 0],
+                    ["Trade candidate", stageCounts.trade_candidate || 0],
+                    ["Paper-ready", stageCounts.paper_ready || 0]
+                ].map(([label, count]) => `
+                    <div>
+                        <span>${qsaseHtmlText(label)}</span>
+                        <strong>${qsaseHtmlText(count)}</strong>
+                    </div>
+                `).join("")}
+            </div>
+            <div class="qsase-pattern-finding-list">
+                ${rows.map((row) => renderQsasePatternFinding(row)).join("") || `<article class="qsase-record-card pending"><strong>No pattern findings exported</strong><p>Qadam will not invent findings when the pattern engine has not written a finding artifact.</p></article>`}
             </div>
             ${hiddenRows.length ? `
                 <details class="qsase-detail-ledger">
-                    <summary>Show ${hiddenRows.length} more pattern records</summary>
+                    <summary>Show ${hiddenRows.length} more ranked findings</summary>
                     <ul class="qsase-compact-list">
                         ${hiddenRows.map((row) => `
-                            <li class="${statusClass(row.state)}">
-                                <strong>${qsaseHtmlText(row.pattern_type)} · ${qsaseHtmlText(row.instrument)}</strong>
-                                <span>${qsaseHtmlText(row.state || row.reason)} · score ${qsaseHtmlText(row.score ?? "pending")}</span>
+                            <li class="${statusClass(row.stage_key)}">
+                                <strong>${qsaseHtmlText(row.market_affected)} · ${qsaseHtmlText(row.stage_label)}</strong>
+                                <span>${qsaseHtmlText(row.what_blocks_trade)} · next: ${qsaseHtmlText(row.next_action)}</span>
                             </li>
                         `).join("")}
                     </ul>
                 </details>
             ` : ""}
+            <details class="qsase-detail-ledger">
+                <summary>Technical evidence ledger: ${diagnostics.linear_pattern_count || legacyLab.linear_pattern_count || 0} linear checks, ${diagnostics.nonlinear_pattern_count || legacyLab.nonlinear_pattern_count || 0} nonlinear checks, ${diagnostics.quantum_review_count || legacyLab.quantum_review_count || 0} nonlinear review records</summary>
+                <ul class="qsase-compact-list">
+                    ${technicalRows.slice(0, 24).map((row) => `
+                        <li class="${statusClass(row.state || row.quantum_review_state || row.recommendation)}">
+                            <strong>${qsaseHtmlText(row.pattern_type || "nonlinear quantum review")} · ${qsaseHtmlText(row.instrument || row.backend || row.quantum_mode, "system review")}</strong>
+                            <span>${qsaseHtmlText(row.state || row.quantum_review_state || row.recommendation || row.reason)} · score ${qsaseHtmlText(row.score ?? "not scored")}</span>
+                        </li>
+                    `).join("") || `<li><strong>No technical ledger rows exported</strong></li>`}
+                </ul>
+            </details>
         </section>
+    `;
+}
+
+function renderQsasePatternFinding(row = {}) {
+    const badges = asArray(row.rank_badges);
+    const sources = asArray(row.source_chain);
+    const instruments = asArray(row.instrument_symbols);
+    return `
+        <article class="qsase-pattern-finding ${statusClass(row.stage_key)}">
+            <div class="qsase-pattern-finding-title">
+                <div>
+                    <span>${badges.length ? qsaseHtmlText(badges.join(" · ")) : "ranked pattern finding"}</span>
+                    <strong>${qsaseHtmlText(row.title || row.market_affected || "Pattern finding")}</strong>
+                </div>
+                <p>${qsaseHtmlText(row.stage_label)} · ${qsaseHtmlText(row.confidence_label)}</p>
+            </div>
+            <div class="qsase-pattern-flow">
+                <div>
+                    <dt>Detected signal</dt>
+                    <dd>${qsaseHtmlText(row.detected_signal)}</dd>
+                </div>
+                <div>
+                    <dt>Market affected</dt>
+                    <dd>${qsaseHtmlText(row.market_affected)}${instruments.length ? ` · ${qsaseHtmlText(instruments.join(", "))}` : ""}</dd>
+                </div>
+                <div>
+                    <dt>Evidence</dt>
+                    <dd>${qsaseHtmlText(row.source_signal_summary)} ${qsaseHtmlText(row.price_relationship)}</dd>
+                </div>
+                <div>
+                    <dt>What Qadam thinks</dt>
+                    <dd>${qsaseHtmlText(row.what_qadam_thinks)}</dd>
+                </div>
+                <div>
+                    <dt>What would confirm it</dt>
+                    <dd>${qsaseHtmlText(row.what_would_confirm)}</dd>
+                </div>
+                <div>
+                    <dt>What blocks the trade</dt>
+                    <dd>${qsaseHtmlText(row.what_blocks_trade)}</dd>
+                </div>
+                <div>
+                    <dt>Next action</dt>
+                    <dd>${qsaseHtmlText(row.next_action)}</dd>
+                </div>
+            </div>
+            <div class="qsase-market-pill-row" aria-label="Pattern source chain">
+                ${sources.slice(0, 10).map((source) => `<span>${qsaseHtmlText(source)}</span>`).join("") || `<span>source chain pending</span>`}
+            </div>
+            <small>${qsaseHtmlText(row.quantum_review?.plain_english_result, "Nonlinear review status not exported.")}</small>
+        </article>
     `;
 }
 
@@ -12473,59 +12558,7 @@ function renderQsaseTradeIntents(qsase = {}) {
 }
 
 function renderQsasePatternToPaperWorkflow(qsase = {}) {
-    const section = qsase.pattern_to_paper_workflow || {};
-    const records = asArray(section.records);
-    const rows = records.slice(0, 5);
-    const steps = asArray(section.workflow_steps);
-    const telegram = section.telegram_candidate || {};
-    const handoffCount = section.paperops_handoff_candidate_count || 0;
-    const tone = handoffCount ? "online" : (records.length ? "pending" : "degraded");
-    return `
-        <section id="qsase-pattern-workflow" class="qsase-section qsase-pattern-workflow ${statusClass(section.status)}" data-qsase-section="pattern_to_paper_workflow">
-            ${renderQsaseSectionHeader("Pattern-To-Paper Workflow", `${section.recognized_pattern_count || rows.length || 0} documented patterns · ${handoffCount} PaperOps handoff candidates`, section.workflow_state || section.status, tone)}
-            <div class="qsase-final-grid">
-                ${renderMetric("Recognized", section.recognized_pattern_count || 0)}
-                ${renderMetric("Documented", section.documented_thesis_count || 0)}
-                ${renderMetric("Telegram notes", section.telegram_candidate_count || 0)}
-                ${renderMetric("Handoff candidates", handoffCount)}
-                ${renderMetric("Orders created", section.paper_order_created_count || 0)}
-                ${renderMetric("Broker writes", section.broker_write_count || 0)}
-            </div>
-            <div class="qsase-card-grid pattern">
-                ${steps.map((step) => `
-                    <article class="qsase-record-card ${statusClass(step.state)}">
-                        <span>${qsaseHtmlText(step.step, "Step")}</span>
-                        <strong>${qsaseHtmlText(step.state, "Not recorded")}</strong>
-                    </article>
-                `).join("")}
-            </div>
-            ${telegram.body ? `
-                <article class="qsase-record-card pending qsase-workflow-message">
-                    <span>Telegram candidate</span>
-                    <strong>Review-only pattern note</strong>
-                    <p>${qsaseHtmlText(telegram.body).replace(/\n/g, "<br>")}</p>
-                    <small>${telegram.telegram_live_send_allowed ? "Live send allowed" : "Dashboard-only unless notification gates allow send"} · ${telegram.telegram_command_path_enabled ? "commands enabled" : "commands disabled"}</small>
-                </article>
-            ` : ""}
-            <div class="qsase-card-grid pattern">
-                ${rows.map((row) => `
-                    <article class="qsase-record-card ${statusClass(row.paperops_state)}">
-                        <span>${qsaseHtmlText(row.market_sleeve)} · ${qsaseHtmlText(asArray(row.instrument_symbols).join(", "), "mapped instruments")}</span>
-                        <strong>${qsaseHtmlText(row.pattern_question, "Pattern question pending")}</strong>
-                        <p>${qsaseHtmlText(row.qualitative_summary, "Qualitative summary pending")}</p>
-                        <dl>
-                            <div><dt>Linear</dt><dd>${qsaseHtmlText(row.linear_state)}</dd></div>
-                            <div><dt>Nonlinear</dt><dd>${qsaseHtmlText(row.nonlinear_state)}</dd></div>
-                            <div><dt>Quantum</dt><dd>${row.quantum_state?.gate_dependency_satisfied ? "review dependency met" : "review pending"}</dd></div>
-                            <div><dt>Next</dt><dd>${qsaseHtmlText(row.next_allowed_action)}</dd></div>
-                        </dl>
-                        <small>${qsaseHtmlText(row.invalidation)} · ${row.paperops_handoff_candidate ? "PaperOps handoff candidate" : "Not ready for PaperOps handoff"}</small>
-                    </article>
-                `).join("") || `<article class="qsase-record-card pending"><strong>No pattern workflow records exported</strong><p>Pattern-to-paper workflow is explicit and will not invent setups.</p></article>`}
-            </div>
-            <p class="qsase-boundary-note">${qsaseHtmlText(section.boundary || "Pattern workflow is dashboard visibility only. No order authority.")}</p>
-        </section>
-    `;
+    return "";
 }
 
 function renderQsaseRouterPaperOps(qsase = {}) {

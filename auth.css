@@ -11558,6 +11558,149 @@ body.qadam-dashboard-page .qsase-workflow-message {
     margin: var(--qadam-space-4) 0;
 }
 
+body.qadam-dashboard-page .qsase-pattern-intelligence {
+    border-left-color: rgba(var(--qadam-rgb-watch), 0.38);
+}
+
+body.qadam-dashboard-page .qsase-pattern-brief,
+body.qadam-dashboard-page .qsase-pattern-finding {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: clamp(1rem, 2vw, 1.4rem);
+}
+
+body.qadam-dashboard-page .qsase-pattern-brief {
+    border-left: 5px solid var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qsase-pattern-brief span,
+body.qadam-dashboard-page .qsase-pattern-finding-title span,
+body.qadam-dashboard-page .qsase-pattern-flow dt {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-pattern-brief p {
+    color: var(--qadam-color-heading);
+    font-size: clamp(1rem, 1.5vw, 1.18rem);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+    max-width: 78rem;
+}
+
+body.qadam-dashboard-page .qsase-pattern-brief small,
+body.qadam-dashboard-page .qsase-pattern-finding small {
+    color: var(--qadam-color-muted);
+    line-height: 1.45;
+}
+
+body.qadam-dashboard-page .qsase-readiness-ladder {
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-readiness-ladder div {
+    background: rgba(var(--qadam-rgb-info), 0.035);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.35rem;
+    min-height: 5.5rem;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-readiness-ladder span {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-readiness-ladder strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 2rem;
+    font-weight: 500;
+    line-height: 1;
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding-list {
+    display: grid;
+    gap: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding {
+    border-left: 5px solid rgba(var(--qadam-rgb-watch), 0.58);
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding.validated,
+body.qadam-dashboard-page .qsase-pattern-finding.paper_ready {
+    border-left-color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding.blocked,
+body.qadam-dashboard-page .qsase-pattern-finding.degraded {
+    border-left-color: var(--qadam-color-risk);
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding-title {
+    align-items: start;
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.26fr);
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding-title div {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding-title strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.35rem, 2.4vw, 2rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+}
+
+body.qadam-dashboard-page .qsase-pattern-finding-title p {
+    color: var(--qadam-color-muted);
+    line-height: 1.35;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-pattern-flow {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-pattern-flow div {
+    background: rgba(var(--qadam-rgb-info), 0.03);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.45rem;
+    min-height: 10rem;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-pattern-flow dd {
+    color: var(--qadam-color-heading);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
 body.qadam-dashboard-page .qsase-category-grid {
     grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
@@ -11892,6 +12035,8 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .qsase-dashboard-hero,
     body.qadam-dashboard-page .qsase-money-hero,
     body.qadam-dashboard-page .qsase-two-column,
+    body.qadam-dashboard-page .qsase-pattern-finding-title,
+    body.qadam-dashboard-page .qsase-pattern-flow,
     body.qadam-dashboard-page .qsase-source-category-row > summary,
     body.qadam-dashboard-page .qsase-trade-event,
     body.qadam-dashboard-page .mission-flow-lifecycle,
@@ -11900,6 +12045,10 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .mission-source-category-grid,
     body.qadam-dashboard-page .mission-learning-definitions {
         grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-readiness-ladder {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -11943,6 +12092,7 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .mission-paper-columns,
     body.qadam-dashboard-page .qsase-money-metrics,
     body.qadam-dashboard-page .qsase-final-grid,
+    body.qadam-dashboard-page .qsase-readiness-ladder,
     body.qadam-dashboard-page .qsase-kpi-row.stage7-kpi-strip.compact,
     body.qadam-dashboard-page .qsase-record-card dl,
     body.qadam-dashboard-page .mission-hypothesis-flow,
