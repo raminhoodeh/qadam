@@ -12216,13 +12216,13 @@ const QSASE_GUIDE_MARKERS = {
             ["Read-only", "It cannot execute commands, create orders, or reveal private model reasoning."]
         ]
     },
-    public_truth_layer: {
-        title: "Why this note matters",
-        summary: "This translates broker state into human language, especially when there are accepted paper orders but no filled holdings yet.",
+    paper_fund_status: {
+        title: "How to read paper fund status",
+        summary: "This is the single public explanation of Qadam's paper account. Filled holdings and pending paper orders are deliberately kept separate.",
         rows: [
-            ["Truth source", "Read-only Alpaca paper mirror plus Qadam's public snapshot."],
-            ["Freshness", "How recently the mirror was exported."],
-            ["No commands", "This layer explains state; it cannot change it."]
+            ["Filled holdings", "Positions Alpaca has reported as filled."],
+            ["Pending orders", "Accepted paper orders waiting for broker fill."],
+            ["No commands", "This dashboard explains state; it cannot place or cancel orders."]
         ]
     }
 };
@@ -12424,25 +12424,38 @@ function qsasePublicFundSummary(qsase = {}) {
     const brokerOpenOrders = firstPresent(portfolio.open_order_count, pendingOrders.length, 0);
     const allOrders = firstPresent(portfolio.order_count, qsase.trading_history?.paper_order_mirror_row_count, pendingOrders.length, 0);
     const closedTrades = firstPresent(portfolio.closed_trade_count, qsase.trading_history?.closed_trade_row_count, 0);
-    const value = formatMoney(portfolio.current_value_gbp, normaliseCurrencyCode(portfolio.display_currency || "USD"));
-    const orderSentence = brokerOpenOrders
-        ? `${brokerOpenOrders} paper orders are open or accepted and waiting for Alpaca paper fill.`
-        : "No accepted paper order is waiting for broker fill right now.";
-    const positionSentence = openPositions
-        ? `${openPositions} filled paper position${openPositions === 1 ? " is" : "s are"} open.`
-        : "No filled paper positions are open yet.";
+    const currency = normaliseCurrencyCode(portfolio.display_currency || "USD");
+    const value = formatMoney(portfolio.current_value_gbp, currency);
+    const freshness = portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "freshness not exported";
+    const consistency = qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported";
+    const headline = brokerOpenOrders
+        ? `${brokerOpenOrders} paper orders are waiting for Alpaca fill`
+        : openPositions
+            ? `${openPositions} filled holding${openPositions === 1 ? "" : "s"} open`
+            : "No filled holdings yet";
+    const plainExplanation = brokerOpenOrders
+        ? openPositions
+            ? `${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? " is" : "s are"} still waiting for fill. Filled holdings remain separate.`
+            : `There are no filled holdings yet because Alpaca has accepted ${brokerOpenOrders} paper order${brokerOpenOrders === 1 ? "" : "s"} but has not reported ${brokerOpenOrders === 1 ? "a fill" : "fills"}.`
+        : openPositions
+            ? "Filled positions are being tracked from the read-only Alpaca paper mirror."
+            : "The fund is flat right now: no filled holdings and no accepted paper order waiting for fill.";
+    const detailNote = brokerOpenOrders
+        ? "Accepted paper orders stay in Trading History until Alpaca reports a filled position. They are not counted as holdings before fill."
+        : "Current holdings come only from filled positions reported by the read-only Alpaca paper mirror.";
     return {
         open_positions: openPositions,
         pending_orders: brokerOpenOrders,
         all_orders: allOrders,
         closed_trades: closedTrades,
-        headline: brokerOpenOrders
-            ? `${brokerOpenOrders} paper orders waiting for fill`
-            : openPositions
-                ? `${openPositions} filled paper positions open`
-                : "No filled positions; waiting for the next fill or setup",
-        summary: `${positionSentence} ${orderSentence} The paper account is ${value}; ${closedTrades} paper trades are closed in the mirror.`,
-        freshness: portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "freshness not exported"
+        currency,
+        value,
+        headline,
+        plain_explanation: plainExplanation,
+        detail_note: detailNote,
+        freshness,
+        consistency,
+        freshness_line: `Mirror freshness: ${freshness} · portfolio consistency: ${consistency}.`
     };
 }
 
@@ -12488,20 +12501,20 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
     const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
     const headline = mismatch
         ? `${reportedCount} broker-reported · ${rowCount} exported rows`
-        : `${rowCount} open positions${brokerOpenOrders ? ` · ${brokerOpenOrders} pending paper orders` : ""}`;
-    const emptyTitle = mismatch ? "Position mismatch" : "No filled open positions yet";
+        : `${rowCount} filled holding${rowCount === 1 ? "" : "s"}`;
+    const emptyTitle = mismatch ? "Position mismatch" : "No filled holdings yet";
     const emptySummary = mismatch
         ? "Broker and dashboard disagree"
         : brokerOpenOrders
-            ? `${brokerOpenOrders} paper orders are accepted or open and waiting for broker fill`
+            ? "Pending orders live in Trading History"
             : "Flat portfolio";
     const emptyDetail = brokerOpenOrders
         ? "Accepted paper orders are shown in Trading History until Alpaca reports a filled position. They are not counted as holdings before fill."
         : "The current-portfolio artifact is explicit, read-only, and does not fabricate holdings.";
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
-            ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
-            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "Open positions come from the read-only Alpaca paper position mirror. Accepted paper orders are pending activity, not holdings, until the broker reports a fill.")}</p>
+            ${renderQsaseSectionHeader("Current Holdings", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
+            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "This section shows filled positions only. Pending orders live in Trading History until Alpaca reports a fill.")}</p>
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
@@ -12885,7 +12898,7 @@ function qsasePulseNodeRows(qsase = {}) {
             node: "Python COO",
             stream: "status export",
             tone: "online",
-            line: `Public snapshot refreshed at ${generatedAt}; ${fundSummary.pending_orders} paper orders wait for Alpaca fill.`
+            line: `Public snapshot refreshed at ${generatedAt}; dashboard state remains read-only.`
         },
         {
             node: "Local LLM",
@@ -12921,7 +12934,7 @@ function qsasePulseNodeRows(qsase = {}) {
             node: "Paper Desk",
             stream: "Alpaca paper mirror",
             tone: fundSummary.pending_orders ? "pending" : "online",
-            line: `${fundSummary.open_positions} filled positions, ${fundSummary.pending_orders} pending paper orders, ${fundSummary.closed_trades} closed paper trades.`
+            line: `Alpaca mirror is ${qsaseHumanText(fundSummary.freshness)}; pending orders are watched for broker fill before holdings appear.`
         },
         {
             node: "Learning Loop",
@@ -12977,7 +12990,6 @@ function renderQsasePulseTerminal(qsase = {}) {
 
 function renderQsaseDashboardVisibility(qsase = {}) {
     const portfolio = qsase.dashboard_portfolio || {};
-    const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
     const router = qsase.router || {};
     const gate = qsase.paperops_gate || {};
     const decision = qsaseRouterHeadline(router, gate);
@@ -13005,28 +13017,29 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                     <h2>Qadam Paper Fund</h2>
                     <p>Read-only public view of the paper account, evidence network, watched markets, strategy families, active patterns, and final paper-trade gate.</p>
                 </div>
-                <div class="qsase-status-card">
-                    <span>Paper account state</span>
-                    <strong>${qsaseHtmlText(fundSummary.headline)}</strong>
-                    <p>${qsaseHtmlText(fundSummary.summary)} Current gate: ${qsaseHtmlText(decision)}.</p>
-                </div>
             </div>
-            <article class="qsase-public-summary">
-                <div class="qsase-callout-head">
-                    <span>Public truth layer</span>
-                    ${renderQsaseGuideMarker("public_truth_layer")}
+            <section id="qsase-fund-status" class="qsase-section qsase-fund-status" data-qsase-section="paper_fund_status">
+                ${renderQsaseSectionHeader("Paper Fund Status", fundSummary.headline, "read-only Alpaca paper mirror", pendingPaperOrderCount ? "pending" : "online", "paper_fund_status")}
+                <article class="qsase-fund-context">
+                    <div>
+                        <span>What this means</span>
+                        <p>${qsaseHtmlText(fundSummary.plain_explanation)}</p>
+                    </div>
+                    <small>${qsaseHtmlText(fundSummary.freshness_line)}</small>
+                </article>
+                <div class="stage7-kpi-strip compact qsase-kpi-row" aria-label="Paper fund summary">
+                    ${renderMetric("Paper value", fundSummary.value)}
+                    ${renderMetric("Filled holdings", openPositionCount)}
+                    ${renderMetric("Pending orders", pendingPaperOrderCount)}
+                    ${renderMetric("Closed trades", fundSummary.closed_trades)}
+                    ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
+                    ${renderMetric("Final gate", decisionLabel)}
                 </div>
-                <p>${qsaseHtmlText(fundSummary.summary)} This means “0 open positions” is not inactivity; it means Alpaca has not reported filled holdings from the accepted paper orders yet.</p>
-                <small>Mirror freshness: ${qsaseHtmlText(fundSummary.freshness)} · portfolio consistency: ${qsaseHtmlText(qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported")}.</small>
-            </article>
-            <div class="stage7-kpi-strip compact qsase-kpi-row" aria-label="Paper fund summary">
-                ${renderMetric("Paper value", formatMoney(portfolio.current_value_gbp, currency))}
-                ${renderMetric("Open positions", openPositionCount)}
-                ${renderMetric("Pending orders", pendingPaperOrderCount)}
-                ${renderMetric("Closed trades", portfolio.closed_trade_count || qsase.trading_history?.closed_trade_row_count || 0)}
-                ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
-                ${renderMetric("Decision", decisionLabel)}
-            </div>
+                <details class="qsase-detail-ledger qsase-fund-detail">
+                    <summary>Why pending orders are not holdings</summary>
+                    <p>${qsaseHtmlText(fundSummary.detail_note)} Current gate: ${qsaseHtmlText(decision)}.</p>
+                </details>
+            </section>
             ${renderQsasePortfolioValue(qsase)}
             ${renderQsaseCurrentPortfolio(qsase)}
             ${renderQsaseTradingHistory(qsase)}

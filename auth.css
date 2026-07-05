@@ -11530,37 +11530,6 @@ body.qadam-dashboard-page .qsase-final-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body.qadam-dashboard-page .qsase-status-card {
-    align-self: stretch;
-    background: rgba(var(--qadam-rgb-info), 0.06);
-    border: 1px solid rgba(var(--qadam-rgb-info), 0.2);
-    display: grid;
-    gap: 0.55rem;
-    padding: clamp(1rem, 2vw, 1.3rem);
-}
-
-body.qadam-dashboard-page .qsase-status-card span,
-body.qadam-dashboard-page .qsase-status-card p {
-    color: var(--qadam-color-muted);
-    margin: 0;
-}
-
-body.qadam-dashboard-page .qsase-status-card span {
-    font-family: var(--qadam-font-ui);
-    font-size: 0.72rem;
-    font-weight: 850;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
-body.qadam-dashboard-page .qsase-status-card strong {
-    color: var(--qadam-color-heading);
-    font-family: var(--qadam-font-display);
-    font-size: clamp(1.6rem, 3vw, 2.35rem);
-    font-weight: 500;
-    line-height: 1;
-}
-
 body.qadam-dashboard-page .qsase-kpi-row.stage7-kpi-strip.compact {
     grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
@@ -11621,7 +11590,7 @@ body.qadam-dashboard-page .qsase-workflow-message {
     margin: var(--qadam-space-4) 0;
 }
 
-body.qadam-dashboard-page .qsase-public-summary,
+body.qadam-dashboard-page .qsase-fund-context,
 body.qadam-dashboard-page .qsase-pattern-priority {
     background: var(--qadam-color-canvas);
     border: 1px solid var(--qadam-color-rule);
@@ -11632,7 +11601,7 @@ body.qadam-dashboard-page .qsase-pattern-priority {
     padding: clamp(1rem, 2vw, 1.35rem);
 }
 
-body.qadam-dashboard-page .qsase-public-summary span,
+body.qadam-dashboard-page .qsase-fund-context span,
 body.qadam-dashboard-page .qsase-pattern-priority span,
 body.qadam-dashboard-page .qsase-pattern-priority dt {
     color: var(--qadam-color-muted);
@@ -11643,7 +11612,7 @@ body.qadam-dashboard-page .qsase-pattern-priority dt {
     text-transform: uppercase;
 }
 
-body.qadam-dashboard-page .qsase-public-summary p,
+body.qadam-dashboard-page .qsase-fund-context p,
 body.qadam-dashboard-page .qsase-pattern-priority p {
     color: var(--qadam-color-heading);
     font-size: clamp(1rem, 1.5vw, 1.15rem);
@@ -11651,7 +11620,7 @@ body.qadam-dashboard-page .qsase-pattern-priority p {
     margin: 0;
 }
 
-body.qadam-dashboard-page .qsase-public-summary small,
+body.qadam-dashboard-page .qsase-fund-context small,
 body.qadam-dashboard-page .qsase-pattern-priority small {
     color: var(--qadam-color-muted);
     line-height: 1.45;
@@ -11711,8 +11680,21 @@ body.qadam-dashboard-page .qsase-pattern-priority div {
 }
 
 body.qadam-dashboard-page .qsase-pattern-priority > .qsase-callout-head,
-body.qadam-dashboard-page .qsase-public-summary > .qsase-callout-head {
+body.qadam-dashboard-page .qsase-fund-context > .qsase-callout-head {
     align-items: start;
+}
+
+body.qadam-dashboard-page .qsase-fund-status {
+    border-left-color: rgba(var(--qadam-rgb-ok), 0.46);
+}
+
+body.qadam-dashboard-page .qsase-fund-context {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+body.qadam-dashboard-page .qsase-fund-context small {
+    text-align: right;
 }
 
 body.qadam-dashboard-page .qsase-pattern-priority dt,
@@ -12548,6 +12530,14 @@ body.qadam-dashboard-page .qsase-boundary-note {
 
     body.qadam-dashboard-page .qsase-terminal-line {
         grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-fund-context {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-fund-context small {
+        text-align: left;
     }
 
     body.qadam-dashboard-page .qsase-terminal-frame {
