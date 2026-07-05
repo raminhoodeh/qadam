@@ -381,6 +381,7 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "pattern_lab": "qsase_dashboard_pattern_lab.json",
     "trade_intents": "qsase_dashboard_trade_intents.json",
     "pattern_to_paper_workflow": "qsase_pattern_to_paper_workflow.json",
+    "pattern_intelligence": "qsase_pattern_intelligence.json",
     "learning_ledger": "qsase_dashboard_learning_ledger.json",
     "repair_queue": "qsase_dashboard_repair_queue.json",
     "router": "qsase_strategy_router_decisions.json",

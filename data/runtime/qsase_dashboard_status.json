@@ -86,8 +86,8 @@
     "boundary": "Canonical public dashboard portfolio. It mirrors Alpaca paper account state and cannot create, cancel, replace, close, or approve orders.",
     "broker": "alpaca_paper_readonly",
     "broker_mirror_freshness": {
-      "age_seconds": 289,
-      "observed_at": "2026-07-05T10:44:32.155724+00:00",
+      "age_seconds": 267,
+      "observed_at": "2026-07-05T11:13:57.463132+00:00",
       "status": "fresh",
       "threshold_seconds": 2700
     },
@@ -102,18 +102,6 @@
     "display_currency": "USD",
     "drawdown_pct": 0.167,
     "equity_curve": [
-      {
-        "cash": 73844.45,
-        "cash_gbp": 73844.45,
-        "display_currency": "USD",
-        "drawdown_pct": 0.906,
-        "equity": 99093.65,
-        "equity_gbp": 99093.65,
-        "observed_at": "2026-06-29T18:12:55.763279+00:00",
-        "portfolio_value": 99093.65,
-        "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-        "timestamp": "2026-06-29T18:12:55.763279+00:00"
-      },
       {
         "cash": 73844.45,
         "cash_gbp": 73844.45,
@@ -1541,11 +1529,23 @@
         "portfolio_value": 99832.91,
         "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
         "timestamp": "2026-07-05T10:44:32.155724+00:00"
+      },
+      {
+        "cash": 99832.91,
+        "cash_gbp": 99832.91,
+        "display_currency": "USD",
+        "drawdown_pct": 0.167,
+        "equity": 99832.91,
+        "equity_gbp": 99832.91,
+        "observed_at": "2026-07-05T11:13:57.463132+00:00",
+        "portfolio_value": 99832.91,
+        "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+        "timestamp": "2026-07-05T11:13:57.463132+00:00"
       }
     ],
     "equity_curve_count": 120,
     "equity_gbp": 99832.91,
-    "generated_at": "2026-07-05T10:49:21.553569+00:00",
+    "generated_at": "2026-07-05T11:18:24.852678+00:00",
     "history_source": "data/runtime/alpaca_paper_mirror.jsonl",
     "latest_curve_point": {
       "cash": 99832.91,
@@ -1554,13 +1554,13 @@
       "drawdown_pct": 0.167,
       "equity": 99832.91,
       "equity_gbp": 99832.91,
-      "observed_at": "2026-07-05T10:44:32.155724+00:00",
+      "observed_at": "2026-07-05T11:13:57.463132+00:00",
       "portfolio_value": 99832.91,
       "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-07-05T10:44:32.155724+00:00"
+      "timestamp": "2026-07-05T11:13:57.463132+00:00"
     },
     "live_capital_enabled": false,
-    "observed_at": "2026-07-05T10:44:32.155724+00:00",
+    "observed_at": "2026-07-05T11:13:57.463132+00:00",
     "open_position_count": 0,
     "order_count": 34,
     "paper_only": true,
@@ -1587,7 +1587,7 @@
     "public_safe": true,
     "public_snapshot_freshness": {
       "age_seconds": 0,
-      "generated_at": "2026-07-05T10:49:21.553569+00:00",
+      "generated_at": "2026-07-05T11:18:24.852678+00:00",
       "status": "fresh",
       "threshold_seconds": 1800
     },
@@ -1603,7 +1603,7 @@
   },
   "default_dashboard_sections_visible": true,
   "freshness_state": "freshness_visible_with_stale_labels",
-  "generated_at": "2026-07-05T10:49:21.553569+00:00",
+  "generated_at": "2026-07-05T11:18:24.852678+00:00",
   "learning_ledger_row_count": 30,
   "learning_ledger_state": "learning_ledger_visible",
   "linear_pattern_count": 16,
@@ -1617,6 +1617,9 @@
   "paper_growth_trial_calendar_advanced": false,
   "paper_only": true,
   "paper_order_created_count": 0,
+  "pattern_intelligence_finding_count": 5,
+  "pattern_intelligence_paper_ready_count": 0,
+  "pattern_intelligence_state": "pattern_intelligence_visible",
   "pattern_lab_state": "pattern_lab_visible",
   "pattern_to_paper_workflow_state": "pattern_to_paper_workflow_ready",
   "pattern_workflow_handoff_candidate_count": 0,
@@ -1651,6 +1654,7 @@
     "current_portfolio": "data/runtime/qsase_dashboard_current_portfolio.json",
     "decision_records": "data/runtime/qsase_dashboard_decision_records.json",
     "learning_ledger": "data/runtime/qsase_dashboard_learning_ledger.json",
+    "pattern_intelligence": "data/runtime/qsase_pattern_intelligence.json",
     "pattern_lab": "data/runtime/qsase_dashboard_pattern_lab.json",
     "pattern_to_paper_workflow": "data/runtime/qsase_pattern_to_paper_workflow.json",
     "portfolio_value_series": "data/runtime/qsase_dashboard_portfolio_value_series.json",

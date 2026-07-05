@@ -20,6 +20,7 @@ from orchestrator.qsase_dashboard_view_model import (
     HISTORY_ARTIFACT,
     LEARNING_LEDGER_ARTIFACT,
     PATTERN_TO_PAPER_WORKFLOW_ARTIFACT,
+    PATTERN_INTELLIGENCE_ARTIFACT,
     PATTERN_LAB_ARTIFACT,
     PORTFOLIO_SERIES_ARTIFACT,
     REPAIR_QUEUE_ARTIFACT,
@@ -61,6 +62,7 @@ def main() -> int:
         PATTERN_LAB_ARTIFACT,
         TRADE_INTENTS_ARTIFACT,
         PATTERN_TO_PAPER_WORKFLOW_ARTIFACT,
+        PATTERN_INTELLIGENCE_ARTIFACT,
         LEARNING_LEDGER_ARTIFACT,
         REPAIR_QUEUE_ARTIFACT,
         ANTI_SLOP_ARTIFACT,
@@ -88,6 +90,7 @@ def main() -> int:
     print(f"pattern_lab={written.get('pattern_lab')}")
     print(f"trade_intents={written.get('trade_intents')}")
     print(f"pattern_to_paper_workflow={written.get('pattern_to_paper_workflow')}")
+    print(f"pattern_intelligence={written.get('pattern_intelligence')}")
     print(f"learning_ledger={written.get('learning_ledger')}")
     print(f"repair_queue={written.get('repair_queue')}")
     print(f"anti_slop={written.get('anti_slop')}")
@@ -108,6 +111,8 @@ def main() -> int:
     print(f"pattern_workflow_record_count={payload.get('pattern_workflow_record_count')}")
     print(f"pattern_workflow_handoff_candidate_count={payload.get('pattern_workflow_handoff_candidate_count')}")
     print(f"pattern_workflow_telegram_candidate_count={payload.get('pattern_workflow_telegram_candidate_count')}")
+    print(f"pattern_intelligence_finding_count={payload.get('pattern_intelligence_finding_count')}")
+    print(f"pattern_intelligence_paper_ready_count={payload.get('pattern_intelligence_paper_ready_count')}")
     print(f"learning_ledger_row_count={payload.get('learning_ledger_row_count')}")
     print(f"repair_queue_count={payload.get('repair_queue_count')}")
     print(f"stale_labeled_count={payload.get('stale_labeled_count')}")

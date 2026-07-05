@@ -13,33 +13,13 @@
 <!-- qsase_13_dashboard_visibility -->
 ## QSASE-13: Dashboard Visibility
 
-- Generated at: `2026-06-29T06:57:29.005470+00:00`
-- Status: `qsase_dashboard_visibility_ready`
+- Generated at: `2026-07-05T11:18:24.852678+00:00`
+- Status: `qsase_dashboard_visibility_degraded`
 - Runtime artifact: `data/runtime/qsase_dashboard_status.json`
-- Portfolio series / positions / trading history rows: `120` / `2` / `80`
+- Portfolio series / positions / trading history rows: `120` / `0` / `48`
 - Source categories / sources / trading universe rows: `6` / `41` / `19`
 - Strategy families / in-play / linear / nonlinear / trade-intent rows: `5` / `3` / `16` / `16` / `16`
+- Pattern workflow records / guarded handoff candidates / Telegram candidates: `5` / `0` / `1`
+- Pattern intelligence findings / paper-ready findings: `5` / `0`
 - Learning / repair / anti-slop errors: `30` / `13` / `0`
 - Safety: dashboard artifacts are read-only decision records; no commands, trade candidates, qualified setups, approvals, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit created.
-
-<!-- qsase_14_telegram_summary_boundary -->
-## QSASE-14: Telegram Summary Boundary
-
-- Generated at: `2026-06-29T06:57:29.105845+00:00`
-- Status: `qsase_telegram_notification_boundary_ready`
-- Runtime artifact: `data/runtime/qsase_telegram_notification_boundary.json`
-- Candidates ready / duplicate / generic / unsafe: `1` / `4` / `0` / `0`
-- Inbound records / commands ignored: `2` / `0`
-- Delivery failures / sent: `0` / `0`
-- Safety: Telegram candidates are dashboard-visible, review-only, command-disabled, deduped, and unable to create candidates, approvals, paper orders, broker writes, live capital, or paper proof ledger credit.
-<!-- qsase_15_end_to_end_certification -->
-## QSASE-15: End-To-End Certification
-
-- Generated at: `2026-06-29T06:57:21.889595+00:00`
-- Status: `degraded_research_only`
-- Runtime artifact: `data/runtime/qsase_end_to_end_certification.json`
-- Phases passed / failed: `16` / `0`
-- Checks passed / failed: `33` / `0`
-- Artifacts present / required: `71` / `71`
-- Authority / lineage / dashboard / Telegram failures: `0` / `0` / `0` / `0`
-- Safety: certification is read-only, paper-only, proposal-first, command-disabled, and cannot create candidates, approvals, paper orders, broker writes, live capital, 30-day paper growth trial calendar advancement, or paper proof ledger credit.

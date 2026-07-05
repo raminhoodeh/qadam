@@ -33,6 +33,7 @@ const artifactMap = {
     pattern_lab: "qsase_dashboard_pattern_lab.json",
     trade_intents: "qsase_dashboard_trade_intents.json",
     pattern_to_paper_workflow: "qsase_pattern_to_paper_workflow.json",
+    pattern_intelligence: "qsase_pattern_intelligence.json",
     learning_ledger: "qsase_dashboard_learning_ledger.json",
     repair_queue: "qsase_dashboard_repair_queue.json",
     router: "qsase_strategy_router_decisions.json",
@@ -93,18 +94,16 @@ function assertStaticContract() {
         "data-qsase-section=\"trading_history\"",
         "data-qsase-section=\"source_intelligence_network\"",
         "data-qsase-section=\"trading_strategy_universe\"",
-        "data-qsase-section=\"pattern_opportunity_lab\"",
+        "data-qsase-section=\"pattern_intelligence_findings\"",
         "data-qsase-section=\"trade_intents\"",
-        "data-qsase-section=\"pattern_to_paper_workflow\"",
         "data-qsase-section=\"router_paperops_gate\"",
         "Portfolio Value &amp; Return",
         "Current Portfolio",
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",
-        "Pattern & Opportunity Lab",
+        "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Pattern-To-Paper Workflow",
         "Router & PaperOps Gate",
         "trade markers are read-only history, not proof credit",
         "No order authority",
@@ -164,6 +163,7 @@ function assertStaticContract() {
     assertIncludesAll(cockpitStatus, [
         "QSASE_DASHBOARD_PUBLIC_ARTIFACTS",
         "\"pattern_to_paper_workflow\": \"qsase_pattern_to_paper_workflow.json\"",
+        "\"pattern_intelligence\": \"qsase_pattern_intelligence.json\"",
         "def _qsase_dashboard_public_status",
         "\"qsase_dashboard\": _qsase_dashboard_public_status(settings)",
         "\"creates_paper_orders\": False",
@@ -185,9 +185,8 @@ async function assertRenderedContract() {
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",
-        "Pattern &amp; Opportunity Lab",
+        "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Pattern-To-Paper Workflow",
         "Router &amp; PaperOps Gate"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
@@ -197,9 +196,8 @@ async function assertRenderedContract() {
         "trading_history",
         "source_intelligence_network",
         "trading_strategy_universe",
-        "pattern_opportunity_lab",
+        "pattern_intelligence_findings",
         "trade_intents",
-        "pattern_to_paper_workflow",
         "router_paperops_gate"
     ].forEach((section) => {
         assert(stageHtml.includes(`data-qsase-section="${section}"`), `rendered QSASE dashboard missing section ${section}`);
@@ -211,9 +209,8 @@ async function assertRenderedContract() {
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",
-        "Pattern &amp; Opportunity Lab",
+        "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Pattern-To-Paper Workflow",
         "Router &amp; PaperOps Gate"
     ].map((label) => stageHtml.indexOf(label));
     assert(order.every((index) => index >= 0), "rendered QSASE dashboard missing required labels");
@@ -245,6 +242,11 @@ async function assertRenderedContract() {
         "qsase-trading-timeline",
         "qsase-source-category-row",
         "qsase-market-pill-row",
+        "qsase-pattern-brief",
+        "qsase-pattern-flow",
+        "Qadam's current read",
+        "What blocks the trade",
+        "Technical evidence ledger",
         "These sources can inform hypotheses, but none of them can place trades."
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);

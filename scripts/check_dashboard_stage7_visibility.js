@@ -228,7 +228,7 @@ async function main() {
             "Trading History",
             "Source Intelligence Network",
             "Trading Strategy Universe",
-            index === 0 ? "Pattern & Opportunity Lab" : "Pattern &amp; Opportunity Lab",
+            "Pattern Recognition Findings",
             "Trade Intents / What Qadam Is Thinking",
             index === 0 ? "Router & PaperOps Gate" : "Router &amp; PaperOps Gate",
             "Advanced / Debug Mode",

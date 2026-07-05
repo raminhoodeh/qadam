@@ -194,7 +194,7 @@ Use this sequence the first time you open Qadam.
    dashboard state, and live capital off.
 3. Read the QSASE dashboard sections in order: Portfolio Value & Return,
    Current Portfolio, Trading History, Source Intelligence Network, Trading
-   Strategy Universe, Pattern & Opportunity Lab, Trade Intents / What Qadam Is
+   Strategy Universe, Pattern Recognition Findings, Trade Intents / What Qadam Is
    Thinking, and Router & PaperOps Gate.
 4. Use Portfolio Value & Return to understand whether the paper account is
    actually moving, then inspect Current Portfolio and Trading History before
@@ -217,7 +217,7 @@ Start in the Overview view. QSASE makes Overview the default paper-fund and
 strategy-engine readout instead of a long stack of technical cards. It is
 organized around eight plain-language sections: Portfolio Value & Return,
 Current Portfolio, Trading History, Source Intelligence Network, Trading
-Strategy Universe, Pattern & Opportunity Lab, Trade Intents / What Qadam Is
+Strategy Universe, Pattern Recognition Findings, Trade Intents / What Qadam Is
 Thinking, and Router & PaperOps Gate.
 
 The deeper Trades, Evidence, Reasoning, and Operations views still exist for
@@ -234,7 +234,9 @@ Use it to answer:
 - what Qadam has traded, rejected, held, or closed
 - what source categories and data sources are connected
 - which strategy families exist and which are currently in play
-- what linear and non-linear source-price patterns are under review
+- what source-price patterns Qadam has found, what evidence supports them, what
+  would confirm them, and what still blocks them from becoming paper-trade
+  candidates
 - what trades Qadam is thinking about now
 - why Router/PaperOps allowed, held, rejected, shadowed, or repair-requested the
   current setup
@@ -251,7 +253,7 @@ approve trades, submit paper orders, write to brokers, or enable live capital.
 | Trading History | Submitted, filled, closed, rejected, held, and mirrored paper-trade records with paper proof ledger status where available. |
 | Source Intelligence Network | Source categories, connected data sources, freshness, trust posture, quorum contribution, and watched trading universe rows. |
 | Trading Strategy Universe | Strategy families Qadam knows, which are in play, Akber filter posture, and current lifecycle state. |
-| Pattern & Opportunity Lab | Linear and non-linear source-price patterns, quantum/classical review state, evidence class, and whether a pattern can enter Strategy Foundry. |
+| Pattern Recognition Findings | Plain-English pattern findings ranked by actionability, evidence strength, and distance from paper-trade review. Each finding shows the detected signal, market affected, evidence chain, Qadam's interpretation, confirmation condition, blocker, and next action. |
 | Trade Intents / What Qadam Is Thinking | Proposed instruments, thesis, source packet, Akber state, quantum review, blocker, and next allowed action. |
 | Router & PaperOps Gate | One final answer for why Qadam can or cannot trade now: paper-review candidate, hold, reject, shadow-only, repair-requested, or blocked. |
 
@@ -612,7 +614,7 @@ Use this routine when checking Qadam.
 2. Read Safety Status and confirm paper-only, read-only, live-capital
    off, no UI-to-broker path, and no LLM-to-broker path.
 3. Scan Portfolio Value & Return, Current Portfolio, Trading History, Source
-   Intelligence Network, Trading Strategy Universe, Pattern & Opportunity Lab,
+   Intelligence Network, Trading Strategy Universe, Pattern Recognition Findings,
    Trade Intents / What Qadam Is Thinking, and Router & PaperOps Gate.
 4. Check whether any required source, reasoning, quant, risk, or paper-account
    dependency needs attention.
@@ -831,7 +833,7 @@ Escalate or comment if:
 | Paper mode | Test-account mode; no live capital. |
 | Paper growth trial | The 30-day paper growth trial, preserved on real calendar time without backfill or forced trades. |
 | Paper proof ledger | The lineage-backed record of closed paper outcomes that can count as proof only after required gates and postmortems. |
-| QSASE | Qadam Self-Aware Strategy Engine: Qadam's self-model, source-price matrix, pattern labs, strategy foundry, router, PaperOps handoff, and learning ledger. |
+| QSASE | Qadam Self-Aware Strategy Engine: Qadam's self-model, source-price matrix, pattern findings, strategy foundry, router, paper-trade review handoff, and learning ledger. |
 | Qualified setup | A setup that passes the current evidence, strategy, and risk prerequisites. |
 | No-trade rationale | The logged reason Qadam did not trade. |
 | Candidate | A structured trade idea, not an order. |

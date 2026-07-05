@@ -180,7 +180,7 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "qsase-source-category-row"],
         ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
         ["[data-stage7-dashboard-visibility]", "Trading Strategy Universe"],
-        ["[data-stage7-dashboard-visibility]", "Pattern &amp; Opportunity Lab"],
+        ["[data-stage7-dashboard-visibility]", "Pattern Recognition Findings"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
