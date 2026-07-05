@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qadam Dashboard</title>
     <meta name="description" content="Public read-only Qadam paper trading dashboard.">
-    <link rel="stylesheet" href="/auth.css?v=20260704-pattern-workflow-v1">
+    <link rel="stylesheet" href="/auth.css?v=20260705-dashboard-ux-v2">
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 
@@ -35,52 +35,6 @@
         </header>
 
         <section id="dashboard-main" class="dashboard-workspace qadam-dashboard-workspace hidden" data-dashboard tabindex="-1">
-            <section class="dashboard-hero">
-                <div>
-                    <p class="eyebrow">Qadam paper trading dashboard</p>
-                    <h1>Qadam Mission Control</h1>
-                    <p class="copy">Public read-only view. Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.</p>
-                </div>
-                <div class="mode-stack" aria-label="Dashboard status">
-                    <span>Paper trading mode</span>
-                </div>
-            </section>
-
-            <nav class="cockpit-nav dashboard-view-switcher qadam-dashboard-nav qadam-section-nav" aria-label="Dashboard sections" data-qadam-section-nav="dashboard" data-qadam-dashboard-section-nav>
-                <div class="cockpit-nav-head">
-                    <span>Mission Control</span>
-                    <strong data-dashboard-view-current>Overview</strong>
-                </div>
-                <div class="cockpit-nav-links" aria-label="Primary dashboard section">
-                    <a href="#overview" class="active" data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview" aria-current="page">Overview</a>
-                </div>
-                <button class="dashboard-debug-toggle" type="button" data-dashboard-debug-toggle aria-label="Show advanced sections" aria-controls="dashboard-advanced-links" aria-pressed="false" aria-expanded="false">Advanced</button>
-                <div id="dashboard-advanced-links" class="dashboard-debug-links" data-dashboard-advanced-links hidden aria-hidden="true">
-                    <a href="#trades" data-dashboard-view-link data-dashboard-view-target="trades" data-target-section="trades">Trades</a>
-                    <a href="#evidence" data-dashboard-view-link data-dashboard-view-target="evidence" data-target-section="evidence">Evidence</a>
-                    <a href="#reasoning" data-dashboard-view-link data-dashboard-view-target="reasoning" data-target-section="reasoning">Reasoning</a>
-                    <a href="#operations" data-dashboard-view-link data-dashboard-view-target="operations" data-target-section="operations">Operations</a>
-                </div>
-            </nav>
-
-            <section class="dashboard-safety-strip pending" aria-label="Safety Status" data-dashboard-safety-strip aria-live="polite">
-                <div class="dashboard-safety-strip-main">
-                    <p class="label">Safety status</p>
-                    <h2>Paper trading authorized</h2>
-                    <p>Paper-only monitoring. Live capital is off; order authority stays behind runtime gates.</p>
-                </div>
-                <div class="dashboard-safety-strip-badges">
-                    <span class="inline-badge pending" data-mode-label>Paper mode</span>
-                    <span class="inline-badge pending" data-capital-label>Paper account loading</span>
-                    <span class="inline-badge blocked" data-live-capital-label>Live capital off</span>
-                </div>
-                <div class="dashboard-safety-strip-authority">
-                    <strong>Read-only safety mirror</strong>
-                    <span>Paper mode, capital state, and order authority in one strip.</span>
-                    <small>Loading backend-derived authority status.</small>
-                </div>
-            </section>
-
             <section id="mission-control" class="mission-control-panel operating-review-panel overview-first-screen" aria-label="Qadam overview" data-mission-control data-dashboard-view-section="overview" data-cockpit-section="Mission Control" data-overview-first-screen>
                 <p class="sr-only">Mission Control walkthrough: fund, sources, markets, strategy, team, hypotheses, replay lab.</p>
                 <section class="stage7-dashboard-visibility" aria-label="Mission Control walkthrough" data-stage7-dashboard-visibility>
@@ -219,7 +173,7 @@
 	                                <div>
 	                                    <p class="label">Operations workspace</p>
 	                                    <h3>Operations diagnostics and event trail</h3>
-	                                    <p>Read-only runtime diagnostics load here: bridge health, safety stops, source plumbing, map edge diagnostics, event trail, governance, and notifications. The canonical node-by-node system map lives once on Overview.</p>
+	                                    <p>Read-only runtime diagnostics load here: bridge health, safety stops, source plumbing, map edge diagnostics, event trail, governance, and notifications. The canonical node-by-node system map lives once in the main walkthrough.</p>
 	                                </div>
                                 <article class="operations-broken-card pending">
                                     <span>What is broken?</span>
@@ -265,7 +219,7 @@
                                             <div><dt>Latest heartbeat</dt><dd>Loads from backend snapshot.</dd></div>
                                             <div><dt>Event Log references</dt><dd>Backend status paths and event-log markers.</dd></div>
                                             <div><dt>Authority boundary</dt><dd>Read-only diagnostics only.</dd></div>
-                                            <div><dt>Related dashboard links</dt><dd>Operations, Evidence, Trades, Reasoning, and Overview.</dd></div>
+                                            <div><dt>Related diagnostics</dt><dd>Operations, evidence, trades, reasoning, and the main walkthrough.</dd></div>
                                         </dl>
                                     </details>
                                 </section>
@@ -433,8 +387,8 @@
                         </section>
                         <details class="reasoning-review-group reasoning-advanced-diagnostics" data-reasoning-review-group="advanced_diagnostics">
                             <summary>
-                                <strong>Advanced cognition diagnostics</strong>
-                                <span>Advanced details for model activity, local research, strategy handoff, and signal integrity.</span>
+                                <strong>Cognition diagnostics</strong>
+                                <span>Model activity, local research, strategy handoff, and signal integrity details.</span>
                                 <em>0 records</em>
                             </summary>
                         </details>
@@ -588,7 +542,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/dashboard.js?v=20260704-pattern-workflow-v1"></script>
+    <script src="/dashboard.js?v=20260705-dashboard-ux-v2"></script>
     <script src="/auth.js?v=20260517-d9-release"></script>
 </body>
 

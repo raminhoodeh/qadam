@@ -11424,38 +11424,6 @@ body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-section {
     border-left: 4px solid rgba(var(--qadam-rgb-info), 0.18);
 }
 
-body.qadam-dashboard-page .qsase-jump-row {
-    align-items: stretch;
-    background: var(--qadam-color-heading);
-    border: 1px solid rgba(var(--qadam-rgb-info), 0.24);
-    display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    margin-top: calc(var(--qadam-space-3) * -1);
-}
-
-body.qadam-dashboard-page .qsase-jump-row a {
-    align-items: center;
-    border-right: 1px solid rgba(255, 255, 255, 0.14);
-    color: var(--qadam-color-canvas);
-    display: flex;
-    font-family: var(--qadam-font-ui);
-    font-size: 0.72rem;
-    font-weight: 800;
-    justify-content: center;
-    letter-spacing: 0.08em;
-    min-height: 3rem;
-    padding: 0.8rem;
-    text-align: center;
-    text-decoration: none;
-    text-transform: uppercase;
-}
-
-body.qadam-dashboard-page .qsase-jump-row a:hover,
-body.qadam-dashboard-page .qsase-jump-row a:focus-visible {
-    background: var(--qadam-color-brand);
-    color: var(--qadam-color-canvas);
-}
-
 body.qadam-dashboard-page .qsase-section-head {
     align-items: end;
     border-bottom: 1px solid var(--qadam-color-rule);
@@ -11499,6 +11467,50 @@ body.qadam-dashboard-page .qsase-final-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+body.qadam-dashboard-page .qsase-status-card {
+    align-self: stretch;
+    background: rgba(var(--qadam-rgb-info), 0.06);
+    border: 1px solid rgba(var(--qadam-rgb-info), 0.2);
+    display: grid;
+    gap: 0.55rem;
+    padding: clamp(1rem, 2vw, 1.3rem);
+}
+
+body.qadam-dashboard-page .qsase-status-card span,
+body.qadam-dashboard-page .qsase-status-card p {
+    color: var(--qadam-color-muted);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-status-card span {
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-status-card strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.6rem, 3vw, 2.35rem);
+    font-weight: 500;
+    line-height: 1;
+}
+
+body.qadam-dashboard-page .qsase-kpi-row.stage7-kpi-strip.compact {
+    grid-template-columns: repeat(5, minmax(10rem, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-kpi-row .metric {
+    min-height: 7.25rem;
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.qadam-dashboard-page .qsase-kpi-row .metric strong {
+    overflow-wrap: anywhere;
+}
+
 body.qadam-dashboard-page .qsase-portfolio-chart {
     background:
         linear-gradient(180deg, rgba(var(--qadam-rgb-info), 0.08), transparent 60%),
@@ -11527,7 +11539,9 @@ body.qadam-dashboard-page .qsase-trade-marker.degraded circle {
 
 body.qadam-dashboard-page .qsase-card-grid,
 body.qadam-dashboard-page .qsase-category-grid,
-body.qadam-dashboard-page .qsase-two-column {
+body.qadam-dashboard-page .qsase-two-column,
+body.qadam-dashboard-page .qsase-source-category-list,
+body.qadam-dashboard-page .qsase-trading-timeline {
     display: grid;
     gap: var(--qadam-space-4);
 }
@@ -11548,6 +11562,10 @@ body.qadam-dashboard-page .qsase-category-grid {
     grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
 }
 
+body.qadam-dashboard-page .qsase-source-category-list {
+    grid-template-columns: 1fr;
+}
+
 body.qadam-dashboard-page .qsase-two-column {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -11565,6 +11583,52 @@ body.qadam-dashboard-page .qsase-record-card,
 body.qadam-dashboard-page .qsase-category-grid article {
     display: grid;
     gap: var(--qadam-space-3);
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-source-category-row {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+}
+
+body.qadam-dashboard-page .qsase-source-category-row.online,
+body.qadam-dashboard-page .qsase-source-category-row.connected {
+    border-color: rgba(var(--qadam-rgb-ok), 0.32);
+}
+
+body.qadam-dashboard-page .qsase-source-category-row > summary {
+    align-items: center;
+    cursor: pointer;
+    display: grid;
+    gap: clamp(1rem, 2vw, 2rem);
+    grid-template-columns: minmax(16rem, 0.42fr) minmax(0, 1fr);
+    list-style: none;
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.qadam-dashboard-page .qsase-source-category-row > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.qadam-dashboard-page .qsase-source-category-row > summary > div {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-source-category-row > summary p {
+    color: var(--qadam-color-muted);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-source-category-row small {
+    color: var(--qadam-color-muted);
+    line-height: 1.35;
+}
+
+body.qadam-dashboard-page .qsase-source-api-list {
+    border-top: 1px solid var(--qadam-color-rule);
     padding: var(--qadam-space-4);
 }
 
@@ -11602,12 +11666,22 @@ body.qadam-dashboard-page .qsase-table th {
 
 body.qadam-dashboard-page .qsase-record-card strong,
 body.qadam-dashboard-page .qsase-category-grid strong,
-body.qadam-dashboard-page .qsase-compact-list strong {
+body.qadam-dashboard-page .qsase-compact-list strong,
+body.qadam-dashboard-page .qsase-source-category-row strong {
     color: var(--qadam-color-heading);
     font-family: var(--qadam-font-display);
     font-size: 1.25rem;
     font-weight: 500;
     letter-spacing: -0.02em;
+}
+
+body.qadam-dashboard-page .qsase-source-category-row span {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 body.qadam-dashboard-page .qsase-record-card dl {
@@ -11651,6 +11725,83 @@ body.qadam-dashboard-page .qsase-table td {
 body.qadam-dashboard-page .qsase-table td strong,
 body.qadam-dashboard-page .qsase-table td span {
     display: block;
+}
+
+body.qadam-dashboard-page .qsase-trading-timeline {
+    max-height: 42rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+body.qadam-dashboard-page .qsase-trade-event {
+    align-items: center;
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 5px solid rgba(var(--qadam-rgb-info), 0.32);
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-template-columns: minmax(9rem, 0.22fr) minmax(0, 1fr) minmax(8rem, 0.18fr);
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-trade-event.buy {
+    border-left-color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-trade-event.sell {
+    border-left-color: var(--qadam-color-brand);
+}
+
+body.qadam-dashboard-page .qsase-trade-event-time,
+body.qadam-dashboard-page .qsase-trade-event-main,
+body.qadam-dashboard-page .qsase-trade-event-meta {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-trade-event-time span,
+body.qadam-dashboard-page .qsase-trade-event-meta span,
+body.qadam-dashboard-page .qsase-trade-event-main p {
+    color: var(--qadam-color-muted);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-trade-event-time span,
+body.qadam-dashboard-page .qsase-trade-event-meta span {
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-trade-event strong {
+    color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qsase-market-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+body.qadam-dashboard-page .qsase-market-pill-row span {
+    border: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    padding: 0.45rem 0.55rem;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-market-pill-row span.online {
+    border-color: rgba(var(--qadam-rgb-ok), 0.34);
+    color: var(--qadam-color-ok);
+}
+
+body.qadam-dashboard-page .qsase-market-pill-row span.pending {
+    border-color: rgba(var(--qadam-rgb-watch), 0.36);
+    color: var(--qadam-color-watch);
 }
 
 body.qadam-dashboard-page .qsase-compact-list {
@@ -11735,16 +11886,14 @@ body.qadam-dashboard-page .qsase-boundary-note {
         justify-content: flex-start;
     }
 
-    body.qadam-dashboard-page .qsase-jump-row {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
     body.qadam-dashboard-page .dashboard-hero,
     body.qadam-dashboard-page .dashboard-safety-strip,
     body.qadam-dashboard-page .stage7-hero,
     body.qadam-dashboard-page .qsase-dashboard-hero,
     body.qadam-dashboard-page .qsase-money-hero,
     body.qadam-dashboard-page .qsase-two-column,
+    body.qadam-dashboard-page .qsase-source-category-row > summary,
+    body.qadam-dashboard-page .qsase-trade-event,
     body.qadam-dashboard-page .mission-flow-lifecycle,
     body.qadam-dashboard-page .mission-paper-metrics,
     body.qadam-dashboard-page .mission-paper-exposure-grid,
@@ -11794,7 +11943,7 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .mission-paper-columns,
     body.qadam-dashboard-page .qsase-money-metrics,
     body.qadam-dashboard-page .qsase-final-grid,
-    body.qadam-dashboard-page .qsase-jump-row,
+    body.qadam-dashboard-page .qsase-kpi-row.stage7-kpi-strip.compact,
     body.qadam-dashboard-page .qsase-record-card dl,
     body.qadam-dashboard-page .mission-hypothesis-flow,
     body.qadam-dashboard-page .mission-feedback-inputs,

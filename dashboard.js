@@ -5916,7 +5916,7 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         summary: `${authoritySummary} ${modelNumber(safety.forbidden_action_count, asArray(status.forbidden_actions).length)} safety stops; ${authorityFlags.length} authority flags. Order authority remains behind runtime gates.`,
         safety_label: liveCapitalEnabled
             ? "Review: live capital flag detected"
-            : "Paper-only monitoring",
+            : "Live capital off",
         authority_label: paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
         authority_tone: paperAuthorityTone,
         authority_status: paperAuthorityStatus,
@@ -12216,14 +12216,50 @@ function renderQsasePortfolioValue(qsase = {}) {
     `;
 }
 
+function qsaseTimestamp(row = {}) {
+    return row.closed_at || row.filled_at || row.submitted_at || row.opened_at || row.generated_at || row.observed_at;
+}
+
+function qsaseTradeEventTone(row = {}) {
+    const event = String(row.event_type || row.row_type || row.status || "").toLowerCase();
+    if (event.includes("sell") || event.includes("close") || event.includes("closed")) return "sell";
+    if (event.includes("buy") || event.includes("order") || event.includes("submitted")) return "buy";
+    return statusClass(row.status || row.row_type || "pending");
+}
+
+const QSASE_SOURCE_FAMILY_LABELS = {
+    conflict: "Conflict & Geopolitics",
+    macro: "Macro & Trade Data",
+    market: "Markets & Technical Analysis",
+    market_context_taxonomy: "Market Context Taxonomy",
+    physical: "Physical World Signals",
+    social: "Social News & Filings"
+};
+
+function qsaseFamilyLabel(value) {
+    const key = String(value || "").trim().toLowerCase();
+    return QSASE_SOURCE_FAMILY_LABELS[key] || qsaseHumanText(value, "Source category");
+}
+
+function qsaseSourceDescription(row = {}) {
+    return row.description || "This read-only source category can strengthen or weaken a hypothesis, but it cannot create trades.";
+}
+
 function renderQsaseCurrentPortfolio(qsase = {}) {
     const portfolio = qsase.dashboard_portfolio || {};
     const section = qsase.current_portfolio || {};
     const rows = asArray(portfolio.positions).length ? asArray(portfolio.positions) : asArray(section.rows);
     const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
+    const reportedCount = firstPresent(section.reported_open_position_count, portfolio.open_position_count, rows.length, 0);
+    const rowCount = firstPresent(section.holding_row_count, section.position_count, rows.length, 0);
+    const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
+    const headline = mismatch
+        ? `${reportedCount} broker-reported · ${rowCount} exported rows`
+        : `${rowCount} current holdings`;
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
-            ${renderQsaseSectionHeader("Current Portfolio", `${portfolio.open_position_count || section.position_count || rows.length || 0} current holdings`, portfolio.status || section.status, rows.length ? "online" : "pending")}
+            ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"))}
+            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "Holdings come from the read-only paper position mirror. If the broker and exported rows disagree, the dashboard must show that mismatch.")}</p>
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
@@ -12238,10 +12274,10 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
                         </dl>
                     </article>
                 `).join("") : `
-                    <article class="qsase-record-card pending">
-                        <span>No current position rows</span>
-                        <strong>Flat or mirror empty</strong>
-                        <p>The QSASE current-portfolio artifact is explicit, read-only, and does not fabricate holdings.</p>
+                    <article class="qsase-record-card ${mismatch ? "blocked" : "pending"}">
+                        <span>${mismatch ? "Position mismatch" : "No current position rows"}</span>
+                        <strong>${mismatch ? "Broker and dashboard disagree" : "Flat or mirror empty"}</strong>
+                        <p>${qsaseHtmlText(section.reconciliation_note || "The QSASE current-portfolio artifact is explicit, read-only, and does not fabricate holdings.")}</p>
                     </article>
                 `}
             </div>
@@ -12252,39 +12288,31 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
 function renderQsaseTradingHistory(qsase = {}) {
     const section = qsase.trading_history || {};
     const allRows = asArray(section.rows);
-    const rows = allRows.slice(0, 8);
-    const extraRows = allRows.slice(8, 24);
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, section.status, rows.length ? "online" : "pending")}
-            <div class="qsase-table-wrap">
-                <table class="qsase-table">
-                    <thead><tr><th>Instrument</th><th>State</th><th>P&L</th><th>Reason / proof state</th></tr></thead>
-                    <tbody>
-                        ${rows.length ? rows.map((row) => `
-                            <tr>
-                                <td><strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong><span>${qsaseHtmlText(row.direction, "direction n/a")}</span></td>
-                                <td>${qsaseHtmlText(row.row_type || row.status, "recorded")}<span>${formatTime(row.closed_at || row.opened_at || row.submitted_at)}</span></td>
-                                <td>${qsaseHtmlText(row.realized_pnl ?? row.unrealized_pnl ?? "n/a")}</td>
-                                <td>${qsaseHtmlText(row.postmortem_status || row.reason || row.boundary, "paper proof ledger pending")}</td>
-                            </tr>
-                        `).join("") : `<tr><td colspan="4">No trading-history rows exported.</td></tr>`}
-                    </tbody>
-                </table>
-            </div>
-            ${extraRows.length ? `
-                <details class="qsase-detail-ledger">
-                    <summary>Show ${extraRows.length} more trade records</summary>
-                    <ul class="qsase-compact-list">
-                        ${extraRows.map((row) => `
-                            <li class="${statusClass(row.row_type || row.status)}">
+            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, section.timeline_order || section.status, allRows.length ? "online" : "pending")}
+            <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology">
+                ${allRows.length ? allRows.map((row) => {
+                    const tone = qsaseTradeEventTone(row);
+                    const pnlValue = firstPresent(row.realized_pnl, row.unrealized_pnl, row.filled_quantity, "n/a");
+                    return `
+                        <article class="qsase-trade-event ${tone}" role="listitem">
+                            <div class="qsase-trade-event-time">
+                                <span>${qsaseHtmlText(row.event_label || row.row_type || row.status, "Recorded event")}</span>
+                                <strong>${formatTime(qsaseTimestamp(row))}</strong>
+                            </div>
+                            <div class="qsase-trade-event-main">
                                 <strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong>
-                                <span>${qsaseHtmlText(row.row_type || row.status, "recorded")} · ${formatTime(row.closed_at || row.opened_at || row.submitted_at)} · ${qsaseHtmlText(row.postmortem_status || row.reason || "paper proof ledger pending")}</span>
-                            </li>
-                        `).join("")}
-                    </ul>
-                </details>
-            ` : ""}
+                                <p>${qsaseHtmlText(row.postmortem_status || row.reason || row.boundary, "Read-only paper ledger record.")}</p>
+                            </div>
+                            <div class="qsase-trade-event-meta">
+                                <span>${qsaseHtmlText(row.direction || row.status || "state n/a")}</span>
+                                <strong>${qsaseHtmlText(pnlValue)}</strong>
+                            </div>
+                        </article>
+                    `;
+                }).join("") : `<article class="qsase-record-card pending"><strong>No trading-history rows exported.</strong></article>`}
+            </div>
         </section>
     `;
 }
@@ -12293,73 +12321,36 @@ function renderQsaseSourceNetwork(qsase = {}) {
     const section = qsase.source_network || {};
     const categories = asArray(section.category_rows);
     const allSources = asArray(section.source_rows);
-    const allMarkets = asArray(section.trading_universe_rows);
-    const sources = allSources.slice(0, 10);
-    const markets = allMarkets.slice(0, 8);
-    const hiddenSources = allSources.slice(10);
-    const hiddenMarkets = allMarkets.slice(8);
+    const sourcesForFamily = (family) => allSources.filter((source) => String(source.family || "").toLowerCase() === String(family || "").toLowerCase());
     return `
         <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
-            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || sources.length} sources · ${section.trading_universe_row_count || markets.length} markets`, section.status, "online")}
-            <div class="qsase-category-grid">
-                ${categories.map((row) => `
-                    <article class="${statusClass(row.state)}">
-                        <span>${qsaseHtmlText(row.family)}</span>
-                        <strong>${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(row.source_count || 0)} fresh</strong>
-                        <p>${qsaseHtmlText(row.quorum_contributing_count || 0)} quorum contributors · ${qsaseHtmlText(row.credential_gated_count || 0)} credential-gated.</p>
-                    </article>
-                `).join("")}
-            </div>
-            <div class="qsase-two-column">
-                <div>
-                    <h3>Connected Data Sources</h3>
-                    <ul class="qsase-compact-list">
-                        ${sources.map((source) => `
-                            <li class="${statusClass(source.state)}">
-                                <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
-                                <span>${qsaseHtmlText(source.family)} · ${qsaseHtmlText(source.freshness_status)} · ${qsaseHtmlText(source.trust_posture)}</span>
-                            </li>
-                        `).join("")}
-                    </ul>
-                    ${hiddenSources.length ? `
-                        <details class="qsase-detail-ledger">
-                            <summary>Show all remaining data sources (${hiddenSources.length})</summary>
-                            <ul class="qsase-compact-list">
-                                ${hiddenSources.map((source) => `
+            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || allSources.length} connected source rows · ${categories.length} categories`, section.status, "online")}
+            <div class="qsase-source-category-list">
+                ${categories.map((row, index) => {
+                    const familySources = sourcesForFamily(row.family);
+                    return `
+                        <details class="qsase-source-category-row ${statusClass(row.state)}" ${index === 0 ? "open" : ""}>
+                            <summary>
+                                <div>
+                                    <span>${qsaseHtmlText(qsaseFamilyLabel(row.family))}</span>
+                                    <strong>${qsaseHtmlText(row.fresh_count || 0)}/${qsaseHtmlText(row.source_count || familySources.length)} fresh sources</strong>
+                                    <small>${qsaseHtmlText(row.quorum_contributing_count || 0)} can contribute to evidence quorum · ${qsaseHtmlText(row.credential_gated_count || 0)} credential-gated.</small>
+                                </div>
+                                <p>${qsaseHtmlText(qsaseSourceDescription(row))}</p>
+                            </summary>
+                            <ul class="qsase-compact-list qsase-source-api-list">
+                                ${familySources.length ? familySources.map((source) => `
                                     <li class="${statusClass(source.state)}">
                                         <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
-                                        <span>${qsaseHtmlText(source.family)} · ${qsaseHtmlText(source.freshness_status)} · ${qsaseHtmlText(source.trust_posture)}</span>
+                                        <span>${qsaseHtmlText(source.freshness_status || "freshness not exported")} · ${qsaseHtmlText(source.trust_posture || "trust posture pending")} · last update ${qsaseHtmlText(source.last_update || "not exported")}</span>
                                     </li>
-                                `).join("")}
+                                `).join("") : `<li class="pending"><strong>No source rows exported for this category</strong></li>`}
                             </ul>
                         </details>
-                    ` : ""}
-                </div>
-                <div>
-                    <h3>Watched Trading Universe</h3>
-                    <ul class="qsase-compact-list">
-                        ${markets.map((market) => `
-                            <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
-                                <strong>${qsaseHtmlText(market.symbol)}</strong>
-                                <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.paperability_state)}</span>
-                            </li>
-                        `).join("")}
-                    </ul>
-                    ${hiddenMarkets.length ? `
-                        <details class="qsase-detail-ledger">
-                            <summary>Show all remaining watched markets (${hiddenMarkets.length})</summary>
-                            <ul class="qsase-compact-list">
-                                ${hiddenMarkets.map((market) => `
-                                    <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
-                                        <strong>${qsaseHtmlText(market.symbol)}</strong>
-                                        <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.paperability_state)}</span>
-                                    </li>
-                                `).join("")}
-                            </ul>
-                        </details>
-                    ` : ""}
-                </div>
+                    `;
+                }).join("") || `<article class="qsase-record-card pending"><strong>No source categories exported</strong></article>`}
             </div>
+            <p class="qsase-boundary-note">These sources can inform hypotheses, but none of them can place trades.</p>
         </section>
     `;
 }
@@ -12367,19 +12358,40 @@ function renderQsaseSourceNetwork(qsase = {}) {
 function renderQsaseStrategyUniverse(qsase = {}) {
     const section = qsase.strategy_universe || {};
     const rows = asArray(section.all_strategy_rows);
+    const unassignedMarkets = asArray(section.unassigned_watched_markets);
     return `
         <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
-            ${renderQsaseSectionHeader("Trading Strategy Universe", `${section.all_strategy_count || rows.length} known · ${section.currently_in_play_count || 0} in play`, section.status, rows.length ? "online" : "pending")}
-            <div class="qsase-card-grid">
-                ${rows.map((row) => `
+            ${renderQsaseSectionHeader("Trading Strategy Universe", `${section.all_strategy_count || rows.length} strategies · ${section.watched_market_count || 0} watched instruments`, section.status, rows.length ? "online" : "pending")}
+            <div class="qsase-card-grid qsase-strategy-grid">
+                ${rows.map((row) => {
+                    const watched = asArray(row.watched_markets);
+                    return `
                     <article class="qsase-record-card ${statusClass(row.current_state)}">
                         <span>${qsaseHtmlText(row.catalyst_class || "strategy")}</span>
                         <strong>${qsaseHtmlText(row.label || row.strategy_family_id)}</strong>
                         <p>${qsaseHtmlText(row.current_state)} · proxies: ${qsaseHtmlText(asArray(row.allowed_proxy_set).join(", "), "none")}</p>
+                        <div class="qsase-market-pill-row" aria-label="Watched markets for this strategy">
+                            ${watched.length ? watched.slice(0, 8).map((market) => `
+                                <span class="${statusClass(market.qualified_setup_state || market.paperability_state)}">${qsaseHtmlText(market.symbol || market.display_name, "Market")}</span>
+                            `).join("") : `<span class="pending">No mapped watched market</span>`}
+                        </div>
                         <small>Sources: ${qsaseHtmlText(asArray(row.source_keywords).join(", "), "source family pending")}</small>
                     </article>
-                `).join("") || `<article class="qsase-record-card pending"><strong>No strategy rows exported</strong></article>`}
+                `; }).join("") || `<article class="qsase-record-card pending"><strong>No strategy rows exported</strong></article>`}
             </div>
+            ${unassignedMarkets.length ? `
+                <details class="qsase-detail-ledger">
+                    <summary>${unassignedMarkets.length} watched instruments are not mapped to a visible strategy card</summary>
+                    <ul class="qsase-compact-list">
+                        ${unassignedMarkets.map((market) => `
+                            <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
+                                <strong>${qsaseHtmlText(market.symbol || market.display_name)}</strong>
+                                <span>${qsaseHtmlText(market.display_name)} · ${qsaseHtmlText(market.market_family)} · ${qsaseHtmlText(market.paperability_state)}</span>
+                            </li>
+                        `).join("")}
+                    </ul>
+                </details>
+            ` : ""}
         </section>
     `;
 }
@@ -12559,29 +12571,23 @@ function renderQsaseDashboardVisibility(qsase = {}) {
         <div class="qsase-dashboard-shell qsase-dashboard-v2" data-qsase-dashboard-rendered data-qsase-dashboard-contract="qsase_public_dashboard_v2">
             <div class="qsase-dashboard-hero">
                 <div>
-                    <p class="label">Public paper fund dashboard · refreshed layout</p>
-                    <h2>Money first. Decisions last.</h2>
-                    <p>One readable path through the system: portfolio value, current holdings, trading history, source network, strategy universe, patterns, live trade thinking, and the final PaperOps gate.</p>
+                    <p class="label">Qadam paper fund dashboard</p>
+                    <h2>Qadam Paper Fund</h2>
+                    <p>Read-only public view of the paper account, its evidence network, watched markets, strategy families, active patterns, and guarded PaperOps decision state.</p>
                 </div>
-                <div class="stage7-kpi-strip compact">
-                    ${renderMetric("Paper value", formatMoney(portfolio.current_value_gbp, currency))}
-                    ${renderMetric("Holdings", portfolio.open_position_count || qsase.current_position_count || 0)}
-                    ${renderMetric("Closed trades", portfolio.closed_trade_count || qsase.trading_history?.closed_trade_row_count || 0)}
-                    ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
-                    ${renderMetric("Decision", decisionLabel)}
+                <div class="qsase-status-card">
+                    <span>Current decision</span>
+                    <strong>${qsaseHtmlText(decisionLabel)}</strong>
+                    <p>${qsaseHtmlText(decision)}</p>
                 </div>
             </div>
-            <nav class="qsase-jump-row" aria-label="Public dashboard sections">
-                <a href="#qsase-portfolio">Portfolio value</a>
-                <a href="#qsase-holdings">Holdings</a>
-                <a href="#qsase-history">History</a>
-                <a href="#qsase-sources">Sources</a>
-                <a href="#qsase-strategies">Strategies</a>
-                <a href="#qsase-patterns">Patterns</a>
-                <a href="#qsase-thinking">Thinking</a>
-                <a href="#qsase-pattern-workflow">Pattern workflow</a>
-                <a href="#qsase-decision">PaperOps gate</a>
-            </nav>
+            <div class="stage7-kpi-strip compact qsase-kpi-row" aria-label="Paper fund summary">
+                ${renderMetric("Paper value", formatMoney(portfolio.current_value_gbp, currency))}
+                ${renderMetric("Holdings", firstPresent(qsase.current_portfolio?.reported_open_position_count, portfolio.open_position_count, qsase.current_position_count, 0))}
+                ${renderMetric("Closed trades", portfolio.closed_trade_count || qsase.trading_history?.closed_trade_row_count || 0)}
+                ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
+                ${renderMetric("Decision", decisionLabel)}
+            </div>
             ${renderQsasePortfolioValue(qsase)}
             ${renderQsaseCurrentPortfolio(qsase)}
             ${renderQsaseTradingHistory(qsase)}
@@ -13212,7 +13218,7 @@ function renderWatching(status, viewModels = {}) {
         <details class="evidence-source-ledger" data-evidence-source-ledger>
             <summary>
                 <strong>Detailed source ledger</strong>
-                <span>Advanced diagnostic rows for credentials, heartbeats, adapters, source payload freshness, and supplemental inputs.</span>
+                <span>Diagnostic rows for credentials, heartbeats, adapters, source payload freshness, and supplemental inputs.</span>
             </summary>
             <div class="evidence-source-ledger-body">${sourceLedgerHtml}</div>
         </details>
@@ -13298,7 +13304,7 @@ function renderReasoningHypothesisSummary(hypothesis) {
             </div>
             <dl class="cognition-facts">
                 <div>
-                    <dt>Advanced by</dt>
+                        <dt>Progressed by</dt>
                     <dd>${htmlText(hypothesis.advanced_by, "No advancement reason exported.")}</dd>
                 </div>
                 <div>
@@ -14066,7 +14072,7 @@ function renderCognition(status, viewModels = {}) {
         ${renderReasoningWorkspace(reasoning)}
         <details class="reasoning-review-group reasoning-advanced-diagnostics" data-reasoning-review-group="advanced_diagnostics">
             <summary>
-                <strong>Advanced cognition diagnostics</strong>
+                <strong>Cognition diagnostics</strong>
                 <span>Legacy detail for paper context, model activity, local research, strategy handoff, and signal integrity.</span>
                 <em>${htmlText(activity.length + shadowPackets.length + localResearch.length + strategyPackets.length + signalReviews.length)} records</em>
             </summary>
