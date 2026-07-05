@@ -107,6 +107,10 @@ function assertStaticContract() {
         "Final Paper-Trade Gate",
         "Public truth layer",
         "Most actionable pattern",
+        "data-tooltip-contract=\"nontechnical-guide\"",
+        "data-guide-marker=",
+        "current_portfolio",
+        "pattern_intelligence_findings",
         "trade markers are read-only history, not proof credit",
         "No order authority",
         "qsase-detail-ledger",
@@ -141,6 +145,9 @@ function assertStaticContract() {
         ".qsase-status-card",
         ".qsase-market-pill-row",
         ".qsase-final-decision",
+        ".qsase-guide-marker",
+        ".qsase-guide-card",
+        ".qsase-callout-head",
         ".qsase-workflow-message",
         ".qsase-dashboard-v2",
         ".qsase-detail-ledger"
@@ -149,7 +156,7 @@ function assertStaticContract() {
 
     assertIncludesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-public-truth-v3",
+        "/dashboard.js?v=20260705-guide-markers-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -249,6 +256,13 @@ async function assertRenderedContract() {
         "Qadam's current read",
         "Public truth layer",
         "Most actionable pattern",
+        "data-tooltip-contract=\"nontechnical-guide\"",
+        "data-guide-marker=\"current_portfolio\"",
+        "data-guide-marker=\"pattern_intelligence_findings\"",
+        "Holdings versus waiting orders",
+        "How to read pattern recognition",
+        "Guide: How to read pattern recognition",
+        "What a trade intent means",
         "What blocks the trade",
         "Technical evidence ledger",
         "These sources can inform hypotheses, but none of them can place trades."
