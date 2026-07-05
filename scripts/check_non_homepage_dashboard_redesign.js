@@ -34,7 +34,7 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260705-position-orders-v1",
+    "/dashboard.js?v=20260705-public-truth-v3",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 

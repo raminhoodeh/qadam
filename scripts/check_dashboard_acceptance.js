@@ -131,7 +131,7 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "/auth.css?v=20260705-topnav-v1",
-    "/dashboard.js?v=20260705-position-orders-v1"
+    "/dashboard.js?v=20260705-public-truth-v3"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -213,7 +213,10 @@ function assertNoUnsafePublicText(text, label) {
     "qsase-kpi-row",
     "qsase-trading-timeline",
     "qsase-source-category-row",
-    "qsase-market-pill-row"
+    "qsase-market-pill-row",
+    "qsase-public-summary",
+    "qsase-pattern-priority",
+    "Final Paper-Trade Gate"
 ].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 
 [

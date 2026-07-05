@@ -233,7 +233,7 @@ async function assertRenderedDashboardContract() {
 async function main() {
     includesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-position-orders-v1"
+        "/dashboard.js?v=20260705-public-truth-v3"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

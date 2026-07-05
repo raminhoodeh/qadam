@@ -104,7 +104,9 @@ function assertStaticContract() {
         "Trading Strategy Universe",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Router & PaperOps Gate",
+        "Final Paper-Trade Gate",
+        "Public truth layer",
+        "Most actionable pattern",
         "trade markers are read-only history, not proof credit",
         "No order authority",
         "qsase-detail-ledger",
@@ -147,7 +149,7 @@ function assertStaticContract() {
 
     assertIncludesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-position-orders-v1",
+        "/dashboard.js?v=20260705-public-truth-v3",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -187,7 +189,7 @@ async function assertRenderedContract() {
         "Trading Strategy Universe",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Router &amp; PaperOps Gate"
+        "Final Paper-Trade Gate"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
     [
@@ -211,7 +213,7 @@ async function assertRenderedContract() {
         "Trading Strategy Universe",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
-        "Router &amp; PaperOps Gate"
+        "Final Paper-Trade Gate"
     ].map((label) => stageHtml.indexOf(label));
     assert(order.every((index) => index >= 0), "rendered QSASE dashboard missing required labels");
     assert(order.every((index, position) => position === 0 || index > order[position - 1]), "rendered QSASE dashboard order is not money-first");
@@ -245,11 +247,21 @@ async function assertRenderedContract() {
         "qsase-pattern-brief",
         "qsase-pattern-flow",
         "Qadam's current read",
+        "Public truth layer",
+        "Most actionable pattern",
         "What blocks the trade",
         "Technical evidence ledger",
         "These sources can inform hypotheses, but none of them can place trades."
     ].forEach((needle) => {
         assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
+    });
+
+    [
+        "Router &amp; PaperOps Gate",
+        "guarded PaperOps decision state",
+        "Nothing is currently being considered by QSASE"
+    ].forEach((needle) => {
+        assert(!stageHtml.includes(needle), `rendered QSASE dashboard still exposes internal copy ${needle}`);
     });
 }
 
