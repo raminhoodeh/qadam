@@ -11510,7 +11510,7 @@ body.qadam-dashboard-page .qsase-status-card strong {
 }
 
 body.qadam-dashboard-page .qsase-kpi-row.stage7-kpi-strip.compact {
-    grid-template-columns: repeat(5, minmax(10rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
 body.qadam-dashboard-page .qsase-kpi-row .metric {
@@ -11569,6 +11569,42 @@ body.qadam-dashboard-page .qsase-workflow-message {
     margin: var(--qadam-space-4) 0;
 }
 
+body.qadam-dashboard-page .qsase-public-summary,
+body.qadam-dashboard-page .qsase-pattern-priority {
+    background: var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 5px solid var(--qadam-color-ok);
+    box-shadow: var(--qadam-shadow-card);
+    display: grid;
+    gap: var(--qadam-space-3);
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.qadam-dashboard-page .qsase-public-summary span,
+body.qadam-dashboard-page .qsase-pattern-priority span,
+body.qadam-dashboard-page .qsase-pattern-priority dt {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-public-summary p,
+body.qadam-dashboard-page .qsase-pattern-priority p {
+    color: var(--qadam-color-heading);
+    font-size: clamp(1rem, 1.5vw, 1.15rem);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-public-summary small,
+body.qadam-dashboard-page .qsase-pattern-priority small {
+    color: var(--qadam-color-muted);
+    line-height: 1.45;
+}
+
 body.qadam-dashboard-page .qsase-pattern-intelligence {
     border-left-color: rgba(var(--qadam-rgb-watch), 0.38);
 }
@@ -11609,6 +11645,28 @@ body.qadam-dashboard-page .qsase-pattern-brief small,
 body.qadam-dashboard-page .qsase-pattern-finding small {
     color: var(--qadam-color-muted);
     line-height: 1.45;
+}
+
+body.qadam-dashboard-page .qsase-pattern-priority dl {
+    display: grid;
+    gap: var(--qadam-space-3);
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-pattern-priority div {
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-pattern-priority dt,
+body.qadam-dashboard-page .qsase-pattern-priority dd {
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-pattern-priority dd {
+    color: var(--qadam-color-heading);
+    line-height: var(--qadam-leading-body);
+    margin-top: 0.25rem;
 }
 
 body.qadam-dashboard-page .qsase-readiness-ladder {
