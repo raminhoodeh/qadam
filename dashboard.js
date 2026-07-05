@@ -12207,6 +12207,15 @@ const QSASE_GUIDE_MARKERS = {
             ["Broker writes", "Must remain zero from this public surface."]
         ]
     },
+    pulse_terminal: {
+        title: "How to read the pulse terminal",
+        summary: "This is a live-looking, public-safe heartbeat built from Qadam's exported status snapshot. It summarizes what each node is doing without exposing secrets or giving the dashboard command authority.",
+        rows: [
+            ["Node", "The part of the fund team being summarized."],
+            ["Line", "The latest exported public status for that node."],
+            ["Read-only", "It cannot execute commands, create orders, or reveal private model reasoning."]
+        ]
+    },
     public_truth_layer: {
         title: "Why this note matters",
         summary: "This translates broker state into human language, especially when there are accepted paper orders but no filled holdings yet.",
@@ -12839,6 +12848,133 @@ function renderQsaseRouterPaperOps(qsase = {}) {
     `;
 }
 
+function qsasePulseCount(...values) {
+    return modelNumber(firstPresent(...values, 0), 0);
+}
+
+function qsasePulseStatus(value, fallback = "pending") {
+    return statusClass(value || fallback);
+}
+
+function qsasePulseNodeRows(qsase = {}) {
+    const portfolio = qsase.dashboard_portfolio || {};
+    const sources = qsase.source_network || {};
+    const strategies = qsase.strategy_universe || {};
+    const patterns = qsase.pattern_intelligence || {};
+    const intents = qsase.trade_intents || {};
+    const router = qsase.router || {};
+    const gate = qsase.paperops_gate || {};
+    const oracle = qsase.quantum_oracle || {};
+    const fireOpal = qsase.fire_opal_ibm || {};
+    const consultation = qsase.qctrl_consultation || {};
+    const fundSummary = qsasePublicFundSummary(qsase);
+    const decisionCounts = qsaseRouterDecisionCounts(router);
+    const sourceCount = qsasePulseCount(sources.source_row_count, asArray(sources.source_rows).length);
+    const categoryCount = qsasePulseCount(sources.category_row_count, asArray(sources.category_rows).length);
+    const strategyCount = qsasePulseCount(strategies.strategy_row_count, strategies.all_strategy_count, asArray(strategies.rows).length, asArray(strategies.strategy_rows).length);
+    const intentCount = qsasePulseCount(intents.intent_count, intents.trade_intent_count, asArray(intents.rows).length);
+    const patternCount = qsasePulseCount(patterns.finding_count, asArray(patterns.findings).length, (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0));
+    const paperReadyCount = qsasePulseCount(patterns.paper_ready_count, patterns.trade_candidate_created_count);
+    const quantumMode = firstPresent(oracle.latest_local_simulation_mode, oracle.latest_backend, qsase.quantum_review?.mode, qsase.quantum_review?.quantum_mode, "nonlinear review mode not exported");
+    const quantumStatus = firstPresent(consultation.status, fireOpal.status, oracle.status, qsase.quantum_review?.status, "status not exported");
+    const generatedAt = formatTime(qsase.generated_at || portfolio.generated_at || patterns.generated_at);
+    const finalDecision = qsaseRouterHeadline(router, gate);
+
+    return [
+        {
+            node: "Python COO",
+            stream: "status export",
+            tone: "online",
+            line: `Public snapshot refreshed at ${generatedAt}; ${fundSummary.pending_orders} paper orders wait for Alpaca fill.`
+        },
+        {
+            node: "Local LLM",
+            stream: "research compression",
+            tone: sources.status || "online",
+            line: `Compressing ${sourceCount} source records across ${categoryCount} categories into evidence packets. Sources remain read-only.`
+        },
+        {
+            node: "Frontier LLM",
+            stream: "strategy challenge",
+            tone: strategies.status || "pending",
+            line: `Reviewing ${strategyCount} strategy families and ${intentCount} trade intents; strongest ideas still need gates before paper execution.`
+        },
+        {
+            node: "Head of Quant",
+            stream: "nonlinear review",
+            tone: quantumStatus,
+            line: `${qsaseHumanText(quantumMode)} is the current public nonlinear-review path; Q-CTRL / IBM device state is ${qsaseHumanText(quantumStatus)}.`
+        },
+        {
+            node: "Signal Integrity",
+            stream: "pattern recognition",
+            tone: paperReadyCount ? "pending" : patterns.status || "online",
+            line: `${patternCount} pattern findings documented; ${paperReadyCount} are close enough to paper review to need extra confirmation.`
+        },
+        {
+            node: "Risk Desk",
+            stream: "safety boundary",
+            tone: decisionCounts.safetyBlocks ? "blocked" : "online",
+            line: `${decisionCounts.safetyBlocks} safety vetoes, ${decisionCounts.held} ideas held for evidence, and live capital disabled.`
+        },
+        {
+            node: "Paper Desk",
+            stream: "Alpaca paper mirror",
+            tone: fundSummary.pending_orders ? "pending" : "online",
+            line: `${fundSummary.open_positions} filled positions, ${fundSummary.pending_orders} pending paper orders, ${fundSummary.closed_trades} closed paper trades.`
+        },
+        {
+            node: "Learning Loop",
+            stream: "postmortem memory",
+            tone: qsase.learning_ledger?.status || "pending",
+            line: `Outcomes and edge notes are kept as review records; strategy changes remain governed and cannot self-promote.`
+        },
+        {
+            node: "Final Gate",
+            stream: "paper-trade decision",
+            tone: decisionCounts.paperReview ? "pending" : qsaseDecisionClass(finalDecision),
+            line: `${finalDecision} Dashboard view is read-only and cannot submit broker writes.`
+        }
+    ];
+}
+
+function renderQsasePulseTerminal(qsase = {}) {
+    const rows = qsasePulseNodeRows(qsase);
+    const portfolio = qsase.dashboard_portfolio || {};
+    const generatedAt = formatTime(qsase.generated_at || portfolio.generated_at);
+    const rainTokens = [
+        "0101 QADAM SOURCE FLOW 1010",
+        "0011 LOCAL LLM WATCH 1100",
+        "1010 FRONTIER REVIEW 0101",
+        "0110 QUANT SHADOW HOLD 1001",
+        "1001 PAPER RISK GATE 0110"
+    ];
+    return `
+        <section id="qsase-pulse-terminal" class="qsase-section qsase-pulse-terminal" data-qsase-section="pulse_terminal">
+            ${renderQsaseSectionHeader("Qadam Pulse Terminal", "Live public-safe heartbeat across Qadam's nodes", "paper mode read-only", "online", "pulse_terminal")}
+            <div class="qsase-terminal-frame" aria-live="polite">
+                <div class="matrix-rain" aria-hidden="true">
+                    ${rainTokens.map((token, index) => `<span style="--rain-index:${index};">${qsaseHtmlText(token)}</span>`).join("")}
+                </div>
+                <div class="qsase-terminal-topline">
+                    <span>QADAM HEARTBEAT</span>
+                    <strong>${qsaseHtmlText(generatedAt)} / public snapshot / no command authority</strong>
+                </div>
+                <ol class="qsase-terminal-lines">
+                    ${rows.map((row, index) => `
+                        <li class="qsase-terminal-line ${qsasePulseStatus(row.tone)}" style="--line-index:${index}; --line-delay:${index * 80}ms;">
+                            <span class="qsase-terminal-node">${qsaseHtmlText(row.node)}</span>
+                            <span class="qsase-terminal-stream">${qsaseHtmlText(row.stream)}</span>
+                            <span class="qsase-terminal-thought">${qsaseHtmlText(row.line)}</span>
+                        </li>
+                    `).join("")}
+                </ol>
+                <p class="qsase-terminal-cursor"><span aria-hidden="true"></span> Public thought stream refreshes with the dashboard status file; it exposes no secrets, private reasoning, or broker controls.</p>
+            </div>
+        </section>
+    `;
+}
+
 function renderQsaseDashboardVisibility(qsase = {}) {
     const portfolio = qsase.dashboard_portfolio || {};
     const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
@@ -12900,6 +13036,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             ${renderQsaseTradeIntents(qsase)}
             ${renderQsasePatternToPaperWorkflow(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}
+            ${renderQsasePulseTerminal(qsase)}
             <p class="qsase-boundary-note">${qsaseHtmlText(qsase.boundary)}</p>
         </div>
     `;

@@ -12128,10 +12128,280 @@ body.qadam-dashboard-page .qsase-final-decision.degraded {
     border-color: rgba(var(--qadam-rgb-risk), 0.42);
 }
 
+body.qadam-dashboard-page .qsase-pulse-terminal {
+    background: #070b0a;
+    border-color: rgba(87, 196, 148, 0.42);
+    border-left-color: #36d399;
+    color: #d9ffe9;
+    overflow: hidden;
+}
+
+body.qadam-dashboard-page .qsase-pulse-terminal .qsase-section-head {
+    border-bottom-color: rgba(126, 231, 180, 0.18);
+}
+
+body.qadam-dashboard-page .qsase-pulse-terminal .qsase-section-head span,
+body.qadam-dashboard-page .qsase-pulse-terminal .qsase-section-head strong {
+    color: #eafff2;
+}
+
+body.qadam-dashboard-page .qsase-pulse-terminal .qsase-section-actions .inline-badge {
+    background: rgba(54, 211, 153, 0.12);
+    border-color: rgba(54, 211, 153, 0.42);
+    color: #9ff8c7;
+}
+
+body.qadam-dashboard-page .qsase-pulse-terminal .qsase-guide-marker .info-button {
+    background: rgba(10, 22, 17, 0.92);
+    border-color: rgba(126, 231, 180, 0.42);
+    color: #9ff8c7;
+}
+
+body.qadam-dashboard-page .qsase-terminal-frame {
+    background:
+        linear-gradient(90deg, rgba(54, 211, 153, 0.1), transparent 38%, rgba(126, 231, 180, 0.06)),
+        linear-gradient(180deg, rgba(7, 15, 12, 0.92), rgba(1, 5, 4, 0.98));
+    border: 1px solid rgba(126, 231, 180, 0.28);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.3), inset 0 0 42px rgba(54, 211, 153, 0.08);
+    display: grid;
+    gap: 1rem;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(1rem, 2vw, 1.35rem);
+    position: relative;
+}
+
+body.qadam-dashboard-page .qsase-terminal-frame::after {
+    animation: qadamTerminalScan 4.8s linear infinite;
+    background: linear-gradient(180deg, transparent, rgba(159, 248, 199, 0.08), transparent);
+    content: "";
+    inset: -30% 0;
+    pointer-events: none;
+    position: absolute;
+    transform: translateY(-45%);
+    z-index: 0;
+}
+
+body.qadam-dashboard-page .matrix-rain {
+    inset: 0;
+    opacity: 0.34;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+}
+
+body.qadam-dashboard-page .matrix-rain span {
+    animation: qadamMatrixFall 8s linear infinite;
+    color: rgba(108, 255, 185, 0.42);
+    font-family: var(--qadam-font-mono);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    position: absolute;
+    text-shadow: 0 0 12px rgba(54, 211, 153, 0.6);
+    top: -20%;
+    writing-mode: vertical-rl;
+}
+
+body.qadam-dashboard-page .matrix-rain span:nth-child(1) {
+    animation-delay: -1s;
+    left: 4%;
+}
+
+body.qadam-dashboard-page .matrix-rain span:nth-child(2) {
+    animation-delay: -3.4s;
+    left: 28%;
+}
+
+body.qadam-dashboard-page .matrix-rain span:nth-child(3) {
+    animation-delay: -5.2s;
+    left: 52%;
+}
+
+body.qadam-dashboard-page .matrix-rain span:nth-child(4) {
+    animation-delay: -2.2s;
+    left: 74%;
+}
+
+body.qadam-dashboard-page .matrix-rain span:nth-child(5) {
+    animation-delay: -6.6s;
+    left: 90%;
+}
+
+body.qadam-dashboard-page .qsase-terminal-topline,
+body.qadam-dashboard-page .qsase-terminal-lines,
+body.qadam-dashboard-page .qsase-terminal-cursor {
+    position: relative;
+    z-index: 1;
+}
+
+body.qadam-dashboard-page .qsase-terminal-topline {
+    align-items: center;
+    border-bottom: 1px solid rgba(126, 231, 180, 0.16);
+    color: rgba(217, 255, 233, 0.72);
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--qadam-font-mono);
+    gap: 0.6rem 1rem;
+    justify-content: space-between;
+    padding-bottom: 0.85rem;
+}
+
+body.qadam-dashboard-page .qsase-terminal-topline span {
+    color: #9ff8c7;
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+body.qadam-dashboard-page .qsase-terminal-topline strong {
+    color: rgba(217, 255, 233, 0.78);
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+body.qadam-dashboard-page .qsase-terminal-lines {
+    counter-reset: pulse-line;
+    display: grid;
+    gap: 0.55rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.qadam-dashboard-page .qsase-terminal-line {
+    animation: qadamTerminalRowIn 0.6s ease both;
+    animation-delay: var(--line-delay);
+    align-items: baseline;
+    background: rgba(2, 12, 8, 0.72);
+    border: 1px solid rgba(126, 231, 180, 0.14);
+    counter-increment: pulse-line;
+    display: grid;
+    gap: 0.5rem 0.85rem;
+    grid-template-columns: minmax(7.5rem, 0.18fr) minmax(9rem, 0.22fr) minmax(0, 1fr);
+    padding: 0.82rem 0.95rem;
+}
+
+body.qadam-dashboard-page .qsase-terminal-line::before {
+    color: rgba(159, 248, 199, 0.58);
+    content: "[" counter(pulse-line, decimal-leading-zero) "]";
+    font-family: var(--qadam-font-mono);
+    font-size: 0.72rem;
+    grid-column: 1 / -1;
+}
+
+body.qadam-dashboard-page .qsase-terminal-line.online {
+    border-color: rgba(54, 211, 153, 0.34);
+}
+
+body.qadam-dashboard-page .qsase-terminal-line.pending {
+    border-color: rgba(255, 218, 121, 0.32);
+}
+
+body.qadam-dashboard-page .qsase-terminal-line.blocked,
+body.qadam-dashboard-page .qsase-terminal-line.degraded {
+    border-color: rgba(255, 108, 108, 0.34);
+}
+
+body.qadam-dashboard-page .qsase-terminal-node,
+body.qadam-dashboard-page .qsase-terminal-stream,
+body.qadam-dashboard-page .qsase-terminal-thought,
+body.qadam-dashboard-page .qsase-terminal-cursor {
+    font-family: var(--qadam-font-mono);
+}
+
+body.qadam-dashboard-page .qsase-terminal-node {
+    color: #eafff2;
+    font-size: 0.82rem;
+    font-weight: 850;
+}
+
+body.qadam-dashboard-page .qsase-terminal-stream {
+    color: #9ff8c7;
+    font-size: 0.78rem;
+}
+
+body.qadam-dashboard-page .qsase-terminal-thought {
+    color: rgba(234, 255, 242, 0.82);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+body.qadam-dashboard-page .qsase-terminal-cursor {
+    align-items: center;
+    color: rgba(217, 255, 233, 0.66);
+    display: flex;
+    font-size: 0.78rem;
+    gap: 0.55rem;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-terminal-cursor span {
+    animation: qadamCursorBlink 1.1s steps(2, start) infinite;
+    background: #9ff8c7;
+    box-shadow: 0 0 16px rgba(54, 211, 153, 0.72);
+    display: inline-block;
+    height: 1rem;
+    width: 0.55rem;
+}
+
+@keyframes qadamMatrixFall {
+    0% {
+        transform: translateY(-28%);
+    }
+
+    100% {
+        transform: translateY(142%);
+    }
+}
+
+@keyframes qadamTerminalScan {
+    0% {
+        transform: translateY(-45%);
+    }
+
+    100% {
+        transform: translateY(45%);
+    }
+}
+
+@keyframes qadamTerminalRowIn {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes qadamCursorBlink {
+    0%,
+    45% {
+        opacity: 1;
+    }
+
+    46%,
+    100% {
+        opacity: 0.18;
+    }
+}
+
 body.qadam-dashboard-page .qsase-boundary-note {
     border-top: 1px solid var(--qadam-color-rule);
     margin: 0;
     padding-top: var(--qadam-space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.qadam-dashboard-page .matrix-rain span,
+    body.qadam-dashboard-page .qsase-terminal-frame::after,
+    body.qadam-dashboard-page .qsase-terminal-line,
+    body.qadam-dashboard-page .qsase-terminal-cursor span {
+        animation: none;
+    }
 }
 
 @media (max-width: 1180px) {
@@ -12274,5 +12544,13 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .mission-hypothesis-drawer-grid,
     body.qadam-dashboard-page .mission-learning-drawer-grid {
         grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-terminal-line {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-terminal-frame {
+        padding: 16px;
     }
 }
