@@ -58,7 +58,7 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260705-dashboard-ux-v2",
+        "/auth.css?v=20260705-topnav-v1",
         "/dashboard.js?v=20260705-dashboard-ux-v2"
     ], "D11L cache keys");
 

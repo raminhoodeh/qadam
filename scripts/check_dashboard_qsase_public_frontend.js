@@ -146,7 +146,7 @@ function assertStaticContract() {
     assert(!css.includes(".qsase-jump-row"), "QSASE stylesheet still styles removed jump row");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260705-dashboard-ux-v2",
+        "/auth.css?v=20260705-topnav-v1",
         "/dashboard.js?v=20260705-dashboard-ux-v2",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");

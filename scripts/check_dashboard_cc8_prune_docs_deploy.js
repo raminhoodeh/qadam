@@ -122,7 +122,7 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260705-dashboard-ux-v2",
+    "/auth.css?v=20260705-topnav-v1",
     "/dashboard.js?v=20260705-dashboard-ux-v2"
 ], "dashboard cache key");
 includesAll(preflight, [
