@@ -11444,6 +11444,58 @@ body.qadam-dashboard-page .qsase-section-head {
     padding-bottom: var(--qadam-space-4);
 }
 
+body.qadam-dashboard-page .qsase-section-actions,
+body.qadam-dashboard-page .qsase-callout-head {
+    align-items: center;
+    display: flex;
+    gap: var(--qadam-space-2);
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-callout-head {
+    justify-content: space-between;
+}
+
+body.qadam-dashboard-page .qsase-callout-head > :first-child {
+    min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-guide-marker {
+    z-index: 30;
+}
+
+body.qadam-dashboard-page .qsase-guide-marker .info-button {
+    background: rgba(var(--qadam-rgb-info), 0.08);
+    border-color: rgba(var(--qadam-rgb-info), 0.28);
+    color: var(--qadam-color-brand);
+    height: 2rem;
+    min-height: 2rem;
+    width: 2rem;
+}
+
+body.qadam-dashboard-page .qsase-guide-marker .info-card {
+    text-align: left;
+    width: min(24rem, calc(100vw - 2rem));
+}
+
+body.qadam-dashboard-page .qsase-guide-card strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: 1.08rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+body.qadam-dashboard-page .qsase-guide-card p,
+body.qadam-dashboard-page .qsase-guide-card dd {
+    color: var(--qadam-color-muted);
+}
+
+body.qadam-dashboard-page .qsase-guide-card dt {
+    color: var(--qadam-color-brand);
+}
+
 body.qadam-dashboard-page .qsase-section-head span {
     color: var(--qadam-color-muted);
     display: block;
@@ -11656,6 +11708,11 @@ body.qadam-dashboard-page .qsase-pattern-priority dl {
 
 body.qadam-dashboard-page .qsase-pattern-priority div {
     min-width: 0;
+}
+
+body.qadam-dashboard-page .qsase-pattern-priority > .qsase-callout-head,
+body.qadam-dashboard-page .qsase-public-summary > .qsase-callout-head {
+    align-items: start;
 }
 
 body.qadam-dashboard-page .qsase-pattern-priority dt,
@@ -12105,6 +12162,19 @@ body.qadam-dashboard-page .qsase-boundary-note {
 
     body.qadam-dashboard-page .nav-actions {
         justify-self: stretch;
+    }
+
+    body.qadam-dashboard-page .qsase-section-head {
+        align-items: start;
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-section-actions {
+        justify-content: flex-start;
+    }
+
+    body.qadam-dashboard-page .qsase-callout-head {
+        align-items: flex-start;
     }
 }
 

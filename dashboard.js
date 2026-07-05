@@ -12116,6 +12116,134 @@ function renderQsaseInlineBadge(value, status = "pending") {
     return `<span class="inline-badge ${statusClass(status)}">${qsaseHtmlText(qsaseBadgeText(value))}</span>`;
 }
 
+const QSASE_GUIDE_MARKERS = {
+    fund_overview: {
+        title: "What this first view means",
+        summary: "This is the plain-English readout of the paper fund right now. It separates filled positions from orders that are still waiting for Alpaca paper to fill.",
+        rows: [
+            ["Paper value", "The current simulated account value."],
+            ["Open orders", "Paper orders accepted by Alpaca but not yet filled."],
+            ["No live money", "This public dashboard cannot move real capital."]
+        ]
+    },
+    portfolio_value_return: {
+        title: "How to read the fund chart",
+        summary: "This chart shows the paper account value over time, so you can see whether Qadam's paper fund is moving toward or away from its target.",
+        rows: [
+            ["Line", "Paper account value across recent snapshots."],
+            ["Markers", "Read-only trade-history points, not proof that a new trade was created."],
+            ["P&L", "Open and closed profit/loss are shown separately."]
+        ]
+    },
+    current_portfolio: {
+        title: "Holdings versus waiting orders",
+        summary: "A holding only appears after Alpaca paper reports a filled position. Accepted orders are real paper activity, but they are not counted as holdings until filled.",
+        rows: [
+            ["Position", "A filled paper holding currently in the account."],
+            ["Pending order", "An accepted paper order waiting for market fill."],
+            ["Why 0 can be OK", "Zero holdings can still coexist with open paper orders."]
+        ]
+    },
+    trading_history: {
+        title: "How to read the timeline",
+        summary: "This is the chronological paper ledger. It records accepted, filled, bought, sold, and closed paper events without allowing any action from the dashboard.",
+        rows: [
+            ["Green", "Buy or order activity."],
+            ["Red/brand", "Sell or close activity."],
+            ["Click target", "Use the timeline to understand what happened before judging the current state."]
+        ]
+    },
+    source_intelligence_network: {
+        title: "What the data-source section means",
+        summary: "These are the real-world feeds Qadam watches. They can support or weaken a hypothesis, but no data source can place trades.",
+        rows: [
+            ["Category", "A human grouping such as geopolitics, macro, markets, or social news."],
+            ["Fresh", "Recently updated enough to be useful."],
+            ["Quorum", "A source allowed to contribute evidence, not authority."]
+        ]
+    },
+    trading_strategy_universe: {
+        title: "How strategies and markets connect",
+        summary: "Each card shows a strategy family and the instruments it watches. A strategy can consider a market, but it still needs evidence, risk, and final paper-gate approval.",
+        rows: [
+            ["Strategy", "The trading lens Qadam is applying."],
+            ["Proxy", "The paper-tradable instrument used to express an idea."],
+            ["State", "Where that strategy currently sits in the review process."]
+        ]
+    },
+    pattern_intelligence_findings: {
+        title: "How to read pattern recognition",
+        summary: "Pattern findings are research discoveries first. Qadam must document, validate, and gate them before they can become a paper trade candidate.",
+        rows: [
+            ["Found", "A possible relationship appeared in the data."],
+            ["Validated", "Enough evidence has accumulated to trust it more."],
+            ["Paper-ready", "The pattern survived enough checks to approach the final gate."]
+        ]
+    },
+    pattern_priority: {
+        title: "Why this pattern is highlighted",
+        summary: "This is the pattern Qadam currently considers most actionable, not necessarily a trade. The blocker and next action explain what still has to happen.",
+        rows: [
+            ["Market", "The sleeve or instrument the pattern affects."],
+            ["Evidence", "The strongest supporting signals."],
+            ["Blocker", "The reason it is not yet a paper order."]
+        ]
+    },
+    trade_intents: {
+        title: "What a trade intent means",
+        summary: "A trade intent is Qadam thinking about a possible action. It is not an order. It must pass source agreement, the six-stage filter, quantum/nonlinear review, risk, and the final gate.",
+        rows: [
+            ["Intent", "A candidate idea under review."],
+            ["Next", "The next condition needed before it can advance."],
+            ["No order", "Unless explicitly stated, no broker order was created."]
+        ]
+    },
+    router_paperops_gate: {
+        title: "What the final gate does",
+        summary: "This is the last paper-trade checkpoint. It shows why ideas are held, vetoed, or allowed toward paper review. The dashboard itself still has no order authority.",
+        rows: [
+            ["Held", "Needs stronger evidence or a distinct setup."],
+            ["Veto", "A safety or policy rule stopped it."],
+            ["Broker writes", "Must remain zero from this public surface."]
+        ]
+    },
+    public_truth_layer: {
+        title: "Why this note matters",
+        summary: "This translates broker state into human language, especially when there are accepted paper orders but no filled holdings yet.",
+        rows: [
+            ["Truth source", "Read-only Alpaca paper mirror plus Qadam's public snapshot."],
+            ["Freshness", "How recently the mirror was exported."],
+            ["No commands", "This layer explains state; it cannot change it."]
+        ]
+    }
+};
+
+function renderQsaseGuideMarker(key, override = {}) {
+    const guide = { ...(QSASE_GUIDE_MARKERS[key] || {}), ...(override || {}) };
+    if (!guide.title && !guide.summary) return "";
+    const tooltipId = `qsase-guide-${String(key || guide.title || "marker").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+    const rows = asArray(guide.rows);
+    return `
+        <div class="info-hover qsase-guide-marker" data-guide-marker="${literalHtmlText(key || "guide")}">
+            <button class="info-button" type="button" aria-label="${literalHtmlText(`Guide: ${guide.title || "What this means"}`)}" aria-describedby="${literalHtmlText(tooltipId)}">i</button>
+            <div id="${literalHtmlText(tooltipId)}" class="info-card section-explainer qsase-guide-card" role="tooltip" data-section-explainer="${literalHtmlText(key || "guide")}" data-tooltip-contract="nontechnical-guide">
+                <strong>${qsaseHtmlText(guide.title || "What this means")}</strong>
+                ${guide.summary ? `<p>${qsaseHtmlText(guide.summary)}</p>` : ""}
+                ${rows.length ? `
+                    <dl class="explainer-grid compact">
+                        ${rows.map(([term, meaning]) => `
+                            <div>
+                                <dt>${qsaseHtmlText(term)}</dt>
+                                <dd>${qsaseHtmlText(meaning)}</dd>
+                            </div>
+                        `).join("")}
+                    </dl>
+                ` : ""}
+            </div>
+        </div>
+    `;
+}
+
 function qsaseRouterDecisionCounts(router = {}) {
     const ranked = asArray(router.scoreboard?.ranked_decisions);
     const outputCounts = ranked.reduce((counts, decision) => {
@@ -12141,14 +12269,17 @@ function qsaseRouterHeadline(router = {}, gate = {}) {
     return qsaseHumanText(rawReason);
 }
 
-function renderQsaseSectionHeader(label, headline, meta = "", tone = "pending") {
+function renderQsaseSectionHeader(label, headline, meta = "", tone = "pending", guideKey = "") {
     return `
         <div class="qsase-section-head">
             <div>
                 <span>${qsaseHtmlText(label)}</span>
                 <strong>${qsaseHtmlText(headline)}</strong>
             </div>
-            ${meta ? renderQsaseInlineBadge(meta, tone) : ""}
+            <div class="qsase-section-actions">
+                ${meta ? renderQsaseInlineBadge(meta, tone) : ""}
+                ${guideKey ? renderQsaseGuideMarker(guideKey) : ""}
+            </div>
         </div>
     `;
 }
@@ -12207,7 +12338,10 @@ function renderQsasePortfolioValue(qsase = {}) {
         <section id="qsase-portfolio" class="qsase-section qsase-portfolio-value ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
             <div class="qsase-money-hero">
                 <div>
-                    <p class="label">Portfolio Value &amp; Return</p>
+                    <div class="qsase-callout-head">
+                        <p class="label">Portfolio Value &amp; Return</p>
+                        ${renderQsaseGuideMarker("portfolio_value_return")}
+                    </div>
                     <h2>${formatMoney(latestValue, currency)}</h2>
                     <p>${formatMoney(delta, currency)} since reset-base/first point · ${deltaPct}% return · ${chartSeries.length} paper-account snapshots.</p>
                 </div>
@@ -12357,7 +12491,7 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
         : "The current-portfolio artifact is explicit, read-only, and does not fabricate holdings.";
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
-            ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"))}
+            ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
             <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "Open positions come from the read-only Alpaca paper position mirror. Accepted paper orders are pending activity, not holdings, until the broker reports a fill.")}</p>
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
@@ -12389,7 +12523,7 @@ function renderQsaseTradingHistory(qsase = {}) {
     const allRows = asArray(section.rows);
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, section.timeline_order || section.status, allRows.length ? "online" : "pending")}
+            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, section.timeline_order || section.status, allRows.length ? "online" : "pending", "trading_history")}
             <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology">
                 ${allRows.length ? allRows.map((row) => {
                     const tone = qsaseTradeEventTone(row);
@@ -12423,7 +12557,7 @@ function renderQsaseSourceNetwork(qsase = {}) {
     const sourcesForFamily = (family) => allSources.filter((source) => String(source.family || "").toLowerCase() === String(family || "").toLowerCase());
     return `
         <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
-            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || allSources.length} connected source rows · ${categories.length} categories`, section.status, "online")}
+            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || allSources.length} connected source rows · ${categories.length} categories`, section.status, "online", "source_intelligence_network")}
             <div class="qsase-source-category-list">
                 ${categories.map((row, index) => {
                     const familySources = sourcesForFamily(row.family);
@@ -12460,7 +12594,7 @@ function renderQsaseStrategyUniverse(qsase = {}) {
     const unassignedMarkets = asArray(section.unassigned_watched_markets);
     return `
         <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
-            ${renderQsaseSectionHeader("Trading Strategy Universe", `${section.all_strategy_count || rows.length} strategies · ${section.watched_market_count || 0} watched instruments`, section.status, rows.length ? "online" : "pending")}
+            ${renderQsaseSectionHeader("Trading Strategy Universe", `${section.all_strategy_count || rows.length} strategies · ${section.watched_market_count || 0} watched instruments`, section.status, rows.length ? "online" : "pending", "trading_strategy_universe")}
             <div class="qsase-card-grid qsase-strategy-grid">
                 ${rows.map((row) => {
                     const watched = asArray(row.watched_markets);
@@ -12514,7 +12648,7 @@ function renderQsasePatternLab(qsase = {}) {
     const summary = section.summary || `${findings.length} pattern findings available. These are research findings, not orders.`;
     return `
         <section id="qsase-patterns" class="qsase-section qsase-pattern-intelligence" data-qsase-section="pattern_intelligence_findings">
-            ${renderQsaseSectionHeader("Pattern Recognition Findings", summary, section.status, rows.length ? "pending" : "degraded")}
+            ${renderQsaseSectionHeader("Pattern Recognition Findings", summary, section.status, rows.length ? "pending" : "degraded", "pattern_intelligence_findings")}
             <article class="qsase-pattern-brief">
                 <span>Qadam's current read</span>
                 <p>${qsaseHtmlText(humanBrief.body || "Qadam has not exported a human-readable pattern brief yet.").replace(/\n/g, "<br><br>")}</p>
@@ -12522,9 +12656,12 @@ function renderQsasePatternLab(qsase = {}) {
             </article>
             ${topFinding.pattern_id ? `
                 <article class="qsase-pattern-priority ${statusClass(topFinding.stage_key)}">
-                    <div>
-                        <span>Most actionable pattern</span>
-                        <strong>${qsaseHtmlText(topFinding.title || topFinding.market_affected || "Ranked finding")}</strong>
+                    <div class="qsase-callout-head">
+                        <div>
+                            <span>Most actionable pattern</span>
+                            <strong>${qsaseHtmlText(topFinding.title || topFinding.market_affected || "Ranked finding")}</strong>
+                        </div>
+                        ${renderQsaseGuideMarker("pattern_priority")}
                     </div>
                     <p>${qsaseHtmlText(topFinding.source_signal_summary)} ${qsaseHtmlText(topFinding.price_relationship)} Qadam's current conclusion: ${qsaseHtmlText(topFinding.what_qadam_thinks)}</p>
                     <dl>
@@ -12639,7 +12776,7 @@ function renderQsaseTradeIntents(qsase = {}) {
     const hiddenRows = allRows.slice(4, 24);
     return `
         <section id="qsase-thinking" class="qsase-section" data-qsase-section="trade_intents">
-            ${renderQsaseSectionHeader("Trade Intents / What Qadam Is Thinking", `${section.intent_count || rows.length} review records`, section.status, rows.length ? "pending" : "online")}
+            ${renderQsaseSectionHeader("Trade Intents / What Qadam Is Thinking", `${section.intent_count || rows.length} review records`, section.status, rows.length ? "pending" : "online", "trade_intents")}
             <div class="qsase-card-grid">
                 ${rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state)}">
@@ -12685,7 +12822,7 @@ function renderQsaseRouterPaperOps(qsase = {}) {
     const decisionTone = counts.held ? "degraded" : qsaseDecisionClass(decision);
     return `
         <section id="qsase-decision" class="qsase-section qsase-final-decision ${statusClass(router.status || gate.status)}" data-qsase-section="router_paperops_gate">
-            ${renderQsaseSectionHeader("Final Paper-Trade Gate", decision, router.status || gate.status, decisionTone)}
+            ${renderQsaseSectionHeader("Final Paper-Trade Gate", decision, router.status || gate.status, decisionTone, "router_paperops_gate")}
             <div class="qsase-final-grid">
                 ${renderMetric("Paper review", counts.paperReview)}
                 ${renderMetric("Held for evidence", counts.held)}
@@ -12725,7 +12862,10 @@ function renderQsaseDashboardVisibility(qsase = {}) {
         <div class="qsase-dashboard-shell qsase-dashboard-v2" data-qsase-dashboard-rendered data-qsase-dashboard-contract="qsase_public_dashboard_v2">
             <div class="qsase-dashboard-hero">
                 <div>
-                    <p class="label">Qadam paper fund dashboard</p>
+                    <div class="qsase-callout-head">
+                        <p class="label">Qadam paper fund dashboard</p>
+                        ${renderQsaseGuideMarker("fund_overview")}
+                    </div>
                     <h2>Qadam Paper Fund</h2>
                     <p>Read-only public view of the paper account, evidence network, watched markets, strategy families, active patterns, and final paper-trade gate.</p>
                 </div>
@@ -12736,7 +12876,10 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                 </div>
             </div>
             <article class="qsase-public-summary">
-                <span>Public truth layer</span>
+                <div class="qsase-callout-head">
+                    <span>Public truth layer</span>
+                    ${renderQsaseGuideMarker("public_truth_layer")}
+                </div>
                 <p>${qsaseHtmlText(fundSummary.summary)} This means “0 open positions” is not inactivity; it means Alpaca has not reported filled holdings from the accepted paper orders yet.</p>
                 <small>Mirror freshness: ${qsaseHtmlText(fundSummary.freshness)} · portfolio consistency: ${qsaseHtmlText(qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported")}.</small>
             </article>
