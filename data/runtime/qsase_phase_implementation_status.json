@@ -1,6 +1,6 @@
 {
   "active_phase": "qsase_13_dashboard_visibility",
-  "generated_at": "2026-07-05T11:18:24.852678+00:00",
+  "generated_at": "2026-07-05T11:28:29.667991+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",

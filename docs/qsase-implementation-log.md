@@ -13,7 +13,7 @@
 <!-- qsase_13_dashboard_visibility -->
 ## QSASE-13: Dashboard Visibility
 
-- Generated at: `2026-07-05T11:18:24.852678+00:00`
+- Generated at: `2026-07-05T11:28:29.667991+00:00`
 - Status: `qsase_dashboard_visibility_degraded`
 - Runtime artifact: `data/runtime/qsase_dashboard_status.json`
 - Portfolio series / positions / trading history rows: `120` / `0` / `48`

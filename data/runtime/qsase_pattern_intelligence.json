@@ -55,7 +55,7 @@
       "confidence_score": 0.878,
       "detected_signal": "Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
       "evidence_summary": "Energy disruption setup, supply shock confirmation, and risk-sizing context.",
-      "finding_id": "qsase-pattern-finding:efa0606b909186c32cad",
+      "finding_id": "qsase-pattern-finding:e47e053a4bb38a446515",
       "instrument_symbols": [
         "CL=F",
         "BZ=F",
@@ -80,7 +80,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:91562605873b0a9d85",
+      "pattern_id": "edge-pattern:19c38f887b16b3cf1f",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quantum_review": {
         "hardware_submission_allowed": false,
@@ -141,7 +141,7 @@
       "confidence_score": 0.878,
       "detected_signal": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
       "evidence_summary": "Precious-metals stress, liquidity repricing, and breakout confirmation.",
-      "finding_id": "qsase-pattern-finding:07c174b60bdff660150d",
+      "finding_id": "qsase-pattern-finding:c9d7e2a6a0c52479d783",
       "instrument_symbols": [
         "SI=F",
         "SLV",
@@ -166,7 +166,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:b4fac7b59496689ed4",
+      "pattern_id": "edge-pattern:e348a006904f79e36d",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quantum_review": {
         "hardware_submission_allowed": false,
@@ -222,7 +222,7 @@
       "confidence_score": 0.878,
       "detected_signal": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
       "evidence_summary": "AI infrastructure, export-control, and supply-chain asymmetry.",
-      "finding_id": "qsase-pattern-finding:7a2c3490328c943f7d80",
+      "finding_id": "qsase-pattern-finding:db11e0384488f1eaaf8f",
       "instrument_symbols": [
         "SMH",
         "SOXX",
@@ -249,7 +249,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:a0b187b74396e236d9",
+      "pattern_id": "edge-pattern:2fff6b3421be560e58",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quantum_review": {
         "hardware_submission_allowed": false,
@@ -305,7 +305,7 @@
       "confidence_score": 0.878,
       "detected_signal": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
       "evidence_summary": "Probability-mispricing research against source evidence and market proxies.",
-      "finding_id": "qsase-pattern-finding:b9448df446f682bee705",
+      "finding_id": "qsase-pattern-finding:1262595e7e9bb7ad217e",
       "instrument_symbols": [
         "Polymarket CLOB",
         "Kalshi events"
@@ -328,7 +328,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:46a37d7fbf198a5865",
+      "pattern_id": "edge-pattern:68a53dbebba254e5ec",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quantum_review": {
         "hardware_submission_allowed": false,
@@ -384,7 +384,7 @@
       "confidence_score": 0.878,
       "detected_signal": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
       "evidence_summary": "Geopolitical escalation, procurement, and second-order defence exposure.",
-      "finding_id": "qsase-pattern-finding:83d712c4734fcc6aaf4c",
+      "finding_id": "qsase-pattern-finding:53d9f5d50c0095f2926a",
       "instrument_symbols": [
         "ITA",
         "XAR",
@@ -410,7 +410,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:1132c75b0e4c2c39e2",
+      "pattern_id": "edge-pattern:dd881468b88aa2a306",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quantum_review": {
         "hardware_submission_allowed": false,
@@ -452,7 +452,7 @@
       "what_would_confirm": "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
     }
   ],
-  "generated_at": "2026-07-05T11:18:24.852678+00:00",
+  "generated_at": "2026-07-05T11:28:29.667991+00:00",
   "human_brief": {
     "body": "Qadam compared 37 data sources with 21 watched markets and recognised 5 candidate patterns today. The recognised candidates were that Oil tested supply-route stress; Silver tested macro and mine-supply pressure; Semiconductors tested filings, patents, code, trade and transport pressure; Prediction markets tested news, social and conflict pressure; Defence stocks tested conflict, transport, GPS and filings pressure.\n\nThe learning is cautious because 0 are validated edges and all 5 still miss thirty-day persistence, even though source scan, lead-lag/divergence, confirmation, adversarial review, paper safety and the quantum core gate passed on classical fallback. This can only raise watch priority; it is not a paper order, risk approval, execution approval or live-capital signal.",
     "command_disabled": true,
@@ -476,10 +476,10 @@
   "public_safe": true,
   "qualified_setup_created": false,
   "rank_flags": {
-    "closest_to_paper_review_pattern_id": "edge-pattern:91562605873b0a9d85",
-    "largest_blocker_pattern_id": "edge-pattern:91562605873b0a9d85",
-    "most_actionable_pattern_id": "edge-pattern:91562605873b0a9d85",
-    "strongest_evidence_pattern_id": "edge-pattern:91562605873b0a9d85"
+    "closest_to_paper_review_pattern_id": "edge-pattern:19c38f887b16b3cf1f",
+    "largest_blocker_pattern_id": "edge-pattern:19c38f887b16b3cf1f",
+    "most_actionable_pattern_id": "edge-pattern:19c38f887b16b3cf1f",
+    "strongest_evidence_pattern_id": "edge-pattern:19c38f887b16b3cf1f"
   },
   "read_only": true,
   "schema_version": "qsase_dashboard_view_model.v1",
