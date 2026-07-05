@@ -12,6 +12,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 from typing import Any
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -53,6 +54,17 @@ DAILY_TELEGRAM_LEARNING_BRIEF_BOUNDARY = (
     "handle Telegram commands, call quantum providers, mutate strategy, expose "
     "secrets or chat ids, grant proof credit, deploy code, or enable live capital."
 )
+
+PATTERN_QUALITATIVE_FOCUS = {
+    "oil": "shipping/GPS/fire/flight vs CL=F, BZ=F, USO and XLE",
+    "silver": "rates, trade and mining flow vs SI=F, SLV, SIL and PAAS",
+    "semiconductors": (
+        "export/news, filings, patents, GitHub and transport vs SMH, SOXX, "
+        "NVDA, AMD, TSM and ASML"
+    ),
+    "prediction_markets": "Polymarket/Kalshi odds vs news/social/conflict",
+    "defence": "conflict, maritime/flight, GPS and filings vs ITA, XAR, LMT, RTX and NOC",
+}
 
 
 def _now() -> str:
@@ -181,6 +193,29 @@ def _pattern_names(daily_edge_findings: dict[str, Any]) -> str:
     return ", ".join(names) or "the watched markets"
 
 
+def _pattern_quality_sentence(daily_edge_findings: dict[str, Any]) -> str:
+    clauses: list[str] = []
+    for pattern in daily_edge_findings.get("patterns_observed", []):
+        if not isinstance(pattern, dict):
+            continue
+        name = str(pattern.get("market_sleeve") or pattern.get("sleeve_key") or "").strip()
+        if not name:
+            continue
+        sleeve_key = str(pattern.get("sleeve_key") or "").strip()
+        focus = PATTERN_QUALITATIVE_FOCUS.get(
+            sleeve_key,
+            "source signals leading market movement",
+        )
+        clauses.append(f"{name.lower()} {focus}")
+        if len(clauses) >= 5:
+            break
+    if not clauses:
+        return f"The pattern work stayed broad across {_pattern_names(daily_edge_findings)}."
+    if len(clauses) == 1:
+        return f"The recognised candidate was {clauses[0]}."
+    return f"The reads: {'; '.join(clauses)}."
+
+
 def _portfolio_goal(daily_edge_findings: dict[str, Any]) -> dict[str, Any]:
     goal = daily_edge_findings.get("portfolio_goal_alignment")
     return goal if isinstance(goal, dict) else {}
@@ -195,41 +230,23 @@ def _render_learning_message(
     watched_count = _int(daily_edge_findings.get("watched_instrument_count"))
     candidate_count = _int(daily_edge_findings.get("candidate_pattern_count"))
     validated_count = _int(daily_edge_findings.get("validated_edge_count"))
-    ready_count = _int(promotion_gates.get("promotion_review_ready_count"))
     held_count = _int(promotion_gates.get("promotion_gate_held_count"))
-    quantum_status = str(
-        daily_edge_findings.get("quantum_mandatory_review_gate_status")
-        or daily_edge_findings.get("quantum_review_status")
-        or "not run"
-    ).replace("_", " ")
     quantum_backend = str(daily_edge_findings.get("quantum_backend") or "not exported").replace(
         "_",
         " ",
     )
-    goal = _portfolio_goal(daily_edge_findings)
-    current = _float(goal.get("current_value_gbp"), 0.0)
-    target = _float(goal.get("target_value_gbp"), 200000.0)
-    progress = _float(goal.get("progress_to_double_pct"), 0.0)
-    target_text = (
-        f"GBP {current:,.0f} versus the GBP {target:,.0f} paper target"
-        if current > 0
-        else "the paper portfolio target"
-    )
     title = "Qadam"
     body = (
-        f"Qadam completed today's learning pass by comparing {source_count} data sources "
-        f"with {watched_count} watched markets, including {_pattern_names(daily_edge_findings)}. "
-        f"It found {candidate_count} candidate relationships and {validated_count} confirmed "
-        f"edges. The quantum review is mandatory in this loop; today it is {quantum_status} "
-        f"on {quantum_backend}, so Qadam will keep testing whether the same source pressure "
-        "appears before prices or probabilities move."
+        f"Qadam scanned {source_count} data sources against {watched_count} watched markets "
+        f"and found {candidate_count} candidate patterns today. "
+        f"{_pattern_quality_sentence(daily_edge_findings)}"
         "\n\n"
-        f"The practical learning is cautious because {ready_count} improvements are ready for "
-        f"human review, and {held_count} remain held until outcome evidence and approval catch up. "
-        f"That can reshape watch priority around {target_text}, currently about {progress:.2f}% "
-        "of the way to the 60-day doubling goal, but it is not permission to trade. Any paper "
-        "order still has to pass strategy, signal integrity, quantum review, risk, idempotency, "
-        "and Alpaca Paper first."
+        f"The learning stays cautious with {validated_count} validated edges; "
+        f"all {held_count} still need thirty-day persistence. Qadam is checking "
+        "whether inputs arrive before price or odds move. Source scan, "
+        "lead-lag, confirmation, adversarial review, paper safety and the "
+        f"quantum core gate passed on {quantum_backend}. This can raise watch priority "
+        "only, not create a paper order, risk approval, execution approval or live-capital signal."
     )
     return title, body
 
@@ -323,6 +340,7 @@ def build_daily_telegram_learning_brief(
     live_send_succeeded = False
     telegram_message_id: int | None = None
     failure_category: str | None = None
+    delivery_retry_status: str | None = None
 
     if send_requested and live_send_allowed:
         live_send_attempted = True
@@ -340,8 +358,12 @@ def build_daily_telegram_learning_brief(
                 status = "daily_telegram_learning_brief_failed"
                 failure_category = "telegram_api_rejected"
         except Exception as exc:  # noqa: BLE001 - persist sanitized failure only.
-            status = "daily_telegram_learning_brief_failed"
             failure_category = type(exc).__name__
+            if isinstance(exc, (urllib.error.URLError, TimeoutError, OSError)):
+                status = "daily_telegram_learning_brief_ready_to_send"
+                delivery_retry_status = "queued_after_transport_failure"
+            else:
+                status = "daily_telegram_learning_brief_failed"
 
         _archive_delivery(
             settings,
@@ -391,6 +413,7 @@ def build_daily_telegram_learning_brief(
         "live_send_succeeded": live_send_succeeded,
         "telegram_message_id_present": telegram_message_id is not None,
         "last_delivery_failure_category": failure_category,
+        "delivery_retry_status": delivery_retry_status,
         "bot_configured": bot_configured,
         "group_chat_configured": group_chat_configured,
         "delivery_key": delivery_key,

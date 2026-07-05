@@ -157,9 +157,10 @@ def _pattern_observation_text(pattern: dict[str, Any]) -> str:
 def _pattern_hypothesis_text(pattern: dict[str, Any]) -> str:
     label = str(pattern.get("label") or pattern.get("sleeve_key") or "This sleeve")
     return (
-        f"If source pressure rises before {label} prices or probabilities move, "
-        "Qadam treats the timing gap as a candidate edge; if the relationship "
-        "does not persist, it is treated as noise."
+        f"If the same named source families repeatedly appear before {label} "
+        "prices or probabilities move, Qadam treats the timing gap as a "
+        "candidate edge; if the relationship does not persist, it is treated "
+        "as noise."
     )
 
 
@@ -340,8 +341,8 @@ def _telegram_message(
         f"it is watching: {pattern_names}. It has {len(patterns)} candidate "
         "patterns under observation, but none of them is being treated as a "
         "finished edge yet. The useful part is the daily discipline: Qadam is "
-        "checking whether the same source pressure keeps appearing before price "
-        "or probability moves, instead of reacting to one-off noise.\n\n"
+        "checking whether named source families repeatedly appear before price "
+        "or probability moves, instead of reacting to one-off headlines.\n\n"
         f"The quantum review is a core part of that process. For {brief_date}, "
         f"the quantum layer is recorded as {quantum_review.get('status', 'unknown')} "
         f"using {quantum_review.get('mode', 'not exported')} on "

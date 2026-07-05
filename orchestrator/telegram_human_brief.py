@@ -269,7 +269,7 @@ def _render_human_brief_message(
         f"including {names}. It found {candidate_count} candidate relationships and "
         f"{validated_count} confirmed edges. The quantum review is part of the core test; "
         f"today it came back {quantum_status} through {quantum_backend}, so Qadam can keep "
-        "checking whether source pressure appears before prices or probabilities move."
+        "checking whether named source families appear before prices or probabilities move."
         "\n\n"
         f"This means Qadam has material to learn from, but not a shortcut to trade. "
         f"{ready_count} improvements are ready for human review and {held_count} are held for "
