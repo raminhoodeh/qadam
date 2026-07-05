@@ -10664,11 +10664,16 @@ body.qadam-dashboard-page .qadam-dashboard-shell {
 }
 
 body.qadam-dashboard-page .qadam-dashboard-header {
+    align-items: center;
     background: var(--qadam-color-canvas);
     border-bottom: 1px solid var(--qadam-color-rule);
     box-shadow: none;
+    column-gap: var(--qadam-space-5);
+    display: grid;
+    grid-template-columns: auto minmax(19rem, 26rem) minmax(16rem, 1fr) max-content;
     margin: 0;
     padding: var(--qadam-space-5) var(--qadam-layout-gutter);
+    row-gap: var(--qadam-space-3);
 }
 
 body.qadam-dashboard-page .qadam-dashboard-header .logo-link img {
@@ -10677,11 +10682,15 @@ body.qadam-dashboard-page .qadam-dashboard-header .logo-link img {
 
 body.qadam-dashboard-page .topbar-right {
     align-items: center;
+    display: contents;
     gap: var(--qadam-space-3);
 }
 
 body.qadam-dashboard-page .nav-actions {
+    flex-wrap: nowrap;
     gap: var(--qadam-space-3);
+    justify-self: end;
+    white-space: nowrap;
 }
 
 body.qadam-dashboard-page .nav-actions .button,
@@ -10710,6 +10719,7 @@ body.qadam-dashboard-page .balance-ticker {
     border-radius: var(--qadam-radius-md);
     box-shadow: none;
     min-width: 15rem;
+    width: 100%;
 }
 
 body.qadam-dashboard-page .balance-ticker strong {
@@ -10722,7 +10732,8 @@ body.qadam-dashboard-page .balance-ticker em {
 }
 
 body.qadam-dashboard-page .trade-toast-rail {
-    max-width: min(32vw, 28rem);
+    max-width: 100%;
+    width: 100%;
 }
 
 body.qadam-dashboard-page .trade-toast-token {
@@ -12006,6 +12017,37 @@ body.qadam-dashboard-page .qsase-boundary-note {
     border-top: 1px solid var(--qadam-color-rule);
     margin: 0;
     padding-top: var(--qadam-space-3);
+}
+
+@media (max-width: 1180px) {
+    body.qadam-dashboard-page .qadam-dashboard-header {
+        grid-template-columns: auto minmax(17rem, 1fr) max-content;
+    }
+
+    body.qadam-dashboard-page .trade-toast-rail {
+        grid-column: 2 / -1;
+    }
+}
+
+@media (max-width: 860px) {
+    body.qadam-dashboard-page .qadam-dashboard-header {
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .topbar-right {
+        display: grid;
+        gap: var(--qadam-space-3);
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    body.qadam-dashboard-page .trade-toast-rail {
+        grid-column: auto;
+    }
+
+    body.qadam-dashboard-page .nav-actions {
+        justify-self: stretch;
+    }
 }
 
 @media (max-width: 1020px) {
