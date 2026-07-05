@@ -34,7 +34,7 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260705-pulse-terminal-v1",
+    "/dashboard.js?v=20260705-fund-status-v1",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 
@@ -63,7 +63,8 @@ includesAll(css, [
     ".qadam-dashboard-shell",
     ".qadam-dashboard-header",
     ".qadam-dashboard-workspace",
-    ".qsase-status-card",
+    ".qsase-fund-status",
+    ".qsase-fund-context",
     ".qsase-kpi-row",
     ".qsase-trading-timeline",
     ".qsase-source-category-row",

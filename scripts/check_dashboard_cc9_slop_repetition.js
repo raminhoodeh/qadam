@@ -103,7 +103,14 @@ async function main() {
         "data-overview-thought-feed",
         "data-overview-cockpit-grid",
         "data-overview-thinking-grid",
-        "data-overview-trade-board"
+        "data-overview-trade-board",
+        "Paper account state",
+        "Public truth layer",
+        "No filled paper positions are open yet",
+        "No filled open positions yet",
+        "paper orders are open or accepted",
+        "fundSummary.summary",
+        "qsase-public-summary"
     ], "dashboard source");
 
     assertAllIncludes(combinedSource, [
@@ -118,7 +125,12 @@ async function main() {
         "Human oversight",
         "portfolio-trade-timeline",
         "renderContractPortfolioHero",
-        "renderPortfolioTradeTimeline"
+        "renderPortfolioTradeTimeline",
+        "Paper Fund Status",
+        "Current Holdings",
+        "Filled holdings",
+        "Pending orders live in Trading History",
+        "Why pending orders are not holdings"
     ], "dashboard source");
 
     assertCount(dashboardHtml, "overview-decision-records", 0, "static dashboard shell decision records");
@@ -249,7 +261,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260705-pulse-terminal-v1");
+    console.log("dashboard_cc9_cache_key=20260705-fund-status-v1");
 }
 
 main().catch((error) => {

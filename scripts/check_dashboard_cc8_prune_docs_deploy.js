@@ -123,7 +123,7 @@ includesAll(whitepaper, [
 
 includesAll(dashboardHtml, [
     "/auth.css?v=20260705-topnav-v1",
-    "/dashboard.js?v=20260705-pulse-terminal-v1"
+    "/dashboard.js?v=20260705-fund-status-v1"
 ], "dashboard cache key");
 includesAll(preflight, [
     "node scripts/check_dashboard_cc8_prune_docs_deploy.js",

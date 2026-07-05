@@ -131,7 +131,7 @@ function assertNoUnsafePublicText(text, label) {
     "explainer-grid",
     "data-panel-brief",
     "/auth.css?v=20260705-topnav-v1",
-    "/dashboard.js?v=20260705-pulse-terminal-v1"
+    "/dashboard.js?v=20260705-fund-status-v1"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
@@ -209,12 +209,12 @@ function assertNoUnsafePublicText(text, label) {
 ].forEach((needle) => assertText(renderer, needle, "dashboard renderer"));
 
 [
-    "qsase-status-card",
+    "qsase-fund-status",
+    "qsase-fund-context",
     "qsase-kpi-row",
     "qsase-trading-timeline",
     "qsase-source-category-row",
     "qsase-market-pill-row",
-    "qsase-public-summary",
     "qsase-pattern-priority",
     "qsase-guide-marker",
     "qsase-guide-card",

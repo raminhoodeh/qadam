@@ -115,7 +115,8 @@ function assertQsasePublicSummaryContract() {
     });
     includesAll(`${renderer}\n${css}`, [
         "function renderQsaseDashboardVisibility",
-        "qsase-status-card",
+        "qsase-fund-status",
+        "qsase-fund-context",
         "qsase-kpi-row",
         "qsase-trading-timeline",
         "qsase-source-category-row",
@@ -233,7 +234,7 @@ async function assertRenderedDashboardContract() {
 async function main() {
     includesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-pulse-terminal-v1"
+        "/dashboard.js?v=20260705-fund-status-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

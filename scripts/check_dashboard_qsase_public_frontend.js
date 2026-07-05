@@ -98,8 +98,10 @@ function assertStaticContract() {
         "data-qsase-section=\"trade_intents\"",
         "data-qsase-section=\"router_paperops_gate\"",
         "data-qsase-section=\"pulse_terminal\"",
+        "data-qsase-section=\"paper_fund_status\"",
+        "Paper Fund Status",
         "Portfolio Value &amp; Return",
-        "Current Portfolio",
+        "Current Holdings",
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",
@@ -107,7 +109,7 @@ function assertStaticContract() {
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
         "Qadam Pulse Terminal",
-        "Public truth layer",
+        "Why pending orders are not holdings",
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=",
@@ -124,7 +126,8 @@ function assertStaticContract() {
         "trade markers are read-only history, not proof credit",
         "No order authority",
         "qsase-detail-ledger",
-        "qsase-status-card",
+        "qsase-fund-status",
+        "qsase-fund-context",
         "qsase-kpi-row",
         "qsase-trading-timeline",
         "qsase-source-category-row",
@@ -152,7 +155,8 @@ function assertStaticContract() {
         ".qsase-trading-timeline",
         ".qsase-trade-event",
         ".qsase-kpi-row",
-        ".qsase-status-card",
+        ".qsase-fund-status",
+        ".qsase-fund-context",
         ".qsase-market-pill-row",
         ".qsase-final-decision",
         ".qsase-guide-marker",
@@ -171,7 +175,7 @@ function assertStaticContract() {
 
     assertIncludesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-pulse-terminal-v1",
+        "/dashboard.js?v=20260705-fund-status-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -204,8 +208,9 @@ async function assertRenderedContract() {
 
     [
         "Qadam Paper Fund",
+        "Paper Fund Status",
         "Portfolio Value &amp; Return",
-        "Current Portfolio",
+        "Current Holdings",
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",
@@ -216,6 +221,7 @@ async function assertRenderedContract() {
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
     [
+        "paper_fund_status",
         "portfolio_value_return",
         "current_portfolio",
         "trading_history",
@@ -230,16 +236,17 @@ async function assertRenderedContract() {
     });
 
     const order = [
-        "Portfolio Value &amp; Return",
-        "Current Portfolio",
-        "Trading History",
-        "Source Intelligence Network",
-        "Trading Strategy Universe",
-        "Pattern Recognition Findings",
-        "Trade Intents / What Qadam Is Thinking",
-        "Final Paper-Trade Gate",
-        "Qadam Pulse Terminal"
-    ].map((label) => stageHtml.indexOf(label));
+        "paper_fund_status",
+        "portfolio_value_return",
+        "current_portfolio",
+        "trading_history",
+        "source_intelligence_network",
+        "trading_strategy_universe",
+        "pattern_intelligence_findings",
+        "trade_intents",
+        "router_paperops_gate",
+        "pulse_terminal"
+    ].map((section) => stageHtml.indexOf(`data-qsase-section="${section}"`));
     assert(order.every((index) => index >= 0), "rendered QSASE dashboard missing required labels");
     assert(order.every((index, position) => position === 0 || index > order[position - 1]), "rendered QSASE dashboard order is not money-first");
 
@@ -266,13 +273,15 @@ async function assertRenderedContract() {
 
     [
         "qsase-kpi-row",
+        "qsase-fund-status",
+        "Why pending orders are not holdings",
         "qsase-trading-timeline",
         "qsase-source-category-row",
         "qsase-market-pill-row",
         "qsase-pattern-brief",
         "qsase-pattern-flow",
         "Qadam's current read",
-        "Public truth layer",
+        "Paper Fund Status",
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=\"current_portfolio\"",
