@@ -12246,21 +12246,42 @@ function qsaseSourceDescription(row = {}) {
     return row.description || "This read-only source category can strengthen or weaken a hypothesis, but it cannot create trades.";
 }
 
+function qsasePendingPaperOrders(qsase = {}) {
+    return asArray(qsase.trading_history?.rows).filter((row) => {
+        const rowType = String(row.row_type || row.event_type || "").toLowerCase();
+        const status = String(row.status || "").toLowerCase();
+        const filledQuantity = Number(row.filled_quantity || 0);
+        const isPaperOrder = rowType.includes("paper_order") || rowType.includes("order");
+        const isClosedState = /filled|canceled|cancelled|rejected|expired|closed/.test(status);
+        return isPaperOrder && !row.filled_at && filledQuantity === 0 && !isClosedState;
+    });
+}
+
 function renderQsaseCurrentPortfolio(qsase = {}) {
     const portfolio = qsase.dashboard_portfolio || {};
     const section = qsase.current_portfolio || {};
     const rows = asArray(portfolio.positions).length ? asArray(portfolio.positions) : asArray(section.rows);
+    const pendingOrders = qsasePendingPaperOrders(qsase);
     const currency = normaliseCurrencyCode(portfolio.display_currency || "GBP");
     const reportedCount = firstPresent(section.reported_open_position_count, portfolio.open_position_count, rows.length, 0);
     const rowCount = firstPresent(section.holding_row_count, section.position_count, rows.length, 0);
     const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
     const headline = mismatch
         ? `${reportedCount} broker-reported · ${rowCount} exported rows`
-        : `${rowCount} current holdings`;
+        : `${rowCount} open positions${pendingOrders.length ? ` · ${pendingOrders.length} pending paper orders` : ""}`;
+    const emptyTitle = mismatch ? "Position mismatch" : "No filled open positions yet";
+    const emptySummary = mismatch
+        ? "Broker and dashboard disagree"
+        : pendingOrders.length
+            ? `${pendingOrders.length} paper orders are accepted and waiting for broker fill`
+            : "Flat portfolio";
+    const emptyDetail = pendingOrders.length
+        ? "Accepted paper orders are shown in Trading History until Alpaca reports a filled position. They are not counted as holdings before fill."
+        : "The QSASE current-portfolio artifact is explicit, read-only, and does not fabricate holdings.";
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
             ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"))}
-            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "Holdings come from the read-only paper position mirror. If the broker and exported rows disagree, the dashboard must show that mismatch.")}</p>
+            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "Open positions come from the read-only Alpaca paper position mirror. Accepted paper orders are pending activity, not holdings, until the broker reports a fill.")}</p>
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
@@ -12276,9 +12297,9 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
                     </article>
                 `).join("") : `
                     <article class="qsase-record-card ${mismatch ? "blocked" : "pending"}">
-                        <span>${mismatch ? "Position mismatch" : "No current position rows"}</span>
-                        <strong>${mismatch ? "Broker and dashboard disagree" : "Flat or mirror empty"}</strong>
-                        <p>${qsaseHtmlText(section.reconciliation_note || "The QSASE current-portfolio artifact is explicit, read-only, and does not fabricate holdings.")}</p>
+                        <span>${qsaseHtmlText(emptyTitle)}</span>
+                        <strong>${qsaseHtmlText(emptySummary)}</strong>
+                        <p>${qsaseHtmlText(section.reconciliation_note || emptyDetail)}</p>
                     </article>
                 `}
             </div>
@@ -12593,6 +12614,8 @@ function renderQsaseDashboardVisibility(qsase = {}) {
     const gate = qsase.paperops_gate || {};
     const decision = qsaseRouterHeadline(router, gate);
     const decisionCounts = qsaseRouterDecisionCounts(router);
+    const openPositionCount = firstPresent(qsase.current_portfolio?.reported_open_position_count, portfolio.open_position_count, qsase.current_position_count, 0);
+    const pendingPaperOrderCount = qsasePendingPaperOrders(qsase).length;
     const decisionLabel = decisionCounts.paperReview
         ? "Paper review"
         : decisionCounts.held
@@ -12616,7 +12639,8 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             </div>
             <div class="stage7-kpi-strip compact qsase-kpi-row" aria-label="Paper fund summary">
                 ${renderMetric("Paper value", formatMoney(portfolio.current_value_gbp, currency))}
-                ${renderMetric("Holdings", firstPresent(qsase.current_portfolio?.reported_open_position_count, portfolio.open_position_count, qsase.current_position_count, 0))}
+                ${renderMetric("Open positions", openPositionCount)}
+                ${renderMetric("Pending orders", pendingPaperOrderCount)}
                 ${renderMetric("Closed trades", portfolio.closed_trade_count || qsase.trading_history?.closed_trade_row_count || 0)}
                 ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
                 ${renderMetric("Decision", decisionLabel)}
