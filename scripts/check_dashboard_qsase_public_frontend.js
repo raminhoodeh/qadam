@@ -147,7 +147,7 @@ function assertStaticContract() {
 
     assertIncludesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-dashboard-ux-v2",
+        "/dashboard.js?v=20260705-position-orders-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [

@@ -59,7 +59,7 @@ async function main() {
 
     includesAll(html, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-dashboard-ux-v2"
+        "/dashboard.js?v=20260705-position-orders-v1"
     ], "D11L cache keys");
 
     includesAll(d11lCss, [
@@ -144,7 +144,7 @@ async function main() {
     console.log("dashboard_d11l_visual_simplification=ok");
     console.log("dashboard_d11l_primary_panels_flattened=True");
     console.log("dashboard_d11l_sticky_layers_removed=True");
-    console.log("dashboard_d11l_cache_key=20260705-dashboard-ux-v2");
+    console.log("dashboard_d11l_cache_key=20260705-position-orders-v1");
     console.log("dashboard_authority_unchanged=True");
 }
 
