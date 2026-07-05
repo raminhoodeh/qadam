@@ -78,54 +78,51 @@ function assertNoSecretMaterial(text, label) {
     });
 }
 
-function assertCanonicalViewNav() {
-    const viewsBlock = renderer.match(/const DASHBOARD_VIEWS = \[([\s\S]*?)\];/)?.[1] || "";
-    const linkMatches = [...viewsBlock.matchAll(/\{\s*id:\s*"([^"]+)",\s*label:\s*"[^"]+"\s*\}/g)].map((match) => match[1]);
-    const expectedViews = ["overview", "trades", "evidence", "reasoning", "operations"];
-    assert(
-        JSON.stringify(linkMatches) === JSON.stringify(expectedViews),
-        `dashboard view nav mismatch: ${JSON.stringify(linkMatches)}`
-    );
-    expectedViews.forEach((view) => {
-        assert(
-            dashboardHtml.includes(`data-dashboard-view-section="${view}"`),
-            `dashboard missing section for view ${view}`
-        );
-    });
-    includesAll(renderer, [
-        "DASHBOARD_VIEWS",
-        "DASHBOARD_ADVANCED_DEBUG_KEY",
+function assertPublicDashboardSingleFlow() {
+    includesAll(dashboardHtml, [
+        'data-qadam-nav-context="public-dashboard"',
+        'data-stage7-dashboard-visibility',
+        'hidden" data-dashboard tabindex="-1"'
+    ], "single-flow dashboard shell");
+    [
+        'data-qadam-section-nav="dashboard"',
+        "data-qadam-dashboard-section-nav",
         "data-dashboard-debug-toggle",
         "data-dashboard-advanced-links",
-        "function setDashboardDebugMode",
-        "window.setQadamDashboardDebugMode",
-        "dashboardDebugModeEnabled"
-    ], "advanced debug renderer");
-    assert(!dashboardHtml.includes("data-dashboard-view-target=\"performance\""), "performance must remain consolidated into Trades");
-    assert(!dashboardHtml.includes("data-dashboard-view-target=\"sources\""), "sources must remain consolidated into Evidence");
+        "data-dashboard-view-link",
+        "data-dashboard-view-target=\"overview\"",
+        "data-dashboard-view-target=\"trades\"",
+        "data-dashboard-view-target=\"evidence\"",
+        "data-dashboard-view-target=\"reasoning\"",
+        "data-dashboard-view-target=\"operations\"",
+        "data-dashboard-view-target=\"performance\"",
+        "data-dashboard-view-target=\"sources\""
+    ].forEach((needle) => {
+        assert(!dashboardHtml.includes(needle), `single-flow dashboard still exposes removed navigation ${needle}`);
+    });
 }
 
-function assertSafetyStripIsSingleGlobalAuthority() {
-    assert(
-        countOccurrences(dashboardHtml, "data-dashboard-safety-strip") === 1,
-        "dashboard must expose exactly one global safety strip"
-    );
-    includesAll(dashboardHtml, [
+function assertQsasePublicSummaryContract() {
+    assert(countOccurrences(dashboardHtml, "data-dashboard-safety-strip") === 0, "static shell must not keep the removed safety strip");
+    [
         "Paper trading authorized",
         "Paper-only monitoring. Live capital is off; order authority stays behind runtime gates.",
-        "Paper mode, capital state, and order authority in one strip."
-    ], "single safety strip static shell");
-    assert(!dashboardHtml.includes("<dt>Limits</dt>"), "static shell still contains Limits rows");
-    assert(!dashboardHtml.includes("<dt>Boundary</dt>"), "static shell still contains Boundary rows");
-    assert(!dashboardHtml.includes("node-authority"), "static shell still contains node-authority badges");
-    includesAll(renderer, [
-        "renderDashboardSafetyStrip(status, viewModels)",
-        "const modeLabel = status.mode === \"paper\"",
-        "? \"OK - paper only\"",
-        "mode_label: modeLabel",
-        "safety_label:",
-        "Order authority remains behind runtime gates"
-    ], "single safety strip renderer");
+        "Paper mode, capital state, and order authority in one strip.",
+        "Qadam Mission Control",
+        "Paper trading mode"
+    ].forEach((needle) => {
+        assert(!dashboardHtml.includes(needle), `static shell still contains removed dashboard copy ${needle}`);
+    });
+    includesAll(`${renderer}\n${css}`, [
+        "function renderQsaseDashboardVisibility",
+        "qsase-status-card",
+        "qsase-kpi-row",
+        "qsase-trading-timeline",
+        "qsase-source-category-row",
+        "qsase-market-pill-row",
+        "qsase.boundary",
+        "No order authority"
+    ], "QSASE public summary renderer");
 }
 
 function assertNoObsoleteComplexity() {
@@ -165,9 +162,7 @@ function assertPlanAndOrchestration() {
 }
 
 async function assertRenderedDashboardContract() {
-    const legacyStatus = JSON.parse(JSON.stringify(status));
-    delete legacyStatus.qsase_dashboard;
-    const rendered = await renderWithStatus(legacyStatus);
+    const rendered = await renderWithStatus(status);
 
     assert(
         rendered.document.documentElement.dataset.dashboardStatus === "rendered",
@@ -179,16 +174,14 @@ async function assertRenderedDashboardContract() {
     );
 
     [
-        ["[data-dashboard-safety-strip]", "Paper trading authorized"],
-        ["[data-dashboard-safety-strip]", "Paper-only monitoring"],
-        ["[data-dashboard-safety-strip]", "Order authority remains behind runtime gates"],
-        ["[data-stage7-dashboard-visibility]", "Paper Fund Status"],
+        ["[data-stage7-dashboard-visibility]", "Qadam Paper Fund"],
+        ["[data-stage7-dashboard-visibility]", "qsase-kpi-row"],
+        ["[data-stage7-dashboard-visibility]", "qsase-trading-timeline"],
+        ["[data-stage7-dashboard-visibility]", "qsase-source-category-row"],
         ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
-        ["[data-stage7-dashboard-visibility]", "Watched Markets Universe"],
-        ["[data-stage7-dashboard-visibility]", "Strategy Playbook"],
-        ["[data-stage7-dashboard-visibility]", "Hedge Fund Investment Team"],
-        ["[data-stage7-dashboard-visibility]", "Hypotheses &amp; Pattern Recognition"],
-        ["[data-stage7-dashboard-visibility]", "Backtesting &amp; Replay Lab"],
+        ["[data-stage7-dashboard-visibility]", "Trading Strategy Universe"],
+        ["[data-stage7-dashboard-visibility]", "Pattern &amp; Opportunity Lab"],
+        ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-balance-ticker]", "Paper balance"],
         ["[data-trade-toast-rail]", "crude oil"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
@@ -218,7 +211,7 @@ async function assertRenderedDashboardContract() {
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     const publicRendered = [
-        "[data-dashboard-safety-strip]",
+        "[data-stage7-dashboard-visibility]",
         "[data-balance-ticker]",
         "[data-trade-toast-rail]",
         "[data-overview-mission-brief]",
@@ -239,12 +232,12 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260704-pattern-workflow-v1",
-        "/dashboard.js?v=20260704-pattern-workflow-v1"
+        "/auth.css?v=20260705-dashboard-ux-v2",
+        "/dashboard.js?v=20260705-dashboard-ux-v2"
     ], "D11M cache-key continuity");
 
-    assertCanonicalViewNav();
-    assertSafetyStripIsSingleGlobalAuthority();
+    assertPublicDashboardSingleFlow();
+    assertQsasePublicSummaryContract();
     assertNoObsoleteComplexity();
     assertPlanAndOrchestration();
     assertNoUnsafePublicText(dashboardHtml, "D11M dashboard HTML");
@@ -253,10 +246,10 @@ async function main() {
     await assertRenderedDashboardContract();
 
     console.log("dashboard_d11m_regression_acceptance=ok");
-    console.log("dashboard_d11m_views=overview,trades,evidence,reasoning,operations");
-    console.log("dashboard_d11m_primary_views_visible=True");
-    console.log("dashboard_d11m_diagnostics_toggle=True");
-    console.log("dashboard_d11m_single_safety_strip=True");
+    console.log("dashboard_d11m_views=single_public_qsase_flow");
+    console.log("dashboard_d11m_primary_views_visible=False");
+    console.log("dashboard_d11m_diagnostics_toggle=False");
+    console.log("dashboard_d11m_single_safety_strip=False");
     console.log("dashboard_d11m_authority_unchanged=True");
 }
 

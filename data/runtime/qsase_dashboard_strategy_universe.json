@@ -30,7 +30,46 @@
         "conflict_tracker",
         "ucdp"
       ],
-      "strategy_family_id": "crude_oil_energy_security_disruption"
+      "strategy_family_id": "crude_oil_energy_security_disruption",
+      "watched_market_count": 4,
+      "watched_markets": [
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:bno",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "BNO"
+        },
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:cl=f",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "qualified_setup_state": "blocked",
+          "symbol": "CL=F"
+        },
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:uso",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "USO"
+        },
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:xle",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "XLE"
+        }
+      ]
     },
     {
       "allowed_proxy_set": [
@@ -58,7 +97,64 @@
         "stock_act",
         "patents"
       ],
-      "strategy_family_id": "defence_repricing_geopolitical_watch"
+      "strategy_family_id": "defence_repricing_geopolitical_watch",
+      "watched_market_count": 6,
+      "watched_markets": [
+        {
+          "display_name": "Defence Repricing Geopolitical Watch",
+          "instrument_id": "qsase-instrument:ita",
+          "market_family": "defence",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "ITA"
+        },
+        {
+          "display_name": "Prediction Market Geopolitical Dislocation",
+          "instrument_id": "qsase-instrument:kalshi:events",
+          "market_family": "prediction_markets",
+          "paper_order_allowed": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "qualified_setup_state": "blocked",
+          "symbol": "KALSHI:EVENTS"
+        },
+        {
+          "display_name": "Defence Repricing Geopolitical Watch",
+          "instrument_id": "qsase-instrument:lmt",
+          "market_family": "defence",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "LMT"
+        },
+        {
+          "display_name": "Prediction Market Geopolitical Dislocation",
+          "instrument_id": "qsase-instrument:polymarket:events",
+          "market_family": "prediction_markets",
+          "paper_order_allowed": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "qualified_setup_state": "blocked",
+          "symbol": "POLYMARKET:EVENTS"
+        },
+        {
+          "display_name": "Defence Repricing Geopolitical Watch",
+          "instrument_id": "qsase-instrument:ppa",
+          "market_family": "defence",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "PPA"
+        },
+        {
+          "display_name": "Defence Repricing Geopolitical Watch",
+          "instrument_id": "qsase-instrument:xar",
+          "market_family": "defence",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "XAR"
+        }
+      ]
     },
     {
       "allowed_proxy_set": [
@@ -84,7 +180,28 @@
         "telegram",
         "acled"
       ],
-      "strategy_family_id": "prediction_market_geopolitical_dislocation"
+      "strategy_family_id": "prediction_market_geopolitical_dislocation",
+      "watched_market_count": 2,
+      "watched_markets": [
+        {
+          "display_name": "Prediction Market Geopolitical Dislocation",
+          "instrument_id": "qsase-instrument:kalshi:events",
+          "market_family": "prediction_markets",
+          "paper_order_allowed": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "qualified_setup_state": "blocked",
+          "symbol": "KALSHI:EVENTS"
+        },
+        {
+          "display_name": "Prediction Market Geopolitical Dislocation",
+          "instrument_id": "qsase-instrument:polymarket:events",
+          "market_family": "prediction_markets",
+          "paper_order_allowed": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "qualified_setup_state": "blocked",
+          "symbol": "POLYMARKET:EVENTS"
+        }
+      ]
     },
     {
       "allowed_proxy_set": [
@@ -113,7 +230,46 @@
         "rss",
         "stock_act"
       ],
-      "strategy_family_id": "semiconductor_policy_options_asymmetry"
+      "strategy_family_id": "semiconductor_policy_options_asymmetry",
+      "watched_market_count": 4,
+      "watched_markets": [
+        {
+          "display_name": "Semiconductor Policy Options Asymmetry",
+          "instrument_id": "qsase-instrument:nvda",
+          "market_family": "semiconductors",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "NVDA"
+        },
+        {
+          "display_name": "Semiconductor Policy Options Asymmetry",
+          "instrument_id": "qsase-instrument:qqq",
+          "market_family": "semiconductors",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "QQQ"
+        },
+        {
+          "display_name": "Semiconductor Policy Options Asymmetry",
+          "instrument_id": "qsase-instrument:smh",
+          "market_family": "semiconductors",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "SMH"
+        },
+        {
+          "display_name": "Semiconductor Policy Options Asymmetry",
+          "instrument_id": "qsase-instrument:soxx",
+          "market_family": "semiconductors",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "production_qualified",
+          "symbol": "SOXX"
+        }
+      ]
     },
     {
       "allowed_proxy_set": [
@@ -139,7 +295,55 @@
         "usgs",
         "un_comtrade"
       ],
-      "strategy_family_id": "silver_macro_liquidity_stress"
+      "strategy_family_id": "silver_macro_liquidity_stress",
+      "watched_market_count": 5,
+      "watched_markets": [
+        {
+          "display_name": "GLD",
+          "instrument_id": "qsase-instrument:gld",
+          "market_family": "macro_watchlist",
+          "paper_order_allowed": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "qualified_setup_state": "not_recorded",
+          "symbol": "GLD"
+        },
+        {
+          "display_name": "Silver Macro Liquidity Stress",
+          "instrument_id": "qsase-instrument:si=f",
+          "market_family": "silver",
+          "paper_order_allowed": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "qualified_setup_state": "blocked",
+          "symbol": "SI=F"
+        },
+        {
+          "display_name": "Silver Macro Liquidity Stress",
+          "instrument_id": "qsase-instrument:sil",
+          "market_family": "silver",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "SIL"
+        },
+        {
+          "display_name": "Silver Macro Liquidity Stress",
+          "instrument_id": "qsase-instrument:slv",
+          "market_family": "silver",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "SLV"
+        },
+        {
+          "display_name": "SPY",
+          "instrument_id": "qsase-instrument:spy",
+          "market_family": "macro_watchlist",
+          "paper_order_allowed": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "qualified_setup_state": "not_recorded",
+          "symbol": "SPY"
+        }
+      ]
     }
   ],
   "artifact_refs": [
@@ -206,7 +410,46 @@
         "conflict_tracker",
         "ucdp"
       ],
-      "strategy_family_id": "crude_oil_energy_security_disruption"
+      "strategy_family_id": "crude_oil_energy_security_disruption",
+      "watched_market_count": 4,
+      "watched_markets": [
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:bno",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "BNO"
+        },
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:cl=f",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "qualified_setup_state": "blocked",
+          "symbol": "CL=F"
+        },
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:uso",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "USO"
+        },
+        {
+          "display_name": "Crude Oil Energy Security Disruption",
+          "instrument_id": "qsase-instrument:xle",
+          "market_family": "crude_oil",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "XLE"
+        }
+      ]
     },
     {
       "allowed_proxy_set": [
@@ -232,7 +475,28 @@
         "telegram",
         "acled"
       ],
-      "strategy_family_id": "prediction_market_geopolitical_dislocation"
+      "strategy_family_id": "prediction_market_geopolitical_dislocation",
+      "watched_market_count": 2,
+      "watched_markets": [
+        {
+          "display_name": "Prediction Market Geopolitical Dislocation",
+          "instrument_id": "qsase-instrument:kalshi:events",
+          "market_family": "prediction_markets",
+          "paper_order_allowed": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "qualified_setup_state": "blocked",
+          "symbol": "KALSHI:EVENTS"
+        },
+        {
+          "display_name": "Prediction Market Geopolitical Dislocation",
+          "instrument_id": "qsase-instrument:polymarket:events",
+          "market_family": "prediction_markets",
+          "paper_order_allowed": false,
+          "paperability_state": "context_only_until_governed_prediction_market_paper_route",
+          "qualified_setup_state": "blocked",
+          "symbol": "POLYMARKET:EVENTS"
+        }
+      ]
     },
     {
       "allowed_proxy_set": [
@@ -258,15 +522,66 @@
         "usgs",
         "un_comtrade"
       ],
-      "strategy_family_id": "silver_macro_liquidity_stress"
+      "strategy_family_id": "silver_macro_liquidity_stress",
+      "watched_market_count": 5,
+      "watched_markets": [
+        {
+          "display_name": "GLD",
+          "instrument_id": "qsase-instrument:gld",
+          "market_family": "macro_watchlist",
+          "paper_order_allowed": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "qualified_setup_state": "not_recorded",
+          "symbol": "GLD"
+        },
+        {
+          "display_name": "Silver Macro Liquidity Stress",
+          "instrument_id": "qsase-instrument:si=f",
+          "market_family": "silver",
+          "paper_order_allowed": false,
+          "paperability_state": "research_only_proxy_not_direct_alpaca_paperable",
+          "qualified_setup_state": "blocked",
+          "symbol": "SI=F"
+        },
+        {
+          "display_name": "Silver Macro Liquidity Stress",
+          "instrument_id": "qsase-instrument:sil",
+          "market_family": "silver",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "SIL"
+        },
+        {
+          "display_name": "Silver Macro Liquidity Stress",
+          "instrument_id": "qsase-instrument:slv",
+          "market_family": "silver",
+          "paper_order_allowed": false,
+          "paperability_state": "alpaca_paper_proxy_available_guarded_route_only",
+          "qualified_setup_state": "blocked",
+          "symbol": "SLV"
+        },
+        {
+          "display_name": "SPY",
+          "instrument_id": "qsase-instrument:spy",
+          "market_family": "macro_watchlist",
+          "paper_order_allowed": false,
+          "paperability_state": "paperability_unknown_context_only",
+          "qualified_setup_state": "not_recorded",
+          "symbol": "SPY"
+        }
+      ]
     }
   ],
-  "generated_at": "2026-06-29T06:57:29.005470+00:00",
+  "generated_at": "2026-07-05T10:49:21.553569+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
   "rejected_hypothesis_count": 16,
   "schema_version": "qsase_dashboard_view_model.v1",
   "status": "strategy_universe_visible",
-  "strategy_hypothesis_count": 0
+  "strategy_hypothesis_count": 0,
+  "unassigned_watched_market_count": 0,
+  "unassigned_watched_markets": [],
+  "watched_market_count": 19
 }

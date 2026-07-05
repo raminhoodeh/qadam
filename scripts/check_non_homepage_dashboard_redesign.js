@@ -31,25 +31,27 @@ includesAll(html, [
     "dashboard-shell qadam-dashboard-shell qadam-layout-shell is-wide",
     "topbar qadam-dashboard-header qadam-layout-header is-institutional",
     "dashboard-workspace qadam-dashboard-workspace hidden",
-    "cockpit-nav dashboard-view-switcher qadam-dashboard-nav",
-    "data-dashboard-view-current",
-    "data-dashboard-view-link data-dashboard-view-target=\"overview\" data-target-section=\"overview\"",
-    "data-dashboard-debug-toggle",
-    "data-dashboard-advanced-links",
-    "data-dashboard-view-target=\"trades\" data-target-section=\"trades\"",
-    "data-dashboard-view-target=\"evidence\" data-target-section=\"evidence\"",
-    "data-dashboard-view-target=\"reasoning\" data-target-section=\"reasoning\"",
-    "data-dashboard-view-target=\"operations\" data-target-section=\"operations\"",
-    "data-dashboard-safety-strip",
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "Public read-only view.",
-    "/dashboard.js?v=20260704-pattern-workflow-v1",
+    "/dashboard.js?v=20260705-dashboard-ux-v2",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 
 assert(!html.includes("data-signout"), "public dashboard must not expose sign-out control");
+[
+    "cockpit-nav dashboard-view-switcher qadam-dashboard-nav",
+    "data-dashboard-view-current",
+    "data-dashboard-view-link",
+    "data-dashboard-debug-toggle",
+    "data-dashboard-advanced-links",
+    "data-dashboard-safety-strip",
+    "Qadam Mission Control",
+    "Paper trading mode",
+    "Paper-only monitoring"
+].forEach((needle) => {
+    assert(!html.includes(needle), `dashboard html should not include removed UX chrome ${needle}`);
+});
 
 includesAll(css, [
     "Stage 6: institutional dashboard redesign",
@@ -61,12 +63,11 @@ includesAll(css, [
     ".qadam-dashboard-shell",
     ".qadam-dashboard-header",
     ".qadam-dashboard-workspace",
-    ".qadam-dashboard-nav",
-    ".qadam-dashboard-nav .cockpit-nav-head",
-    ".qadam-dashboard-nav .cockpit-nav-links a",
-    ".qadam-dashboard-nav .dashboard-debug-links a",
-    ".qadam-dashboard-nav .dashboard-debug-toggle",
-    ".dashboard-safety-strip",
+    ".qsase-status-card",
+    ".qsase-kpi-row",
+    ".qsase-trading-timeline",
+    ".qsase-source-category-row",
+    ".qsase-market-pill-row",
     ".stage7-hero",
     ".stage7-section",
     ".mission-flow-lifecycle",
@@ -89,6 +90,12 @@ includesAll(css, [
     "@media (max-width: 1020px)",
     "@media (max-width: 760px)"
 ], "dashboard css");
+
+[
+    ".qsase-jump-row"
+].forEach((needle) => {
+    assert(!css.includes(needle), `dashboard css should not include removed QSASE jump chrome ${needle}`);
+});
 
 assert(
     css.indexOf("body.qadam-dashboard-page") > css.indexOf("/* Dashboard polish: reduce first-viewport density without changing IA. */"),

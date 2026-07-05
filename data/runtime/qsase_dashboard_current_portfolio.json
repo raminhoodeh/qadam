@@ -31,53 +31,39 @@
     "trade_candidate_created": false,
     "trade_intent_created": false
   },
+  "broker_mirror_freshness": {
+    "age_seconds": 289,
+    "observed_at": "2026-07-05T10:44:32.155724+00:00",
+    "status": "fresh",
+    "threshold_seconds": 2700
+  },
   "command_disabled": true,
-  "explicitly_empty": false,
-  "generated_at": "2026-06-29T06:57:29.005470+00:00",
+  "explicitly_empty": true,
+  "generated_at": "2026-07-05T10:49:21.553569+00:00",
+  "holding_row_count": 0,
   "paper_only": true,
-  "position_count": 2,
+  "portfolio_consistency": {
+    "calculated_total_pnl": -167.09,
+    "current_value": 99832.91,
+    "errors": [],
+    "holding_row_count": 0,
+    "latest_chart_value": 99832.91,
+    "pnl_delta": 0.0,
+    "position_count_delta": 0,
+    "realized_pnl": -167.09,
+    "reported_open_position_count": 0,
+    "reported_total_pnl": -167.09,
+    "status": "ok",
+    "unrealized_pnl": 0.0,
+    "value_delta": 0.0
+  },
+  "position_count": 0,
   "public_safe": true,
   "read_only": true,
-  "rows": [
-    {
-      "artifact_refs": [
-        "data/runtime/paper_positions.jsonl"
-      ],
-      "boundary": "read_only_paper_position_mirror_no_close_or_modify",
-      "broker_write_allowed": false,
-      "current_price": 236.78,
-      "direction": "long",
-      "entry_price": 238.402857,
-      "instrument": "ITA",
-      "paper_order_created": false,
-      "position_id": "c99828a7-af45-4fb5-b9c2-b6e28522fc2e",
-      "quantity": 21.0,
-      "risk_size": 4972.38,
-      "row_type": "open_paper_position_mirror",
-      "source_intent_id": null,
-      "status": "open_position",
-      "unrealized_pnl": -34.08
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/paper_positions.jsonl"
-      ],
-      "boundary": "read_only_paper_position_mirror_no_close_or_modify",
-      "broker_write_allowed": false,
-      "current_price": 619.32,
-      "direction": "long",
-      "entry_price": 640.437188,
-      "instrument": "SMH",
-      "paper_order_created": false,
-      "position_id": "b92f74a0-d31f-4e3c-9162-6ff91cae4174",
-      "quantity": 32.0,
-      "risk_size": 19818.24,
-      "row_type": "open_paper_position_mirror",
-      "source_intent_id": null,
-      "status": "open_position",
-      "unrealized_pnl": -675.75
-    }
-  ],
+  "reconciliation_note": "The broker mirror and exported position rows agree.",
+  "reconciliation_status": "ok",
+  "reported_open_position_count": 0,
+  "rows": [],
   "schema_version": "qsase_dashboard_view_model.v1",
-  "status": "current_portfolio_present"
+  "status": "current_portfolio_explicitly_empty"
 }

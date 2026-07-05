@@ -87,17 +87,22 @@ includesAll(pages.guide, [
 
 includesAll(pages.dashboard, [
     'data-qadam-nav-item="dashboard" aria-current="page"',
+    'data-stage7-dashboard-visibility',
+    'hidden" data-dashboard'
+], "dashboard nav contract");
+
+excludesAll(pages.dashboard, [
     'data-qadam-section-nav="dashboard"',
     'data-qadam-dashboard-section-nav',
     'data-dashboard-debug-toggle',
     'data-dashboard-advanced-links',
-    'data-dashboard-view-link data-dashboard-view-target="overview" data-target-section="overview"',
-    'data-dashboard-view-target="trades" data-target-section="trades"',
-    'data-dashboard-view-target="evidence" data-target-section="evidence"',
-    'data-dashboard-view-target="reasoning" data-target-section="reasoning"',
-    'data-dashboard-view-target="operations" data-target-section="operations"',
-    'hidden" data-dashboard'
-], "dashboard nav contract");
+    'data-dashboard-view-link',
+    'data-dashboard-view-target="overview"',
+    'data-dashboard-view-target="trades"',
+    'data-dashboard-view-target="evidence"',
+    'data-dashboard-view-target="reasoning"',
+    'data-dashboard-view-target="operations"'
+], "dashboard removed section nav contract");
 
 excludesAll(`${pages.login}\n${pages.signup}\n${pages.whitepaper}\n${pages.dashboard}`, [
     "data-signout"

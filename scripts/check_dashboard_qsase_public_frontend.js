@@ -109,8 +109,22 @@ function assertStaticContract() {
         "trade markers are read-only history, not proof credit",
         "No order authority",
         "qsase-detail-ledger",
-        "qsase-jump-row"
+        "qsase-status-card",
+        "qsase-kpi-row",
+        "qsase-trading-timeline",
+        "qsase-source-category-row",
+        "qsase-market-pill-row"
     ], "QSASE renderer");
+    [
+        "qsase-jump-row",
+        "Money first. Decisions last.",
+        "Portfolio value</a>",
+        "Holdings</a>",
+        "Pattern workflow</a>",
+        "PaperOps gate</a>"
+    ].forEach((needle) => {
+        assert(!renderer.includes(needle), `QSASE renderer still contains removed navigation/copy ${needle}`);
+    });
 
     assertIncludesAll(css, [
         ".qsase-dashboard-shell",
@@ -118,19 +132,34 @@ function assertStaticContract() {
         ".qsase-portfolio-chart",
         ".qsase-card-grid",
         ".qsase-table",
-        ".qsase-category-grid",
+        ".qsase-source-category-list",
+        ".qsase-source-category-row",
+        ".qsase-trading-timeline",
+        ".qsase-trade-event",
+        ".qsase-kpi-row",
+        ".qsase-status-card",
+        ".qsase-market-pill-row",
         ".qsase-final-decision",
         ".qsase-workflow-message",
         ".qsase-dashboard-v2",
-        ".qsase-jump-row",
         ".qsase-detail-ledger"
     ], "QSASE stylesheet");
+    assert(!css.includes(".qsase-jump-row"), "QSASE stylesheet still styles removed jump row");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260704-pattern-workflow-v1",
-        "/dashboard.js?v=20260704-pattern-workflow-v1",
+        "/auth.css?v=20260705-dashboard-ux-v2",
+        "/dashboard.js?v=20260705-dashboard-ux-v2",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
+    [
+        "Qadam Mission Control",
+        "Paper trading mode",
+        "Paper-only monitoring",
+        "data-dashboard-debug-toggle",
+        "data-dashboard-view-link"
+    ].forEach((needle) => {
+        assert(!dashboardHtml.includes(needle), `dashboard shell still contains removed chrome ${needle}`);
+    });
 
     assertIncludesAll(cockpitStatus, [
         "QSASE_DASHBOARD_PUBLIC_ARTIFACTS",
@@ -150,7 +179,7 @@ async function assertRenderedContract() {
     const stageHtml = html(rendered, "[data-stage7-dashboard-visibility]");
 
     [
-        "Public paper fund dashboard",
+        "Qadam Paper Fund",
         "Portfolio Value &amp; Return",
         "Current Portfolio",
         "Trading History",
@@ -200,9 +229,25 @@ async function assertRenderedContract() {
 
     [
         "data-cc6-real-portfolio-timeline",
-        "Mission Control walkthrough"
+        "Mission Control walkthrough",
+        "qsase-jump-row",
+        "Money first. Decisions last.",
+        "Paper trading mode",
+        "Paper-only monitoring",
+        "Connected Data Sources",
+        "Watched Trading Universe"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `QSASE dashboard should not render old overview element ${needle}`);
+    });
+
+    [
+        "qsase-kpi-row",
+        "qsase-trading-timeline",
+        "qsase-source-category-row",
+        "qsase-market-pill-row",
+        "These sources can inform hypotheses, but none of them can place trades."
+    ].forEach((needle) => {
+        assert(stageHtml.includes(needle), `rendered QSASE dashboard missing redesigned UX element ${needle}`);
     });
 }
 

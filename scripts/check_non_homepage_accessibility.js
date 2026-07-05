@@ -154,15 +154,24 @@ includesAll(pages.guide, [
 
 includesAll(pages.dashboard, [
     'aria-live="polite"',
-    'aria-controls="dashboard-advanced-links"',
-    'id="dashboard-advanced-links"',
-    'aria-pressed="false"',
-    'aria-expanded="false"',
     'hidden" data-dashboard tabindex="-1"',
+    'id="dashboard-main"',
+    'href="#dashboard-main"',
+    'data-stage7-dashboard-visibility',
     'data-qadam-nav-context="public-dashboard"'
 ], "dashboard accessibility");
 
 assert(!pages.dashboard.includes("data-signout"), "public dashboard must not expose a sign-out control");
+[
+    'aria-controls="dashboard-advanced-links"',
+    'id="dashboard-advanced-links"',
+    'data-dashboard-debug-toggle',
+    'data-dashboard-view-link',
+    'Paper trading mode',
+    'Paper-only monitoring'
+].forEach((needle) => {
+    assert(!pages.dashboard.includes(needle), `dashboard accessibility should not include removed control ${needle}`);
+});
 
 includesAll(authJs, [
     'document.querySelector("[data-status]")',
@@ -173,11 +182,12 @@ includesAll(authJs, [
 ], "auth js accessibility contract");
 
 includesAll(dashboardJs, [
-    'button.setAttribute("aria-pressed", enabled ? "true" : "false");',
-    'button.setAttribute("aria-expanded", enabled ? "true" : "false");',
-    'links.setAttribute("aria-hidden", enabled ? "false" : "true");',
-    'link.setAttribute("aria-current", "page");',
-    'link.removeAttribute("aria-current");'
+    'data-qsase-dashboard-rendered',
+    'role="list"',
+    'role="listitem"',
+    'aria-label="Read-only paper trading chronology"',
+    'aria-label="Paper fund summary"',
+    'aria-label="Watched markets for this strategy"'
 ], "dashboard js accessibility contract");
 
 includesAll(layoutCss, [

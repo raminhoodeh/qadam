@@ -130,19 +130,27 @@ function assertNoUnsafePublicText(text, label) {
     "data-section-explainer",
     "explainer-grid",
     "data-panel-brief",
-    "/auth.css?v=20260704-pattern-workflow-v1",
-    "/dashboard.js?v=20260704-pattern-workflow-v1"
+    "/auth.css?v=20260705-dashboard-ux-v2",
+    "/dashboard.js?v=20260705-dashboard-ux-v2"
 ].forEach((needle) => assertText(html, needle, "dashboard HTML"));
 
 [
-    "Qadam Mission Control",
-    "Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.",
-    "Paper trading mode",
     "Mission Snapshot",
     "Paper Account &amp; Trade State",
     "Strategy Universe",
     "Data source tracker"
 ].forEach((needle) => assertText(html, needle, "dashboard authority copy"));
+
+[
+    "Qadam Mission Control",
+    "Follow the paper fund from evidence to hypotheses, replay, and paper outcomes.",
+    "Paper trading mode",
+    "Paper-only monitoring",
+    "data-dashboard-debug-toggle",
+    "data-dashboard-view-link"
+].forEach((needle) => {
+    assert(!html.includes(needle), `dashboard HTML still contains removed dashboard chrome ${needle}`);
+});
 
 [
     "--bg: #0a0a0c",
@@ -184,6 +192,7 @@ function assertNoUnsafePublicText(text, label) {
     "function renderMissionControl",
     "function buildStage7VisibilityModel",
     "function renderStage7Visibility",
+    "function renderQsaseDashboardVisibility",
     "function renderOverviewFirstScreen",
     "function renderContractPortfolioHero",
     "function renderPortfolioTradeTimeline",
@@ -198,6 +207,14 @@ function assertNoUnsafePublicText(text, label) {
     "DASHBOARD_LEGACY_HASH_TARGETS",
     "renderQadamDashboardStatus"
 ].forEach((needle) => assertText(renderer, needle, "dashboard renderer"));
+
+[
+    "qsase-status-card",
+    "qsase-kpi-row",
+    "qsase-trading-timeline",
+    "qsase-source-category-row",
+    "qsase-market-pill-row"
+].forEach((needle) => assertText(`${renderer}\n${css}`, needle, "simplified QSASE dashboard"));
 
 [
     "data-density-toggle",

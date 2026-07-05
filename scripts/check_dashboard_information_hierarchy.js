@@ -22,8 +22,6 @@ function indexOf(needle, label = needle) {
     return index;
 }
 
-const hero = indexOf("dashboard-hero");
-const safetyStrip = indexOf("data-dashboard-safety-strip");
 const missionControl = indexOf("data-overview-first-screen");
 const stage7Cockpit = indexOf("data-stage7-dashboard-visibility");
 const portfolioHero = indexOf("data-overview-portfolio-hero");
@@ -34,8 +32,6 @@ const controlPlane = indexOf("data-overview-control-plane");
 const sourceTracker = indexOf("data-overview-source-summary");
 const detailFlow = indexOf("dashboard-detail-flow");
 
-assert(hero < safetyStrip, "Safety Status must appear after the hero");
-assert(safetyStrip < missionControl, "Mission Control walkthrough must appear after Safety Status");
 assert(missionControl < stage7Cockpit, "Mission Control walkthrough must be first inside Overview");
 assert(stage7Cockpit < portfolioHero, "advanced portfolio timeline must appear after the Mission Control walkthrough");
 assert(portfolioHero < mission, "Mission Snapshot must appear after the Mission Control compatibility shell");
@@ -47,7 +43,6 @@ assert(sourceTracker < detailFlow, "hidden detail panels must appear after the f
 
 [
     "data-overview-first-screen",
-    "data-dashboard-safety-strip",
     "data-stage7-dashboard-visibility",
     "data-overview-portfolio-hero",
     "data-overview-mission-brief",
@@ -69,10 +64,25 @@ assert(sourceTracker < detailFlow, "hidden detail panels must appear after the f
 ].forEach((needle) => assert(html.includes(needle), `dashboard hierarchy HTML missing ${needle}`));
 
 [
+    "dashboard-hero",
+    "data-dashboard-safety-strip",
+    "data-dashboard-debug-toggle",
+    "data-dashboard-view-link",
+    "Qadam Mission Control",
+    "Paper trading mode",
+    "Paper-only monitoring"
+].forEach((needle) => assert(!html.includes(needle), `dashboard hierarchy HTML still contains removed shell ${needle}`));
+
+[
     ".operating-review-panel",
     ".overview-first-screen",
-    ".dashboard-safety-strip",
     ".stage7-dashboard-visibility",
+    ".qsase-dashboard-hero",
+    ".qsase-status-card",
+    ".qsase-kpi-row",
+    ".qsase-trading-timeline",
+    ".qsase-source-category-row",
+    ".qsase-market-pill-row",
     ".mission-paper-fund",
     ".mission-source-network",
     ".mission-markets",
@@ -102,6 +112,7 @@ const overviewFunction = renderer.indexOf("function renderOverviewFirstScreen");
 const overviewCall = renderer.lastIndexOf("renderOverviewFirstScreen(viewModels)");
 const stage7Function = renderer.indexOf("function renderStage7Visibility");
 const stage7Call = renderer.lastIndexOf("renderStage7Visibility(viewModels)");
+const qsaseFunction = renderer.indexOf("function renderQsaseDashboardVisibility");
 const portfolioFunction = renderer.indexOf("function renderContractPortfolioHero");
 const flowCall = Math.max(
     renderer.lastIndexOf("renderFlowMap(status, source, viewModels)"),
@@ -115,6 +126,7 @@ assert(overviewFunction >= 0, "renderer missing renderOverviewFirstScreen");
 assert(overviewCall >= 0, "renderer does not call renderOverviewFirstScreen");
 assert(stage7Function >= 0, "renderer missing renderStage7Visibility");
 assert(stage7Call >= 0, "renderer does not call renderStage7Visibility");
+assert(qsaseFunction >= 0, "renderer missing renderQsaseDashboardVisibility");
 assert(portfolioFunction >= 0, "renderer missing renderContractPortfolioHero");
 assert(missionCall < renderCall, "mission control must render before operating summary cards");
 assert(renderCall < stage7Call, "operating summary compatibility render must run before Mission Control walkthrough");
@@ -123,6 +135,10 @@ assert(overviewCall < flowCall, "Overview must render before the system map");
 
 [
     "renderOverviewFirstScreen",
+    "renderQsaseDashboardVisibility",
+    "renderQsaseTradingHistory",
+    "renderQsaseSourceNetwork",
+    "renderQsaseStrategyUniverse",
     "buildStage7VisibilityModel",
     "renderStage7Visibility",
     "Paper Fund Status",

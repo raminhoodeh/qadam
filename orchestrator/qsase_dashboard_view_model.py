@@ -262,6 +262,42 @@ def _artifact_ref(filename: str, pointer: str | None = None) -> str:
     return f"{base}#{pointer}" if pointer else base
 
 
+SOURCE_FAMILY_DESCRIPTIONS = {
+    "conflict": (
+        "Conflict and geopolitics feeds track wars, sanctions, political violence, and government-risk events "
+        "that can move oil, defence, shipping, currencies, and prediction markets."
+    ),
+    "macro": (
+        "Macro and trade feeds give Qadam the economic backdrop: rates, inflation, trade flows, inventories, "
+        "industrial activity, and country-level pressure that may change market regimes."
+    ),
+    "market": (
+        "Market feeds provide the direct trading lens: prices, technical context, paper broker mirrors, prediction "
+        "market order books, options context, and execution-safe market state."
+    ),
+    "market_context_taxonomy": (
+        "Market-context taxonomy feeds map raw sources into the actual sleeves Qadam watches, so a shipping, "
+        "energy, chip, defence, or prediction-market signal is routed to the right strategy family."
+    ),
+    "physical": (
+        "Physical-world feeds watch real-world movement and constraints: ships, flights, weather, fires, ports, "
+        "infrastructure, geospatial activity, and supply-chain pressure."
+    ),
+    "social": (
+        "Social, news, filings, and web feeds watch public narrative, attention shifts, regulatory filings, "
+        "developer/news activity, and human crowd signals that can strengthen or weaken a hypothesis."
+    ),
+}
+
+
+def _source_family_description(family: Any) -> str:
+    key = str(family or "").strip().lower()
+    return SOURCE_FAMILY_DESCRIPTIONS.get(
+        key,
+        "This source category contributes read-only evidence to Qadam's hypothesis engine. It can inform a pattern, but it cannot create trades.",
+    )
+
+
 def _dashboard_authority() -> dict[str, Any]:
     return dict(DASHBOARD_AUTHORITY_FLAGS)
 
@@ -659,13 +695,29 @@ def build_current_portfolio(context: dict[str, Any], generated_at: str) -> dict[
     artifact = _section_base("qsase_dashboard_current_portfolio", generated_at)
     portfolio = context.get("dashboard_portfolio", {})
     rows = _safe_list(portfolio.get("positions"))
+    consistency = portfolio.get("portfolio_consistency", {})
+    reported_count = int(consistency.get("reported_open_position_count") or portfolio.get("open_position_count") or 0)
+    row_count = len(rows)
+    reconciliation_status = "ok" if reported_count == row_count else "mismatch"
     artifact.update(
         {
-            "status": "current_portfolio_present" if rows else "current_portfolio_explicitly_empty",
-            "position_count": len(rows),
+            "status": (
+                "current_portfolio_reconciliation_mismatch"
+                if reconciliation_status == "mismatch"
+                else ("current_portfolio_present" if rows else "current_portfolio_explicitly_empty")
+            ),
+            "position_count": row_count,
+            "reported_open_position_count": reported_count,
+            "holding_row_count": row_count,
+            "reconciliation_status": reconciliation_status,
+            "reconciliation_note": (
+                "The broker mirror and exported position rows agree."
+                if reconciliation_status == "ok"
+                else "The broker mirror and exported position rows disagree; the dashboard must show this as a data-truth mismatch."
+            ),
             "rows": rows,
             "explicitly_empty": not rows,
-            "portfolio_consistency": portfolio.get("portfolio_consistency", {}),
+            "portfolio_consistency": consistency,
             "broker_mirror_freshness": portfolio.get("broker_mirror_freshness", {}),
             "artifact_refs": [_artifact_ref(PAPER_POSITIONS_ARTIFACT), _artifact_ref(ALPACA_PAPER_MIRROR_ARTIFACT)],
         }
@@ -677,6 +729,8 @@ def build_trading_history(context: dict[str, Any], generated_at: str) -> dict[st
     artifact = _section_base("qsase_dashboard_trading_history", generated_at)
     closed_rows = [
         {
+            "event_type": "sell_or_close",
+            "event_label": "Sell / close",
             "row_type": "closed_paper_trade_mirror",
             "trade_id": row.get("trade_id"),
             "instrument": row.get("instrument"),
@@ -693,6 +747,8 @@ def build_trading_history(context: dict[str, Any], generated_at: str) -> dict[st
     ]
     order_rows = [
         {
+            "event_type": "buy_or_order",
+            "event_label": "Buy / order",
             "row_type": "paper_order_mirror_not_trade_intent",
             "order_id": row.get("order_id"),
             "instrument": row.get("instrument"),
@@ -706,12 +762,19 @@ def build_trading_history(context: dict[str, Any], generated_at: str) -> dict[st
         }
         for row in context.get("paper_orders", [])[-30:]
     ]
+    rows = closed_rows + order_rows
+    rows.sort(
+        key=lambda row: _parse_timestamp(row.get("closed_at") or row.get("filled_at") or row.get("submitted_at") or row.get("opened_at"))
+        or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
+    )
     artifact.update(
         {
             "status": "trading_history_present" if closed_rows or order_rows else "trading_history_explicitly_empty",
             "closed_trade_row_count": len(closed_rows),
             "paper_order_mirror_row_count": len(order_rows),
-            "rows": closed_rows + order_rows,
+            "timeline_order": "newest_first",
+            "rows": rows,
             "explicitly_empty": not (closed_rows or order_rows),
             "artifact_refs": [_artifact_ref(PAPER_CLOSED_TRADES_ARTIFACT), _artifact_ref(PAPER_ORDERS_ARTIFACT)],
         }
@@ -736,6 +799,7 @@ def build_source_network(context: dict[str, Any], generated_at: str) -> dict[str
                     "credential_gated_count": row.get("credential_gated_count"),
                     "quorum_contributing_count": row.get("quorum_contributing_count"),
                     "state": "connected" if int(row.get("source_count") or 0) else "empty",
+                    "description": _source_family_description(family),
                     "artifact_refs": [_artifact_ref(UNIVERSAL_MATRIX_ARTIFACT, f"source_universe.source_families.{family}")],
                 }
             )
@@ -746,6 +810,7 @@ def build_source_network(context: dict[str, Any], generated_at: str) -> dict[str
             "family": row.get("source_family"),
             "state": row.get("state"),
             "freshness_status": row.get("freshness_status"),
+            "last_update": row.get("last_update") or row.get("observed_at") or row.get("generated_at") or row.get("updated_at"),
             "trust_posture": row.get("trust_posture"),
             "quorum_contribution": row.get("source_quorum_contribution", {}).get("can_contribute"),
             "credential_gated": row.get("credential_gated"),
@@ -796,9 +861,46 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
     family_map = context.get("strategy_family_map", {})
     known_families = family_map.get("known_families", {}) if isinstance(family_map.get("known_families"), dict) else {}
     router_families = {_strategy_family_from_router(row) for row in context.get("router_decisions", [])}
+    trading_universe = context.get("universal_matrix", {}).get("trading_universe", {})
+    watched_markets = _safe_list(trading_universe.get("instruments"))
+    assigned_market_ids: set[str] = set()
+
+    def _market_matches_family(market: dict[str, Any], family: dict[str, Any]) -> bool:
+        haystack = " ".join(
+            str(market.get(key) or "")
+            for key in ("instrument_id", "symbol", "display_name", "market_family")
+        ).lower()
+        for keyword in _safe_list(family.get("instrument_keywords")) + _safe_list(family.get("allowed_proxy_set")):
+            token = str(keyword or "").strip().lower()
+            if token and token in haystack:
+                return True
+        catalyst = str(family.get("catalyst_class") or "").lower()
+        return bool(catalyst and any(part in haystack for part in catalyst.split("_") if len(part) > 3))
+
+    def _strategy_markets(family: dict[str, Any]) -> list[dict[str, Any]]:
+        rows = []
+        for index, market in enumerate(watched_markets):
+            if not isinstance(market, dict) or not _market_matches_family(market, family):
+                continue
+            market_id = _first_text(market.get("instrument_id"), market.get("symbol"), default=f"market_{index}")
+            assigned_market_ids.add(market_id)
+            rows.append(
+                {
+                    "instrument_id": market.get("instrument_id"),
+                    "symbol": market.get("symbol"),
+                    "display_name": market.get("display_name"),
+                    "market_family": market.get("market_family"),
+                    "paperability_state": market.get("paperability_state"),
+                    "qualified_setup_state": market.get("qualified_setup_state"),
+                    "paper_order_allowed": False,
+                }
+            )
+        return rows
+
     all_rows = []
     for family_id, family in sorted(known_families.items()):
         current_state = "currently_in_play_blocked_or_rejected" if family_id in router_families else "available_strategy_family"
+        strategy_markets = _strategy_markets(family)
         all_rows.append(
             {
                 "strategy_family_id": family_id,
@@ -807,6 +909,8 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
                 "allowed_proxy_set": family.get("allowed_proxy_set", []),
                 "source_keywords": family.get("source_keywords", []),
                 "instrument_keywords": family.get("instrument_keywords", []),
+                "watched_markets": strategy_markets,
+                "watched_market_count": len(strategy_markets),
                 "current_state": current_state,
                 "currently_in_play": family_id in router_families,
                 "artifact_refs": [_artifact_ref(STRATEGY_FAMILY_MAP_ARTIFACT, f"known_families.{family_id}")],
@@ -821,21 +925,44 @@ def build_strategy_universe(context: dict[str, Any], generated_at: str) -> dict[
                 "allowed_proxy_set": [],
                 "source_keywords": [],
                 "instrument_keywords": [],
+                "watched_markets": [],
+                "watched_market_count": 0,
                 "current_state": "currently_in_play_blocked_or_rejected",
                 "currently_in_play": True,
                 "artifact_refs": [_artifact_ref(ROUTER_DECISIONS_ARTIFACT)],
             }
         )
     in_play_rows = [row for row in all_rows if row["currently_in_play"]]
+    unassigned_markets = []
+    for index, market in enumerate(watched_markets):
+        if not isinstance(market, dict):
+            continue
+        market_id = _first_text(market.get("instrument_id"), market.get("symbol"), default=f"market_{index}")
+        if market_id in assigned_market_ids:
+            continue
+        unassigned_markets.append(
+            {
+                "instrument_id": market.get("instrument_id"),
+                "symbol": market.get("symbol"),
+                "display_name": market.get("display_name"),
+                "market_family": market.get("market_family"),
+                "paperability_state": market.get("paperability_state"),
+                "qualified_setup_state": market.get("qualified_setup_state"),
+                "paper_order_allowed": False,
+            }
+        )
     artifact.update(
         {
             "status": "strategy_universe_visible" if all_rows else "strategy_universe_explicitly_empty",
             "all_strategy_count": len(all_rows),
             "currently_in_play_count": len(in_play_rows),
+            "watched_market_count": len(watched_markets),
+            "unassigned_watched_market_count": len(unassigned_markets),
             "strategy_hypothesis_count": int(context.get("strategy_foundry", {}).get("strategy_hypothesis_count") or 0),
             "rejected_hypothesis_count": len(context.get("rejected_strategy_hypotheses", [])),
             "all_strategy_rows": all_rows,
             "currently_in_play_rows": in_play_rows,
+            "unassigned_watched_markets": unassigned_markets,
             "artifact_refs": [_artifact_ref(STRATEGY_FAMILY_MAP_ARTIFACT), _artifact_ref(ROUTER_DECISIONS_ARTIFACT)],
         }
     )
