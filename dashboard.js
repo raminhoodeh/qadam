@@ -6334,6 +6334,7 @@ function buildQsaseDashboardModel(status = {}) {
         source_network: sections.source_network || {},
         strategy_universe: sections.strategy_universe || {},
         pattern_lab: sections.pattern_lab || {},
+        evidence_quality: sections.evidence_quality || {},
         trade_intents: sections.trade_intents || {},
         pattern_to_paper_workflow: sections.pattern_to_paper_workflow || {},
         pattern_intelligence: sections.pattern_intelligence || {},
@@ -12843,6 +12844,41 @@ function renderQsaseStrategyUniverse(qsase = {}) {
     `;
 }
 
+function renderQsaseEvidenceQualityGate(qsase = {}) {
+    const section = qsase.evidence_quality || {};
+    const patternSummary = qsase.pattern_intelligence?.evidence_quality_summary || {};
+    const records = asArray(section.records);
+    const top = section.dashboard_summary?.top_pattern || records[0] || {};
+    const historical = section.historical_memory || {};
+    const sources = section.source_reliability || {};
+    const status = firstPresent(section.status, patternSummary.status, "evidence_quality_missing");
+    const summary = firstPresent(
+        section.summary,
+        "Qadam has not exported an evidence-quality summary yet."
+    );
+    return `
+        <article class="qsase-pattern-priority ${statusClass(status)}">
+            <div class="qsase-callout-head">
+                <div>
+                    <span>Evidence quality gate</span>
+                    <strong>${qsaseHtmlText(qsaseHumanText(status))}</strong>
+                </div>
+                ${renderQsaseGuideMarker("pattern_evidence_quality")}
+            </div>
+            <p>${qsaseHtmlText(summary)}</p>
+            <dl>
+                <div><dt>Tradeable now</dt><dd>${qsaseHtmlText(modelNumber(section.paper_review_candidate_count, patternSummary.paper_review_candidate_count || 0))}</dd></div>
+                <div><dt>Held for evidence</dt><dd>${qsaseHtmlText(modelNumber(section.held_for_evidence_count, patternSummary.held_for_evidence_count || 0))}</dd></div>
+                <div><dt>Fresh sources</dt><dd>${qsaseHtmlText(formatConfidence(firstPresent(sources.freshness_ratio, patternSummary.source_freshness_ratio, 0)))}</dd></div>
+                <div><dt>Historical windows</dt><dd>${qsaseHtmlText(formatConfidence(firstPresent(historical.complete_forward_window_ratio, patternSummary.historical_complete_forward_window_ratio, 0)))}</dd></div>
+                <div><dt>Akber holds</dt><dd>${qsaseHtmlText(modelNumber(section.akber_hold_count, 0))}</dd></div>
+                <div><dt>Top blocker</dt><dd>${qsaseHtmlText(firstPresent(top.what_blocks_trade, section.most_important_missing_piece, "evidence quality not ready"))}</dd></div>
+            </dl>
+            <small>${qsaseHtmlText(section.boundary || "Evidence quality is review-only. No order, broker write, proof credit, Telegram command, or live-capital authority.")}</small>
+        </article>
+    `;
+}
+
 function renderQsasePatternLab(qsase = {}) {
     const section = qsase.pattern_intelligence || {};
     const diagnostics = section.technical_diagnostics || {};
@@ -12867,6 +12903,7 @@ function renderQsasePatternLab(qsase = {}) {
                 <p>${qsaseHtmlText(humanBrief.body || "Qadam has not exported a human-readable pattern brief yet.").replace(/\n/g, "<br><br>")}</p>
                 <small>Dashboard-only explanation. No Telegram command path, broker instruction, paper order, or live-capital authority.</small>
             </article>
+            ${renderQsaseEvidenceQualityGate(qsase)}
             ${topFinding.pattern_id ? `
                 <article class="qsase-pattern-priority ${statusClass(topFinding.stage_key)}">
                     <div class="qsase-callout-head">
@@ -12944,6 +12981,12 @@ function renderQsasePatternFinding(row = {}) {
                 </div>
                 <p>${qsaseHtmlText(row.stage_label)} · ${qsaseHtmlText(row.confidence_label)}</p>
             </div>
+            ${row.tradeability_state || row.evidence_quality_score ? `
+                <div class="qsase-market-pill-row" aria-label="Evidence quality state">
+                    <span>${qsaseHtmlText(qsaseHumanText(row.tradeability_state || row.evidence_quality_state || "evidence state pending"))}</span>
+                    <span>evidence score ${qsaseHtmlText(row.evidence_quality_score ?? "not scored")}</span>
+                </div>
+            ` : ""}
             <div class="qsase-pattern-flow">
                 <div>
                     <dt>Detected signal</dt>
