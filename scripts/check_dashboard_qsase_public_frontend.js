@@ -135,6 +135,7 @@ function assertStaticContract() {
         "qsase-fund-status",
         "qsase-fund-context",
         "qsase-kpi-row",
+        "qsase-final-gate-summary",
         "qsase-trading-timeline",
         "qsase-source-category-row",
         "qsase-market-pill-row"
@@ -169,6 +170,8 @@ function assertStaticContract() {
         ".qsase-guide-card",
         ".qsase-callout-head",
         ".qsase-dashboard-v2 .qsase-dashboard-hero .qsase-callout-head",
+        ".qsase-final-gate-summary",
+        "grid-template-columns: minmax(8rem, 0.42fr) minmax(14rem, 1fr);",
         "data-guide-tooltip-bound=\"true\"",
         "--qadam-tooltip-left",
         "--qadam-tooltip-top",
@@ -200,8 +203,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260706-tooltip-clamp-v1",
-        "/dashboard.js?v=20260706-tooltip-clamp-v1",
+        "/auth.css?v=20260706-final-gate-inline-v1",
+        "/dashboard.js?v=20260706-final-gate-inline-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -305,7 +308,9 @@ async function assertRenderedContract() {
     [
         "qsase-kpi-row",
         "qsase-fund-status",
-        "How to read portfolio status",
+        "qsase-final-gate-summary",
+        "Final gate",
+        "Current gate:",
         "qsase-trading-timeline",
         "qsase-source-category-row",
         "qsase-market-pill-row",
@@ -316,7 +321,6 @@ async function assertRenderedContract() {
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=\"pattern_intelligence_findings\"",
-        "How to read portfolio status",
         "How to read pattern recognition",
         "Guide: How to read pattern recognition",
         "What a trade intent means",
@@ -340,7 +344,8 @@ async function assertRenderedContract() {
         "Nothing is currently being considered by QSASE",
         "No filled holdings yet",
         "0 filled holdings",
-        "Current Holdings"
+        "Current Holdings",
+        "qsase-fund-detail"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `rendered QSASE dashboard still exposes internal copy ${needle}`);
     });

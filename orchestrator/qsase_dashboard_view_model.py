@@ -719,9 +719,16 @@ def build_current_portfolio(context: dict[str, Any], generated_at: str) -> dict[
             "holding_row_count": row_count,
             "reconciliation_status": reconciliation_status,
             "reconciliation_note": (
-                "The broker mirror and exported position rows agree."
-                if reconciliation_status == "ok"
-                else "The broker mirror and exported position rows disagree; the dashboard must show this as a data-truth mismatch."
+                (
+                    "No broker-filled positions are currently held. This only describes the current holdings view; "
+                    "trade candidates, staged paper orders, pending orders, and closed trades are shown in the trade lifecycle sections."
+                )
+                if reconciliation_status == "ok" and not rows
+                else (
+                    "The broker mirror and exported position rows agree."
+                    if reconciliation_status == "ok"
+                    else "The broker mirror and exported position rows disagree; the dashboard must show this as a data-truth mismatch."
+                )
             ),
             "rows": rows,
             "explicitly_empty": not rows,
