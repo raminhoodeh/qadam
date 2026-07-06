@@ -122,7 +122,7 @@ includesAll(whitepaper, [
 ], "whitepaper How To Use section");
 
 includesAll(dashboardHtml, [
-    "/auth.css?v=20260706-hedge-team-v1",
+    "/auth.css?v=20260706-hero-single-column-v1",
     "/dashboard.js?v=20260706-hedge-team-v1"
 ], "dashboard cache key");
 includesAll(preflight, [

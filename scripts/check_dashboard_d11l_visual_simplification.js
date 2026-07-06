@@ -58,7 +58,7 @@ async function main() {
     const d11lCss = css.slice(markerIndex);
 
     includesAll(html, [
-        "/auth.css?v=20260706-hedge-team-v1",
+        "/auth.css?v=20260706-hero-single-column-v1",
         "/dashboard.js?v=20260706-hedge-team-v1"
     ], "D11L cache keys");
 

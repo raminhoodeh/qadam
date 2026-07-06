@@ -235,7 +235,7 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260706-hedge-team-v1",
+        "/auth.css?v=20260706-hero-single-column-v1",
         "/dashboard.js?v=20260706-hedge-team-v1"
     ], "D11M cache-key continuity");
 

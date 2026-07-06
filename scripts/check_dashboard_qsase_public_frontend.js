@@ -167,6 +167,7 @@ function assertStaticContract() {
         ".qsase-guide-marker",
         ".qsase-guide-card",
         ".qsase-callout-head",
+        ".qsase-dashboard-v2 .qsase-dashboard-hero .qsase-callout-head",
         ".qsase-workflow-message",
         ".qsase-dashboard-v2",
         ".qsase-detail-ledger",
@@ -174,12 +175,18 @@ function assertStaticContract() {
         ".qsase-terminal-frame",
         ".matrix-rain",
         ".qsase-terminal-line",
+        "grid-template-columns: minmax(0, 1fr);",
+        "max-width: 100%;",
         "@keyframes qadamMatrixFall"
     ], "QSASE stylesheet");
+    assert(
+        !css.includes("grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.68fr);"),
+        "QSASE hero stylesheet still contains the removed two-column dashboard hero layout"
+    );
     assert(!css.includes(".qsase-jump-row"), "QSASE stylesheet still styles removed jump row");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260706-hedge-team-v1",
+        "/auth.css?v=20260706-hero-single-column-v1",
         "/dashboard.js?v=20260706-hedge-team-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
