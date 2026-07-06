@@ -12273,11 +12273,11 @@ const QSASE_GUIDE_MARKERS = {
     },
     trading_history: {
         title: "How to read the timeline",
-        summary: "This is the chronological paper ledger. It records accepted, bought, sold, and closed paper events without allowing any action from the dashboard.",
+        summary: "This is the chronological paper-trade record. The left side lists recent broker-mirrored events; the right side explains what has been traded recently in plain English.",
         rows: [
-            ["Green", "Buy or order activity."],
-            ["Red/brand", "Sell or close activity."],
-            ["Click target", "Use the timeline to understand what happened before judging the current state."]
+            ["Records", "How many broker-mirrored paper-trade events are in the timeline."],
+            ["Green / red edge", "Green means buy or accepted-order activity; red means sell or close activity."],
+            ["Summary", "The right panel translates the recent timeline into a short human-readable update."]
         ]
     },
     source_intelligence_network: {
@@ -12560,6 +12560,58 @@ function qsaseTradeEventTone(row = {}) {
     return statusClass(row.status || row.row_type || "pending");
 }
 
+function qsaseTradeEventDescription(row = {}) {
+    const raw = firstPresent(row.reason, row.postmortem_status, row.boundary, "Read-only paper ledger record.");
+    return qsaseHumanText(raw, "Read-only paper ledger record.")
+        .replace(/postmortem due/gi, "Needs a post-trade note explaining what happened and what Qadam learned.")
+        .replace(/mirrored order only no create cancel replace or close/gi, "Mirrored from Alpaca for visibility only; this dashboard did not create, cancel, replace, or close it.")
+        .replace(/proof credit/gi, "a fully documented paper result");
+}
+
+function qsaseTradeActionLabel(row = {}) {
+    const tone = qsaseTradeEventTone(row);
+    if (tone === "sell") return "sell or close";
+    if (tone === "buy") return "buy or order";
+    return qsaseHumanText(row.event_label || row.row_type || row.status, "recorded event").toLowerCase();
+}
+
+function qsaseTradingHistoryNarrative(section = {}, lifecycle = {}, proof = {}, rows = []) {
+    const recentRows = asArray(rows).slice(0, 8);
+    const latest = recentRows[0] || {};
+    const recentInstruments = Array.from(new Set(recentRows.map((row) => row.instrument).filter(Boolean))).slice(0, 5);
+    const buyOrOrderCount = recentRows.filter((row) => qsaseTradeEventTone(row) === "buy").length;
+    const sellOrCloseCount = recentRows.filter((row) => qsaseTradeEventTone(row) === "sell").length;
+    const staleAccepted = modelNumber(lifecycle.stale_accepted_order_count, 0);
+    const documentationGap = modelNumber(proof.proof_rejected_count, 0);
+    const recordCount = modelNumber(lifecycle.lifecycle_record_count, rows.length);
+    const closedCount = modelNumber(section.closed_trade_row_count, 0);
+    const orderMirrorCount = modelNumber(section.paper_order_mirror_row_count, 0);
+    const latestInstrument = latest.instrument || "the latest paper record";
+    const latestAction = latest.instrument ? qsaseTradeActionLabel(latest) : "recorded event";
+    const latestTime = latest.instrument ? formatTime(qsaseTimestamp(latest)) : "time not exported";
+
+    return {
+        recordLabel: `${recordCount || rows.length} records`,
+        auditSummary: staleAccepted
+            ? `${staleAccepted} accepted paper order mirror${staleAccepted === 1 ? "" : "s"} may be stale and should be checked against Alpaca.`
+            : "No accepted paper orders look stale against the Alpaca paper mirror right now.",
+        documentationSummary: documentationGap
+            ? `${documentationGap} closed trade${documentationGap === 1 ? "" : "s"} still need a complete explanation of why Qadam entered, how it exited, and what it learned.`
+            : "Closed trades currently have enough explanation for this public view.",
+        recentHeadline: recentRows.length
+            ? `Recent activity: ${recentInstruments.length ? recentInstruments.join(", ") : "symbols not exported"}`
+            : "No recent paper activity exported",
+        recentSummary: recentRows.length
+            ? `The latest record is a ${latestAction} entry for ${latestInstrument} at ${latestTime}. Across the latest visible records, ${buyOrOrderCount} are buys or accepted orders and ${sellOrCloseCount} are sells or closes.`
+            : "The paper ledger has not exported recent rows for this section.",
+        totals: [
+            ["Closed trades", closedCount],
+            ["Mirrored orders", orderMirrorCount],
+            ["Visible rows", rows.length]
+        ]
+    };
+}
+
 const QSASE_SOURCE_FAMILY_LABELS = {
     conflict: "Conflict & Geopolitics",
     macro: "Macro & Trade Data",
@@ -12735,32 +12787,43 @@ function renderQsaseTradingHistory(qsase = {}) {
     const lifecycle = qsase.paper_lifecycle_v2 || {};
     const proof = qsase.proof_ledger_v2 || {};
     const allRows = asArray(section.rows);
-    const lifecycleSummary = `${lifecycle.lifecycle_record_count || 0} lifecycle records · ${lifecycle.ambiguous_lifecycle_count || 0} ambiguous · ${proof.proof_eligible_count || 0} proof-eligible`;
+    const narrative = qsaseTradingHistoryNarrative(section, lifecycle, proof, allRows);
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, lifecycleSummary, allRows.length ? "online" : "pending", "trading_history")}
-            <p class="qsase-boundary-note">Lifecycle audit: ${qsaseHtmlText(lifecycle.stale_accepted_order_count || 0)} stale accepted order mirrors need review. Paper proof ledger: ${qsaseHtmlText(proof.proof_rejected_count || 0)} closed trades still need complete lineage or postmortem evidence before proof credit.</p>
-            <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology">
-                ${allRows.length ? allRows.map((row) => {
-                    const tone = qsaseTradeEventTone(row);
-                    const pnlValue = firstPresent(row.realized_pnl, row.unrealized_pnl, row.filled_quantity, "n/a");
-                    return `
-                        <article class="qsase-trade-event ${tone}" role="listitem">
-                            <div class="qsase-trade-event-time">
-                                <span>${qsaseHtmlText(row.event_label || row.row_type || row.status, "Recorded event")}</span>
-                                <strong>${formatTime(qsaseTimestamp(row))}</strong>
+            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
+            <p class="qsase-boundary-note">${qsaseHtmlText(narrative.auditSummary)} ${qsaseHtmlText(narrative.documentationSummary)}</p>
+            <div class="qsase-trading-history-layout">
+                <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology">
+                    ${allRows.length ? allRows.map((row) => {
+                        const tone = qsaseTradeEventTone(row);
+                        return `
+                            <article class="qsase-trade-event ${tone}" role="listitem">
+                                <div class="qsase-trade-event-time">
+                                    <span>${qsaseHtmlText(row.event_label || row.row_type || row.status, "Recorded event")}</span>
+                                    <strong>${formatTime(qsaseTimestamp(row))}</strong>
+                                </div>
+                                <div class="qsase-trade-event-main">
+                                    <strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong>
+                                    <p>${qsaseHtmlText(qsaseTradeEventDescription(row))}</p>
+                                </div>
+                            </article>
+                        `;
+                    }).join("") : `<article class="qsase-record-card pending"><strong>No trading-history rows exported.</strong></article>`}
+                </div>
+                <aside class="qsase-trading-summary" aria-label="Recent trading summary">
+                    <span>Recent trading summary</span>
+                    <strong>${qsaseHtmlText(narrative.recentHeadline)}</strong>
+                    <p>${qsaseHtmlText(narrative.recentSummary)}</p>
+                    <dl>
+                        ${narrative.totals.map(([label, value]) => `
+                            <div>
+                                <dt>${qsaseHtmlText(label)}</dt>
+                                <dd>${qsaseHtmlText(value)}</dd>
                             </div>
-                            <div class="qsase-trade-event-main">
-                                <strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong>
-                                <p>${qsaseHtmlText(row.postmortem_status || row.reason || row.boundary, "Read-only paper ledger record.")}</p>
-                            </div>
-                            <div class="qsase-trade-event-meta">
-                                <span>${qsaseHtmlText(row.direction || row.status || "state n/a")}</span>
-                                <strong>${qsaseHtmlText(pnlValue)}</strong>
-                            </div>
-                        </article>
-                    `;
-                }).join("") : `<article class="qsase-record-card pending"><strong>No trading-history rows exported.</strong></article>`}
+                        `).join("")}
+                    </dl>
+                    <p class="mini">This is a read-only timeline. It explains what the paper broker mirror has reported; it does not create, cancel, or approve trades.</p>
+                </aside>
             </div>
         </section>
     `;

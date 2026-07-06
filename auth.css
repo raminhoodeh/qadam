@@ -12111,6 +12111,13 @@ body.qadam-dashboard-page .qsase-trading-timeline {
     padding-right: 0.25rem;
 }
 
+body.qadam-dashboard-page .qsase-trading-history-layout {
+    align-items: start;
+    display: grid;
+    gap: var(--qadam-space-5);
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+}
+
 body.qadam-dashboard-page .qsase-trade-event {
     align-items: center;
     background: var(--qadam-color-canvas);
@@ -12118,7 +12125,7 @@ body.qadam-dashboard-page .qsase-trade-event {
     border-left: 5px solid rgba(var(--qadam-rgb-info), 0.32);
     display: grid;
     gap: var(--qadam-space-4);
-    grid-template-columns: minmax(9rem, 0.22fr) minmax(0, 1fr) minmax(8rem, 0.18fr);
+    grid-template-columns: minmax(8rem, 0.34fr) minmax(0, 1fr);
     padding: var(--qadam-space-4);
 }
 
@@ -12155,6 +12162,61 @@ body.qadam-dashboard-page .qsase-trade-event-meta span {
 
 body.qadam-dashboard-page .qsase-trade-event strong {
     color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qsase-trading-summary {
+    background:
+        linear-gradient(180deg, rgba(var(--qadam-rgb-ok), 0.08), rgba(var(--qadam-rgb-info), 0.03)),
+        var(--qadam-color-canvas);
+    border: 1px solid var(--qadam-color-rule);
+    border-left: 5px solid var(--qadam-color-ok);
+    display: grid;
+    gap: var(--qadam-space-3);
+    padding: var(--qadam-space-5);
+}
+
+body.qadam-dashboard-page .qsase-trading-summary > span,
+body.qadam-dashboard-page .qsase-trading-summary dt {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-trading-summary > strong {
+    color: var(--qadam-color-heading);
+    font-family: var(--qadam-font-display);
+    font-size: clamp(1.35rem, 2.2vw, 2rem);
+    line-height: 1.05;
+}
+
+body.qadam-dashboard-page .qsase-trading-summary p {
+    color: var(--qadam-color-text);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-trading-summary dl {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: var(--qadam-space-2) 0 0;
+}
+
+body.qadam-dashboard-page .qsase-trading-summary dl div {
+    background: rgba(var(--qadam-rgb-paper), 0.5);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.25rem;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-trading-summary dd {
+    color: var(--qadam-color-heading);
+    font-size: 1.25rem;
+    font-weight: 850;
+    margin: 0;
 }
 
 body.qadam-dashboard-page .qsase-market-pill-row {
@@ -12587,6 +12649,7 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .qsase-pattern-finding-title,
     body.qadam-dashboard-page .qsase-pattern-flow,
     body.qadam-dashboard-page .qsase-source-category-row > summary,
+    body.qadam-dashboard-page .qsase-trading-history-layout,
     body.qadam-dashboard-page .qsase-trade-event,
     body.qadam-dashboard-page .mission-flow-lifecycle,
     body.qadam-dashboard-page .mission-paper-metrics,
