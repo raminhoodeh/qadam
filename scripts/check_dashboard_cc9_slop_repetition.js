@@ -108,6 +108,9 @@ async function main() {
         "Public truth layer",
         "No filled paper positions are open yet",
         "No filled open positions yet",
+        "No filled holdings yet",
+        "Filled holdings",
+        "Why pending orders are not holdings",
         "paper orders are open or accepted",
         "fundSummary.summary",
         "qsase-public-summary"
@@ -127,12 +130,12 @@ async function main() {
         "renderContractPortfolioHero",
         "renderPortfolioTradeTimeline",
         "Paper Fund Status",
-        "Current Holdings",
-        "Filled holdings",
-        "Pending orders live in Trading History",
-        "Why pending orders are not holdings",
-        "accepted paper order",
-        "waiting for market fill"
+        "Current Portfolio",
+        "Portfolio status",
+        "Open exposure",
+        "Trade History",
+        "How to read portfolio status",
+        "pending paper order"
     ], "dashboard source");
 
     assertCount(dashboardHtml, "overview-decision-records", 0, "static dashboard shell decision records");
@@ -263,7 +266,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260706-hedge-team-v1");
+    console.log("dashboard_cc9_cache_key=20260706-tooltip-clamp-v1");
 }
 
 main().catch((error) => {

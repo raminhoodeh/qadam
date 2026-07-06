@@ -103,8 +103,9 @@ function assertStaticContract() {
         "data-qsase-section=\"paper_fund_status\"",
         "Paper Fund Status",
         "Portfolio Value &amp; Return",
-        "Current Holdings",
-        "waiting for market fill",
+        "Current Portfolio",
+        "Portfolio status",
+        "Open exposure",
         "Trading History",
         "Hedge Fund Team",
         "Source Intelligence Network",
@@ -114,7 +115,7 @@ function assertStaticContract() {
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
         "Qadam Pulse Terminal",
-        "Why pending orders are not holdings",
+        "How to read portfolio status",
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=",
@@ -168,6 +169,11 @@ function assertStaticContract() {
         ".qsase-guide-card",
         ".qsase-callout-head",
         ".qsase-dashboard-v2 .qsase-dashboard-hero .qsase-callout-head",
+        "data-guide-tooltip-bound=\"true\"",
+        "--qadam-tooltip-left",
+        "--qadam-tooltip-top",
+        "position: fixed;",
+        "max-height: min(72vh, 32rem);",
         ".qsase-workflow-message",
         ".qsase-dashboard-v2",
         ".qsase-detail-ledger",
@@ -185,9 +191,17 @@ function assertStaticContract() {
     );
     assert(!css.includes(".qsase-jump-row"), "QSASE stylesheet still styles removed jump row");
 
+    assertIncludesAll(renderer, [
+        "function positionDashboardGuideTooltip(marker)",
+        "function initDashboardGuideTooltips()",
+        "clampDashboardTooltipValue",
+        "data-tooltip-contract=\"nontechnical-guide\"",
+        "initDashboardGuideTooltips();"
+    ], "QSASE tooltip positioning controller");
+
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260706-hero-single-column-v1",
-        "/dashboard.js?v=20260706-hedge-team-v1",
+        "/auth.css?v=20260706-tooltip-clamp-v1",
+        "/dashboard.js?v=20260706-tooltip-clamp-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -222,8 +236,8 @@ async function assertRenderedContract() {
         "Qadam Paper Fund",
         "Paper Fund Status",
         "Portfolio Value &amp; Return",
-        "Current Holdings",
-        "waiting for market fill",
+        "Portfolio status",
+        "Open exposure",
         "Trading History",
         "Hedge Fund Team",
         "Source Intelligence Network",
@@ -238,7 +252,6 @@ async function assertRenderedContract() {
     [
         "paper_fund_status",
         "portfolio_value_return",
-        "current_portfolio",
         "trading_history",
         "hedge_fund_team",
         "source_intelligence_network",
@@ -255,7 +268,6 @@ async function assertRenderedContract() {
     const order = [
         "paper_fund_status",
         "portfolio_value_return",
-        "current_portfolio",
         "trading_history",
         "hedge_fund_team",
         "source_intelligence_network",
@@ -293,7 +305,7 @@ async function assertRenderedContract() {
     [
         "qsase-kpi-row",
         "qsase-fund-status",
-        "Why pending orders are not holdings",
+        "How to read portfolio status",
         "qsase-trading-timeline",
         "qsase-source-category-row",
         "qsase-market-pill-row",
@@ -303,9 +315,8 @@ async function assertRenderedContract() {
         "Paper Fund Status",
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
-        "data-guide-marker=\"current_portfolio\"",
         "data-guide-marker=\"pattern_intelligence_findings\"",
-        "Holdings versus waiting orders",
+        "How to read portfolio status",
         "How to read pattern recognition",
         "Guide: How to read pattern recognition",
         "What a trade intent means",
@@ -326,7 +337,10 @@ async function assertRenderedContract() {
     [
         "Router &amp; PaperOps Gate",
         "guarded PaperOps decision state",
-        "Nothing is currently being considered by QSASE"
+        "Nothing is currently being considered by QSASE",
+        "No filled holdings yet",
+        "0 filled holdings",
+        "Current Holdings"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `rendered QSASE dashboard still exposes internal copy ${needle}`);
     });
