@@ -12445,8 +12445,6 @@ function renderQsasePortfolioValue(qsase = {}) {
         `;
     }).join("");
     const tone = delta >= 0 ? "online" : "blocked";
-    const freshnessCopy = dashboardFreshnessCopy(portfolio.public_snapshot_freshness || {});
-    const consistencyCopy = portfolio.portfolio_consistency?.status === "ok" ? "portfolio values match" : "portfolio values need review";
     return `
         <section id="qsase-portfolio" class="qsase-section qsase-portfolio-value ${statusClass(tone)}" data-qsase-section="portfolio_value_return">
             <div class="qsase-money-hero">
@@ -12476,7 +12474,6 @@ function renderQsasePortfolioValue(qsase = {}) {
                 <text class="chart-axis-label" x="4" y="${yFor(minRaw).toFixed(2)}">${literalHtmlText(formatMoney(minRaw, currency))}</text>
                 <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(latest.timestamp || latest.observed_at || portfolio.generated_at))}</text>
             </svg>
-            <p class="qsase-boundary-note">${qsaseHtmlText(portfolio.status || section.status)} · ${qsaseHtmlText(consistencyCopy)} · ${qsaseHtmlText(freshnessCopy)} · trade markers are read-only history, not proof credit.</p>
         </section>
     `;
 }
@@ -12702,10 +12699,13 @@ function renderQsaseSourceNetwork(qsase = {}) {
     const section = qsase.source_network || {};
     const categories = asArray(section.category_rows);
     const allSources = asArray(section.source_rows);
+    const tradingRows = asArray(section.trading_universe_rows);
+    const fundCategoryCount = new Set(tradingRows.map((row) => row.market_family || "unassigned")).size || categories.length;
+    const sourceMeta = `${tradingRows.length || allSources.length} Instruments over ${fundCategoryCount} Fund Categories`;
     const sourcesForFamily = (family) => allSources.filter((source) => String(source.family || "").toLowerCase() === String(family || "").toLowerCase());
     return `
         <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
-            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || allSources.length} connected source rows · ${categories.length} categories`, section.status, "online", "source_intelligence_network")}
+            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || allSources.length} connected source rows · ${categories.length} categories`, sourceMeta, "online", "source_intelligence_network")}
             <div class="qsase-source-category-list">
                 ${categories.map((row, index) => {
                     const familySources = sourcesForFamily(row.family);
@@ -12749,6 +12749,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
     const fireOpal = qsase.fire_opal_ibm || {};
     const consultation = qsase.qctrl_consultation || {};
     const sourceCount = qsasePulseCount(sources.source_row_count, asArray(sources.source_rows).length);
+    const tradingRows = asArray(sources.trading_universe_rows);
+    const fundCategoryCount = new Set(tradingRows.map((row) => row.market_family || "unassigned")).size || qsasePulseCount(sources.category_row_count, asArray(sources.category_rows).length);
+    const sourceUniverseStatus = `${tradingRows.length || sourceCount} Instruments over ${fundCategoryCount} Fund Categories`;
     const patternCount = qsasePulseCount(patterns.finding_count, asArray(patterns.findings).length);
     const routerDecision = qsaseRouterHeadline(router, gate);
     const quantumMode = firstPresent(oracle.latest_local_simulation_mode, oracle.latest_backend, oracle.backend, qsase.quantum_review?.mode, "classical fallback");
@@ -12769,7 +12772,7 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             role: "Local LLM",
             title: "Research Analyst",
             tone: sources.status || "online",
-            status: qsaseTeamStatusText(sources.status, "source compression active"),
+            status: sourceUniverseStatus,
             summary: `Reads the source network first: ${sourceCount} source rows become compact, public-safe research context before any strategy discussion.`,
             description: "In a boutique macro fund, this is the analyst who wakes up early and reads the wires. It is close to the raw sources, cheap enough to run often, and useful for turning noisy world events into structured observations.",
             selfAwareness: "It knows it is fast but not final. Its job is breadth and freshness, so Qadam treats its output as research context that still needs source quorum, market confirmation, and challenge review.",
@@ -12863,10 +12866,10 @@ function renderQsaseTradingUniverse(qsase = {}) {
         return groups;
     }, {});
     const categoryKeys = Object.keys(grouped).sort((a, b) => qsaseMarketFamilyLabel(a).localeCompare(qsaseMarketFamilyLabel(b)));
-    const paperableCount = rows.filter((row) => row.paper_route_available || String(row.paperability_state || "").includes("paper")).length;
+    const universeMeta = `${rows.length} Instruments over ${categoryKeys.length} Fund Categories`;
     return `
         <section id="qsase-trading-universe" class="qsase-section" data-qsase-section="trading_universe">
-            ${renderQsaseSectionHeader("Trading Universe", `${rows.length} watched instruments · ${categoryKeys.length} categories · ${paperableCount} paper-route candidates`, sourceSection.status, rows.length ? "online" : "pending", "trading_universe")}
+            ${renderQsaseSectionHeader("Multi-Asset Funds", "Trading Universe", universeMeta, rows.length ? "online" : "pending", "trading_universe")}
             <div class="qsase-source-category-list qsase-trading-universe-list">
                 ${categoryKeys.map((family, index) => {
                     const markets = grouped[family] || [];
@@ -13498,7 +13501,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                         ${renderQsaseGuideMarker("fund_overview")}
                     </div>
                     <h2>Qadam Paper Fund</h2>
-                    <p>Read-only public view of the paper account, evidence network, watched markets, strategy families, active patterns, and final paper-trade gate.</p>
+                    <p>Qadam watches the world → checks the data → finds patterns → tests ideas → filters them → decides if they are tradeable → paper trades only if safe → learns from the result.</p>
                 </div>
             </div>
             <section id="qsase-fund-status" class="qsase-section qsase-fund-status" data-qsase-section="paper_fund_status">
