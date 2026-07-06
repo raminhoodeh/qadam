@@ -41,6 +41,7 @@ LEARNING_LEDGER_ARTIFACT = "qsase_dashboard_learning_ledger.json"
 REPAIR_QUEUE_ARTIFACT = "qsase_dashboard_repair_queue.json"
 PATTERN_TO_PAPER_WORKFLOW_ARTIFACT = "qsase_pattern_to_paper_workflow.json"
 PATTERN_INTELLIGENCE_ARTIFACT = "qsase_pattern_intelligence.json"
+EVIDENCE_QUALITY_ARTIFACT = "qsase_evidence_quality_engine.json"
 ANTI_SLOP_ARTIFACT = "qsase_dashboard_anti_slop_audit.json"
 HISTORY_ARTIFACT = "qsase_dashboard_view_model_history.jsonl"
 EVENTS_ARTIFACT = "qsase_dashboard_view_model_events.jsonl"
@@ -151,6 +152,7 @@ FRESHNESS_THRESHOLDS_SECONDS = {
     SELF_MODEL_ARTIFACT: 14400,
     PATTERN_ENGINE_ARTIFACT: 14400,
     EDGE_PATTERN_LEDGER_ARTIFACT: 14400,
+    EVIDENCE_QUALITY_ARTIFACT: 14400,
     ROUTER_ARTIFACT: 14400,
     PAPEROPS_GATE_ARTIFACT: 14400,
     COMPONENT_ATTRIBUTION_LEDGER_ARTIFACT: 14400,
@@ -363,6 +365,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "akber_filter": AKBER_FILTER_ARTIFACT,
         "linear_lab": LINEAR_LAB_ARTIFACT,
         "nonlinear_lab": NONLINEAR_LAB_ARTIFACT,
+        "evidence_quality": EVIDENCE_QUALITY_ARTIFACT,
         "router": ROUTER_ARTIFACT,
         "paperops_gate": PAPEROPS_GATE_ARTIFACT,
         "learning_ledger": COMPONENT_ATTRIBUTION_LEDGER_ARTIFACT,
@@ -1143,22 +1146,65 @@ def _workflow_telegram_message(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _evidence_quality_by_sleeve(context: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    evidence = context.get("evidence_quality", {})
+    records: dict[str, dict[str, Any]] = {}
+    for record in _safe_list(evidence.get("records")):
+        if not isinstance(record, dict):
+            continue
+        sleeve = _first_text(record.get("sleeve_key"), record.get("market_sleeve"), default="")
+        if sleeve:
+            records[sleeve.lower()] = record
+    return records
+
+
+def build_evidence_quality(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
+    artifact = _section_base("qsase_evidence_quality", generated_at)
+    evidence = context.get("evidence_quality", {})
+    if not evidence or evidence.get("public_safe") is not True:
+        artifact.update(
+            {
+                "status": "evidence_quality_missing",
+                "summary": "Evidence quality has not exported a public-safe artifact yet.",
+                "evidence_record_count": 0,
+                "paper_review_candidate_count": 0,
+                "held_for_evidence_count": 0,
+                "records": [],
+                "boundary": "Dashboard visibility only. No trade candidate, order, broker write, proof credit, or live-capital authority.",
+                "artifact_refs": [_artifact_ref(EVIDENCE_QUALITY_ARTIFACT)],
+            }
+        )
+        return artifact
+    artifact.update(copy.deepcopy(evidence))
+    artifact["artifact_type"] = "qsase_evidence_quality"
+    artifact["dashboard_section"] = True
+    artifact["generated_at"] = evidence.get("generated_at") or generated_at
+    artifact.setdefault("artifact_refs", [_artifact_ref(EVIDENCE_QUALITY_ARTIFACT)])
+    return artifact
+
+
 def build_pattern_to_paper_workflow(context: dict[str, Any], generated_at: str) -> dict[str, Any]:
     artifact = _section_base("qsase_pattern_to_paper_workflow", generated_at)
     paperops_gate = context.get("paperops_gate", {})
     router = context.get("router", {})
+    evidence_by_sleeve = _evidence_quality_by_sleeve(context)
     records = []
     for index, pattern in enumerate(_pattern_candidates(context)):
         sleeve = _first_text(pattern.get("market_sleeve"), pattern.get("label"), pattern.get("sleeve_key"), default="Pattern")
+        sleeve_key = _first_text(pattern.get("sleeve_key"), sleeve, default=sleeve).lower()
+        evidence_quality = evidence_by_sleeve.get(sleeve_key, {})
         symbols = _safe_list(pattern.get("instrument_symbols"))
         missing = _safe_list(pattern.get("missing_criteria"))
         passed = _safe_list(pattern.get("passed_criteria"))
-        paperops_ready = _workflow_paperops_ready(pattern, context)
+        paperops_ready = _workflow_paperops_ready(pattern, context) and evidence_quality.get("tradeability_state") == "paper_review_candidate"
         state = "paperops_handoff_candidate" if paperops_ready else "documented_research_pattern"
-        next_action = (
-            "route to guarded PaperOps handoff review"
-            if paperops_ready
-            else f"collect {_workflow_missing_text(missing)} before PaperOps handoff review"
+        next_action = _first_text(
+            evidence_quality.get("next_action"),
+            default=(
+                "route to guarded PaperOps handoff review"
+                if paperops_ready
+                else f"collect {_workflow_missing_text(missing)} before PaperOps handoff review"
+            ),
         )
         workflow_id = _hash_id([pattern.get("pattern_id"), sleeve, symbols, state], "qsase-pattern-workflow")
         records.append(
@@ -1193,6 +1239,26 @@ def build_pattern_to_paper_workflow(context: dict[str, Any], generated_at: str) 
                 "passed_criteria": passed,
                 "missing_criteria": missing,
                 "invalidation": f"Invalidate if {_workflow_missing_text(missing)} remains unresolved, source pressure fades, or market confirmation fails.",
+                "tradeability_state": evidence_quality.get("tradeability_state", "research_only"),
+                "evidence_quality_state": evidence_quality.get("status", evidence_quality.get("tradeability_state", "not_recorded")),
+                "evidence_quality_score": evidence_quality.get("scores", {}).get("evidence_quality_score"),
+                "evidence_quality": {
+                    "available": bool(evidence_quality),
+                    "tradeability_state": evidence_quality.get("tradeability_state"),
+                    "score": evidence_quality.get("scores", {}).get("evidence_quality_score"),
+                    "source_reliability_score": evidence_quality.get("scores", {}).get("source_reliability_score"),
+                    "historical_completeness_score": evidence_quality.get("scores", {}).get("historical_completeness_score"),
+                    "akber_practical_confirmation_score": evidence_quality.get("scores", {}).get("akber_practical_confirmation_score"),
+                    "shadow_replay_score": evidence_quality.get("scores", {}).get("shadow_replay_score"),
+                    "quality_bar": evidence_quality.get("quality_bar", {}),
+                    "what_qadam_thinks": evidence_quality.get("what_qadam_thinks"),
+                    "what_would_confirm": evidence_quality.get("what_would_confirm"),
+                    "what_blocks_trade": evidence_quality.get("what_blocks_trade"),
+                    "next_action": evidence_quality.get("next_action"),
+                },
+                "what_qadam_thinks": evidence_quality.get("what_qadam_thinks"),
+                "what_would_confirm": evidence_quality.get("what_would_confirm"),
+                "what_blocks_trade": evidence_quality.get("what_blocks_trade"),
                 "paperops_state": state,
                 "paperops_handoff_candidate": paperops_ready,
                 "paper_review_eligible": paperops_ready,
@@ -1214,6 +1280,7 @@ def build_pattern_to_paper_workflow(context: dict[str, Any], generated_at: str) 
                 "artifact_refs": [
                     _artifact_ref(PATTERN_ENGINE_ARTIFACT, f"candidate_patterns.{index}"),
                     _artifact_ref(EDGE_PATTERN_LEDGER_ARTIFACT),
+                    _artifact_ref(EVIDENCE_QUALITY_ARTIFACT),
                     _artifact_ref(ROUTER_ARTIFACT),
                     _artifact_ref(PAPEROPS_GATE_ARTIFACT),
                 ],
@@ -1256,6 +1323,7 @@ def build_pattern_to_paper_workflow(context: dict[str, Any], generated_at: str) 
             "artifact_refs": [
                 _artifact_ref(PATTERN_ENGINE_ARTIFACT),
                 _artifact_ref(EDGE_PATTERN_LEDGER_ARTIFACT),
+                _artifact_ref(EVIDENCE_QUALITY_ARTIFACT),
                 _artifact_ref(ROUTER_ARTIFACT),
                 _artifact_ref(PAPEROPS_GATE_ARTIFACT),
             ],
@@ -1320,8 +1388,18 @@ def _confidence_label(score: Any) -> str:
 
 
 def _finding_stage(record: dict[str, Any], edge_record: dict[str, Any] | None = None) -> tuple[str, str]:
+    tradeability_state = str(record.get("tradeability_state") or "")
+    if tradeability_state == "paper_review_candidate":
+        return "paper_ready", "Paper-ready review candidate"
     if record.get("paperops_handoff_candidate"):
         return "paper_ready", "Paper-ready review candidate"
+    if tradeability_state in {
+        "hold_missing_akber_inputs",
+        "hold_missing_historical_forward_windows",
+        "hold_unvalidated_edge",
+        "shadow_only",
+    }:
+        return "documented", tradeability_state.replace("_", " ").title()
     missing = _safe_list(record.get("missing_criteria"))
     edge_stage = str((edge_record or {}).get("edge_stage") or "").lower()
     if "validated" in edge_stage and "not_validated" not in edge_stage:
@@ -1413,7 +1491,11 @@ def build_pattern_intelligence(
         source_keys = _safe_list(record.get("source_packet_summary", {}).get("primary_lens_source_keys"))
         source_names = _source_names(source_keys)
         scores = record.get("evidence_scores", {}) if isinstance(record.get("evidence_scores"), dict) else {}
+        evidence_quality = record.get("evidence_quality", {}) if isinstance(record.get("evidence_quality"), dict) else {}
         readiness_score = _float(scores.get("edge_readiness_score"))
+        evidence_quality_score = _float(record.get("evidence_quality_score"), _float(evidence_quality.get("score"), 0.0))
+        if evidence_quality_score:
+            readiness_score = evidence_quality_score
         source_pressure_score = _float(scores.get("source_pressure_score"))
         coverage_score = _float(scores.get("signal_review_coverage_score"))
         ambiguity_score = _float(scores.get("ambiguity_score"))
@@ -1424,15 +1506,23 @@ def build_pattern_intelligence(
         source_chain_text = ", ".join(source_names[:4])
         if len(source_names) > 4:
             source_chain_text = f"{source_chain_text}, plus {len(source_names) - 4} more"
-        what_blocks = (
-            f"Still needs {_workflow_missing_text(missing)} before it can enter paper-trade review."
-            if missing
-            else "No upstream research blocker is recorded; it still needs final risk and paper-route checks."
+        what_blocks = _first_text(
+            record.get("what_blocks_trade"),
+            evidence_quality.get("what_blocks_trade"),
+            default=(
+                f"Still needs {_workflow_missing_text(missing)} before it can enter paper-trade review."
+                if missing
+                else "No upstream research blocker is recorded; it still needs final risk and paper-route checks."
+            ),
         )
-        what_confirms = (
-            "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
-            if missing
-            else "Sustained source agreement, price confirmation, and clean risk checks would confirm it."
+        what_confirms = _first_text(
+            record.get("what_would_confirm"),
+            evidence_quality.get("what_would_confirm"),
+            default=(
+                "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
+                if missing
+                else "Sustained source agreement, price confirmation, and clean risk checks would confirm it."
+            ),
         )
         raw_next_action = str(record.get("next_allowed_action") or "continue observation before paper-trade review")
         next_action = (
@@ -1469,14 +1559,22 @@ def build_pattern_intelligence(
                     else "Qadam has not yet exported a source-price relationship strong enough to rely on."
                 ),
                 "evidence_summary": _first_text(record.get("qualitative_summary"), default="Evidence summary pending."),
-                "what_qadam_thinks": (
-                    f"Qadam sees a possible {sleeve} relationship, but it is still a research finding rather than a trade."
-                    if stage_key in {"found", "documented"}
-                    else f"Qadam sees {sleeve} moving closer to paper-trade review."
+                "what_qadam_thinks": _first_text(
+                    record.get("what_qadam_thinks"),
+                    evidence_quality.get("what_qadam_thinks"),
+                    default=(
+                        f"Qadam sees a possible {sleeve} relationship, but it is still a research finding rather than a trade."
+                        if stage_key in {"found", "documented"}
+                        else f"Qadam sees {sleeve} moving closer to paper-trade review."
+                    ),
                 ),
                 "what_would_confirm": what_confirms,
                 "what_blocks_trade": what_blocks,
                 "next_action": next_action,
+                "tradeability_state": record.get("tradeability_state"),
+                "evidence_quality_state": record.get("evidence_quality_state"),
+                "evidence_quality_score": round(evidence_quality_score, 3),
+                "quality_bar": evidence_quality.get("quality_bar", {}),
                 "passed_plain_english": _plain_criteria(passed),
                 "missing_plain_english": _plain_criteria(missing),
                 "blockers": _plain_criteria(missing) or ["final risk and paper-route review"],
@@ -1550,6 +1648,16 @@ def build_pattern_intelligence(
             "rank_flags": flags,
             "findings": findings,
             "human_brief": human_brief,
+            "evidence_quality_summary": {
+                "status": context.get("evidence_quality", {}).get("status"),
+                "evidence_record_count": context.get("evidence_quality", {}).get("evidence_record_count", 0),
+                "paper_review_candidate_count": context.get("evidence_quality", {}).get("paper_review_candidate_count", 0),
+                "held_for_evidence_count": context.get("evidence_quality", {}).get("held_for_evidence_count", 0),
+                "historical_complete_forward_window_ratio": context.get("evidence_quality", {}).get("historical_memory", {}).get("complete_forward_window_ratio"),
+                "source_freshness_ratio": context.get("evidence_quality", {}).get("source_reliability", {}).get("freshness_ratio"),
+                "akber_missing_context_count": context.get("evidence_quality", {}).get("akber_missing_context_count"),
+                "most_important_missing_piece": context.get("evidence_quality", {}).get("most_important_missing_piece"),
+            },
             "technical_diagnostics": {
                 "linear_pattern_count": pattern_lab.get("linear_pattern_count", 0),
                 "nonlinear_pattern_count": pattern_lab.get("nonlinear_pattern_count", 0),
@@ -1670,6 +1778,7 @@ def build_system_map(sections: dict[str, dict[str, Any]], generated_at: str) -> 
         "source_network",
         "strategy_universe",
         "pattern_lab",
+        "evidence_quality",
         "trade_intents",
         "pattern_to_paper_workflow",
         "router_paperops_state",
@@ -1759,6 +1868,18 @@ def build_decision_records(sections: dict[str, dict[str, Any]], context: dict[st
             blocker="quantum_review_is_research_only",
             next_allowed_action="render linear, nonlinear, and quantum review rows without trade authority",
             artifact_refs=sections["pattern_lab"]["artifact_refs"],
+        ),
+        _decision_record(
+            module="evidence_quality",
+            state=sections["evidence_quality"]["status"],
+            headline="Evidence Quality decides whether patterns are tradeable now.",
+            reason=sections["evidence_quality"].get("summary", "Evidence quality has not exported a summary."),
+            blocker=_first_text(
+                sections["evidence_quality"].get("most_important_missing_piece"),
+                default="evidence_quality_not_ready",
+            ),
+            next_allowed_action="collect missing evidence until Akber and Router can promote a setup",
+            artifact_refs=sections["evidence_quality"].get("artifact_refs", [_artifact_ref(EVIDENCE_QUALITY_ARTIFACT)]),
         ),
         _decision_record(
             module="trade_intents",
@@ -1992,6 +2113,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
     sections["source_network"] = build_source_network(context, generated_at)
     sections["strategy_universe"] = build_strategy_universe(context, generated_at)
     sections["pattern_lab"] = build_pattern_lab(context, generated_at)
+    sections["evidence_quality"] = build_evidence_quality(context, generated_at)
     sections["trade_intents"] = build_trade_intents(context, generated_at)
     sections["pattern_to_paper_workflow"] = build_pattern_to_paper_workflow(context, generated_at)
     sections["pattern_intelligence"] = build_pattern_intelligence(
@@ -2030,6 +2152,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "source_network_state": sections["source_network"]["status"],
         "strategy_universe_state": sections["strategy_universe"]["status"],
         "pattern_lab_state": sections["pattern_lab"]["status"],
+        "evidence_quality_state": sections["evidence_quality"]["status"],
         "trade_intents_state": sections["trade_intents"]["status"],
         "pattern_to_paper_workflow_state": sections["pattern_to_paper_workflow"]["status"],
         "pattern_intelligence_state": sections["pattern_intelligence"]["status"],
@@ -2048,6 +2171,9 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "currently_in_play_count": sections["strategy_universe"]["currently_in_play_count"],
         "linear_pattern_count": sections["pattern_lab"]["linear_pattern_count"],
         "nonlinear_pattern_count": sections["pattern_lab"]["nonlinear_pattern_count"],
+        "evidence_quality_record_count": sections["evidence_quality"].get("evidence_record_count", 0),
+        "evidence_quality_paper_review_candidate_count": sections["evidence_quality"].get("paper_review_candidate_count", 0),
+        "evidence_quality_held_for_evidence_count": sections["evidence_quality"].get("held_for_evidence_count", 0),
         "trade_intent_count": sections["trade_intents"]["intent_count"],
         "pattern_workflow_record_count": sections["pattern_to_paper_workflow"]["recognized_pattern_count"],
         "pattern_workflow_handoff_candidate_count": sections["pattern_to_paper_workflow"]["paperops_handoff_candidate_count"],
@@ -2073,6 +2199,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
             "source_network": _artifact_ref(SOURCE_NETWORK_ARTIFACT),
             "strategy_universe": _artifact_ref(STRATEGY_UNIVERSE_ARTIFACT),
             "pattern_lab": _artifact_ref(PATTERN_LAB_ARTIFACT),
+            "evidence_quality": _artifact_ref(EVIDENCE_QUALITY_ARTIFACT),
             "trade_intents": _artifact_ref(TRADE_INTENTS_ARTIFACT),
             "pattern_to_paper_workflow": _artifact_ref(PATTERN_TO_PAPER_WORKFLOW_ARTIFACT),
             "pattern_intelligence": _artifact_ref(PATTERN_INTELLIGENCE_ARTIFACT),
@@ -2088,6 +2215,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
         "source_network": sections["source_network"],
         "strategy_universe": sections["strategy_universe"],
         "pattern_lab": sections["pattern_lab"],
+        "evidence_quality": sections["evidence_quality"],
         "trade_intents": sections["trade_intents"],
         "pattern_to_paper_workflow": sections["pattern_to_paper_workflow"],
         "pattern_intelligence": sections["pattern_intelligence"],
@@ -2105,7 +2233,7 @@ def build_dashboard_view_model(settings: Settings | None = None) -> dict[str, An
     if anti_slop["error_count"]:
         payload["status"] = "qsase_dashboard_visibility_blocked"
     elif payload["stale_labeled_count"]:
-        payload["status"] = "qsase_dashboard_visibility_degraded"
+        payload["status"] = "qsase_dashboard_visibility_ready_with_stale_labels"
     return payload
 
 
@@ -2130,6 +2258,7 @@ def _status_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "source_network_state",
         "strategy_universe_state",
         "pattern_lab_state",
+        "evidence_quality_state",
         "trade_intents_state",
         "pattern_to_paper_workflow_state",
         "pattern_intelligence_state",
@@ -2148,6 +2277,9 @@ def _status_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "currently_in_play_count",
         "linear_pattern_count",
         "nonlinear_pattern_count",
+        "evidence_quality_record_count",
+        "evidence_quality_paper_review_candidate_count",
+        "evidence_quality_held_for_evidence_count",
         "trade_intent_count",
         "pattern_workflow_record_count",
         "pattern_workflow_handoff_candidate_count",
@@ -2184,6 +2316,7 @@ def load_dashboard_view_model(settings: Settings | None = None) -> dict[str, Any
     status["source_network"] = _read_json(runtime / SOURCE_NETWORK_ARTIFACT)
     status["strategy_universe"] = _read_json(runtime / STRATEGY_UNIVERSE_ARTIFACT)
     status["pattern_lab"] = _read_json(runtime / PATTERN_LAB_ARTIFACT)
+    status["evidence_quality"] = _read_json(runtime / EVIDENCE_QUALITY_ARTIFACT)
     status["trade_intents"] = _read_json(runtime / TRADE_INTENTS_ARTIFACT)
     status["pattern_to_paper_workflow"] = _read_json(runtime / PATTERN_TO_PAPER_WORKFLOW_ARTIFACT)
     status["pattern_intelligence"] = _read_json(runtime / PATTERN_INTELLIGENCE_ARTIFACT)
@@ -2201,6 +2334,7 @@ def validate_dashboard_view_model(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_dashboard_visibility_ready",
+        "qsase_dashboard_visibility_ready_with_stale_labels",
         "qsase_dashboard_visibility_degraded",
         "qsase_dashboard_visibility_blocked",
     }:
@@ -2259,6 +2393,21 @@ def validate_dashboard_view_model(payload: dict[str, Any]) -> list[str]:
         errors.append("linear_pattern_rows_missing")
     if int(payload.get("pattern_lab", {}).get("nonlinear_pattern_count") or 0) <= 0:
         errors.append("nonlinear_pattern_rows_missing")
+    evidence_quality = payload.get("evidence_quality", {})
+    if evidence_quality.get("artifact_type") != "qsase_evidence_quality":
+        errors.append("evidence_quality_artifact_missing")
+    if int(evidence_quality.get("evidence_record_count") or 0) <= 0:
+        errors.append("evidence_quality_records_missing")
+    for field in (
+        "paper_order_allowed",
+        "trade_candidate_created",
+        "qualified_setup_created",
+        "broker_write_allowed",
+        "proof_credit_allowed",
+        "live_capital_enabled",
+    ):
+        if evidence_quality.get(field) is not False:
+            errors.append(f"evidence_quality_{field}_must_be_false")
     if "rows" not in payload.get("trade_intents", {}):
         errors.append("trade_intent_rows_missing")
     for row in payload.get("trade_intents", {}).get("rows", []):
@@ -2373,6 +2522,7 @@ def build_qsase_phase_implementation_status(payload: dict[str, Any]) -> dict[str
         "source_network_path": f"data/runtime/{SOURCE_NETWORK_ARTIFACT}",
         "strategy_universe_path": f"data/runtime/{STRATEGY_UNIVERSE_ARTIFACT}",
         "pattern_lab_path": f"data/runtime/{PATTERN_LAB_ARTIFACT}",
+        "evidence_quality_path": f"data/runtime/{EVIDENCE_QUALITY_ARTIFACT}",
         "trade_intents_path": f"data/runtime/{TRADE_INTENTS_ARTIFACT}",
         "pattern_to_paper_workflow_path": f"data/runtime/{PATTERN_TO_PAPER_WORKFLOW_ARTIFACT}",
         "pattern_intelligence_path": f"data/runtime/{PATTERN_INTELLIGENCE_ARTIFACT}",
@@ -2387,6 +2537,9 @@ def build_qsase_phase_implementation_status(payload: dict[str, Any]) -> dict[str
         "currently_in_play_count": payload["currently_in_play_count"],
         "linear_pattern_count": payload["linear_pattern_count"],
         "nonlinear_pattern_count": payload["nonlinear_pattern_count"],
+        "evidence_quality_record_count": payload["evidence_quality_record_count"],
+        "evidence_quality_paper_review_candidate_count": payload["evidence_quality_paper_review_candidate_count"],
+        "evidence_quality_held_for_evidence_count": payload["evidence_quality_held_for_evidence_count"],
         "trade_intent_count": payload["trade_intent_count"],
         "pattern_workflow_record_count": payload["pattern_workflow_record_count"],
         "pattern_workflow_handoff_candidate_count": payload["pattern_workflow_handoff_candidate_count"],
@@ -2462,6 +2615,7 @@ def write_dashboard_view_model(
         "source_network": runtime / SOURCE_NETWORK_ARTIFACT,
         "strategy_universe": runtime / STRATEGY_UNIVERSE_ARTIFACT,
         "pattern_lab": runtime / PATTERN_LAB_ARTIFACT,
+        "evidence_quality": runtime / EVIDENCE_QUALITY_ARTIFACT,
         "trade_intents": runtime / TRADE_INTENTS_ARTIFACT,
         "pattern_to_paper_workflow": runtime / PATTERN_TO_PAPER_WORKFLOW_ARTIFACT,
         "pattern_intelligence": runtime / PATTERN_INTELLIGENCE_ARTIFACT,
@@ -2479,6 +2633,7 @@ def write_dashboard_view_model(
     _write_json(paths["source_network"], payload["source_network"])
     _write_json(paths["strategy_universe"], payload["strategy_universe"])
     _write_json(paths["pattern_lab"], payload["pattern_lab"])
+    _write_json(paths["evidence_quality"], payload["evidence_quality"])
     _write_json(paths["trade_intents"], payload["trade_intents"])
     _write_json(paths["pattern_to_paper_workflow"], payload["pattern_to_paper_workflow"])
     _write_json(paths["pattern_intelligence"], payload["pattern_intelligence"])

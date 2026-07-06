@@ -31,8 +31,33 @@
       "data/runtime/qsase_quantum_pattern_reviews.jsonl"
     ],
     [
+      "data/runtime/qsase_source_universe.json",
+      "data/runtime/qsase_historical_source_price_memory.json",
+      "data/runtime/pattern_recognition_engine.json",
+      "data/runtime/qsase_strategy_hypotheses.json",
+      "data/runtime/qsase_akber_filter_integration.json",
+      "data/runtime/qsase_shadow_strategy_simulator.json",
+      "data/runtime/qsase_strategy_router_decisions.json",
+      "data/runtime/qsase_paperops_gate_interface.json",
+      "data/runtime/qsase_component_attribution_ledger.json"
+    ],
+    [
       "data/runtime/qsase_strategy_router_decisions.jsonl",
       "data/runtime/qsase_akber_filter_results.jsonl"
+    ],
+    [
+      "data/runtime/pattern_recognition_engine.json",
+      "data/runtime/edge_pattern_ledger.json",
+      "data/runtime/qsase_evidence_quality_engine.json",
+      "data/runtime/qsase_strategy_router_decisions.json",
+      "data/runtime/qsase_paperops_gate_interface.json"
+    ],
+    [
+      "data/runtime/qsase_pattern_intelligence.json",
+      "data/runtime/qsase_dashboard_pattern_lab.json",
+      "data/runtime/qsase_pattern_to_paper_workflow.json",
+      "data/runtime/edge_pattern_ledger.json",
+      "data/runtime/daily_telegram_learning_brief.json"
     ],
     [
       "data/runtime/qsase_component_attribution_ledger.json",
@@ -113,10 +138,20 @@
     {
       "from": "pattern_lab",
       "relationship": "dashboard_flow",
+      "to": "evidence_quality"
+    },
+    {
+      "from": "evidence_quality",
+      "relationship": "dashboard_flow",
       "to": "trade_intents"
     },
     {
       "from": "trade_intents",
+      "relationship": "dashboard_flow",
+      "to": "pattern_to_paper_workflow"
+    },
+    {
+      "from": "pattern_to_paper_workflow",
       "relationship": "dashboard_flow",
       "to": "router_paperops_state"
     },
@@ -136,8 +171,8 @@
       "to": "freshness"
     }
   ],
-  "generated_at": "2026-06-29T06:57:29.005470+00:00",
-  "node_count": 12,
+  "generated_at": "2026-07-06T11:30:35.473217+00:00",
+  "node_count": 14,
   "nodes": [
     {
       "artifact_refs": [
@@ -169,7 +204,7 @@
       "label": "Current Portfolio",
       "node_id": "current_portfolio",
       "overview_detail_level": "summary_only",
-      "state": "current_portfolio_present"
+      "state": "current_portfolio_explicitly_empty"
     },
     {
       "artifact_refs": [
@@ -213,6 +248,23 @@
     },
     {
       "artifact_refs": [
+        "data/runtime/qsase_source_universe.json",
+        "data/runtime/qsase_historical_source_price_memory.json",
+        "data/runtime/pattern_recognition_engine.json",
+        "data/runtime/qsase_strategy_hypotheses.json",
+        "data/runtime/qsase_akber_filter_integration.json",
+        "data/runtime/qsase_shadow_strategy_simulator.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json",
+        "data/runtime/qsase_component_attribution_ledger.json"
+      ],
+      "label": "Evidence Quality",
+      "node_id": "evidence_quality",
+      "overview_detail_level": "summary_only",
+      "state": "qsase_evidence_quality_ready_with_tradeability_holds"
+    },
+    {
+      "artifact_refs": [
         "data/runtime/qsase_strategy_router_decisions.jsonl",
         "data/runtime/qsase_akber_filter_results.jsonl"
       ],
@@ -223,13 +275,26 @@
     },
     {
       "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "label": "Pattern To Paper Workflow",
+      "node_id": "pattern_to_paper_workflow",
+      "overview_detail_level": "summary_only",
+      "state": "pattern_to_paper_workflow_ready"
+    },
+    {
+      "artifact_refs": [
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
       "label": "Router Paperops State",
       "node_id": "router_paperops_state",
       "overview_detail_level": "summary_only",
-      "state": "qsase_paperops_gate_interface_degraded"
+      "state": "qsase_paperops_gate_interface_ready_no_handoff"
     },
     {
       "artifact_refs": [

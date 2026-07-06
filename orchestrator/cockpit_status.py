@@ -379,6 +379,7 @@ QSASE_DASHBOARD_PUBLIC_ARTIFACTS = {
     "source_network": "qsase_dashboard_source_network.json",
     "strategy_universe": "qsase_dashboard_strategy_universe.json",
     "pattern_lab": "qsase_dashboard_pattern_lab.json",
+    "evidence_quality": "qsase_evidence_quality_engine.json",
     "trade_intents": "qsase_dashboard_trade_intents.json",
     "pattern_to_paper_workflow": "qsase_pattern_to_paper_workflow.json",
     "pattern_intelligence": "qsase_pattern_intelligence.json",
@@ -2207,6 +2208,9 @@ def _qsase_dashboard_public_status(settings: Settings) -> dict[str, Any]:
         "currently_in_play_count": int(primary.get("currently_in_play_count", 0) or 0),
         "linear_pattern_count": int(primary.get("linear_pattern_count", 0) or 0),
         "nonlinear_pattern_count": int(primary.get("nonlinear_pattern_count", 0) or 0),
+        "evidence_quality_record_count": int(primary.get("evidence_quality_record_count", 0) or 0),
+        "evidence_quality_paper_review_candidate_count": int(primary.get("evidence_quality_paper_review_candidate_count", 0) or 0),
+        "evidence_quality_held_for_evidence_count": int(primary.get("evidence_quality_held_for_evidence_count", 0) or 0),
         "trade_intent_count": int(primary.get("trade_intent_count", 0) or 0),
         "pattern_workflow_record_count": int(primary.get("pattern_workflow_record_count", 0) or 0),
         "pattern_workflow_handoff_candidate_count": int(

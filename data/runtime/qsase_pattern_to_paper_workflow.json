@@ -2,6 +2,7 @@
   "artifact_refs": [
     "data/runtime/pattern_recognition_engine.json",
     "data/runtime/edge_pattern_ledger.json",
+    "data/runtime/qsase_evidence_quality_engine.json",
     "data/runtime/qsase_strategy_router_decisions.json",
     "data/runtime/qsase_paperops_gate_interface.json"
   ],
@@ -38,14 +39,14 @@
   "broker_write_count": 0,
   "command_disabled": true,
   "documented_thesis_count": 5,
-  "generated_at": "2026-07-04T11:46:01.063138+00:00",
+  "generated_at": "2026-07-06T11:30:35.473217+00:00",
   "live_capital_enabled": false,
   "paper_only": true,
   "paper_order_allowed": false,
   "paper_order_created_count": 0,
-  "paperops_gate_status": "qsase_paperops_gate_interface_degraded",
+  "paperops_gate_status": "qsase_paperops_gate_interface_ready_no_handoff",
   "paperops_handoff_candidate_count": 0,
-  "paperops_top_blocking_gate": "akber_filter_failed",
+  "paperops_top_blocking_gate": "akber_filter_waiting_for_confirmation",
   "proof_credit_allowed": false,
   "public_safe": true,
   "qualified_setup_created": false,
@@ -56,11 +57,35 @@
       "artifact_refs": [
         "data/runtime/pattern_recognition_engine.json#candidate_patterns.0",
         "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
       "broker_write_allowed": false,
       "broker_write_count": 0,
+      "evidence_quality": {
+        "akber_practical_confirmation_score": 0.3711,
+        "available": true,
+        "historical_completeness_score": 0.0132,
+        "next_action": "repair or clear the safety veto before any further promotion",
+        "quality_bar": {
+          "akber_confirmation": false,
+          "fresh_data": true,
+          "point_in_time_memory": false,
+          "router_support": false,
+          "shadow_support": false,
+          "validated_edge": false
+        },
+        "score": 0.4623,
+        "shadow_replay_score": 0.5248,
+        "source_reliability_score": 0.808,
+        "tradeability_state": "blocked_safety_boundary",
+        "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
+        "what_qadam_thinks": "Qadam is refusing to promote Oil because a safety veto exists.",
+        "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+      },
+      "evidence_quality_score": 0.4623,
+      "evidence_quality_state": "blocked_safety_boundary",
       "evidence_scores": {
         "ambiguity_score": 0.264,
         "edge_readiness_score": 0.878,
@@ -80,7 +105,7 @@
       "missing_criteria": [
         "thirty_day_persistence"
       ],
-      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "next_allowed_action": "repair or clear the safety veto before any further promotion",
       "nonlinear_state": "quantum_review_dependency_satisfied",
       "paper_order_allowed": false,
       "paper_order_created": false,
@@ -127,7 +152,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:2d4f1d20e8d458244f",
+      "source_pattern_id": "edge-pattern:d1a22953ab57377576",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -135,17 +160,45 @@
         "text": "Oil: watching CL=F, BZ=F, USO, XLE; needs thirty day persistence before guarded PaperOps review."
       },
       "trade_candidate_created": false,
-      "workflow_id": "qsase-pattern-workflow:8ef12f9e90acafdc2e1d"
+      "tradeability_state": "blocked_safety_boundary",
+      "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
+      "what_qadam_thinks": "Qadam is refusing to promote Oil because a safety veto exists.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+      "workflow_id": "qsase-pattern-workflow:90c44a8a6ebc5bd57ee9"
     },
     {
       "artifact_refs": [
         "data/runtime/pattern_recognition_engine.json#candidate_patterns.1",
         "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
       "broker_write_allowed": false,
       "broker_write_count": 0,
+      "evidence_quality": {
+        "akber_practical_confirmation_score": 0.3854,
+        "available": true,
+        "historical_completeness_score": 0.0132,
+        "next_action": "continue observation until the edge ledger records validation",
+        "quality_bar": {
+          "akber_confirmation": false,
+          "fresh_data": true,
+          "point_in_time_memory": false,
+          "router_support": false,
+          "shadow_support": false,
+          "validated_edge": false
+        },
+        "score": 0.476,
+        "shadow_replay_score": 0.6197,
+        "source_reliability_score": 0.808,
+        "tradeability_state": "hold_unvalidated_edge",
+        "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+        "what_qadam_thinks": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
+        "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+      },
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.264,
         "edge_readiness_score": 0.878,
@@ -165,7 +218,7 @@
       "missing_criteria": [
         "thirty_day_persistence"
       ],
-      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "next_allowed_action": "continue observation until the edge ledger records validation",
       "nonlinear_state": "quantum_review_dependency_satisfied",
       "paper_order_allowed": false,
       "paper_order_created": false,
@@ -212,7 +265,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:675c51cd2e391ef945",
+      "source_pattern_id": "edge-pattern:e854a499b2669af512",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -220,17 +273,45 @@
         "text": "Silver: watching SI=F, SLV, SIL, PAAS; needs thirty day persistence before guarded PaperOps review."
       },
       "trade_candidate_created": false,
-      "workflow_id": "qsase-pattern-workflow:1d9a413fad1a098f7c19"
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+      "workflow_id": "qsase-pattern-workflow:2ebbf357ae1a58cebe17"
     },
     {
       "artifact_refs": [
         "data/runtime/pattern_recognition_engine.json#candidate_patterns.2",
         "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
       "broker_write_allowed": false,
       "broker_write_count": 0,
+      "evidence_quality": {
+        "akber_practical_confirmation_score": 0.3854,
+        "available": true,
+        "historical_completeness_score": 0.0132,
+        "next_action": "continue observation until the edge ledger records validation",
+        "quality_bar": {
+          "akber_confirmation": false,
+          "fresh_data": true,
+          "point_in_time_memory": false,
+          "router_support": false,
+          "shadow_support": false,
+          "validated_edge": false
+        },
+        "score": 0.476,
+        "shadow_replay_score": 0.6197,
+        "source_reliability_score": 0.808,
+        "tradeability_state": "hold_unvalidated_edge",
+        "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+        "what_qadam_thinks": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
+        "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+      },
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.264,
         "edge_readiness_score": 0.878,
@@ -252,7 +333,7 @@
       "missing_criteria": [
         "thirty_day_persistence"
       ],
-      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "next_allowed_action": "continue observation until the edge ledger records validation",
       "nonlinear_state": "quantum_review_dependency_satisfied",
       "paper_order_allowed": false,
       "paper_order_created": false,
@@ -299,7 +380,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:58a947672bc4bef280",
+      "source_pattern_id": "edge-pattern:20ae8e053b52f7d809",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -307,17 +388,45 @@
         "text": "Semiconductors: watching SMH, SOXX, NVDA, AMD, TSM, ASML; needs thirty day persistence before guarded PaperOps review."
       },
       "trade_candidate_created": false,
-      "workflow_id": "qsase-pattern-workflow:623827ba16cf8e7df76c"
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+      "workflow_id": "qsase-pattern-workflow:3fddcb42cd34f7da1549"
     },
     {
       "artifact_refs": [
         "data/runtime/pattern_recognition_engine.json#candidate_patterns.3",
         "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
       "broker_write_allowed": false,
       "broker_write_count": 0,
+      "evidence_quality": {
+        "akber_practical_confirmation_score": 0.3854,
+        "available": true,
+        "historical_completeness_score": 0.0132,
+        "next_action": "continue observation until the edge ledger records validation",
+        "quality_bar": {
+          "akber_confirmation": false,
+          "fresh_data": true,
+          "point_in_time_memory": false,
+          "router_support": false,
+          "shadow_support": false,
+          "validated_edge": false
+        },
+        "score": 0.476,
+        "shadow_replay_score": 0.6197,
+        "source_reliability_score": 0.808,
+        "tradeability_state": "hold_unvalidated_edge",
+        "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+        "what_qadam_thinks": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
+        "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+      },
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.264,
         "edge_readiness_score": 0.878,
@@ -335,7 +444,7 @@
       "missing_criteria": [
         "thirty_day_persistence"
       ],
-      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "next_allowed_action": "continue observation until the edge ledger records validation",
       "nonlinear_state": "quantum_review_dependency_satisfied",
       "paper_order_allowed": false,
       "paper_order_created": false,
@@ -382,7 +491,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:38fe4c75576c6bf36c",
+      "source_pattern_id": "edge-pattern:10d58f2ea0c8ae31a7",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -390,17 +499,45 @@
         "text": "Prediction markets: watching Polymarket CLOB, Kalshi events; needs thirty day persistence before guarded PaperOps review."
       },
       "trade_candidate_created": false,
-      "workflow_id": "qsase-pattern-workflow:a20b89efe4065c8fd381"
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+      "workflow_id": "qsase-pattern-workflow:73b05fde99edf6ee8346"
     },
     {
       "artifact_refs": [
         "data/runtime/pattern_recognition_engine.json#candidate_patterns.4",
         "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
       "broker_write_allowed": false,
       "broker_write_count": 0,
+      "evidence_quality": {
+        "akber_practical_confirmation_score": 0.3854,
+        "available": true,
+        "historical_completeness_score": 0.0132,
+        "next_action": "continue observation until the edge ledger records validation",
+        "quality_bar": {
+          "akber_confirmation": false,
+          "fresh_data": true,
+          "point_in_time_memory": false,
+          "router_support": false,
+          "shadow_support": false,
+          "validated_edge": false
+        },
+        "score": 0.476,
+        "shadow_replay_score": 0.6197,
+        "source_reliability_score": 0.808,
+        "tradeability_state": "hold_unvalidated_edge",
+        "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+        "what_qadam_thinks": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
+        "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+      },
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_scores": {
         "ambiguity_score": 0.264,
         "edge_readiness_score": 0.878,
@@ -421,7 +558,7 @@
       "missing_criteria": [
         "thirty_day_persistence"
       ],
-      "next_allowed_action": "collect thirty day persistence before PaperOps handoff review",
+      "next_allowed_action": "continue observation until the edge ledger records validation",
       "nonlinear_state": "quantum_review_dependency_satisfied",
       "paper_order_allowed": false,
       "paper_order_created": false,
@@ -468,7 +605,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:0c2881fea17617c503",
+      "source_pattern_id": "edge-pattern:8bf9c98d9d48b3a905",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -476,10 +613,14 @@
         "text": "Defence stocks: watching ITA, XAR, LMT, RTX, NOC; needs thirty day persistence before guarded PaperOps review."
       },
       "trade_candidate_created": false,
-      "workflow_id": "qsase-pattern-workflow:932e7ffb4f30ea5d98fb"
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
+      "workflow_id": "qsase-pattern-workflow:08f273d72a806f762874"
     }
   ],
-  "router_status": "qsase_strategy_router_degraded",
+  "router_status": "qsase_strategy_router_ready_no_paper_candidate",
   "router_why_not_trading_now": {
     "artifact_type": "qsase_why_not_trading_now",
     "authority": {
@@ -536,31 +677,31 @@
           "duplicate_submit_count": 4,
           "fresh_eligible_submit_count": 0,
           "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-          "open_order_count": 14
+          "open_order_count": 20
         },
         "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
         "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
         "repair_required": false
       },
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
       "soft_blockers": [
-        "akber_filter_artifact_degraded",
+        "akber_filter_hold_missing_context",
+        "akber_filter_waiting_for_confirmation",
+        "foundry_probationary_research_needs_confirmation",
         "learning_health:no_validated_edges_yet",
+        "missing_foundry_promotion_confirmation",
         "missing_volume_or_flow_confirmation",
         "model_stack:llm_provider_probes_artifact_missing",
-        "nonlinear_not_incremental",
-        "open_order_state_requires_downstream_duplicate_check",
-        "paperops_current_duplicate_hold_requires_distinct_idempotency_key",
-        "quantum_did_not_upgrade_research_confidence"
+        "open_order_state_requires_downstream_duplicate_check"
       ]
     },
-    "generated_at": "2026-06-29T06:57:28.456300+00:00",
+    "generated_at": "2026-07-06T09:36:54.085266+00:00",
     "live_capital_enabled": false,
     "next_allowed_action": "watch_for_missing_confirmation",
     "paper_order_created": false,
     "paper_review_candidate_count": 0,
     "proof_credit_allowed": false,
-    "reason": "Required evidence is missing: akber_filter_artifact_degraded.",
+    "reason": "Required evidence is missing: akber_filter_hold_missing_context.",
     "repair_required": false,
     "schema_version": "qsase_strategy_router.v1",
     "status": "why_not_trading_now_recorded"

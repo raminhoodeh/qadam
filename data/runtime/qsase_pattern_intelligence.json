@@ -38,12 +38,23 @@
   "broker_write_allowed": false,
   "broker_write_count": 0,
   "command_disabled": true,
+  "evidence_quality_summary": {
+    "akber_missing_context_count": 16,
+    "evidence_record_count": 5,
+    "held_for_evidence_count": 5,
+    "historical_complete_forward_window_ratio": 0.0132,
+    "most_important_missing_piece": "fresh point-in-time source-price evidence strong enough for Akber and Router to call a setup tradeable now",
+    "paper_review_candidate_count": 0,
+    "source_freshness_ratio": 1.0,
+    "status": "qsase_evidence_quality_ready_with_tradeability_holds"
+  },
   "finding_count": 5,
   "findings": [
     {
       "artifact_refs": [
-        "data/runtime/pattern_recognition_engine.json#candidate_patterns.0",
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.1",
         "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
@@ -51,11 +62,391 @@
         "the pattern still needs to keep appearing over the paper trial window"
       ],
       "broker_write_allowed": false,
-      "confidence_label": "strong evidence, still gated",
-      "confidence_score": 0.878,
+      "confidence_label": "early evidence",
+      "confidence_score": 0.476,
+      "detected_signal": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
+      "evidence_summary": "Precious-metals stress, liquidity repricing, and breakout confirmation.",
+      "finding_id": "qsase-pattern-finding:78a46663ea57b211023a",
+      "instrument_symbols": [
+        "SI=F",
+        "SLV",
+        "SIL",
+        "PAAS"
+      ],
+      "lifecycle_label": "Hold Unvalidated Edge",
+      "live_capital_enabled": false,
+      "market_affected": "Silver",
+      "missing_plain_english": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "next_action": "continue observation until the edge ledger records validation",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "passed_plain_english": [
+        "all connected sources were compared against the watched market",
+        "a source-price lead, lag, or divergence was observed",
+        "the LLM review challenged the thesis",
+        "market data gave some confirmation",
+        "more than one source family supported the pattern",
+        "the paper-only safety route is intact",
+        "the nonlinear quantum review gate was satisfied"
+      ],
+      "pattern_id": "edge-pattern:e854a499b2669af512",
+      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
+      "quality_bar": {
+        "akber_confirmation": false,
+        "fresh_data": true,
+        "point_in_time_memory": false,
+        "router_support": false,
+        "shadow_support": false,
+        "validated_edge": false
+      },
+      "quantum_review": {
+        "hardware_submission_allowed": false,
+        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
+        "provider_call_allowed": false,
+        "required": true,
+        "status": "nonlinear review gate satisfied"
+      },
+      "rank": 2,
+      "rank_badges": [
+        "most actionable pattern",
+        "strongest evidence",
+        "closest to paper-trade review",
+        "clearest blocker"
+      ],
+      "ranking_scores": {
+        "actionability": 44.28,
+        "evidence_strength": 58.405,
+        "paper_review_closeness": 60
+      },
+      "readiness": {
+        "paper_order_allowed": false,
+        "paper_review_eligible": false,
+        "research_finding": true,
+        "tradeable": false,
+        "validated_edge": false
+      },
+      "source_chain": [
+        "FRED macro data",
+        "BIS macro data",
+        "ECB macro data",
+        "UN Comtrade trade data",
+        "USGS commodity data",
+        "RSS news feeds",
+        "X/Twitter social signal",
+        "Reddit narrative signal"
+      ],
+      "source_signal_summary": "FRED macro data, BIS macro data, ECB macro data, UN Comtrade trade data, plus 4 more are being cross-checked against Silver prices.",
+      "stage_key": "documented",
+      "stage_label": "Hold Unvalidated Edge",
+      "title": "Silver pattern watch",
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.2",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "blockers": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "broker_write_allowed": false,
+      "confidence_label": "early evidence",
+      "confidence_score": 0.476,
+      "detected_signal": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
+      "evidence_summary": "AI infrastructure, export-control, and supply-chain asymmetry.",
+      "finding_id": "qsase-pattern-finding:f2c0310ecae14684260d",
+      "instrument_symbols": [
+        "SMH",
+        "SOXX",
+        "NVDA",
+        "AMD",
+        "TSM",
+        "ASML"
+      ],
+      "lifecycle_label": "Hold Unvalidated Edge",
+      "live_capital_enabled": false,
+      "market_affected": "Semiconductors",
+      "missing_plain_english": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "next_action": "continue observation until the edge ledger records validation",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "passed_plain_english": [
+        "all connected sources were compared against the watched market",
+        "a source-price lead, lag, or divergence was observed",
+        "the LLM review challenged the thesis",
+        "market data gave some confirmation",
+        "more than one source family supported the pattern",
+        "the paper-only safety route is intact",
+        "the nonlinear quantum review gate was satisfied"
+      ],
+      "pattern_id": "edge-pattern:20ae8e053b52f7d809",
+      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
+      "quality_bar": {
+        "akber_confirmation": false,
+        "fresh_data": true,
+        "point_in_time_memory": false,
+        "router_support": false,
+        "shadow_support": false,
+        "validated_edge": false
+      },
+      "quantum_review": {
+        "hardware_submission_allowed": false,
+        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
+        "provider_call_allowed": false,
+        "required": true,
+        "status": "nonlinear review gate satisfied"
+      },
+      "rank": 3,
+      "rank_badges": [],
+      "ranking_scores": {
+        "actionability": 44.28,
+        "evidence_strength": 58.405,
+        "paper_review_closeness": 60
+      },
+      "readiness": {
+        "paper_order_allowed": false,
+        "paper_review_eligible": false,
+        "research_finding": true,
+        "tradeable": false,
+        "validated_edge": false
+      },
+      "source_chain": [
+        "GDELT news events",
+        "RSS news feeds",
+        "Sec Edgar",
+        "Patents",
+        "Github",
+        "UN Comtrade trade data",
+        "AviationStack flight data",
+        "TradingView technical analysis"
+      ],
+      "source_signal_summary": "GDELT news events, RSS news feeds, Sec Edgar, Patents, plus 4 more are being cross-checked against Semiconductors prices.",
+      "stage_key": "documented",
+      "stage_label": "Hold Unvalidated Edge",
+      "title": "Semiconductors pattern watch",
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.3",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "blockers": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "broker_write_allowed": false,
+      "confidence_label": "early evidence",
+      "confidence_score": 0.476,
+      "detected_signal": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
+      "evidence_summary": "Probability-mispricing research against source evidence and market proxies.",
+      "finding_id": "qsase-pattern-finding:e83afb8b97b875d2f70c",
+      "instrument_symbols": [
+        "Polymarket CLOB",
+        "Kalshi events"
+      ],
+      "lifecycle_label": "Hold Unvalidated Edge",
+      "live_capital_enabled": false,
+      "market_affected": "Prediction markets",
+      "missing_plain_english": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "next_action": "continue observation until the edge ledger records validation",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "passed_plain_english": [
+        "all connected sources were compared against the watched market",
+        "a source-price lead, lag, or divergence was observed",
+        "the LLM review challenged the thesis",
+        "market data gave some confirmation",
+        "more than one source family supported the pattern",
+        "the paper-only safety route is intact",
+        "the nonlinear quantum review gate was satisfied"
+      ],
+      "pattern_id": "edge-pattern:10d58f2ea0c8ae31a7",
+      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
+      "quality_bar": {
+        "akber_confirmation": false,
+        "fresh_data": true,
+        "point_in_time_memory": false,
+        "router_support": false,
+        "shadow_support": false,
+        "validated_edge": false
+      },
+      "quantum_review": {
+        "hardware_submission_allowed": false,
+        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
+        "provider_call_allowed": false,
+        "required": true,
+        "status": "nonlinear review gate satisfied"
+      },
+      "rank": 4,
+      "rank_badges": [],
+      "ranking_scores": {
+        "actionability": 44.28,
+        "evidence_strength": 58.405,
+        "paper_review_closeness": 60
+      },
+      "readiness": {
+        "paper_order_allowed": false,
+        "paper_review_eligible": false,
+        "research_finding": true,
+        "tradeable": false,
+        "validated_edge": false
+      },
+      "source_chain": [
+        "Polymarket",
+        "Kalshi",
+        "RSS news feeds",
+        "X/Twitter social signal",
+        "Reddit narrative signal",
+        "ACLED conflict data",
+        "GDELT news events",
+        "Telegram"
+      ],
+      "source_signal_summary": "Polymarket, Kalshi, RSS news feeds, X/Twitter social signal, plus 4 more are being cross-checked against Prediction markets prices.",
+      "stage_key": "documented",
+      "stage_label": "Hold Unvalidated Edge",
+      "title": "Prediction markets pattern watch",
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.4",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "blockers": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "broker_write_allowed": false,
+      "confidence_label": "early evidence",
+      "confidence_score": 0.476,
+      "detected_signal": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
+      "evidence_quality_score": 0.476,
+      "evidence_quality_state": "hold_unvalidated_edge",
+      "evidence_summary": "Geopolitical escalation, procurement, and second-order defence exposure.",
+      "finding_id": "qsase-pattern-finding:277eae569f5a290be34c",
+      "instrument_symbols": [
+        "ITA",
+        "XAR",
+        "LMT",
+        "RTX",
+        "NOC"
+      ],
+      "lifecycle_label": "Hold Unvalidated Edge",
+      "live_capital_enabled": false,
+      "market_affected": "Defence stocks",
+      "missing_plain_english": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "next_action": "continue observation until the edge ledger records validation",
+      "paper_order_allowed": false,
+      "paper_order_created": false,
+      "passed_plain_english": [
+        "all connected sources were compared against the watched market",
+        "a source-price lead, lag, or divergence was observed",
+        "the LLM review challenged the thesis",
+        "market data gave some confirmation",
+        "more than one source family supported the pattern",
+        "the paper-only safety route is intact",
+        "the nonlinear quantum review gate was satisfied"
+      ],
+      "pattern_id": "edge-pattern:8bf9c98d9d48b3a905",
+      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
+      "quality_bar": {
+        "akber_confirmation": false,
+        "fresh_data": true,
+        "point_in_time_memory": false,
+        "router_support": false,
+        "shadow_support": false,
+        "validated_edge": false
+      },
+      "quantum_review": {
+        "hardware_submission_allowed": false,
+        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
+        "provider_call_allowed": false,
+        "required": true,
+        "status": "nonlinear review gate satisfied"
+      },
+      "rank": 5,
+      "rank_badges": [],
+      "ranking_scores": {
+        "actionability": 44.28,
+        "evidence_strength": 58.405,
+        "paper_review_closeness": 60
+      },
+      "readiness": {
+        "paper_order_allowed": false,
+        "paper_review_eligible": false,
+        "research_finding": true,
+        "tradeable": false,
+        "validated_edge": false
+      },
+      "source_chain": [
+        "ACLED conflict data",
+        "Ucdp",
+        "GDELT news events",
+        "AIS maritime movement",
+        "AviationStack flight data",
+        "GPS interference",
+        "Sec Edgar",
+        "Stock Act"
+      ],
+      "source_signal_summary": "ACLED conflict data, Ucdp, GDELT news events, AIS maritime movement, plus 4 more are being cross-checked against Defence stocks prices.",
+      "stage_key": "documented",
+      "stage_label": "Hold Unvalidated Edge",
+      "title": "Defence stocks pattern watch",
+      "tradeability_state": "hold_unvalidated_edge",
+      "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
+      "what_qadam_thinks": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json#candidate_patterns.0",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "blockers": [
+        "the pattern still needs to keep appearing over the paper trial window"
+      ],
+      "broker_write_allowed": false,
+      "confidence_label": "early evidence",
+      "confidence_score": 0.462,
       "detected_signal": "Do conflict, maritime, aviation, fire, macro, and technical signals imply a repricing of energy-security risk?",
+      "evidence_quality_score": 0.462,
+      "evidence_quality_state": "blocked_safety_boundary",
       "evidence_summary": "Energy disruption setup, supply shock confirmation, and risk-sizing context.",
-      "finding_id": "qsase-pattern-finding:e47e053a4bb38a446515",
+      "finding_id": "qsase-pattern-finding:636c6fe3afb4bef6b9fe",
       "instrument_symbols": [
         "CL=F",
         "BZ=F",
@@ -68,7 +459,7 @@
       "missing_plain_english": [
         "the pattern still needs to keep appearing over the paper trial window"
       ],
-      "next_action": "collect thirty day persistence before paper-trade review",
+      "next_action": "repair or clear the safety veto before any further promotion",
       "paper_order_allowed": false,
       "paper_order_created": false,
       "passed_plain_english": [
@@ -80,8 +471,16 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:19c38f887b16b3cf1f",
+      "pattern_id": "edge-pattern:d1a22953ab57377576",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
+      "quality_bar": {
+        "akber_confirmation": false,
+        "fresh_data": true,
+        "point_in_time_memory": false,
+        "router_support": false,
+        "shadow_support": false,
+        "validated_edge": false
+      },
       "quantum_review": {
         "hardware_submission_allowed": false,
         "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
@@ -90,15 +489,10 @@
         "status": "nonlinear review gate satisfied"
       },
       "rank": 1,
-      "rank_badges": [
-        "most actionable pattern",
-        "strongest evidence",
-        "closest to paper-trade review",
-        "clearest blocker"
-      ],
+      "rank_badges": [],
       "ranking_scores": {
-        "actionability": 84.48,
-        "evidence_strength": 72.475,
+        "actionability": 42.91,
+        "evidence_strength": 57.925,
         "paper_review_closeness": 60
       },
       "readiness": {
@@ -122,339 +516,15 @@
       "stage_key": "documented",
       "stage_label": "Documented research finding",
       "title": "Oil pattern watch",
-      "what_blocks_trade": "Still needs thirty day persistence before it can enter paper-trade review.",
-      "what_qadam_thinks": "Qadam sees a possible Oil relationship, but it is still a research finding rather than a trade.",
-      "what_would_confirm": "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/pattern_recognition_engine.json#candidate_patterns.1",
-        "data/runtime/edge_pattern_ledger.json",
-        "data/runtime/qsase_strategy_router_decisions.json",
-        "data/runtime/qsase_paperops_gate_interface.json"
-      ],
-      "blockers": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "broker_write_allowed": false,
-      "confidence_label": "strong evidence, still gated",
-      "confidence_score": 0.878,
-      "detected_signal": "Do macro liquidity, commodity trade, industrial demand, social flow, and technical structure imply convex metals exposure?",
-      "evidence_summary": "Precious-metals stress, liquidity repricing, and breakout confirmation.",
-      "finding_id": "qsase-pattern-finding:c9d7e2a6a0c52479d783",
-      "instrument_symbols": [
-        "SI=F",
-        "SLV",
-        "SIL",
-        "PAAS"
-      ],
-      "lifecycle_label": "Documented research finding",
-      "live_capital_enabled": false,
-      "market_affected": "Silver",
-      "missing_plain_english": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "next_action": "collect thirty day persistence before paper-trade review",
-      "paper_order_allowed": false,
-      "paper_order_created": false,
-      "passed_plain_english": [
-        "all connected sources were compared against the watched market",
-        "a source-price lead, lag, or divergence was observed",
-        "the LLM review challenged the thesis",
-        "market data gave some confirmation",
-        "more than one source family supported the pattern",
-        "the paper-only safety route is intact",
-        "the nonlinear quantum review gate was satisfied"
-      ],
-      "pattern_id": "edge-pattern:e348a006904f79e36d",
-      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
-      "quantum_review": {
-        "hardware_submission_allowed": false,
-        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
-        "provider_call_allowed": false,
-        "required": true,
-        "status": "nonlinear review gate satisfied"
-      },
-      "rank": 2,
-      "rank_badges": [],
-      "ranking_scores": {
-        "actionability": 84.48,
-        "evidence_strength": 72.475,
-        "paper_review_closeness": 60
-      },
-      "readiness": {
-        "paper_order_allowed": false,
-        "paper_review_eligible": false,
-        "research_finding": true,
-        "tradeable": false,
-        "validated_edge": false
-      },
-      "source_chain": [
-        "FRED macro data",
-        "BIS macro data",
-        "ECB macro data",
-        "UN Comtrade trade data",
-        "USGS commodity data",
-        "RSS news feeds",
-        "X/Twitter social signal",
-        "Reddit narrative signal"
-      ],
-      "source_signal_summary": "FRED macro data, BIS macro data, ECB macro data, UN Comtrade trade data, plus 4 more are being cross-checked against Silver prices.",
-      "stage_key": "documented",
-      "stage_label": "Documented research finding",
-      "title": "Silver pattern watch",
-      "what_blocks_trade": "Still needs thirty day persistence before it can enter paper-trade review.",
-      "what_qadam_thinks": "Qadam sees a possible Silver relationship, but it is still a research finding rather than a trade.",
-      "what_would_confirm": "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/pattern_recognition_engine.json#candidate_patterns.2",
-        "data/runtime/edge_pattern_ledger.json",
-        "data/runtime/qsase_strategy_router_decisions.json",
-        "data/runtime/qsase_paperops_gate_interface.json"
-      ],
-      "blockers": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "broker_write_allowed": false,
-      "confidence_label": "strong evidence, still gated",
-      "confidence_score": 0.878,
-      "detected_signal": "Do sanctions, export controls, supply-chain pressure, software signals, earnings context, and technical strength imply semiconductor repricing?",
-      "evidence_summary": "AI infrastructure, export-control, and supply-chain asymmetry.",
-      "finding_id": "qsase-pattern-finding:db11e0384488f1eaaf8f",
-      "instrument_symbols": [
-        "SMH",
-        "SOXX",
-        "NVDA",
-        "AMD",
-        "TSM",
-        "ASML"
-      ],
-      "lifecycle_label": "Documented research finding",
-      "live_capital_enabled": false,
-      "market_affected": "Semiconductors",
-      "missing_plain_english": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "next_action": "collect thirty day persistence before paper-trade review",
-      "paper_order_allowed": false,
-      "paper_order_created": false,
-      "passed_plain_english": [
-        "all connected sources were compared against the watched market",
-        "a source-price lead, lag, or divergence was observed",
-        "the LLM review challenged the thesis",
-        "market data gave some confirmation",
-        "more than one source family supported the pattern",
-        "the paper-only safety route is intact",
-        "the nonlinear quantum review gate was satisfied"
-      ],
-      "pattern_id": "edge-pattern:2fff6b3421be560e58",
-      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
-      "quantum_review": {
-        "hardware_submission_allowed": false,
-        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
-        "provider_call_allowed": false,
-        "required": true,
-        "status": "nonlinear review gate satisfied"
-      },
-      "rank": 3,
-      "rank_badges": [],
-      "ranking_scores": {
-        "actionability": 84.48,
-        "evidence_strength": 72.475,
-        "paper_review_closeness": 60
-      },
-      "readiness": {
-        "paper_order_allowed": false,
-        "paper_review_eligible": false,
-        "research_finding": true,
-        "tradeable": false,
-        "validated_edge": false
-      },
-      "source_chain": [
-        "GDELT news events",
-        "RSS news feeds",
-        "Sec Edgar",
-        "Patents",
-        "Github",
-        "UN Comtrade trade data",
-        "AviationStack flight data",
-        "TradingView technical analysis"
-      ],
-      "source_signal_summary": "GDELT news events, RSS news feeds, Sec Edgar, Patents, plus 4 more are being cross-checked against Semiconductors prices.",
-      "stage_key": "documented",
-      "stage_label": "Documented research finding",
-      "title": "Semiconductors pattern watch",
-      "what_blocks_trade": "Still needs thirty day persistence before it can enter paper-trade review.",
-      "what_qadam_thinks": "Qadam sees a possible Semiconductors relationship, but it is still a research finding rather than a trade.",
-      "what_would_confirm": "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/pattern_recognition_engine.json#candidate_patterns.3",
-        "data/runtime/edge_pattern_ledger.json",
-        "data/runtime/qsase_strategy_router_decisions.json",
-        "data/runtime/qsase_paperops_gate_interface.json"
-      ],
-      "blockers": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "broker_write_allowed": false,
-      "confidence_label": "strong evidence, still gated",
-      "confidence_score": 0.878,
-      "detected_signal": "Do event-probability curves disagree with source evidence, market prices, and Qadam's scenario model?",
-      "evidence_summary": "Probability-mispricing research against source evidence and market proxies.",
-      "finding_id": "qsase-pattern-finding:1262595e7e9bb7ad217e",
-      "instrument_symbols": [
-        "Polymarket CLOB",
-        "Kalshi events"
-      ],
-      "lifecycle_label": "Documented research finding",
-      "live_capital_enabled": false,
-      "market_affected": "Prediction markets",
-      "missing_plain_english": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "next_action": "collect thirty day persistence before paper-trade review",
-      "paper_order_allowed": false,
-      "paper_order_created": false,
-      "passed_plain_english": [
-        "all connected sources were compared against the watched market",
-        "a source-price lead, lag, or divergence was observed",
-        "the LLM review challenged the thesis",
-        "market data gave some confirmation",
-        "more than one source family supported the pattern",
-        "the paper-only safety route is intact",
-        "the nonlinear quantum review gate was satisfied"
-      ],
-      "pattern_id": "edge-pattern:68a53dbebba254e5ec",
-      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
-      "quantum_review": {
-        "hardware_submission_allowed": false,
-        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
-        "provider_call_allowed": false,
-        "required": true,
-        "status": "nonlinear review gate satisfied"
-      },
-      "rank": 4,
-      "rank_badges": [],
-      "ranking_scores": {
-        "actionability": 84.48,
-        "evidence_strength": 72.475,
-        "paper_review_closeness": 60
-      },
-      "readiness": {
-        "paper_order_allowed": false,
-        "paper_review_eligible": false,
-        "research_finding": true,
-        "tradeable": false,
-        "validated_edge": false
-      },
-      "source_chain": [
-        "Polymarket",
-        "Kalshi",
-        "RSS news feeds",
-        "X/Twitter social signal",
-        "Reddit narrative signal",
-        "ACLED conflict data",
-        "GDELT news events",
-        "Telegram"
-      ],
-      "source_signal_summary": "Polymarket, Kalshi, RSS news feeds, X/Twitter social signal, plus 4 more are being cross-checked against Prediction markets prices.",
-      "stage_key": "documented",
-      "stage_label": "Documented research finding",
-      "title": "Prediction markets pattern watch",
-      "what_blocks_trade": "Still needs thirty day persistence before it can enter paper-trade review.",
-      "what_qadam_thinks": "Qadam sees a possible Prediction markets relationship, but it is still a research finding rather than a trade.",
-      "what_would_confirm": "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/pattern_recognition_engine.json#candidate_patterns.4",
-        "data/runtime/edge_pattern_ledger.json",
-        "data/runtime/qsase_strategy_router_decisions.json",
-        "data/runtime/qsase_paperops_gate_interface.json"
-      ],
-      "blockers": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "broker_write_allowed": false,
-      "confidence_label": "strong evidence, still gated",
-      "confidence_score": 0.878,
-      "detected_signal": "Do conflict intensity, procurement pressure, congressional flows, shipping disruption, and aviation activity imply defence repricing?",
-      "evidence_summary": "Geopolitical escalation, procurement, and second-order defence exposure.",
-      "finding_id": "qsase-pattern-finding:53d9f5d50c0095f2926a",
-      "instrument_symbols": [
-        "ITA",
-        "XAR",
-        "LMT",
-        "RTX",
-        "NOC"
-      ],
-      "lifecycle_label": "Documented research finding",
-      "live_capital_enabled": false,
-      "market_affected": "Defence stocks",
-      "missing_plain_english": [
-        "the pattern still needs to keep appearing over the paper trial window"
-      ],
-      "next_action": "collect thirty day persistence before paper-trade review",
-      "paper_order_allowed": false,
-      "paper_order_created": false,
-      "passed_plain_english": [
-        "all connected sources were compared against the watched market",
-        "a source-price lead, lag, or divergence was observed",
-        "the LLM review challenged the thesis",
-        "market data gave some confirmation",
-        "more than one source family supported the pattern",
-        "the paper-only safety route is intact",
-        "the nonlinear quantum review gate was satisfied"
-      ],
-      "pattern_id": "edge-pattern:dd881468b88aa2a306",
-      "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
-      "quantum_review": {
-        "hardware_submission_allowed": false,
-        "plain_english_result": "The nonlinear quantum review is satisfied for research, but it does not create a trade by itself.",
-        "provider_call_allowed": false,
-        "required": true,
-        "status": "nonlinear review gate satisfied"
-      },
-      "rank": 5,
-      "rank_badges": [],
-      "ranking_scores": {
-        "actionability": 84.48,
-        "evidence_strength": 72.475,
-        "paper_review_closeness": 60
-      },
-      "readiness": {
-        "paper_order_allowed": false,
-        "paper_review_eligible": false,
-        "research_finding": true,
-        "tradeable": false,
-        "validated_edge": false
-      },
-      "source_chain": [
-        "ACLED conflict data",
-        "Ucdp",
-        "GDELT news events",
-        "AIS maritime movement",
-        "AviationStack flight data",
-        "GPS interference",
-        "Sec Edgar",
-        "Stock Act"
-      ],
-      "source_signal_summary": "ACLED conflict data, Ucdp, GDELT news events, AIS maritime movement, plus 4 more are being cross-checked against Defence stocks prices.",
-      "stage_key": "documented",
-      "stage_label": "Documented research finding",
-      "title": "Defence stocks pattern watch",
-      "what_blocks_trade": "Still needs thirty day persistence before it can enter paper-trade review.",
-      "what_qadam_thinks": "Qadam sees a possible Defence stocks relationship, but it is still a research finding rather than a trade.",
-      "what_would_confirm": "The relationship needs to keep appearing over real elapsed time, with source agreement and market reaction staying aligned."
+      "tradeability_state": "blocked_safety_boundary",
+      "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
+      "what_qadam_thinks": "Qadam is refusing to promote Oil because a safety veto exists.",
+      "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
     }
   ],
-  "generated_at": "2026-07-05T11:28:29.667991+00:00",
+  "generated_at": "2026-07-06T11:30:35.471904+00:00",
   "human_brief": {
-    "body": "Qadam compared 37 data sources with 21 watched markets and recognised 5 candidate patterns today. The recognised candidates were that Oil tested supply-route stress; Silver tested macro and mine-supply pressure; Semiconductors tested filings, patents, code, trade and transport pressure; Prediction markets tested news, social and conflict pressure; Defence stocks tested conflict, transport, GPS and filings pressure.\n\nThe learning is cautious because 0 are validated edges and all 5 still miss thirty-day persistence, even though source scan, lead-lag/divergence, confirmation, adversarial review, paper safety and the quantum core gate passed on classical fallback. This can only raise watch priority; it is not a paper order, risk approval, execution approval or live-capital signal.",
+    "body": "Qadam scanned 37 data sources against 21 watched markets and found 5 candidate patterns today. The reads: oil shipping/GPS/fire/flight vs CL=F, BZ=F, USO and XLE; silver rates, trade and mining flow vs SI=F, SLV, SIL and PAAS; semiconductors export/news, filings, patents, GitHub and transport vs SMH, SOXX, NVDA, AMD, TSM and ASML; prediction markets Polymarket/Kalshi odds vs news/social/conflict; defence stocks conflict, maritime/flight, GPS and filings vs ITA, XAR, LMT, RTX and NOC.\n\nThe learning stays cautious with 0 validated edges; all 5 still need thirty-day persistence. Qadam is checking whether inputs arrive before price or odds move. Source scan, lead-lag, confirmation, adversarial review, paper safety and the quantum core gate passed on classical fallback. This can raise watch priority only, not create a paper order, risk approval, execution approval or live-capital signal.",
     "command_disabled": true,
     "review_only": true,
     "source": "daily_telegram_learning_brief",
@@ -476,10 +546,10 @@
   "public_safe": true,
   "qualified_setup_created": false,
   "rank_flags": {
-    "closest_to_paper_review_pattern_id": "edge-pattern:19c38f887b16b3cf1f",
-    "largest_blocker_pattern_id": "edge-pattern:19c38f887b16b3cf1f",
-    "most_actionable_pattern_id": "edge-pattern:19c38f887b16b3cf1f",
-    "strongest_evidence_pattern_id": "edge-pattern:19c38f887b16b3cf1f"
+    "closest_to_paper_review_pattern_id": "edge-pattern:e854a499b2669af512",
+    "largest_blocker_pattern_id": "edge-pattern:e854a499b2669af512",
+    "most_actionable_pattern_id": "edge-pattern:e854a499b2669af512",
+    "strongest_evidence_pattern_id": "edge-pattern:e854a499b2669af512"
   },
   "read_only": true,
   "schema_version": "qsase_dashboard_view_model.v1",
@@ -506,7 +576,7 @@
         "paper_order_allowed": false,
         "pattern_id": "qsase-linear:456b3a921b15627475a0",
         "pattern_type": "linear",
-        "reason": "Records are not spread across enough independent decision dates.",
+        "reason": "Factor control is present but degraded by missing benchmark history.",
         "score": 0.452651,
         "source_pattern_id": "qsase-pattern:859efd37916736db8e6c",
         "state": "linear_inconclusive_candidate_for_nonlinear_review"
@@ -521,7 +591,7 @@
         "paper_order_allowed": false,
         "pattern_id": "qsase-linear:fec5145783f230114d12",
         "pattern_type": "linear",
-        "reason": "Records are not spread across enough independent decision dates.",
+        "reason": "Factor control is present but degraded by missing benchmark history.",
         "score": 0.452651,
         "source_pattern_id": "qsase-pattern:3f439169082ee0eee180",
         "state": "linear_inconclusive_candidate_for_nonlinear_review"
@@ -536,7 +606,7 @@
         "paper_order_allowed": false,
         "pattern_id": "qsase-linear:c7cf577b85b6f82ee58e",
         "pattern_type": "linear",
-        "reason": "Records are not spread across enough independent decision dates.",
+        "reason": "Factor control is present but degraded by missing benchmark history.",
         "score": 0.452651,
         "source_pattern_id": "qsase-pattern:d40998ecf829eb893973",
         "state": "linear_inconclusive_candidate_for_nonlinear_review"
@@ -551,7 +621,7 @@
         "paper_order_allowed": false,
         "pattern_id": "qsase-linear:52145873fa19d345f367",
         "pattern_type": "linear",
-        "reason": "Records are not spread across enough independent decision dates.",
+        "reason": "Factor control is present but degraded by missing benchmark history.",
         "score": 0.452651,
         "source_pattern_id": "qsase-pattern:13b663d141baed6557b2",
         "state": "linear_inconclusive_candidate_for_nonlinear_review"
@@ -691,7 +761,7 @@
         "pattern_type": "nonlinear",
         "quantum_review_id": "qsase-quantum:c3d0b36dbe3c357e59e9",
         "quantum_review_state": "quantum_review_passed_for_research",
-        "score": 0.448274,
+        "score": 0.470274,
         "source_pattern_id": "qsase-pattern:859efd37916736db8e6c",
         "state": "candidate_for_quantum_review"
       },
@@ -707,7 +777,7 @@
         "pattern_type": "nonlinear",
         "quantum_review_id": "qsase-quantum:1a0abe45df8916e87820",
         "quantum_review_state": "quantum_review_passed_for_research",
-        "score": 0.448274,
+        "score": 0.470274,
         "source_pattern_id": "qsase-pattern:3f439169082ee0eee180",
         "state": "candidate_for_quantum_review"
       },
@@ -723,7 +793,7 @@
         "pattern_type": "nonlinear",
         "quantum_review_id": "qsase-quantum:9de5fa183a611448961b",
         "quantum_review_state": "quantum_review_passed_for_research",
-        "score": 0.448274,
+        "score": 0.470274,
         "source_pattern_id": "qsase-pattern:d40998ecf829eb893973",
         "state": "candidate_for_quantum_review"
       },
@@ -739,7 +809,7 @@
         "pattern_type": "nonlinear",
         "quantum_review_id": "qsase-quantum:b48b93487e3b2ef80ac5",
         "quantum_review_state": "quantum_review_passed_for_research",
-        "score": 0.448274,
+        "score": 0.470274,
         "source_pattern_id": "qsase-pattern:13b663d141baed6557b2",
         "state": "candidate_for_quantum_review"
       },
@@ -754,8 +824,8 @@
         "pattern_id": "qsase-nonlinear:76c88ce093d3dbe10b7a",
         "pattern_type": "nonlinear",
         "quantum_review_id": "qsase-quantum:8a7dadb146d29f5a657e",
-        "quantum_review_state": "quantum_hold",
-        "score": 0.228531,
+        "quantum_review_state": "quantum_review_passed_for_research",
+        "score": 0.250531,
         "source_pattern_id": "qsase-pattern:ac984d0856d96acf5898",
         "state": "candidate_for_quantum_review"
       },
@@ -770,8 +840,8 @@
         "pattern_id": "qsase-nonlinear:201d273ba8889059b693",
         "pattern_type": "nonlinear",
         "quantum_review_id": "qsase-quantum:24a608a4d130e07c5a45",
-        "quantum_review_state": "quantum_hold",
-        "score": 0.228531,
+        "quantum_review_state": "quantum_review_passed_for_research",
+        "score": 0.250531,
         "source_pattern_id": "qsase-pattern:142addc338b73ccfa384",
         "state": "candidate_for_quantum_review"
       },
@@ -928,11 +998,11 @@
         ],
         "backend": "classical_fallback",
         "quantum_mode": "deterministic_classical_shadow",
-        "recommendation": "hold",
+        "recommendation": "downgrade_or_hold",
         "review_id": "qsase-quantum:8a7dadb146d29f5a657e",
-        "state": "quantum_hold",
+        "state": "quantum_review_passed_for_research",
         "trade_confirmation": false,
-        "usefulness_class": "useful_ambiguity_hold"
+        "usefulness_class": "useful_false_positive_demotion"
       },
       {
         "artifact_refs": [
@@ -940,11 +1010,11 @@
         ],
         "backend": "classical_fallback",
         "quantum_mode": "deterministic_classical_shadow",
-        "recommendation": "hold",
+        "recommendation": "downgrade_or_hold",
         "review_id": "qsase-quantum:24a608a4d130e07c5a45",
-        "state": "quantum_hold",
+        "state": "quantum_review_passed_for_research",
         "trade_confirmation": false,
-        "usefulness_class": "useful_ambiguity_hold"
+        "usefulness_class": "useful_false_positive_demotion"
       },
       {
         "artifact_refs": [

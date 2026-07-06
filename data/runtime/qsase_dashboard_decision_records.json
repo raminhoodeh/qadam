@@ -28,10 +28,10 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:29.005470+00:00",
+  "generated_at": "2026-07-06T11:30:35.473217+00:00",
   "public_safe": true,
   "read_only": true,
-  "record_count": 9,
+  "record_count": 11,
   "records": [
     {
       "applied_change": false,
@@ -67,7 +67,7 @@
         "trade_intent_created": false
       },
       "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
-      "blocker": "akber_filter_failed",
+      "blocker": "akber_filter_waiting_for_confirmation",
       "decision_record_id": "qsase-dashboard:d27d748bea932175de7b",
       "evidence": [
         "self-model",
@@ -81,7 +81,7 @@
       "next_allowed_action": "render decision records and wait for a fresh distinct paperable setup",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "Required evidence is missing: akber_filter_artifact_degraded.",
+      "reason": "Required evidence is missing: akber_filter_hold_missing_context.",
       "schema_version": "qsase_dashboard_view_model.v1",
       "state": "qsase_dashboard_snapshot_visible",
       "strategy_family": "aggregate"
@@ -281,6 +281,61 @@
     {
       "applied_change": false,
       "artifact_refs": [
+        "data/runtime/qsase_source_universe.json",
+        "data/runtime/qsase_historical_source_price_memory.json",
+        "data/runtime/pattern_recognition_engine.json",
+        "data/runtime/qsase_strategy_hypotheses.json",
+        "data/runtime/qsase_akber_filter_integration.json",
+        "data/runtime/qsase_shadow_strategy_simulator.json",
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json",
+        "data/runtime/qsase_component_attribution_ledger.json"
+      ],
+      "authority": {
+        "broker_write_allowed": false,
+        "dashboard_command_disabled": true,
+        "dashboard_mirror_only": true,
+        "dashboard_read_only": true,
+        "execution_approval_allowed": false,
+        "execution_approval_created": false,
+        "filter_threshold_update_created": false,
+        "live_broker_endpoint_allowed": false,
+        "live_capital_enabled": false,
+        "model_weight_update_created": false,
+        "paper_growth_trial_calendar_advance_allowed": false,
+        "paper_order_allowed": false,
+        "paper_order_created": false,
+        "paper_proof_ledger_credit_allowed": false,
+        "proof_credit_allowed": false,
+        "qualified_setup_created": false,
+        "risk_approval_allowed": false,
+        "risk_approval_created": false,
+        "simulated_elapsed_time_allowed": false,
+        "source_trust_update_created": false,
+        "strategy_mutation_created": false,
+        "telegram_command_path_enabled": false,
+        "telegram_trade_command_enabled": false,
+        "trade_candidate_created": false,
+        "trade_intent_created": false
+      },
+      "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
+      "blocker": "fresh point-in-time source-price evidence strong enough for Akber and Router to call a setup tradeable now",
+      "decision_record_id": "qsase-dashboard:cb5348cbf4ecf64b2de4",
+      "evidence": [],
+      "headline": "Evidence Quality decides whether patterns are tradeable now.",
+      "live_capital_enabled": false,
+      "module": "evidence_quality",
+      "next_allowed_action": "collect missing evidence until Akber and Router can promote a setup",
+      "paper_order_created": false,
+      "proof_credit_allowed": false,
+      "reason": "Qadam evaluated 5 pattern setups for evidence quality. 0 are paper-review candidates and 5 are held for evidence. The main missing piece is evidence quality, not broker execution.",
+      "schema_version": "qsase_dashboard_view_model.v1",
+      "state": "qsase_evidence_quality_ready_with_tradeability_holds",
+      "strategy_family": "aggregate"
+    },
+    {
+      "applied_change": false,
+      "artifact_refs": [
         "data/runtime/qsase_strategy_router_decisions.jsonl",
         "data/runtime/qsase_akber_filter_results.jsonl"
       ],
@@ -329,6 +384,9 @@
     {
       "applied_change": false,
       "artifact_refs": [
+        "data/runtime/pattern_recognition_engine.json",
+        "data/runtime/edge_pattern_ledger.json",
+        "data/runtime/qsase_evidence_quality_engine.json",
         "data/runtime/qsase_strategy_router_decisions.json",
         "data/runtime/qsase_paperops_gate_interface.json"
       ],
@@ -360,8 +418,56 @@
         "trade_intent_created": false
       },
       "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
-      "blocker": "akber_filter_failed",
-      "decision_record_id": "qsase-dashboard:52900ec6b0419f3da519",
+      "blocker": "akber_filter_waiting_for_confirmation",
+      "decision_record_id": "qsase-dashboard:6f21fa2d1cd555d57981",
+      "evidence": [],
+      "headline": "Pattern workflow documents how evidence can reach paper review.",
+      "live_capital_enabled": false,
+      "module": "pattern_to_paper_workflow",
+      "next_allowed_action": "wait for validated edge evidence before guarded PaperOps handoff",
+      "paper_order_created": false,
+      "proof_credit_allowed": false,
+      "reason": "5 recognized patterns, 0 guarded handoff candidates.",
+      "schema_version": "qsase_dashboard_view_model.v1",
+      "state": "pattern_to_paper_workflow_ready",
+      "strategy_family": "aggregate"
+    },
+    {
+      "applied_change": false,
+      "artifact_refs": [
+        "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qsase_paperops_gate_interface.json"
+      ],
+      "authority": {
+        "broker_write_allowed": false,
+        "dashboard_command_disabled": true,
+        "dashboard_mirror_only": true,
+        "dashboard_read_only": true,
+        "execution_approval_allowed": false,
+        "execution_approval_created": false,
+        "filter_threshold_update_created": false,
+        "live_broker_endpoint_allowed": false,
+        "live_capital_enabled": false,
+        "model_weight_update_created": false,
+        "paper_growth_trial_calendar_advance_allowed": false,
+        "paper_order_allowed": false,
+        "paper_order_created": false,
+        "paper_proof_ledger_credit_allowed": false,
+        "proof_credit_allowed": false,
+        "qualified_setup_created": false,
+        "risk_approval_allowed": false,
+        "risk_approval_created": false,
+        "simulated_elapsed_time_allowed": false,
+        "source_trust_update_created": false,
+        "strategy_mutation_created": false,
+        "telegram_command_path_enabled": false,
+        "telegram_trade_command_enabled": false,
+        "trade_candidate_created": false,
+        "trade_intent_created": false
+      },
+      "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
+      "blocker": "akber_filter_waiting_for_confirmation",
+      "decision_record_id": "qsase-dashboard:0951c92413e3c181aac6",
       "evidence": [],
       "headline": "PaperOps gate state is visible.",
       "live_capital_enabled": false,
@@ -369,9 +475,9 @@
       "next_allowed_action": "wait for distinct paperable setup or rerun guarded PaperOps checks",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "akber_filter_failed",
+      "reason": "akber_filter_waiting_for_confirmation",
       "schema_version": "qsase_dashboard_view_model.v1",
-      "state": "qsase_paperops_gate_interface_degraded",
+      "state": "qsase_paperops_gate_interface_ready_no_handoff",
       "strategy_family": "aggregate"
     },
     {
@@ -465,7 +571,7 @@
       "next_allowed_action": "repair runtime/source gaps or review proposals before any change",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "13 repair or approval rows are visible.",
+      "reason": "14 repair or approval rows are visible.",
       "schema_version": "qsase_dashboard_view_model.v1",
       "state": "repair_queue_visible",
       "strategy_family": "aggregate"

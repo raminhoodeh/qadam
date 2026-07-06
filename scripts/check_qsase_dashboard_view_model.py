@@ -16,6 +16,7 @@ from orchestrator.qsase_dashboard_view_model import (
     ANTI_SLOP_ARTIFACT,
     CURRENT_PORTFOLIO_ARTIFACT,
     DECISION_RECORDS_ARTIFACT,
+    EVIDENCE_QUALITY_ARTIFACT,
     EVENTS_ARTIFACT,
     HISTORY_ARTIFACT,
     LEARNING_LEDGER_ARTIFACT,
@@ -60,6 +61,7 @@ def main() -> int:
         SOURCE_NETWORK_ARTIFACT,
         STRATEGY_UNIVERSE_ARTIFACT,
         PATTERN_LAB_ARTIFACT,
+        EVIDENCE_QUALITY_ARTIFACT,
         TRADE_INTENTS_ARTIFACT,
         PATTERN_TO_PAPER_WORKFLOW_ARTIFACT,
         PATTERN_INTELLIGENCE_ARTIFACT,
@@ -88,6 +90,7 @@ def main() -> int:
     print(f"source_network={written.get('source_network')}")
     print(f"strategy_universe={written.get('strategy_universe')}")
     print(f"pattern_lab={written.get('pattern_lab')}")
+    print(f"evidence_quality={written.get('evidence_quality')}")
     print(f"trade_intents={written.get('trade_intents')}")
     print(f"pattern_to_paper_workflow={written.get('pattern_to_paper_workflow')}")
     print(f"pattern_intelligence={written.get('pattern_intelligence')}")
@@ -107,6 +110,9 @@ def main() -> int:
     print(f"currently_in_play_count={payload.get('currently_in_play_count')}")
     print(f"linear_pattern_count={payload.get('linear_pattern_count')}")
     print(f"nonlinear_pattern_count={payload.get('nonlinear_pattern_count')}")
+    print(f"evidence_quality_record_count={payload.get('evidence_quality_record_count')}")
+    print(f"evidence_quality_paper_review_candidate_count={payload.get('evidence_quality_paper_review_candidate_count')}")
+    print(f"evidence_quality_held_for_evidence_count={payload.get('evidence_quality_held_for_evidence_count')}")
     print(f"trade_intent_count={payload.get('trade_intent_count')}")
     print(f"pattern_workflow_record_count={payload.get('pattern_workflow_record_count')}")
     print(f"pattern_workflow_handoff_candidate_count={payload.get('pattern_workflow_handoff_candidate_count')}")
