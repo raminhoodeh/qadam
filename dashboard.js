@@ -6339,6 +6339,16 @@ function buildQsaseDashboardModel(status = {}) {
         pattern_to_paper_workflow: sections.pattern_to_paper_workflow || {},
         pattern_intelligence: sections.pattern_intelligence || {},
         learning_ledger: sections.learning_ledger || {},
+        paper_lifecycle_v2: sections.paper_lifecycle_v2 || {},
+        proof_ledger_v2: sections.proof_ledger_v2 || {},
+        learning_attribution_v2: sections.learning_attribution_v2 || {},
+        dashboard_completion_v2: sections.dashboard_completion_v2 || {},
+        telegram_summary_v2: sections.telegram_summary_v2 || {},
+        telegram_communications_mirror_v2: sections.telegram_communications_mirror_v2 || {},
+        self_healing: sections.self_healing || {},
+        operational_perfection: sections.operational_perfection || {},
+        operational_soak: sections.operational_soak || {},
+        final_live_declaration: sections.final_live_declaration || {},
         repair_queue: sections.repair_queue || {},
         router: sections.router || {},
         paperops_gate: sections.paperops_gate || {},
@@ -12572,10 +12582,14 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
 
 function renderQsaseTradingHistory(qsase = {}) {
     const section = qsase.trading_history || {};
+    const lifecycle = qsase.paper_lifecycle_v2 || {};
+    const proof = qsase.proof_ledger_v2 || {};
     const allRows = asArray(section.rows);
+    const lifecycleSummary = `${lifecycle.lifecycle_record_count || 0} lifecycle records · ${lifecycle.ambiguous_lifecycle_count || 0} ambiguous · ${proof.proof_eligible_count || 0} proof-eligible`;
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, section.timeline_order || section.status, allRows.length ? "online" : "pending", "trading_history")}
+            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, lifecycleSummary, allRows.length ? "online" : "pending", "trading_history")}
+            <p class="qsase-boundary-note">Lifecycle audit: ${qsaseHtmlText(lifecycle.stale_accepted_order_count || 0)} stale accepted order mirrors need review. Paper proof ledger: ${qsaseHtmlText(proof.proof_rejected_count || 0)} closed trades still need complete lineage or postmortem evidence before proof credit.</p>
             <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology">
                 ${allRows.length ? allRows.map((row) => {
                     const tone = qsaseTradeEventTone(row);
@@ -13070,6 +13084,159 @@ function renderQsasePatternToPaperWorkflow(qsase = {}) {
     return "";
 }
 
+function renderQsaseLearningLedger(qsase = {}) {
+    const learning = qsase.learning_attribution_v2 || {};
+    const legacyLedger = qsase.learning_ledger || {};
+    const outcomeCounts = learning.outcome_class_counts || {};
+    const causalCounts = learning.causal_label_counts || {};
+    const proposalRows = [
+        ["Source trust", learning.source_trust_proposal_count || 0],
+        ["Strategy weight", learning.strategy_weight_proposal_count || 0],
+        ["Akber threshold", learning.akber_threshold_proposal_count || 0],
+        ["Model routing", learning.model_routing_proposal_count || 0],
+        ["Data repair", learning.data_source_repair_proposal_count || 0]
+    ].filter((row) => row[1]);
+    const topOutcomes = Object.entries(outcomeCounts).slice(0, 5);
+    const topCausalLabels = Object.entries(causalCounts).slice(0, 5);
+    return `
+        <section id="qsase-learning-ledger" class="qsase-section" data-qsase-section="learning_ledger">
+            ${renderQsaseSectionHeader("Learning Ledger", `${learning.attribution_record_count || legacyLedger.record_count || 0} attributed outcomes · ${learning.policy_proposal_count || 0} proposals`, learning.status || legacyLedger.status || "review-only", "pending", "learning_ledger")}
+            <div class="qsase-final-grid">
+                ${renderMetric("Attribution records", learning.attribution_record_count || legacyLedger.record_count || 0)}
+                ${renderMetric("Policy proposals", learning.policy_proposal_count || 0)}
+                ${renderMetric("Proof eligible", learning.proof_eligible_count || 0)}
+                ${renderMetric("Mutations applied", learning.policy_mutation_created ? "yes" : "0")}
+                ${renderMetric("Orders created", learning.paper_order_created_count || 0)}
+                ${renderMetric("Broker writes", learning.broker_write_count || 0)}
+            </div>
+            <div class="qsase-card-grid">
+                <article class="qsase-record-card pending">
+                    <span>Proposal queue</span>
+                    <strong>${proposalRows.length ? `${proposalRows.length} proposal classes` : "No proposal classes"}</strong>
+                    <p>Learning can suggest repairs or weighting changes, but every change stays pending human approval.</p>
+                    <dl>
+                        ${proposalRows.map(([label, count]) => `<div><dt>${qsaseHtmlText(label)}</dt><dd>${qsaseHtmlText(count)}</dd></div>`).join("") || `<div><dt>State</dt><dd>Nothing to apply</dd></div>`}
+                    </dl>
+                </article>
+                <article class="qsase-record-card online">
+                    <span>Outcome memory</span>
+                    <strong>${topOutcomes.length ? "Outcome classes visible" : "No outcome classes"}</strong>
+                    <p>Backtests, shadows, holds, and paper outcomes are attributed before any strategy change is proposed.</p>
+                    <dl>
+                        ${topOutcomes.map(([label, count]) => `<div><dt>${qsaseHtmlText(qsaseHumanText(label))}</dt><dd>${qsaseHtmlText(count)}</dd></div>`).join("") || `<div><dt>State</dt><dd>Awaiting outcomes</dd></div>`}
+                    </dl>
+                </article>
+                <article class="qsase-record-card online">
+                    <span>Causal caution</span>
+                    <strong>${topCausalLabels.length ? "Labels tracked" : "No causal labels"}</strong>
+                    <p>Qadam separates “helped”, “blocked”, and “not assessed” so the learning loop does not overclaim.</p>
+                    <dl>
+                        ${topCausalLabels.map(([label, count]) => `<div><dt>${qsaseHtmlText(qsaseHumanText(label))}</dt><dd>${qsaseHtmlText(count)}</dd></div>`).join("") || `<div><dt>State</dt><dd>No labels exported</dd></div>`}
+                    </dl>
+                </article>
+            </div>
+            <p class="qsase-boundary-note">${qsaseHtmlText(learning.boundary || "Learning attribution is proposal-only. It cannot mutate policies, create orders, or grant proof credit.")}</p>
+        </section>
+    `;
+}
+
+function renderQsaseTelegramSummary(qsase = {}) {
+    const summary = qsase.telegram_summary_v2 || {};
+    const mirror = qsase.telegram_communications_mirror_v2 || {};
+    const messages = asArray(mirror.latest_messages).slice(0, 4);
+    return `
+        <section id="qsase-telegram-summary" class="qsase-section" data-qsase-section="telegram_summary">
+            ${renderQsaseSectionHeader("Telegram Summary Mirror", `${summary.message_candidate_count || 0} short message candidates · ${summary.message_rejected_duplicate_count || 0} duplicates held`, summary.status || mirror.status || "review-only", "online", "telegram_summary")}
+            <div class="qsase-final-grid">
+                ${renderMetric("Ready", summary.message_ready_count || 0)}
+                ${renderMetric("Duplicates held", summary.message_rejected_duplicate_count || 0)}
+                ${renderMetric("Quality rejects", summary.message_rejected_quality_count || 0)}
+                ${renderMetric("Live sends", summary.telegram_live_send_allowed ? "allowed" : "off")}
+                ${renderMetric("Command path", summary.telegram_command_path_enabled ? "enabled" : "off")}
+                ${renderMetric("Broker writes", summary.broker_write_count || 0)}
+            </div>
+            <div class="qsase-card-grid">
+                ${messages.length ? messages.map((message) => `
+                    <article class="qsase-record-card ${statusClass(message.status)}">
+                        <span>${qsaseHtmlText(qsaseHumanText(message.message_class || "telegram note"))}</span>
+                        <strong>${qsaseHtmlText(message.status || "review state")}</strong>
+                        <p>${qsaseHtmlText(message.body || "No message body exported.")}</p>
+                    </article>
+                `).join("") : `
+                    <article class="qsase-record-card pending">
+                        <span>No message mirror</span>
+                        <strong>Telegram summary not exported</strong>
+                        <p>No public-safe Telegram summary candidates are visible in this snapshot.</p>
+                    </article>
+                `}
+            </div>
+            <p class="qsase-boundary-note">${qsaseHtmlText(mirror.boundary || summary.boundary || "Telegram is review-only, command-disabled, public-safe, and cannot create orders or approvals.")}</p>
+        </section>
+    `;
+}
+
+function renderQadamOperationalClosure(qsase = {}) {
+    const selfHealing = qsase.self_healing || {};
+    const certification = qsase.operational_perfection || {};
+    const soak = qsase.operational_soak || {};
+    const declaration = qsase.final_live_declaration || {};
+    const blockers = asArray(certification.unresolved_blockers).slice(0, 4);
+    const repairTier = selfHealing.repair_request_tier || {};
+    const refreshTier = selfHealing.refresh_tier || {};
+    const quarantineTier = selfHealing.quarantine_tier || {};
+    const headline = certification.operationally_complete
+        ? "Operationally complete"
+        : certification.status
+            ? "Not operationally complete yet"
+            : "Certification not exported";
+    return `
+        <section id="qadam-operational-closure" class="qsase-section" data-qsase-section="operational_closure">
+            ${renderQsaseSectionHeader("Operational Closure", headline, certification.why_not_trading_now || declaration.declaration || "review-only", certification.operationally_complete ? "online" : "pending", "operational_closure")}
+            <div class="qsase-final-grid">
+                ${renderMetric("Self-healing", selfHealing.self_healing_passed ? "pass" : "review")}
+                ${renderMetric("Repairs", repairTier.repair_request_count || 0)}
+                ${renderMetric("Quarantined sources", quarantineTier.quarantine_record_count || 0)}
+                ${renderMetric("Refreshes", refreshTier.refresh_success_count || 0)}
+                ${renderMetric("Certification gates", `${certification.passed_gate_count || 0}/${certification.gate_count || 0}`)}
+                ${renderMetric("Soak days", `${soak.observed_soak_day_count || 0}/${soak.required_soak_days || 7}`)}
+                ${renderMetric("Soak complete", soak.soak_complete ? "yes" : "no")}
+                ${renderMetric("Final declaration", qsaseHumanText(declaration.status || "not ready"))}
+            </div>
+            <div class="qsase-card-grid">
+                <article class="qsase-record-card ${certification.operationally_complete ? "online" : "pending"}">
+                    <span>Certification answer</span>
+                    <strong>${qsaseHtmlText(certification.status || "not exported")}</strong>
+                    <p>${qsaseHtmlText(certification.final_answer_contract || declaration.declaration || "No final answer exported.")}</p>
+                </article>
+                <article class="qsase-record-card ${selfHealing.self_healing_passed ? "online" : "pending"}">
+                    <span>Self-healing supervisor</span>
+                    <strong>${qsaseHtmlText(selfHealing.status || "not exported")}</strong>
+                    <p>Safe refresh, source quarantine, and repair-request records are visible. No code edits or broker actions are allowed.</p>
+                </article>
+                <article class="qsase-record-card ${soak.soak_complete ? "online" : "pending"}">
+                    <span>Seven-day soak</span>
+                    <strong>${qsaseHtmlText(soak.status || "not started")}</strong>
+                    <p>${qsaseHtmlText(soak.boundary || "The soak uses real calendar days only and cannot simulate elapsed time.")}</p>
+                </article>
+            </div>
+            ${blockers.length ? `
+                <details class="qsase-detail-ledger" open>
+                    <summary>Current certification blockers</summary>
+                    <ul class="qsase-compact-list">
+                        ${blockers.map((blocker) => `
+                            <li class="pending">
+                                <strong>${qsaseHtmlText(qsaseHumanText(blocker.gate || "gate"))}</strong>
+                                <span>${qsaseHtmlText(blocker.reason || "No reason exported.")}</span>
+                            </li>
+                        `).join("")}
+                    </ul>
+                </details>
+            ` : ""}
+            <p class="qsase-boundary-note">${qsaseHtmlText(certification.boundary || soak.boundary || "Operational closure is read-only. It cannot force trades or enable live capital.")}</p>
+        </section>
+    `;
+}
+
 function renderQsaseRouterPaperOps(qsase = {}) {
     const router = qsase.router || {};
     const gate = qsase.paperops_gate || {};
@@ -13285,6 +13452,9 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             ${renderQsaseTradeIntents(qsase)}
             ${renderQsasePatternToPaperWorkflow(qsase)}
             ${renderQsaseRouterPaperOps(qsase)}
+            ${renderQsaseLearningLedger(qsase)}
+            ${renderQsaseTelegramSummary(qsase)}
+            ${renderQadamOperationalClosure(qsase)}
             ${renderQsasePulseTerminal(qsase)}
             <p class="qsase-boundary-note">${qsaseHtmlText(qsase.boundary)}</p>
         </div>
