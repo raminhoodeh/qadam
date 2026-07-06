@@ -12428,15 +12428,21 @@ function qsasePublicFundSummary(qsase = {}) {
     const value = formatMoney(portfolio.current_value_gbp, currency);
     const freshness = portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "freshness not exported";
     const consistency = qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported";
-    const headline = brokerOpenOrders
-        ? `${brokerOpenOrders} paper orders are waiting for Alpaca fill`
+    const filledHoldingText = `${openPositions} filled holding${openPositions === 1 ? "" : "s"}`;
+    const waitingOrderText = `${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? "" : "s"} waiting for market fill`;
+    const holdingsActivityLabel = brokerOpenOrders
+        ? `${filledHoldingText} · ${waitingOrderText}`
         : openPositions
-            ? `${openPositions} filled holding${openPositions === 1 ? "" : "s"} open`
+            ? `${filledHoldingText} open`
             : "No filled holdings yet";
+    const filledHoldingsMetric = brokerOpenOrders
+        ? `${openPositions} filled · ${brokerOpenOrders} waiting`
+        : openPositions;
+    const headline = holdingsActivityLabel;
     const plainExplanation = brokerOpenOrders
         ? openPositions
             ? `${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? " is" : "s are"} still waiting for fill. Filled holdings remain separate.`
-            : `There are no filled holdings yet because Alpaca has accepted ${brokerOpenOrders} paper order${brokerOpenOrders === 1 ? "" : "s"} but has not reported ${brokerOpenOrders === 1 ? "a fill" : "fills"}.`
+            : `There are no filled holdings yet because Alpaca has accepted ${brokerOpenOrders} paper order${brokerOpenOrders === 1 ? "" : "s"} but has not reported ${brokerOpenOrders === 1 ? "a market fill" : "market fills"}.`
         : openPositions
             ? "Filled positions are being tracked from the read-only Alpaca paper mirror."
             : "The fund is flat right now: no filled holdings and no accepted paper order waiting for fill.";
@@ -12451,6 +12457,8 @@ function qsasePublicFundSummary(qsase = {}) {
         currency,
         value,
         headline,
+        holdings_activity_label: holdingsActivityLabel,
+        filled_holdings_metric: filledHoldingsMetric,
         plain_explanation: plainExplanation,
         detail_note: detailNote,
         freshness,
@@ -12499,9 +12507,12 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
     const reportedCount = firstPresent(section.reported_open_position_count, portfolio.open_position_count, rows.length, 0);
     const rowCount = firstPresent(section.holding_row_count, section.position_count, rows.length, 0);
     const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
+    const holdingsActivityHeadline = brokerOpenOrders
+        ? `${rowCount} filled holding${rowCount === 1 ? "" : "s"} · ${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? "" : "s"} waiting for market fill`
+        : `${rowCount} filled holding${rowCount === 1 ? "" : "s"}`;
     const headline = mismatch
         ? `${reportedCount} broker-reported · ${rowCount} exported rows`
-        : `${rowCount} filled holding${rowCount === 1 ? "" : "s"}`;
+        : holdingsActivityHeadline;
     const emptyTitle = mismatch ? "Position mismatch" : "No filled holdings yet";
     const emptySummary = mismatch
         ? "Broker and dashboard disagree"
@@ -13029,7 +13040,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                 </article>
                 <div class="stage7-kpi-strip compact qsase-kpi-row" aria-label="Paper fund summary">
                     ${renderMetric("Paper value", fundSummary.value)}
-                    ${renderMetric("Filled holdings", openPositionCount)}
+                    ${renderMetric("Filled holdings", fundSummary.filled_holdings_metric)}
                     ${renderMetric("Pending orders", pendingPaperOrderCount)}
                     ${renderMetric("Closed trades", fundSummary.closed_trades)}
                     ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
