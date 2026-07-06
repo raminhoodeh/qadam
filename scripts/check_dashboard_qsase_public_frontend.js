@@ -332,6 +332,9 @@ async function assertRenderedContract() {
         "Final gate",
         "Current gate:",
         "qsase-trading-timeline",
+        "qsase-trading-summary",
+        "Recent trading summary",
+        "No accepted paper orders look stale",
         "qsase-source-category-row",
         "qsase-market-pill-row",
         "qsase-pattern-brief",
@@ -365,7 +368,11 @@ async function assertRenderedContract() {
         "No filled holdings yet",
         "0 filled holdings",
         "Current Holdings",
-        "qsase-fund-detail"
+        "qsase-fund-detail",
+        "proof-eligible",
+        "Lifecycle audit:",
+        "Paper proof ledger:",
+        "stale accepted order mirrors need review"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `rendered QSASE dashboard still exposes internal copy ${needle}`);
     });
