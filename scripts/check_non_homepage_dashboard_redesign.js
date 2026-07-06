@@ -34,7 +34,7 @@ includesAll(html, [
     "data-stage7-dashboard-visibility",
     "data-dashboard",
     "data-qadam-nav-context=\"public-dashboard\"",
-    "/dashboard.js?v=20260706-final-gate-inline-v1",
+    "/dashboard.js?v=20260706-remove-portfolio-note-v1",
     "/auth.js?v=20260517-d9-release"
 ], "dashboard html");
 

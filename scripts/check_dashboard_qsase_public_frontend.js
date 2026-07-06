@@ -109,6 +109,7 @@ function assertStaticContract() {
         "Trading History",
         "Hedge Fund Team",
         "Source Intelligence Network",
+        "Multi-Asset Funds",
         "Trading Universe",
         "Strategy Universe",
         "Pattern Recognition Findings",
@@ -129,7 +130,6 @@ function assertStaticContract() {
         "qsase-terminal-line",
         "current_portfolio",
         "pattern_intelligence_findings",
-        "trade markers are read-only history, not proof credit",
         "No order authority",
         "qsase-detail-ledger",
         "qsase-fund-status",
@@ -203,8 +203,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260706-final-gate-inline-v1",
-        "/dashboard.js?v=20260706-final-gate-inline-v1",
+        "/auth.css?v=20260706-remove-portfolio-note-v1",
+        "/dashboard.js?v=20260706-remove-portfolio-note-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -244,7 +244,9 @@ async function assertRenderedContract() {
         "Trading History",
         "Hedge Fund Team",
         "Source Intelligence Network",
+        "Multi-Asset Funds",
         "Trading Universe",
+        "19 Instruments over 6 Fund Categories",
         "Strategy Universe",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
@@ -286,8 +288,7 @@ async function assertRenderedContract() {
 
     [
         "live-capital authority",
-        "paper proof ledger credit",
-        "trade markers are read-only history"
+        "paper proof ledger credit"
     ].forEach((needle) => {
         assert(stageHtml.toLowerCase().includes(needle.toLowerCase()), `rendered QSASE dashboard missing boundary wording ${needle}`);
     });
@@ -300,7 +301,13 @@ async function assertRenderedContract() {
         "Paper trading mode",
         "Paper-only monitoring",
         "Connected Data Sources",
-        "Watched Trading Universe"
+        "Watched Trading Universe",
+        "19 watched instruments · 6 categories · 19 paper-route candidates",
+        "source network visible",
+        "dashboard portfolio consistent",
+        "portfolio values match",
+        "Snapshot fresh (age unknown)",
+        "trade markers are read-only history, not proof credit"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `QSASE dashboard should not render old overview element ${needle}`);
     });

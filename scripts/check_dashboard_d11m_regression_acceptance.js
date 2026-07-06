@@ -235,8 +235,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260706-final-gate-inline-v1",
-        "/dashboard.js?v=20260706-final-gate-inline-v1"
+        "/auth.css?v=20260706-remove-portfolio-note-v1",
+        "/dashboard.js?v=20260706-remove-portfolio-note-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

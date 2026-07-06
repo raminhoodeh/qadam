@@ -110,6 +110,8 @@ async function main() {
         "No filled open positions yet",
         "No filled holdings yet",
         "Filled holdings",
+        "19 watched instruments · 6 categories · 19 paper-route candidates",
+        "source network visible",
         "Why pending orders are not holdings",
         "paper orders are open or accepted",
         "fundSummary.summary",
@@ -134,6 +136,8 @@ async function main() {
         "Portfolio status",
         "Open exposure",
         "Trade History",
+        "Multi-Asset Funds",
+        "Fund Categories",
         "How to read portfolio status",
         "pending paper order"
     ], "dashboard source");
@@ -266,7 +270,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260706-final-gate-inline-v1");
+    console.log("dashboard_cc9_cache_key=20260706-remove-portfolio-note-v1");
 }
 
 main().catch((error) => {
