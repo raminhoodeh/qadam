@@ -12942,11 +12942,11 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
     const roles = qsaseHedgeFundTeamRoles(qsase);
     return `
         <section id="qsase-hedge-fund-team" class="qsase-section qsase-hedge-fund-team" data-qsase-section="hedge_fund_team">
-            ${renderQsaseSectionHeader("Hedge Fund Team", "Hybrid boutique macro desk: Python COO, local analyst, frontier strategist, Head of Quant", "self-aware paper-only operating model", "online", "hedge_fund_team")}
+            ${renderQsaseSectionHeader("Hedge Fund Team", "Qadam Team Overview", "self-aware paper-only operating model", "online", "hedge_fund_team")}
             <article class="qsase-fund-context qsase-team-thesis">
                 <div>
                     <span>Boutique macro intelligence fund</span>
-                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
+                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details. The Qadam hedge fund team runs a hybrid system of a Python script [COO], a local LLM [Research Analyst], a frontier LLM [Strategy Lead], and a quantum computer [Head of Quant]. 500+ live data feeds across 5 intelligence pipelines. One overseeing Fund Manager [you]. See below their operating status and roles.</p>
                 </div>
             </article>
             <div class="qsase-source-category-list qsase-team-card-list">
