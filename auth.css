@@ -11480,7 +11480,18 @@ body.qadam-dashboard-page .qsase-guide-marker .info-button {
 
 body.qadam-dashboard-page .qsase-guide-marker .info-card {
     text-align: left;
-    width: min(24rem, calc(100vw - 2rem));
+    width: min(var(--qadam-tooltip-width, 24rem), calc(100vw - 2rem));
+}
+
+body.qadam-dashboard-page .qsase-guide-marker[data-guide-tooltip-bound="true"] .info-card {
+    left: var(--qadam-tooltip-left, 1rem);
+    max-height: min(72vh, 32rem);
+    max-width: calc(100vw - 2rem);
+    overflow-y: auto;
+    position: fixed;
+    right: auto;
+    top: var(--qadam-tooltip-top, 1rem);
+    z-index: 1000;
 }
 
 body.qadam-dashboard-page .qsase-guide-card strong {

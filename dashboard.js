@@ -544,6 +544,80 @@ function initCockpitNavigation() {
     }
 }
 
+function clampDashboardTooltipValue(value, min, max) {
+    if (!Number.isFinite(value)) return min;
+    if (!Number.isFinite(max) || max < min) return min;
+    return Math.min(Math.max(value, min), max);
+}
+
+function isDashboardGuideTooltipActive(marker) {
+    if (!marker) return false;
+    const active = typeof document !== "undefined" ? document.activeElement : null;
+    return Boolean(
+        (typeof marker.matches === "function" && marker.matches(":hover")) ||
+        (active && typeof marker.contains === "function" && marker.contains(active))
+    );
+}
+
+function positionDashboardGuideTooltip(marker) {
+    if (!marker || typeof window === "undefined") return;
+    const button = marker.querySelector?.(".info-button");
+    const card = marker.querySelector?.('[data-tooltip-contract="nontechnical-guide"]');
+    if (!button || !card || typeof button.getBoundingClientRect !== "function") return;
+
+    const viewportWidth = Math.max(document.documentElement?.clientWidth || 0, window.innerWidth || 0);
+    const viewportHeight = Math.max(document.documentElement?.clientHeight || 0, window.innerHeight || 0);
+    if (!viewportWidth || !viewportHeight) return;
+
+    const gutter = 16;
+    const gap = 10;
+    const cardWidth = Math.min(384, Math.max(220, viewportWidth - (gutter * 2)));
+    card.style.setProperty("--qadam-tooltip-width", `${cardWidth}px`);
+
+    const buttonRect = button.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const measuredHeight = Math.min(cardRect.height || 240, viewportHeight - (gutter * 2));
+    const maxLeft = viewportWidth - cardWidth - gutter;
+    const centeredLeft = buttonRect.left + (buttonRect.width / 2) - (cardWidth / 2);
+    const left = clampDashboardTooltipValue(centeredLeft, gutter, maxLeft);
+
+    let top = buttonRect.bottom + gap;
+    let placement = "bottom";
+    if (top + measuredHeight > viewportHeight - gutter) {
+        top = buttonRect.top - measuredHeight - gap;
+        placement = "top";
+    }
+    top = clampDashboardTooltipValue(top, gutter, viewportHeight - measuredHeight - gutter);
+
+    card.style.setProperty("--qadam-tooltip-left", `${Math.round(left)}px`);
+    card.style.setProperty("--qadam-tooltip-top", `${Math.round(top)}px`);
+    marker.dataset.guideTooltipPlacement = placement;
+}
+
+function refreshDashboardGuideTooltipPositions() {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll(".qsase-guide-marker[data-guide-tooltip-bound='true']").forEach((marker) => {
+        if (isDashboardGuideTooltipActive(marker)) positionDashboardGuideTooltip(marker);
+    });
+}
+
+function initDashboardGuideTooltips() {
+    if (typeof document === "undefined" || typeof document.querySelectorAll !== "function") return;
+    if (typeof window === "undefined") return;
+    document.querySelectorAll(".qsase-guide-marker").forEach((marker) => {
+        const card = marker.querySelector?.('[data-tooltip-contract="nontechnical-guide"]');
+        if (!card || marker.dataset.guideTooltipBound === "true") return;
+        marker.dataset.guideTooltipBound = "true";
+        marker.addEventListener("mouseenter", () => positionDashboardGuideTooltip(marker));
+        marker.addEventListener("focusin", () => positionDashboardGuideTooltip(marker));
+        marker.addEventListener("touchstart", () => positionDashboardGuideTooltip(marker), { passive: true });
+    });
+    if (window.qadamDashboardGuideTooltipListenersBound) return;
+    window.qadamDashboardGuideTooltipListenersBound = true;
+    window.addEventListener("resize", refreshDashboardGuideTooltipPositions, { passive: true });
+    window.addEventListener("scroll", refreshDashboardGuideTooltipPositions, { passive: true, capture: true });
+}
+
 function dashboardText(value, fallback = "Not connected yet") {
     if (value === null || value === undefined || value === "") return fallback;
     return String(value)
@@ -9584,14 +9658,14 @@ function portfolioTradeRecordReason(record = {}, type = "order") {
     }
     if (direction === "sell") {
         return status.includes("fill")
-            ? "Sell or close order filled in the paper account."
+            ? "Sell or close order completed in the paper account."
             : "Sell or close order is visible in the paper-account order history.";
     }
     if (status.includes("fill")) {
-        return "Buy order filled in the paper account and added to the paper ledger.";
+        return "Buy order completed in the paper account and added to the paper ledger.";
     }
     if (status === "new" || status === "accepted" || status === "pending_new") {
-        return "Paper order is waiting for broker fill or cancellation.";
+        return "Paper order is waiting for broker completion or cancellation.";
     }
     if (record.source_intent_id || record.intent_id) {
         return `Linked to ${record.source_intent_id || record.intent_id}.`;
@@ -12130,10 +12204,10 @@ function renderQsaseInlineBadge(value, status = "pending") {
 const QSASE_GUIDE_MARKERS = {
     fund_overview: {
         title: "What this first view means",
-        summary: "This is the plain-English readout of the paper fund right now. It separates filled positions from orders that are still waiting for Alpaca paper to fill.",
+        summary: "This is the plain-English readout of the paper fund right now: portfolio status, portfolio value, recent trade activity, and whether Qadam is waiting on anything.",
         rows: [
             ["Paper value", "The current simulated account value."],
-            ["Open orders", "Paper orders accepted by Alpaca but not yet filled."],
+            ["Trade history", "The timeline of paper orders, buys, sells, and closed trades."],
             ["No live money", "This public dashboard cannot move real capital."]
         ]
     },
@@ -12147,17 +12221,17 @@ const QSASE_GUIDE_MARKERS = {
         ]
     },
     current_portfolio: {
-        title: "Holdings versus waiting orders",
-        summary: "A holding only appears after Alpaca paper reports a filled position. Accepted orders are real paper activity, but they are not counted as holdings until filled.",
+        title: "How to read portfolio status",
+        summary: "This panel summarizes the current account exposure. Paper orders and closed-trade events live in Trading History, so the page reads like a portfolio update rather than a broker-settlement explainer.",
         rows: [
-            ["Position", "A filled paper holding currently in the account."],
-            ["Pending order", "An accepted paper order waiting for market fill."],
-            ["Why 0 can be OK", "Zero holdings can still coexist with open paper orders."]
+            ["Portfolio status", "Whether the paper account is flat, exposed, or waiting on paper activity."],
+            ["Open exposure", "Current market exposure carried by the paper account."],
+            ["Trade history", "Where submitted orders, buys, sells, and closed trades are listed."]
         ]
     },
     trading_history: {
         title: "How to read the timeline",
-        summary: "This is the chronological paper ledger. It records accepted, filled, bought, sold, and closed paper events without allowing any action from the dashboard.",
+        summary: "This is the chronological paper ledger. It records accepted, bought, sold, and closed paper events without allowing any action from the dashboard.",
         rows: [
             ["Green", "Buy or order activity."],
             ["Red/brand", "Sell or close activity."],
@@ -12247,10 +12321,11 @@ const QSASE_GUIDE_MARKERS = {
     },
     paper_fund_status: {
         title: "How to read paper fund status",
-        summary: "This is the single public explanation of Qadam's paper account. Filled holdings and pending paper orders are deliberately kept separate.",
+        summary: "This is the single public summary of Qadam's paper account: value, exposure, pending paper activity, closed trades, and the current final gate.",
         rows: [
-            ["Filled holdings", "Positions Alpaca has reported as filled."],
-            ["Pending orders", "Accepted paper orders waiting for broker fill."],
+            ["Portfolio value", "The current simulated account value."],
+            ["Open exposure", "Current market exposure carried by the paper account."],
+            ["Trade history", "The timeline of paper activity and closed trades."],
             ["No commands", "This dashboard explains state; it cannot place or cancel orders."]
         ]
     }
@@ -12457,27 +12532,29 @@ function qsasePublicFundSummary(qsase = {}) {
     const value = formatMoney(portfolio.current_value_gbp, currency);
     const freshness = portfolio.broker_mirror_freshness?.status || portfolio.public_snapshot_freshness?.status || "freshness not exported";
     const consistency = qsase.portfolio_consistency_status || portfolio.portfolio_consistency?.status || "not exported";
-    const filledHoldingText = `${openPositions} filled holding${openPositions === 1 ? "" : "s"}`;
-    const waitingOrderText = `${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? "" : "s"} waiting for market fill`;
-    const holdingsActivityLabel = brokerOpenOrders
-        ? `${filledHoldingText} · ${waitingOrderText}`
+    const exposureText = openPositions
+        ? `${openPositions} open exposure item${openPositions === 1 ? "" : "s"}`
+        : "flat";
+    const waitingOrderText = `${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"}`;
+    const portfolioActivityLabel = brokerOpenOrders
+        ? `Portfolio status: ${exposureText} · ${waitingOrderText}`
         : openPositions
-            ? `${filledHoldingText} open`
-            : "No filled holdings yet";
-    const filledHoldingsMetric = brokerOpenOrders
-        ? `${openPositions} filled · ${brokerOpenOrders} waiting`
+            ? `Portfolio status: ${exposureText}`
+            : "Portfolio status: flat";
+    const openExposureMetric = brokerOpenOrders
+        ? `${openPositions} open · ${brokerOpenOrders} pending`
         : openPositions;
-    const headline = holdingsActivityLabel;
+    const headline = portfolioActivityLabel;
     const plainExplanation = brokerOpenOrders
         ? openPositions
-            ? `${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? " is" : "s are"} still waiting for fill. Filled holdings remain separate.`
-            : `There are no filled holdings yet because Alpaca has accepted ${brokerOpenOrders} paper order${brokerOpenOrders === 1 ? "" : "s"} but has not reported ${brokerOpenOrders === 1 ? "a market fill" : "market fills"}.`
+            ? `The paper portfolio is currently ${value}. Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in Trading History.`
+            : `The paper portfolio is currently ${value}. Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in Trading History.`
         : openPositions
-            ? "Filled positions are being tracked from the read-only Alpaca paper mirror."
-            : "The fund is flat right now: no filled holdings and no accepted paper order waiting for fill.";
+            ? `The paper portfolio is currently ${value}, with ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Trade History shows how it got there.`
+            : `The paper portfolio is currently ${value}. Qadam is flat right now; Trade History shows the latest paper activity.`;
     const detailNote = brokerOpenOrders
-        ? "Accepted paper orders stay in Trading History until Alpaca reports a filled position. They are not counted as holdings before fill."
-        : "Current holdings come only from filled positions reported by the read-only Alpaca paper mirror.";
+        ? "Portfolio Status summarizes the account snapshot. Trading History lists each paper order, trade event, and closed-trade record."
+        : "Portfolio Status summarizes value, cash, exposure, and risk. Trading History carries the detailed paper-trade timeline.";
     return {
         open_positions: openPositions,
         pending_orders: brokerOpenOrders,
@@ -12486,8 +12563,8 @@ function qsasePublicFundSummary(qsase = {}) {
         currency,
         value,
         headline,
-        holdings_activity_label: holdingsActivityLabel,
-        filled_holdings_metric: filledHoldingsMetric,
+        portfolio_activity_label: portfolioActivityLabel,
+        open_exposure_metric: openExposureMetric,
         plain_explanation: plainExplanation,
         detail_note: detailNote,
         freshness,
@@ -12536,25 +12613,29 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
     const reportedCount = firstPresent(section.reported_open_position_count, portfolio.open_position_count, rows.length, 0);
     const rowCount = firstPresent(section.holding_row_count, section.position_count, rows.length, 0);
     const mismatch = String(section.reconciliation_status || portfolio.portfolio_consistency?.status || "ok") !== "ok";
-    const holdingsActivityHeadline = brokerOpenOrders
-        ? `${rowCount} filled holding${rowCount === 1 ? "" : "s"} · ${brokerOpenOrders} accepted paper order${brokerOpenOrders === 1 ? "" : "s"} waiting for market fill`
-        : `${rowCount} filled holding${rowCount === 1 ? "" : "s"}`;
+    const hasOpenExposure = rows.length > 0 || Number(rowCount || 0) > 0 || Number(reportedCount || 0) > 0;
+    if (!hasOpenExposure && !mismatch) return "";
+    const portfolioActivityHeadline = brokerOpenOrders
+        ? `${rowCount} open exposure item${rowCount === 1 ? "" : "s"} · ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"}`
+        : rowCount
+            ? `${rowCount} open exposure item${rowCount === 1 ? "" : "s"}`
+            : "Flat portfolio";
     const headline = mismatch
         ? `${reportedCount} broker-reported · ${rowCount} exported rows`
-        : holdingsActivityHeadline;
-    const emptyTitle = mismatch ? "Position mismatch" : "No filled holdings yet";
+        : portfolioActivityHeadline;
+    const emptyTitle = mismatch ? "Position mismatch" : "Portfolio status";
     const emptySummary = mismatch
         ? "Broker and dashboard disagree"
         : brokerOpenOrders
-            ? "Pending orders live in Trading History"
+            ? "Pending paper activity in Trading History"
             : "Flat portfolio";
     const emptyDetail = brokerOpenOrders
-        ? "Accepted paper orders are shown in Trading History until Alpaca reports a filled position. They are not counted as holdings before fill."
-        : "The current-portfolio artifact is explicit, read-only, and does not fabricate holdings.";
+        ? "The pending paper activity is visible in Trading History; this panel stays focused on current account exposure."
+        : "No open exposure is currently exported by the read-only paper mirror.";
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
-            ${renderQsaseSectionHeader("Current Holdings", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
-            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "This section shows filled positions only. Pending orders live in Trading History until Alpaca reports a fill.")}</p>
+            ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
+            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "This section summarizes current paper exposure. Paper order and closed-trade events live in Trading History.")}</p>
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
@@ -13335,7 +13416,7 @@ function qsasePulseNodeRows(qsase = {}) {
             node: "Paper Desk",
             stream: "Alpaca paper mirror",
             tone: fundSummary.pending_orders ? "pending" : "online",
-            line: `Alpaca mirror is ${qsaseHumanText(fundSummary.freshness)}; pending orders are watched for broker fill before holdings appear.`
+            line: `Alpaca mirror is ${qsaseHumanText(fundSummary.freshness)}; portfolio status and pending paper activity are visible in the dashboard.`
         },
         {
             node: "Learning Loop",
@@ -13405,7 +13486,7 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             : decisionCounts.safetyBlocks
                 ? "Safety veto"
                 : pendingPaperOrderCount
-                    ? "Waiting for fill"
+                    ? "Pending order"
                     : "Watching";
     return `
         <div class="qsase-dashboard-shell qsase-dashboard-v2" data-qsase-dashboard-rendered data-qsase-dashboard-contract="qsase_public_dashboard_v2">
@@ -13430,14 +13511,14 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                 </article>
                 <div class="stage7-kpi-strip compact qsase-kpi-row" aria-label="Paper fund summary">
                     ${renderMetric("Paper value", fundSummary.value)}
-                    ${renderMetric("Filled holdings", fundSummary.filled_holdings_metric)}
+                    ${renderMetric("Open exposure", fundSummary.open_exposure_metric)}
                     ${renderMetric("Pending orders", pendingPaperOrderCount)}
                     ${renderMetric("Closed trades", fundSummary.closed_trades)}
                     ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
                     ${renderMetric("Final gate", decisionLabel)}
                 </div>
                 <details class="qsase-detail-ledger qsase-fund-detail">
-                    <summary>Why pending orders are not holdings</summary>
+                    <summary>How to read portfolio status</summary>
                     <p>${qsaseHtmlText(fundSummary.detail_note)} Current gate: ${qsaseHtmlText(decision)}.</p>
                 </details>
             </section>
@@ -17584,6 +17665,7 @@ async function renderQadamDashboardStatus(session) {
         renderCapital(status, viewModels);
         renderFundManagerNotes(status, viewModels);
         renderConsole(status);
+        initDashboardGuideTooltips();
         if (document.documentElement) {
             document.documentElement.dataset.dashboardStatus = "rendered";
             document.documentElement.dataset.dashboardStatusSource = source.key;
