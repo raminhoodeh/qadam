@@ -33,6 +33,16 @@ EVENTS_ARTIFACT = "qsase_full_universe_pattern_search_events.jsonl"
 HISTORY_ARTIFACT = "qsase_full_universe_pattern_search_history.jsonl"
 DASHBOARD_SUMMARY_ARTIFACT = "qsase_full_universe_pattern_search_dashboard_summary.json"
 
+SOURCE_PRICE_MATRIX_READY_STATUSES = {
+    "qsase_source_price_matrix_ready",
+    "qsase_source_price_matrix_ready_with_gaps",
+}
+
+HISTORICAL_MEMORY_READY_STATUSES = {
+    "qsase_historical_source_price_memory_ready",
+    "qsase_historical_source_price_memory_ready_with_gaps",
+}
+
 SELF_MODEL_ARTIFACT = "qsase_self_model.json"
 MATRIX_ARTIFACT = "qsase_universal_source_price_matrix.json"
 MATRIX_EDGES_ARTIFACT = "qsase_source_price_edges.jsonl"
@@ -801,12 +811,17 @@ def build_full_universe_pattern_search(settings: Settings | None = None) -> dict
         missing_required_state.append("qsase_historical_source_price_memory_missing")
 
     degraded_reasons: list[str] = []
-    if matrix.get("status") != "qsase_source_price_matrix_ready":
+    hold_reasons: list[str] = []
+    if matrix.get("status") not in SOURCE_PRICE_MATRIX_READY_STATUSES:
         degraded_reasons.append("source_price_matrix_degraded")
-    if historical_memory.get("status") != "qsase_historical_source_price_memory_ready":
+    elif matrix.get("status") == "qsase_source_price_matrix_ready_with_gaps":
+        hold_reasons.append("source_price_matrix_has_coverage_gaps")
+    if historical_memory.get("status") not in HISTORICAL_MEMORY_READY_STATUSES:
         degraded_reasons.append("historical_memory_degraded")
+    elif historical_memory.get("status") == "qsase_historical_source_price_memory_ready_with_gaps":
+        hold_reasons.append("historical_memory_has_missing_forward_windows")
     if coverage_gaps:
-        degraded_reasons.append("coverage_gaps_present")
+        hold_reasons.append("coverage_gaps_present")
     if not complete:
         degraded_reasons.append("no_complete_source_price_outcomes")
 
@@ -815,6 +830,8 @@ def build_full_universe_pattern_search(settings: Settings | None = None) -> dict
         status = "qsase_full_universe_pattern_search_blocked"
     elif degraded_reasons:
         status = "qsase_full_universe_pattern_search_degraded"
+    elif hold_reasons or rejected:
+        status = "qsase_full_universe_pattern_search_ready_with_research_gaps"
 
     strategy_labels = sorted(
         {
@@ -853,6 +870,7 @@ def build_full_universe_pattern_search(settings: Settings | None = None) -> dict
         "rejected_patterns": rejected,
         "coverage_gaps": coverage_gaps,
         "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "missing_required_state": missing_required_state,
         "candidate_patterns_path": f"data/runtime/{CANDIDATE_PATTERNS_ARTIFACT}",
         "rejected_patterns_path": f"data/runtime/{REJECTED_PATTERNS_ARTIFACT}",
@@ -907,6 +925,7 @@ def validate_full_universe_pattern_search(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_full_universe_pattern_search_ready",
+        "qsase_full_universe_pattern_search_ready_with_research_gaps",
         "qsase_full_universe_pattern_search_degraded",
         "qsase_full_universe_pattern_search_blocked",
     }:

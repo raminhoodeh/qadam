@@ -35,6 +35,21 @@ VARIANT_MATRIX_ARTIFACT = "qsase_shadow_strategy_variant_matrix.json"
 ACTUAL_VS_HYPOTHETICAL_ARTIFACT = "qsase_shadow_actual_vs_hypothetical.json"
 DASHBOARD_SUMMARY_ARTIFACT = "qsase_shadow_strategy_dashboard_summary.json"
 
+STRATEGY_FOUNDRY_READY_STATUSES = {
+    "qsase_strategy_foundry_ready",
+    "qsase_strategy_foundry_ready_with_probationary_hypotheses",
+}
+
+AKBER_READY_STATUSES = {
+    "qsase_akber_filter_integration_ready",
+    "qsase_akber_filter_integration_ready_with_holds",
+}
+
+HISTORICAL_MEMORY_READY_STATUSES = {
+    "qsase_historical_source_price_memory_ready",
+    "qsase_historical_source_price_memory_ready_with_gaps",
+}
+
 STRATEGY_FOUNDRY_ARTIFACT = "qsase_strategy_hypotheses.json"
 STRATEGY_HYPOTHESES_ARTIFACT = "qsase_strategy_hypotheses.jsonl"
 REJECTED_STRATEGY_HYPOTHESES_ARTIFACT = "qsase_rejected_strategy_hypotheses.jsonl"
@@ -873,28 +888,39 @@ def build_shadow_strategy_replay(settings: Settings | None = None) -> dict[str, 
     router_count = score_summary["candidate_for_router_count"]
     missing_required_state: list[str] = []
     degraded_reasons: list[str] = []
+    hold_reasons: list[str] = []
     if not context["strategy_foundry"]:
         missing_required_state.append("strategy_foundry_missing")
     if not context["akber_filter"] or not context["akber_results"]:
         missing_required_state.append("akber_filter_missing")
     if not context["historical_memory"]:
         missing_required_state.append("historical_memory_missing")
-    if context["strategy_foundry"].get("status") != "qsase_strategy_foundry_ready":
+    if context["strategy_foundry"].get("status") not in STRATEGY_FOUNDRY_READY_STATUSES:
         degraded_reasons.append("strategy_foundry_degraded")
-    if context["akber_filter"].get("status") != "qsase_akber_filter_integration_ready":
+    elif context["strategy_foundry"].get("status") == "qsase_strategy_foundry_ready_with_probationary_hypotheses":
+        hold_reasons.append("strategy_foundry_has_probationary_hypotheses")
+    if context["akber_filter"].get("status") not in AKBER_READY_STATUSES:
         degraded_reasons.append("akber_filter_degraded")
+    elif context["akber_filter"].get("status") == "qsase_akber_filter_integration_ready_with_holds":
+        hold_reasons.append("akber_filter_waiting_for_confirmation")
+    if context["historical_memory"].get("status") not in HISTORICAL_MEMORY_READY_STATUSES:
+        degraded_reasons.append("historical_memory_degraded")
+    elif context["historical_memory"].get("status") == "qsase_historical_source_price_memory_ready_with_gaps":
+        hold_reasons.append("historical_memory_has_missing_forward_windows")
     if not context["strategy_hypotheses"]:
-        degraded_reasons.append("no_promoted_strategy_hypotheses_to_shadow")
+        hold_reasons.append("no_strategy_hypotheses_to_shadow")
     if context["phase6_shadow"].get("status") == "blocked":
-        degraded_reasons.append("legacy_phase6_shadow_runner_blocked")
+        hold_reasons.append("legacy_phase6_shadow_runner_blocked")
     if blocked_count:
-        degraded_reasons.append("blocked_shadow_replay_records_present")
+        hold_reasons.append("blocked_shadow_replay_records_present")
     status = "qsase_shadow_strategy_simulator_ready"
     if missing_required_state:
         status = "qsase_shadow_strategy_simulator_blocked"
     elif degraded_reasons:
         status = "qsase_shadow_strategy_simulator_degraded"
-    blocked_reason = ",".join(sorted(set(missing_required_state or degraded_reasons))) or "none"
+    elif hold_reasons or not router_count:
+        status = "qsase_shadow_strategy_simulator_ready_with_holds"
+    blocked_reason = ",".join(sorted(set(missing_required_state or degraded_reasons or hold_reasons))) or "none"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_shadow_strategy_simulator",
@@ -962,6 +988,7 @@ def build_shadow_strategy_replay(settings: Settings | None = None) -> dict[str, 
         },
         "missing_required_state": missing_required_state,
         "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "authority": universal_authority_flags(),
         "authority_flags": dict(SHADOW_AUTHORITY_FLAGS),
     }
@@ -1009,6 +1036,7 @@ def validate_shadow_strategy_replay(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_shadow_strategy_simulator_ready",
+        "qsase_shadow_strategy_simulator_ready_with_holds",
         "qsase_shadow_strategy_simulator_degraded",
         "qsase_shadow_strategy_simulator_blocked",
     }:

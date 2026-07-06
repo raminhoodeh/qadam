@@ -4,9 +4,9 @@
   "authority_state": "akber_filter_not_execution_approval",
   "command_disabled": true,
   "filter_pass_is_not_execution_approval": true,
-  "generated_at": "2026-06-29T06:57:28.138657+00:00",
+  "generated_at": "2026-07-06T09:36:53.800933+00:00",
   "historical_ablation_status": "ablation_degraded_proxy_only_no_promoted_hypotheses",
-  "latest_blocker": "missing_filter_context_present,no_promoted_strategy_hypotheses_to_filter,strategy_foundry_degraded",
+  "latest_blocker": "missing_practical_filter_context_present",
   "live_send_allowed": false,
   "next_evidence_needed": [
     "volume_or_flow_confirmation"
@@ -16,11 +16,11 @@
   "no_trade_candidates_created": true,
   "public_safe": true,
   "schema_version": "qsase_akber_filter_integration.v1",
-  "status": "qsase_akber_filter_integration_degraded",
+  "status": "qsase_akber_filter_integration_ready_with_holds",
   "summary_rows": [
     {
       "label": "Akber filter status",
-      "value": "qsase_akber_filter_integration_degraded"
+      "value": "qsase_akber_filter_integration_ready_with_holds"
     },
     {
       "label": "Filter records",
@@ -32,15 +32,15 @@
     },
     {
       "label": "Hold",
-      "value": 8
+      "value": 14
     },
     {
       "label": "Veto",
-      "value": 4
+      "value": 2
     },
     {
       "label": "Audit-only",
-      "value": 4
+      "value": 0
     },
     {
       "label": "Router candidates",
@@ -51,7 +51,7 @@
       "value": "akber_filter_not_execution_approval"
     }
   ],
-  "top_filter_decision": "audit_only",
-  "top_filter_result": "qsase-akber:8ada8184beb0797a87be",
-  "top_reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion."
+  "top_filter_decision": "hold_missing_context",
+  "top_filter_result": "qsase-akber:cfb8daff358919ae7407",
+  "top_reason": "Akber cannot pass because required practical context is missing."
 }

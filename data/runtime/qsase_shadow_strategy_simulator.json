@@ -1,5 +1,5 @@
 {
-  "active_replay_count": 32,
+  "active_replay_count": 48,
   "actual_vs_hypothetical_count": 48,
   "akber_filter_record_count": 16,
   "artifact_type": "qsase_shadow_strategy_simulator",
@@ -79,8 +79,8 @@
     "trade_candidate_created": false,
     "trade_candidate_creation_allowed": false
   },
-  "blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
-  "blocked_replay_count": 16,
+  "blocked_reason": "akber_filter_waiting_for_confirmation,historical_memory_has_missing_forward_windows,legacy_phase6_shadow_runner_blocked,strategy_foundry_has_probationary_hypotheses",
+  "blocked_replay_count": 0,
   "broker_write_allowed": false,
   "broker_write_count": 0,
   "candidate_for_router_count": 0,
@@ -92,8 +92,8 @@
     "authority_state": "shadow_replay_research_only_no_order",
     "candidate_for_router_count": 0,
     "command_disabled": true,
-    "generated_at": "2026-06-29T06:57:28.267353+00:00",
-    "latest_blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
+    "generated_at": "2026-07-06T09:36:53.935734+00:00",
+    "latest_blocked_reason": "akber_filter_waiting_for_confirmation,historical_memory_has_missing_forward_windows,legacy_phase6_shadow_runner_blocked,strategy_foundry_has_probationary_hypotheses",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
     "no_proof_credit_granted": true,
@@ -101,11 +101,11 @@
     "proof_boundary": "shadow replay is not paper proof ledger credit",
     "public_safe": true,
     "schema_version": "qsase_shadow_strategy_simulator.v1",
-    "status": "qsase_shadow_strategy_simulator_degraded",
+    "status": "qsase_shadow_strategy_simulator_ready_with_holds",
     "summary_rows": [
       {
         "label": "Shadow simulator",
-        "value": "qsase_shadow_strategy_simulator_degraded"
+        "value": "qsase_shadow_strategy_simulator_ready_with_holds"
       },
       {
         "label": "Variants",
@@ -113,15 +113,15 @@
       },
       {
         "label": "Active replays",
-        "value": 32
+        "value": 48
       },
       {
         "label": "Blocked replays",
-        "value": 16
+        "value": 0
       },
       {
         "label": "Rejected variants",
-        "value": 40
+        "value": 34
       },
       {
         "label": "Router candidates",
@@ -136,18 +136,12 @@
         "value": "no order created"
       }
     ],
-    "top_rejected_variant": "forward_watch_only",
-    "top_shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800",
-    "top_variant": "akber_strict_veto"
+    "top_rejected_variant": "baseline_current_strategy",
+    "top_shadow_replay_id": "qsase-shadow:6acbaf3b4b5f51b7b54e",
+    "top_variant": "baseline_current_strategy"
   },
-  "degraded_reasons": [
-    "akber_filter_degraded",
-    "blocked_shadow_replay_records_present",
-    "legacy_phase6_shadow_runner_blocked",
-    "no_promoted_strategy_hypotheses_to_shadow",
-    "strategy_foundry_degraded"
-  ],
-  "evaluated_replay_count": 32,
+  "degraded_reasons": [],
+  "evaluated_replay_count": 48,
   "evidence_classes": [
     "counterfactual_no_order_outcome",
     "forward_shadow_watch",
@@ -156,9 +150,15 @@
   "execution_allowed": false,
   "execution_intent_created": false,
   "execution_intent_created_count": 0,
-  "generated_at": "2026-06-29T06:57:28.267353+00:00",
+  "generated_at": "2026-07-06T09:36:53.935734+00:00",
   "historical_memory_record_count": 6232,
   "historical_point_in_time_safe_record_count": 6232,
+  "hold_reasons": [
+    "akber_filter_waiting_for_confirmation",
+    "historical_memory_has_missing_forward_windows",
+    "legacy_phase6_shadow_runner_blocked",
+    "strategy_foundry_has_probationary_hypotheses"
+  ],
   "input_artifacts": {
     "akber_filter": "data/runtime/qsase_akber_filter_integration.json",
     "akber_filter_results": "data/runtime/qsase_akber_filter_results.jsonl",
@@ -169,8 +169,8 @@
     "strategy_foundry": "data/runtime/qsase_strategy_hypotheses.json",
     "strategy_hypotheses": "data/runtime/qsase_strategy_hypotheses.jsonl"
   },
-  "input_hypothesis_count": 0,
-  "input_rejected_hypothesis_count": 16,
+  "input_hypothesis_count": 6,
+  "input_rejected_hypothesis_count": 10,
   "live_capital_enabled": false,
   "missing_required_state": [],
   "paper_growth_trial_calendar_advanced": false,
@@ -184,7 +184,7 @@
   "proof_credit_allowed": false,
   "proposal_first": true,
   "public_safe": true,
-  "rejected_variant_count": 40,
+  "rejected_variant_count": 34,
   "replay_modes": [
     "counterfactual_strategy_replay",
     "forward_shadow_replay",
@@ -198,10 +198,10 @@
     "candidate_for_router_count": 0,
     "schema_version": "qsase_shadow_strategy_simulator.v1",
     "scored_record_count": 48,
-    "top_shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800",
-    "top_shadow_status": "reject_after_shadow_replay",
-    "top_shadow_variant_score": 0.617776,
-    "top_variant_key": "akber_strict_veto"
+    "top_shadow_replay_id": "qsase-shadow:6acbaf3b4b5f51b7b54e",
+    "top_shadow_status": "hold_for_more_shadow_data",
+    "top_shadow_variant_score": 0.619656,
+    "top_variant_key": "baseline_current_strategy"
   },
   "shadow_records_cannot_create_orders": true,
   "shadow_records_cannot_create_proof_credit": true,
@@ -209,7 +209,7 @@
   "shadow_success_cannot_be_paper_proof_ledger_credit": true,
   "simulated_elapsed_time_allowed": false,
   "source_model_strategy_policy_mutated": false,
-  "status": "qsase_shadow_strategy_simulator_degraded",
+  "status": "qsase_shadow_strategy_simulator_ready_with_holds",
   "trade_candidate_created": false,
   "trade_candidate_created_count": 0,
   "variant_count": 3

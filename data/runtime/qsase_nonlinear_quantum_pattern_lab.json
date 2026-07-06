@@ -76,9 +76,9 @@
     "artifact_type": "qsase_nonlinear_quantum_pattern_lab_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-06-29T06:57:27.722598+00:00",
+    "generated_at": "2026-07-06T09:36:53.365660+00:00",
     "hardware_execution_claimed": false,
-    "latest_blocker": "historical_memory_degraded,linear_pattern_lab_degraded,nonlinear_overfit_controls_holding",
+    "latest_blocker": "quantum_ambiguity_holds_present",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
     "no_proof_credit_granted": true,
@@ -86,11 +86,11 @@
     "public_safe": true,
     "quantum_review_is_not_trade_confirmation": true,
     "schema_version": "qsase_nonlinear_quantum_pattern_lab.v1",
-    "status": "qsase_nonlinear_quantum_pattern_lab_degraded",
+    "status": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds",
     "summary_rows": [
       {
         "label": "Nonlinear lab status",
-        "value": "qsase_nonlinear_quantum_pattern_lab_degraded"
+        "value": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds"
       },
       {
         "label": "Tested interactions",
@@ -125,13 +125,14 @@
     "top_advanced_status": "candidate_for_quantum_review",
     "top_ambiguity_hold": null
   },
-  "degraded_reasons": [
-    "historical_memory_degraded",
-    "linear_pattern_lab_degraded",
+  "degraded_reasons": [],
+  "execution_allowed": false,
+  "generated_at": "2026-07-06T09:36:53.365660+00:00",
+  "hold_reasons": [
+    "historical_memory_has_missing_forward_windows",
+    "linear_pattern_lab_has_research_holds",
     "nonlinear_overfit_controls_holding"
   ],
-  "execution_allowed": false,
-  "generated_at": "2026-06-29T06:57:27.722598+00:00",
   "inconclusive_nonlinear_pattern_count": 8,
   "input_artifacts": {
     "historical_memory": "data/runtime/qsase_historical_source_price_memory.json",
@@ -170,10 +171,10 @@
   "proposal_first": true,
   "public_safe": true,
   "qctrl_holds_bypassed": false,
-  "quantum_hold_count": 4,
+  "quantum_hold_count": 2,
   "quantum_review_is_not_execution_authority": true,
   "quantum_review_is_not_trade_approval": true,
-  "quantum_review_passed_for_research_count": 4,
+  "quantum_review_passed_for_research_count": 6,
   "quantum_reviewed_pattern_count": 8,
   "quantum_reviews_path": "data/runtime/qsase_quantum_pattern_reviews.jsonl",
   "quantum_state": {
@@ -184,7 +185,7 @@
     "hardware_submitted": false,
     "lab_provider_call_allowed": false,
     "lab_provider_call_attempted": false,
-    "latest_oracle_created_at": "2026-06-29T06:34:25.569308+00:00",
+    "latest_oracle_created_at": "2026-07-06T09:34:18.895815+00:00",
     "local_validation_status": "passed",
     "paper_order_allowed": false,
     "proof_credit_allowed": false,
@@ -217,7 +218,7 @@
   },
   "quantum_summary": {
     "execution_allowed": false,
-    "generated_at": "2026-06-29T06:57:27.801990+00:00",
+    "generated_at": "2026-07-06T09:36:53.446165+00:00",
     "hardware_submission_allowed": false,
     "hardware_submitted": false,
     "local_validation_status": "passed",
@@ -239,6 +240,6 @@
   "research_only": true,
   "reviewed_pattern_count": 8,
   "schema_version": "qsase_nonlinear_quantum_pattern_lab.v1",
-  "status": "qsase_nonlinear_quantum_pattern_lab_degraded",
+  "status": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds",
   "tested_interaction_count": 16
 }

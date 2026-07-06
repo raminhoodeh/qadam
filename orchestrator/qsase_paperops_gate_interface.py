@@ -458,8 +458,12 @@ def _failure_reasons(
     holds: list[str] = []
     rejections: list[str] = []
     repairs: list[str] = []
-    if router_decision.get("decision", {}).get("router_output") != "paper_review_candidate":
-        rejections.append("router_output_not_paper_review_candidate")
+    router_output = router_decision.get("decision", {}).get("router_output")
+    if router_output != "paper_review_candidate":
+        if router_output in {"blocked_safety_boundary", "reject"}:
+            rejections.append("router_output_blocks_paper_review")
+        else:
+            holds.append("router_output_waiting_for_paper_review_candidate")
     lineage = _research_goal_lineage(router_decision)
     identity = _candidate_identity(router_decision)
     if not lineage.get("research_goal_id"):
@@ -472,10 +476,17 @@ def _failure_reasons(
         rejections.append("duplicate_idempotency_key")
     if gate_state.get("source_quorum") != "pass":
         rejections.append("source_quorum_failed")
-    if gate_state.get("akber_filter") != "pass":
-        rejections.append("akber_filter_failed")
+    akber_state = str(gate_state.get("akber_filter") or "missing")
+    if akber_state != "pass":
+        if akber_state == "reject":
+            rejections.append("akber_filter_rejected")
+        else:
+            holds.append("akber_filter_waiting_for_confirmation")
     if gate_state.get("quantum_review") in {None, "", "missing", "not_recorded"}:
-        rejections.append("quantum_review_required_but_missing")
+        if router_output == "paper_review_candidate":
+            rejections.append("quantum_review_required_but_missing")
+        else:
+            holds.append("quantum_review_not_ready_for_paper_review")
     if str(gate_state.get("quantum_review")) == "downgrade_or_hold":
         holds.append("qctrl_or_quantum_review_hold")
     if gate_state.get("daily_drawdown") == "breach":
@@ -684,6 +695,7 @@ def _dashboard_summary(payload: dict[str, Any]) -> dict[str, Any]:
             {"label": "Eligible handoffs", "value": payload["eligible_for_paperops_review_count"]},
             {"label": "Held handoffs", "value": payload["held_handoff_count"]},
             {"label": "Rejected handoffs", "value": payload["rejected_handoff_count"]},
+            {"label": "Non-eligible records", "value": payload.get("non_eligible_handoff_count", 0)},
             {"label": "Q-CTRL", "value": payload["qctrl_paper_consultation_state"]},
             {"label": "Authority", "value": "no order submitted"},
         ],
@@ -798,8 +810,10 @@ def build_paperops_gate_interface(settings: Settings | None = None) -> dict[str,
     status = "qsase_paperops_gate_interface_ready"
     if missing_inputs:
         status = "qsase_paperops_gate_interface_blocked"
-    elif not handoff_records or rejected or held:
+    elif repair_required:
         status = "qsase_paperops_gate_interface_degraded"
+    elif not handoff_records:
+        status = "qsase_paperops_gate_interface_ready_no_handoff"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_paperops_gate_interface",
@@ -819,7 +833,8 @@ def build_paperops_gate_interface(settings: Settings | None = None) -> dict[str,
         "handoff_record_count": len(handoff_records),
         "eligible_for_paperops_review_count": len(handoff_records),
         "held_handoff_count": len(held),
-        "rejected_handoff_count": len(rejected_handoffs),
+        "rejected_handoff_count": len(rejected),
+        "non_eligible_handoff_count": len(rejected_handoffs),
         "duplicate_idempotency_count": duplicate_idempotency_count,
         "duplicate_exposure_count": duplicate_exposure_count,
         "source_quorum_block_count": source_quorum_block_count,
@@ -897,6 +912,7 @@ def validate_paperops_gate_interface(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_paperops_gate_interface_ready",
+        "qsase_paperops_gate_interface_ready_no_handoff",
         "qsase_paperops_gate_interface_degraded",
         "qsase_paperops_gate_interface_blocked",
     }:
@@ -1009,7 +1025,10 @@ def validate_paperops_gate_interface(payload: dict[str, Any]) -> list[str]:
     if not isinstance(rejected, list):
         errors.append("rejected_handoffs_missing")
         rejected = []
-    if payload.get("rejected_handoff_count") != len(rejected):
+    actual_rejected_count = sum(1 for record in rejected if record.get("status") == "rejected_handoff_recorded")
+    if payload.get("non_eligible_handoff_count") != len(rejected):
+        errors.append("non_eligible_handoff_count_mismatch")
+    if payload.get("rejected_handoff_count") != actual_rejected_count:
         errors.append("rejected_handoff_count_mismatch")
     for record in rejected:
         record_id = record.get("rejected_handoff_id")

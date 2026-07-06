@@ -7,3 +7,9 @@
 {"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-06-28T21:06:55.475833+00:00", "public_safe": true, "status": "qsase_strategy_router_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-06-28T21:07:55.913215+00:00", "public_safe": true, "status": "qsase_strategy_router_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-06-29T06:57:28.456300+00:00", "public_safe": true, "status": "qsase_strategy_router_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-07-06T09:21:29.516090+00:00", "public_safe": true, "status": "qsase_strategy_router_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-07-06T09:25:03.563966+00:00", "public_safe": true, "status": "qsase_strategy_router_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-07-06T09:29:40.874031+00:00", "public_safe": true, "status": "qsase_strategy_router_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-07-06T09:30:06.458883+00:00", "public_safe": true, "status": "qsase_strategy_router_ready_no_paper_candidate"}
+{"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-07-06T09:36:41.665555+00:00", "public_safe": true, "status": "qsase_strategy_router_ready_no_paper_candidate"}
+{"authority_flags_false": true, "event_type": "qsase_strategy_router_decisions_written", "generated_at": "2026-07-06T09:36:54.085266+00:00", "public_safe": true, "status": "qsase_strategy_router_ready_no_paper_candidate"}

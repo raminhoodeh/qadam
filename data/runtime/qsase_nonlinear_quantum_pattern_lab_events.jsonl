@@ -4,3 +4,6 @@
 {"authority_flags_false": true, "event_type": "qsase_nonlinear_quantum_pattern_lab_written", "generated_at": "2026-06-28T21:06:54.589446+00:00", "public_safe": true, "status": "qsase_nonlinear_quantum_pattern_lab_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_nonlinear_quantum_pattern_lab_written", "generated_at": "2026-06-28T21:07:55.043162+00:00", "public_safe": true, "status": "qsase_nonlinear_quantum_pattern_lab_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_nonlinear_quantum_pattern_lab_written", "generated_at": "2026-06-29T06:57:27.722598+00:00", "public_safe": true, "status": "qsase_nonlinear_quantum_pattern_lab_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_nonlinear_quantum_pattern_lab_written", "generated_at": "2026-07-06T09:28:34.508842+00:00", "public_safe": true, "status": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds"}
+{"authority_flags_false": true, "event_type": "qsase_nonlinear_quantum_pattern_lab_written", "generated_at": "2026-07-06T09:36:40.946724+00:00", "public_safe": true, "status": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds"}
+{"authority_flags_false": true, "event_type": "qsase_nonlinear_quantum_pattern_lab_written", "generated_at": "2026-07-06T09:36:53.365660+00:00", "public_safe": true, "status": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds"}

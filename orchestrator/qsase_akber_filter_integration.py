@@ -33,6 +33,16 @@ HISTORY_ARTIFACT = "qsase_akber_filter_integration_history.jsonl"
 EVENTS_ARTIFACT = "qsase_akber_filter_integration_events.jsonl"
 DASHBOARD_SUMMARY_ARTIFACT = "qsase_akber_filter_dashboard_summary.json"
 
+STRATEGY_FOUNDRY_READY_STATUSES = {
+    "qsase_strategy_foundry_ready",
+    "qsase_strategy_foundry_ready_with_probationary_hypotheses",
+}
+
+AKBER_READY_STATUSES = {
+    "qsase_akber_filter_integration_ready",
+    "qsase_akber_filter_integration_ready_with_holds",
+}
+
 STRATEGY_FOUNDRY_ARTIFACT = "qsase_strategy_hypotheses.json"
 STRATEGY_HYPOTHESES_ARTIFACT = "qsase_strategy_hypotheses.jsonl"
 REJECTED_STRATEGY_HYPOTHESES_ARTIFACT = "qsase_rejected_strategy_hypotheses.jsonl"
@@ -716,17 +726,20 @@ def build_akber_filter_results(settings: Settings | None = None) -> dict[str, An
     if not context["strategy_hypotheses"] and not context["rejected_strategy_hypotheses"]:
         missing_required_state.append("foundry_hypothesis_or_rejection_inputs_missing")
     degraded_reasons: list[str] = []
-    if context["strategy_foundry"].get("status") != "qsase_strategy_foundry_ready":
+    hold_reasons: list[str] = []
+    if context["strategy_foundry"].get("status") not in STRATEGY_FOUNDRY_READY_STATUSES:
         degraded_reasons.append("strategy_foundry_degraded")
     if not context["strategy_hypotheses"]:
-        degraded_reasons.append("no_promoted_strategy_hypotheses_to_filter")
+        hold_reasons.append("no_strategy_hypotheses_promoted_to_filter")
     if missing_context:
-        degraded_reasons.append("missing_filter_context_present")
+        hold_reasons.append("missing_practical_filter_context_present")
     status = "qsase_akber_filter_integration_ready"
     if missing_required_state:
         status = "qsase_akber_filter_integration_blocked"
     elif degraded_reasons:
         status = "qsase_akber_filter_integration_degraded"
+    elif not passed:
+        status = "qsase_akber_filter_integration_ready_with_holds"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_akber_filter_integration",
@@ -777,6 +790,7 @@ def build_akber_filter_results(settings: Settings | None = None) -> dict[str, An
         },
         "missing_required_state": missing_required_state,
         "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "akber_filter_pass_is_not_execution_approval": True,
         "filter_vetoes_become_learning_evidence": True,
         "threshold_changes_are_proposal_only": True,
@@ -827,6 +841,7 @@ def validate_akber_filter_results(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_akber_filter_integration_ready",
+        "qsase_akber_filter_integration_ready_with_holds",
         "qsase_akber_filter_integration_degraded",
         "qsase_akber_filter_integration_blocked",
     }:
@@ -937,6 +952,8 @@ def _dashboard_summary(payload: dict[str, Any]) -> dict[str, Any]:
         latest_blocker = ",".join(payload["missing_required_state"])
     elif payload.get("degraded_reasons"):
         latest_blocker = ",".join(payload["degraded_reasons"])
+    elif payload.get("hold_reasons"):
+        latest_blocker = ",".join(payload["hold_reasons"])
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_akber_filter_dashboard_summary",

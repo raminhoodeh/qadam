@@ -66,7 +66,7 @@ def main() -> int:
         validation_errors.append("written_gate_record_count_mismatch")
     if len(handoff_records) != payload.get("handoff_record_count"):
         validation_errors.append("written_handoff_record_count_mismatch")
-    if len(rejected_handoffs) != payload.get("rejected_handoff_count"):
+    if len(rejected_handoffs) != payload.get("non_eligible_handoff_count"):
         validation_errors.append("written_rejected_handoff_count_mismatch")
     validation_errors.extend(validate_paperops_gate_interface(loaded))
     validation_errors.extend(validate_negative_paperops_gate_interface_probes())
@@ -85,6 +85,7 @@ def main() -> int:
     print(f"eligible_for_paperops_review_count={payload.get('eligible_for_paperops_review_count')}")
     print(f"held_handoff_count={payload.get('held_handoff_count')}")
     print(f"rejected_handoff_count={payload.get('rejected_handoff_count')}")
+    print(f"non_eligible_handoff_count={payload.get('non_eligible_handoff_count')}")
     print(f"duplicate_idempotency_count={payload.get('duplicate_idempotency_count')}")
     print(f"duplicate_exposure_count={payload.get('duplicate_exposure_count')}")
     print(f"source_quorum_block_count={payload.get('source_quorum_block_count')}")

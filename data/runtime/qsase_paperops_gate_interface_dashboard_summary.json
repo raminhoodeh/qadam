@@ -2,11 +2,11 @@
   "artifact_type": "qsase_paperops_gate_interface_dashboard_summary",
   "authority_flags_false": true,
   "authority_state": "paperops_handoff_context_only_no_order",
-  "blocking_gate": "akber_filter_failed",
+  "blocking_gate": "akber_filter_waiting_for_confirmation",
   "command_disabled": true,
   "drawdown_state": "no_sample_within_cap",
   "duplicate_exposure_state": "managed_by_paperops_idempotency_and_duplicate_guard",
-  "generated_at": "2026-06-29T06:57:28.671409+00:00",
+  "generated_at": "2026-07-06T09:36:54.277414+00:00",
   "guarded_alpaca_paper_route_state": "available_for_review",
   "idempotency_state": "distinct_or_not_applicable",
   "live_send_allowed": false,
@@ -18,11 +18,11 @@
   "public_safe": true,
   "qctrl_paper_consultation_state": "not_bypassed",
   "schema_version": "qsase_paperops_gate_interface.v1",
-  "status": "qsase_paperops_gate_interface_degraded",
+  "status": "qsase_paperops_gate_interface_ready_no_handoff",
   "summary_rows": [
     {
       "label": "PaperOps gate",
-      "value": "qsase_paperops_gate_interface_degraded"
+      "value": "qsase_paperops_gate_interface_ready_no_handoff"
     },
     {
       "label": "Router candidates",
@@ -34,10 +34,14 @@
     },
     {
       "label": "Held handoffs",
-      "value": 0
+      "value": 14
     },
     {
       "label": "Rejected handoffs",
+      "value": 2
+    },
+    {
+      "label": "Non-eligible records",
       "value": 16
     },
     {
@@ -49,6 +53,6 @@
       "value": "no order submitted"
     }
   ],
-  "top_handoff_candidate": "qsase-paperops-handoff:0bb4de91cff921390d89",
+  "top_handoff_candidate": "qsase-paperops-handoff:edb571a615ea8a13bcff",
   "top_setup": "energy_security_disruption in CL=F may produce a repeatable source-price lag."
 }

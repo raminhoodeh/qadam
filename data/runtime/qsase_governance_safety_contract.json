@@ -119,13 +119,13 @@
     },
     "backfill_allowed": false,
     "calendar_boundary_violation_count": 0,
-    "generated_at": "2026-06-29T06:57:22.182401+00:00",
+    "generated_at": "2026-07-06T09:36:47.833375+00:00",
     "historical_backtests_remain_historical": true,
     "paper_growth_trial": {
       "actual_calendar_run": true,
       "backfill_used": false,
-      "completed_calendar_day_count": 30,
-      "run_day": 36,
+      "completed_calendar_day_count": 7,
+      "run_day": 8,
       "run_state": "active",
       "simulated_time_used": false
     },
@@ -178,7 +178,7 @@
       "trust_score_update_created": false
     },
     "command_disabled": true,
-    "generated_at": "2026-06-29T06:57:22.182401+00:00",
+    "generated_at": "2026-07-06T09:36:47.833375+00:00",
     "live_send_allowed": false,
     "public_safe": true,
     "rows": [
@@ -266,7 +266,7 @@
       "role": "Source and resource registry reference"
     }
   ],
-  "generated_at": "2026-06-29T06:57:22.182401+00:00",
+  "generated_at": "2026-07-06T09:36:47.833375+00:00",
   "governance_review_queue": {
     "artifact_type": "qsase_governance_review_queue",
     "authority": {
@@ -309,7 +309,7 @@
       "trade_candidate_created": false,
       "trust_score_update_created": false
     },
-    "generated_at": "2026-06-29T06:57:22.182401+00:00",
+    "generated_at": "2026-07-06T09:36:47.833375+00:00",
     "governance_review_queue_count": 0,
     "proposal_applied_count": 0,
     "proposal_approved_count": 0,
@@ -466,7 +466,7 @@
         "surface": "proof_standards"
       }
     ],
-    "generated_at": "2026-06-29T06:57:22.182401+00:00",
+    "generated_at": "2026-07-06T09:36:47.833375+00:00",
     "proposal_applied_count": 0,
     "proposal_first": true,
     "schema_version": "qsase_governance_safety_contract.v1",
@@ -517,7 +517,7 @@
       "trust_score_update_created": false
     },
     "backtest_to_proof_allowed": false,
-    "generated_at": "2026-06-29T06:57:22.182401+00:00",
+    "generated_at": "2026-07-06T09:36:47.833375+00:00",
     "paper_proof_ledger": {
       "closed_proof_trade_count": 0,
       "qualified_setup_count": 2,
@@ -555,33 +555,33 @@
   "source_artifacts": {
     "cockpit_status": {
       "exists": true,
-      "mtime": "2026-06-29T06:40:02.999473+00:00",
+      "mtime": "2026-07-06T09:35:43.494724+00:00",
       "path": "data/runtime/cockpit-status.json",
-      "size_bytes": 3073218
+      "size_bytes": 3082845
     },
     "paperops_autonomous_pass_summary": {
       "exists": true,
-      "mtime": "2026-06-29T06:18:17.066524+00:00",
+      "mtime": "2026-07-06T09:35:43.865316+00:00",
       "path": "data/runtime/paperops_autonomous_pass_summary.json",
-      "size_bytes": 191684
+      "size_bytes": 191886
     },
     "paperops_paper_lifecycle_poller": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:27.442183+00:00",
+      "mtime": "2026-07-06T09:34:59.564592+00:00",
       "path": "data/runtime/paperops_paper_lifecycle_poller.json",
-      "size_bytes": 31599
+      "size_bytes": 31558
     },
     "phase7_proof_lifecycle_monitor": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:28.176991+00:00",
+      "mtime": "2026-07-06T09:34:21.571726+00:00",
       "path": "data/runtime/phase7_proof_lifecycle_monitor.json",
       "size_bytes": 38955
     },
     "qsase_phase0_paperops_reliability_baseline": {
       "exists": true,
-      "mtime": "2026-06-29T06:57:21.928962+00:00",
+      "mtime": "2026-07-06T09:36:47.612235+00:00",
       "path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
-      "size_bytes": 32615
+      "size_bytes": 29010
     }
   },
   "status": "governance_safety_ready",

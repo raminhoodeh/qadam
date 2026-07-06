@@ -43,13 +43,13 @@
   },
   "backfill_allowed": false,
   "calendar_boundary_violation_count": 0,
-  "generated_at": "2026-06-29T06:57:22.182401+00:00",
+  "generated_at": "2026-07-06T09:36:47.833375+00:00",
   "historical_backtests_remain_historical": true,
   "paper_growth_trial": {
     "actual_calendar_run": true,
     "backfill_used": false,
-    "completed_calendar_day_count": 30,
-    "run_day": 36,
+    "completed_calendar_day_count": 7,
+    "run_day": 8,
     "run_state": "active",
     "simulated_time_used": false
   },

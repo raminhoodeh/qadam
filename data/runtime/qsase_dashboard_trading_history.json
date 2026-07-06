@@ -31,10 +31,10 @@
     "trade_candidate_created": false,
     "trade_intent_created": false
   },
-  "closed_trade_row_count": 18,
+  "closed_trade_row_count": 40,
   "command_disabled": true,
   "explicitly_empty": false,
-  "generated_at": "2026-07-05T10:49:21.553569+00:00",
+  "generated_at": "2026-07-06T14:40:43.883977+00:00",
   "paper_only": true,
   "paper_order_mirror_row_count": 30,
   "public_safe": true,
@@ -42,35 +42,37 @@
   "rows": [
     {
       "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
+        "data/runtime/paper_closed_trades.jsonl"
       ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:35:30.61357Z",
       "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
-      "instrument": "SMH",
-      "order_id": "e64326f9-c867-4adb-b3fb-4b01f2bc998c",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-05T00:28:43.192671Z"
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
-      ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
-      "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
       "instrument": "ITA",
-      "order_id": "c9b7cde2-1048-4824-8895-37310cadd15f",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-05T00:28:42.275474Z"
+      "opened_at": "2026-07-06T08:03:24.225551Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "af4398aa-6648-46bc-bba3-5f82c707f619"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:35:13.196757Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.159274Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "87fdfc0e-340f-495b-95cd-fb4aa223dbd0"
     },
     {
       "artifact_refs": [
@@ -80,29 +82,30 @@
       "direction": "buy",
       "event_label": "Buy / order",
       "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
-      "instrument": "SMH",
-      "order_id": "342bc081-5771-48ba-9ebc-244e41833ae6",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-04T12:15:48.301916Z"
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
-      ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
-      "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "filled_at": "2026-07-06T13:35:13.196757Z",
+      "filled_quantity": 1.0,
       "instrument": "ITA",
       "order_id": "87fdfc0e-340f-495b-95cd-fb4aa223dbd0",
       "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-04T12:15:47.466925Z"
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.159274Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:34:51.959486Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:23.990236Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "23ec757f-e46b-4af9-b2da-a6f355e6a474"
     },
     {
       "artifact_refs": [
@@ -112,45 +115,80 @@
       "direction": "buy",
       "event_label": "Buy / order",
       "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "filled_at": "2026-07-06T13:34:51.959486Z",
+      "filled_quantity": 1.0,
+      "instrument": "SMH",
+      "order_id": "23ec757f-e46b-4af9-b2da-a6f355e6a474",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:23.990236Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:57.495167Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:24.044212Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "5b222263-11d3-416f-bee5-8f7240d01ab3"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:33:57.495167Z",
+      "filled_quantity": 1.0,
       "instrument": "SMH",
       "order_id": "5b222263-11d3-416f-bee5-8f7240d01ab3",
       "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-04T08:58:19.159529Z"
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.044212Z"
     },
     {
       "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
+        "data/runtime/paper_closed_trades.jsonl"
       ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:53.868231Z",
       "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
-      "instrument": "ITA",
-      "order_id": "af4398aa-6648-46bc-bba3-5f82c707f619",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-04T08:35:40.922167Z"
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
-      ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
-      "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
       "instrument": "SMH",
-      "order_id": "4a7a2801-4d89-42b3-be20-6c4380365ddc",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-04T08:35:40.118848Z"
+      "opened_at": "2026-07-06T08:03:24.266382Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "ef86d15e-6433-4260-82ca-79d77f1be8c1"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:51.833933Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:24.074381Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "6bc863d5-042d-4236-9600-08ce7447a2f4"
     },
     {
       "artifact_refs": [
@@ -160,13 +198,47 @@
       "direction": "buy",
       "event_label": "Buy / order",
       "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "filled_at": "2026-07-06T13:33:51.833933Z",
+      "filled_quantity": 1.0,
+      "instrument": "SMH",
+      "order_id": "6bc863d5-042d-4236-9600-08ce7447a2f4",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.074381Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:48.007127Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
       "instrument": "ITA",
-      "order_id": "ed39b385-d86c-41ed-a3eb-0e1e0de3f7ce",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-04T08:35:39.282558Z"
+      "opened_at": "2026-07-06T08:03:24.236815Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "bee2a71e-707c-43b9-810a-1de4d00771ec"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:33.253749Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.10062Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "86992502-868e-4a38-9633-7d75e9b7de40"
     },
     {
       "artifact_refs": [
@@ -176,45 +248,263 @@
       "direction": "buy",
       "event_label": "Buy / order",
       "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "filled_at": "2026-07-06T13:33:33.253749Z",
+      "filled_quantity": 1.0,
+      "instrument": "ITA",
+      "order_id": "86992502-868e-4a38-9633-7d75e9b7de40",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.10062Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:28.944506Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.170621Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "8879fb73-d9ed-44ea-abca-7d3105ff70a4"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:33:28.944506Z",
+      "filled_quantity": 1.0,
+      "instrument": "ITA",
+      "order_id": "8879fb73-d9ed-44ea-abca-7d3105ff70a4",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.170621Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:28.577094Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.059561Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "5c780b46-e053-48cc-91af-ae6eab439417"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:33:28.577094Z",
+      "filled_quantity": 1.0,
+      "instrument": "ITA",
+      "order_id": "5c780b46-e053-48cc-91af-ae6eab439417",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.059561Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:33:09.14775Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:24.211347Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "9efdfcc0-3ba4-4146-8370-fb75e0fd0c2d"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:32:39.931643Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:22.948948Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "f3df8686-d673-4d16-9a76-715793355c23"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:32:39.931643Z",
+      "filled_quantity": 1.0,
+      "instrument": "SMH",
+      "order_id": "f3df8686-d673-4d16-9a76-715793355c23",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:22.948948Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:32:35.884987Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T10:24:49.496969Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "d2c41fce-c9ba-498a-b4f1-0006c202ed45"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:31:44.04176Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.27752Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "f0cccf77-b6fc-43bd-9205-5abadaca9ab8"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:31:20.845381Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.089232Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "85bf0122-59ca-4dc2-90eb-ce0732a9797f"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:31:20.845381Z",
+      "filled_quantity": 1.0,
+      "instrument": "ITA",
+      "order_id": "85bf0122-59ca-4dc2-90eb-ce0732a9797f",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.089232Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:31:09.701248Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.259158Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "ed39b385-d86c-41ed-a3eb-0e1e0de3f7ce"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:31:03.945456Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:24.192771Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "8dad3f20-e136-44be-8680-92494ca4aa33"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:31:03.945456Z",
+      "filled_quantity": 1.0,
       "instrument": "SMH",
       "order_id": "8dad3f20-e136-44be-8680-92494ca4aa33",
       "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-03T04:49:30.549279Z"
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.192771Z"
     },
     {
       "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
+        "data/runtime/paper_closed_trades.jsonl"
       ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:31:02.869704Z",
       "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
-      "instrument": "ITA",
-      "order_id": "bee2a71e-707c-43b9-810a-1de4d00771ec",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-03T04:49:24.620499Z"
-    },
-    {
-      "artifact_refs": [
-        "data/runtime/paper_orders.jsonl"
-      ],
-      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
-      "direction": "buy",
-      "event_label": "Buy / order",
-      "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
       "instrument": "SMH",
-      "order_id": "9efdfcc0-3ba4-4146-8370-fb75e0fd0c2d",
-      "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-03T04:49:23.59174Z"
+      "opened_at": "2026-07-06T08:03:24.029329Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "4a7a2801-4d89-42b3-be20-6c4380365ddc"
     },
     {
       "artifact_refs": [
@@ -224,13 +514,97 @@
       "direction": "buy",
       "event_label": "Buy / order",
       "event_type": "buy_or_order",
-      "filled_at": null,
-      "filled_quantity": 0.0,
-      "instrument": "ITA",
-      "order_id": "f0cccf77-b6fc-43bd-9205-5abadaca9ab8",
+      "filled_at": "2026-07-06T13:31:02.869704Z",
+      "filled_quantity": 1.0,
+      "instrument": "SMH",
+      "order_id": "4a7a2801-4d89-42b3-be20-6c4380365ddc",
       "row_type": "paper_order_mirror_not_trade_intent",
-      "status": "accepted",
-      "submitted_at": "2026-07-03T04:49:22.496668Z"
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.029329Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:30:48.942727Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:24.251659Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "e64326f9-c867-4adb-b3fb-4b01f2bc998c"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:30:26.686063Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T08:03:24.00519Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "342bc081-5771-48ba-9ebc-244e41833ae6"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_orders.jsonl"
+      ],
+      "boundary": "mirrored_order_only_no_create_cancel_replace_or_close",
+      "direction": "buy",
+      "event_label": "Buy / order",
+      "event_type": "buy_or_order",
+      "filled_at": "2026-07-06T13:30:26.686063Z",
+      "filled_quantity": 1.0,
+      "instrument": "SMH",
+      "order_id": "342bc081-5771-48ba-9ebc-244e41833ae6",
+      "row_type": "paper_order_mirror_not_trade_intent",
+      "status": "filled",
+      "submitted_at": "2026-07-06T08:03:24.00519Z"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:30:17.889305Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T08:03:24.248039Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "c9b7cde2-1048-4824-8895-37310cadd15f"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T13:30:07.268511Z",
+      "direction": "buy",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T10:24:48.620845Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "6ef6ddaf-00f7-40a9-bd05-2ea44d80e1f4"
     },
     {
       "artifact_refs": [

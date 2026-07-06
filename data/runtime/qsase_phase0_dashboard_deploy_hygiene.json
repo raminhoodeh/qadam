@@ -6,15 +6,15 @@
       "qadam.trade",
       "www.qadam.trade"
     ],
-    "cockpit_status_age_seconds": 1045,
-    "cockpit_status_generated_at": "2026-06-29T06:39:56.285703+00:00",
+    "cockpit_status_age_seconds": 70,
+    "cockpit_status_generated_at": "2026-07-06T09:35:37.383623+00:00",
     "cockpit_status_signature_exists": true,
     "component": "dashboard_deploy_hygiene",
     "dashboard_public_safe_boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
     "degraded_reasons": [],
-    "deployment_receipt_age_seconds": 1012,
-    "deployment_receipt_deployed_at": "2026-06-29T06:40:29.112Z",
-    "deployment_url": "https://qadam-pmu77yt8b-ramin-hoodehs-projects.vercel.app",
+    "deployment_receipt_age_seconds": 51023,
+    "deployment_receipt_deployed_at": "2026-07-05T19:26:24.288Z",
+    "deployment_url": "https://qadam-k8d4t06dp-ramin-hoodehs-projects.vercel.app",
     "gaps": [],
     "safety": {
       "backfill_allowed": false,
@@ -41,7 +41,7 @@
     },
     "status": "ready"
   },
-  "generated_at": "2026-06-29T06:57:21.916277+00:00",
+  "generated_at": "2026-07-06T09:36:47.603251+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

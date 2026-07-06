@@ -1071,11 +1071,17 @@ def build_qsase_universal_source_price_matrix(
         * len(TIME_WINDOWS)
     )
     full_cross_product = expected_rows == len(edges) and expected_rows > 0
+    degraded_reasons: list[str] = []
+    hold_reasons = [gap["gap_type"] for gap in coverage_gaps]
+    if self_model.get("status") in {"qsase_self_model_blocked", "qsase_self_model_stale"}:
+        degraded_reasons.append("self_model_not_ready")
     status = "qsase_source_price_matrix_ready"
     if missing_required_state:
         status = "qsase_source_price_matrix_blocked"
-    elif coverage_gaps or self_model.get("status") in {"qsase_self_model_blocked", "qsase_self_model_stale"}:
+    elif degraded_reasons:
         status = "qsase_source_price_matrix_degraded"
+    elif hold_reasons:
+        status = "qsase_source_price_matrix_ready_with_gaps"
 
     payload = {
         "schema_version": SCHEMA_VERSION,
@@ -1145,7 +1151,8 @@ def build_qsase_universal_source_price_matrix(
         "source_price_edges_path": f"data/runtime/{SOURCE_PRICE_EDGES_ARTIFACT}",
         "source_price_edge_count": len(edges),
         "source_price_edge_sample": edges[:10],
-        "degraded_reasons": [gap["gap_type"] for gap in coverage_gaps],
+        "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "missing_required_state": missing_required_state,
         "self_model_ref": {
             "path": "data/runtime/qsase_self_model.json",
@@ -1214,6 +1221,7 @@ def validate_qsase_universal_source_price_matrix(
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_source_price_matrix_ready",
+        "qsase_source_price_matrix_ready_with_gaps",
         "qsase_source_price_matrix_degraded",
         "qsase_source_price_matrix_blocked",
     }:

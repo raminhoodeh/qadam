@@ -36,6 +36,27 @@ HARD_VETOES_ARTIFACT = "qsase_strategy_router_hard_vetoes.jsonl"
 SOFT_BLOCKERS_ARTIFACT = "qsase_strategy_router_soft_blockers.jsonl"
 DASHBOARD_SUMMARY_ARTIFACT = "qsase_strategy_router_dashboard_summary.json"
 
+STRATEGY_FOUNDRY_READY_STATUSES = {
+    "qsase_strategy_foundry_ready",
+    "qsase_strategy_foundry_ready_with_probationary_hypotheses",
+}
+
+SELF_MODEL_READY_STATUSES = {
+    "qsase_self_model_ready",
+    "qsase_self_model_ready_with_gaps",
+    "ready",
+}
+
+AKBER_READY_STATUSES = {
+    "qsase_akber_filter_integration_ready",
+    "qsase_akber_filter_integration_ready_with_holds",
+}
+
+SHADOW_SIMULATOR_READY_STATUSES = {
+    "qsase_shadow_strategy_simulator_ready",
+    "qsase_shadow_strategy_simulator_ready_with_holds",
+}
+
 SELF_MODEL_ARTIFACT = "qsase_self_model.json"
 STRATEGY_FOUNDRY_ARTIFACT = "qsase_strategy_hypotheses.json"
 STRATEGY_HYPOTHESES_ARTIFACT = "qsase_strategy_hypotheses.jsonl"
@@ -359,7 +380,7 @@ def _shadow_for_strategy(strategy: dict[str, Any], context: dict[str, Any]) -> l
 def _self_model_soft_blockers(context: dict[str, Any]) -> list[str]:
     blockers: list[str] = []
     self_model = context["self_model"]
-    if self_model.get("status") not in {"qsase_self_model_ready", "ready"}:
+    if self_model.get("status") not in SELF_MODEL_READY_STATUSES:
         blockers.append("self_model_not_ready")
     for component in self_model.get("degraded_components", []):
         if isinstance(component, dict):
@@ -456,10 +477,16 @@ def apply_router_vetoes(strategy: dict[str, Any], context: dict[str, Any]) -> di
         soft.append("open_order_state_requires_downstream_duplicate_check")
     if context["shadow_simulator"].get("candidate_for_router_count", 0) == 0:
         soft.append("shadow_replay_has_no_router_candidate")
-    if context["akber_filter"].get("status") != "qsase_akber_filter_integration_ready":
+    if strategy.get("probationary_strategy_hypothesis") is True:
+        soft.append("missing_foundry_promotion_confirmation")
+    if context["akber_filter"].get("status") not in AKBER_READY_STATUSES:
         soft.append("akber_filter_artifact_degraded")
-    if context["strategy_foundry"].get("status") != "qsase_strategy_foundry_ready":
+    elif context["akber_filter"].get("status") == "qsase_akber_filter_integration_ready_with_holds":
+        soft.append("akber_filter_waiting_for_confirmation")
+    if context["strategy_foundry"].get("status") not in STRATEGY_FOUNDRY_READY_STATUSES:
         soft.append("strategy_foundry_artifact_degraded")
+    elif context["strategy_foundry"].get("status") == "qsase_strategy_foundry_ready_with_probationary_hypotheses":
+        soft.append("foundry_probationary_research_needs_confirmation")
     soft.extend(_self_model_soft_blockers(context))
     return {"hard_vetoes": sorted(set(hard)), "soft_blockers": sorted(set(soft))}
 
@@ -858,21 +885,23 @@ def build_strategy_router_decisions(settings: Settings | None = None) -> dict[st
     counts = _state_counts(decisions)
     repair_blockers = _system_repair_blockers(context)
     degraded_reasons: list[str] = []
-    if context["self_model"].get("status") != "qsase_self_model_ready":
+    if context["self_model"].get("status") not in SELF_MODEL_READY_STATUSES:
         degraded_reasons.append("self_model_not_ready")
-    if context["strategy_foundry"].get("status") != "qsase_strategy_foundry_ready":
+    if context["strategy_foundry"].get("status") not in STRATEGY_FOUNDRY_READY_STATUSES:
         degraded_reasons.append("strategy_foundry_degraded")
-    if context["akber_filter"].get("status") != "qsase_akber_filter_integration_ready":
+    if context["akber_filter"].get("status") not in AKBER_READY_STATUSES:
         degraded_reasons.append("akber_filter_degraded")
-    if context["shadow_simulator"].get("status") != "qsase_shadow_strategy_simulator_ready":
+    if context["shadow_simulator"].get("status") not in SHADOW_SIMULATOR_READY_STATUSES:
         degraded_reasons.append("shadow_simulator_degraded")
     if not strategies:
         degraded_reasons.append("no_strategy_inputs")
     status = "qsase_strategy_router_ready"
     if repair_blockers:
         status = "qsase_strategy_router_blocked"
-    elif degraded_reasons or not counts["paper_review_candidate"]:
+    elif degraded_reasons:
         status = "qsase_strategy_router_degraded"
+    elif not counts["paper_review_candidate"]:
+        status = "qsase_strategy_router_ready_no_paper_candidate"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_strategy_router_decisions",
@@ -977,6 +1006,7 @@ def validate_strategy_router_decisions(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_strategy_router_ready",
+        "qsase_strategy_router_ready_no_paper_candidate",
         "qsase_strategy_router_degraded",
         "qsase_strategy_router_blocked",
     }:

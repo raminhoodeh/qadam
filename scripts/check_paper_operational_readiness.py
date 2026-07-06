@@ -1639,8 +1639,18 @@ def main() -> int:
             errors.append("PT-10 armed unattended delegation while blocked")
         if written["paper_live_certification_blocker_count"] < 1:
             errors.append("PT-10 certification blockers are missing")
-    if written["paper_live_submission_delegation_allowed"] is not False:
-        errors.append("PT-10 unexpectedly delegated immediate paper submission")
+    paper_live_submission_expected = (
+        written["paper_live_certified"] is True
+        and written["paper_live_operation_allowed"] is True
+        and written["paper_live_unattended_execution_delegation_enabled"] is True
+        and written["paper_live_certification_qctrl_hold_active"] is not True
+        and written["active_paper_trading_automation_submit_step_allowed"] is True
+    )
+    if written["paper_live_submission_delegation_allowed"] is not paper_live_submission_expected:
+        if paper_live_submission_expected:
+            errors.append("PT-10 did not delegate guarded paper submission while certified")
+        else:
+            errors.append("PT-10 unexpectedly delegated immediate paper submission")
     if (
         written["paper_live_certification_qctrl_hold_active"] is True
         and written["paper_live_certification_submit_visible_as_held"] is not True

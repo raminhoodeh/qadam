@@ -4,19 +4,19 @@
   "component": {
     "comparisons": {
       "closed_paper_trade_count": {
-        "cockpit_portfolio": 78,
+        "cockpit_portfolio": 18,
         "lifecycle_poller": 0,
-        "paperops_summary": 78,
+        "paperops_summary": 18,
         "scanner_cadence": 7
       },
       "open_position_count": {
-        "cockpit_portfolio": 2,
+        "cockpit_portfolio": 0,
         "lifecycle_poller": 0,
-        "paperops_summary": 2,
+        "paperops_summary": 0,
         "scanner_cadence": 7
       },
       "submitted_paper_order_count": {
-        "cockpit_portfolio": 92,
+        "cockpit_portfolio": 38,
         "lifecycle_poller": 4,
         "paperops_summary": 0,
         "scanner_cadence": 7
@@ -59,7 +59,7 @@
     "status": "ready",
     "telemetry_reconciled_to_public_contract": true
   },
-  "generated_at": "2026-06-29T06:57:21.916277+00:00",
+  "generated_at": "2026-07-06T09:36:47.603251+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

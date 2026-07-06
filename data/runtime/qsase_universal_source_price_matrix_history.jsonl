@@ -7,3 +7,6 @@
 {"coverage_gap_count": 1, "generated_at": "2026-06-29T05:08:27.697085+00:00", "source_count": 41, "source_price_edge_count": 6232, "status": "qsase_source_price_matrix_degraded", "watched_market_count": 19}
 {"coverage_gap_count": 1, "generated_at": "2026-06-29T06:57:21.961874+00:00", "source_count": 41, "source_price_edge_count": 6232, "status": "qsase_source_price_matrix_degraded", "watched_market_count": 19}
 {"coverage_gap_count": 1, "generated_at": "2026-06-29T06:57:22.410804+00:00", "source_count": 41, "source_price_edge_count": 6232, "status": "qsase_source_price_matrix_degraded", "watched_market_count": 19}
+{"coverage_gap_count": 1, "generated_at": "2026-07-06T09:28:12.782132+00:00", "source_count": 41, "source_price_edge_count": 6232, "status": "qsase_source_price_matrix_ready_with_gaps", "watched_market_count": 19}
+{"coverage_gap_count": 1, "generated_at": "2026-07-06T09:36:35.264435+00:00", "source_count": 41, "source_price_edge_count": 6232, "status": "qsase_source_price_matrix_ready_with_gaps", "watched_market_count": 19}
+{"coverage_gap_count": 1, "generated_at": "2026-07-06T09:36:48.064260+00:00", "source_count": 41, "source_price_edge_count": 6232, "status": "qsase_source_price_matrix_ready_with_gaps", "watched_market_count": 19}

@@ -32,11 +32,11 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:29.005470+00:00",
+  "generated_at": "2026-07-06T14:40:43.883977+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
-  "repair_queue_count": 13,
+  "repair_queue_count": 14,
   "rows": [
     {
       "applied_strategy_change": false,
@@ -132,12 +132,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:f3db483e6edbfc7554c4"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:eb0eb95dbe2f06b4ff20"
       ],
       "component": "strategy_family",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "decrease_strategy_weight",
-      "repair_queue_id": "qsase-learning-approval:f3db483e6edbfc7554c4",
+      "repair_queue_id": "qsase-learning-approval:eb0eb95dbe2f06b4ff20",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -145,12 +145,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:c5f985f4767bf2952bce"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:20021cb6d31b805715c6"
       ],
       "component": "strategy_family",
       "next_allowed_action": "human or governance review required before any change",
-      "reason": "decrease_strategy_weight",
-      "repair_queue_id": "qsase-learning-approval:c5f985f4767bf2952bce",
+      "reason": "hold_strategy_weight",
+      "repair_queue_id": "qsase-learning-approval:20021cb6d31b805715c6",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -164,6 +164,19 @@
       "next_allowed_action": "human or governance review required before any change",
       "reason": "decrease_strategy_weight",
       "repair_queue_id": "qsase-learning-approval:6b491498e298cdbc600c",
+      "severity": "review",
+      "source": "learning_approval_queue",
+      "state": "pending_learning_approval"
+    },
+    {
+      "applied_strategy_change": false,
+      "artifact_refs": [
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:03116cf8886f6be37978"
+      ],
+      "component": "strategy_family",
+      "next_allowed_action": "human or governance review required before any change",
+      "reason": "hold_strategy_weight",
+      "repair_queue_id": "qsase-learning-approval:03116cf8886f6be37978",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"
@@ -197,12 +210,12 @@
     {
       "applied_strategy_change": false,
       "artifact_refs": [
-        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:2289adfe07ed47271990"
+        "data/runtime/qsase_learning_approval_queue.json#qsase-learning-approval:6f590b8bb6f84cda5c23"
       ],
       "component": "akber_filter",
       "next_allowed_action": "human or governance review required before any change",
       "reason": "tighten_akber_filter",
-      "repair_queue_id": "qsase-learning-approval:2289adfe07ed47271990",
+      "repair_queue_id": "qsase-learning-approval:6f590b8bb6f84cda5c23",
       "severity": "review",
       "source": "learning_approval_queue",
       "state": "pending_learning_approval"

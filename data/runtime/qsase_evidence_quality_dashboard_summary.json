@@ -1,5 +1,6 @@
 {
-  "akber_hold_count": 14,
+  "akber_hold_count": 6,
+  "akber_missing_context_count": 6,
   "akber_pass_count": 0,
   "artifact_refs": [
     "data/runtime/qsase_evidence_quality_engine.json",
@@ -9,22 +10,25 @@
   "boundary": "Evidence quality is review-only. It can explain whether a setup is research-only, held, shadow-only, or a Router/PaperOps paper-review candidate, but it cannot create orders, approvals, broker writes, proof credit, Telegram commands, or live capital.",
   "command_disabled": true,
   "evidence_record_count": 5,
-  "generated_at": "2026-07-06T12:02:17.023805+00:00",
+  "generated_at": "2026-07-06T13:41:31.635410+00:00",
   "held_for_evidence_count": 5,
   "historical_complete_forward_window_ratio": 0.0132,
+  "market_confirmation_packet_count": 6,
+  "market_confirmation_repair_request_count": 6,
+  "market_confirmation_status": "qsase_market_confirmation_ready_with_missing_inputs",
   "paper_review_candidate_count": 0,
   "public_safe": true,
   "read_only": true,
   "schema_version": "qsase_evidence_quality_engine.v1",
-  "source_freshness_ratio": 1.0,
+  "source_freshness_ratio": 0.5185,
   "status": "qsase_evidence_quality_ready_with_tradeability_holds",
   "summary": "Qadam evaluated 5 pattern setups for evidence quality. 0 are paper-review candidates and 5 are held for evidence. The main missing piece is evidence quality, not broker execution.",
   "top_pattern": {
-    "evidence_quality_score": 0.476,
-    "market_affected": "Silver (SI=F, SLV, SIL, PAAS)",
-    "next_action": "continue observation until the edge ledger records validation",
-    "tradeability_state": "hold_unvalidated_edge",
-    "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support."
+    "evidence_quality_score": 0.497,
+    "market_affected": "Oil (CL=F, BZ=F, USO, XLE)",
+    "next_action": "repair or clear the safety veto before any further promotion",
+    "tradeability_state": "blocked_safety_boundary",
+    "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high"
   },
   "validated_edge_count": 0
 }

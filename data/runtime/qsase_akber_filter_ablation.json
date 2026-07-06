@@ -34,16 +34,16 @@
     "trade_candidate_creation_allowed": false
   },
   "filter_contribution_attribution": {
-    "audit_only_count": 4,
+    "audit_only_count": 0,
     "claim_quality": "no_performance_claim_current_inputs",
-    "hold_count": 8,
+    "hold_count": 14,
     "pass_count": 0,
-    "veto_count": 4
+    "veto_count": 2
   },
-  "generated_at": "2026-06-29T06:57:28.139628+00:00",
+  "generated_at": "2026-07-06T09:36:53.802033+00:00",
   "historical_filter_replay_exists": true,
   "historical_improvement_observed": false,
-  "historical_memory_status": "qsase_historical_source_price_memory_degraded",
+  "historical_memory_status": "qsase_historical_source_price_memory_ready_with_gaps",
   "schema_version": "qsase_akber_filter_integration.v1",
   "status": "ablation_degraded_proxy_only_no_promoted_hypotheses",
   "tested_filter_record_count": 16,

@@ -2,46 +2,13 @@
   "artifact_id": "qsase:phase0:paper-lifecycle",
   "artifact_type": "qsase_phase0_paper_lifecycle",
   "component": {
-    "accepted_order_policy_records": [
-      {
-        "age_seconds": 24167,
-        "client_order_id_present": true,
-        "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-        "stale_after_seconds": 14400,
-        "submitted_at": "2026-06-29T00:14:34.884822035Z",
-        "symbol": "ITA"
-      },
-      {
-        "age_seconds": 24166,
-        "client_order_id_present": true,
-        "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-        "stale_after_seconds": 14400,
-        "submitted_at": "2026-06-29T00:14:35.712759574Z",
-        "symbol": "SMH"
-      },
-      {
-        "age_seconds": 13278,
-        "client_order_id_present": true,
-        "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-        "stale_after_seconds": 14400,
-        "submitted_at": "2026-06-29T03:16:03.36711304Z",
-        "symbol": "ITA"
-      },
-      {
-        "age_seconds": 13277,
-        "client_order_id_present": true,
-        "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-        "stale_after_seconds": 14400,
-        "submitted_at": "2026-06-29T03:16:04.261516499Z",
-        "symbol": "SMH"
-      }
-    ],
+    "accepted_order_policy_records": [],
     "ambiguous_accepted_order_count": 0,
     "broker_status_counts": {
-      "accepted": 4
+      "new": 4
     },
-    "cockpit_open_position_count": 2,
-    "cockpit_order_count": 92,
+    "cockpit_open_position_count": 0,
+    "cockpit_order_count": 38,
     "component": "paper_lifecycle",
     "degraded_reasons": [],
     "fill_event_count": 0,
@@ -99,13 +66,13 @@
       "telegram_inbound_authoritative": false
     },
     "source_artifact": "paperops_paper_lifecycle_poller.json",
-    "source_generated_at": "2026-06-29T06:34:17.027203+00:00",
+    "source_generated_at": "2026-07-06T09:34:56.778738+00:00",
     "source_status": "paper_lifecycle_poll_recorded",
-    "stale_accepted_order_count": 2,
-    "stale_accepted_order_policy_recorded": true,
+    "stale_accepted_order_count": 0,
+    "stale_accepted_order_policy_recorded": false,
     "status": "ready"
   },
-  "generated_at": "2026-06-29T06:57:21.916277+00:00",
+  "generated_at": "2026-07-06T09:36:47.603251+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

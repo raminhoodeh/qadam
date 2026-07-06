@@ -91,7 +91,6 @@
           "data/runtime/data_environment_map.json",
           "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
           "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-          "data/runtime/source_heartbeats.jsonl",
           "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
         ],
         "quorum_contributing_count": 6,
@@ -108,7 +107,7 @@
   },
   "credential_gated_source_count": 0,
   "degraded_source_count": 0,
-  "generated_at": "2026-06-29T06:57:22.410804+00:00",
+  "generated_at": "2026-07-06T09:36:48.064260+00:00",
   "public_safe": true,
   "schema_version": "qsase_universal_source_price_matrix.v1",
   "source_count": 41,
@@ -187,7 +186,6 @@
         "data/runtime/data_environment_map.json",
         "data/runtime/cockpit-status.json:mission_control.data_sources.ledger",
         "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-        "data/runtime/source_heartbeats.jsonl",
         "data/runtime/market_context_packet.json:recent_packets.source_taxonomy"
       ],
       "quorum_contributing_count": 6,
@@ -203,9 +201,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -244,9 +242,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -292,7 +290,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
+      "observed_timestamp": "2026-07-06T09:36:48.064260+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -326,9 +324,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -372,9 +370,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -413,9 +411,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -459,9 +457,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -500,9 +498,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -541,9 +539,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -587,9 +585,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -628,9 +626,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -669,9 +667,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -710,9 +708,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -751,9 +749,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -797,9 +795,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -838,9 +836,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -879,9 +877,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -920,9 +918,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -961,9 +959,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1002,9 +1000,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1048,9 +1046,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1094,9 +1092,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1135,9 +1133,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1176,9 +1174,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1217,9 +1215,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1258,9 +1256,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1275,11 +1273,6 @@
         },
         {
           "artifact": "data/runtime/paperops_autonomous_pass_summary.json:source_gap_visibility",
-          "public_safe": true,
-          "role": "source_state"
-        },
-        {
-          "artifact": "data/runtime/source_heartbeats.jsonl",
           "public_safe": true,
           "role": "source_state"
         }
@@ -1309,9 +1302,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1355,9 +1348,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1398,7 +1391,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
+      "observed_timestamp": "2026-07-06T09:36:48.064260+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1432,9 +1425,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1473,9 +1466,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1519,9 +1512,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1562,7 +1555,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
+      "observed_timestamp": "2026-07-06T09:36:48.064260+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1603,7 +1596,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
+      "observed_timestamp": "2026-07-06T09:36:48.064260+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1637,9 +1630,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1683,9 +1676,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1724,9 +1717,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1770,9 +1763,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": false,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1811,9 +1804,9 @@
       "durable_replay_reference": null,
       "eligible_for_signal_review": true,
       "execution_allowed": false,
-      "freshness_status": "fresh",
-      "observed_age_seconds": 1340,
-      "observed_timestamp": "2026-06-29T06:35:02.326059+00:00",
+      "freshness_status": "recent",
+      "observed_age_seconds": 51309,
+      "observed_timestamp": "2026-07-05T19:21:38.325617+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1854,7 +1847,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
+      "observed_timestamp": "2026-07-06T09:36:48.064260+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {
@@ -1890,7 +1883,7 @@
       "execution_allowed": false,
       "freshness_status": "fresh",
       "observed_age_seconds": 0,
-      "observed_timestamp": "2026-06-29T06:57:22.410804+00:00",
+      "observed_timestamp": "2026-07-06T09:36:48.064260+00:00",
       "proof_credit_allowed": false,
       "provenance": [
         {

@@ -2,7 +2,7 @@
   "artifact_type": "qsase_full_universe_pattern_search_dashboard_summary",
   "authority_flags_false": true,
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:27.252165+00:00",
+  "generated_at": "2026-07-06T09:36:52.886513+00:00",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
   "no_proof_credit_granted": true,
@@ -10,7 +10,7 @@
   "patterns_are_not_strategies": true,
   "public_safe": true,
   "schema_version": "qsase_full_universe_pattern_search.v1",
-  "status": "qsase_full_universe_pattern_search_degraded",
+  "status": "qsase_full_universe_pattern_search_ready_with_research_gaps",
   "summary_rows": [
     {
       "label": "Matrix rows scanned",

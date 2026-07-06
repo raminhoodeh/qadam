@@ -2,7 +2,7 @@
   "artifact_type": "qsase_historical_source_price_memory_dashboard_summary",
   "authority_flags_false": true,
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:22.726092+00:00",
+  "generated_at": "2026-07-06T09:36:48.381940+00:00",
   "live_send_allowed": false,
   "memory_state_language": "Historical memory informs research. It is not paper proof ledger credit.",
   "paper_growth_trial_calendar_advanced": false,
@@ -10,7 +10,7 @@
   "public_safe": true,
   "research_only": true,
   "schema_version": "qsase_historical_source_price_memory.v1",
-  "status": "qsase_historical_source_price_memory_degraded",
+  "status": "qsase_historical_source_price_memory_ready_with_gaps",
   "summary_rows": [
     {
       "label": "Historical memory records",

@@ -60,7 +60,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "baseline_current_strategy",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -72,7 +72,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "historical_hypothesis_replay",
-      "shadow_replay_id": "qsase-shadow:1a95b5421d308f0c2d4d"
+      "shadow_replay_id": "qsase-shadow:6acbaf3b4b5f51b7b54e"
     },
     {
       "actual_decision": {
@@ -107,7 +107,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "forward_shadow_replay",
-      "shadow_replay_id": "qsase-shadow:0ce9287225b238e59e85"
+      "shadow_replay_id": "qsase-shadow:e79c09f3e82732e3b024"
     },
     {
       "actual_decision": {
@@ -130,7 +130,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "akber_strict_veto",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -142,7 +142,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "counterfactual_strategy_replay",
-      "shadow_replay_id": "qsase-shadow:1b77383e89ef7c18021d"
+      "shadow_replay_id": "qsase-shadow:54afd106fa25a94cee92"
     },
     {
       "actual_decision": {
@@ -165,7 +165,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "baseline_current_strategy",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -177,7 +177,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "historical_hypothesis_replay",
-      "shadow_replay_id": "qsase-shadow:6dbb4780779e87e14c45"
+      "shadow_replay_id": "qsase-shadow:088dabfc86f99e70032e"
     },
     {
       "actual_decision": {
@@ -212,7 +212,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "forward_shadow_replay",
-      "shadow_replay_id": "qsase-shadow:225e7f56cab22c09916b"
+      "shadow_replay_id": "qsase-shadow:8be0018b22968452aacd"
     },
     {
       "actual_decision": {
@@ -235,7 +235,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "akber_strict_veto",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -247,7 +247,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "counterfactual_strategy_replay",
-      "shadow_replay_id": "qsase-shadow:91bc9793815ee909d22c"
+      "shadow_replay_id": "qsase-shadow:8798b36603418957e66d"
     },
     {
       "actual_decision": {
@@ -270,7 +270,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "baseline_current_strategy",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -282,7 +282,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "historical_hypothesis_replay",
-      "shadow_replay_id": "qsase-shadow:782ad2b17476eae89e23"
+      "shadow_replay_id": "qsase-shadow:f0f7f8d939e5b4684114"
     },
     {
       "actual_decision": {
@@ -317,7 +317,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "forward_shadow_replay",
-      "shadow_replay_id": "qsase-shadow:fdf482935f383dee912a"
+      "shadow_replay_id": "qsase-shadow:842be43671352719e445"
     },
     {
       "actual_decision": {
@@ -340,7 +340,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "akber_strict_veto",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -352,7 +352,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "counterfactual_strategy_replay",
-      "shadow_replay_id": "qsase-shadow:018517415cff46ea000c"
+      "shadow_replay_id": "qsase-shadow:ef46ff4046852709c7b5"
     },
     {
       "actual_decision": {
@@ -375,7 +375,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "baseline_current_strategy",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -387,7 +387,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "historical_hypothesis_replay",
-      "shadow_replay_id": "qsase-shadow:51d71cec74aa96e81ee9"
+      "shadow_replay_id": "qsase-shadow:3aaec530705468987018"
     },
     {
       "actual_decision": {
@@ -422,7 +422,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "forward_shadow_replay",
-      "shadow_replay_id": "qsase-shadow:bfc3883fb8690928c722"
+      "shadow_replay_id": "qsase-shadow:171aeee018cef35c1053"
     },
     {
       "actual_decision": {
@@ -445,7 +445,7 @@
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
         "decision_type": "would_have_held",
-        "reason": "Foundry marked this as shadow-only/audit evidence; Akber records practical gaps without router promotion.",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "akber_strict_veto",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -457,7 +457,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "counterfactual_strategy_replay",
-      "shadow_replay_id": "qsase-shadow:5833e85b3078db74883e"
+      "shadow_replay_id": "qsase-shadow:a0bc856b4d882355b7cc"
     },
     {
       "actual_decision": {
@@ -473,14 +473,14 @@
         "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
         "delta_drawdown": 0.0,
         "delta_expectancy": 0.0,
-        "delta_false_positive_rate": -0.02,
+        "delta_false_positive_rate": 0.0,
         "performance_claim_allowed": false,
         "variant_added_value": false
       },
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
-        "decision_type": "would_have_rejected_or_held",
-        "reason": "quantum_ambiguity_too_high",
+        "decision_type": "would_have_held",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "baseline_current_strategy",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -492,7 +492,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "historical_hypothesis_replay",
-      "shadow_replay_id": "qsase-shadow:06748ec50c6677595ab3"
+      "shadow_replay_id": "qsase-shadow:9594f1b7efa366a6c4f4"
     },
     {
       "actual_decision": {
@@ -508,14 +508,14 @@
         "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
         "delta_drawdown": 0.0,
         "delta_expectancy": 0.0,
-        "delta_false_positive_rate": -0.02,
+        "delta_false_positive_rate": 0.0,
         "performance_claim_allowed": false,
         "variant_added_value": false
       },
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
-        "decision_type": "would_have_rejected_or_held",
-        "reason": "quantum_ambiguity_too_high",
+        "decision_type": "would_have_watched_forward",
+        "reason": "Forward shadow watch records future evidence requirements without an order.",
         "variant_key": "forward_watch_only",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -527,7 +527,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "forward_shadow_replay",
-      "shadow_replay_id": "qsase-shadow:c34b36c36e13f3e44a06"
+      "shadow_replay_id": "qsase-shadow:b49b419ca8b8e0e43f8d"
     },
     {
       "actual_decision": {
@@ -543,14 +543,14 @@
         "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
         "delta_drawdown": 0.0,
         "delta_expectancy": 0.0,
-        "delta_false_positive_rate": -0.02,
+        "delta_false_positive_rate": 0.0,
         "performance_claim_allowed": false,
-        "variant_added_value": true
+        "variant_added_value": false
       },
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
-        "decision_type": "would_have_rejected_or_held",
-        "reason": "quantum_ambiguity_too_high",
+        "decision_type": "would_have_held",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "akber_strict_veto",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -562,7 +562,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "counterfactual_strategy_replay",
-      "shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800"
+      "shadow_replay_id": "qsase-shadow:a7c99d5986cc87ab15c1"
     },
     {
       "actual_decision": {
@@ -578,14 +578,14 @@
         "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
         "delta_drawdown": 0.0,
         "delta_expectancy": 0.0,
-        "delta_false_positive_rate": -0.02,
+        "delta_false_positive_rate": 0.0,
         "performance_claim_allowed": false,
         "variant_added_value": false
       },
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
-        "decision_type": "would_have_rejected_or_held",
-        "reason": "quantum_ambiguity_too_high",
+        "decision_type": "would_have_held",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "baseline_current_strategy",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -597,7 +597,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "historical_hypothesis_replay",
-      "shadow_replay_id": "qsase-shadow:0b9e6c4081b70fe0b807"
+      "shadow_replay_id": "qsase-shadow:2a4443b81bc24fe5a38d"
     },
     {
       "actual_decision": {
@@ -613,14 +613,14 @@
         "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
         "delta_drawdown": 0.0,
         "delta_expectancy": 0.0,
-        "delta_false_positive_rate": -0.02,
+        "delta_false_positive_rate": 0.0,
         "performance_claim_allowed": false,
         "variant_added_value": false
       },
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
-        "decision_type": "would_have_rejected_or_held",
-        "reason": "quantum_ambiguity_too_high",
+        "decision_type": "would_have_watched_forward",
+        "reason": "Forward shadow watch records future evidence requirements without an order.",
         "variant_key": "forward_watch_only",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -632,7 +632,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "forward_shadow_replay",
-      "shadow_replay_id": "qsase-shadow:72e4c5ee44314f9860ee"
+      "shadow_replay_id": "qsase-shadow:685c845b948fa3968244"
     },
     {
       "actual_decision": {
@@ -648,14 +648,14 @@
         "baseline_variant_id": "qsase-shadow-variant:20e88723818a04bbc6a8",
         "delta_drawdown": 0.0,
         "delta_expectancy": 0.0,
-        "delta_false_positive_rate": -0.02,
+        "delta_false_positive_rate": 0.0,
         "performance_claim_allowed": false,
-        "variant_added_value": true
+        "variant_added_value": false
       },
       "evidence_class": "actual_vs_hypothetical_reference",
       "hypothetical_decision": {
-        "decision_type": "would_have_rejected_or_held",
-        "reason": "quantum_ambiguity_too_high",
+        "decision_type": "would_have_held",
+        "reason": "Akber cannot pass because required practical context is missing.",
         "variant_key": "akber_strict_veto",
         "would_have_created_execution_intent": false,
         "would_have_created_paper_order": false,
@@ -667,7 +667,7 @@
       "paper_proof_ledger_mutated": false,
       "proof_credit_allowed": false,
       "replay_mode": "counterfactual_strategy_replay",
-      "shadow_replay_id": "qsase-shadow:f88d958bb752f88d4458"
+      "shadow_replay_id": "qsase-shadow:93a7735b4d84fe0eba1f"
     },
     {
       "actual_decision": {
@@ -1721,7 +1721,7 @@
     }
   ],
   "evaluated_comparison_count": 48,
-  "generated_at": "2026-06-29T06:57:28.269799+00:00",
+  "generated_at": "2026-07-06T09:36:53.938106+00:00",
   "paper_order_created": false,
   "paper_proof_ledger_mutated": false,
   "proof_credit_allowed": false,

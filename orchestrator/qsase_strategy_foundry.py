@@ -33,6 +33,16 @@ FAMILY_MAP_ARTIFACT = "qsase_strategy_family_map.json"
 REJECTED_HYPOTHESES_ARTIFACT = "qsase_rejected_strategy_hypotheses.jsonl"
 DASHBOARD_SUMMARY_ARTIFACT = "qsase_strategy_foundry_dashboard_summary.json"
 
+FOUNDRY_READY_STATUSES = {
+    "qsase_strategy_foundry_ready",
+    "qsase_strategy_foundry_ready_with_probationary_hypotheses",
+}
+
+NONLINEAR_LAB_READY_STATUSES = {
+    "qsase_nonlinear_quantum_pattern_lab_ready",
+    "qsase_nonlinear_quantum_pattern_lab_ready_with_holds",
+}
+
 NONLINEAR_LAB_ARTIFACT = "qsase_nonlinear_quantum_pattern_lab.json"
 NONLINEAR_RESULTS_ARTIFACT = "qsase_nonlinear_pattern_results.jsonl"
 QUANTUM_REVIEWS_ARTIFACT = "qsase_quantum_pattern_reviews.jsonl"
@@ -590,6 +600,59 @@ def _hypothesis_eligible(pattern: dict[str, Any], quantum_review: dict[str, Any]
     return True
 
 
+def _probationary_hypothesis_allowed(
+    pattern: dict[str, Any],
+    quantum_review: dict[str, Any] | None,
+    paperability: dict[str, Any],
+    rejection_reasons: list[str],
+) -> bool:
+    """Allow structured research into Akber/Router review without PaperOps authority."""
+    hard_research_blocks = {
+        "point_in_time_leakage",
+        "source_quorum_weak",
+        "quantum_ambiguity_too_high",
+        "instrument_is_observable_or_futures_symbol_not_guarded_paper_route",
+        "no_clean_paper_expression",
+        "live_only_expression_not_allowed",
+    }
+    if hard_research_blocks.intersection(rejection_reasons):
+        return False
+    sample = pattern.get("sample", {})
+    if sample.get("point_in_time_safe") is not True:
+        return False
+    if paperability.get("paper_review_candidate") is not True:
+        return False
+    if not pattern.get("source_recipe", {}).get("source_names"):
+        return False
+    if not quantum_review or quantum_review.get("review_state") == "quantum_hold":
+        return False
+    return True
+
+
+def _build_probationary_hypothesis(
+    pattern: dict[str, Any],
+    family_map: dict[str, Any],
+    quantum_review: dict[str, Any] | None,
+    generated_at: str,
+    rejection_reasons: list[str],
+) -> dict[str, Any]:
+    hypothesis = _build_hypothesis(pattern, family_map, quantum_review, generated_at)
+    hypothesis["status"] = "probationary_strategy_hypothesis_recorded_not_approved"
+    hypothesis["hypothesis_type"] = f"probationary_{hypothesis['hypothesis_type']}"
+    hypothesis["probationary_strategy_hypothesis"] = True
+    hypothesis["promotion_blockers"] = sorted(set(rejection_reasons))
+    hypothesis["promotion_required_before_paper_review"] = True
+    hypothesis["route_readiness"]["strategy_router_eligible"] = False
+    hypothesis["route_readiness"]["paper_review_candidate"] = False
+    hypothesis["learning_value"]["expected_learning_class"] = (
+        f"probationary_{hypothesis['learning_value']['expected_learning_class']}"
+    )
+    hypothesis["learning_value"]["probationary_reason"] = (
+        "Pattern is structured enough for Akber and router review, but not strong enough for PaperOps."
+    )
+    return hypothesis
+
+
 def _strategy_logic(pattern: dict[str, Any], catalyst: str) -> dict[str, Any]:
     market = pattern.get("market_expression", {})
     return {
@@ -855,8 +918,19 @@ def build_strategy_hypotheses(settings: Settings | None = None) -> dict[str, Any
         family_map = family_by_pattern.get(pattern.get("nonlinear_pattern_id"), {})
         quantum_review = quantum_by_source.get(str(pattern.get("nonlinear_pattern_id")))
         paperability = _paperability(pattern, family_map)
+        rejection_reasons = _hypothesis_rejection_reasons(pattern, quantum_review, paperability)
         if _hypothesis_eligible(pattern, quantum_review, paperability):
             hypotheses.append(_build_hypothesis(pattern, family_map, quantum_review, generated_at))
+        elif _probationary_hypothesis_allowed(pattern, quantum_review, paperability, rejection_reasons):
+            hypotheses.append(
+                _build_probationary_hypothesis(
+                    pattern,
+                    family_map,
+                    quantum_review,
+                    generated_at,
+                    rejection_reasons,
+                )
+            )
         else:
             rejected.append(_build_rejection(pattern, family_map, quantum_review, generated_at))
     rejected.extend(
@@ -871,6 +945,10 @@ def build_strategy_hypotheses(settings: Settings | None = None) -> dict[str, Any
     )
     shadow_only_monitor_count = sum(1 for record in rejected if record.get("decision_type") == "shadow_only_monitor")
     rejected_pattern_count = len(rejected)
+    probationary_strategy_hypothesis_count = sum(
+        1 for hypothesis in hypotheses if hypothesis.get("probationary_strategy_hypothesis") is True
+    )
+    fully_promoted_hypothesis_count = len(hypotheses) - probationary_strategy_hypothesis_count
     missing_required_state: list[str] = []
     if not context["nonlinear_lab"]:
         missing_required_state.append("qsase_nonlinear_quantum_pattern_lab_missing")
@@ -881,17 +959,24 @@ def build_strategy_hypotheses(settings: Settings | None = None) -> dict[str, Any
     if not context["phase4_strategy_universe"]:
         missing_required_state.append("phase4_candidate_strategy_universe_missing")
     degraded_reasons: list[str] = []
-    if context["nonlinear_lab"].get("status") != "qsase_nonlinear_quantum_pattern_lab_ready":
+    research_hold_reasons: list[str] = []
+    if context["nonlinear_lab"].get("status") not in NONLINEAR_LAB_READY_STATUSES:
         degraded_reasons.append("nonlinear_quantum_lab_degraded")
+    elif context["nonlinear_lab"].get("status") == "qsase_nonlinear_quantum_pattern_lab_ready_with_holds":
+        research_hold_reasons.append("nonlinear_quantum_lab_has_research_holds")
     if not hypotheses:
         degraded_reasons.append("no_strategy_hypotheses_promoted_current_inputs")
+    if probationary_strategy_hypothesis_count:
+        research_hold_reasons.append("probationary_hypotheses_need_confirmation_before_paper_review")
     if rejected:
-        degraded_reasons.append("rejected_or_shadow_only_hypotheses_present")
+        research_hold_reasons.append("some_patterns_remain_rejected_or_shadow_only")
     status = "qsase_strategy_foundry_ready"
     if missing_required_state:
         status = "qsase_strategy_foundry_blocked"
     elif degraded_reasons:
         status = "qsase_strategy_foundry_degraded"
+    elif probationary_strategy_hypothesis_count and fully_promoted_hypothesis_count == 0:
+        status = "qsase_strategy_foundry_ready_with_probationary_hypotheses"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_strategy_foundry",
@@ -906,6 +991,8 @@ def build_strategy_hypotheses(settings: Settings | None = None) -> dict[str, Any
         "research_only": True,
         "input_pattern_count": len(patterns),
         "strategy_hypothesis_count": len(hypotheses),
+        "fully_promoted_hypothesis_count": fully_promoted_hypothesis_count,
+        "probationary_strategy_hypothesis_count": probationary_strategy_hypothesis_count,
         "existing_family_match_count": existing_family_match_count,
         "new_family_proposal_count": new_family_proposal_count,
         "strategy_modification_proposal_count": existing_family_match_count,
@@ -947,6 +1034,7 @@ def build_strategy_hypotheses(settings: Settings | None = None) -> dict[str, Any
         },
         "missing_required_state": missing_required_state,
         "degraded_reasons": sorted(set(degraded_reasons)),
+        "research_hold_reasons": sorted(set(research_hold_reasons)),
         "strategy_hypotheses_path": f"data/runtime/{HYPOTHESES_ARTIFACT}",
         "rejected_strategy_hypotheses_path": f"data/runtime/{REJECTED_HYPOTHESES_ARTIFACT}",
         "strategy_family_map_path": f"data/runtime/{FAMILY_MAP_ARTIFACT}",
@@ -1025,6 +1113,7 @@ def validate_strategy_hypotheses(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_strategy_foundry_ready",
+        "qsase_strategy_foundry_ready_with_probationary_hypotheses",
         "qsase_strategy_foundry_degraded",
         "qsase_strategy_foundry_blocked",
     }:
@@ -1062,6 +1151,8 @@ def validate_strategy_hypotheses(payload: dict[str, Any]) -> list[str]:
         hypotheses = []
     if payload.get("strategy_hypothesis_count") != len(hypotheses):
         errors.append("strategy_hypothesis_count_mismatch")
+    if payload.get("probationary_strategy_hypothesis_count", 0) > payload.get("strategy_hypothesis_count", 0):
+        errors.append("probationary_hypothesis_count_exceeds_hypothesis_count")
     seen_ids: set[str] = set()
     for hypothesis in hypotheses:
         hypothesis_id = hypothesis.get("strategy_hypothesis_id")
@@ -1176,6 +1267,8 @@ def _dashboard_summary(payload: dict[str, Any]) -> dict[str, Any]:
         latest_blocker = ",".join(payload["missing_required_state"])
     elif payload.get("degraded_reasons"):
         latest_blocker = ",".join(payload["degraded_reasons"])
+    elif payload.get("research_hold_reasons"):
+        latest_blocker = ",".join(payload["research_hold_reasons"])
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_strategy_foundry_dashboard_summary",
@@ -1187,6 +1280,7 @@ def _dashboard_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "summary_rows": [
             {"label": "Foundry status", "value": payload["status"]},
             {"label": "Hypotheses", "value": payload["strategy_hypothesis_count"]},
+            {"label": "Probationary", "value": payload.get("probationary_strategy_hypothesis_count", 0)},
             {"label": "Existing-family matches", "value": payload["existing_family_match_count"]},
             {"label": "New-family proposals", "value": payload["new_family_proposal_count"]},
             {"label": "Rejected records", "value": payload["rejected_pattern_count"]},

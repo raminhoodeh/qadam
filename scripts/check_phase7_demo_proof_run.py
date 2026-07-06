@@ -97,8 +97,12 @@ def main() -> int:
     forced_trade_errors = validate_phase7_demo_proof_run(forced_trade_probe)
 
     no_setup_trade_probe = deepcopy(written)
+    no_setup_trade_probe["qualified_setup_count"] = 0
+    no_setup_trade_probe["qualified_setups_exist"] = False
     no_setup_trade_probe["submitted_paper_order_count"] = 1
     no_setup_trade_probe["closed_proof_trade_count"] = 1
+    if no_setup_trade_probe.get("calendar_day_records"):
+        no_setup_trade_probe["calendar_day_records"][0]["qualified_setup_count"] = 0
     no_setup_trade_probe["calendar_day_records"][0]["proof_trade_count"] = 1
     no_setup_trade_errors = validate_phase7_demo_proof_run(no_setup_trade_probe)
 

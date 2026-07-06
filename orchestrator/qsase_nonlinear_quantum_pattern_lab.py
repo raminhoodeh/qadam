@@ -32,6 +32,16 @@ EVENTS_ARTIFACT = "qsase_nonlinear_quantum_pattern_lab_events.jsonl"
 HISTORY_ARTIFACT = "qsase_nonlinear_quantum_pattern_lab_history.jsonl"
 DASHBOARD_SUMMARY_ARTIFACT = "qsase_nonlinear_quantum_pattern_lab_dashboard_summary.json"
 
+LINEAR_LAB_READY_STATUSES = {
+    "qsase_linear_pattern_lab_ready",
+    "qsase_linear_pattern_lab_ready_with_holds",
+}
+
+HISTORICAL_MEMORY_READY_STATUSES = {
+    "qsase_historical_source_price_memory_ready",
+    "qsase_historical_source_price_memory_ready_with_gaps",
+}
+
 LINEAR_LAB_ARTIFACT = "qsase_linear_pattern_lab.json"
 LINEAR_RESULTS_ARTIFACT = "qsase_linear_backtest_results.jsonl"
 LINEAR_REJECTED_ARTIFACT = "qsase_linear_rejected_patterns.jsonl"
@@ -567,12 +577,17 @@ def build_nonlinear_pattern_results(settings: Settings | None = None) -> dict[st
     if not context["historical_memory"]:
         missing_required_state.append("qsase_historical_source_price_memory_missing")
     degraded_reasons: list[str] = []
-    if context["linear_lab"].get("status") != "qsase_linear_pattern_lab_ready":
+    hold_reasons: list[str] = []
+    if context["linear_lab"].get("status") not in LINEAR_LAB_READY_STATUSES:
         degraded_reasons.append("linear_pattern_lab_degraded")
-    if context["historical_memory"].get("status") != "qsase_historical_source_price_memory_ready":
+    elif context["linear_lab"].get("status") == "qsase_linear_pattern_lab_ready_with_holds":
+        hold_reasons.append("linear_pattern_lab_has_research_holds")
+    if context["historical_memory"].get("status") not in HISTORICAL_MEMORY_READY_STATUSES:
         degraded_reasons.append("historical_memory_degraded")
+    elif context["historical_memory"].get("status") == "qsase_historical_source_price_memory_ready_with_gaps":
+        hold_reasons.append("historical_memory_has_missing_forward_windows")
     if any(result["nonlinear_tests"]["overfit_risk_score"] > 0.55 for result in nonlinear_results):
-        degraded_reasons.append("nonlinear_overfit_controls_holding")
+        hold_reasons.append("nonlinear_overfit_controls_holding")
     accepted_count = sum(
         1 for result in nonlinear_results if result["nonlinear_tests"]["linear_baseline_beaten"]
     )
@@ -591,8 +606,10 @@ def build_nonlinear_pattern_results(settings: Settings | None = None) -> dict[st
     status = "qsase_nonlinear_quantum_pattern_lab_ready"
     if missing_required_state:
         status = "qsase_nonlinear_quantum_pattern_lab_blocked"
-    elif degraded_reasons or accepted_count == 0:
+    elif degraded_reasons:
         status = "qsase_nonlinear_quantum_pattern_lab_degraded"
+    elif hold_reasons or accepted_count == 0:
+        status = "qsase_nonlinear_quantum_pattern_lab_ready_with_holds"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "artifact_type": "qsase_nonlinear_quantum_pattern_lab",
@@ -628,6 +645,7 @@ def build_nonlinear_pattern_results(settings: Settings | None = None) -> dict[st
         },
         "missing_required_state": missing_required_state,
         "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "nonlinear_results_path": f"data/runtime/{NONLINEAR_RESULTS_ARTIFACT}",
         "quantum_reviews_path": f"data/runtime/{QUANTUM_REVIEWS_ARTIFACT}",
         "execution_allowed": False,
@@ -922,6 +940,7 @@ def validate_nonlinear_pattern_results(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_nonlinear_quantum_pattern_lab_ready",
+        "qsase_nonlinear_quantum_pattern_lab_ready_with_holds",
         "qsase_nonlinear_quantum_pattern_lab_degraded",
         "qsase_nonlinear_quantum_pattern_lab_blocked",
     }:

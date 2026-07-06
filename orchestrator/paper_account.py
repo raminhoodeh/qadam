@@ -45,6 +45,9 @@ ALPACA_READONLY_PATHS = frozenset(
     }
 )
 OPEN_ORDER_STATUSES = frozenset({"new", "accepted", "pending_new", "partially_filled"})
+PAPER_TRIAL_RESET_SCHEMA_VERSION = 1
+PAPER_TRIAL_RESET_RUNTIME_ARTIFACT = "paper_trial_reset_epoch.json"
+PAPER_TRIAL_RESET_HISTORY = "paper_trial_reset_epoch_history.jsonl"
 
 
 @dataclass(frozen=True)
@@ -161,6 +164,40 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def paper_trial_reset_epoch_paths(settings: Settings | None = None) -> tuple[Path, Path]:
+    runtime = Path((settings or Settings.from_env()).runtime_dir)
+    return (
+        runtime / PAPER_TRIAL_RESET_RUNTIME_ARTIFACT,
+        runtime / PAPER_TRIAL_RESET_HISTORY,
+    )
+
+
+def read_paper_trial_reset_epoch(settings: Settings | None = None) -> dict[str, Any]:
+    path, _ = paper_trial_reset_epoch_paths(settings)
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def write_paper_trial_reset_epoch(
+    epoch: dict[str, Any],
+    settings: Settings | None = None,
+) -> tuple[Path, Path]:
+    path, history_path = paper_trial_reset_epoch_paths(settings)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    output = dict(epoch)
+    output["schema_version"] = PAPER_TRIAL_RESET_SCHEMA_VERSION
+    output["artifact_type"] = "paper_trial_reset_epoch"
+    path.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with history_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(output, sort_keys=True) + "\n")
+    return path, history_path
+
+
 def _float(value: Any, default: float = 0.0) -> float:
     try:
         if value is None or value == "":
@@ -174,6 +211,23 @@ def _optional_float(value: Any) -> float | None:
     if value is None or value == "":
         return None
     return _float(value)
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = f"{text[:-1]}+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def _safe_id(prefix: str, value: Any) -> str:
@@ -597,13 +651,76 @@ class AlpacaReadOnlyPaperMirror:
             "portfolio_history": history if isinstance(history, dict) else {},
         }
 
+    def _order_timestamp(self, item: dict[str, Any]) -> datetime | None:
+        for key in ("submitted_at", "filled_at", "created_at", "updated_at"):
+            parsed = _parse_timestamp(item.get(key))
+            if parsed is not None:
+                return parsed
+        return None
+
+    def _epoch_order_payloads(
+        self,
+        orders_payload: list[Any],
+        reset_epoch: dict[str, Any],
+    ) -> tuple[list[dict[str, Any]], int]:
+        if not reset_epoch:
+            return [item for item in orders_payload if isinstance(item, dict)], 0
+        reset_at = _parse_timestamp(reset_epoch.get("reset_at"))
+        if reset_at is None:
+            return [item for item in orders_payload if isinstance(item, dict)], 0
+        kept: list[dict[str, Any]] = []
+        excluded_count = 0
+        for item in orders_payload:
+            if not isinstance(item, dict):
+                continue
+            timestamp = self._order_timestamp(item)
+            if timestamp is not None and timestamp >= reset_at:
+                kept.append(item)
+            else:
+                excluded_count += 1
+        return kept, excluded_count
+
+    def _epoch_position_payloads(
+        self,
+        positions_payload: list[Any],
+        reset_epoch: dict[str, Any],
+    ) -> tuple[list[dict[str, Any]], int]:
+        items = [item for item in positions_payload if isinstance(item, dict)]
+        if not reset_epoch:
+            return items, 0
+        excluded_symbols = {
+            str(symbol).upper()
+            for symbol in reset_epoch.get("broker_open_position_symbols_at_reset", [])
+            if str(symbol).strip()
+        }
+        if not excluded_symbols:
+            return items, 0
+        kept: list[dict[str, Any]] = []
+        excluded_count = 0
+        for item in items:
+            symbol = str(item.get("symbol") or "").upper()
+            if symbol and symbol in excluded_symbols:
+                excluded_count += 1
+            else:
+                kept.append(item)
+        return kept, excluded_count
+
     def sync(self) -> dict[str, Any]:
         payload = self.fetch()
         account = payload["account"]
-        positions_payload = payload["positions"]
-        orders_payload = payload["orders"]
+        raw_positions_payload = payload["positions"]
+        raw_orders_payload = payload["orders"]
         clock = payload["clock"]
         history = payload["portfolio_history"]
+        reset_epoch = read_paper_trial_reset_epoch(self.settings)
+        positions_payload, pre_reset_position_count = self._epoch_position_payloads(
+            raw_positions_payload,
+            reset_epoch,
+        )
+        orders_payload, pre_reset_order_count = self._epoch_order_payloads(
+            raw_orders_payload,
+            reset_epoch,
+        )
 
         positions = tuple(self._position_from_alpaca(item) for item in positions_payload if isinstance(item, dict))
         orders = tuple(self._order_from_alpaca(item) for item in orders_payload if isinstance(item, dict))
@@ -615,14 +732,31 @@ class AlpacaReadOnlyPaperMirror:
         latest_profit_loss = self._latest_profit_loss(history)
         latest_history_equity = self._latest_history_money(history, "equity")
         unrealized = round(sum(position.unrealized_pnl_gbp for position in positions), 2)
-        realized = round(latest_profit_loss - unrealized, 2) if latest_profit_loss is not None else 0.0
         account_currency = self._account_currency(account)
         display_currency = self._display_currency(account_currency)
         equity = self._money(account.get("equity") or account.get("portfolio_value"))
         cash = self._money(account.get("cash"))
         last_equity = self._money(account.get("last_equity") or equity)
-        peak_equity = max(equity, last_equity, float(self.settings.trial_balance_gbp))
-        drawdown_pct = round(max(0.0, (peak_equity - equity) / peak_equity * 100), 3) if peak_equity else 0.0
+        starting_balance = float(reset_epoch.get("trial_balance_gbp") or self.settings.trial_balance_gbp)
+        broker_equity_baseline = _optional_float(reset_epoch.get("broker_equity_baseline_gbp"))
+        broker_cash_baseline = _optional_float(reset_epoch.get("broker_cash_baseline_gbp"))
+        if broker_equity_baseline is not None:
+            current_balance = round(starting_balance + (equity - broker_equity_baseline), 2)
+        else:
+            current_balance = equity
+        if broker_cash_baseline is not None:
+            effective_cash = round(starting_balance + (cash - broker_cash_baseline), 2)
+        else:
+            effective_cash = cash
+        peak_equity = max(current_balance, starting_balance)
+        drawdown_pct = round(max(0.0, (peak_equity - current_balance) / peak_equity * 100), 3) if peak_equity else 0.0
+        realized = (
+            round(current_balance - starting_balance - unrealized, 2)
+            if broker_equity_baseline is not None
+            else round(latest_profit_loss - unrealized, 2)
+            if latest_profit_loss is not None
+            else 0.0
+        )
         reconciliation = self._reconcile_account_to_history(equity, latest_history_equity)
         snapshot = PaperAccountSnapshot(
             schema_version=PAPER_ACCOUNT_SCHEMA_VERSION,
@@ -631,10 +765,10 @@ class AlpacaReadOnlyPaperMirror:
             mode="paper",
             broker="alpaca_paper_readonly",
             connection_status="alpaca_paper_readonly_connected",
-            starting_balance_gbp=float(self.settings.trial_balance_gbp),
-            current_balance_gbp=equity,
-            cash_gbp=cash,
-            equity_gbp=equity,
+            starting_balance_gbp=starting_balance,
+            current_balance_gbp=current_balance,
+            cash_gbp=effective_cash,
+            equity_gbp=current_balance,
             peak_equity_gbp=round(peak_equity, 2),
             realized_pnl_gbp=realized,
             unrealized_pnl_gbp=unrealized,
@@ -648,11 +782,17 @@ class AlpacaReadOnlyPaperMirror:
             postmortem_complete_count=0,
             maturity_closed_trade_target=MATURITY_CLOSED_TRADE_TARGET,
             maturity_closed_trade_count=len(closed_trades),
-            timeline_status="alpaca_paper_readonly_mirrored",
+            timeline_status=(
+                "alpaca_paper_readonly_epoch_rebased"
+                if reset_epoch
+                else "alpaca_paper_readonly_mirrored"
+            ),
             observed_at=_now(),
             boundary=(
-                "Alpaca paper mirror is read-only: balance, positions, orders, and P&L only. "
-                "No broker write path, no live capital, no order placement."
+                "Alpaca paper mirror is read-only. When a Qadam paper-trial reset "
+                "epoch exists, pre-reset broker orders are excluded from the active "
+                "trial view and account value is rebased to the reset balance. No "
+                "broker write path, no live capital, no order placement."
             ),
             account_currency=account_currency,
             display_currency=display_currency,
@@ -703,6 +843,9 @@ class AlpacaReadOnlyPaperMirror:
             "broker_reconciliation_status": snapshot.broker_reconciliation_status,
             "broker_reconciliation_delta": snapshot.broker_reconciliation_delta,
             "market_clock": self._sanitize_clock(clock),
+            "reset_epoch": reset_epoch,
+            "pre_reset_order_count": pre_reset_order_count,
+            "pre_reset_position_count": pre_reset_position_count,
             "boundary": snapshot.boundary,
         }
         self._write_report(report)

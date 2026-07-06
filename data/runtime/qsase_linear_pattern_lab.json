@@ -66,7 +66,7 @@
     "artifact_type": "qsase_linear_pattern_lab_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-06-29T06:57:27.467528+00:00",
+    "generated_at": "2026-07-06T09:36:53.105948+00:00",
     "linear_success_is_research_evidence_only": true,
     "live_send_allowed": false,
     "no_paper_orders_created": true,
@@ -74,7 +74,7 @@
     "no_trade_candidates_created": true,
     "public_safe": true,
     "schema_version": "qsase_linear_pattern_lab.v1",
-    "status": "qsase_linear_pattern_lab_degraded",
+    "status": "qsase_linear_pattern_lab_ready_with_holds",
     "summary_rows": [
       {
         "label": "Tested relationships",
@@ -109,13 +109,9 @@
     "top_linear_status": "linear_inconclusive_candidate_for_nonlinear_review",
     "top_rejected_pattern_reason": "linear_inconclusive_candidate_for_nonlinear_review"
   },
-  "degraded_reasons": [
-    "coverage_blocked_patterns_present",
-    "full_universe_pattern_search_degraded",
-    "historical_memory_degraded"
-  ],
+  "degraded_reasons": [],
   "execution_allowed": false,
-  "generated_at": "2026-06-29T06:57:27.467528+00:00",
+  "generated_at": "2026-07-06T09:36:53.105948+00:00",
   "historical_memory": {
     "artifact": "data/runtime/qsase_historical_source_price_memory.json",
     "historical_record_count": 6232,
@@ -124,8 +120,13 @@
     "paper_proof_ledger_credit_allowed": false,
     "point_in_time_safety_required": true,
     "records_artifact": "data/runtime/qsase_historical_source_price_memory.jsonl",
-    "status": "qsase_historical_source_price_memory_degraded"
+    "status": "qsase_historical_source_price_memory_ready_with_gaps"
   },
+  "hold_reasons": [
+    "coverage_blocked_patterns_present",
+    "full_universe_pattern_search_has_rejected_patterns",
+    "historical_memory_has_missing_forward_windows"
+  ],
   "inconclusive_linear_pattern_count": 8,
   "input_artifacts": {
     "candidate_patterns": "data/runtime/qsase_candidate_patterns.jsonl",
@@ -164,7 +165,7 @@
   "results_path": "data/runtime/qsase_linear_backtest_results.jsonl",
   "schema_version": "qsase_linear_pattern_lab.v1",
   "source_count": 41,
-  "status": "qsase_linear_pattern_lab_degraded",
+  "status": "qsase_linear_pattern_lab_ready_with_holds",
   "test_families": [
     "event_study",
     "lead_lag",

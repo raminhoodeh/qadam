@@ -734,11 +734,20 @@ def build_historical_source_price_memory(settings: Settings | None = None) -> di
     if not edges:
         missing_required_state.append("qsase_source_price_edges_missing")
 
+    degraded_reasons: list[str] = []
+    hold_reasons: list[str] = []
+    if leakage["status"] != "leakage_checks_passed":
+        degraded_reasons.append("leakage_checks_not_passed")
+    if missing_windows:
+        hold_reasons.append("historical_forward_windows_missing_or_incomplete")
+
     status = "qsase_historical_source_price_memory_ready"
     if missing_required_state:
         status = "qsase_historical_source_price_memory_blocked"
-    elif missing_windows or leakage["status"] != "leakage_checks_passed":
+    elif degraded_reasons:
         status = "qsase_historical_source_price_memory_degraded"
+    elif hold_reasons:
+        status = "qsase_historical_source_price_memory_ready_with_gaps"
 
     memory = {
         "schema_version": SCHEMA_VERSION,
@@ -783,6 +792,8 @@ def build_historical_source_price_memory(settings: Settings | None = None) -> di
         "replay_manifest": replay_manifest,
         "point_in_time_replay_index": replay_index,
         "missing_required_state": missing_required_state,
+        "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "leakage_checks": leakage,
         "calendar_integrity": replay_manifest["calendar_integrity"],
         "memory_record_sample": records[:10],
@@ -837,6 +848,7 @@ def validate_historical_source_price_memory(memory: dict[str, Any]) -> list[str]
         errors.append("schema_version_invalid")
     if memory.get("status") not in {
         "qsase_historical_source_price_memory_ready",
+        "qsase_historical_source_price_memory_ready_with_gaps",
         "qsase_historical_source_price_memory_degraded",
         "qsase_historical_source_price_memory_blocked",
     }:

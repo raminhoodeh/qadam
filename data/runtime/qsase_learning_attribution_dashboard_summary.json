@@ -1,7 +1,7 @@
 {
-  "active_proposal_count": 8,
+  "active_proposal_count": 9,
   "applied_update_count": 0,
-  "approval_required_count": 8,
+  "approval_required_count": 9,
   "artifact_type": "qsase_learning_attribution_dashboard_summary",
   "backtest_evidence_count": 16,
   "command_disabled": true,
@@ -73,7 +73,7 @@
     }
   ],
   "essay_free": true,
-  "generated_at": "2026-06-29T06:57:28.760222+00:00",
+  "generated_at": "2026-07-06T09:36:54.375014+00:00",
   "latest_attribution": "self_healing_repair_loop",
   "latest_attribution_state": "recorded_proposal_only",
   "latest_cause": "route_defect_prevented_evaluation",
@@ -90,7 +90,7 @@
   "proposal_applied": false,
   "public_safe": true,
   "real_paper_evidence_count": 0,
-  "rejected_hypothesis_learning_count": 16,
+  "rejected_hypothesis_learning_count": 10,
   "schema_version": "qsase_component_attribution_ledger.v1",
   "shadow_evidence_count": 48,
   "status": "qsase_learning_attribution_ledger_degraded",

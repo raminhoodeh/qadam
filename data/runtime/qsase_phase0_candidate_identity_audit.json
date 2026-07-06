@@ -24,7 +24,7 @@
     "qualified_setup_count": 2,
     "record_audit": [
       {
-        "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:46fe7f9e4a84118d",
+        "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:9041eeedfbb80a61",
         "derived_identity_fields": [
           "invalidation"
         ],
@@ -40,7 +40,7 @@
         "strategy_family_key": "defence_repricing_geopolitical_watch"
       },
       {
-        "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:4d205462dd54aabe",
+        "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:3abaaac6d3be3b16",
         "derived_identity_fields": [
           "invalidation"
         ],
@@ -80,11 +80,11 @@
       "telegram_inbound_authoritative": false
     },
     "source_artifact": "phase7_qualified_setup_ledger.json",
-    "source_generated_at": "2026-06-29T06:34:26.813828+00:00",
+    "source_generated_at": "2026-07-06T09:34:20.238000+00:00",
     "source_status": "read_only_q7_setups_recorded",
     "status": "ready"
   },
-  "generated_at": "2026-06-29T06:57:21.916277+00:00",
+  "generated_at": "2026-07-06T09:36:47.603251+00:00",
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
   "phase_name": "Operational Phase 0 - PaperOps Execution Reliability Baseline",
   "safety": {

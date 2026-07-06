@@ -5,3 +5,5 @@
 {"authority_flags_false": true, "event_type": "qsase_learning_attribution_ledger_written", "generated_at": "2026-06-28T21:06:55.844728+00:00", "proposal_first": true, "status": "qsase_learning_attribution_ledger_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_learning_attribution_ledger_written", "generated_at": "2026-06-28T21:07:56.278740+00:00", "proposal_first": true, "status": "qsase_learning_attribution_ledger_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_learning_attribution_ledger_written", "generated_at": "2026-06-29T06:57:28.760222+00:00", "proposal_first": true, "status": "qsase_learning_attribution_ledger_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_learning_attribution_ledger_written", "generated_at": "2026-07-06T09:36:41.939790+00:00", "proposal_first": true, "status": "qsase_learning_attribution_ledger_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_learning_attribution_ledger_written", "generated_at": "2026-07-06T09:36:54.375014+00:00", "proposal_first": true, "status": "qsase_learning_attribution_ledger_degraded"}

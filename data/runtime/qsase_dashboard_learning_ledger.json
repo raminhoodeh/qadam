@@ -1,12 +1,12 @@
 {
-  "active_proposal_count": 8,
+  "active_proposal_count": 9,
   "applied_update_count": 0,
   "artifact_refs": [
     "data/runtime/qsase_component_attribution_ledger.json",
     "data/runtime/qsase_component_attribution_ledger.jsonl"
   ],
   "artifact_type": "qsase_dashboard_learning_ledger",
-  "attribution_record_count": 102,
+  "attribution_record_count": 96,
   "authority": {
     "broker_write_allowed": false,
     "dashboard_command_disabled": true,
@@ -35,7 +35,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:29.005470+00:00",
+  "generated_at": "2026-07-06T14:40:43.883977+00:00",
   "paper_only": true,
   "public_safe": true,
   "read_only": true,
@@ -58,10 +58,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fc452707f4dc923459f"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:b9fae18680426aa2c224"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:0fc452707f4dc923459f",
+      "attribution_record_id": "qsase-attribution:b9fae18680426aa2c224",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -72,10 +72,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:dac65a9d55e354eedc1c"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:9a6210b4877382c6c21d"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:dac65a9d55e354eedc1c",
+      "attribution_record_id": "qsase-attribution:9a6210b4877382c6c21d",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -86,10 +86,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:f5869666bfbfc9766bc4"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e8886ff1c80772ebffc6"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:f5869666bfbfc9766bc4",
+      "attribution_record_id": "qsase-attribution:e8886ff1c80772ebffc6",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -100,10 +100,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:e9345e93d89bc54b2573"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:bcff1263e68a92d7e221"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:e9345e93d89bc54b2573",
+      "attribution_record_id": "qsase-attribution:bcff1263e68a92d7e221",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -114,10 +114,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0fd31e5a1a248b063652"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:82c142276086e82dd8ad"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:0fd31e5a1a248b063652",
+      "attribution_record_id": "qsase-attribution:82c142276086e82dd8ad",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -128,10 +128,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3dd0bf513f1767b16bd1"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:4fb64ecc1f41b46a217f"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:3dd0bf513f1767b16bd1",
+      "attribution_record_id": "qsase-attribution:4fb64ecc1f41b46a217f",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -142,10 +142,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58fd625bf731432d3e2c"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1cb7b954612175d24efa"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:58fd625bf731432d3e2c",
+      "attribution_record_id": "qsase-attribution:1cb7b954612175d24efa",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -156,10 +156,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:c1bb4872693831f64f1f"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1654299ac31d660ade7f"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:c1bb4872693831f64f1f",
+      "attribution_record_id": "qsase-attribution:1654299ac31d660ade7f",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -170,10 +170,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:58154269958668e7febd"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:185e087d2a999de626c1"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:58154269958668e7febd",
+      "attribution_record_id": "qsase-attribution:185e087d2a999de626c1",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -184,10 +184,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:98971e6918366aa1ad2e"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6eb5da7f398c7c36df88"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:98971e6918366aa1ad2e",
+      "attribution_record_id": "qsase-attribution:6eb5da7f398c7c36df88",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -198,10 +198,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:3789c5bb940e573d2de7"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:91adf0a26eda3a8aa68f"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:3789c5bb940e573d2de7",
+      "attribution_record_id": "qsase-attribution:91adf0a26eda3a8aa68f",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -212,10 +212,10 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:47f7a4b375016779c18a"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:6952456f2ab39b4ca19c"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:47f7a4b375016779c18a",
+      "attribution_record_id": "qsase-attribution:6952456f2ab39b4ca19c",
       "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
@@ -226,11 +226,11 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ec7e05560f43876cf4f6"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:0e83e1d4fd093730b17b"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:ec7e05560f43876cf4f6",
-      "cause": "rejected_correctly",
+      "attribution_record_id": "qsase-attribution:0e83e1d4fd093730b17b",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight",
@@ -240,11 +240,11 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:7e00dff1b21f6886b780"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:ef6fb577126335402413"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:7e00dff1b21f6886b780",
-      "cause": "rejected_correctly",
+      "attribution_record_id": "qsase-attribution:ef6fb577126335402413",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight",
@@ -254,11 +254,11 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:66f875d9dd0ed6df320a"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:df5ab5208aabba07b6b3"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:66f875d9dd0ed6df320a",
-      "cause": "rejected_correctly",
+      "attribution_record_id": "qsase-attribution:df5ab5208aabba07b6b3",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight",
@@ -268,11 +268,11 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:cf4bb2a95ae5adf78501"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:88fa732efb3f0013e404"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:cf4bb2a95ae5adf78501",
-      "cause": "rejected_correctly",
+      "attribution_record_id": "qsase-attribution:88fa732efb3f0013e404",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight",
@@ -282,11 +282,11 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:1532ee348058eb200227"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:09535ad1aa4cac643f77"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:1532ee348058eb200227",
-      "cause": "rejected_correctly",
+      "attribution_record_id": "qsase-attribution:09535ad1aa4cac643f77",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight",
@@ -296,11 +296,11 @@
     {
       "applied": false,
       "artifact_refs": [
-        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:97c3b2c7cb1f2c9f77b5"
+        "data/runtime/qsase_component_attribution_ledger.jsonl#qsase-attribution:40daeb0b512cc5ae305c"
       ],
       "attribution": "source_universe",
-      "attribution_record_id": "qsase-attribution:97c3b2c7cb1f2c9f77b5",
-      "cause": "rejected_correctly",
+      "attribution_record_id": "qsase-attribution:40daeb0b512cc5ae305c",
+      "cause": "insufficient_evidence",
       "evidence_class": "shadow_replay",
       "outcome": "shadow_replay",
       "proposal": "hold_strategy_weight",

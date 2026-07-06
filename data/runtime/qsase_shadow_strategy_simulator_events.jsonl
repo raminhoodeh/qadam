@@ -5,3 +5,7 @@
 {"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-06-28T21:06:55.287678+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-06-28T21:07:55.730794+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-06-29T06:57:28.267353+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-07-06T09:28:48.077724+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-07-06T09:29:36.966670+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_ready_with_holds"}
+{"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-07-06T09:36:41.511844+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_ready_with_holds"}
+{"authority_flags_false": true, "event_type": "qsase_shadow_strategy_simulator_written", "generated_at": "2026-07-06T09:36:53.935734+00:00", "public_safe": true, "status": "qsase_shadow_strategy_simulator_ready_with_holds"}

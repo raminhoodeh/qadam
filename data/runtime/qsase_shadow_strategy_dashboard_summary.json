@@ -5,8 +5,8 @@
   "authority_state": "shadow_replay_research_only_no_order",
   "candidate_for_router_count": 0,
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:28.267353+00:00",
-  "latest_blocked_reason": "akber_filter_degraded,blocked_shadow_replay_records_present,legacy_phase6_shadow_runner_blocked,no_promoted_strategy_hypotheses_to_shadow,strategy_foundry_degraded",
+  "generated_at": "2026-07-06T09:36:53.935734+00:00",
+  "latest_blocked_reason": "akber_filter_waiting_for_confirmation,historical_memory_has_missing_forward_windows,legacy_phase6_shadow_runner_blocked,strategy_foundry_has_probationary_hypotheses",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
   "no_proof_credit_granted": true,
@@ -14,11 +14,11 @@
   "proof_boundary": "shadow replay is not paper proof ledger credit",
   "public_safe": true,
   "schema_version": "qsase_shadow_strategy_simulator.v1",
-  "status": "qsase_shadow_strategy_simulator_degraded",
+  "status": "qsase_shadow_strategy_simulator_ready_with_holds",
   "summary_rows": [
     {
       "label": "Shadow simulator",
-      "value": "qsase_shadow_strategy_simulator_degraded"
+      "value": "qsase_shadow_strategy_simulator_ready_with_holds"
     },
     {
       "label": "Variants",
@@ -26,15 +26,15 @@
     },
     {
       "label": "Active replays",
-      "value": 32
+      "value": 48
     },
     {
       "label": "Blocked replays",
-      "value": 16
+      "value": 0
     },
     {
       "label": "Rejected variants",
-      "value": 40
+      "value": 34
     },
     {
       "label": "Router candidates",
@@ -49,7 +49,7 @@
       "value": "no order created"
     }
   ],
-  "top_rejected_variant": "forward_watch_only",
-  "top_shadow_replay_id": "qsase-shadow:23f7deddb0f176a57800",
-  "top_variant": "akber_strict_veto"
+  "top_rejected_variant": "baseline_current_strategy",
+  "top_shadow_replay_id": "qsase-shadow:6acbaf3b4b5f51b7b54e",
+  "top_variant": "baseline_current_strategy"
 }

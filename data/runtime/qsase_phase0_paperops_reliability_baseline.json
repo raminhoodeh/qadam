@@ -43,7 +43,7 @@
       "qualified_setup_count": 2,
       "record_audit": [
         {
-          "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:46fe7f9e4a84118d",
+          "candidate_identity": "paperops-candidate:defence_repricing_geopolitical_watch:9041eeedfbb80a61",
           "derived_identity_fields": [
             "invalidation"
           ],
@@ -59,7 +59,7 @@
           "strategy_family_key": "defence_repricing_geopolitical_watch"
         },
         {
-          "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:4d205462dd54aabe",
+          "candidate_identity": "paperops-candidate:semiconductor_policy_options_asymmetry:3abaaac6d3be3b16",
           "derived_identity_fields": [
             "invalidation"
           ],
@@ -99,7 +99,7 @@
         "telegram_inbound_authoritative": false
       },
       "source_artifact": "phase7_qualified_setup_ledger.json",
-      "source_generated_at": "2026-06-29T06:34:26.813828+00:00",
+      "source_generated_at": "2026-07-06T09:34:20.238000+00:00",
       "source_status": "read_only_q7_setups_recorded",
       "status": "ready"
     },
@@ -108,15 +108,15 @@
         "qadam.trade",
         "www.qadam.trade"
       ],
-      "cockpit_status_age_seconds": 1045,
-      "cockpit_status_generated_at": "2026-06-29T06:39:56.285703+00:00",
+      "cockpit_status_age_seconds": 70,
+      "cockpit_status_generated_at": "2026-07-06T09:35:37.383623+00:00",
       "cockpit_status_signature_exists": true,
       "component": "dashboard_deploy_hygiene",
       "dashboard_public_safe_boundary": "Public-safe read-only snapshot. It cannot trigger trading and contains no secrets.",
       "degraded_reasons": [],
-      "deployment_receipt_age_seconds": 1012,
-      "deployment_receipt_deployed_at": "2026-06-29T06:40:29.112Z",
-      "deployment_url": "https://qadam-pmu77yt8b-ramin-hoodehs-projects.vercel.app",
+      "deployment_receipt_age_seconds": 51023,
+      "deployment_receipt_deployed_at": "2026-07-05T19:26:24.288Z",
+      "deployment_url": "https://qadam-k8d4t06dp-ramin-hoodehs-projects.vercel.app",
       "gaps": [],
       "safety": {
         "backfill_allowed": false,
@@ -144,46 +144,13 @@
       "status": "ready"
     },
     "paper_lifecycle": {
-      "accepted_order_policy_records": [
-        {
-          "age_seconds": 24167,
-          "client_order_id_present": true,
-          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-          "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-29T00:14:34.884822035Z",
-          "symbol": "ITA"
-        },
-        {
-          "age_seconds": 24166,
-          "client_order_id_present": true,
-          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-          "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-29T00:14:35.712759574Z",
-          "symbol": "SMH"
-        },
-        {
-          "age_seconds": 13278,
-          "client_order_id_present": true,
-          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-          "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-29T03:16:03.36711304Z",
-          "symbol": "ITA"
-        },
-        {
-          "age_seconds": 13277,
-          "client_order_id_present": true,
-          "policy": "wait_only_read_only_phase0_audit_no_cancel_replace_close",
-          "stale_after_seconds": 14400,
-          "submitted_at": "2026-06-29T03:16:04.261516499Z",
-          "symbol": "SMH"
-        }
-      ],
+      "accepted_order_policy_records": [],
       "ambiguous_accepted_order_count": 0,
       "broker_status_counts": {
-        "accepted": 4
+        "new": 4
       },
-      "cockpit_open_position_count": 2,
-      "cockpit_order_count": 92,
+      "cockpit_open_position_count": 0,
+      "cockpit_order_count": 38,
       "component": "paper_lifecycle",
       "degraded_reasons": [],
       "fill_event_count": 0,
@@ -241,10 +208,10 @@
         "telegram_inbound_authoritative": false
       },
       "source_artifact": "paperops_paper_lifecycle_poller.json",
-      "source_generated_at": "2026-06-29T06:34:17.027203+00:00",
+      "source_generated_at": "2026-07-06T09:34:56.778738+00:00",
       "source_status": "paper_lifecycle_poll_recorded",
-      "stale_accepted_order_count": 2,
-      "stale_accepted_order_policy_recorded": true,
+      "stale_accepted_order_count": 0,
+      "stale_accepted_order_policy_recorded": false,
       "status": "ready"
     },
     "proof_lineage": {
@@ -259,7 +226,7 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "f7a6ca71-fb83-484e-9d1b-68bd5f329bda"
+          "trade_ref": "cca5d005-8600-42ab-83d3-c60fb8dbd978"
         },
         {
           "missing_lineage_fields": [
@@ -271,7 +238,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "de8391be-95d7-4e10-a301-3341af2815d6"
+          "trade_ref": "1f4d6ff2-c010-4001-955e-7f63fd89b4f0"
         },
         {
           "missing_lineage_fields": [
@@ -283,19 +250,7 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "fa5a2558-42b1-40ed-9257-0328d8888440"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "99cf2dcb-6cb4-4167-bc3f-b2a685c732f7"
+          "trade_ref": "ab4f1658-ae9b-4625-ace0-a01dc0414404"
         },
         {
           "missing_lineage_fields": [
@@ -307,7 +262,19 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "a77e329b-c1c9-4d2e-b020-741fbb767f9f"
+          "trade_ref": "71fce417-6736-486d-899c-12b2ddbfdafa"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "6a3520e0-c744-4464-87b9-322866f352ad"
         },
         {
           "missing_lineage_fields": [
@@ -319,43 +286,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "4f730c10-688a-42cf-a65a-9957a3040554"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "1fc986ad-eedc-4641-ac6b-4cb05cc0e17c"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "64db75f8-642d-416d-b8d5-a31de83ab58a"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "b54ab294-56b1-445d-b452-2e01a1621c13"
+          "trade_ref": "e4600ff7-6568-48eb-b314-a6efd90bf25a"
         },
         {
           "missing_lineage_fields": [
@@ -367,7 +298,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "bd0a2759-6085-43a7-b33c-e62ff7997db0"
+          "trade_ref": "8cc5441b-5074-467a-bb94-5d9646aa2fb9"
         },
         {
           "missing_lineage_fields": [
@@ -379,19 +310,7 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "8dda0d53-a1d1-466f-bede-74504f89f816"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "c074c290-4b30-4059-9b09-63ee42c79f0d"
+          "trade_ref": "83e2fd62-da96-4a85-8997-88784795ff82"
         },
         {
           "missing_lineage_fields": [
@@ -403,31 +322,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "b6dafc69-a3e0-4242-a3ba-52bea382a043"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "ff195703-87d3-499c-96a0-3e1b2529fa9e"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "da3870f3-359a-402b-b8dd-5a7701399f15"
+          "trade_ref": "daefa18e-4b41-4525-a823-60251ab097fd"
         },
         {
           "missing_lineage_fields": [
@@ -439,7 +334,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "66280f2f-822e-4a4c-8881-841919f645c7"
+          "trade_ref": "cd98ba75-ea3a-4c70-91c8-9e1cb81f35b1"
         },
         {
           "missing_lineage_fields": [
@@ -451,7 +346,7 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "17bbb530-058c-499a-af81-6e521e74ad10"
+          "trade_ref": "cd69f4fd-f4d4-49cf-88bb-21897324a7c2"
         },
         {
           "missing_lineage_fields": [
@@ -463,7 +358,19 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "d2da97a7-f88f-41e4-b07c-de3191354a32"
+          "trade_ref": "e055a5b3-f411-4812-a058-2da8ff78c137"
+        },
+        {
+          "missing_lineage_fields": [
+            "research_goal_id",
+            "candidate_identity",
+            "idempotency_key",
+            "client_order_id",
+            "symbol",
+            "postmortem_id"
+          ],
+          "symbol": "SMH",
+          "trade_ref": "424fc8f1-2005-4332-b372-5cb5a4401669"
         },
         {
           "missing_lineage_fields": [
@@ -475,7 +382,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "ee9fda9f-d838-448c-94d8-4ebbea23d96d"
+          "trade_ref": "1da872ad-8b80-4686-8db7-4a47d1268974"
         },
         {
           "missing_lineage_fields": [
@@ -487,7 +394,7 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "e7579ebc-36db-48d8-88ef-7d5be2979f5e"
+          "trade_ref": "8a238b4d-4f57-4fd7-949c-ab6a491cf342"
         },
         {
           "missing_lineage_fields": [
@@ -499,7 +406,7 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "db10ae2f-8238-45a7-a0f5-9f3ebcc883ee"
+          "trade_ref": "7a1613a3-9ea1-4a05-82d6-5dd684da0d6a"
         },
         {
           "missing_lineage_fields": [
@@ -511,19 +418,7 @@
             "postmortem_id"
           ],
           "symbol": "SMH",
-          "trade_ref": "d87dd8aa-46f5-4fd1-9ef7-8a3620b7965f"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "SMH",
-          "trade_ref": "d1dea02d-733f-4af1-98b6-ee2298a5bd1a"
+          "trade_ref": "20027c12-ea12-48f0-a9db-4a005f5e38db"
         },
         {
           "missing_lineage_fields": [
@@ -535,30 +430,18 @@
             "postmortem_id"
           ],
           "symbol": "ITA",
-          "trade_ref": "d0f19bef-032d-477f-9a01-1922075261bc"
-        },
-        {
-          "missing_lineage_fields": [
-            "research_goal_id",
-            "candidate_identity",
-            "idempotency_key",
-            "client_order_id",
-            "symbol",
-            "postmortem_id"
-          ],
-          "symbol": "XLK",
-          "trade_ref": "c6ebc938-ebd4-4e23-9d6b-1d3a8835fd37"
+          "trade_ref": "b289e1c8-345d-4660-845f-11d273607d00"
         }
       ],
-      "cockpit_closed_trade_count": 78,
-      "cockpit_postmortem_due_count": 78,
+      "cockpit_closed_trade_count": 18,
+      "cockpit_postmortem_due_count": 18,
       "complete_lineage_closed_trade_count": 0,
       "component": "proof_lineage",
       "degraded_reasons": [],
       "gaps": [],
-      "legacy_unverified_closed_trade_count": 78,
+      "legacy_unverified_closed_trade_count": 18,
       "legacy_unverified_closed_trades_are_not_proof_credit": true,
-      "paper_closed_trades_jsonl_count": 78,
+      "paper_closed_trades_jsonl_count": 18,
       "paper_proof_ledger_verified_record_count": 0,
       "phase7_proof_trade_count": 2,
       "phase7_proof_trade_credit_count": 0,
@@ -595,7 +478,7 @@
         "telegram_inbound_authoritative": false
       },
       "source_artifact": "phase7_proof_lifecycle_monitor.json",
-      "source_generated_at": "2026-06-29T06:34:28.175948+00:00",
+      "source_generated_at": "2026-07-06T09:34:21.570657+00:00",
       "source_status": "proof_lifecycle_events_recorded",
       "status": "ready"
     },
@@ -619,7 +502,7 @@
       },
       "qctrl_consultation_generated_at": "2026-05-26T23:01:00.843967+00:00",
       "qctrl_consultation_status": "consultation_recorded",
-      "quantum_review_gate_generated_at": "2026-06-29T06:37:44.200215+00:00",
+      "quantum_review_gate_generated_at": "2026-07-05T19:23:56.899753+00:00",
       "quantum_review_gate_status": "quantum_review_gate_passed",
       "review_readiness_only": true,
       "safety": {
@@ -667,7 +550,7 @@
       "market_hours": {
         "calendar": "approx_us_equity_regular_session_utc",
         "in_regular_session": false,
-        "observed_at": "2026-06-29T06:57:21.916277+00:00",
+        "observed_at": "2026-07-06T09:36:47.603251+00:00",
         "regular_close_utc": "20:00",
         "regular_open_utc": "13:30",
         "state": "outside_regular_session"
@@ -700,9 +583,9 @@
       "scanner_ready": true,
       "scheduler_activity_required_now": false,
       "source_artifact": "paperops_opportunity_scan_cadence.json",
-      "source_generated_age_seconds": 2116561,
+      "source_generated_age_seconds": 2730927,
       "source_generated_at": "2026-06-04T19:01:20.159436+00:00",
-      "source_mtime_age_seconds": 2116561,
+      "source_mtime_age_seconds": 2730927,
       "status": "ready",
       "trade_submission_allowed_by_scan": false,
       "twenty_minute_recurring_scheduler_active": false
@@ -710,19 +593,19 @@
     "telemetry_consistency": {
       "comparisons": {
         "closed_paper_trade_count": {
-          "cockpit_portfolio": 78,
+          "cockpit_portfolio": 18,
           "lifecycle_poller": 0,
-          "paperops_summary": 78,
+          "paperops_summary": 18,
           "scanner_cadence": 7
         },
         "open_position_count": {
-          "cockpit_portfolio": 2,
+          "cockpit_portfolio": 0,
           "lifecycle_poller": 0,
-          "paperops_summary": 2,
+          "paperops_summary": 0,
           "scanner_cadence": 7
         },
         "submitted_paper_order_count": {
-          "cockpit_portfolio": 92,
+          "cockpit_portfolio": 38,
           "lifecycle_poller": 4,
           "paperops_summary": 0,
           "scanner_cadence": 7
@@ -811,20 +694,20 @@
   "degraded_reasons": [],
   "gap_count": 0,
   "gaps": [],
-  "generated_at": "2026-06-29T06:57:21.916277+00:00",
+  "generated_at": "2026-07-06T09:36:47.603251+00:00",
   "paper_growth_trial": {
     "actual_calendar_run": true,
     "backfill_used": false,
-    "run_day": 36,
+    "run_day": 8,
     "simulated_time_used": false
   },
   "paper_runtime": {
-    "closed_paper_trade_count": 78,
+    "closed_paper_trade_count": 18,
     "duplicate_submit_count": 4,
     "fresh_eligible_submit_count": 0,
     "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-    "open_order_count": 14,
-    "open_position_count": 2,
+    "open_order_count": 20,
+    "open_position_count": 0,
     "submitted_paper_order_count": 0
   },
   "phase_id": "appendix_a_operational_phase0_paperops_execution_reliability_baseline",
@@ -861,99 +744,99 @@
   "source_artifacts": {
     "cockpit_status": {
       "exists": true,
-      "mtime": "2026-06-29T06:40:02.999473+00:00",
-      "mtime_age_seconds": 1038,
+      "mtime": "2026-07-06T09:35:43.494724+00:00",
+      "mtime_age_seconds": 64,
       "path": "data/runtime/cockpit-status.json",
-      "size_bytes": 3073218
+      "size_bytes": 3082845
     },
     "cockpit_status_signature": {
       "exists": true,
-      "mtime": "2026-06-29T06:40:03.011267+00:00",
-      "mtime_age_seconds": 1038,
+      "mtime": "2026-07-06T09:35:43.504408+00:00",
+      "mtime_age_seconds": 64,
       "path": "data/runtime/cockpit-status.signature.json",
       "size_bytes": 576
     },
     "dashboard_deployment_receipt": {
       "exists": true,
-      "mtime": "2026-06-29T06:40:29.114660+00:00",
-      "mtime_age_seconds": 1012,
+      "mtime": "2026-07-05T19:26:24.291545+00:00",
+      "mtime_age_seconds": 51023,
       "path": "data/runtime/dashboard-deployment-receipt.json",
       "size_bytes": 373
     },
     "paper_closed_trades": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:23.602669+00:00",
-      "mtime_age_seconds": 1378,
+      "mtime": "2026-07-06T09:35:03.089077+00:00",
+      "mtime_age_seconds": 104,
       "path": "data/runtime/paper_closed_trades.jsonl",
-      "size_bytes": 39546
+      "size_bytes": 9130
     },
     "paper_orders": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:23.600749+00:00",
-      "mtime_age_seconds": 1378,
+      "mtime": "2026-07-06T09:35:03.088456+00:00",
+      "mtime_age_seconds": 104,
       "path": "data/runtime/paper_orders.jsonl",
-      "size_bytes": 48222
+      "size_bytes": 19391
     },
     "paperops_alpaca_paper_submit_enablement": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:27.168581+00:00",
-      "mtime_age_seconds": 1374,
+      "mtime": "2026-07-06T09:34:20.588180+00:00",
+      "mtime_age_seconds": 147,
       "path": "data/runtime/paperops_alpaca_paper_submit_enablement.json",
       "size_bytes": 3426
     },
     "paperops_autonomous_pass_summary": {
       "exists": true,
-      "mtime": "2026-06-29T06:18:17.066524+00:00",
-      "mtime_age_seconds": 2344,
+      "mtime": "2026-07-06T09:35:43.865316+00:00",
+      "mtime_age_seconds": 63,
       "path": "data/runtime/paperops_autonomous_pass_summary.json",
-      "size_bytes": 191684
+      "size_bytes": 191886
     },
     "paperops_opportunity_scan_cadence": {
       "exists": true,
       "mtime": "2026-06-04T19:01:20.172757+00:00",
-      "mtime_age_seconds": 2116561,
+      "mtime_age_seconds": 2730927,
       "path": "data/runtime/paperops_opportunity_scan_cadence.json",
       "size_bytes": 6404
     },
     "paperops_paper_lifecycle_poller": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:27.442183+00:00",
-      "mtime_age_seconds": 1374,
+      "mtime": "2026-07-06T09:34:59.564592+00:00",
+      "mtime_age_seconds": 108,
       "path": "data/runtime/paperops_paper_lifecycle_poller.json",
-      "size_bytes": 31599
+      "size_bytes": 31558
     },
     "paperops_qctrl_paper_consultation": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:26.004641+00:00",
-      "mtime_age_seconds": 1375,
+      "mtime": "2026-07-06T09:34:19.406891+00:00",
+      "mtime_age_seconds": 148,
       "path": "data/runtime/paperops_qctrl_paper_consultation.json",
       "size_bytes": 4710
     },
     "phase7_proof_lifecycle_monitor": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:28.176991+00:00",
-      "mtime_age_seconds": 1373,
+      "mtime": "2026-07-06T09:34:21.571726+00:00",
+      "mtime_age_seconds": 146,
       "path": "data/runtime/phase7_proof_lifecycle_monitor.json",
       "size_bytes": 38955
     },
     "phase7_proof_order_staging": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:26.991030+00:00",
-      "mtime_age_seconds": 1374,
+      "mtime": "2026-07-06T09:34:20.411094+00:00",
+      "mtime_age_seconds": 147,
       "path": "data/runtime/phase7_proof_order_staging.json",
       "size_bytes": 76860
     },
     "phase7_qualified_setup_ledger": {
       "exists": true,
-      "mtime": "2026-06-29T06:34:26.815775+00:00",
-      "mtime_age_seconds": 1375,
+      "mtime": "2026-07-06T09:34:20.239736+00:00",
+      "mtime_age_seconds": 147,
       "path": "data/runtime/phase7_qualified_setup_ledger.json",
-      "size_bytes": 68680
+      "size_bytes": 68687
     },
     "quantum_mandatory_review_gate": {
       "exists": true,
-      "mtime": "2026-06-29T06:37:44.205436+00:00",
-      "mtime_age_seconds": 1177,
+      "mtime": "2026-07-05T19:23:56.900350+00:00",
+      "mtime_age_seconds": 51170,
       "path": "data/runtime/quantum_mandatory_review_gate.json",
       "size_bytes": 10667
     }

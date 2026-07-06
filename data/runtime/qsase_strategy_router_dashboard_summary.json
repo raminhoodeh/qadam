@@ -3,7 +3,7 @@
   "authority_flags_false": true,
   "authority_state": "strategy_router_no_order_authority",
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:28.456300+00:00",
+  "generated_at": "2026-07-06T09:36:54.085266+00:00",
   "hard_vetoes": [
     {
       "authority": {
@@ -50,12 +50,12 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:e95042df32f7a3aebb9f",
+      "hard_veto_id": "qsase-router-veto:4b41758e9a33506935d6",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
+      "router_decision_id": "qsase-router:a048501840641749dd64",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:0f900d6fb68f8dfa0608",
+      "strategy_key": "qsase-rejected-strategy:1e32eb5000fc8fa72b74",
       "veto": "akber_filter_reject:quantum_ambiguity_too_high"
     },
     {
@@ -103,12 +103,12 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:95e9d8f96ffc6395f63d",
+      "hard_veto_id": "qsase-router-veto:25e49eb2b75ecff710ef",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
+      "router_decision_id": "qsase-router:a048501840641749dd64",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:0f900d6fb68f8dfa0608",
+      "strategy_key": "qsase-rejected-strategy:1e32eb5000fc8fa72b74",
       "veto": "paperability:quantum_ambiguity_hold"
     },
     {
@@ -156,12 +156,12 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:7d6c525ffd0d8af8be25",
+      "hard_veto_id": "qsase-router-veto:df3479dd68096ec7a491",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:da5e5cfb97b5024c6195",
+      "router_decision_id": "qsase-router:a048501840641749dd64",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:0f900d6fb68f8dfa0608",
+      "strategy_key": "qsase-rejected-strategy:1e32eb5000fc8fa72b74",
       "veto": "quantum_ambiguity_too_high"
     },
     {
@@ -209,12 +209,12 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:1c9db091b3d54d70042c",
+      "hard_veto_id": "qsase-router-veto:73989aa59ee1361e7b31",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:152c46c8b7f8fe91404f",
+      "router_decision_id": "qsase-router:889ac4e6e702a8e1a45a",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:7ccfda435c39353fcb5c",
+      "strategy_key": "qsase-rejected-strategy:89495d95e717612c21c6",
       "veto": "akber_filter_reject:quantum_ambiguity_too_high"
     },
     {
@@ -262,12 +262,12 @@
         "trade_candidate_creation_allowed": false
       },
       "blocks_paper_review_candidate": true,
-      "hard_veto_id": "qsase-router-veto:a2e24128c781f28da439",
+      "hard_veto_id": "qsase-router-veto:9a3c9b35798ec212d1b0",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:152c46c8b7f8fe91404f",
+      "router_decision_id": "qsase-router:889ac4e6e702a8e1a45a",
       "schema_version": "qsase_strategy_router.v1",
-      "strategy_key": "qsase-rejected-strategy:7ccfda435c39353fcb5c",
+      "strategy_key": "qsase-rejected-strategy:89495d95e717612c21c6",
       "veto": "paperability:quantum_ambiguity_hold"
     }
   ],
@@ -285,30 +285,30 @@
       "hard_veto_count": 0,
       "primary_family": "crude_oil_energy_security_disruption",
       "rank": 1,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
       "router_output": "hold_missing_evidence",
-      "router_total_score": 0.520334,
-      "soft_blocker_count": 14
+      "router_total_score": 0.497657,
+      "soft_blocker_count": 13
     },
     {
       "candidate_identity_key": "qsase-strategy-identity:43e363327d116d219cad",
       "hard_veto_count": 0,
       "primary_family": "crude_oil_energy_security_disruption",
       "rank": 2,
-      "router_decision_id": "qsase-router:792809f2ae069977d6c2",
+      "router_decision_id": "qsase-router:887c36c3a98cd38464b6",
       "router_output": "hold_missing_evidence",
-      "router_total_score": 0.520334,
-      "soft_blocker_count": 14
+      "router_total_score": 0.497657,
+      "soft_blocker_count": 13
     },
     {
       "candidate_identity_key": "qsase-strategy-identity:8d3a3da96eea0cac9ef6",
       "hard_veto_count": 0,
       "primary_family": "crude_oil_energy_security_disruption",
       "rank": 3,
-      "router_decision_id": "qsase-router:e031a63a39531680664b",
+      "router_decision_id": "qsase-router:05ec75bc213df2741540",
       "router_output": "hold_missing_evidence",
-      "router_total_score": 0.520334,
-      "soft_blocker_count": 14
+      "router_total_score": 0.497657,
+      "soft_blocker_count": 13
     }
   ],
   "soft_blockers": [
@@ -356,14 +356,120 @@
         "trade_candidate_created": false,
         "trade_candidate_creation_allowed": false
       },
-      "blocker": "akber_filter_artifact_degraded",
+      "blocker": "akber_filter_hold_missing_context",
       "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
       "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:705bef863e7dbcc37d5c",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
+      "soft_blocker_id": "qsase-router-soft:4041c680cadd8f7318f0",
+      "strategy_key": "qsase-strategy:145754126e0f9b30815b"
+    },
+    {
+      "authority": {
+        "broker_write_allowed": false,
+        "daily_drawdown_override_allowed": false,
+        "duplicate_exposure_override_allowed": false,
+        "execution_allowed": false,
+        "execution_approval_allowed": false,
+        "execution_approval_created": false,
+        "execution_intent_created": false,
+        "idempotency_override_allowed": false,
+        "live_broker_endpoint_allowed": false,
+        "live_capital_enabled": false,
+        "model_weight_update_allowed": false,
+        "model_weight_update_created": false,
+        "no_broker_or_execution_authority": true,
+        "paper_growth_trial_calendar_advance_allowed": false,
+        "paper_order_allowed": false,
+        "paper_order_created": false,
+        "paper_proof_ledger_credit_allowed": false,
+        "paper_proof_ledger_write_allowed": false,
+        "paper_review_candidate_is_not_order": true,
+        "paperops_bypass_allowed": false,
+        "paperops_direct_call_allowed": false,
+        "paperops_handoff_created": false,
+        "policy_mutation_allowed": false,
+        "policy_mutation_created": false,
+        "proof_credit_allowed": false,
+        "qctrl_bypass_allowed": false,
+        "qualified_setup_created": false,
+        "risk_approval_allowed": false,
+        "risk_approval_created": false,
+        "risk_budget_override_allowed": false,
+        "risk_handoff_allowed": false,
+        "router_decision_only": true,
+        "simulated_elapsed_time_allowed": false,
+        "source_trust_update_allowed": false,
+        "source_trust_update_created": false,
+        "strategy_mutation_allowed": false,
+        "strategy_mutation_created": false,
+        "telegram_command_path_enabled": false,
+        "telegram_trade_command_enabled": false,
+        "trade_candidate_created": false,
+        "trade_candidate_creation_allowed": false
+      },
+      "blocker": "akber_filter_waiting_for_confirmation",
+      "next_required_action": "watch_for_missing_confirmation",
+      "paper_order_created": false,
+      "proof_credit_allowed": false,
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
+      "schema_version": "qsase_strategy_router.v1",
+      "soft_blocker_id": "qsase-router-soft:877227b7ab7bab90ec4e",
+      "strategy_key": "qsase-strategy:145754126e0f9b30815b"
+    },
+    {
+      "authority": {
+        "broker_write_allowed": false,
+        "daily_drawdown_override_allowed": false,
+        "duplicate_exposure_override_allowed": false,
+        "execution_allowed": false,
+        "execution_approval_allowed": false,
+        "execution_approval_created": false,
+        "execution_intent_created": false,
+        "idempotency_override_allowed": false,
+        "live_broker_endpoint_allowed": false,
+        "live_capital_enabled": false,
+        "model_weight_update_allowed": false,
+        "model_weight_update_created": false,
+        "no_broker_or_execution_authority": true,
+        "paper_growth_trial_calendar_advance_allowed": false,
+        "paper_order_allowed": false,
+        "paper_order_created": false,
+        "paper_proof_ledger_credit_allowed": false,
+        "paper_proof_ledger_write_allowed": false,
+        "paper_review_candidate_is_not_order": true,
+        "paperops_bypass_allowed": false,
+        "paperops_direct_call_allowed": false,
+        "paperops_handoff_created": false,
+        "policy_mutation_allowed": false,
+        "policy_mutation_created": false,
+        "proof_credit_allowed": false,
+        "qctrl_bypass_allowed": false,
+        "qualified_setup_created": false,
+        "risk_approval_allowed": false,
+        "risk_approval_created": false,
+        "risk_budget_override_allowed": false,
+        "risk_handoff_allowed": false,
+        "router_decision_only": true,
+        "simulated_elapsed_time_allowed": false,
+        "source_trust_update_allowed": false,
+        "source_trust_update_created": false,
+        "strategy_mutation_allowed": false,
+        "strategy_mutation_created": false,
+        "telegram_command_path_enabled": false,
+        "telegram_trade_command_enabled": false,
+        "trade_candidate_created": false,
+        "trade_candidate_creation_allowed": false
+      },
+      "blocker": "foundry_probationary_research_needs_confirmation",
+      "next_required_action": "watch_for_missing_confirmation",
+      "paper_order_created": false,
+      "proof_credit_allowed": false,
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
+      "schema_version": "qsase_strategy_router.v1",
+      "soft_blocker_id": "qsase-router-soft:7b92419b9646dca4321f",
+      "strategy_key": "qsase-strategy:145754126e0f9b30815b"
     },
     {
       "authority": {
@@ -413,10 +519,10 @@
       "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
       "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:51ad54ef2d0a9a02775a",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
+      "soft_blocker_id": "qsase-router-soft:54d475b2841951309bf6",
+      "strategy_key": "qsase-strategy:145754126e0f9b30815b"
     },
     {
       "authority": {
@@ -462,127 +568,21 @@
         "trade_candidate_created": false,
         "trade_candidate_creation_allowed": false
       },
-      "blocker": "missing_volume_or_flow_confirmation",
+      "blocker": "missing_foundry_promotion_confirmation",
       "next_required_action": "watch_for_missing_confirmation",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
+      "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
       "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:ff751bc6846d7992be26",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
-    },
-    {
-      "authority": {
-        "broker_write_allowed": false,
-        "daily_drawdown_override_allowed": false,
-        "duplicate_exposure_override_allowed": false,
-        "execution_allowed": false,
-        "execution_approval_allowed": false,
-        "execution_approval_created": false,
-        "execution_intent_created": false,
-        "idempotency_override_allowed": false,
-        "live_broker_endpoint_allowed": false,
-        "live_capital_enabled": false,
-        "model_weight_update_allowed": false,
-        "model_weight_update_created": false,
-        "no_broker_or_execution_authority": true,
-        "paper_growth_trial_calendar_advance_allowed": false,
-        "paper_order_allowed": false,
-        "paper_order_created": false,
-        "paper_proof_ledger_credit_allowed": false,
-        "paper_proof_ledger_write_allowed": false,
-        "paper_review_candidate_is_not_order": true,
-        "paperops_bypass_allowed": false,
-        "paperops_direct_call_allowed": false,
-        "paperops_handoff_created": false,
-        "policy_mutation_allowed": false,
-        "policy_mutation_created": false,
-        "proof_credit_allowed": false,
-        "qctrl_bypass_allowed": false,
-        "qualified_setup_created": false,
-        "risk_approval_allowed": false,
-        "risk_approval_created": false,
-        "risk_budget_override_allowed": false,
-        "risk_handoff_allowed": false,
-        "router_decision_only": true,
-        "simulated_elapsed_time_allowed": false,
-        "source_trust_update_allowed": false,
-        "source_trust_update_created": false,
-        "strategy_mutation_allowed": false,
-        "strategy_mutation_created": false,
-        "telegram_command_path_enabled": false,
-        "telegram_trade_command_enabled": false,
-        "trade_candidate_created": false,
-        "trade_candidate_creation_allowed": false
-      },
-      "blocker": "model_stack:llm_provider_probes_artifact_missing",
-      "next_required_action": "watch_for_missing_confirmation",
-      "paper_order_created": false,
-      "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
-      "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:a85b93d01d6c8af0248b",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
-    },
-    {
-      "authority": {
-        "broker_write_allowed": false,
-        "daily_drawdown_override_allowed": false,
-        "duplicate_exposure_override_allowed": false,
-        "execution_allowed": false,
-        "execution_approval_allowed": false,
-        "execution_approval_created": false,
-        "execution_intent_created": false,
-        "idempotency_override_allowed": false,
-        "live_broker_endpoint_allowed": false,
-        "live_capital_enabled": false,
-        "model_weight_update_allowed": false,
-        "model_weight_update_created": false,
-        "no_broker_or_execution_authority": true,
-        "paper_growth_trial_calendar_advance_allowed": false,
-        "paper_order_allowed": false,
-        "paper_order_created": false,
-        "paper_proof_ledger_credit_allowed": false,
-        "paper_proof_ledger_write_allowed": false,
-        "paper_review_candidate_is_not_order": true,
-        "paperops_bypass_allowed": false,
-        "paperops_direct_call_allowed": false,
-        "paperops_handoff_created": false,
-        "policy_mutation_allowed": false,
-        "policy_mutation_created": false,
-        "proof_credit_allowed": false,
-        "qctrl_bypass_allowed": false,
-        "qualified_setup_created": false,
-        "risk_approval_allowed": false,
-        "risk_approval_created": false,
-        "risk_budget_override_allowed": false,
-        "risk_handoff_allowed": false,
-        "router_decision_only": true,
-        "simulated_elapsed_time_allowed": false,
-        "source_trust_update_allowed": false,
-        "source_trust_update_created": false,
-        "strategy_mutation_allowed": false,
-        "strategy_mutation_created": false,
-        "telegram_command_path_enabled": false,
-        "telegram_trade_command_enabled": false,
-        "trade_candidate_created": false,
-        "trade_candidate_creation_allowed": false
-      },
-      "blocker": "nonlinear_not_incremental",
-      "next_required_action": "watch_for_missing_confirmation",
-      "paper_order_created": false,
-      "proof_credit_allowed": false,
-      "router_decision_id": "qsase-router:562b9a8186385c779193",
-      "schema_version": "qsase_strategy_router.v1",
-      "soft_blocker_id": "qsase-router-soft:9324f2349c1fae41a5f4",
-      "strategy_key": "qsase-rejected-strategy:79acee9c1f6d7c2ea101"
+      "soft_blocker_id": "qsase-router-soft:ba7aa24b4e24956b14cc",
+      "strategy_key": "qsase-strategy:145754126e0f9b30815b"
     }
   ],
-  "status": "qsase_strategy_router_degraded",
+  "status": "qsase_strategy_router_ready_no_paper_candidate",
   "summary_rows": [
     {
       "label": "Router status",
-      "value": "qsase_strategy_router_degraded"
+      "value": "qsase_strategy_router_ready_no_paper_candidate"
     },
     {
       "label": "Strategy inputs",
@@ -594,11 +594,11 @@
     },
     {
       "label": "Hard vetoes",
-      "value": 12
+      "value": 6
     },
     {
       "label": "Soft blockers",
-      "value": 260
+      "value": 238
     },
     {
       "label": "Top output",
@@ -609,6 +609,6 @@
       "value": "no paper order"
     }
   ],
-  "top_strategy": "qsase-router:562b9a8186385c779193",
-  "why_not_trading_now": "Required evidence is missing: akber_filter_artifact_degraded."
+  "top_strategy": "qsase-router:45a1279f173a0a52b18e",
+  "why_not_trading_now": "Required evidence is missing: akber_filter_hold_missing_context."
 }

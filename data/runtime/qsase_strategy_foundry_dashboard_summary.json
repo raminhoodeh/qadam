@@ -3,25 +3,29 @@
   "authority_flags_false": true,
   "authority_state": "strategy_hypothesis_only_no_execution",
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:28.020987+00:00",
-  "latest_blocker": "no_strategy_hypotheses_promoted_current_inputs,nonlinear_quantum_lab_degraded,rejected_or_shadow_only_hypotheses_present",
+  "generated_at": "2026-07-06T09:36:53.674981+00:00",
+  "latest_blocker": "nonlinear_quantum_lab_has_research_holds,probationary_hypotheses_need_confirmation_before_paper_review,some_patterns_remain_rejected_or_shadow_only",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
   "no_proof_credit_granted": true,
   "no_trade_candidates_created": true,
   "public_safe": true,
-  "required_next_gate": "upstream evidence repair",
+  "required_next_gate": "Akber filter and shadow replay",
   "schema_version": "qsase_strategy_foundry.v1",
-  "status": "qsase_strategy_foundry_degraded",
+  "status": "qsase_strategy_foundry_ready_with_probationary_hypotheses",
   "strategy_hypotheses_are_not_trades": true,
   "summary_rows": [
     {
       "label": "Foundry status",
-      "value": "qsase_strategy_foundry_degraded"
+      "value": "qsase_strategy_foundry_ready_with_probationary_hypotheses"
     },
     {
       "label": "Hypotheses",
-      "value": 0
+      "value": 6
+    },
+    {
+      "label": "Probationary",
+      "value": 6
     },
     {
       "label": "Existing-family matches",
@@ -33,7 +37,7 @@
     },
     {
       "label": "Rejected records",
-      "value": 16
+      "value": 10
     },
     {
       "label": "Paper-review candidates",
@@ -44,7 +48,7 @@
       "value": "strategy_hypothesis_only_no_execution"
     }
   ],
-  "top_hypothesis": null,
-  "top_hypothesis_type": null,
-  "top_rejection_reason": "nonlinear_not_incremental,quantum_did_not_upgrade_research_confidence"
+  "top_hypothesis": "qsase-strategy:145754126e0f9b30815b",
+  "top_hypothesis_type": "probationary_existing_family_modification",
+  "top_rejection_reason": "nonlinear_not_incremental,overfit_pattern,quantum_ambiguity_hold"
 }

@@ -171,7 +171,7 @@
       "to": "freshness"
     }
   ],
-  "generated_at": "2026-07-06T11:30:35.473217+00:00",
+  "generated_at": "2026-07-06T14:40:43.883977+00:00",
   "node_count": 14,
   "nodes": [
     {
@@ -204,7 +204,7 @@
       "label": "Current Portfolio",
       "node_id": "current_portfolio",
       "overview_detail_level": "summary_only",
-      "state": "current_portfolio_explicitly_empty"
+      "state": "current_portfolio_present"
     },
     {
       "artifact_refs": [
@@ -323,7 +323,7 @@
       "label": "Freshness",
       "node_id": "freshness",
       "overview_detail_level": "summary_only",
-      "state": "freshness_visible"
+      "state": "freshness_visible_with_stale_labels"
     }
   ],
   "overview_detail_policy": {

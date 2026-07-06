@@ -2512,6 +2512,11 @@ def build_qsase_phase_implementation_status(payload: dict[str, Any]) -> dict[str
     runtime_dir = _runtime_dir()
     existing = _read_json(runtime_dir / PHASE_STATUS_ARTIFACT)
     phases = existing.get("phases") if isinstance(existing.get("phases"), dict) else {}
+    existing_safety = existing.get("safety") if isinstance(existing.get("safety"), dict) else {}
+    safety = {
+        **existing_safety,
+        **payload["authority"],
+    }
     phases[PHASE_ID] = {
         "name": PHASE_NAME,
         "status": payload["status"],
@@ -2563,7 +2568,7 @@ def build_qsase_phase_implementation_status(payload: dict[str, Any]) -> dict[str
         "generated_at": payload["generated_at"],
         "active_phase": PHASE_ID,
         "phases": phases,
-        "safety": payload["authority"],
+        "safety": safety,
     }
 
 

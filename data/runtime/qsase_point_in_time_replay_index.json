@@ -2,7 +2,7 @@
   "artifact_type": "qsase_point_in_time_replay_index",
   "command_disabled": true,
   "execution_allowed": false,
-  "generated_at": "2026-06-29T06:57:22.726092+00:00",
+  "generated_at": "2026-07-06T09:36:48.381940+00:00",
   "indices": {
     "by_asset_class": {
       "crude_oil": {

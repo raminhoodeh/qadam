@@ -1,5 +1,5 @@
 {
-  "akber_filter_inputs_prepared_count": 0,
+  "akber_filter_inputs_prepared_count": 6,
   "artifact_type": "qsase_strategy_foundry",
   "authority": {
     "backtest_to_proof_allowed": false,
@@ -80,25 +80,29 @@
     "authority_flags_false": true,
     "authority_state": "strategy_hypothesis_only_no_execution",
     "command_disabled": true,
-    "generated_at": "2026-06-29T06:57:28.020987+00:00",
-    "latest_blocker": "no_strategy_hypotheses_promoted_current_inputs,nonlinear_quantum_lab_degraded,rejected_or_shadow_only_hypotheses_present",
+    "generated_at": "2026-07-06T09:36:53.674981+00:00",
+    "latest_blocker": "nonlinear_quantum_lab_has_research_holds,probationary_hypotheses_need_confirmation_before_paper_review,some_patterns_remain_rejected_or_shadow_only",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
     "no_proof_credit_granted": true,
     "no_trade_candidates_created": true,
     "public_safe": true,
-    "required_next_gate": "upstream evidence repair",
+    "required_next_gate": "Akber filter and shadow replay",
     "schema_version": "qsase_strategy_foundry.v1",
-    "status": "qsase_strategy_foundry_degraded",
+    "status": "qsase_strategy_foundry_ready_with_probationary_hypotheses",
     "strategy_hypotheses_are_not_trades": true,
     "summary_rows": [
       {
         "label": "Foundry status",
-        "value": "qsase_strategy_foundry_degraded"
+        "value": "qsase_strategy_foundry_ready_with_probationary_hypotheses"
       },
       {
         "label": "Hypotheses",
-        "value": 0
+        "value": 6
+      },
+      {
+        "label": "Probationary",
+        "value": 6
       },
       {
         "label": "Existing-family matches",
@@ -110,7 +114,7 @@
       },
       {
         "label": "Rejected records",
-        "value": 16
+        "value": 10
       },
       {
         "label": "Paper-review candidates",
@@ -121,18 +125,15 @@
         "value": "strategy_hypothesis_only_no_execution"
       }
     ],
-    "top_hypothesis": null,
-    "top_hypothesis_type": null,
-    "top_rejection_reason": "nonlinear_not_incremental,quantum_did_not_upgrade_research_confidence"
+    "top_hypothesis": "qsase-strategy:145754126e0f9b30815b",
+    "top_hypothesis_type": "probationary_existing_family_modification",
+    "top_rejection_reason": "nonlinear_not_incremental,overfit_pattern,quantum_ambiguity_hold"
   },
-  "degraded_reasons": [
-    "no_strategy_hypotheses_promoted_current_inputs",
-    "nonlinear_quantum_lab_degraded",
-    "rejected_or_shadow_only_hypotheses_present"
-  ],
+  "degraded_reasons": [],
   "execution_allowed": false,
   "existing_family_match_count": 0,
-  "generated_at": "2026-06-29T06:57:28.020987+00:00",
+  "fully_promoted_hypothesis_count": 0,
+  "generated_at": "2026-07-06T09:36:53.674981+00:00",
   "input_artifacts": {
     "full_universe_pattern_search": "data/runtime/qsase_full_universe_pattern_search.json",
     "linear_lab": "data/runtime/qsase_linear_pattern_lab.json",
@@ -158,24 +159,30 @@
   "paper_review_candidate_count": 0,
   "phase_id": "qsase_7_strategy_foundry",
   "phase_name": "QSASE-7: Strategy Foundry",
+  "probationary_strategy_hypothesis_count": 6,
   "proof_credit_allowed": false,
   "proposal_first": true,
   "public_safe": true,
   "qualified_setup_created": false,
-  "rejected_pattern_count": 16,
+  "rejected_pattern_count": 10,
   "rejected_strategy_hypotheses_path": "data/runtime/qsase_rejected_strategy_hypotheses.jsonl",
+  "research_hold_reasons": [
+    "nonlinear_quantum_lab_has_research_holds",
+    "probationary_hypotheses_need_confirmation_before_paper_review",
+    "some_patterns_remain_rejected_or_shadow_only"
+  ],
   "research_only": true,
   "risk_handoff_allowed": false,
   "schema_version": "qsase_strategy_foundry.v1",
-  "shadow_only_monitor_count": 4,
-  "shadow_replay_inputs_prepared_count": 0,
-  "status": "qsase_strategy_foundry_degraded",
+  "shadow_only_monitor_count": 0,
+  "shadow_replay_inputs_prepared_count": 6,
+  "status": "qsase_strategy_foundry_ready_with_probationary_hypotheses",
   "strategy_family_map_path": "data/runtime/qsase_strategy_family_map.json",
   "strategy_hypotheses_are_not_orders": true,
   "strategy_hypotheses_are_not_qualified_setups": true,
   "strategy_hypotheses_are_not_trades": true,
   "strategy_hypotheses_path": "data/runtime/qsase_strategy_hypotheses.jsonl",
-  "strategy_hypothesis_count": 0,
+  "strategy_hypothesis_count": 6,
   "strategy_modification_proposal_count": 0,
   "trade_candidate_created": false
 }

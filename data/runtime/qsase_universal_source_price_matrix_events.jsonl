@@ -7,3 +7,6 @@
 {"authority_flags_false": true, "event_type": "qsase_universal_source_price_matrix_written", "generated_at": "2026-06-29T05:08:27.697085+00:00", "public_safe": true, "status": "qsase_source_price_matrix_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_universal_source_price_matrix_written", "generated_at": "2026-06-29T06:57:21.961874+00:00", "public_safe": true, "status": "qsase_source_price_matrix_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_universal_source_price_matrix_written", "generated_at": "2026-06-29T06:57:22.410804+00:00", "public_safe": true, "status": "qsase_source_price_matrix_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_universal_source_price_matrix_written", "generated_at": "2026-07-06T09:28:12.782132+00:00", "public_safe": true, "status": "qsase_source_price_matrix_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_universal_source_price_matrix_written", "generated_at": "2026-07-06T09:36:35.264435+00:00", "public_safe": true, "status": "qsase_source_price_matrix_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_universal_source_price_matrix_written", "generated_at": "2026-07-06T09:36:48.064260+00:00", "public_safe": true, "status": "qsase_source_price_matrix_ready_with_gaps"}

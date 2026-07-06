@@ -54,31 +54,31 @@
         "duplicate_submit_count": 4,
         "fresh_eligible_submit_count": 0,
         "idempotency_guard_message": "idempotency guard active: existing paper submit already recorded",
-        "open_order_count": 14
+        "open_order_count": 20
       },
       "next_allowed_action": "watch_or_wait_for_fresh_distinct_setup",
       "reason": "idempotency_guard_holding_duplicate_or_already_submitted_setup",
       "repair_required": false
     },
-    "router_decision_id": "qsase-router:562b9a8186385c779193",
+    "router_decision_id": "qsase-router:45a1279f173a0a52b18e",
     "soft_blockers": [
-      "akber_filter_artifact_degraded",
+      "akber_filter_hold_missing_context",
+      "akber_filter_waiting_for_confirmation",
+      "foundry_probationary_research_needs_confirmation",
       "learning_health:no_validated_edges_yet",
+      "missing_foundry_promotion_confirmation",
       "missing_volume_or_flow_confirmation",
       "model_stack:llm_provider_probes_artifact_missing",
-      "nonlinear_not_incremental",
-      "open_order_state_requires_downstream_duplicate_check",
-      "paperops_current_duplicate_hold_requires_distinct_idempotency_key",
-      "quantum_did_not_upgrade_research_confidence"
+      "open_order_state_requires_downstream_duplicate_check"
     ]
   },
-  "generated_at": "2026-06-29T06:57:28.456300+00:00",
+  "generated_at": "2026-07-06T09:36:54.085266+00:00",
   "live_capital_enabled": false,
   "next_allowed_action": "watch_for_missing_confirmation",
   "paper_order_created": false,
   "paper_review_candidate_count": 0,
   "proof_credit_allowed": false,
-  "reason": "Required evidence is missing: akber_filter_artifact_degraded.",
+  "reason": "Required evidence is missing: akber_filter_hold_missing_context.",
   "repair_required": false,
   "schema_version": "qsase_strategy_router.v1",
   "status": "why_not_trading_now_recorded"

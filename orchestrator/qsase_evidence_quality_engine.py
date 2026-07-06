@@ -31,6 +31,8 @@ EVENTS_ARTIFACT = "qsase_evidence_quality_events.jsonl"
 
 SOURCE_UNIVERSE_ARTIFACT = "qsase_source_universe.json"
 SOURCE_NETWORK_ARTIFACT = "qsase_dashboard_source_network.json"
+SOURCE_RELIABILITY_ARTIFACT = "qsase_source_reliability.json"
+SOURCE_RELIABILITY_RECORDS_ARTIFACT = "qsase_source_reliability_records.jsonl"
 UNIVERSAL_MATRIX_ARTIFACT = "qsase_universal_source_price_matrix.json"
 SOURCE_PRICE_EDGES_ARTIFACT = "qsase_source_price_edges.jsonl"
 TRADING_UNIVERSE_ARTIFACT = "qsase_trading_universe.json"
@@ -38,6 +40,7 @@ HISTORICAL_MEMORY_ARTIFACT = "qsase_historical_source_price_memory.json"
 HISTORICAL_MEMORY_JSONL_ARTIFACT = "qsase_historical_source_price_memory.jsonl"
 HISTORICAL_COVERAGE_ARTIFACT = "qsase_historical_coverage_map.json"
 HISTORICAL_MISSING_WINDOWS_ARTIFACT = "qsase_historical_missing_windows.jsonl"
+HISTORICAL_MEMORY_COMPLETION_ARTIFACT = "qsase_historical_memory_completion.json"
 PATTERN_ENGINE_ARTIFACT = "pattern_recognition_engine.json"
 EDGE_PATTERN_LEDGER_ARTIFACT = "edge_pattern_ledger.json"
 LINEAR_LAB_ARTIFACT = "qsase_linear_pattern_lab.json"
@@ -48,13 +51,27 @@ QUANTUM_REVIEWS_ARTIFACT = "qsase_quantum_pattern_reviews.jsonl"
 STRATEGY_FOUNDRY_ARTIFACT = "qsase_strategy_hypotheses.json"
 STRATEGY_HYPOTHESES_ARTIFACT = "qsase_strategy_hypotheses.jsonl"
 REJECTED_STRATEGY_HYPOTHESES_ARTIFACT = "qsase_rejected_strategy_hypotheses.jsonl"
+VALIDATED_EDGE_GRADUATION_V2_ARTIFACT = "qsase_validated_edge_graduation.json"
+STRATEGY_FOUNDRY_V2_ARTIFACT = "qsase_strategy_foundry_v2.json"
+STRATEGY_HYPOTHESES_V2_ARTIFACT = "qsase_strategy_hypotheses_v2.jsonl"
 AKBER_FILTER_ARTIFACT = "qsase_akber_filter_integration.json"
 AKBER_FILTER_RESULTS_ARTIFACT = "qsase_akber_filter_results.jsonl"
+AKBER_FILTER_V2_ARTIFACT = "qsase_akber_filter_v2.json"
+AKBER_FILTER_V2_RECORDS_ARTIFACT = "qsase_akber_stage_records_v2.jsonl"
+MARKET_CONFIRMATION_ARTIFACT = "qsase_market_confirmation.json"
+MARKET_CONFIRMATION_PACKETS_ARTIFACT = "qsase_market_confirmation_packets.jsonl"
+AKBER_INPUT_COMPLETENESS_ARTIFACT = "qsase_akber_input_completeness.json"
 SHADOW_SIMULATOR_ARTIFACT = "qsase_shadow_strategy_simulator.json"
 SHADOW_RESULTS_ARTIFACT = "qsase_shadow_strategy_results.jsonl"
+SHADOW_SIMULATOR_V2_ARTIFACT = "qsase_shadow_simulator_v2.json"
+SHADOW_RESULTS_V2_ARTIFACT = "qsase_shadow_results_v2.jsonl"
 ROUTER_ARTIFACT = "qsase_strategy_router_decisions.json"
 ROUTER_DECISIONS_ARTIFACT = "qsase_strategy_router_decisions.jsonl"
 WHY_NOT_TRADING_ARTIFACT = "qsase_why_not_trading_now.json"
+ROUTER_V2_ARTIFACT = "qsase_strategy_router_v2.json"
+ROUTER_DECISIONS_V2_ARTIFACT = "qsase_strategy_router_decisions_v2.jsonl"
+WHY_NOT_TRADING_V2_ARTIFACT = "qsase_why_not_trading_now_v2.json"
+PAPEROPS_HANDOFF_V2_ARTIFACT = "qsase_paperops_handoff_v2.json"
 PAPEROPS_GATE_ARTIFACT = "qsase_paperops_gate_interface.json"
 PAPEROPS_GATE_RECORDS_ARTIFACT = "qsase_paperops_gate_interface.jsonl"
 PAPEROPS_SUMMARY_ARTIFACT = "paperops_autonomous_pass_summary.json"
@@ -286,6 +303,8 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "runtime_dir": runtime,
         "source_universe": _read_json(runtime / SOURCE_UNIVERSE_ARTIFACT),
         "source_network": _read_json(runtime / SOURCE_NETWORK_ARTIFACT),
+        "source_reliability": _read_json(runtime / SOURCE_RELIABILITY_ARTIFACT),
+        "source_reliability_records": _read_jsonl(runtime / SOURCE_RELIABILITY_RECORDS_ARTIFACT, limit=500),
         "universal_matrix": _read_json(runtime / UNIVERSAL_MATRIX_ARTIFACT),
         "source_price_edges": _read_jsonl(runtime / SOURCE_PRICE_EDGES_ARTIFACT, limit=5000),
         "trading_universe": _read_json(runtime / TRADING_UNIVERSE_ARTIFACT),
@@ -293,6 +312,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "historical_records": _read_jsonl(runtime / HISTORICAL_MEMORY_JSONL_ARTIFACT, limit=8000),
         "historical_coverage": _read_json(runtime / HISTORICAL_COVERAGE_ARTIFACT),
         "historical_missing_windows": _read_jsonl(runtime / HISTORICAL_MISSING_WINDOWS_ARTIFACT, limit=8000),
+        "historical_memory_completion": _read_json(runtime / HISTORICAL_MEMORY_COMPLETION_ARTIFACT),
         "pattern_engine": _read_json(runtime / PATTERN_ENGINE_ARTIFACT),
         "edge_pattern_ledger": _read_json(runtime / EDGE_PATTERN_LEDGER_ARTIFACT),
         "linear_lab": _read_json(runtime / LINEAR_LAB_ARTIFACT),
@@ -303,13 +323,27 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "strategy_foundry": _read_json(runtime / STRATEGY_FOUNDRY_ARTIFACT),
         "strategy_hypotheses": _read_jsonl(runtime / STRATEGY_HYPOTHESES_ARTIFACT, limit=500),
         "rejected_strategy_hypotheses": _read_jsonl(runtime / REJECTED_STRATEGY_HYPOTHESES_ARTIFACT, limit=500),
+        "validated_edge_graduation_v2": _read_json(runtime / VALIDATED_EDGE_GRADUATION_V2_ARTIFACT),
+        "strategy_foundry_v2": _read_json(runtime / STRATEGY_FOUNDRY_V2_ARTIFACT),
+        "strategy_hypotheses_v2": _read_jsonl(runtime / STRATEGY_HYPOTHESES_V2_ARTIFACT, limit=500),
         "akber_filter": _read_json(runtime / AKBER_FILTER_ARTIFACT),
         "akber_results": _read_jsonl(runtime / AKBER_FILTER_RESULTS_ARTIFACT, limit=500),
+        "akber_filter_v2": _read_json(runtime / AKBER_FILTER_V2_ARTIFACT),
+        "akber_records_v2": _read_jsonl(runtime / AKBER_FILTER_V2_RECORDS_ARTIFACT, limit=500),
+        "market_confirmation": _read_json(runtime / MARKET_CONFIRMATION_ARTIFACT),
+        "market_confirmation_packets": _read_jsonl(runtime / MARKET_CONFIRMATION_PACKETS_ARTIFACT, limit=500),
+        "akber_input_completeness": _read_json(runtime / AKBER_INPUT_COMPLETENESS_ARTIFACT),
         "shadow_simulator": _read_json(runtime / SHADOW_SIMULATOR_ARTIFACT),
         "shadow_results": _read_jsonl(runtime / SHADOW_RESULTS_ARTIFACT, limit=1000),
+        "shadow_simulator_v2": _read_json(runtime / SHADOW_SIMULATOR_V2_ARTIFACT),
+        "shadow_results_v2": _read_jsonl(runtime / SHADOW_RESULTS_V2_ARTIFACT, limit=1000),
         "router": _read_json(runtime / ROUTER_ARTIFACT),
         "router_decisions": _read_jsonl(runtime / ROUTER_DECISIONS_ARTIFACT, limit=1000),
         "why_not_trading": _read_json(runtime / WHY_NOT_TRADING_ARTIFACT),
+        "router_v2": _read_json(runtime / ROUTER_V2_ARTIFACT),
+        "router_decisions_v2": _read_jsonl(runtime / ROUTER_DECISIONS_V2_ARTIFACT, limit=1000),
+        "why_not_trading_v2": _read_json(runtime / WHY_NOT_TRADING_V2_ARTIFACT),
+        "paperops_handoff_v2": _read_json(runtime / PAPEROPS_HANDOFF_V2_ARTIFACT),
         "paperops_gate": _read_json(runtime / PAPEROPS_GATE_ARTIFACT),
         "paperops_gate_records": _read_jsonl(runtime / PAPEROPS_GATE_RECORDS_ARTIFACT, limit=500),
         "paperops_summary": _read_json(runtime / PAPEROPS_SUMMARY_ARTIFACT),
@@ -331,6 +365,42 @@ def _source_rows(context: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _source_reliability(context: dict[str, Any]) -> dict[str, Any]:
+    reliability = _safe_dict(context.get("source_reliability"))
+    if reliability:
+        source_count = _int(reliability.get("source_count"), 0)
+        quorum_count = _int(reliability.get("quorum_contributing_source_count"), 0)
+        freshness_ratio = _float(reliability.get("required_source_freshness_ratio"), 0.0)
+        records = [row for row in _safe_list(context.get("source_reliability_records")) if isinstance(row, dict)]
+        trust_scores = [_float(row.get("trust_score"), 0.0) for row in records]
+        avg_trust = round(sum(trust_scores) / len(trust_scores), 4) if trust_scores else 0.0
+        by_category = _safe_dict(reliability.get("by_category"))
+        return {
+            "status": reliability.get("status") or "source_reliability_recorded",
+            "source_count": source_count,
+            "fresh_source_count": _int(reliability.get("fresh_required_source_count"), 0),
+            "degraded_source_count": _int(reliability.get("outage_count"), 0),
+            "credential_gated_source_count": 0,
+            "source_quorum_contributing_count": quorum_count,
+            "freshness_ratio": freshness_ratio,
+            "quorum_ratio": round(quorum_count / source_count, 4) if source_count else 0.0,
+            "average_trust_score": avg_trust,
+            "category_count": len(by_category),
+            "target_required_source_freshness_passed": bool(reliability.get("target_required_source_freshness_passed")),
+            "blockers": _safe_list(reliability.get("blockers")),
+            "category_rows": [
+                {
+                    "family": category,
+                    "source_count": _int(item.get("source_count"), 0) if isinstance(item, dict) else 0,
+                    "fresh_count": _int(item.get("fresh_required_source_count"), 0) if isinstance(item, dict) else 0,
+                    "quorum_contributing_count": 0,
+                    "degraded_count": _int(item.get("stale_or_offline_count"), 0) if isinstance(item, dict) else 0,
+                    "credential_gated_count": 0,
+                }
+                for category, item in sorted(by_category.items())
+            ],
+            "artifact_refs": [_artifact_ref(SOURCE_RELIABILITY_ARTIFACT), _artifact_ref(SOURCE_RELIABILITY_RECORDS_ARTIFACT)],
+        }
+
     rows = _source_rows(context)
     by_family: dict[str, Counter[str]] = defaultdict(Counter)
     trust_scores: list[float] = []
@@ -406,6 +476,44 @@ def _forward_outcome_available(record: dict[str, Any]) -> bool:
 
 
 def _historical_memory_health(context: dict[str, Any]) -> dict[str, Any]:
+    completion = _safe_dict(context.get("historical_memory_completion"))
+    if completion:
+        complete_ratio = _float(completion.get("complete_forward_window_ratio"), 0.0)
+        leakage = _safe_dict(completion.get("leakage_audit"))
+        if leakage.get("status") and leakage.get("status") != "leakage_checks_passed":
+            state = "leakage_rejected_records_present"
+        elif complete_ratio >= 0.7 and _int(completion.get("memory_record_count"), 0) >= 50:
+            state = "historical_memory_complete_enough"
+        elif _int(completion.get("memory_record_count"), 0):
+            state = "historical_memory_incomplete_forward_windows"
+        else:
+            state = "historical_memory_missing"
+        return {
+            "status": state,
+            "completion_status": completion.get("status"),
+            "memory_record_count": _int(completion.get("memory_record_count"), 0),
+            "complete_forward_window_count": _int(completion.get("complete_forward_window_count"), 0),
+            "incomplete_forward_window_count": _int(completion.get("missing_forward_window_count"), 0),
+            "missing_window_count": _int(completion.get("missing_forward_window_count"), 0),
+            "point_in_time_safe_record_count": _int(leakage.get("lookahead_safe_record_count"), 0),
+            "leakage_rejected_record_count": _int(leakage.get("leakage_rejected_record_count"), 0),
+            "complete_forward_window_ratio": complete_ratio,
+            "target_complete_forward_window_passed": bool(completion.get("target_complete_forward_window_passed")),
+            "point_in_time_safe": leakage.get("status") == "leakage_checks_passed",
+            "required_next_action": (
+                "supply point-in-time historical source and price windows"
+                if state in {"historical_memory_incomplete_forward_windows", "historical_memory_missing"}
+                else "continue replay coverage monitoring"
+            ),
+            "blockers": _safe_list(completion.get("blockers")),
+            "artifact_refs": [
+                _artifact_ref(HISTORICAL_MEMORY_COMPLETION_ARTIFACT),
+                _artifact_ref(HISTORICAL_MEMORY_ARTIFACT),
+                _artifact_ref(HISTORICAL_COVERAGE_ARTIFACT),
+                _artifact_ref(HISTORICAL_MISSING_WINDOWS_ARTIFACT),
+            ],
+        }
+
     coverage = context.get("historical_coverage", {})
     memory = context.get("historical_memory", {})
     records = context.get("historical_records", [])
@@ -551,6 +659,45 @@ def _akber_input_state(akber_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "missing_input_count": sum(required_inputs.values()),
         "required_inputs": [item for item, _count in required_inputs.most_common(6)],
         "average_akber_score": avg_score,
+    }
+
+
+def _market_confirmation_input_state(
+    market_packets: list[dict[str, Any]],
+    akber_rows: list[dict[str, Any]],
+    completeness: dict[str, Any],
+) -> dict[str, Any]:
+    if not market_packets:
+        fallback = _akber_input_state(akber_rows)
+        if completeness:
+            fallback["market_confirmation_status"] = completeness.get("status")
+            fallback["market_confirmation_missing_context_count"] = _int(
+                completeness.get("akber_missing_context_count"),
+                fallback.get("missing_input_count", 0),
+            )
+        return fallback
+
+    complete_count = sum(1 for packet in market_packets if packet.get("akber_input_complete") is True)
+    incomplete_count = len(market_packets) - complete_count
+    required_inputs = Counter()
+    scores: list[float] = []
+    for packet in market_packets:
+        for item in _safe_list(packet.get("missing_inputs")):
+            required_inputs[str(item)] += 1
+        scores.append(_float(packet.get("completeness_score"), 0.0))
+    avg_score = round(sum(scores) / len(scores), 4) if scores else 0.0
+    return {
+        "state": "akber_inputs_passed" if complete_count and incomplete_count == 0 else "akber_inputs_incomplete",
+        "passed_count": complete_count,
+        "held_count": incomplete_count,
+        "rejected_count": 0,
+        "missing_input_count": sum(required_inputs.values()),
+        "required_inputs": [item for item, _count in required_inputs.most_common(6)],
+        "average_akber_score": avg_score,
+        "market_confirmation_status": completeness.get("status"),
+        "market_confirmation_packet_count": len(market_packets),
+        "market_confirmation_complete_packet_count": complete_count,
+        "market_confirmation_missing_context_count": _int(completeness.get("akber_missing_context_count"), sum(required_inputs.values())),
     }
 
 
@@ -852,10 +999,15 @@ def _build_records(
         edge = _validated_edge_state(pattern, edge_records.get(sleeve_key))
         hypothesis_rows = _match_rows(pattern, context.get("strategy_hypotheses", []))
         akber_rows = _match_rows(pattern, context.get("akber_results", []))
+        market_packets = _match_rows(pattern, context.get("market_confirmation_packets", []))
         shadow_rows = _match_rows(pattern, context.get("shadow_results", []))
         router_rows = _match_rows(pattern, context.get("router_decisions", []))
         strategy = _strategy_state(hypothesis_rows)
-        akber = _akber_input_state(akber_rows or context.get("akber_results", [])[:3])
+        akber = _market_confirmation_input_state(
+            market_packets,
+            akber_rows or context.get("akber_results", [])[:3],
+            _safe_dict(context.get("akber_input_completeness")),
+        )
         shadow = _shadow_state(shadow_rows or context.get("shadow_results", [])[:3])
         router = _router_state(router_rows or context.get("router_decisions", [])[:3])
         tradeability_state = _tradeability_state(
@@ -964,6 +1116,10 @@ def _dashboard_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "validated_edge_count": payload.get("validated_edge_count"),
         "akber_pass_count": payload.get("akber_pass_count"),
         "akber_hold_count": payload.get("akber_hold_count"),
+        "akber_missing_context_count": payload.get("akber_missing_context_count"),
+        "market_confirmation_status": payload.get("market_confirmation_status"),
+        "market_confirmation_packet_count": payload.get("market_confirmation_packet_count"),
+        "market_confirmation_repair_request_count": payload.get("market_confirmation_repair_request_count"),
         "historical_complete_forward_window_ratio": payload.get("historical_memory", {}).get("complete_forward_window_ratio"),
         "source_freshness_ratio": payload.get("source_reliability", {}).get("freshness_ratio"),
         "summary": payload.get("summary"),
@@ -990,8 +1146,42 @@ def build_evidence_quality_engine(settings: Settings | None = None) -> dict[str,
     paper_review_count = counts.get("paper_review_candidate", 0)
     held_count = sum(count for state, count in counts.items() if state != "paper_review_candidate")
     akber_filter = context.get("akber_filter", {})
+    akber_filter_v2 = _safe_dict(context.get("akber_filter_v2"))
+    akber_completeness = _safe_dict(context.get("akber_input_completeness"))
+    market_confirmation = _safe_dict(context.get("market_confirmation"))
     router = context.get("router", {})
-    validated_edge_count = _int(context.get("edge_pattern_ledger", {}).get("validated_edge_count"), 0)
+    router_v2 = _safe_dict(context.get("router_v2"))
+    validated_edge_graduation_v2 = _safe_dict(context.get("validated_edge_graduation_v2"))
+    strategy_foundry_v2 = _safe_dict(context.get("strategy_foundry_v2"))
+    shadow_simulator_v2 = _safe_dict(context.get("shadow_simulator_v2"))
+    paperops_handoff_v2 = _safe_dict(context.get("paperops_handoff_v2"))
+    validated_edge_count = _int(
+        validated_edge_graduation_v2.get("validated_edge_count"),
+        _int(context.get("edge_pattern_ledger", {}).get("validated_edge_count"), 0),
+    )
+    router_paper_review_candidate_count = _int(
+        router_v2.get("paper_review_candidate_count"),
+        _int(router.get("paper_review_candidate_count"), 0),
+    )
+    router_hold_count = _int(
+        router_v2.get("decision_count"),
+        _int(router.get("hold_count"), 0),
+    )
+    akber_pass_count = _int(
+        akber_filter_v2.get("pass_count"),
+        _int(akber_filter.get("passed_filter_count"), 0),
+    )
+    akber_hold_count = _int(
+        akber_filter_v2.get("hold_count"),
+        _int(akber_filter.get("hold_filter_count"), 0),
+    )
+    akber_missing_context_count = _int(
+        akber_filter_v2.get("missing_context_count"),
+        _int(
+            akber_completeness.get("akber_missing_context_count"),
+            _int(akber_filter.get("missing_context_count"), 0),
+        ),
+    )
     if not records:
         status = "qsase_evidence_quality_missing_pattern_inputs"
     elif paper_review_count:
@@ -1018,14 +1208,61 @@ def build_evidence_quality_engine(settings: Settings | None = None) -> dict[str,
         "historical_memory": historical,
         "paperops_state": paperops,
         "router_status": router.get("status"),
-        "router_paper_review_candidate_count": _int(router.get("paper_review_candidate_count"), 0),
-        "router_hold_count": _int(router.get("hold_count"), 0),
+        "router_v2_status": router_v2.get("status"),
+        "router_paper_review_candidate_count": router_paper_review_candidate_count,
+        "router_hold_count": router_hold_count,
         "akber_status": akber_filter.get("status"),
-        "akber_input_record_count": _int(akber_filter.get("input_filter_record_count"), len(context.get("akber_results", []))),
-        "akber_pass_count": _int(akber_filter.get("passed_filter_count"), 0),
-        "akber_hold_count": _int(akber_filter.get("hold_filter_count"), 0),
-        "akber_missing_context_count": _int(akber_filter.get("missing_context_count"), 0),
+        "akber_v2_status": akber_filter_v2.get("status"),
+        "market_confirmation_status": market_confirmation.get("status"),
+        "market_confirmation_packet_count": _int(market_confirmation.get("packet_count"), 0),
+        "market_confirmation_complete_packet_count": _int(market_confirmation.get("complete_packet_count"), 0),
+        "market_confirmation_repair_request_count": _int(market_confirmation.get("repair_request_count"), 0),
+        "akber_input_record_count": _int(
+            akber_filter_v2.get("stage_record_count"),
+            _int(akber_filter.get("input_filter_record_count"), len(context.get("akber_results", []))),
+        ),
+        "akber_pass_count": akber_pass_count,
+        "akber_hold_count": akber_hold_count,
+        "akber_missing_context_count": akber_missing_context_count,
+        "akber_input_completeness": akber_completeness,
         "validated_edge_count": validated_edge_count,
+        "validated_edge_graduation_v2": {
+            "status": validated_edge_graduation_v2.get("status"),
+            "graduation_record_count": _int(validated_edge_graduation_v2.get("graduation_record_count"), 0),
+            "validated_edge_count": _int(validated_edge_graduation_v2.get("validated_edge_count"), 0),
+            "edge_rejection_count": _int(validated_edge_graduation_v2.get("edge_rejection_count"), 0),
+            "top_failed_criteria": validated_edge_graduation_v2.get("top_failed_criteria", {}),
+        },
+        "strategy_foundry_v2": {
+            "status": strategy_foundry_v2.get("status"),
+            "strategy_hypothesis_count": _int(strategy_foundry_v2.get("strategy_hypothesis_count"), 0),
+            "rejected_hypothesis_count": _int(strategy_foundry_v2.get("rejected_hypothesis_count"), 0),
+        },
+        "akber_filter_v2": {
+            "status": akber_filter_v2.get("status"),
+            "stage_record_count": _int(akber_filter_v2.get("stage_record_count"), 0),
+            "pass_count": akber_pass_count,
+            "hold_count": akber_hold_count,
+            "missing_context_count": akber_missing_context_count,
+        },
+        "shadow_simulator_v2": {
+            "status": shadow_simulator_v2.get("status"),
+            "shadow_result_count": _int(shadow_simulator_v2.get("shadow_result_count"), 0),
+            "shadow_support_count": _int(shadow_simulator_v2.get("shadow_support_count"), 0),
+            "shadow_rejection_count": _int(shadow_simulator_v2.get("shadow_rejection_count"), 0),
+        },
+        "strategy_router_v2": {
+            "status": router_v2.get("status"),
+            "decision_count": _int(router_v2.get("decision_count"), 0),
+            "paper_review_candidate_count": router_paper_review_candidate_count,
+            "handoff_count": _int(router_v2.get("handoff_count"), 0),
+            "rejected_handoff_count": _int(router_v2.get("rejected_handoff_count"), 0),
+        },
+        "paperops_handoff_v2": {
+            "status": paperops_handoff_v2.get("status"),
+            "handoff_count": _int(paperops_handoff_v2.get("handoff_count"), 0),
+            "rejected_handoff_count": _int(paperops_handoff_v2.get("rejected_handoff_count"), 0),
+        },
         "candidate_pattern_count": len(_pattern_candidates(context)),
         "evidence_record_count": len(records),
         "paper_review_candidate_count": paper_review_count,

@@ -45,6 +45,16 @@ PATTERN_RECOGNITION_ENGINE_ARTIFACT = "pattern_recognition_engine.json"
 PHASE6_SHADOW_STRATEGY_REPLAY_ARTIFACT = "phase6_shadow_strategy_replay.json"
 PAPEROPS_SUMMARY_ARTIFACT = "paperops_autonomous_pass_summary.json"
 
+HISTORICAL_MEMORY_READY_STATUSES = {
+    "qsase_historical_source_price_memory_ready",
+    "qsase_historical_source_price_memory_ready_with_gaps",
+}
+
+FULL_UNIVERSE_READY_STATUSES = {
+    "qsase_full_universe_pattern_search_ready",
+    "qsase_full_universe_pattern_search_ready_with_research_gaps",
+}
+
 LINEAR_AUTHORITY_FLAGS = {
     "trade_candidate_creation_allowed": False,
     "strategy_hypothesis_creation_allowed": False,
@@ -925,17 +935,24 @@ def build_linear_pattern_results(settings: Settings | None = None) -> dict[str, 
     if not candidate_patterns:
         missing_required_state.append("qsase_candidate_patterns_missing")
     degraded_reasons: list[str] = []
-    if context["historical_memory"].get("status") != "qsase_historical_source_price_memory_ready":
+    hold_reasons: list[str] = []
+    if context["historical_memory"].get("status") not in HISTORICAL_MEMORY_READY_STATUSES:
         degraded_reasons.append("historical_memory_degraded")
-    if context["full_universe"].get("status") != "qsase_full_universe_pattern_search_ready":
+    elif context["historical_memory"].get("status") == "qsase_historical_source_price_memory_ready_with_gaps":
+        hold_reasons.append("historical_memory_has_missing_forward_windows")
+    if context["full_universe"].get("status") not in FULL_UNIVERSE_READY_STATUSES:
         degraded_reasons.append("full_universe_pattern_search_degraded")
+    elif context["full_universe"].get("status") == "qsase_full_universe_pattern_search_ready_with_research_gaps":
+        hold_reasons.append("full_universe_pattern_search_has_rejected_patterns")
     if coverage_blocked_count:
-        degraded_reasons.append("coverage_blocked_patterns_present")
+        hold_reasons.append("coverage_blocked_patterns_present")
     status = "qsase_linear_pattern_lab_ready"
     if missing_required_state:
         status = "qsase_linear_pattern_lab_blocked"
-    elif degraded_reasons or accepted_count == 0:
+    elif degraded_reasons:
         status = "qsase_linear_pattern_lab_degraded"
+    elif hold_reasons or accepted_count == 0:
+        status = "qsase_linear_pattern_lab_ready_with_holds"
     source_names = {
         source
         for result in ranked_results
@@ -997,6 +1014,7 @@ def build_linear_pattern_results(settings: Settings | None = None) -> dict[str, 
         },
         "missing_required_state": missing_required_state,
         "degraded_reasons": sorted(set(degraded_reasons)),
+        "hold_reasons": sorted(set(hold_reasons)),
         "results_path": f"data/runtime/{BACKTEST_RESULTS_ARTIFACT}",
         "rejected_patterns_path": f"data/runtime/{REJECTED_PATTERNS_ARTIFACT}",
         "linear_success_is_research_evidence_only": True,
@@ -1046,6 +1064,7 @@ def validate_linear_pattern_results(payload: dict[str, Any]) -> list[str]:
         errors.append("schema_version_invalid")
     if payload.get("status") not in {
         "qsase_linear_pattern_lab_ready",
+        "qsase_linear_pattern_lab_ready_with_holds",
         "qsase_linear_pattern_lab_degraded",
         "qsase_linear_pattern_lab_blocked",
     }:

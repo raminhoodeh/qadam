@@ -2,9 +2,9 @@
   "artifact_type": "qsase_nonlinear_quantum_pattern_lab_dashboard_summary",
   "authority_flags_false": true,
   "command_disabled": true,
-  "generated_at": "2026-06-29T06:57:27.722598+00:00",
+  "generated_at": "2026-07-06T09:36:53.365660+00:00",
   "hardware_execution_claimed": false,
-  "latest_blocker": "historical_memory_degraded,linear_pattern_lab_degraded,nonlinear_overfit_controls_holding",
+  "latest_blocker": "quantum_ambiguity_holds_present",
   "live_send_allowed": false,
   "no_paper_orders_created": true,
   "no_proof_credit_granted": true,
@@ -12,11 +12,11 @@
   "public_safe": true,
   "quantum_review_is_not_trade_confirmation": true,
   "schema_version": "qsase_nonlinear_quantum_pattern_lab.v1",
-  "status": "qsase_nonlinear_quantum_pattern_lab_degraded",
+  "status": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds",
   "summary_rows": [
     {
       "label": "Nonlinear lab status",
-      "value": "qsase_nonlinear_quantum_pattern_lab_degraded"
+      "value": "qsase_nonlinear_quantum_pattern_lab_ready_with_holds"
     },
     {
       "label": "Tested interactions",

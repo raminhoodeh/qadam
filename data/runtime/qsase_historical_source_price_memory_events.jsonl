@@ -4,3 +4,6 @@
 {"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-06-28T21:06:48.645908+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-06-28T21:07:48.935891+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_degraded"}
 {"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-06-29T06:57:22.726092+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_degraded"}
+{"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T09:28:16.724786+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T09:36:35.590626+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T09:36:48.381940+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
