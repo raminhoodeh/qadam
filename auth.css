@@ -11921,6 +11921,13 @@ body.qadam-dashboard-page .qsase-source-category-row > summary p {
     margin: 0;
 }
 
+body.qadam-dashboard-page .qsase-source-api-list p,
+body.qadam-dashboard-page .qsase-compact-list li p {
+    color: var(--qadam-color-text);
+    line-height: 1.45;
+    margin: 0;
+}
+
 body.qadam-dashboard-page .qsase-source-category-row small {
     color: var(--qadam-color-muted);
     line-height: 1.35;
@@ -12299,7 +12306,7 @@ body.qadam-dashboard-page .qsase-trade-event {
     border-left: 5px solid rgba(var(--qadam-rgb-info), 0.32);
     display: grid;
     gap: var(--qadam-space-4);
-    grid-template-columns: minmax(8rem, 0.34fr) minmax(0, 1fr);
+    grid-template-columns: minmax(8rem, 0.26fr) minmax(0, 1fr) minmax(10rem, 0.22fr);
     padding: var(--qadam-space-4);
 }
 
@@ -12313,12 +12320,14 @@ body.qadam-dashboard-page .qsase-trade-event.sell {
 
 body.qadam-dashboard-page .qsase-trade-event-time,
 body.qadam-dashboard-page .qsase-trade-event-main,
+body.qadam-dashboard-page .qsase-trade-event-amount,
 body.qadam-dashboard-page .qsase-trade-event-meta {
     display: grid;
     gap: 0.35rem;
 }
 
 body.qadam-dashboard-page .qsase-trade-event-time span,
+body.qadam-dashboard-page .qsase-trade-event-amount span,
 body.qadam-dashboard-page .qsase-trade-event-meta span,
 body.qadam-dashboard-page .qsase-trade-event-main p {
     color: var(--qadam-color-muted);
@@ -12326,6 +12335,7 @@ body.qadam-dashboard-page .qsase-trade-event-main p {
 }
 
 body.qadam-dashboard-page .qsase-trade-event-time span,
+body.qadam-dashboard-page .qsase-trade-event-amount span,
 body.qadam-dashboard-page .qsase-trade-event-meta span {
     font-family: var(--qadam-font-ui);
     font-size: 0.72rem;
@@ -12336,6 +12346,13 @@ body.qadam-dashboard-page .qsase-trade-event-meta span {
 
 body.qadam-dashboard-page .qsase-trade-event strong {
     color: var(--qadam-color-heading);
+}
+
+body.qadam-dashboard-page .qsase-trade-event-amount strong {
+    font-family: var(--qadam-font-ui);
+    font-size: 0.95rem;
+    font-weight: 850;
+    letter-spacing: 0;
 }
 
 body.qadam-dashboard-page .qsase-trading-summary {

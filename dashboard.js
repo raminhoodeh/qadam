@@ -12263,10 +12263,10 @@ const QSASE_GUIDE_MARKERS = {
         ]
     },
     current_portfolio: {
-        title: "How to read portfolio status",
-        summary: "This panel summarizes the current account exposure. Paper orders and closed-trade events live in Trading History, so the page reads like a portfolio update rather than a broker-settlement explainer.",
+        title: "How to read the portfolio overview",
+        summary: "This panel summarizes the current account exposure. Paper orders and closed-trade events live in Timeline, so the page reads like a portfolio update rather than a broker-settlement explainer.",
         rows: [
-            ["Portfolio status", "Whether the paper account is flat, exposed, or waiting on paper activity."],
+            ["Portfolio overview", "Whether the paper account is flat, exposed, or waiting on paper activity."],
             ["Open exposure", "Current market exposure carried by the paper account."],
             ["Trade history", "Where submitted orders, buys, sells, and closed trades are listed."]
         ]
@@ -12568,11 +12568,49 @@ function qsaseTradeEventDescription(row = {}) {
         .replace(/proof credit/gi, "a fully documented paper result");
 }
 
+function qsaseTradeQuantity(row = {}, rows = []) {
+    const explicit = firstPresent(row.filled_quantity, row.quantity, row.qty, row.shares, row.position_qty, row.filled_qty);
+    if (explicit !== undefined && explicit !== null && explicit !== "") return explicit;
+    const id = row.order_id || row.trade_id;
+    if (!id) return null;
+    const match = asArray(rows).find((candidate) => candidate !== row && (candidate.order_id === id || candidate.trade_id === id) && firstPresent(candidate.filled_quantity, candidate.quantity, candidate.qty, candidate.shares, candidate.position_qty, candidate.filled_qty) !== undefined);
+    return match ? firstPresent(match.filled_quantity, match.quantity, match.qty, match.shares, match.position_qty, match.filled_qty) : null;
+}
+
+function qsaseFormatQuantity(value) {
+    const number = Number(value);
+    if (Number.isFinite(number)) return Number.isInteger(number) ? String(number) : number.toFixed(4).replace(/0+$/g, "").replace(/\.$/, "");
+    return value === undefined || value === null || value === "" ? "amount not exported" : String(value);
+}
+
+function qsaseTradeAmountLabel(row = {}, rows = []) {
+    const quantity = qsaseTradeQuantity(row, rows);
+    const formattedQuantity = qsaseFormatQuantity(quantity);
+    if (formattedQuantity === "amount not exported") return formattedQuantity;
+    const unit = Number(formattedQuantity) === 1 ? "unit" : "units";
+    const tone = qsaseTradeEventTone(row);
+    const verb = tone === "sell" ? "Sold / closed" : tone === "buy" ? "Bought / ordered" : "Amount";
+    return `${verb} ${formattedQuantity} ${unit}`;
+}
+
 function qsaseTradeActionLabel(row = {}) {
     const tone = qsaseTradeEventTone(row);
     if (tone === "sell") return "sell or close";
     if (tone === "buy") return "buy or order";
     return qsaseHumanText(row.event_label || row.row_type || row.status, "recorded event").toLowerCase();
+}
+
+function qsaseClosedTradesInWindow(rows = [], days = 7) {
+    const closedRows = asArray(rows).filter((row) => row.closed_at || String(row.row_type || "").includes("closed_paper_trade"));
+    const timestamps = closedRows
+        .map((row) => Date.parse(qsaseTimestamp(row)))
+        .filter(Number.isFinite);
+    const latest = timestamps.length ? Math.max(...timestamps) : Date.now();
+    const threshold = latest - days * 24 * 60 * 60 * 1000;
+    return closedRows.filter((row) => {
+        const timestamp = Date.parse(qsaseTimestamp(row));
+        return Number.isFinite(timestamp) && timestamp >= threshold;
+    }).length;
 }
 
 function qsaseTradingHistoryNarrative(section = {}, lifecycle = {}, proof = {}, rows = []) {
@@ -12586,12 +12624,13 @@ function qsaseTradingHistoryNarrative(section = {}, lifecycle = {}, proof = {}, 
     const recordCount = modelNumber(lifecycle.lifecycle_record_count, rows.length);
     const closedCount = modelNumber(section.closed_trade_row_count, 0);
     const orderMirrorCount = modelNumber(section.paper_order_mirror_row_count, 0);
+    const closedLastSevenDays = qsaseClosedTradesInWindow(rows, 7);
     const latestInstrument = latest.instrument || "the latest paper record";
     const latestAction = latest.instrument ? qsaseTradeActionLabel(latest) : "recorded event";
     const latestTime = latest.instrument ? formatTime(qsaseTimestamp(latest)) : "time not exported";
 
     return {
-        recordLabel: `${recordCount || rows.length} records`,
+        recordLabel: `${closedLastSevenDays} closed trades in the last 7 days`,
         auditSummary: staleAccepted
             ? `${staleAccepted} accepted paper order mirror${staleAccepted === 1 ? "" : "s"} may be stale and should be checked against Alpaca.`
             : "No accepted paper orders look stale against the Alpaca paper mirror right now.",
@@ -12607,7 +12646,7 @@ function qsaseTradingHistoryNarrative(section = {}, lifecycle = {}, proof = {}, 
         totals: [
             ["Closed trades", closedCount],
             ["Mirrored orders", orderMirrorCount],
-            ["Visible rows", rows.length]
+            ["Last 7 days", closedLastSevenDays]
         ]
     };
 }
@@ -12628,6 +12667,55 @@ function qsaseFamilyLabel(value) {
 
 function qsaseSourceDescription(row = {}) {
     return row.description || "This read-only source category can strengthen or weaken a hypothesis, but it cannot create trades.";
+}
+
+const QSASE_SOURCE_DESCRIPTIONS = {
+    acled: "Global political violence, protest, and conflict-event data. Qadam uses it to detect geopolitical stress that could affect oil, defence, prediction markets, and broader risk appetite.",
+    ais_maritime: "Ship-position and vessel-movement data. Qadam uses it to watch chokepoints, shipping disruption, port flow, and energy-route stress.",
+    ais_or_shipping: "A market-context grouping for shipping and vessel-flow signals. It helps connect maritime disruption to commodities and supply-chain hypotheses.",
+    alpaca: "The Alpaca paper broker and market-data route. Qadam uses it for paper account visibility and guarded paper execution, not live-capital authority.",
+    arcgis_usace: "Geospatial infrastructure and waterway context from ArcGIS and USACE-style feeds. Qadam uses it for ports, waterways, infrastructure, and physical-route context.",
+    aviationstack: "Commercial flight-status and aviation-route data. Qadam uses it to detect air-traffic disruption, rerouting, and transport stress.",
+    bis: "Bank for International Settlements macro and financial statistics. Qadam uses it for global liquidity, credit, and cross-border financial context.",
+    bls: "US labor, inflation, and economic data from the Bureau of Labor Statistics. Qadam uses it for macro pressure that can affect rates, dollar assets, silver, and equities.",
+    bookmap: "Local order-flow and liquidity context from Bookmap. Qadam uses it as technical market texture, not as a trade authority.",
+    chainlink: "Decentralized price-feed context. Qadam treats it as supplemental market-reference data when available.",
+    coinglass: "Crypto derivatives, funding, liquidation, and open-interest context. Qadam uses it as a risk and liquidity proxy when available.",
+    conflict_tracker: "Curated conflict and geopolitical-risk monitoring. Qadam uses it as a second view beside event databases such as ACLED and GDELT.",
+    ecb: "European Central Bank data. Qadam uses it for rates, liquidity, money, and euro-area macro context.",
+    fred: "Federal Reserve Economic Data. Qadam uses it for rates, inflation, liquidity, commodities, labor, and macro series that shape cross-asset hypotheses.",
+    gdelt: "Global news and event-monitoring data. Qadam uses it to detect narrative acceleration, geopolitical attention, and global event coverage.",
+    github: "Repository, code, and developer-activity signals. Qadam uses it as a technology and software-ecosystem context source when active.",
+    gps_jamming: "GPS interference and spoofing monitors. Qadam uses it as a physical-world disruption signal for conflict, shipping, aviation, and defence hypotheses.",
+    hyperliquid: "Perpetual-futures market data. Qadam uses it as speculative liquidity and risk-appetite context.",
+    internet_outage: "Internet outage and network-disruption data, including IODA-style signals. Qadam uses it to detect infrastructure stress and geopolitical disruption.",
+    kalshi: "Regulated event-contract market data and odds context. Qadam uses it to compare market-implied probabilities with its source evidence.",
+    nasa_firms: "NASA fire and thermal-anomaly satellite data. Qadam uses it to detect fires, industrial disruption, conflict effects, and physical stress near strategic assets.",
+    oref: "Rocket and civil-defence alert context. Qadam uses it as a high-frequency conflict signal where available.",
+    patents: "Patent and intellectual-property filings. Qadam uses it for technology, semiconductor, defence, and innovation-cycle context.",
+    polymarket: "Prediction-market odds and event-probability context. Qadam uses it to compare crowd-implied probabilities with source evidence.",
+    rapidapi: "A connector hub for supplemental APIs. Qadam treats it as optional context until a specific provider is promoted.",
+    reddit: "Narrative and community-discussion signals. Qadam uses it to detect retail attention, early story formation, and social-market context.",
+    rss: "RSS and Atom news feeds. Qadam uses them for public news flow, official updates, and broad narrative monitoring.",
+    sec_edgar: "SEC company filings. Qadam uses it for disclosures, risk factors, insider filings, and company-specific evidence.",
+    "social.rss": "A market-context grouping for social and RSS-derived narrative signals. It helps organize public story flow before strategy review.",
+    space_track_celestrak: "Satellite orbit and tracking context. Qadam uses it for space, defence, GPS, and infrastructure-related physical-world signals.",
+    stock_act: "Politician and congressional trading disclosure context. Qadam uses it as a governance and positioning signal, not as a standalone trade trigger.",
+    telegram: "Telegram monitoring and message-routing context. Qadam uses it for human-readable briefings and selected public/intake signals, with commands disabled.",
+    tradingview_mcp: "Read-only technical-analysis observations from the local TradingView MCP path. Qadam uses it as evidence context; it cannot place trades.",
+    tradingview_paid_alerts: "TradingView alert intake. Qadam uses alerts as watched signals that still require source, risk, and paper-trading gates.",
+    twitter_x: "X/Twitter public narrative and breaking-news context. Qadam uses it for attention, rumor, and fast-moving story signals.",
+    ucdp: "Uppsala conflict data. Qadam uses it as an additional structured conflict dataset for geopolitical hypotheses.",
+    un_comtrade: "United Nations trade-flow data. Qadam uses it to understand commodity, import/export, and supply-chain relationships.",
+    unusual_whales: "Options-flow, dark-pool, and congressional-trading context. Qadam treats it as optional until credentials and adapter status are active.",
+    usgs: "US geological, mineral, earthquake, and commodity context. Qadam uses it for physical-resource and commodity hypotheses.",
+    yahoo_finance: "Market price and instrument context from Yahoo Finance. Qadam uses it for research prices and watchlist movement, not broker truth.",
+    yahoo_finance_or_tradingview: "A market-context fallback grouping for public price and technical-analysis sources. Qadam uses it to keep price context visible when a preferred feed is unavailable."
+};
+
+function qsaseSourcePublicDescription(source = {}) {
+    const key = String(source.source_key || "").trim().toLowerCase();
+    return source.description || QSASE_SOURCE_DESCRIPTIONS[key] || `${source.source_name || source.source_key || "This source"} is a read-only context source. Qadam can use it to support or challenge hypotheses, but it cannot create trades.`;
 }
 
 function qsasePendingPaperOrders(qsase = {}) {
@@ -12656,25 +12744,21 @@ function qsasePublicFundSummary(qsase = {}) {
         ? `${openPositions} open exposure item${openPositions === 1 ? "" : "s"}`
         : "flat";
     const waitingOrderText = `${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"}`;
-    const portfolioActivityLabel = brokerOpenOrders
-        ? `Portfolio status: ${exposureText} · ${waitingOrderText}`
-        : openPositions
-            ? `Portfolio status: ${exposureText}`
-            : "Portfolio status: flat";
+    const portfolioActivityLabel = "Portfolio Overview";
     const openExposureMetric = brokerOpenOrders
         ? `${openPositions} open · ${brokerOpenOrders} pending`
         : openPositions;
-    const headline = portfolioActivityLabel;
+    const headline = "Portfolio Overview";
     const plainExplanation = brokerOpenOrders
         ? openPositions
-            ? `The paper portfolio is currently ${value}. Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in Trading History.`
-            : `The paper portfolio is currently ${value}. Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in Trading History.`
+            ? `The paper portfolio is currently ${value}. Qadam is carrying ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}, and ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} are listed in the Timeline.`
+            : `The paper portfolio is currently ${value}. Qadam is flat right now, with ${brokerOpenOrders} pending paper order${brokerOpenOrders === 1 ? "" : "s"} listed in the Timeline.`
         : openPositions
-            ? `The paper portfolio is currently ${value}, with ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Trade History shows how it got there.`
-            : `The paper portfolio is currently ${value}. Qadam is flat right now; Trade History shows the latest paper activity.`;
+            ? `The paper portfolio is currently ${value}, with ${openPositions} open exposure item${openPositions === 1 ? "" : "s"}. Timeline shows how it got there.`
+            : `The paper portfolio is currently ${value}. Qadam is flat right now; Timeline shows the latest paper activity.`;
     const detailNote = brokerOpenOrders
-        ? "Portfolio Status summarizes the account snapshot. Trading History lists each paper order, trade event, and closed-trade record."
-        : "Portfolio Status summarizes value, cash, exposure, and risk. Trading History carries the detailed paper-trade timeline.";
+        ? "Portfolio Overview summarizes the account snapshot. Timeline lists each paper order, trade event, and closed-trade record."
+        : "Portfolio Overview summarizes value, cash, exposure, and risk. Timeline carries the detailed paper-trade chronology.";
     return {
         open_positions: openPositions,
         pending_orders: brokerOpenOrders,
@@ -12743,16 +12827,16 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
     const headline = mismatch
         ? `${reportedCount} broker-reported · ${rowCount} exported rows`
         : portfolioActivityHeadline;
-    const emptyTitle = mismatch ? "Position mismatch" : "Portfolio status";
+    const emptyTitle = mismatch ? "Position mismatch" : "Portfolio overview";
     const emptySummary = mismatch
         ? "Broker and dashboard disagree"
         : brokerOpenOrders
-            ? "Pending paper activity in Trading History"
+            ? "Pending paper activity in Timeline"
             : "No current holdings";
     const emptyDetail = brokerOpenOrders
-        ? "The pending paper activity is visible in Trading History; this panel stays focused on current account exposure."
+        ? "The pending paper activity is visible in Timeline; this panel stays focused on current account exposure."
         : "No broker-filled positions are currently held. This only describes the current holdings view; trade candidates, staged paper orders, pending orders, and closed trades are shown in the trade lifecycle sections.";
-    const portfolioNote = !rows.length && !mismatch ? emptyDetail : (section.reconciliation_note || "This section summarizes current paper exposure. Paper order and closed-trade events live in Trading History.");
+    const portfolioNote = !rows.length && !mismatch ? emptyDetail : (section.reconciliation_note || "This section summarizes current paper exposure. Paper order and closed-trade events live in Timeline.");
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
             ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
@@ -12790,7 +12874,7 @@ function renderQsaseTradingHistory(qsase = {}) {
     const narrative = qsaseTradingHistoryNarrative(section, lifecycle, proof, allRows);
     return `
         <section id="qsase-history" class="qsase-section" data-qsase-section="trading_history">
-            ${renderQsaseSectionHeader("Trading History", `${section.closed_trade_row_count || 0} closed · ${section.paper_order_mirror_row_count || 0} mirrored orders`, narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
+            ${renderQsaseSectionHeader("Timeline", "Trading History", narrative.recordLabel, allRows.length ? "online" : "pending", "trading_history")}
             <p class="qsase-boundary-note">${qsaseHtmlText(narrative.auditSummary)} ${qsaseHtmlText(narrative.documentationSummary)}</p>
             <div class="qsase-trading-history-layout">
                 <div class="qsase-trading-timeline" role="list" aria-label="Read-only paper trading chronology">
@@ -12805,6 +12889,10 @@ function renderQsaseTradingHistory(qsase = {}) {
                                 <div class="qsase-trade-event-main">
                                     <strong>${qsaseHtmlText(row.instrument, "Instrument")}</strong>
                                     <p>${qsaseHtmlText(qsaseTradeEventDescription(row))}</p>
+                                </div>
+                                <div class="qsase-trade-event-amount">
+                                    <span>Amount</span>
+                                    <strong>${qsaseHtmlText(qsaseTradeAmountLabel(row, allRows))}</strong>
                                 </div>
                             </article>
                         `;
@@ -12835,16 +12923,16 @@ function renderQsaseSourceNetwork(qsase = {}) {
     const allSources = asArray(section.source_rows);
     const tradingRows = asArray(section.trading_universe_rows);
     const fundCategoryCount = new Set(tradingRows.map((row) => row.market_family || "unassigned")).size || categories.length;
-    const sourceMeta = `${tradingRows.length || allSources.length} Instruments over ${fundCategoryCount} Fund Categories`;
+    const sourceMeta = `${section.source_row_count || allSources.length} connected sources covering ${categories.length} categories`;
     const sourcesForFamily = (family) => allSources.filter((source) => String(source.family || "").toLowerCase() === String(family || "").toLowerCase());
     return `
         <section id="qsase-sources" class="qsase-section" data-qsase-section="source_intelligence_network">
-            ${renderQsaseSectionHeader("Source Intelligence Network", `${section.source_row_count || allSources.length} connected source rows · ${categories.length} categories`, sourceMeta, "online", "source_intelligence_network")}
+            ${renderQsaseSectionHeader("Alternative Data Network", "Data Sources", sourceMeta, "online", "source_intelligence_network")}
             <div class="qsase-source-category-list">
                 ${categories.map((row, index) => {
                     const familySources = sourcesForFamily(row.family);
                     return `
-                        <details class="qsase-source-category-row ${statusClass(row.state)}" ${index === 0 ? "open" : ""}>
+                        <details class="qsase-source-category-row ${statusClass(row.state)}" data-qsase-source-category="${qsaseHtmlText(row.family || `category-${index}`)}" ${index === 0 ? "open" : ""}>
                             <summary>
                                 <div>
                                     <span>${qsaseHtmlText(qsaseFamilyLabel(row.family))}</span>
@@ -12857,6 +12945,7 @@ function renderQsaseSourceNetwork(qsase = {}) {
                                 ${familySources.length ? familySources.map((source) => `
                                     <li class="${statusClass(source.state)}">
                                         <strong>${qsaseHtmlText(source.source_name || source.source_key)}</strong>
+                                        <p>${qsaseHtmlText(qsaseSourcePublicDescription(source))}</p>
                                         <span>${qsaseHtmlText(source.freshness_status || "freshness not exported")} · ${qsaseHtmlText(source.trust_posture || "trust posture pending")} · last update ${qsaseHtmlText(source.last_update || "not exported")}</span>
                                     </li>
                                 `).join("") : `<li class="pending"><strong>No source rows exported for this category</strong></li>`}
@@ -12868,6 +12957,39 @@ function renderQsaseSourceNetwork(qsase = {}) {
             <p class="qsase-boundary-note">These sources can inform hypotheses, but none of them can place trades.</p>
         </section>
     `;
+}
+
+const QSASE_SOURCE_OPEN_STORAGE_KEY = "qadam.qsase.sourceCategories.open";
+
+function qsaseReadSourceOpenState() {
+    try {
+        return JSON.parse(window.localStorage.getItem(QSASE_SOURCE_OPEN_STORAGE_KEY) || "{}");
+    } catch (error) {
+        return {};
+    }
+}
+
+function qsaseWriteSourceOpenState(state = {}) {
+    try {
+        window.localStorage.setItem(QSASE_SOURCE_OPEN_STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+        /* Ignore private-mode storage failures; the accordion still works for the current render. */
+    }
+}
+
+function qsaseRestoreSourceCategoryState(root = document) {
+    const details = Array.from(root.querySelectorAll("[data-qsase-source-category]"));
+    if (!details.length) return;
+    const stored = qsaseReadSourceOpenState();
+    details.forEach((detail) => {
+        const key = detail.getAttribute("data-qsase-source-category");
+        if (Object.prototype.hasOwnProperty.call(stored, key)) detail.open = Boolean(stored[key]);
+        detail.addEventListener("toggle", () => {
+            const next = qsaseReadSourceOpenState();
+            next[key] = detail.open;
+            qsaseWriteSourceOpenState(next);
+        });
+    });
 }
 
 function qsaseTeamStatusText(...values) {
@@ -12885,7 +13007,7 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
     const sourceCount = qsasePulseCount(sources.source_row_count, asArray(sources.source_rows).length);
     const tradingRows = asArray(sources.trading_universe_rows);
     const fundCategoryCount = new Set(tradingRows.map((row) => row.market_family || "unassigned")).size || qsasePulseCount(sources.category_row_count, asArray(sources.category_rows).length);
-    const sourceUniverseStatus = `${tradingRows.length || sourceCount} Instruments over ${fundCategoryCount} Fund Categories`;
+    const sourceUniverseStatus = `${sourceCount} connected source${sourceCount === 1 ? "" : "s"} across ${fundCategoryCount} categor${fundCategoryCount === 1 ? "y" : "ies"}`;
     const patternCount = qsasePulseCount(patterns.finding_count, asArray(patterns.findings).length);
     const routerDecision = qsaseRouterHeadline(router, gate);
     const quantumMode = firstPresent(oracle.latest_local_simulation_mode, oracle.latest_backend, oracle.backend, qsase.quantum_review?.mode, "classical fallback");
@@ -13061,7 +13183,7 @@ function renderQsaseTradingUniverse(qsase = {}) {
         return groups;
     }, {});
     const categoryKeys = Object.keys(grouped).sort((a, b) => qsaseMarketFamilyLabel(a).localeCompare(qsaseMarketFamilyLabel(b)));
-    const universeMeta = `${rows.length} Instruments over ${categoryKeys.length} Fund Categories`;
+    const universeMeta = `${rows.length} watched instruments across ${categoryKeys.length} fund categories`;
     return `
         <section id="qsase-trading-universe" class="qsase-section" data-qsase-section="trading_universe">
             ${renderQsaseSectionHeader("Multi-Asset Funds", "Trading Universe", universeMeta, rows.length ? "online" : "pending", "trading_universe")}
@@ -13884,6 +14006,7 @@ function renderStage7Visibility(viewModels = {}) {
     const qsase = viewModels.qsase_dashboard_model || {};
     if (qsase.available) {
         target.innerHTML = renderQsaseDashboardVisibility(qsase);
+        qsaseRestoreSourceCategoryState(target);
         return;
     }
     const stage7 = viewModels.stage7_visibility_model || {};
