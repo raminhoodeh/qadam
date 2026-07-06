@@ -12628,14 +12628,15 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
         ? "Broker and dashboard disagree"
         : brokerOpenOrders
             ? "Pending paper activity in Trading History"
-            : "Flat portfolio";
+            : "No current holdings";
     const emptyDetail = brokerOpenOrders
         ? "The pending paper activity is visible in Trading History; this panel stays focused on current account exposure."
-        : "No open exposure is currently exported by the read-only paper mirror.";
+        : "No broker-filled positions are currently held. This only describes the current holdings view; trade candidates, staged paper orders, pending orders, and closed trades are shown in the trade lifecycle sections.";
+    const portfolioNote = !rows.length && !mismatch ? emptyDetail : (section.reconciliation_note || "This section summarizes current paper exposure. Paper order and closed-trade events live in Trading History.");
     return `
         <section id="qsase-holdings" class="qsase-section" data-qsase-section="current_portfolio">
             ${renderQsaseSectionHeader("Current Portfolio", headline, section.status || portfolio.status, mismatch ? "blocked" : (rows.length ? "online" : "pending"), "current_portfolio")}
-            <p class="qsase-boundary-note">${qsaseHtmlText(section.reconciliation_note || "This section summarizes current paper exposure. Paper order and closed-trade events live in Trading History.")}</p>
+            <p class="qsase-boundary-note">${qsaseHtmlText(portfolioNote)}</p>
             <div class="qsase-card-grid">
                 ${rows.length ? rows.map((row) => `
                     <article class="qsase-record-card ${statusClass(row.state || row.status)}">
@@ -12653,7 +12654,7 @@ function renderQsaseCurrentPortfolio(qsase = {}) {
                     <article class="qsase-record-card ${mismatch ? "blocked" : "pending"}">
                         <span>${qsaseHtmlText(emptyTitle)}</span>
                         <strong>${qsaseHtmlText(emptySummary)}</strong>
-                        <p>${qsaseHtmlText(section.reconciliation_note || emptyDetail)}</p>
+                        <p>${qsaseHtmlText(portfolioNote)}</p>
                     </article>
                 `}
             </div>
@@ -13515,12 +13516,14 @@ function renderQsaseDashboardVisibility(qsase = {}) {
                     ${renderMetric("Pending orders", pendingPaperOrderCount)}
                     ${renderMetric("Closed trades", fundSummary.closed_trades)}
                     ${renderMetric("Patterns", (qsase.linear_pattern_count || 0) + (qsase.nonlinear_pattern_count || 0))}
-                    ${renderMetric("Final gate", decisionLabel)}
+                    <article class="metric qsase-final-gate-summary">
+                        <div>
+                            <span>Final gate</span>
+                            <strong>${qsaseHtmlText(decisionLabel)}</strong>
+                        </div>
+                        <p>${qsaseHtmlText(fundSummary.detail_note)} Current gate: ${qsaseHtmlText(decision)}.</p>
+                    </article>
                 </div>
-                <details class="qsase-detail-ledger qsase-fund-detail">
-                    <summary>How to read portfolio status</summary>
-                    <p>${qsaseHtmlText(fundSummary.detail_note)} Current gate: ${qsaseHtmlText(decision)}.</p>
-                </details>
             </section>
             ${renderQsasePortfolioValue(qsase)}
             ${renderQsaseCurrentPortfolio(qsase)}

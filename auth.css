@@ -11558,6 +11558,22 @@ body.qadam-dashboard-page .qsase-kpi-row .metric strong {
     overflow-wrap: anywhere;
 }
 
+body.qadam-dashboard-page .qsase-kpi-row .qsase-final-gate-summary {
+    align-items: center;
+    display: grid;
+    gap: var(--qadam-space-4);
+    grid-column: span 2;
+    grid-template-columns: minmax(8rem, 0.42fr) minmax(14rem, 1fr);
+}
+
+body.qadam-dashboard-page .qsase-final-gate-summary p {
+    border-left: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-muted);
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+    padding-left: var(--qadam-space-4);
+}
+
 body.qadam-dashboard-page .qsase-portfolio-chart {
     background:
         linear-gradient(180deg, rgba(var(--qadam-rgb-info), 0.08), transparent 60%),
@@ -12571,6 +12587,18 @@ body.qadam-dashboard-page .qsase-boundary-note {
 
     body.qadam-dashboard-page .qsase-terminal-line {
         grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-kpi-row .qsase-final-gate-summary {
+        grid-column: span 1;
+        grid-template-columns: 1fr;
+    }
+
+    body.qadam-dashboard-page .qsase-final-gate-summary p {
+        border-left: 0;
+        border-top: 1px solid var(--qadam-color-rule);
+        padding-left: 0;
+        padding-top: var(--qadam-space-3);
     }
 
     body.qadam-dashboard-page .qsase-fund-context {
