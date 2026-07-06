@@ -104,16 +104,25 @@ function assertStaticContract() {
         "Paper Fund Status",
         "Portfolio Value &amp; Return",
         "Current Portfolio",
-        "Portfolio status",
+        "Portfolio Overview",
         "Open exposure",
         "Trading History",
+        "Timeline",
         "Hedge Fund Team",
         "Qadam Team Overview",
         "Python script [COO]",
         "local LLM [Research Analyst]",
         "frontier LLM [Strategy Lead]",
         "quantum computer [Head of Quant]",
-        "Source Intelligence Network",
+        "Alternative Data Network",
+        "Data Sources",
+        "connected sources covering",
+        "qsaseSourcePublicDescription",
+        "data-qsase-source-category",
+        "qsaseRestoreSourceCategoryState",
+        "Global political violence, protest, and conflict-event data",
+        "Ship-position and vessel-movement data",
+        "Federal Reserve Economic Data",
         "Multi-Asset Funds",
         "Trading Universe",
         "QSASE_INSTRUMENT_FULL_NAMES",
@@ -127,7 +136,7 @@ function assertStaticContract() {
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
         "Qadam Pulse Terminal",
-        "How to read portfolio status",
+        "How to read the portfolio overview",
         "Most actionable pattern",
         "data-tooltip-contract=\"nontechnical-guide\"",
         "data-guide-marker=",
@@ -155,7 +164,11 @@ function assertStaticContract() {
         "timeTicks",
         "data-time-scaled-axis=",
         "data-qsase-time-axis",
-        "chart-axis-time"
+        "chart-axis-time",
+        "qsaseTradeAmountLabel",
+        "qsaseClosedTradesInWindow",
+        "closed trades in the last 7 days",
+        "Amount"
     ], "QSASE renderer");
     [
         "qsase-jump-row",
@@ -163,7 +176,11 @@ function assertStaticContract() {
         "Portfolio value</a>",
         "Holdings</a>",
         "Pattern workflow</a>",
-        "PaperOps gate</a>"
+        "PaperOps gate</a>",
+        "Portfolio status: flat",
+        "connected source rows",
+        "19 Instruments over 6 Fund Categories",
+        "Visible rows"
     ].forEach((needle) => {
         assert(!renderer.includes(needle), `QSASE renderer still contains removed navigation/copy ${needle}`);
     });
@@ -178,6 +195,7 @@ function assertStaticContract() {
         ".qsase-source-category-row",
         ".qsase-trading-timeline",
         ".qsase-trade-event",
+        ".qsase-trade-event-amount",
         ".qsase-kpi-row",
         ".qsase-fund-status",
         ".qsase-fund-context",
@@ -203,6 +221,7 @@ function assertStaticContract() {
         ".qsase-terminal-frame",
         ".matrix-rain",
         ".qsase-terminal-line",
+        ".qsase-source-api-list p",
         "grid-template-columns: minmax(0, 1fr);",
         "max-width: 100%;",
         "@keyframes qadamMatrixFall"
@@ -258,14 +277,16 @@ async function assertRenderedContract() {
         "Qadam Paper Fund",
         "Paper Fund Status",
         "Portfolio Value &amp; Return",
-        "Portfolio status",
+        "Portfolio Overview",
         "Open exposure",
         "Trading History",
+        "Timeline",
         "Hedge Fund Team",
-        "Source Intelligence Network",
+        "Alternative Data Network",
+        "Data Sources",
+        "connected sources covering",
         "Multi-Asset Funds",
         "Trading Universe",
-        "19 Instruments over 6 Fund Categories",
         "United States Oil Fund",
         "Lockheed Martin Corporation",
         "Kalshi event contracts",
@@ -277,7 +298,11 @@ async function assertRenderedContract() {
         "Qadam Pulse Terminal",
         "data-time-scaled-axis=\"true\"",
         "data-qsase-time-axis",
-        "chart-axis-time"
+        "chart-axis-time",
+        "closed trades in the last 7 days",
+        "Amount",
+        "data-qsase-source-category",
+        "Global political violence, protest, and conflict-event data"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
     [
@@ -333,7 +358,12 @@ async function assertRenderedContract() {
         "dashboard portfolio consistent",
         "portfolio values match",
         "Snapshot fresh (age unknown)",
-        "trade markers are read-only history, not proof credit"
+        "trade markers are read-only history, not proof credit",
+        "Portfolio status: flat",
+        "connected source rows",
+        "19 Instruments over 6 Fund Categories",
+        "Visible rows",
+        "Source Intelligence Network"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `QSASE dashboard should not render old overview element ${needle}`);
     });

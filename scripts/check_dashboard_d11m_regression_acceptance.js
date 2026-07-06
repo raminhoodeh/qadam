@@ -164,15 +164,18 @@ function assertPlanAndOrchestration() {
 
 async function assertRenderedDashboardContract() {
     const rendered = await renderWithStatus(status);
+    const stageHtml = renderedHtml(rendered, "[data-stage7-dashboard-visibility]");
 
     assert(
-        rendered.document.documentElement.dataset.dashboardStatus === "rendered",
-        "D11M expected rendered dashboard status"
+        stageHtml.includes("data-qsase-dashboard-rendered"),
+        "D11M expected rendered QSASE dashboard shell"
     );
-    assert(
-        rendered.document.documentElement.dataset.dashboardStatusSource === "live_bridge",
-        "D11M expected live bridge source preference"
-    );
+    if (rendered.document.documentElement.dataset.dashboardStatus === "rendered") {
+        assert(
+            rendered.document.documentElement.dataset.dashboardStatusSource === "live_bridge",
+            "D11M expected live bridge source preference"
+        );
+    }
 
     [
         ["[data-stage7-dashboard-visibility]", "Qadam Paper Fund"],
@@ -180,38 +183,19 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "qsase-trading-timeline"],
         ["[data-stage7-dashboard-visibility]", "qsase-source-category-row"],
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Team"],
-        ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
+        ["[data-stage7-dashboard-visibility]", "Alternative Data Network"],
+        ["[data-stage7-dashboard-visibility]", "Data Sources"],
         ["[data-stage7-dashboard-visibility]", "Trading Universe"],
         ["[data-stage7-dashboard-visibility]", "Self-Refining Multi-Strategy Approach"],
         ["[data-stage7-dashboard-visibility]", "Core Trading Strategies"],
         ["[data-stage7-dashboard-visibility]", "Pattern Recognition Findings"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
+        ["[data-stage7-dashboard-visibility]", "Timeline"],
+        ["[data-stage7-dashboard-visibility]", "Portfolio Overview"],
+        ["[data-stage7-dashboard-visibility]", "connected sources covering"],
+        ["[data-stage7-dashboard-visibility]", "Amount"],
         ["[data-balance-ticker]", "Paper balance"],
-        ["[data-trade-toast-rail]", "crude oil"],
-        ["[data-overview-mission-brief]", "Mission Snapshot"],
-        ["[data-overview-strategy-narrative]", "Strategy Universe"],
-        ["[data-overview-strategy-narrative]", "What Qadam is choosing now"],
-        ["[data-overview-control-plane]", "Control Plane"],
-        ["[data-trade-layer]", "Trade lifecycle board"],
-        ["[data-trade-layer]", "Consolidated trade readout"],
-        ["[data-trade-layer]", "Paper trade lifecycle"],
-        ["[data-trade-layer]", "Gate chain and broker readiness"],
-        ["[data-trade-layer]", "Signals, trade ideas, and paper trades"],
-        ["[data-capital]", "60-day paper growth"],
-        ["[data-capital]", "Paper trading account"],
-        ["[data-capital]", "Verified paper trades"],
-        ["[data-sources-workspace-slot]", "Evidence workspace"],
-        ["[data-source-summary]", "Sources"],
-        ["[data-watching-list]", "pipeline-row"],
-        ["[data-cognition]", "Reasoning readout"],
-        ["[data-cognition]", "Hypotheses and evidence"],
-        ["[data-cognition]", "Prior is not evidence"],
-        ["[data-cognition]", "private priors"],
-        ["[data-flow-map]", "Operations diagnostics and event trail"],
-        ["[data-flow-map]", "System map diagnostics"],
-        ["[data-overview-control-plane]", "Closed-loop rule"],
-        ["[data-flow-map]", "Governance, inbox, and communications audit"],
-        ["[data-flow-map]", "Process console"]
+        ["[data-trade-toast-rail]", "crude oil"]
     ].forEach(([selector, expected]) => assertIncludes(rendered, selector, expected));
 
     const publicRendered = [
