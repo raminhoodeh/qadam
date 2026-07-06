@@ -11931,6 +11931,93 @@ body.qadam-dashboard-page .qsase-source-api-list {
     padding: var(--qadam-space-4);
 }
 
+body.qadam-dashboard-page .qsase-trading-universe-card {
+    align-items: center;
+    gap: clamp(1rem, 2vw, 2rem);
+    grid-template-columns: minmax(16rem, 0.34fr) minmax(0, 1fr);
+    padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+body.qadam-dashboard-page .qsase-trading-universe-meta {
+    display: grid;
+    gap: 0.35rem;
+}
+
+body.qadam-dashboard-page .qsase-instrument-chip-cloud {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: flex-start;
+}
+
+body.qadam-dashboard-page .qsase-instrument-chip {
+    background: rgba(var(--qadam-rgb-info), 0.035);
+    border: 1px solid var(--qadam-color-rule);
+    color: var(--qadam-color-heading);
+    cursor: help;
+    display: inline-flex;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.86rem;
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1;
+    min-height: 2.3rem;
+    padding: 0.7rem 0.85rem;
+    text-transform: none;
+}
+
+body.qadam-dashboard-page .qsase-instrument-chip.online,
+body.qadam-dashboard-page .qsase-instrument-chip.connected {
+    background: rgba(var(--qadam-rgb-ok), 0.08);
+    border-color: rgba(var(--qadam-rgb-ok), 0.3);
+}
+
+body.qadam-dashboard-page .qsase-instrument-chip.pending {
+    background: rgba(var(--qadam-rgb-watch), 0.08);
+    border-color: rgba(var(--qadam-rgb-watch), 0.34);
+}
+
+body.qadam-dashboard-page .qsase-instrument-chip.blocked,
+body.qadam-dashboard-page .qsase-instrument-chip.degraded {
+    background: rgba(var(--qadam-rgb-risk), 0.045);
+    border-color: rgba(var(--qadam-rgb-risk), 0.26);
+}
+
+body.qadam-dashboard-page .qsase-instrument-chip:hover,
+body.qadam-dashboard-page .qsase-instrument-chip:focus-visible {
+    border-color: var(--qadam-color-brand);
+    box-shadow: 0 0 0 3px rgba(var(--qadam-rgb-brand), 0.08);
+}
+
+body.qadam-dashboard-page .qsase-universe-key {
+    background: var(--qadam-color-section-band);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-universe-key span {
+    background: var(--qadam-color-canvas);
+    color: var(--qadam-color-muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-universe-key b {
+    color: var(--qadam-color-heading);
+    display: block;
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+}
+
 body.qadam-dashboard-page .qsase-team-thesis p {
     min-height: 0;
 }
@@ -12086,6 +12173,14 @@ body.qadam-dashboard-page .qsase-source-category-row span {
     font-weight: 850;
     letter-spacing: 0.1em;
     text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-source-category-row .qsase-instrument-chip {
+    color: var(--qadam-color-heading);
+    display: inline-flex;
+    font-size: 0.86rem;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 body.qadam-dashboard-page .qsase-record-card dl {
@@ -12728,6 +12823,8 @@ body.qadam-dashboard-page .qsase-boundary-note {
     body.qadam-dashboard-page .qsase-pattern-finding-title,
     body.qadam-dashboard-page .qsase-pattern-flow,
     body.qadam-dashboard-page .qsase-source-category-row > summary,
+    body.qadam-dashboard-page .qsase-trading-universe-card,
+    body.qadam-dashboard-page .qsase-universe-key,
     body.qadam-dashboard-page .qsase-team-flow-list div,
     body.qadam-dashboard-page .qsase-trading-history-layout,
     body.qadam-dashboard-page .qsase-trade-event,

@@ -13000,6 +13000,57 @@ function qsaseMarketFamilyLabel(family) {
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+const QSASE_INSTRUMENT_FULL_NAMES = {
+    "BNO": "United States Brent Oil Fund",
+    "CL=F": "WTI crude oil futures continuous contract",
+    "USO": "United States Oil Fund",
+    "XLE": "Energy Select Sector SPDR Fund",
+    "ITA": "iShares U.S. Aerospace & Defense ETF",
+    "LMT": "Lockheed Martin Corporation",
+    "PPA": "Invesco Aerospace & Defense ETF",
+    "XAR": "SPDR S&P Aerospace & Defense ETF",
+    "NVDA": "NVIDIA Corporation",
+    "QQQ": "Invesco QQQ Trust",
+    "SMH": "VanEck Semiconductor ETF",
+    "SOXX": "iShares Semiconductor ETF",
+    "KALSHI:EVENTS": "Kalshi event contracts",
+    "POLYMARKET:EVENTS": "Polymarket event markets",
+    "SI=F": "COMEX silver futures continuous contract",
+    "SIL": "Global X Silver Miners ETF",
+    "SLV": "iShares Silver Trust",
+    "GLD": "SPDR Gold Shares",
+    "SPY": "SPDR S&P 500 ETF Trust"
+};
+
+function qsaseInstrumentFullName(market = {}) {
+    const symbol = String(market.symbol || "").trim().toUpperCase();
+    return QSASE_INSTRUMENT_FULL_NAMES[symbol] || market.full_name || market.display_name || market.instrument_id || symbol || "Watched instrument";
+}
+
+function qsasePaperRouteLabel(market = {}) {
+    const state = String(market.paperability_state || "").toLowerCase();
+    if (market.paper_route_available || state.includes("alpaca_paper_proxy")) return "paper proxy";
+    if (state.includes("research_only")) return "research only";
+    if (state.includes("context_only") || state.includes("unknown")) return "context only";
+    return "route pending";
+}
+
+function qsaseSetupLabel(market = {}) {
+    const state = String(market.qualified_setup_state || "").toLowerCase();
+    if (state.includes("production_qualified")) return "route fit";
+    if (state.includes("blocked")) return "held";
+    if (state.includes("not_recorded")) return "watching";
+    return "checking";
+}
+
+function qsaseInstrumentTooltip(market = {}) {
+    const symbol = market.symbol || market.display_name || market.instrument_id || "Instrument";
+    const fullName = qsaseInstrumentFullName(market);
+    const route = qsasePaperRouteLabel(market);
+    const setup = qsaseSetupLabel(market);
+    return `${symbol}: ${fullName}. Route: ${route}. Current state: ${setup}.`;
+}
+
 function renderQsaseTradingUniverse(qsase = {}) {
     const sourceSection = qsase.source_network || {};
     const rows = asArray(sourceSection.trading_universe_rows);
@@ -13015,30 +13066,31 @@ function renderQsaseTradingUniverse(qsase = {}) {
         <section id="qsase-trading-universe" class="qsase-section" data-qsase-section="trading_universe">
             ${renderQsaseSectionHeader("Multi-Asset Funds", "Trading Universe", universeMeta, rows.length ? "online" : "pending", "trading_universe")}
             <div class="qsase-source-category-list qsase-trading-universe-list">
-                ${categoryKeys.map((family, index) => {
+                ${categoryKeys.map((family) => {
                     const markets = grouped[family] || [];
                     const paperableInFamily = markets.filter((market) => market.paper_route_available || String(market.paperability_state || "").includes("paper")).length;
+                    const watchOnlyInFamily = Math.max(0, markets.length - paperableInFamily);
                     return `
-                        <details class="qsase-source-category-row ${paperableInFamily ? "online" : "pending"}" ${index === 0 ? "open" : ""}>
-                            <summary>
-                                <div>
-                                    <span>${qsaseHtmlText(qsaseMarketFamilyLabel(family))}</span>
-                                    <strong>${qsaseHtmlText(markets.length)} watched instruments</strong>
-                                    <small>${qsaseHtmlText(paperableInFamily)} have a paper-route candidate · live routes disabled.</small>
-                                </div>
-                                <p>Qadam can analyse this market sleeve, but each instrument still needs evidence, risk, and PaperOps gates before paper execution.</p>
-                            </summary>
-                            <ul class="qsase-compact-list qsase-source-api-list">
+                        <article class="qsase-source-category-row qsase-trading-universe-card ${paperableInFamily ? "online" : "pending"}">
+                            <div class="qsase-trading-universe-meta">
+                                <span>${qsaseHtmlText(qsaseMarketFamilyLabel(family))}</span>
+                                <strong>${qsaseHtmlText(markets.length)} watched instruments</strong>
+                                <small>${qsaseHtmlText(paperableInFamily)} paper-proxy candidates · ${qsaseHtmlText(watchOnlyInFamily)} watch-only/context instruments · live routes disabled.</small>
+                            </div>
+                            <div class="qsase-instrument-chip-cloud" aria-label="${literalHtmlText(qsaseMarketFamilyLabel(family))} instruments">
                                 ${markets.map((market) => `
-                                    <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
-                                        <strong>${qsaseHtmlText(market.symbol || market.display_name || market.instrument_id)}</strong>
-                                        <span>${qsaseHtmlText(market.display_name || "watched instrument")} · ${qsaseHtmlText(qsaseHumanText(market.paperability_state || "paperability pending"))} · ${qsaseHtmlText(qsaseHumanText(market.qualified_setup_state || "no current setup"))}</span>
-                                    </li>
+                                    <span class="qsase-instrument-chip ${statusClass(market.qualified_setup_state || market.paperability_state)}" title="${literalHtmlText(qsaseInstrumentTooltip(market))}" aria-label="${literalHtmlText(qsaseInstrumentTooltip(market))}">${qsaseHtmlText(market.symbol || market.display_name || market.instrument_id)}</span>
                                 `).join("")}
-                            </ul>
-                        </details>
+                            </div>
+                        </article>
                     `;
                 }).join("") || `<article class="qsase-record-card pending"><strong>No trading universe rows exported</strong></article>`}
+            </div>
+            <div class="qsase-universe-key" aria-label="Trading Universe key">
+                <span><b>Paper proxy</b> means Qadam can represent that market through an Alpaca paper-tradable proxy after evidence, risk, and paper-trading runner checks pass.</span>
+                <span><b>Research only</b> means Qadam can watch the instrument, but cannot submit it directly as an Alpaca paper order.</span>
+                <span><b>Context only</b> means the instrument helps compare market conditions but is not a paper-order target.</span>
+                <span><b>Held</b> means no setup is currently accepted for paper execution.</span>
             </div>
             <p class="qsase-boundary-note">The Trading Universe defines where Qadam may look for paper ideas. It does not create trade authority, broker writes, or live-capital access.</p>
         </section>
@@ -13132,9 +13184,7 @@ function renderQsaseInstrumentPills(symbols = [], watchedIndex = {}, fallbackTon
     return qsaseUniqueInstruments(symbols).map((symbol) => {
         const market = watchedIndex[symbol.toLowerCase()];
         const state = market?.qualified_setup_state || market?.paperability_state || fallbackTone;
-        const title = market
-            ? `${qsaseHumanText(market.paperability_state || "paperability pending")} · ${qsaseHumanText(market.qualified_setup_state || "no current setup")}`
-            : "secondary watchlist or context instrument";
+        const title = market ? qsaseInstrumentTooltip(market) : `${symbol}: secondary watchlist or context instrument.`;
         return `<span class="${statusClass(state)}" title="${literalHtmlText(title)}">${qsaseHtmlText(symbol)}</span>`;
     }).join("") || `<span class="pending">No instruments mapped</span>`;
 }
