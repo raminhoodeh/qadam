@@ -102,6 +102,7 @@ function assertStaticContract() {
         "Paper Fund Status",
         "Portfolio Value &amp; Return",
         "Current Holdings",
+        "waiting for market fill",
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",
@@ -175,7 +176,7 @@ function assertStaticContract() {
 
     assertIncludesAll(dashboardHtml, [
         "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-fund-status-v1",
+        "/dashboard.js?v=20260705-holdings-fill-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -211,6 +212,7 @@ async function assertRenderedContract() {
         "Paper Fund Status",
         "Portfolio Value &amp; Return",
         "Current Holdings",
+        "waiting for market fill",
         "Trading History",
         "Source Intelligence Network",
         "Trading Strategy Universe",

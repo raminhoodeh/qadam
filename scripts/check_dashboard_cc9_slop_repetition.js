@@ -130,7 +130,9 @@ async function main() {
         "Current Holdings",
         "Filled holdings",
         "Pending orders live in Trading History",
-        "Why pending orders are not holdings"
+        "Why pending orders are not holdings",
+        "accepted paper order",
+        "waiting for market fill"
     ], "dashboard source");
 
     assertCount(dashboardHtml, "overview-decision-records", 0, "static dashboard shell decision records");
@@ -261,7 +263,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260705-fund-status-v1");
+    console.log("dashboard_cc9_cache_key=20260705-holdings-fill-v1");
 }
 
 main().catch((error) => {
