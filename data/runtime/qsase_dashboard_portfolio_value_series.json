@@ -32,16 +32,16 @@
     "trade_intent_created": false
   },
   "broker_mirror_freshness": {
-    "age_seconds": 883,
+    "age_seconds": 3397,
     "observed_at": "2026-07-06T14:26:00.020638+00:00",
-    "status": "fresh",
+    "status": "stale",
     "threshold_seconds": 2700
   },
   "cash_gbp": 90409.92,
   "command_disabled": true,
   "current_value": 99930.59,
   "current_value_gbp": 99930.59,
-  "generated_at": "2026-07-06T14:40:43.883977+00:00",
+  "generated_at": "2026-07-06T15:22:37.352582+00:00",
   "latest_value": 99930.59,
   "line_graph_available": true,
   "paper_only": true,
@@ -63,7 +63,7 @@
   "public_safe": true,
   "public_snapshot_freshness": {
     "age_seconds": 0,
-    "generated_at": "2026-07-06T14:40:43.883977+00:00",
+    "generated_at": "2026-07-06T15:22:37.352582+00:00",
     "status": "fresh",
     "threshold_seconds": 1800
   },

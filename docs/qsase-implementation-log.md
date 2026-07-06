@@ -164,7 +164,7 @@
 <!-- qsase_13_dashboard_visibility -->
 ## QSASE-13: Dashboard Visibility
 
-- Generated at: `2026-07-06T14:40:43.883977+00:00`
+- Generated at: `2026-07-06T15:22:37.352582+00:00`
 - Status: `qsase_dashboard_visibility_ready_with_stale_labels`
 - Runtime artifact: `data/runtime/qsase_dashboard_status.json`
 - Portfolio series / positions / trading history rows: `120` / `2` / `70`

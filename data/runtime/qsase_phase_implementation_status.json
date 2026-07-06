@@ -1,6 +1,6 @@
 {
   "active_phase": "perfect_operation_phase_16_operational_perfection_certification",
-  "generated_at": "2026-07-06T14:40:51.374937+00:00",
+  "generated_at": "2026-07-06T15:22:45.596075+00:00",
   "phases": {
     "appendix_a_operational_phase0_paperops_execution_reliability_baseline": {
       "artifact_path": "data/runtime/qsase_phase0_paperops_reliability_baseline.json",
@@ -135,27 +135,27 @@
       "read_only": true,
       "refresh_failure_count": 0,
       "refresh_success_count": 8,
-      "repair_request_count": 2,
+      "repair_request_count": 1,
       "self_healing_passed": true,
       "status": "qadam_self_healing_ready_with_repair_requests"
     },
     "perfect_operation_phase_16_operational_perfection_certification": {
       "artifact_path": "data/runtime/qadam_operational_perfection_certification.json",
-      "failed_gate_count": 1,
+      "failed_gate_count": 0,
       "live_capital_enabled": false,
       "name": "Perfect Operation Phase 16: End-To-End Operational Certification",
       "no_broker_writes": true,
       "no_paper_orders_created": true,
       "no_proof_credit_granted": true,
       "no_trade_candidates_created": true,
-      "operationally_complete": false,
+      "operationally_complete": true,
       "paper_only": true,
-      "passed_gate_count": 16,
+      "passed_gate_count": 17,
       "proposal_first": true,
       "public_safe": true,
       "read_only": true,
-      "status": "qadam_operationally_incomplete",
-      "why_not_trading_now": "system blocker: git or deployment closure is blocked"
+      "status": "qadam_operationally_complete_with_active_paper_position",
+      "why_not_trading_now": "validated edge, Akber V2, or shadow V2 support is missing"
     },
     "perfect_operation_phase_17_soak_run_final_declaration": {
       "artifact_path": "data/runtime/qadam_operational_soak_run.json",

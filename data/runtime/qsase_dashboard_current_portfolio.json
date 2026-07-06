@@ -32,14 +32,14 @@
     "trade_intent_created": false
   },
   "broker_mirror_freshness": {
-    "age_seconds": 883,
+    "age_seconds": 3397,
     "observed_at": "2026-07-06T14:26:00.020638+00:00",
-    "status": "fresh",
+    "status": "stale",
     "threshold_seconds": 2700
   },
   "command_disabled": true,
   "explicitly_empty": false,
-  "generated_at": "2026-07-06T14:40:43.883977+00:00",
+  "generated_at": "2026-07-06T15:22:37.352582+00:00",
   "holding_row_count": 2,
   "paper_only": true,
   "portfolio_consistency": {
