@@ -12953,12 +12953,16 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                 ${roles.map((role) => `
                     <details class="qsase-source-category-row qsase-team-card ${statusClass(role.tone)}">
                         <summary>
-                            <div>
-                                <span>${qsaseHtmlText(role.title)}</span>
-                                <strong>${qsaseHtmlText(role.role)}</strong>
+                            <div class="qsase-team-card-identity">
+                                <span>${qsaseHtmlText(role.role)}</span>
+                                <strong>${qsaseHtmlText(role.title)}</strong>
                                 <small>${qsaseHtmlText(role.status)} · no live-capital authority.</small>
                             </div>
-                            <p>${qsaseHtmlText(role.summary)}</p>
+                            <p class="qsase-team-card-summary">${qsaseHtmlText(role.summary)}</p>
+                            <span class="qsase-team-card-expand" aria-hidden="true">
+                                <b>Expand details</b>
+                                <i></i>
+                            </span>
                         </summary>
                         <div class="qsase-team-card-body">
                             <p>${qsaseHtmlText(role.description)}</p>

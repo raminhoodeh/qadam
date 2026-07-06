@@ -11940,7 +11940,49 @@ body.qadam-dashboard-page .qsase-team-card {
 }
 
 body.qadam-dashboard-page .qsase-team-card > summary {
-    grid-template-columns: minmax(13rem, 0.34fr) minmax(0, 1fr);
+    align-items: center;
+    grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr) auto;
+}
+
+body.qadam-dashboard-page .qsase-team-card-identity {
+    align-self: start;
+}
+
+body.qadam-dashboard-page .qsase-team-card-summary {
+    justify-self: start;
+    max-width: 62rem;
+}
+
+body.qadam-dashboard-page .qsase-team-card-expand {
+    align-items: center;
+    color: var(--qadam-color-muted);
+    display: inline-flex;
+    gap: 0.65rem;
+    justify-self: end;
+    white-space: nowrap;
+}
+
+body.qadam-dashboard-page .qsase-team-card-expand b {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-team-card-expand i {
+    border-bottom: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    display: block;
+    height: 0.58rem;
+    transform: rotate(45deg) translateY(-0.1rem);
+    transition: transform 160ms ease;
+    width: 0.58rem;
+}
+
+body.qadam-dashboard-page .qsase-team-card[open] .qsase-team-card-expand i {
+    transform: rotate(225deg) translateY(-0.1rem);
 }
 
 body.qadam-dashboard-page .qsase-team-card-body {
