@@ -363,6 +363,11 @@ async function assertRenderedContract() {
         "Head of Quant",
         "Quantum computer",
         "Expand details",
+        "Plain-English role",
+        "Where it fits in Qadam",
+        "Current snapshot",
+        "Decision boundary",
+        "fallback review path",
         "Public thought stream refreshes with the dashboard status file",
         "What blocks the trade",
         "Technical evidence ledger",
@@ -383,7 +388,10 @@ async function assertRenderedContract() {
         "Lifecycle audit:",
         "Paper proof ledger:",
         "stale accepted order mirrors need review",
-        "Hybrid boutique macro desk: Python COO, local analyst, frontier strategist, Head of Quant"
+        "Hybrid boutique macro desk: Python COO, local analyst, frontier strategist, Head of Quant",
+        "Self-awareness",
+        "Mode: deterministic classical shadow",
+        "State: consultation recorded"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `rendered QSASE dashboard still exposes internal copy ${needle}`);
     });
