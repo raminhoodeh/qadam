@@ -263,7 +263,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260705-holdings-fill-v1");
+    console.log("dashboard_cc9_cache_key=20260706-hedge-team-v1");
 }
 
 main().catch((error) => {

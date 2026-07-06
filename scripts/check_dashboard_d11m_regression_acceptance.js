@@ -179,8 +179,10 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "qsase-kpi-row"],
         ["[data-stage7-dashboard-visibility]", "qsase-trading-timeline"],
         ["[data-stage7-dashboard-visibility]", "qsase-source-category-row"],
+        ["[data-stage7-dashboard-visibility]", "Hedge Fund Team"],
         ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
-        ["[data-stage7-dashboard-visibility]", "Trading Strategy Universe"],
+        ["[data-stage7-dashboard-visibility]", "Trading Universe"],
+        ["[data-stage7-dashboard-visibility]", "Strategy Universe"],
         ["[data-stage7-dashboard-visibility]", "Pattern Recognition Findings"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-balance-ticker]", "Paper balance"],
@@ -233,8 +235,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260705-topnav-v1",
-        "/dashboard.js?v=20260705-holdings-fill-v1"
+        "/auth.css?v=20260706-hedge-team-v1",
+        "/dashboard.js?v=20260706-hedge-team-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();
