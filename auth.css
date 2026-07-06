@@ -11384,14 +11384,18 @@ body.qadam-dashboard-page .qsase-dashboard-hero {
     border-top: 8px solid var(--qadam-color-section-band);
     display: grid;
     gap: var(--qadam-space-6);
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.68fr);
-    padding: clamp(1.4rem, 3vw, 2.2rem);
+    grid-template-columns: minmax(0, 1fr);
+    padding: clamp(1.15rem, 2.2vw, 1.75rem);
 }
 
 body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-dashboard-hero {
     border-color: rgba(var(--qadam-rgb-info), 0.28);
     border-left: 8px solid var(--qadam-color-brand);
     border-top: 0;
+}
+
+body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-dashboard-hero .qsase-callout-head {
+    justify-content: flex-start;
 }
 
 body.qadam-dashboard-page .qsase-dashboard-hero h2,
@@ -11411,7 +11415,7 @@ body.qadam-dashboard-page .qsase-dashboard-hero h2 {
 }
 
 body.qadam-dashboard-page .qsase-dashboard-v2 .qsase-dashboard-hero h2 {
-    max-width: 10ch;
+    max-width: 100%;
 }
 
 body.qadam-dashboard-page .qsase-dashboard-hero p,
