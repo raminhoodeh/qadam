@@ -270,7 +270,7 @@ async function main() {
     ], "rendered overview");
 
     console.log("dashboard_cc9_slop_repetition=ok");
-    console.log("dashboard_cc9_cache_key=20260706-remove-portfolio-note-v1");
+    console.log("dashboard_cc9_cache_key=20260706-time-axis-v1");
 }
 
 main().catch((error) => {

@@ -182,7 +182,8 @@ async function assertRenderedDashboardContract() {
         ["[data-stage7-dashboard-visibility]", "Hedge Fund Team"],
         ["[data-stage7-dashboard-visibility]", "Source Intelligence Network"],
         ["[data-stage7-dashboard-visibility]", "Trading Universe"],
-        ["[data-stage7-dashboard-visibility]", "Strategy Universe"],
+        ["[data-stage7-dashboard-visibility]", "Self-Refining Multi-Strategy Approach"],
+        ["[data-stage7-dashboard-visibility]", "Core Trading Strategies"],
         ["[data-stage7-dashboard-visibility]", "Pattern Recognition Findings"],
         ["[data-stage7-dashboard-visibility]", "These sources can inform hypotheses, but none of them can place trades."],
         ["[data-balance-ticker]", "Paper balance"],
@@ -235,8 +236,8 @@ async function assertRenderedDashboardContract() {
 
 async function main() {
     includesAll(dashboardHtml, [
-        "/auth.css?v=20260706-remove-portfolio-note-v1",
-        "/dashboard.js?v=20260706-remove-portfolio-note-v1"
+        "/auth.css?v=20260706-time-axis-v1",
+        "/dashboard.js?v=20260706-time-axis-v1"
     ], "D11M cache-key continuity");
 
     assertPublicDashboardSingleFlow();

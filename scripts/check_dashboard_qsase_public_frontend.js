@@ -111,7 +111,8 @@ function assertStaticContract() {
         "Source Intelligence Network",
         "Multi-Asset Funds",
         "Trading Universe",
-        "Strategy Universe",
+        "Self-Refining Multi-Strategy Approach",
+        "Core Trading Strategies",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
@@ -138,7 +139,13 @@ function assertStaticContract() {
         "qsase-final-gate-summary",
         "qsase-trading-timeline",
         "qsase-source-category-row",
-        "qsase-market-pill-row"
+        "qsase-market-pill-row",
+        "pointTimeMs",
+        "xForPoint",
+        "timeTicks",
+        "data-time-scaled-axis=",
+        "data-qsase-time-axis",
+        "chart-axis-time"
     ], "QSASE renderer");
     [
         "qsase-jump-row",
@@ -171,6 +178,8 @@ function assertStaticContract() {
         ".qsase-callout-head",
         ".qsase-dashboard-v2 .qsase-dashboard-hero .qsase-callout-head",
         ".qsase-final-gate-summary",
+        ".chart-time-tick",
+        ".chart-axis-time",
         "grid-template-columns: minmax(8rem, 0.42fr) minmax(14rem, 1fr);",
         "data-guide-tooltip-bound=\"true\"",
         "--qadam-tooltip-left",
@@ -203,8 +212,8 @@ function assertStaticContract() {
     ], "QSASE tooltip positioning controller");
 
     assertIncludesAll(dashboardHtml, [
-        "/auth.css?v=20260706-remove-portfolio-note-v1",
-        "/dashboard.js?v=20260706-remove-portfolio-note-v1",
+        "/auth.css?v=20260706-time-axis-v1",
+        "/dashboard.js?v=20260706-time-axis-v1",
         "data-stage7-dashboard-visibility"
     ], "dashboard shell");
     [
@@ -247,11 +256,15 @@ async function assertRenderedContract() {
         "Multi-Asset Funds",
         "Trading Universe",
         "19 Instruments over 6 Fund Categories",
-        "Strategy Universe",
+        "Self-Refining Multi-Strategy Approach",
+        "Core Trading Strategies",
         "Pattern Recognition Findings",
         "Trade Intents / What Qadam Is Thinking",
         "Final Paper-Trade Gate",
-        "Qadam Pulse Terminal"
+        "Qadam Pulse Terminal",
+        "data-time-scaled-axis=\"true\"",
+        "data-qsase-time-axis",
+        "chart-axis-time"
     ].forEach((needle) => assertIncludes(rendered, "[data-stage7-dashboard-visibility]", needle));
 
     [
