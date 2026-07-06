@@ -12898,9 +12898,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             status: qsaseTeamStatusText(gate.status, router.status, "paper operations visible"),
             summary: "Runs the fund's operating system: schedules checks, writes artifacts, reconciles the paper account, and keeps PaperOps as the only submit route.",
             description: "In hedge-fund terms, this is the COO and operations desk. It does not have taste or intuition; its edge is discipline. It turns Qadam's research into auditable state, refuses missing lineage, preserves idempotency, and keeps live capital disabled.",
-            selfAwareness: "Its trading strategy is shaped by determinism and latency: when data is stale, schemas fail, or duplicate exposure appears, Python slows the fund down instead of improvising.",
-            cannotDo: "Cannot invent evidence, bypass Q-CTRL, place live trades, or let the dashboard/Telegram become a command surface.",
-            metrics: [`${qsaseHtmlText(gate.handoff_record_count || 0)} PaperOps handoffs`, `${qsaseHtmlText(gate.paper_order_created_count || 0)} orders created`, `${qsaseHtmlText(gate.broker_write_count || 0)} broker writes`]
+            flowRole: "After evidence and strategy review, it turns approved paper decisions into auditable records and keeps the guarded PaperOps route as the only way to submit a paper order.",
+            currentPicture: `${gate.handoff_record_count || 0} paper handoff records, ${gate.paper_order_created_count || 0} paper orders created, and ${gate.broker_write_count || 0} paper submission writes are recorded in this snapshot.`,
+            boundary: "If evidence is missing, stale, duplicated, or outside the paper-only route, it pauses the flow instead of improvising."
         },
         {
             role: "Local LLM",
@@ -12909,9 +12909,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             status: sourceUniverseStatus,
             summary: `Reads the source network first: ${sourceCount} source rows become compact, public-safe research context before any strategy discussion.`,
             description: "In a boutique macro fund, this is the analyst who wakes up early and reads the wires. It is close to the raw sources, cheap enough to run often, and useful for turning noisy world events into structured observations.",
-            selfAwareness: "It knows it is fast but not final. Its job is breadth and freshness, so Qadam treats its output as research context that still needs source quorum, market confirmation, and challenge review.",
-            cannotDo: "Cannot approve risk, create orders, satisfy source quorum alone, or turn a narrative into a trade candidate by itself.",
-            metrics: [`${sourceCount} source rows`, `${qsaseHtmlText(sources.category_row_count || 0)} categories`, "read-only intake"]
+            flowRole: "It turns raw source activity into readable research context before the Strategy Lead, Head of Quant, or paper-trade gate are allowed to treat anything as a hypothesis.",
+            currentPicture: `${sourceCount} source rows are visible across ${sources.category_row_count || 0} source categories before strategy review starts.`,
+            boundary: "It can surface possible patterns, but it cannot make a trade valid, approve risk, or turn a narrative into an order."
         },
         {
             role: "Frontier LLM",
@@ -12920,9 +12920,9 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             status: qsaseTeamStatusText(patterns.status, "strategy challenge visible"),
             summary: `Challenges the thesis after evidence exists: ${patternCount} pattern findings are reviewed for narrative risk, invalidation, and tradeability.`,
             description: "This is the portfolio strategist in the room. It asks whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea.",
-            selfAwareness: "It is powerful but higher-latency and more expensive, so Qadam uses it for judgment, not constant polling. It should improve strategy quality, not become an execution shortcut.",
-            cannotDo: "Cannot self-approve strategy changes, override Akber's filter, approve risk, or submit anything to a broker.",
-            metrics: [`${patternCount} findings`, `${qsaseHtmlText(qsase.currently_in_play_count || 0)} strategies in play`, "challenge-only"]
+            flowRole: "After sources and market movement produce a hypothesis, it challenges whether the explanation is causal, tradeable, and worth sending further through the strategy filter.",
+            currentPicture: `${patternCount} pattern findings are being reviewed against ${qsase.currently_in_play_count || 0} strategies currently in play.`,
+            boundary: "It can recommend holding, downgrading, or advancing a hypothesis, but it cannot approve risk or submit anything to a broker."
         },
         {
             role: "Quantum computer",
@@ -12931,9 +12931,11 @@ function qsaseHedgeFundTeamRoles(qsase = {}) {
             status: qsaseTeamStatusText(quantumState),
             summary: `Reviews nonlinear ambiguity through ${qsaseHumanText(quantumMode)} before a pattern can be treated as more than linear evidence.`,
             description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. When hardware is not available, the dashboard must say so honestly rather than dressing up a classical fallback.",
-            selfAwareness: "Its value is not magic prediction. Qadam uses it where the stack is naturally suited: nonlinear pattern review, ambiguity scoring, and deciding whether a signal should be upgraded, held, or downgraded.",
-            cannotDo: "Cannot create trades, approve execution, bypass Q-CTRL, claim proof credit, or pretend classical fallback is hardware execution.",
-            metrics: [`Mode: ${qsaseHtmlText(qsaseHumanText(quantumMode))}`, `State: ${qsaseHtmlText(qsaseHumanText(quantumState))}`, "review-only"]
+            flowRole: "Before Qadam upgrades a pattern, it checks whether the relationship looks nonlinear, ambiguous, or regime-dependent rather than just a simple source-price correlation.",
+            currentPicture: qsaseHumanText(quantumMode).toLowerCase().includes("classical") || qsaseHumanText(quantumMode).toLowerCase().includes("shadow") || qsaseHumanText(quantumMode).toLowerCase().includes("fallback")
+                ? "The latest quant review is recorded through the fallback review path, so Qadam can learn from nonlinear structure without claiming confirmed quantum hardware execution."
+                : "The latest quant review is recorded through the configured quantum provider path and feeds confidence back into the pattern review process.",
+            boundary: "It can raise or lower confidence in a hypothesis, but it cannot create trades, approve execution, or pretend a fallback review was hardware execution."
         }
     ];
 }
@@ -12965,20 +12967,24 @@ function renderQsaseHedgeFundTeam(qsase = {}) {
                             </span>
                         </summary>
                         <div class="qsase-team-card-body">
-                            <p>${qsaseHtmlText(role.description)}</p>
-                            <dl class="qsase-pattern-flow">
+                            <dl class="qsase-team-flow-list">
                                 <div>
-                                    <dt>Self-awareness</dt>
-                                    <dd>${qsaseHtmlText(role.selfAwareness)}</dd>
+                                    <dt>Plain-English role</dt>
+                                    <dd>${qsaseHtmlText(role.description)}</dd>
                                 </div>
                                 <div>
-                                    <dt>Boundary</dt>
-                                    <dd>${qsaseHtmlText(role.cannotDo)}</dd>
+                                    <dt>Where it fits in Qadam</dt>
+                                    <dd>${qsaseHtmlText(role.flowRole)}</dd>
+                                </div>
+                                <div>
+                                    <dt>Current snapshot</dt>
+                                    <dd>${qsaseHtmlText(role.currentPicture)}</dd>
+                                </div>
+                                <div>
+                                    <dt>Decision boundary</dt>
+                                    <dd>${qsaseHtmlText(role.boundary)}</dd>
                                 </div>
                             </dl>
-                            <div class="qsase-market-pill-row" aria-label="${literalHtmlText(role.title)} operating markers">
-                                ${asArray(role.metrics).map((metric) => `<span>${metric}</span>`).join("")}
-                            </div>
                         </div>
                     </details>
                 `).join("")}
