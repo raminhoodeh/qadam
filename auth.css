@@ -11883,6 +11883,32 @@ body.qadam-dashboard-page .qsase-source-api-list {
     padding: var(--qadam-space-4);
 }
 
+body.qadam-dashboard-page .qsase-team-thesis p {
+    min-height: 0;
+}
+
+body.qadam-dashboard-page .qsase-team-card {
+    border-left: 4px solid rgba(var(--qadam-rgb-ok), 0.26);
+}
+
+body.qadam-dashboard-page .qsase-team-card > summary {
+    grid-template-columns: minmax(13rem, 0.34fr) minmax(0, 1fr);
+}
+
+body.qadam-dashboard-page .qsase-team-card-body {
+    border-top: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: var(--qadam-space-4);
+    padding: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-team-card-body > p {
+    color: var(--qadam-color-heading);
+    font-size: 0.98rem;
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
 body.qadam-dashboard-page .qsase-record-card.online,
 body.qadam-dashboard-page .qsase-category-grid article.online,
 body.qadam-dashboard-page .qsase-compact-list li.online {

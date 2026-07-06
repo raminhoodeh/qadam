@@ -12162,12 +12162,30 @@ const QSASE_GUIDE_MARKERS = {
             ["Quorum", "A source allowed to contribute evidence, not authority."]
         ]
     },
+    hedge_fund_team: {
+        title: "How Qadam's team works",
+        summary: "Qadam is a boutique macro intelligence fund run by a hybrid software team. Each role has a narrow job, a known limitation, and no live-capital authority from the dashboard.",
+        rows: [
+            ["Python COO", "Runs deterministic orchestration, artifacts, checks, and guarded PaperOps handoff."],
+            ["LLM roles", "Compress research locally and challenge strategy with a frontier model."],
+            ["Head of Quant", "Reviews nonlinear ambiguity and quantum/classical pattern evidence without creating trades."]
+        ]
+    },
+    trading_universe: {
+        title: "What Qadam can look at",
+        summary: "These are the market categories and individual instruments Qadam watches for paper-trade ideas. Being watched does not mean Qadam is allowed to trade it now.",
+        rows: [
+            ["Category", "A market sleeve such as crude oil, silver, semiconductors, prediction markets, or defence."],
+            ["Instrument", "The specific symbol, proxy, or contract Qadam can analyse."],
+            ["Paperability", "Whether there is a guarded paper route for expressing the idea."]
+        ]
+    },
     trading_strategy_universe: {
-        title: "How strategies and markets connect",
-        summary: "Each card shows a strategy family and the instruments it watches. A strategy can consider a market, but it still needs evidence, risk, and final paper-gate approval.",
+        title: "How Qadam thinks about trades",
+        summary: "Each card shows a strategy family. A strategy can interpret watched markets, but it still needs evidence, risk, and final paper-gate approval.",
         rows: [
             ["Strategy", "The trading lens Qadam is applying."],
-            ["Proxy", "The paper-tradable instrument used to express an idea."],
+            ["Proxy", "The paper-tradable expression a later gate may use."],
             ["State", "Where that strategy currently sits in the review process."]
         ]
     },
@@ -12621,13 +12639,175 @@ function renderQsaseSourceNetwork(qsase = {}) {
     `;
 }
 
+function qsaseTeamStatusText(...values) {
+    return qsaseHumanText(firstPresent(...values, "visible"));
+}
+
+function qsaseHedgeFundTeamRoles(qsase = {}) {
+    const sources = qsase.source_network || {};
+    const patterns = qsase.pattern_intelligence || {};
+    const router = qsase.router || {};
+    const gate = qsase.paperops_gate || {};
+    const oracle = qsase.quantum_oracle || {};
+    const fireOpal = qsase.fire_opal_ibm || {};
+    const consultation = qsase.qctrl_consultation || {};
+    const sourceCount = qsasePulseCount(sources.source_row_count, asArray(sources.source_rows).length);
+    const patternCount = qsasePulseCount(patterns.finding_count, asArray(patterns.findings).length);
+    const routerDecision = qsaseRouterHeadline(router, gate);
+    const quantumMode = firstPresent(oracle.latest_local_simulation_mode, oracle.latest_backend, oracle.backend, qsase.quantum_review?.mode, "classical fallback");
+    const quantumState = firstPresent(consultation.status, fireOpal.status, oracle.status, qsase.quantum_review?.status, "review visible");
+    return [
+        {
+            role: "Python script",
+            title: "COO",
+            tone: gate.status || router.status || "online",
+            status: qsaseTeamStatusText(gate.status, router.status, "paper operations visible"),
+            summary: "Runs the fund's operating system: schedules checks, writes artifacts, reconciles the paper account, and keeps PaperOps as the only submit route.",
+            description: "In hedge-fund terms, this is the COO and operations desk. It does not have taste or intuition; its edge is discipline. It turns Qadam's research into auditable state, refuses missing lineage, preserves idempotency, and keeps live capital disabled.",
+            selfAwareness: "Its trading strategy is shaped by determinism and latency: when data is stale, schemas fail, or duplicate exposure appears, Python slows the fund down instead of improvising.",
+            cannotDo: "Cannot invent evidence, bypass Q-CTRL, place live trades, or let the dashboard/Telegram become a command surface.",
+            metrics: [`${qsaseHtmlText(gate.handoff_record_count || 0)} PaperOps handoffs`, `${qsaseHtmlText(gate.paper_order_created_count || 0)} orders created`, `${qsaseHtmlText(gate.broker_write_count || 0)} broker writes`]
+        },
+        {
+            role: "Local LLM",
+            title: "Research Analyst",
+            tone: sources.status || "online",
+            status: qsaseTeamStatusText(sources.status, "source compression active"),
+            summary: `Reads the source network first: ${sourceCount} source rows become compact, public-safe research context before any strategy discussion.`,
+            description: "In a boutique macro fund, this is the analyst who wakes up early and reads the wires. It is close to the raw sources, cheap enough to run often, and useful for turning noisy world events into structured observations.",
+            selfAwareness: "It knows it is fast but not final. Its job is breadth and freshness, so Qadam treats its output as research context that still needs source quorum, market confirmation, and challenge review.",
+            cannotDo: "Cannot approve risk, create orders, satisfy source quorum alone, or turn a narrative into a trade candidate by itself.",
+            metrics: [`${sourceCount} source rows`, `${qsaseHtmlText(sources.category_row_count || 0)} categories`, "read-only intake"]
+        },
+        {
+            role: "Frontier LLM",
+            title: "Strategy Lead",
+            tone: patterns.status || "pending",
+            status: qsaseTeamStatusText(patterns.status, "strategy challenge visible"),
+            summary: `Challenges the thesis after evidence exists: ${patternCount} pattern findings are reviewed for narrative risk, invalidation, and tradeability.`,
+            description: "This is the portfolio strategist in the room. It asks whether the story is actually causal, whether the market already priced it, what would falsify it, and which strategy family should own the idea.",
+            selfAwareness: "It is powerful but higher-latency and more expensive, so Qadam uses it for judgment, not constant polling. It should improve strategy quality, not become an execution shortcut.",
+            cannotDo: "Cannot self-approve strategy changes, override Akber's filter, approve risk, or submit anything to a broker.",
+            metrics: [`${patternCount} findings`, `${qsaseHtmlText(qsase.currently_in_play_count || 0)} strategies in play`, "challenge-only"]
+        },
+        {
+            role: "Quantum computer",
+            title: "Head of Quant",
+            tone: quantumState,
+            status: qsaseTeamStatusText(quantumState),
+            summary: `Reviews nonlinear ambiguity through ${qsaseHumanText(quantumMode)} before a pattern can be treated as more than linear evidence.`,
+            description: "This is the quant partner: it looks for interaction effects, regime dependence, and pattern ambiguity across sources and markets. When hardware is not available, the dashboard must say so honestly rather than dressing up a classical fallback.",
+            selfAwareness: "Its value is not magic prediction. Qadam uses it where the stack is naturally suited: nonlinear pattern review, ambiguity scoring, and deciding whether a signal should be upgraded, held, or downgraded.",
+            cannotDo: "Cannot create trades, approve execution, bypass Q-CTRL, claim proof credit, or pretend classical fallback is hardware execution.",
+            metrics: [`Mode: ${qsaseHtmlText(qsaseHumanText(quantumMode))}`, `State: ${qsaseHtmlText(qsaseHumanText(quantumState))}`, "review-only"]
+        }
+    ];
+}
+
+function renderQsaseHedgeFundTeam(qsase = {}) {
+    const roles = qsaseHedgeFundTeamRoles(qsase);
+    return `
+        <section id="qsase-hedge-fund-team" class="qsase-section qsase-hedge-fund-team" data-qsase-section="hedge_fund_team">
+            ${renderQsaseSectionHeader("Hedge Fund Team", "Hybrid boutique macro desk: Python COO, local analyst, frontier strategist, Head of Quant", "self-aware paper-only operating model", "online", "hedge_fund_team")}
+            <article class="qsase-fund-context qsase-team-thesis">
+                <div>
+                    <span>Boutique macro intelligence fund</span>
+                    <p>Qadam runs on a self-imposed trading strategy: understand the world, understand its own machinery, and only act when both the evidence and the operating stack are fit for the decision. It treats cognition, latency, source freshness, and data quality as part of the strategy rather than hidden implementation details.</p>
+                </div>
+            </article>
+            <div class="qsase-source-category-list qsase-team-card-list">
+                ${roles.map((role) => `
+                    <details class="qsase-source-category-row qsase-team-card ${statusClass(role.tone)}">
+                        <summary>
+                            <div>
+                                <span>${qsaseHtmlText(role.title)}</span>
+                                <strong>${qsaseHtmlText(role.role)}</strong>
+                                <small>${qsaseHtmlText(role.status)} · no live-capital authority.</small>
+                            </div>
+                            <p>${qsaseHtmlText(role.summary)}</p>
+                        </summary>
+                        <div class="qsase-team-card-body">
+                            <p>${qsaseHtmlText(role.description)}</p>
+                            <dl class="qsase-pattern-flow">
+                                <div>
+                                    <dt>Self-awareness</dt>
+                                    <dd>${qsaseHtmlText(role.selfAwareness)}</dd>
+                                </div>
+                                <div>
+                                    <dt>Boundary</dt>
+                                    <dd>${qsaseHtmlText(role.cannotDo)}</dd>
+                                </div>
+                            </dl>
+                            <div class="qsase-market-pill-row" aria-label="${literalHtmlText(role.title)} operating markers">
+                                ${asArray(role.metrics).map((metric) => `<span>${metric}</span>`).join("")}
+                            </div>
+                        </div>
+                    </details>
+                `).join("")}
+            </div>
+            <p class="qsase-boundary-note">This team can observe, reason, challenge, and review. It cannot create live-capital authority, bypass PaperOps, or turn dashboard visibility into broker action.</p>
+        </section>
+    `;
+}
+
+function qsaseMarketFamilyLabel(family) {
+    return String(family || "unassigned market")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function renderQsaseTradingUniverse(qsase = {}) {
+    const sourceSection = qsase.source_network || {};
+    const rows = asArray(sourceSection.trading_universe_rows);
+    const grouped = rows.reduce((groups, row) => {
+        const family = row.market_family || "unassigned";
+        if (!groups[family]) groups[family] = [];
+        groups[family].push(row);
+        return groups;
+    }, {});
+    const categoryKeys = Object.keys(grouped).sort((a, b) => qsaseMarketFamilyLabel(a).localeCompare(qsaseMarketFamilyLabel(b)));
+    const paperableCount = rows.filter((row) => row.paper_route_available || String(row.paperability_state || "").includes("paper")).length;
+    return `
+        <section id="qsase-trading-universe" class="qsase-section" data-qsase-section="trading_universe">
+            ${renderQsaseSectionHeader("Trading Universe", `${rows.length} watched instruments · ${categoryKeys.length} categories · ${paperableCount} paper-route candidates`, sourceSection.status, rows.length ? "online" : "pending", "trading_universe")}
+            <div class="qsase-source-category-list qsase-trading-universe-list">
+                ${categoryKeys.map((family, index) => {
+                    const markets = grouped[family] || [];
+                    const paperableInFamily = markets.filter((market) => market.paper_route_available || String(market.paperability_state || "").includes("paper")).length;
+                    return `
+                        <details class="qsase-source-category-row ${paperableInFamily ? "online" : "pending"}" ${index === 0 ? "open" : ""}>
+                            <summary>
+                                <div>
+                                    <span>${qsaseHtmlText(qsaseMarketFamilyLabel(family))}</span>
+                                    <strong>${qsaseHtmlText(markets.length)} watched instruments</strong>
+                                    <small>${qsaseHtmlText(paperableInFamily)} have a paper-route candidate · live routes disabled.</small>
+                                </div>
+                                <p>Qadam can analyse this market sleeve, but each instrument still needs evidence, risk, and PaperOps gates before paper execution.</p>
+                            </summary>
+                            <ul class="qsase-compact-list qsase-source-api-list">
+                                ${markets.map((market) => `
+                                    <li class="${statusClass(market.qualified_setup_state || market.paperability_state)}">
+                                        <strong>${qsaseHtmlText(market.symbol || market.display_name || market.instrument_id)}</strong>
+                                        <span>${qsaseHtmlText(market.display_name || "watched instrument")} · ${qsaseHtmlText(qsaseHumanText(market.paperability_state || "paperability pending"))} · ${qsaseHtmlText(qsaseHumanText(market.qualified_setup_state || "no current setup"))}</span>
+                                    </li>
+                                `).join("")}
+                            </ul>
+                        </details>
+                    `;
+                }).join("") || `<article class="qsase-record-card pending"><strong>No trading universe rows exported</strong></article>`}
+            </div>
+            <p class="qsase-boundary-note">The Trading Universe defines where Qadam may look for paper ideas. It does not create trade authority, broker writes, or live-capital access.</p>
+        </section>
+    `;
+}
+
 function renderQsaseStrategyUniverse(qsase = {}) {
     const section = qsase.strategy_universe || {};
     const rows = asArray(section.all_strategy_rows);
     const unassignedMarkets = asArray(section.unassigned_watched_markets);
     return `
         <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
-            ${renderQsaseSectionHeader("Trading Strategy Universe", `${section.all_strategy_count || rows.length} strategies · ${section.watched_market_count || 0} watched instruments`, section.status, rows.length ? "online" : "pending", "trading_strategy_universe")}
+            ${renderQsaseSectionHeader("Strategy Universe", `${section.all_strategy_count || rows.length} strategy families · ${section.currently_in_play_count || 0} currently in play`, section.status, rows.length ? "online" : "pending", "trading_strategy_universe")}
             <div class="qsase-card-grid qsase-strategy-grid">
                 ${rows.map((row) => {
                     const watched = asArray(row.watched_markets);
@@ -13054,7 +13234,9 @@ function renderQsaseDashboardVisibility(qsase = {}) {
             ${renderQsasePortfolioValue(qsase)}
             ${renderQsaseCurrentPortfolio(qsase)}
             ${renderQsaseTradingHistory(qsase)}
+            ${renderQsaseHedgeFundTeam(qsase)}
             ${renderQsaseSourceNetwork(qsase)}
+            ${renderQsaseTradingUniverse(qsase)}
             ${renderQsaseStrategyUniverse(qsase)}
             ${renderQsasePatternLab(qsase)}
             ${renderQsaseTradeIntents(qsase)}
