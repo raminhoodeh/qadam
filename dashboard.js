@@ -9588,6 +9588,48 @@ function renderOverviewEdgeTracker(edge = {}) {
     `;
 }
 
+function paperChartPointTimeMs(point = {}) {
+    return qsaseTimestampMs(point.timestamp || point.observed_at || point.generated_at || point.date || point.time);
+}
+
+function paperChartTimeScale(points = [], left = 0, plotWidth = 0) {
+    const timeValues = points.map(paperChartPointTimeMs).filter((value) => value !== null);
+    const timeMin = timeValues.length ? Math.min(...timeValues) : null;
+    const timeMax = timeValues.length ? Math.max(...timeValues) : null;
+    const hasTimeScale = timeMin !== null && timeMax !== null && timeMax > timeMin;
+    const xFor = (point, index) => {
+        const pointMs = paperChartPointTimeMs(point);
+        if (hasTimeScale && pointMs !== null) return left + ((pointMs - timeMin) / (timeMax - timeMin)) * plotWidth;
+        return left + (points.length <= 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+    };
+    const tickCount = Math.min(5, Math.max(1, hasTimeScale ? points.length : timeValues.length));
+    const ticks = Array.from({ length: tickCount }, (_, index) => {
+        const ratio = tickCount <= 1 ? 0.5 : index / (tickCount - 1);
+        const tickMs = hasTimeScale
+            ? timeMin + ((timeMax - timeMin) * ratio)
+            : (timeValues[index] || timeValues[0] || null);
+        return {
+            x: hasTimeScale ? left + ratio * plotWidth : left + plotWidth / 2,
+            anchor: index === 0 ? "start" : (index === tickCount - 1 ? "end" : "middle"),
+            label: tickMs === null ? "Time pending" : formatTime(new Date(tickMs).toISOString())
+        };
+    });
+    return { hasTimeScale, xFor, ticks };
+}
+
+function renderPaperChartTimeAxis(timeScale = {}, height = 0) {
+    return `
+        <g data-paper-chart-time-axis>
+            ${asArray(timeScale.ticks).map((tick) => `
+                <g class="chart-time-tick">
+                    <line x1="${tick.x.toFixed(2)}" y1="${height - 28}" x2="${tick.x.toFixed(2)}" y2="${height - 22}"></line>
+                    <text class="chart-axis-label chart-axis-time" x="${tick.x.toFixed(2)}" y="${height - 8}" text-anchor="${tick.anchor}">${literalHtmlText(tick.label)}</text>
+                </g>
+            `).join("")}
+        </g>
+    `;
+}
+
 function renderOverviewCapacityChart(capacity = {}) {
     const chartPoints = asArray(capacity.equity_curve).length
         ? asArray(capacity.equity_curve)
@@ -9613,23 +9655,23 @@ function renderOverviewCapacityChart(capacity = {}) {
     const min = rawMin - padding;
     const max = rawMax + padding;
     const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
-    const xFor = (index) => left + (chartPoints.length <= 1 ? plotWidth / 2 : (index / (chartPoints.length - 1)) * plotWidth);
+    const timeScale = paperChartTimeScale(chartPoints, left, plotWidth);
     const path = chartPoints
-        .map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
+        .map((point, index) => `${index ? "L" : "M"} ${timeScale.xFor(point, index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
         .join(" ");
     const usedWidth = Math.round(Math.min(1, Math.max(0, Number(capacity.used_fraction || 0))) * 100);
     const targetWidth = Math.round(Math.min(1, Math.max(0, Number(capacity.target_progress_fraction || 0))) * 100);
 
     return `
         <div class="overview-capacity-chart-card ${statusClass(capacity.tone || "online")}">
-            <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account capacity line" preserveAspectRatio="none" data-paper-capacity-line>
+            <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account capacity over time" preserveAspectRatio="none" data-paper-capacity-line data-time-scaled-axis="${timeScale.hasTimeScale ? "true" : "false"}">
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.max).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.max).toFixed(2)}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(stats.min).toFixed(2)}" x2="${width - right}" y2="${yFor(stats.min).toFixed(2)}"></line>
                 <path class="paper-equity-line" d="${path}"></path>
                 <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(formatMoney(stats.max))}</text>
                 <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(formatMoney(stats.min))}</text>
-                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(capacity.observed_at))}</text>
+                ${renderPaperChartTimeAxis(timeScale, height)}
             </svg>
             <div class="overview-capacity-bar" aria-label="Paper capacity deployed">
                 <span style="width: ${usedWidth}%"></span>
@@ -10160,9 +10202,9 @@ function renderContractPortfolioBlock(portfolio = {}) {
     const min = rawMin - padding;
     const max = rawMax + padding;
     const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
-    const xFor = (index) => left + (chartPoints.length <= 1 ? plotWidth / 2 : (index / (chartPoints.length - 1)) * plotWidth);
+    const timeScale = paperChartTimeScale(chartPoints, left, plotWidth);
     const path = chartPoints
-        .map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
+        .map((point, index) => `${index ? "L" : "M"} ${timeScale.xFor(point, index).toFixed(2)} ${yFor(point.equity_gbp).toFixed(2)}`)
         .join(" ");
     const lineTone = stats.change >= 0 ? "online" : "blocked";
     return `
@@ -10172,7 +10214,7 @@ function renderContractPortfolioBlock(portfolio = {}) {
                 <strong>${chartPoints.length} live points · ${htmlText(portfolio.timeline_source || "capital.equity_curve")}</strong>
                 ${renderInlineBadge(freshnessLabel, freshnessTone)}
             </div>
-            <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account portfolio value line" preserveAspectRatio="none" data-paper-capacity-line>
+            <svg class="overview-capacity-line" viewBox="0 0 ${width} ${height}" role="img" aria-label="Paper account portfolio value line over time" preserveAspectRatio="none" data-paper-capacity-line data-time-scaled-axis="${timeScale.hasTimeScale ? "true" : "false"}">
                 <title>Paper account equity curve from ${literalHtmlText(portfolio.timeline_source || "capital.equity_curve")}</title>
                 <desc>${literalHtmlText(`${chartPoints.length} real points, latest balance ${formatMoney(portfolio.balance_gbp)}, ${freshnessLabel}.`)}</desc>
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
@@ -10181,7 +10223,7 @@ function renderContractPortfolioBlock(portfolio = {}) {
                 <path class="paper-equity-line ${statusClass(lineTone)}" d="${path}"></path>
                 <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(formatMoney(stats.max))}</text>
                 <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(formatMoney(stats.min))}</text>
-                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(chartPoints.at(-1)?.observed_at || portfolio.observed_at))}</text>
+                ${renderPaperChartTimeAxis(timeScale, height)}
             </svg>
             <div class="overview-capacity-summary">
                 ${renderMetric("Balance", formatMoney(portfolio.balance_gbp))}
@@ -12266,12 +12308,12 @@ const QSASE_GUIDE_MARKERS = {
         ]
     },
     trading_strategy_universe: {
-        title: "How Qadam thinks about trades",
-        summary: "Each card shows a strategy family. A strategy can interpret watched markets, but it still needs evidence, risk, and final paper-gate approval.",
+        title: "How Qadam uses strategy playbooks",
+        summary: "Each card shows one core trading strategy. The Trading Universe tells Qadam where it may look; this section explains the playbook Qadam uses to interpret those instruments.",
         rows: [
-            ["Strategy", "The trading lens Qadam is applying."],
-            ["Proxy", "The paper-tradable expression a later gate may use."],
-            ["State", "Where that strategy currently sits in the review process."]
+            ["Core instruments", "The primary expressions Qadam currently maps to the strategy."],
+            ["Secondary instruments", "Related instruments Qadam can use as confirmation, context, or future watchlist expansion."],
+            ["Self-refining", "Pattern recognition can change the evidence thresholds, preferred proxies, and strategy posture over time."]
         ]
     },
     pattern_intelligence_findings: {
@@ -12429,8 +12471,35 @@ function renderQsasePortfolioValue(qsase = {}) {
     const plotWidth = width - left - right;
     const plotHeight = height - top - bottom;
     const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
-    const xFor = (index) => left + (chartSeries.length <= 1 ? plotWidth / 2 : (index / (chartSeries.length - 1)) * plotWidth);
-    const linePath = chartSeries.map((point, index) => `${index ? "L" : "M"} ${xFor(index).toFixed(2)} ${yFor(modelNumber(point.portfolio_value ?? point.equity_gbp ?? point.current_value_gbp ?? qsaseSeriesValue(point), latestValue)).toFixed(2)}`).join(" ");
+    const pointTimeMs = (point) => qsaseTimestampMs(point.timestamp || point.observed_at || point.generated_at);
+    const timeValues = chartSeries.map(pointTimeMs).filter((value) => value !== null);
+    const timeMin = timeValues.length ? Math.min(...timeValues) : 0;
+    const timeMax = timeValues.length ? Math.max(...timeValues) : 0;
+    const hasTimeScale = timeValues.length > 1 && timeMax > timeMin;
+    const xForPoint = (point, index) => {
+        const pointMs = pointTimeMs(point);
+        if (hasTimeScale && pointMs !== null) {
+            return left + ((pointMs - timeMin) / (timeMax - timeMin || 1)) * plotWidth;
+        }
+        return left + (chartSeries.length <= 1 ? plotWidth / 2 : (index / (chartSeries.length - 1)) * plotWidth);
+    };
+    const tickCount = hasTimeScale ? Math.min(5, Math.max(2, chartSeries.length)) : 0;
+    const timeTicks = Array.from({ length: tickCount }, (_, index) => {
+        const ratio = tickCount <= 1 ? 0 : index / (tickCount - 1);
+        const ms = timeMin + ((timeMax - timeMin) * ratio);
+        return {
+            anchor: index === 0 ? "start" : (index === tickCount - 1 ? "end" : "middle"),
+            label: formatTime(new Date(ms).toISOString()),
+            x: left + (plotWidth * ratio)
+        };
+    });
+    const timeAxis = timeTicks.map((tick) => `
+        <g class="chart-time-tick">
+            <line x1="${tick.x.toFixed(2)}" y1="${height - bottom}" x2="${tick.x.toFixed(2)}" y2="${height - bottom + 7}"></line>
+            <text class="chart-axis-label chart-axis-time" x="${tick.x.toFixed(2)}" y="${height - 8}" text-anchor="${tick.anchor}">${literalHtmlText(tick.label)}</text>
+        </g>
+    `).join("");
+    const linePath = chartSeries.map((point, index) => `${index ? "L" : "M"} ${xForPoint(point, index).toFixed(2)} ${yFor(modelNumber(point.portfolio_value ?? point.equity_gbp ?? point.current_value_gbp ?? qsaseSeriesValue(point), latestValue)).toFixed(2)}`).join(" ");
     const tradeRows = asArray(history.rows).slice(0, 18);
     const markers = tradeRows.map((row) => {
         const markerPoint = qsaseNearestSeriesPoint(chartSeries, row.closed_at || row.opened_at || row.submitted_at);
@@ -12439,7 +12508,7 @@ function renderQsasePortfolioValue(qsase = {}) {
         const markerValue = modelNumber(markerPoint.portfolio_value ?? markerPoint.equity_gbp ?? markerPoint.current_value_gbp ?? qsaseSeriesValue(markerPoint), latestValue);
         return `
             <g class="qsase-trade-marker ${statusClass(row.row_type || row.postmortem_status || "pending")}">
-                <circle cx="${xFor(index).toFixed(2)}" cy="${yFor(markerValue).toFixed(2)}" r="4.5"></circle>
+                <circle cx="${xForPoint(markerPoint, index).toFixed(2)}" cy="${yFor(markerValue).toFixed(2)}" r="4.5"></circle>
                 <title>${literalHtmlText(`${row.instrument || "trade"} · ${row.row_type || "history"} · ${formatTime(row.closed_at || row.opened_at || row.submitted_at)}`)}</title>
             </g>
         `;
@@ -12464,15 +12533,17 @@ function renderQsasePortfolioValue(qsase = {}) {
                     ${renderMetric("Closed P&L", formatMoney(portfolio.realized_pnl_gbp, currency))}
                 </div>
             </div>
-            <svg class="qsase-portfolio-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Qadam paper portfolio value over time" preserveAspectRatio="none" data-qsase-portfolio-line>
+            <svg class="qsase-portfolio-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Qadam paper portfolio value over time with timestamped horizontal axis" preserveAspectRatio="none" data-qsase-portfolio-line data-time-scaled-axis="${hasTimeScale ? "true" : "false"}">
                 <line class="chart-grid-line" x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(maxRaw).toFixed(2)}" x2="${width - right}" y2="${yFor(maxRaw).toFixed(2)}"></line>
                 <line class="chart-grid-line muted" x1="${left}" y1="${yFor(minRaw).toFixed(2)}" x2="${width - right}" y2="${yFor(minRaw).toFixed(2)}"></line>
                 <path class="paper-equity-line ${statusClass(tone)}" d="${linePath}"></path>
                 ${markers}
+                <g data-qsase-time-axis>
+                    ${timeAxis}
+                </g>
                 <text class="chart-axis-label" x="4" y="${yFor(maxRaw).toFixed(2)}">${literalHtmlText(formatMoney(maxRaw, currency))}</text>
                 <text class="chart-axis-label" x="4" y="${yFor(minRaw).toFixed(2)}">${literalHtmlText(formatMoney(minRaw, currency))}</text>
-                <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(latest.timestamp || latest.observed_at || portfolio.generated_at))}</text>
             </svg>
         </section>
     `;
@@ -12901,28 +12972,163 @@ function renderQsaseTradingUniverse(qsase = {}) {
     `;
 }
 
+const QSASE_STRATEGY_PLAYBOOK_COPY = {
+    crude_oil_energy_security_disruption: {
+        thesis: "Looks for the market underpricing or overpricing real-world energy disruption: conflict, shipping chokepoints, fires, sanctions, supply stress, and how quickly oil proxies react.",
+        refinement: "The pattern engine compares physical disruption sources against oil futures, energy ETFs, and energy equities so the playbook can learn which signals tend to lead price rather than merely explain it afterward.",
+        core: ["USO", "XLE", "BNO", "CL=F"],
+        secondary: ["XOP", "OIH", "XOM", "CVX", "BZ=F", "RB=F"],
+        confirmation: "Physical disruption plus market divergence: ACLED, maritime AIS, satellite fire data, conflict trackers, and oil/energy price movement."
+    },
+    defence_repricing_geopolitical_watch: {
+        thesis: "Looks for defence and security names being repriced after geopolitical escalation, policy movement, procurement signals, filings, or sustained conflict risk.",
+        refinement: "Qadam tests whether conflict, filings, policy language, and patent/procurement clues consistently precede moves in defence ETFs and major contractors.",
+        core: ["ITA", "XAR", "LMT", "PPA"],
+        secondary: ["NOC", "RTX", "GD", "LHX", "BA", "KTOS"],
+        confirmation: "Geopolitical escalation plus defence-market confirmation: ACLED, GDELT, SEC filings, Stock Act disclosures, and defence price action."
+    },
+    prediction_market_geopolitical_dislocation: {
+        thesis: "Looks for event-probability markets disagreeing with the wider evidence picture: world events, social narrative, conflict data, and market-implied probability.",
+        refinement: "The pattern engine watches whether prediction-market probability shifts lead, lag, or contradict related macro and equity proxies before Qadam treats the signal as useful.",
+        core: ["KALSHI:EVENTS", "POLYMARKET:EVENTS"],
+        secondary: ["Kalshi macro contracts", "Kalshi election contracts", "Polymarket geopolitics", "event-probability spreads"],
+        confirmation: "Probability dislocation plus independent sources: Kalshi, Polymarket, GDELT, Telegram intake, ACLED, and related market prices."
+    },
+    semiconductor_policy_options_asymmetry: {
+        thesis: "Looks for chip-sector asymmetry created by export controls, industrial policy, supply-chain stress, AI-capex narratives, patents, or filings.",
+        refinement: "Qadam learns which source combinations matter for semiconductors by comparing policy/news/filings signals with ETF and single-name chip moves.",
+        core: ["SMH", "SOXX", "NVDA", "QQQ"],
+        secondary: ["AMD", "TSM", "ASML", "AVGO", "MU", "INTC"],
+        confirmation: "Policy or supply-chain signal plus market confirmation: filings, patents, GDELT/RSS, Stock Act activity, and semiconductor price dispersion."
+    },
+    silver_macro_liquidity_stress: {
+        thesis: "Looks for silver behaving like a stress/liquidity instrument when macro data, rates, dollar pressure, commodities, and precious-metal proxies diverge.",
+        refinement: "The pattern engine tests whether macro liquidity sources and cross-asset confirmation improve timing before silver ideas can advance toward Akber's filter.",
+        core: ["SLV", "SIL", "SI=F"],
+        secondary: ["GLD", "SPY", "GDX", "TLT", "UUP", "real-yield proxies"],
+        confirmation: "Macro stress plus cross-asset confirmation: FRED, ECB, BIS, USGS, trade data, gold, dollar/rate proxies, and silver price action."
+    }
+};
+
+function qsaseStrategyKey(row = {}) {
+    return String(row.strategy_family_id || row.id || row.label || row.catalyst_class || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_|_$/g, "");
+}
+
+function qsaseStrategyPlaybook(row = {}) {
+    const key = qsaseStrategyKey(row);
+    return QSASE_STRATEGY_PLAYBOOK_COPY[key] || {
+        thesis: "Uses a defined trading lens to interpret watched instruments after source evidence and market behavior are compared.",
+        refinement: "Qadam can refine this playbook when repeated source-price evidence shows which signals, instruments, and confirmation thresholds are most useful.",
+        core: asArray(row.allowed_proxy_set).slice(0, 5),
+        secondary: asArray(row.instrument_keywords).slice(0, 6),
+        confirmation: "Source evidence, market confirmation, risk context, and final paper-trading gates."
+    };
+}
+
+function qsaseInstrumentSymbol(value) {
+    if (typeof value === "string") return value.trim();
+    return String(value?.symbol || value?.display_name || value?.instrument_id || "").trim();
+}
+
+function qsaseUniqueInstruments(values = []) {
+    const seen = new Set();
+    return asArray(values)
+        .map(qsaseInstrumentSymbol)
+        .filter(Boolean)
+        .filter((symbol) => {
+            const key = symbol.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+}
+
+function qsaseWatchedMarketIndex(watched = []) {
+    return asArray(watched).reduce((index, market) => {
+        const symbol = qsaseInstrumentSymbol(market);
+        if (symbol) index[symbol.toLowerCase()] = market;
+        return index;
+    }, {});
+}
+
+function renderQsaseInstrumentPills(symbols = [], watchedIndex = {}, fallbackTone = "pending") {
+    return qsaseUniqueInstruments(symbols).map((symbol) => {
+        const market = watchedIndex[symbol.toLowerCase()];
+        const state = market?.qualified_setup_state || market?.paperability_state || fallbackTone;
+        const title = market
+            ? `${qsaseHumanText(market.paperability_state || "paperability pending")} · ${qsaseHumanText(market.qualified_setup_state || "no current setup")}`
+            : "secondary watchlist or context instrument";
+        return `<span class="${statusClass(state)}" title="${literalHtmlText(title)}">${qsaseHtmlText(symbol)}</span>`;
+    }).join("") || `<span class="pending">No instruments mapped</span>`;
+}
+
 function renderQsaseStrategyUniverse(qsase = {}) {
     const section = qsase.strategy_universe || {};
     const rows = asArray(section.all_strategy_rows);
     const unassignedMarkets = asArray(section.unassigned_watched_markets);
+    const strategyCount = section.all_strategy_count || rows.length;
     return `
         <section id="qsase-strategies" class="qsase-section" data-qsase-section="trading_strategy_universe">
-            ${renderQsaseSectionHeader("Strategy Universe", `${section.all_strategy_count || rows.length} strategy families · ${section.currently_in_play_count || 0} currently in play`, section.status, rows.length ? "online" : "pending", "trading_strategy_universe")}
+            ${renderQsaseSectionHeader("Self-Refining Multi-Strategy Approach", "Core Trading Strategies", `${strategyCount} strategy families`, rows.length ? "online" : "pending", "trading_strategy_universe")}
+            <article class="qsase-fund-context qsase-strategy-universe-thesis">
+                <div>
+                    <span>How this fits the dashboard flow</span>
+                    <p>The Trading Universe shows where Qadam may look. These core strategies explain how Qadam interprets those markets. Each playbook can be refined over time when source-price patterns show better instruments, better confirmations, or weaker assumptions.</p>
+                </div>
+            </article>
             <div class="qsase-card-grid qsase-strategy-grid">
                 ${rows.map((row) => {
                     const watched = asArray(row.watched_markets);
+                    const watchedIndex = qsaseWatchedMarketIndex(watched);
+                    const playbook = qsaseStrategyPlaybook(row);
                     const currentState = qsaseHumanText(row.current_state || row.status, "state not exported");
+                    const coreInstruments = qsaseUniqueInstruments([
+                        ...asArray(playbook.core),
+                        ...watched.map(qsaseInstrumentSymbol)
+                    ]).slice(0, 6);
+                    const coreInstrumentSet = new Set(coreInstruments.map((item) => item.toLowerCase()));
+                    const secondaryInstruments = qsaseUniqueInstruments([
+                        ...watched.map(qsaseInstrumentSymbol).filter((symbol) => !coreInstrumentSet.has(symbol.toLowerCase())),
+                        ...asArray(playbook.secondary)
+                    ]).filter((symbol) => !coreInstrumentSet.has(symbol.toLowerCase()));
                     return `
-                    <article class="qsase-record-card ${statusClass(row.current_state)}">
+                    <article class="qsase-record-card qsase-strategy-card ${statusClass(row.current_state)}">
                         <span>${qsaseHtmlText(row.catalyst_class || "strategy")}</span>
                         <strong>${qsaseHtmlText(row.label || row.strategy_family_id)}</strong>
-                        <p>${qsaseHtmlText(currentState)} · proxies: ${qsaseHtmlText(asArray(row.allowed_proxy_set).join(", "), "none")}</p>
-                        <div class="qsase-market-pill-row" aria-label="Watched markets for this strategy">
-                            ${watched.length ? watched.slice(0, 8).map((market) => `
-                                <span class="${statusClass(market.qualified_setup_state || market.paperability_state)}" title="${literalHtmlText(qsaseHumanText(market.paperability_state || market.qualified_setup_state, "market state not exported"))}">${qsaseHtmlText(market.symbol || market.display_name, "Market")}</span>
-                            `).join("") : `<span class="pending">No mapped watched market</span>`}
+                        <p>${qsaseHtmlText(playbook.thesis)}</p>
+                        <dl class="qsase-strategy-card-flow">
+                            <div>
+                                <dt>Current posture</dt>
+                                <dd>${qsaseHtmlText(currentState)}</dd>
+                            </div>
+                            <div>
+                                <dt>Confirmation chain</dt>
+                                <dd>${qsaseHtmlText(playbook.confirmation)}</dd>
+                            </div>
+                            <div>
+                                <dt>Self-refinement loop</dt>
+                                <dd>${qsaseHtmlText(playbook.refinement)}</dd>
+                            </div>
+                        </dl>
+                        <div aria-label="Watched markets for this strategy">
+                            <div class="qsase-strategy-instrument-block">
+                                <span>Core instruments</span>
+                                <div class="qsase-market-pill-row" aria-label="Core instruments for this strategy">
+                                    ${renderQsaseInstrumentPills(coreInstruments, watchedIndex, row.current_state || "pending")}
+                                </div>
+                            </div>
+                            <div class="qsase-strategy-instrument-block">
+                                <span>Secondary instruments Qadam could use for context</span>
+                                <div class="qsase-market-pill-row" aria-label="Secondary instruments for this strategy">
+                                    ${renderQsaseInstrumentPills(secondaryInstruments, watchedIndex, "pending")}
+                                </div>
+                            </div>
                         </div>
-                        <small>Sources: ${qsaseHtmlText(asArray(row.source_keywords).join(", "), "source family pending")}</small>
+                        <small>Source dependencies: ${qsaseHtmlText(asArray(row.source_keywords).join(", "), "source family pending")}</small>
                     </article>
                 `; }).join("") || `<article class="qsase-record-card pending"><strong>No strategy rows exported</strong></article>`}
             </div>
@@ -12939,6 +13145,7 @@ function renderQsaseStrategyUniverse(qsase = {}) {
                     </ul>
                 </details>
             ` : ""}
+            <p class="qsase-boundary-note">These are strategy playbooks, not orders. A strategy can focus Qadam's research, but it still needs source agreement, pattern evidence, the six-stage filter, risk checks, and the final paper-trading gate before any guarded paper submission.</p>
         </section>
     `;
 }
@@ -17271,10 +17478,10 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
     const min = rawMin - padding;
     const max = rawMax + padding;
     const yFor = (value) => top + ((max - value) / (max - min || 1)) * plotHeight;
-    const xFor = (index) => left + (chartPoints.length <= 1 ? plotWidth / 2 : (index / (chartPoints.length - 1)) * plotWidth);
+    const timeScale = paperChartTimeScale(chartPoints, left, plotWidth);
     const coordinates = chartPoints.map((point, index) => ({
         ...point,
-        x: xFor(index),
+        x: timeScale.xFor(point, index),
         y: yFor(point.equity_gbp)
     }));
     const path = coordinates.length
@@ -17339,7 +17546,7 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
                 </div>
             </div>
             <div class="paper-equity-chart-card ${statusClass(tone)}">
-                <svg class="paper-equity-chart" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="paper-equity-chart-title paper-equity-chart-desc" preserveAspectRatio="none">
+                <svg class="paper-equity-chart" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="paper-equity-chart-title paper-equity-chart-desc" preserveAspectRatio="none" data-time-scaled-axis="${timeScale.hasTimeScale ? "true" : "false"}">
                     <title id="paper-equity-chart-title">Paper trading account equity over time</title>
                     <desc id="paper-equity-chart-desc">${literalHtmlText(latestLabel)}. ${literalHtmlText(activityLabels.join(", "))}.</desc>
                     <line class="chart-grid-line" x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}"></line>
@@ -17356,7 +17563,7 @@ function renderPaperAccountEquityChart(capital = {}, points = [], activity = {})
                     `).join("")}
                     <text class="chart-axis-label" x="4" y="${yFor(stats.max).toFixed(2)}">${literalHtmlText(money(stats.max))}</text>
                     <text class="chart-axis-label" x="4" y="${yFor(stats.min).toFixed(2)}">${literalHtmlText(money(stats.min))}</text>
-                    <text class="chart-axis-label chart-axis-last" x="${width - right}" y="${height - 8}">${literalHtmlText(formatTime(chartPoints[chartPoints.length - 1].observed_at))}</text>
+                    ${renderPaperChartTimeAxis(timeScale, height)}
                 </svg>
                 <div class="paper-equity-chart-summary">
                     ${renderMetric("Now", money(stats.last))}

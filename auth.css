@@ -11585,6 +11585,19 @@ body.qadam-dashboard-page .qsase-portfolio-chart {
     width: 100%;
 }
 
+body.qadam-dashboard-page .chart-time-tick line,
+body.qadam-dashboard-page .qsase-portfolio-chart .chart-time-tick line {
+    stroke: var(--qadam-color-rule);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+body.qadam-dashboard-page .chart-axis-time,
+body.qadam-dashboard-page .qsase-portfolio-chart .chart-axis-time {
+    fill: var(--qadam-color-muted);
+    font-size: 10px;
+}
+
 body.qadam-dashboard-page .qsase-trade-marker circle {
     fill: var(--qadam-color-watch);
     stroke: var(--qadam-color-canvas);
@@ -11615,6 +11628,10 @@ body.qadam-dashboard-page .qsase-card-grid {
 
 body.qadam-dashboard-page .qsase-card-grid.pattern {
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+body.qadam-dashboard-page .qsase-strategy-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
 }
 
 body.qadam-dashboard-page .qsase-workflow-message {
@@ -12009,6 +12026,59 @@ body.qadam-dashboard-page .qsase-record-card dt {
 body.qadam-dashboard-page .qsase-record-card dd {
     color: var(--qadam-color-heading);
     margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-strategy-universe-thesis {
+    border-left-color: rgba(var(--qadam-rgb-info), 0.42);
+}
+
+body.qadam-dashboard-page .qsase-strategy-card {
+    align-content: start;
+    gap: var(--qadam-space-4);
+}
+
+body.qadam-dashboard-page .qsase-strategy-card > p {
+    color: var(--qadam-color-heading);
+    font-size: 0.98rem;
+    line-height: var(--qadam-leading-body);
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-strategy-card-flow {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: 1fr;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-strategy-card-flow div {
+    background: rgba(var(--qadam-rgb-info), 0.03);
+    border: 1px solid var(--qadam-color-rule);
+    display: grid;
+    gap: 0.35rem;
+    padding: var(--qadam-space-3);
+}
+
+body.qadam-dashboard-page .qsase-strategy-card-flow dt,
+body.qadam-dashboard-page .qsase-strategy-instrument-block > span {
+    color: var(--qadam-color-muted);
+    font-family: var(--qadam-font-ui);
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+body.qadam-dashboard-page .qsase-strategy-card-flow dd {
+    color: var(--qadam-color-heading);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+body.qadam-dashboard-page .qsase-strategy-instrument-block {
+    display: grid;
+    gap: 0.6rem;
 }
 
 body.qadam-dashboard-page .qsase-table-wrap {
