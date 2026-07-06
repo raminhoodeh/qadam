@@ -108,6 +108,11 @@ function assertStaticContract() {
         "Open exposure",
         "Trading History",
         "Hedge Fund Team",
+        "Qadam Team Overview",
+        "Python script [COO]",
+        "local LLM [Research Analyst]",
+        "frontier LLM [Strategy Lead]",
+        "quantum computer [Head of Quant]",
         "Source Intelligence Network",
         "Multi-Asset Funds",
         "Trading Universe",
@@ -372,7 +377,8 @@ async function assertRenderedContract() {
         "proof-eligible",
         "Lifecycle audit:",
         "Paper proof ledger:",
-        "stale accepted order mirrors need review"
+        "stale accepted order mirrors need review",
+        "Hybrid boutique macro desk: Python COO, local analyst, frontier strategist, Head of Quant"
     ].forEach((needle) => {
         assert(!stageHtml.includes(needle), `rendered QSASE dashboard still exposes internal copy ${needle}`);
     });
