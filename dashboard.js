@@ -5917,6 +5917,14 @@ function buildStage7VisibilityModel(status = {}, models = {}) {
     };
 }
 
+function hasLongBacktestWatchOnlyLock(value, depth = 0) {
+    if (!value || typeof value !== "object" || depth > 6) return false;
+    if (value.long_backtest_lock_active === true && value.paperops_watch_only_mode === true) {
+        return true;
+    }
+    return Object.values(value).some((child) => hasLongBacktestWatchOnlyLock(child, depth + 1));
+}
+
 function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const operations = viewModels.operations_model || buildOperationsModel(status);
     const performance = viewModels.performance_model || buildPerformanceModel(status);
@@ -5932,6 +5940,7 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const paperOpportunityBlockers = asArray(paperAuthority.opportunity_or_risk_blockers);
     const paperCurrentBlockers = asArray(paperAuthority.current_blockers);
     const paperAuthorityStatus = paperAuthority.status || "not_exported";
+    const longBacktestWatchOnly = hasLongBacktestWatchOnlyLock(status) || hasLongBacktestWatchOnlyLock(viewModels);
     const openPaperOrderCount = modelNumber(
         capital.open_order_count,
         asArray(capital.orders).filter((order) => {
@@ -5946,7 +5955,7 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         : `Alpaca paper market is ${marketClockStatus}${marketClock.next_open ? `; next open ${formatTime(marketClock.next_open)}` : ""}.`;
     const paperAuthorityTone = paperSafetyBlockers.length
         ? "blocked"
-        : (openPaperOrderCount || paperOperationalBlockers.length || paperOpportunityBlockers.length ? "pending" : "online");
+        : (longBacktestWatchOnly || openPaperOrderCount || paperOperationalBlockers.length || paperOpportunityBlockers.length ? "pending" : "online");
     const tone = liveCapitalEnabled || writeAuthority || authorityFlags.length
         ? "blocked"
         : paperAuthorityTone;
@@ -5956,7 +5965,9 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
     const authorityHeadline = paperSafetyBlockers.length
         ? "Review safety before paper trading"
         : (
-            paperAuthorityStatus === "paper_authorized_blocked_operational"
+            longBacktestWatchOnly
+                ? "Backtest running; PaperOps watch-only"
+                : paperAuthorityStatus === "paper_authorized_blocked_operational"
                 ? "Paper authorized; runner not armed"
                 : (
                     openPaperOrderCount
@@ -5976,14 +5987,18 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
                         )
                 )
         );
-    const authoritySummary = publicOverviewText(
-        openPaperOrderCount
-            ? `${openPaperOrderCount} Alpaca paper orders are open. Closed-trade count updates after Alpaca fills or closes those orders. ${marketClockSummary}`
-            : paperAuthority.why_not_trading_now,
-        "Qadam can only act through guarded paper-trading routes when all gates pass."
-    );
+    const authoritySummary = longBacktestWatchOnly
+        ? "Qadam is running the whole-universe historical backfill/backtest. PaperOps is watch-only during this research lock, so it can report state but cannot submit orders."
+        : publicOverviewText(
+            openPaperOrderCount
+                ? `${openPaperOrderCount} Alpaca paper orders are open. Closed-trade count updates after Alpaca fills or closes those orders. ${marketClockSummary}`
+                : paperAuthority.why_not_trading_now,
+            "Qadam can only act through guarded paper-trading routes when all gates pass."
+        );
     const authorityBlockerLabel = paperCurrentBlockers.length
         ? paperCurrentBlockers.slice(0, 3).join(", ")
+        : longBacktestWatchOnly
+        ? "long backtest research lock"
         : "no current blockers";
     return {
         id: "dashboard_safety_strip",
@@ -5995,12 +6010,12 @@ function buildDashboardSafetyStripModel(status = {}, viewModels = {}) {
         safety_label: liveCapitalEnabled
             ? "Review: live capital flag detected"
             : "Live capital off",
-        authority_label: paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
+        authority_label: longBacktestWatchOnly ? "Paper authority: watch-only" : paperAuthority.paper_authorized ? "Paper authority: on" : "Paper authority: off",
         authority_tone: paperAuthorityTone,
-        authority_status: paperAuthorityStatus,
+        authority_status: longBacktestWatchOnly ? "long_backtest_watch_only" : paperAuthorityStatus,
         authority_blocker_label: authorityBlockerLabel,
         authority_next_action: publicOverviewText(
-            paperAuthority.next_required_action,
+            longBacktestWatchOnly ? "Let the backtest finish or release the research lock before PaperOps can leave watch-only mode." : paperAuthority.next_required_action,
             "Continue monitoring guarded paper-trading status."
         ),
         mode_label: modeLabel,
@@ -13719,8 +13734,13 @@ function renderQadamOperationalClosure(qsase = {}) {
     const declaration = qsase.final_live_declaration || {};
     const blockers = asArray(certification.unresolved_blockers).slice(0, 4);
     const repairTier = selfHealing.repair_request_tier || {};
+    const repairQueueTier = selfHealing.repair_queue_tier || {};
     const refreshTier = selfHealing.refresh_tier || {};
     const quarantineTier = selfHealing.quarantine_tier || {};
+    const providerOutages = selfHealing.provider_outage_classification || {};
+    const staleRecovery = selfHealing.stale_artifact_recovery || {};
+    const backfillResume = selfHealing.backfill_resume || {};
+    const whyNotWorking = selfHealing.why_not_working || {};
     const headline = certification.operationally_complete
         ? "Operationally complete"
         : certification.status
@@ -13732,8 +13752,12 @@ function renderQadamOperationalClosure(qsase = {}) {
             <div class="qsase-final-grid">
                 ${renderMetric("Self-healing", selfHealing.self_healing_passed ? "pass" : "review")}
                 ${renderMetric("Repairs", repairTier.repair_request_count || 0)}
+                ${renderMetric("Repair queue", repairQueueTier.repair_queue_count || 0)}
                 ${renderMetric("Quarantined sources", quarantineTier.quarantine_record_count || 0)}
                 ${renderMetric("Refreshes", refreshTier.refresh_success_count || 0)}
+                ${renderMetric("Provider outages", providerOutages.provider_outage_count || 0)}
+                ${renderMetric("Stale artifacts", staleRecovery.stale_or_missing_artifact_count || 0)}
+                ${renderMetric("Backfill resume", qsaseHumanText(backfillResume.status || "not exported"))}
                 ${renderMetric("Certification gates", `${certification.passed_gate_count || 0}/${certification.gate_count || 0}`)}
                 ${renderMetric("Soak days", `${soak.observed_soak_day_count || 0}/${soak.required_soak_days || 7}`)}
                 ${renderMetric("Soak complete", soak.soak_complete ? "yes" : "no")}
@@ -13748,7 +13772,7 @@ function renderQadamOperationalClosure(qsase = {}) {
                 <article class="qsase-record-card ${selfHealing.self_healing_passed ? "online" : "pending"}">
                     <span>Self-healing supervisor</span>
                     <strong>${qsaseHtmlText(selfHealing.status || "not exported")}</strong>
-                    <p>Safe refresh, source quarantine, and repair-request records are visible. No code edits or broker actions are allowed.</p>
+                    <p>${qsaseHtmlText(whyNotWorking.plain_english_reason || "Safe refresh, source quarantine, and repair-request records are visible. No code edits or broker actions are allowed.")}</p>
                 </article>
                 <article class="qsase-record-card ${soak.soak_complete ? "online" : "pending"}">
                     <span>Seven-day soak</span>
