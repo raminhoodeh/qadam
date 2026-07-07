@@ -10,7 +10,7 @@
   "boundary": "Evidence quality is review-only. It can explain whether a setup is research-only, held, shadow-only, or a Router/PaperOps paper-review candidate, but it cannot create orders, approvals, broker writes, proof credit, Telegram commands, or live capital.",
   "command_disabled": true,
   "evidence_record_count": 5,
-  "generated_at": "2026-07-07T05:28:20.855194+00:00",
+  "generated_at": "2026-07-07T05:47:10.029795+00:00",
   "held_for_evidence_count": 5,
   "historical_complete_forward_window_ratio": 0.0132,
   "market_confirmation_packet_count": 6,

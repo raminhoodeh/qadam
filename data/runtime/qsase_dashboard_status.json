@@ -98,8 +98,8 @@
     "boundary": "Canonical public dashboard portfolio. It mirrors Alpaca paper account state and cannot create, cancel, replace, close, or approve orders.",
     "broker": "alpaca_paper_readonly",
     "broker_mirror_freshness": {
-      "age_seconds": 288,
-      "observed_at": "2026-07-07T05:23:32.919119+00:00",
+      "age_seconds": 264,
+      "observed_at": "2026-07-07T05:42:45.767129+00:00",
       "status": "fresh",
       "threshold_seconds": 2700
     },
@@ -114,18 +114,6 @@
     "display_currency": "USD",
     "drawdown_pct": 0.109,
     "equity_curve": [
-      {
-        "cash": 96851.07,
-        "cash_gbp": 96851.07,
-        "display_currency": "USD",
-        "drawdown_pct": 0.159,
-        "equity": 99841.02,
-        "equity_gbp": 99841.02,
-        "observed_at": "2026-07-02T15:23:03.362931+00:00",
-        "portfolio_value": 99841.02,
-        "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-        "timestamp": "2026-07-02T15:23:03.362931+00:00"
-      },
       {
         "cash": 96851.07,
         "cash_gbp": 96851.07,
@@ -1553,11 +1541,23 @@
         "portfolio_value": 99890.83,
         "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
         "timestamp": "2026-07-07T05:23:32.919119+00:00"
+      },
+      {
+        "cash": 99890.83,
+        "cash_gbp": 99890.83,
+        "display_currency": "USD",
+        "drawdown_pct": 0.109,
+        "equity": 99890.83,
+        "equity_gbp": 99890.83,
+        "observed_at": "2026-07-07T05:42:45.767129+00:00",
+        "portfolio_value": 99890.83,
+        "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+        "timestamp": "2026-07-07T05:42:45.767129+00:00"
       }
     ],
     "equity_curve_count": 120,
     "equity_gbp": 99890.83,
-    "generated_at": "2026-07-07T05:28:21.251063+00:00",
+    "generated_at": "2026-07-07T05:47:10.403374+00:00",
     "history_source": "data/runtime/alpaca_paper_mirror.jsonl",
     "latest_curve_point": {
       "cash": 99890.83,
@@ -1566,13 +1566,13 @@
       "drawdown_pct": 0.109,
       "equity": 99890.83,
       "equity_gbp": 99890.83,
-      "observed_at": "2026-07-07T05:23:32.919119+00:00",
+      "observed_at": "2026-07-07T05:42:45.767129+00:00",
       "portfolio_value": 99890.83,
       "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-07-07T05:23:32.919119+00:00"
+      "timestamp": "2026-07-07T05:42:45.767129+00:00"
     },
     "live_capital_enabled": false,
-    "observed_at": "2026-07-07T05:23:32.919119+00:00",
+    "observed_at": "2026-07-07T05:42:45.767129+00:00",
     "open_position_count": 0,
     "order_count": 42,
     "paper_only": true,
@@ -1599,7 +1599,7 @@
     "public_safe": true,
     "public_snapshot_freshness": {
       "age_seconds": 0,
-      "generated_at": "2026-07-07T05:28:21.251063+00:00",
+      "generated_at": "2026-07-07T05:47:10.403374+00:00",
       "status": "fresh",
       "threshold_seconds": 1800
     },
@@ -1634,7 +1634,7 @@
   "evidence_quality_record_count": 5,
   "evidence_quality_state": "qsase_evidence_quality_ready_with_tradeability_holds",
   "freshness_state": "freshness_visible_with_stale_labels",
-  "generated_at": "2026-07-07T05:28:21.251063+00:00",
+  "generated_at": "2026-07-07T05:47:10.403374+00:00",
   "learning_attribution_v2_akber_record_count": 4,
   "learning_attribution_v2_applied_update_count": 0,
   "learning_attribution_v2_authority_mutation_count": 0,

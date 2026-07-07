@@ -148,7 +148,7 @@
     "boundary": "Evidence quality is review-only. It can explain whether a setup is research-only, held, shadow-only, or a Router/PaperOps paper-review candidate, but it cannot create orders, approvals, broker writes, proof credit, Telegram commands, or live capital.",
     "command_disabled": true,
     "evidence_record_count": 5,
-    "generated_at": "2026-07-07T05:28:20.855194+00:00",
+    "generated_at": "2026-07-07T05:47:10.029795+00:00",
     "held_for_evidence_count": 5,
     "historical_complete_forward_window_ratio": 0.0132,
     "market_confirmation_packet_count": 6,
@@ -185,7 +185,7 @@
   "execution_approval_created": false,
   "filter_threshold_update_allowed": false,
   "filter_threshold_update_created": false,
-  "generated_at": "2026-07-07T05:28:20.855194+00:00",
+  "generated_at": "2026-07-07T05:47:10.029795+00:00",
   "held_for_evidence_count": 5,
   "historical_memory": {
     "artifact_refs": [
@@ -424,14 +424,14 @@
         "Akber practical filter: akber_inputs_passed",
         "Router state: router_blocked_by_hard_veto"
       ],
-      "evidence_quality_id": "qsase-evidence:ecacb61b3c4683be2d64",
+      "evidence_quality_id": "qsase-evidence:7aaa5f1038acbc412f63",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-07T05:28:20.855194+00:00",
+      "generated_at": "2026-07-07T05:47:10.029795+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -624,7 +624,7 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "oil",
-      "source_pattern_id": "edge-pattern:b8d2fbc46672574771",
+      "source_pattern_id": "edge-pattern:8a090b35536bd5a212",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
@@ -840,14 +840,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:2dae0c12179ad40bbe20",
+      "evidence_quality_id": "qsase-evidence:7dd2161b510c41222d73",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-07T05:28:20.855194+00:00",
+      "generated_at": "2026-07-07T05:47:10.029795+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -1036,7 +1036,7 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "silver",
-      "source_pattern_id": "edge-pattern:d9bd19420539087f0c",
+      "source_pattern_id": "edge-pattern:e871e7cd3b27c0628b",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
@@ -1240,14 +1240,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:3918206ac88c4eedde95",
+      "evidence_quality_id": "qsase-evidence:8984e94a5232a3648d97",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-07T05:28:20.855194+00:00",
+      "generated_at": "2026-07-07T05:47:10.029795+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -1438,7 +1438,7 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "semiconductors",
-      "source_pattern_id": "edge-pattern:6c449b0d60d88529a9",
+      "source_pattern_id": "edge-pattern:7c91ca64555d36f594",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
@@ -1642,14 +1642,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:d9b7c1eb0ae901dfd0d9",
+      "evidence_quality_id": "qsase-evidence:dead2305534e82410a89",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-07T05:28:20.855194+00:00",
+      "generated_at": "2026-07-07T05:47:10.029795+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -1836,7 +1836,7 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "prediction_markets",
-      "source_pattern_id": "edge-pattern:935aac7e69725b5ea8",
+      "source_pattern_id": "edge-pattern:d694e26223152b373b",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
@@ -2046,14 +2046,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:9333a15e91fee3dcf789",
+      "evidence_quality_id": "qsase-evidence:1250ed3dca68b7b297a2",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-07T05:28:20.855194+00:00",
+      "generated_at": "2026-07-07T05:47:10.029795+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -2243,7 +2243,7 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "defence",
-      "source_pattern_id": "edge-pattern:35b0f1552e0ea11e0f",
+      "source_pattern_id": "edge-pattern:0c7b17df2a005c5c50",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",

@@ -32,8 +32,8 @@
     "trade_intent_created": false
   },
   "broker_mirror_freshness": {
-    "age_seconds": 288,
-    "observed_at": "2026-07-07T05:23:32.919119+00:00",
+    "age_seconds": 264,
+    "observed_at": "2026-07-07T05:42:45.767129+00:00",
     "status": "fresh",
     "threshold_seconds": 2700
   },
@@ -41,7 +41,7 @@
   "command_disabled": true,
   "current_value": 99890.83,
   "current_value_gbp": 99890.83,
-  "generated_at": "2026-07-07T05:28:21.251063+00:00",
+  "generated_at": "2026-07-07T05:47:10.403374+00:00",
   "latest_value": 99890.83,
   "line_graph_available": true,
   "paper_only": true,
@@ -63,25 +63,13 @@
   "public_safe": true,
   "public_snapshot_freshness": {
     "age_seconds": 0,
-    "generated_at": "2026-07-07T05:28:21.251063+00:00",
+    "generated_at": "2026-07-07T05:47:10.403374+00:00",
     "status": "fresh",
     "threshold_seconds": 1800
   },
   "read_only": true,
   "schema_version": "qsase_dashboard_view_model.v1",
   "series": [
-    {
-      "cash": 96851.07,
-      "cash_gbp": 96851.07,
-      "display_currency": "USD",
-      "drawdown_pct": 0.159,
-      "equity": 99841.02,
-      "equity_gbp": 99841.02,
-      "observed_at": "2026-07-02T15:23:03.362931+00:00",
-      "portfolio_value": 99841.02,
-      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
-      "timestamp": "2026-07-02T15:23:03.362931+00:00"
-    },
     {
       "cash": 96851.07,
       "cash_gbp": 96851.07,
@@ -1509,6 +1497,18 @@
       "portfolio_value": 99890.83,
       "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
       "timestamp": "2026-07-07T05:23:32.919119+00:00"
+    },
+    {
+      "cash": 99890.83,
+      "cash_gbp": 99890.83,
+      "display_currency": "USD",
+      "drawdown_pct": 0.109,
+      "equity": 99890.83,
+      "equity_gbp": 99890.83,
+      "observed_at": "2026-07-07T05:42:45.767129+00:00",
+      "portfolio_value": 99890.83,
+      "read_only_source": "data/runtime/alpaca_paper_mirror.jsonl",
+      "timestamp": "2026-07-07T05:42:45.767129+00:00"
     }
   ],
   "series_count": 120,

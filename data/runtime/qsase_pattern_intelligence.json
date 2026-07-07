@@ -68,7 +68,7 @@
       "evidence_quality_score": 0.545,
       "evidence_quality_state": "blocked_safety_boundary",
       "evidence_summary": "Energy disruption setup, supply shock confirmation, and risk-sizing context.",
-      "finding_id": "qsase-pattern-finding:0354e6b7270071de30a3",
+      "finding_id": "qsase-pattern-finding:e761a2ab2ffd3cc023f2",
       "instrument_symbols": [
         "CL=F",
         "BZ=F",
@@ -93,7 +93,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:b8d2fbc46672574771",
+      "pattern_id": "edge-pattern:8a090b35536bd5a212",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quality_bar": {
         "akber_confirmation": true,
@@ -166,7 +166,7 @@
       "evidence_quality_score": 0.459,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_summary": "Precious-metals stress, liquidity repricing, and breakout confirmation.",
-      "finding_id": "qsase-pattern-finding:d123bad2f63f079c42ea",
+      "finding_id": "qsase-pattern-finding:9efd642d7dac774d8be9",
       "instrument_symbols": [
         "SI=F",
         "SLV",
@@ -191,7 +191,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:d9bd19420539087f0c",
+      "pattern_id": "edge-pattern:e871e7cd3b27c0628b",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quality_bar": {
         "akber_confirmation": false,
@@ -259,7 +259,7 @@
       "evidence_quality_score": 0.459,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_summary": "AI infrastructure, export-control, and supply-chain asymmetry.",
-      "finding_id": "qsase-pattern-finding:f895bd93fea9235dc0bf",
+      "finding_id": "qsase-pattern-finding:ece99d443d73310e8d5f",
       "instrument_symbols": [
         "SMH",
         "SOXX",
@@ -286,7 +286,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:6c449b0d60d88529a9",
+      "pattern_id": "edge-pattern:7c91ca64555d36f594",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quality_bar": {
         "akber_confirmation": false,
@@ -354,7 +354,7 @@
       "evidence_quality_score": 0.459,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_summary": "Probability-mispricing research against source evidence and market proxies.",
-      "finding_id": "qsase-pattern-finding:23063c565a145defd2f1",
+      "finding_id": "qsase-pattern-finding:e858e9f9495afe73c65e",
       "instrument_symbols": [
         "Polymarket CLOB",
         "Kalshi events"
@@ -377,7 +377,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:935aac7e69725b5ea8",
+      "pattern_id": "edge-pattern:d694e26223152b373b",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quality_bar": {
         "akber_confirmation": false,
@@ -445,7 +445,7 @@
       "evidence_quality_score": 0.459,
       "evidence_quality_state": "hold_unvalidated_edge",
       "evidence_summary": "Geopolitical escalation, procurement, and second-order defence exposure.",
-      "finding_id": "qsase-pattern-finding:a8bdda169f3aeda2ef60",
+      "finding_id": "qsase-pattern-finding:ffc15b7f9b0776fe18c8",
       "instrument_symbols": [
         "ITA",
         "XAR",
@@ -471,7 +471,7 @@
         "the paper-only safety route is intact",
         "the nonlinear quantum review gate was satisfied"
       ],
-      "pattern_id": "edge-pattern:35b0f1552e0ea11e0f",
+      "pattern_id": "edge-pattern:0c7b17df2a005c5c50",
       "price_relationship": "Qadam has observed source-price lead, lag, or divergence evidence.",
       "quality_bar": {
         "akber_confirmation": false,
@@ -522,7 +522,7 @@
       "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision."
     }
   ],
-  "generated_at": "2026-07-07T05:28:21.251063+00:00",
+  "generated_at": "2026-07-07T05:47:10.403374+00:00",
   "human_brief": {
     "body": "Qadam scanned 37 data sources against 21 watched markets and found 5 candidate patterns today. The reads: oil shipping/GPS/fire/flight vs CL=F, BZ=F, USO and XLE; silver rates, trade and mining flow vs SI=F, SLV, SIL and PAAS; semiconductors export/news, filings, patents, GitHub and transport vs SMH, SOXX, NVDA, AMD, TSM and ASML; prediction markets Polymarket/Kalshi odds vs news/social/conflict; defence stocks conflict, maritime/flight, GPS and filings vs ITA, XAR, LMT, RTX and NOC.\n\nThe learning stays cautious with 0 validated edges; all 5 still need thirty-day persistence. Qadam is checking whether inputs arrive before price or odds move. Source scan, lead-lag, confirmation, adversarial review, paper safety and the quantum core gate passed on classical fallback. This can raise watch priority only, not create a paper order, risk approval, execution approval or live-capital signal.",
     "command_disabled": true,
@@ -546,10 +546,10 @@
   "public_safe": true,
   "qualified_setup_created": false,
   "rank_flags": {
-    "closest_to_paper_review_pattern_id": "edge-pattern:b8d2fbc46672574771",
-    "largest_blocker_pattern_id": "edge-pattern:b8d2fbc46672574771",
-    "most_actionable_pattern_id": "edge-pattern:b8d2fbc46672574771",
-    "strongest_evidence_pattern_id": "edge-pattern:b8d2fbc46672574771"
+    "closest_to_paper_review_pattern_id": "edge-pattern:8a090b35536bd5a212",
+    "largest_blocker_pattern_id": "edge-pattern:8a090b35536bd5a212",
+    "most_actionable_pattern_id": "edge-pattern:8a090b35536bd5a212",
+    "strongest_evidence_pattern_id": "edge-pattern:8a090b35536bd5a212"
   },
   "read_only": true,
   "schema_version": "qsase_dashboard_view_model.v1",

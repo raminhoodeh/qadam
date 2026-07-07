@@ -39,7 +39,7 @@
   "broker_write_count": 0,
   "command_disabled": true,
   "documented_thesis_count": 5,
-  "generated_at": "2026-07-07T05:28:21.251063+00:00",
+  "generated_at": "2026-07-07T05:47:10.403374+00:00",
   "live_capital_enabled": false,
   "paper_only": true,
   "paper_order_allowed": false,
@@ -152,7 +152,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:b8d2fbc46672574771",
+      "source_pattern_id": "edge-pattern:8a090b35536bd5a212",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -164,7 +164,7 @@
       "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high",
       "what_qadam_thinks": "Qadam is refusing to promote Oil because a safety veto exists.",
       "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-      "workflow_id": "qsase-pattern-workflow:2b99185783fc3623ac98"
+      "workflow_id": "qsase-pattern-workflow:6d2058c3b36f36945811"
     },
     {
       "artifact_refs": [
@@ -265,7 +265,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:d9bd19420539087f0c",
+      "source_pattern_id": "edge-pattern:e871e7cd3b27c0628b",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -277,7 +277,7 @@
       "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
       "what_qadam_thinks": "Qadam has a Silver pattern, but it is still an observed research edge rather than a validated edge.",
       "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-      "workflow_id": "qsase-pattern-workflow:43b0ceb707072af7d59a"
+      "workflow_id": "qsase-pattern-workflow:ba6f7e0b8721b6634ef6"
     },
     {
       "artifact_refs": [
@@ -380,7 +380,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:6c449b0d60d88529a9",
+      "source_pattern_id": "edge-pattern:7c91ca64555d36f594",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -392,7 +392,7 @@
       "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
       "what_qadam_thinks": "Qadam has a Semiconductors pattern, but it is still an observed research edge rather than a validated edge.",
       "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-      "workflow_id": "qsase-pattern-workflow:2feaf7ec2a97fa8c3a8d"
+      "workflow_id": "qsase-pattern-workflow:d83a118931720ace4121"
     },
     {
       "artifact_refs": [
@@ -491,7 +491,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:935aac7e69725b5ea8",
+      "source_pattern_id": "edge-pattern:d694e26223152b373b",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -503,7 +503,7 @@
       "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
       "what_qadam_thinks": "Qadam has a Prediction markets pattern, but it is still an observed research edge rather than a validated edge.",
       "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-      "workflow_id": "qsase-pattern-workflow:404b9a5f67712daad1b0"
+      "workflow_id": "qsase-pattern-workflow:d7ad454d3ea429c575cf"
     },
     {
       "artifact_refs": [
@@ -605,7 +605,7 @@
           "signal_review_eligible_source_count": 27
         }
       },
-      "source_pattern_id": "edge-pattern:35b0f1552e0ea11e0f",
+      "source_pattern_id": "edge-pattern:0c7b17df2a005c5c50",
       "telegram_summary": {
         "command_disabled": true,
         "live_send_allowed": false,
@@ -617,7 +617,7 @@
       "what_blocks_trade": "The pattern has not graduated from candidate edge to validated edge; it still needs persistence over real elapsed time. Also: historical forward windows are incomplete; Akber still needs volume_or_flow_confirmation, obv_volume; shadow replay has not produced paper-review support.",
       "what_qadam_thinks": "Qadam has a Defence stocks pattern, but it is still an observed research edge rather than a validated edge.",
       "what_would_confirm": "A validated edge, complete point-in-time forward windows, Akber practical confirmation, supportive shadow replay, and a Router paper-review decision.",
-      "workflow_id": "qsase-pattern-workflow:dfd9c50145d8b72d5523"
+      "workflow_id": "qsase-pattern-workflow:811e6270ea3421202f5e"
     }
   ],
   "router_status": "qsase_strategy_router_ready_no_paper_candidate",
