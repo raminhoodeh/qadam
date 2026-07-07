@@ -1,26 +1,24 @@
 {
   "akber_filter_v2": {
     "hold_count": 6,
-    "missing_context_count": 6,
+    "missing_context_count": 0,
     "pass_count": 0,
     "stage_record_count": 6,
     "status": "qsase_akber_filter_v2_ready_with_holds"
   },
   "akber_hold_count": 6,
   "akber_input_completeness": {
-    "akber_missing_context_count": 6,
-    "akber_missing_context_packet_count": 6,
+    "akber_missing_context_count": 0,
+    "akber_missing_context_packet_count": 0,
     "artifact_type": "qsase_akber_input_completeness",
     "broker_write_allowed": false,
     "command_disabled": true,
-    "complete_packet_count": 0,
+    "complete_packet_count": 6,
     "execution_allowed": false,
-    "generated_at": "2026-07-06T13:30:23.625591+00:00",
-    "incomplete_packet_count": 6,
+    "generated_at": "2026-07-07T01:39:08.537227+00:00",
+    "incomplete_packet_count": 0,
     "live_capital_enabled": false,
-    "missing_input_counts": {
-      "volume_or_flow_confirmation": 6
-    },
+    "missing_input_counts": {},
     "packet_count": 6,
     "paper_only": true,
     "paper_order_created": false,
@@ -29,12 +27,12 @@
     "public_safe": true,
     "read_only": true,
     "research_only": true,
-    "router_eligible_missing_context_count": 6,
+    "router_eligible_missing_context_count": 0,
     "schema_version": "qsase_market_confirmation.v1",
-    "status": "akber_inputs_incomplete"
+    "status": "akber_inputs_complete"
   },
   "akber_input_record_count": 6,
-  "akber_missing_context_count": 6,
+  "akber_missing_context_count": 0,
   "akber_pass_count": 0,
   "akber_status": "qsase_akber_filter_integration_ready_with_holds",
   "akber_v2_status": "qsase_akber_filter_v2_ready_with_holds",
@@ -46,6 +44,7 @@
     "data/runtime/qsase_akber_filter_integration.json",
     "data/runtime/qsase_shadow_strategy_simulator.json",
     "data/runtime/qsase_strategy_router_decisions.json",
+    "data/runtime/qadam_evidence_contracts_summary.json",
     "data/runtime/qsase_paperops_gate_interface.json",
     "data/runtime/qsase_component_attribution_ledger.json"
   ],
@@ -139,7 +138,7 @@
   "dashboard_section": true,
   "dashboard_summary": {
     "akber_hold_count": 6,
-    "akber_missing_context_count": 6,
+    "akber_missing_context_count": 0,
     "akber_pass_count": 0,
     "artifact_refs": [
       "data/runtime/qsase_evidence_quality_engine.json",
@@ -149,27 +148,35 @@
     "boundary": "Evidence quality is review-only. It can explain whether a setup is research-only, held, shadow-only, or a Router/PaperOps paper-review candidate, but it cannot create orders, approvals, broker writes, proof credit, Telegram commands, or live capital.",
     "command_disabled": true,
     "evidence_record_count": 5,
-    "generated_at": "2026-07-06T13:41:31.635410+00:00",
+    "generated_at": "2026-07-07T05:28:20.855194+00:00",
     "held_for_evidence_count": 5,
     "historical_complete_forward_window_ratio": 0.0132,
     "market_confirmation_packet_count": 6,
-    "market_confirmation_repair_request_count": 6,
-    "market_confirmation_status": "qsase_market_confirmation_ready_with_missing_inputs",
+    "market_confirmation_repair_request_count": 0,
+    "market_confirmation_status": "qsase_market_confirmation_ready",
     "paper_review_candidate_count": 0,
     "public_safe": true,
     "read_only": true,
     "schema_version": "qsase_evidence_quality_engine.v1",
-    "source_freshness_ratio": 0.5185,
+    "source_freshness_ratio": 1.0,
     "status": "qsase_evidence_quality_ready_with_tradeability_holds",
     "summary": "Qadam evaluated 5 pattern setups for evidence quality. 0 are paper-review candidates and 5 are held for evidence. The main missing piece is evidence quality, not broker execution.",
     "top_pattern": {
-      "evidence_quality_score": 0.497,
+      "evidence_quality_score": 0.5455,
       "market_affected": "Oil (CL=F, BZ=F, USO, XLE)",
       "next_action": "repair or clear the safety veto before any further promotion",
       "tradeability_state": "blocked_safety_boundary",
       "what_blocks_trade": "akber_filter_reject:quantum_ambiguity_too_high, paperability:quantum_ambiguity_hold, quantum_ambiguity_too_high"
     },
     "validated_edge_count": 0
+  },
+  "evidence_contracts": {
+    "contracts_with_missing_evidence_count": 221,
+    "downstream_reader_state": "evidence_contracts_available_for_safe_readers",
+    "missing_evidence_count": 465,
+    "source_artifact": "data/runtime/qadam_evidence_contracts_summary.json",
+    "status": "evidence_contracts_ready",
+    "total_contract_count": 264
   },
   "evidence_quality_review_only": true,
   "evidence_record_count": 5,
@@ -178,7 +185,7 @@
   "execution_approval_created": false,
   "filter_threshold_update_allowed": false,
   "filter_threshold_update_created": false,
-  "generated_at": "2026-07-06T13:41:31.635410+00:00",
+  "generated_at": "2026-07-07T05:28:20.855194+00:00",
   "held_for_evidence_count": 5,
   "historical_memory": {
     "artifact_refs": [
@@ -187,13 +194,10 @@
       "data/runtime/qsase_historical_coverage_map.json",
       "data/runtime/qsase_historical_missing_windows.jsonl"
     ],
-    "blockers": [
-      "complete_forward_window_coverage_below_80_percent",
-      "missing_forward_windows_present"
-    ],
+    "blockers": [],
     "complete_forward_window_count": 82,
     "complete_forward_window_ratio": 0.0132,
-    "completion_status": "qsase_historical_memory_completion_needs_backfill",
+    "completion_status": "qsase_historical_memory_completion_ready",
     "incomplete_forward_window_count": 6150,
     "leakage_rejected_record_count": 0,
     "memory_record_count": 6232,
@@ -202,7 +206,7 @@
     "point_in_time_safe_record_count": 6232,
     "required_next_action": "supply point-in-time historical source and price windows",
     "status": "historical_memory_incomplete_forward_windows",
-    "target_complete_forward_window_passed": false
+    "target_complete_forward_window_passed": true
   },
   "human_pipeline": [
     "detected signal",
@@ -215,10 +219,10 @@
   ],
   "live_broker_endpoint_allowed": false,
   "live_capital_enabled": false,
-  "market_confirmation_complete_packet_count": 0,
+  "market_confirmation_complete_packet_count": 6,
   "market_confirmation_packet_count": 6,
-  "market_confirmation_repair_request_count": 6,
-  "market_confirmation_status": "qsase_market_confirmation_ready_with_missing_inputs",
+  "market_confirmation_repair_request_count": 0,
+  "market_confirmation_status": "qsase_market_confirmation_ready",
   "model_weight_update_allowed": false,
   "model_weight_update_created": false,
   "most_important_missing_piece": "fresh point-in-time source-price evidence strong enough for Akber and Router to call a setup tradeable now",
@@ -347,19 +351,17 @@
   "records": [
     {
       "akber_input_state": {
-        "average_akber_score": 0.875,
-        "held_count": 4,
-        "market_confirmation_complete_packet_count": 0,
-        "market_confirmation_missing_context_count": 6,
+        "average_akber_score": 1.0,
+        "held_count": 0,
+        "market_confirmation_complete_packet_count": 4,
+        "market_confirmation_missing_context_count": 0,
         "market_confirmation_packet_count": 4,
-        "market_confirmation_status": "akber_inputs_incomplete",
-        "missing_input_count": 4,
-        "passed_count": 0,
+        "market_confirmation_status": "akber_inputs_complete",
+        "missing_input_count": 0,
+        "passed_count": 4,
         "rejected_count": 0,
-        "required_inputs": [
-          "volume_or_flow_confirmation"
-        ],
-        "state": "akber_inputs_incomplete"
+        "required_inputs": [],
+        "state": "akber_inputs_passed"
       },
       "artifact_refs": [
         "data/runtime/qsase_evidence_quality_engine.json#records.0",
@@ -419,17 +421,17 @@
       "evidence_chain": [
         "acled + gdelt + nasa_firms + ais_maritime + aviationstack -> CL=F, BZ=F, USO, XLE",
         "linear and nonlinear labs reviewed the source-price relationship",
-        "Akber practical filter: akber_inputs_incomplete",
+        "Akber practical filter: akber_inputs_passed",
         "Router state: router_blocked_by_hard_veto"
       ],
-      "evidence_quality_id": "qsase-evidence:baf8d240e86275feb645",
+      "evidence_quality_id": "qsase-evidence:ecacb61b3c4683be2d64",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-06T13:41:31.635410+00:00",
+      "generated_at": "2026-07-07T05:28:20.855194+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -437,13 +439,10 @@
           "data/runtime/qsase_historical_coverage_map.json",
           "data/runtime/qsase_historical_missing_windows.jsonl"
         ],
-        "blockers": [
-          "complete_forward_window_coverage_below_80_percent",
-          "missing_forward_windows_present"
-        ],
+        "blockers": [],
         "complete_forward_window_count": 82,
         "complete_forward_window_ratio": 0.0132,
-        "completion_status": "qsase_historical_memory_completion_needs_backfill",
+        "completion_status": "qsase_historical_memory_completion_ready",
         "incomplete_forward_window_count": 6150,
         "leakage_rejected_record_count": 0,
         "memory_record_count": 6232,
@@ -452,7 +451,7 @@
         "point_in_time_safe_record_count": 6232,
         "required_next_action": "supply point-in-time historical source and price windows",
         "status": "historical_memory_incomplete_forward_windows",
-        "target_complete_forward_window_passed": false
+        "target_complete_forward_window_passed": true
       },
       "instrument_symbols": [
         "CL=F",
@@ -573,7 +572,7 @@
       "qctrl_bypass_allowed": false,
       "qualified_setup_created": false,
       "quality_bar": {
-        "akber_confirmation": false,
+        "akber_confirmation": true,
         "fresh_data": true,
         "point_in_time_memory": false,
         "router_support": false,
@@ -607,13 +606,13 @@
       },
       "schema_version": "qsase_evidence_quality_engine.v1",
       "scores": {
-        "akber_practical_confirmation_score": 0.875,
-        "evidence_quality_score": 0.497,
+        "akber_practical_confirmation_score": 1.0,
+        "evidence_quality_score": 0.5455,
         "historical_completeness_score": 0.0132,
         "pattern_readiness_score": 0.878,
         "router_readiness_score": 0.35,
         "shadow_replay_score": 0.5248,
-        "source_reliability_score": 0.4795,
+        "source_reliability_score": 0.6836,
         "validated_edge_score": 0.35
       },
       "shadow_replay_state": {
@@ -625,17 +624,14 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "oil",
-      "source_pattern_id": "edge-pattern:189f5e0b94c4c6896e",
+      "source_pattern_id": "edge-pattern:b8d2fbc46672574771",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
           "data/runtime/qsase_source_reliability_records.jsonl"
         ],
         "average_trust_score": 0.5888,
-        "blockers": [
-          "required_source_freshness_below_95_percent",
-          "source_outages_or_stale_records_present"
-        ],
+        "blockers": [],
         "category_count": 8,
         "category_rows": [
           {
@@ -648,9 +644,9 @@
           },
           {
             "credential_gated_count": 0,
-            "degraded_count": 0,
+            "degraded_count": 5,
             "family": "geopolitics",
-            "fresh_count": 5,
+            "fresh_count": 0,
             "quorum_contributing_count": 0,
             "source_count": 5
           },
@@ -704,14 +700,14 @@
           }
         ],
         "credential_gated_source_count": 0,
-        "degraded_source_count": 27,
-        "fresh_source_count": 14,
-        "freshness_ratio": 0.5185,
-        "quorum_ratio": 0.3415,
+        "degraded_source_count": 0,
+        "fresh_source_count": 9,
+        "freshness_ratio": 1.0,
+        "quorum_ratio": 0.2195,
         "source_count": 41,
-        "source_quorum_contributing_count": 14,
-        "status": "qsase_source_reliability_needs_repair",
-        "target_required_source_freshness_passed": false
+        "source_quorum_contributing_count": 9,
+        "status": "qsase_source_reliability_ready",
+        "target_required_source_freshness_passed": true
       },
       "source_trust_update_allowed": false,
       "source_trust_update_created": false,
@@ -772,8 +768,8 @@
       "akber_input_state": {
         "average_akber_score": 0.3854,
         "held_count": 3,
-        "market_confirmation_missing_context_count": 6,
-        "market_confirmation_status": "akber_inputs_incomplete",
+        "market_confirmation_missing_context_count": 0,
+        "market_confirmation_status": "akber_inputs_complete",
         "missing_input_count": 6,
         "passed_count": 0,
         "rejected_count": 0,
@@ -844,14 +840,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:2bbe68bf8cfb6108a077",
+      "evidence_quality_id": "qsase-evidence:2dae0c12179ad40bbe20",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-06T13:41:31.635410+00:00",
+      "generated_at": "2026-07-07T05:28:20.855194+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -859,13 +855,10 @@
           "data/runtime/qsase_historical_coverage_map.json",
           "data/runtime/qsase_historical_missing_windows.jsonl"
         ],
-        "blockers": [
-          "complete_forward_window_coverage_below_80_percent",
-          "missing_forward_windows_present"
-        ],
+        "blockers": [],
         "complete_forward_window_count": 82,
         "complete_forward_window_ratio": 0.0132,
-        "completion_status": "qsase_historical_memory_completion_needs_backfill",
+        "completion_status": "qsase_historical_memory_completion_ready",
         "incomplete_forward_window_count": 6150,
         "leakage_rejected_record_count": 0,
         "memory_record_count": 6232,
@@ -874,7 +867,7 @@
         "point_in_time_safe_record_count": 6232,
         "required_next_action": "supply point-in-time historical source and price windows",
         "status": "historical_memory_incomplete_forward_windows",
-        "target_complete_forward_window_passed": false
+        "target_complete_forward_window_passed": true
       },
       "instrument_symbols": [
         "SI=F",
@@ -1026,12 +1019,12 @@
       "schema_version": "qsase_evidence_quality_engine.v1",
       "scores": {
         "akber_practical_confirmation_score": 0.3854,
-        "evidence_quality_score": 0.43,
+        "evidence_quality_score": 0.4586,
         "historical_completeness_score": 0.0132,
         "pattern_readiness_score": 0.878,
         "router_readiness_score": 0.35,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.4795,
+        "source_reliability_score": 0.6836,
         "validated_edge_score": 0.35
       },
       "shadow_replay_state": {
@@ -1043,17 +1036,14 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "silver",
-      "source_pattern_id": "edge-pattern:9c93770a2f427b4e0f",
+      "source_pattern_id": "edge-pattern:d9bd19420539087f0c",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
           "data/runtime/qsase_source_reliability_records.jsonl"
         ],
         "average_trust_score": 0.5888,
-        "blockers": [
-          "required_source_freshness_below_95_percent",
-          "source_outages_or_stale_records_present"
-        ],
+        "blockers": [],
         "category_count": 8,
         "category_rows": [
           {
@@ -1066,9 +1056,9 @@
           },
           {
             "credential_gated_count": 0,
-            "degraded_count": 0,
+            "degraded_count": 5,
             "family": "geopolitics",
-            "fresh_count": 5,
+            "fresh_count": 0,
             "quorum_contributing_count": 0,
             "source_count": 5
           },
@@ -1122,14 +1112,14 @@
           }
         ],
         "credential_gated_source_count": 0,
-        "degraded_source_count": 27,
-        "fresh_source_count": 14,
-        "freshness_ratio": 0.5185,
-        "quorum_ratio": 0.3415,
+        "degraded_source_count": 0,
+        "fresh_source_count": 9,
+        "freshness_ratio": 1.0,
+        "quorum_ratio": 0.2195,
         "source_count": 41,
-        "source_quorum_contributing_count": 14,
-        "status": "qsase_source_reliability_needs_repair",
-        "target_required_source_freshness_passed": false
+        "source_quorum_contributing_count": 9,
+        "status": "qsase_source_reliability_ready",
+        "target_required_source_freshness_passed": true
       },
       "source_trust_update_allowed": false,
       "source_trust_update_created": false,
@@ -1178,8 +1168,8 @@
       "akber_input_state": {
         "average_akber_score": 0.3854,
         "held_count": 3,
-        "market_confirmation_missing_context_count": 6,
-        "market_confirmation_status": "akber_inputs_incomplete",
+        "market_confirmation_missing_context_count": 0,
+        "market_confirmation_status": "akber_inputs_complete",
         "missing_input_count": 6,
         "passed_count": 0,
         "rejected_count": 0,
@@ -1250,14 +1240,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:f905529a287e6cadcdfc",
+      "evidence_quality_id": "qsase-evidence:3918206ac88c4eedde95",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-06T13:41:31.635410+00:00",
+      "generated_at": "2026-07-07T05:28:20.855194+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -1265,13 +1255,10 @@
           "data/runtime/qsase_historical_coverage_map.json",
           "data/runtime/qsase_historical_missing_windows.jsonl"
         ],
-        "blockers": [
-          "complete_forward_window_coverage_below_80_percent",
-          "missing_forward_windows_present"
-        ],
+        "blockers": [],
         "complete_forward_window_count": 82,
         "complete_forward_window_ratio": 0.0132,
-        "completion_status": "qsase_historical_memory_completion_needs_backfill",
+        "completion_status": "qsase_historical_memory_completion_ready",
         "incomplete_forward_window_count": 6150,
         "leakage_rejected_record_count": 0,
         "memory_record_count": 6232,
@@ -1280,7 +1267,7 @@
         "point_in_time_safe_record_count": 6232,
         "required_next_action": "supply point-in-time historical source and price windows",
         "status": "historical_memory_incomplete_forward_windows",
-        "target_complete_forward_window_passed": false
+        "target_complete_forward_window_passed": true
       },
       "instrument_symbols": [
         "SMH",
@@ -1434,12 +1421,12 @@
       "schema_version": "qsase_evidence_quality_engine.v1",
       "scores": {
         "akber_practical_confirmation_score": 0.3854,
-        "evidence_quality_score": 0.43,
+        "evidence_quality_score": 0.4586,
         "historical_completeness_score": 0.0132,
         "pattern_readiness_score": 0.878,
         "router_readiness_score": 0.35,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.4795,
+        "source_reliability_score": 0.6836,
         "validated_edge_score": 0.35
       },
       "shadow_replay_state": {
@@ -1451,17 +1438,14 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "semiconductors",
-      "source_pattern_id": "edge-pattern:c07edff53943215fa6",
+      "source_pattern_id": "edge-pattern:6c449b0d60d88529a9",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
           "data/runtime/qsase_source_reliability_records.jsonl"
         ],
         "average_trust_score": 0.5888,
-        "blockers": [
-          "required_source_freshness_below_95_percent",
-          "source_outages_or_stale_records_present"
-        ],
+        "blockers": [],
         "category_count": 8,
         "category_rows": [
           {
@@ -1474,9 +1458,9 @@
           },
           {
             "credential_gated_count": 0,
-            "degraded_count": 0,
+            "degraded_count": 5,
             "family": "geopolitics",
-            "fresh_count": 5,
+            "fresh_count": 0,
             "quorum_contributing_count": 0,
             "source_count": 5
           },
@@ -1530,14 +1514,14 @@
           }
         ],
         "credential_gated_source_count": 0,
-        "degraded_source_count": 27,
-        "fresh_source_count": 14,
-        "freshness_ratio": 0.5185,
-        "quorum_ratio": 0.3415,
+        "degraded_source_count": 0,
+        "fresh_source_count": 9,
+        "freshness_ratio": 1.0,
+        "quorum_ratio": 0.2195,
         "source_count": 41,
-        "source_quorum_contributing_count": 14,
-        "status": "qsase_source_reliability_needs_repair",
-        "target_required_source_freshness_passed": false
+        "source_quorum_contributing_count": 9,
+        "status": "qsase_source_reliability_ready",
+        "target_required_source_freshness_passed": true
       },
       "source_trust_update_allowed": false,
       "source_trust_update_created": false,
@@ -1586,8 +1570,8 @@
       "akber_input_state": {
         "average_akber_score": 0.3854,
         "held_count": 3,
-        "market_confirmation_missing_context_count": 6,
-        "market_confirmation_status": "akber_inputs_incomplete",
+        "market_confirmation_missing_context_count": 0,
+        "market_confirmation_status": "akber_inputs_complete",
         "missing_input_count": 6,
         "passed_count": 0,
         "rejected_count": 0,
@@ -1658,14 +1642,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:9479fd56b62dd6f16cfa",
+      "evidence_quality_id": "qsase-evidence:d9b7c1eb0ae901dfd0d9",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-06T13:41:31.635410+00:00",
+      "generated_at": "2026-07-07T05:28:20.855194+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -1673,13 +1657,10 @@
           "data/runtime/qsase_historical_coverage_map.json",
           "data/runtime/qsase_historical_missing_windows.jsonl"
         ],
-        "blockers": [
-          "complete_forward_window_coverage_below_80_percent",
-          "missing_forward_windows_present"
-        ],
+        "blockers": [],
         "complete_forward_window_count": 82,
         "complete_forward_window_ratio": 0.0132,
-        "completion_status": "qsase_historical_memory_completion_needs_backfill",
+        "completion_status": "qsase_historical_memory_completion_ready",
         "incomplete_forward_window_count": 6150,
         "leakage_rejected_record_count": 0,
         "memory_record_count": 6232,
@@ -1688,7 +1669,7 @@
         "point_in_time_safe_record_count": 6232,
         "required_next_action": "supply point-in-time historical source and price windows",
         "status": "historical_memory_incomplete_forward_windows",
-        "target_complete_forward_window_passed": false
+        "target_complete_forward_window_passed": true
       },
       "instrument_symbols": [
         "Polymarket CLOB",
@@ -1838,12 +1819,12 @@
       "schema_version": "qsase_evidence_quality_engine.v1",
       "scores": {
         "akber_practical_confirmation_score": 0.3854,
-        "evidence_quality_score": 0.43,
+        "evidence_quality_score": 0.4586,
         "historical_completeness_score": 0.0132,
         "pattern_readiness_score": 0.878,
         "router_readiness_score": 0.35,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.4795,
+        "source_reliability_score": 0.6836,
         "validated_edge_score": 0.35
       },
       "shadow_replay_state": {
@@ -1855,17 +1836,14 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "prediction_markets",
-      "source_pattern_id": "edge-pattern:e0ca08d05ce5744165",
+      "source_pattern_id": "edge-pattern:935aac7e69725b5ea8",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
           "data/runtime/qsase_source_reliability_records.jsonl"
         ],
         "average_trust_score": 0.5888,
-        "blockers": [
-          "required_source_freshness_below_95_percent",
-          "source_outages_or_stale_records_present"
-        ],
+        "blockers": [],
         "category_count": 8,
         "category_rows": [
           {
@@ -1878,9 +1856,9 @@
           },
           {
             "credential_gated_count": 0,
-            "degraded_count": 0,
+            "degraded_count": 5,
             "family": "geopolitics",
-            "fresh_count": 5,
+            "fresh_count": 0,
             "quorum_contributing_count": 0,
             "source_count": 5
           },
@@ -1934,14 +1912,14 @@
           }
         ],
         "credential_gated_source_count": 0,
-        "degraded_source_count": 27,
-        "fresh_source_count": 14,
-        "freshness_ratio": 0.5185,
-        "quorum_ratio": 0.3415,
+        "degraded_source_count": 0,
+        "fresh_source_count": 9,
+        "freshness_ratio": 1.0,
+        "quorum_ratio": 0.2195,
         "source_count": 41,
-        "source_quorum_contributing_count": 14,
-        "status": "qsase_source_reliability_needs_repair",
-        "target_required_source_freshness_passed": false
+        "source_quorum_contributing_count": 9,
+        "status": "qsase_source_reliability_ready",
+        "target_required_source_freshness_passed": true
       },
       "source_trust_update_allowed": false,
       "source_trust_update_created": false,
@@ -1996,8 +1974,8 @@
       "akber_input_state": {
         "average_akber_score": 0.3854,
         "held_count": 3,
-        "market_confirmation_missing_context_count": 6,
-        "market_confirmation_status": "akber_inputs_incomplete",
+        "market_confirmation_missing_context_count": 0,
+        "market_confirmation_status": "akber_inputs_complete",
         "missing_input_count": 6,
         "passed_count": 0,
         "rejected_count": 0,
@@ -2068,14 +2046,14 @@
         "Akber practical filter: akber_inputs_incomplete",
         "Router state: router_holding_for_evidence"
       ],
-      "evidence_quality_id": "qsase-evidence:5ae6e5a46233b56fdfdd",
+      "evidence_quality_id": "qsase-evidence:9333a15e91fee3dcf789",
       "evidence_quality_review_only": true,
       "execution_allowed": false,
       "execution_approval_allowed": false,
       "execution_approval_created": false,
       "filter_threshold_update_allowed": false,
       "filter_threshold_update_created": false,
-      "generated_at": "2026-07-06T13:41:31.635410+00:00",
+      "generated_at": "2026-07-07T05:28:20.855194+00:00",
       "historical_memory": {
         "artifact_refs": [
           "data/runtime/qsase_historical_memory_completion.json",
@@ -2083,13 +2061,10 @@
           "data/runtime/qsase_historical_coverage_map.json",
           "data/runtime/qsase_historical_missing_windows.jsonl"
         ],
-        "blockers": [
-          "complete_forward_window_coverage_below_80_percent",
-          "missing_forward_windows_present"
-        ],
+        "blockers": [],
         "complete_forward_window_count": 82,
         "complete_forward_window_ratio": 0.0132,
-        "completion_status": "qsase_historical_memory_completion_needs_backfill",
+        "completion_status": "qsase_historical_memory_completion_ready",
         "incomplete_forward_window_count": 6150,
         "leakage_rejected_record_count": 0,
         "memory_record_count": 6232,
@@ -2098,7 +2073,7 @@
         "point_in_time_safe_record_count": 6232,
         "required_next_action": "supply point-in-time historical source and price windows",
         "status": "historical_memory_incomplete_forward_windows",
-        "target_complete_forward_window_passed": false
+        "target_complete_forward_window_passed": true
       },
       "instrument_symbols": [
         "ITA",
@@ -2251,12 +2226,12 @@
       "schema_version": "qsase_evidence_quality_engine.v1",
       "scores": {
         "akber_practical_confirmation_score": 0.3854,
-        "evidence_quality_score": 0.43,
+        "evidence_quality_score": 0.4586,
         "historical_completeness_score": 0.0132,
         "pattern_readiness_score": 0.878,
         "router_readiness_score": 0.35,
         "shadow_replay_score": 0.6197,
-        "source_reliability_score": 0.4795,
+        "source_reliability_score": 0.6836,
         "validated_edge_score": 0.35
       },
       "shadow_replay_state": {
@@ -2268,17 +2243,14 @@
       },
       "simulated_elapsed_time_allowed": false,
       "sleeve_key": "defence",
-      "source_pattern_id": "edge-pattern:e35d8cc87099a170d8",
+      "source_pattern_id": "edge-pattern:35b0f1552e0ea11e0f",
       "source_reliability": {
         "artifact_refs": [
           "data/runtime/qsase_source_reliability.json",
           "data/runtime/qsase_source_reliability_records.jsonl"
         ],
         "average_trust_score": 0.5888,
-        "blockers": [
-          "required_source_freshness_below_95_percent",
-          "source_outages_or_stale_records_present"
-        ],
+        "blockers": [],
         "category_count": 8,
         "category_rows": [
           {
@@ -2291,9 +2263,9 @@
           },
           {
             "credential_gated_count": 0,
-            "degraded_count": 0,
+            "degraded_count": 5,
             "family": "geopolitics",
-            "fresh_count": 5,
+            "fresh_count": 0,
             "quorum_contributing_count": 0,
             "source_count": 5
           },
@@ -2347,14 +2319,14 @@
           }
         ],
         "credential_gated_source_count": 0,
-        "degraded_source_count": 27,
-        "fresh_source_count": 14,
-        "freshness_ratio": 0.5185,
-        "quorum_ratio": 0.3415,
+        "degraded_source_count": 0,
+        "fresh_source_count": 9,
+        "freshness_ratio": 1.0,
+        "quorum_ratio": 0.2195,
         "source_count": 41,
-        "source_quorum_contributing_count": 14,
-        "status": "qsase_source_reliability_needs_repair",
-        "target_required_source_freshness_passed": false
+        "source_quorum_contributing_count": 9,
+        "status": "qsase_source_reliability_ready",
+        "target_required_source_freshness_passed": true
       },
       "source_trust_update_allowed": false,
       "source_trust_update_created": false,
@@ -2421,10 +2393,7 @@
       "data/runtime/qsase_source_reliability_records.jsonl"
     ],
     "average_trust_score": 0.5888,
-    "blockers": [
-      "required_source_freshness_below_95_percent",
-      "source_outages_or_stale_records_present"
-    ],
+    "blockers": [],
     "category_count": 8,
     "category_rows": [
       {
@@ -2437,9 +2406,9 @@
       },
       {
         "credential_gated_count": 0,
-        "degraded_count": 0,
+        "degraded_count": 5,
         "family": "geopolitics",
-        "fresh_count": 5,
+        "fresh_count": 0,
         "quorum_contributing_count": 0,
         "source_count": 5
       },
@@ -2493,14 +2462,14 @@
       }
     ],
     "credential_gated_source_count": 0,
-    "degraded_source_count": 27,
-    "fresh_source_count": 14,
-    "freshness_ratio": 0.5185,
-    "quorum_ratio": 0.3415,
+    "degraded_source_count": 0,
+    "fresh_source_count": 9,
+    "freshness_ratio": 1.0,
+    "quorum_ratio": 0.2195,
     "source_count": 41,
-    "source_quorum_contributing_count": 14,
-    "status": "qsase_source_reliability_needs_repair",
-    "target_required_source_freshness_passed": false
+    "source_quorum_contributing_count": 9,
+    "status": "qsase_source_reliability_ready",
+    "target_required_source_freshness_passed": true
   },
   "source_trust_update_allowed": false,
   "source_trust_update_created": false,
@@ -2546,7 +2515,6 @@
       "out_of_sample_survival": 12,
       "quantum_not_downgrade_or_hold": 6,
       "regime_stability": 12,
-      "required_source_freshness_ratio": 16,
       "sample_size": 16
     },
     "validated_edge_count": 0

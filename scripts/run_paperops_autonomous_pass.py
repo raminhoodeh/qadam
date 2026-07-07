@@ -12,19 +12,32 @@ if str(ROOT) not in sys.path:
 
 from orchestrator.config import Settings  # noqa: E402
 from orchestrator.paperops_autonomous_pass import (  # noqa: E402
+    build_research_lock_watch_only_summary,
     build_paperops_autonomous_pass_summary,
+    read_latest_paperops_autonomous_pass_summary,
     run_command_sequence,
     write_paperops_autonomous_pass_summary,
+)
+from orchestrator.qadam_next_generation_safety_lock import (  # noqa: E402
+    is_long_backtest_lock_active,
+    read_long_backtest_lock,
 )
 
 
 def main() -> int:
     settings = Settings.from_env()
-    command_results = run_command_sequence(
-        repo_root=ROOT,
-        python_executable=sys.executable,
-    )
-    summary = build_paperops_autonomous_pass_summary(command_results)
+    lock = read_long_backtest_lock(settings)
+    if is_long_backtest_lock_active(lock):
+        summary = build_research_lock_watch_only_summary(
+            lock=lock,
+            previous_summary=read_latest_paperops_autonomous_pass_summary(settings),
+        )
+    else:
+        command_results = run_command_sequence(
+            repo_root=ROOT,
+            python_executable=sys.executable,
+        )
+        summary = build_paperops_autonomous_pass_summary(command_results)
     output_path = write_paperops_autonomous_pass_summary(summary, settings=settings)
 
     print(f"paperops_autonomous_pass_summary_path={output_path}")

@@ -125,7 +125,7 @@ async function main() {
 
     const rendered = await renderWithStatus(status);
     [
-        ["[data-dashboard-safety-strip]", "Paper trading authorized"],
+        ["[data-dashboard-safety-strip]", "Backtest running; PaperOps watch-only"],
         ["[data-dashboard-safety-strip]", "Live capital off"],
         ["[data-overview-mission-brief]", "Mission Snapshot"],
         ["[data-overview-strategy-narrative]", "Strategy Universe"],

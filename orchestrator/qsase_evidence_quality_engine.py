@@ -79,6 +79,7 @@ COMPONENT_ATTRIBUTION_ARTIFACT = "qsase_component_attribution_ledger.json"
 COMPONENT_ATTRIBUTION_RECORDS_ARTIFACT = "qsase_component_attribution_ledger.jsonl"
 TELEGRAM_MESSAGE_CANDIDATES_ARTIFACT = "qsase_telegram_message_candidates.json"
 TELEGRAM_COMMUNICATIONS_MIRROR_ARTIFACT = "qsase_telegram_dashboard_communications_mirror.json"
+EVIDENCE_CONTRACTS_SUMMARY_ARTIFACT = "qadam_evidence_contracts_summary.json"
 
 TRADEABILITY_STATES = {
     "paper_review_candidate",
@@ -351,6 +352,7 @@ def _load_context(settings: Settings | None = None) -> dict[str, Any]:
         "learning_records": _read_jsonl(runtime / COMPONENT_ATTRIBUTION_RECORDS_ARTIFACT, limit=1000),
         "telegram_message_candidates": _read_json(runtime / TELEGRAM_MESSAGE_CANDIDATES_ARTIFACT),
         "telegram_mirror": _read_json(runtime / TELEGRAM_COMMUNICATIONS_MIRROR_ARTIFACT),
+        "evidence_contracts_summary": _read_json(runtime / EVIDENCE_CONTRACTS_SUMMARY_ARTIFACT),
     }
 
 
@@ -1155,6 +1157,7 @@ def build_evidence_quality_engine(settings: Settings | None = None) -> dict[str,
     strategy_foundry_v2 = _safe_dict(context.get("strategy_foundry_v2"))
     shadow_simulator_v2 = _safe_dict(context.get("shadow_simulator_v2"))
     paperops_handoff_v2 = _safe_dict(context.get("paperops_handoff_v2"))
+    evidence_contracts_summary = _safe_dict(context.get("evidence_contracts_summary"))
     validated_edge_count = _int(
         validated_edge_graduation_v2.get("validated_edge_count"),
         _int(context.get("edge_pattern_ledger", {}).get("validated_edge_count"), 0),
@@ -1214,6 +1217,17 @@ def build_evidence_quality_engine(settings: Settings | None = None) -> dict[str,
         "akber_status": akber_filter.get("status"),
         "akber_v2_status": akber_filter_v2.get("status"),
         "market_confirmation_status": market_confirmation.get("status"),
+        "evidence_contracts": {
+            "status": evidence_contracts_summary.get("status"),
+            "total_contract_count": _int(evidence_contracts_summary.get("total_contract_count"), 0),
+            "missing_evidence_count": _int(evidence_contracts_summary.get("missing_evidence_count"), 0),
+            "contracts_with_missing_evidence_count": _int(
+                evidence_contracts_summary.get("contracts_with_missing_evidence_count"),
+                0,
+            ),
+            "downstream_reader_state": evidence_contracts_summary.get("downstream_reader_contract", {}).get("status"),
+            "source_artifact": _artifact_ref(EVIDENCE_CONTRACTS_SUMMARY_ARTIFACT),
+        },
         "market_confirmation_packet_count": _int(market_confirmation.get("packet_count"), 0),
         "market_confirmation_complete_packet_count": _int(market_confirmation.get("complete_packet_count"), 0),
         "market_confirmation_repair_request_count": _int(market_confirmation.get("repair_request_count"), 0),
@@ -1303,6 +1317,7 @@ def build_evidence_quality_engine(settings: Settings | None = None) -> dict[str,
             _artifact_ref(AKBER_FILTER_ARTIFACT),
             _artifact_ref(SHADOW_SIMULATOR_ARTIFACT),
             _artifact_ref(ROUTER_ARTIFACT),
+            _artifact_ref(EVIDENCE_CONTRACTS_SUMMARY_ARTIFACT),
             _artifact_ref(PAPEROPS_GATE_ARTIFACT),
             _artifact_ref(COMPONENT_ATTRIBUTION_ARTIFACT),
         ],

@@ -66,6 +66,22 @@ from orchestrator.telegram_inbound_intake import ensure_sample_telegram_inbound_
 from world_monitor.source_registry import EXPECTED_SOURCE_COUNT  # noqa: E402
 
 
+def _long_backtest_watch_only_lock_active() -> bool:
+    path = ROOT / "data/runtime/qadam_long_backtest_lock.json"
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return (
+        payload.get("lock_type") == "qadam_next_generation_whole_universe_backfill_backtest"
+        and payload.get("status") == "active"
+        and payload.get("paperops_autonomous_runner_paused") is True
+        and payload.get("paperops_watch_only_mode") is True
+    )
+
+
 WATCHING_REQUIRED_FIELDS = {
     "auth_class",
     "cadence",
@@ -7009,36 +7025,52 @@ def main() -> int:
     if validate_rs10_final_paper_autonomy_certification(rs10_final_paper_autonomy):
         print("cockpit_status_rs10_final_paper_autonomy_validation_errors=true")
         return 1
-    if rs10_final_paper_autonomy.get("status") not in {
+    long_backtest_watch_only = _long_backtest_watch_only_lock_active()
+    allowed_rs10_statuses = {
         "certified_actionable",
         "certified_waiting_for_qualified_setup",
         "certified_idle",
-    }:
+    }
+    if long_backtest_watch_only:
+        allowed_rs10_statuses.add("blocked_pending_final_certification")
+    if rs10_final_paper_autonomy.get("status") not in allowed_rs10_statuses:
         print("cockpit_status_rs10_final_paper_autonomy_status_invalid=true")
         return 1
-    if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
-        print("cockpit_status_rs10_final_paper_autonomy_not_certified=true")
-        return 1
-    if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
-        print("cockpit_status_rs10_guarded_paper_autonomy_not_allowed=true")
-        return 1
-    if (
-        rs10_final_paper_autonomy.get(
-            "multiple_paper_trades_per_day_allowed_when_gates_pass"
-        )
-        is not True
-    ):
-        print("cockpit_status_rs10_multiple_paper_trades_policy_disabled=true")
-        return 1
-    if rs10_final_paper_autonomy.get("certification_blocker_count") != 0:
-        print("cockpit_status_rs10_final_paper_autonomy_certification_blockers=true")
-        return 1
-    if rs10_final_paper_autonomy.get("safety_blocker_count") != 0:
-        print("cockpit_status_rs10_final_paper_autonomy_safety_blockers=true")
-        return 1
-    if rs10_final_paper_autonomy.get("stale_blocker_in_current_count") != 0:
-        print("cockpit_status_rs10_stale_blocker_in_current=true")
-        return 1
+    if long_backtest_watch_only:
+        for key in (
+            "guarded_paper_autonomy_allowed",
+            "autonomy_currently_actionable",
+            "paper_submit_currently_allowed",
+            "paper_poll_currently_allowed",
+            "paper_exit_currently_allowed",
+        ):
+            if rs10_final_paper_autonomy.get(key) is not False:
+                print(f"cockpit_status_rs10_long_backtest_not_watch_only={key}")
+                return 1
+    else:
+        if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
+            print("cockpit_status_rs10_final_paper_autonomy_not_certified=true")
+            return 1
+        if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
+            print("cockpit_status_rs10_guarded_paper_autonomy_not_allowed=true")
+            return 1
+        if (
+            rs10_final_paper_autonomy.get(
+                "multiple_paper_trades_per_day_allowed_when_gates_pass"
+            )
+            is not True
+        ):
+            print("cockpit_status_rs10_multiple_paper_trades_policy_disabled=true")
+            return 1
+        if rs10_final_paper_autonomy.get("certification_blocker_count") != 0:
+            print("cockpit_status_rs10_final_paper_autonomy_certification_blockers=true")
+            return 1
+        if rs10_final_paper_autonomy.get("safety_blocker_count") != 0:
+            print("cockpit_status_rs10_final_paper_autonomy_safety_blockers=true")
+            return 1
+        if rs10_final_paper_autonomy.get("stale_blocker_in_current_count") != 0:
+            print("cockpit_status_rs10_stale_blocker_in_current=true")
+            return 1
     for key in RS10_FINAL_PAPER_AUTONOMY_AUTHORITY_FIELDS:
         if rs10_final_paper_autonomy.get(key) is not False:
             print(f"cockpit_status_rs10_authority_enabled={key}")
@@ -9539,6 +9571,7 @@ def main() -> int:
     if (
         paperops_30_day_operations.get("status") != "operations_active"
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paperops_30_day_operations_not_active=true")
         return 1
@@ -9557,10 +9590,14 @@ def main() -> int:
     if (
         paperops_30_day_operations.get("validation_error_count") != 0
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paperops_30_day_operations_validation_errors=true")
         return 1
-    if paperops_30_day_operations.get("automation_active") is not True:
+    if (
+        paperops_30_day_operations.get("automation_active") is not True
+        and not long_backtest_watch_only
+    ):
         print("cockpit_status_paperops_30_day_operations_automation_inactive=true")
         return 1
     if paperops_30_day_operations.get("automation_prompt_paperops_bound") is not True:
@@ -9625,7 +9662,7 @@ def main() -> int:
         return 1
     if paperops_cockpit_notification.get("status") != (
         "cockpit_notification_upgrade_ready"
-    ) and not no_current_paperops_setup:
+    ) and not no_current_paperops_setup and not long_backtest_watch_only:
         print("cockpit_status_paperops_cockpit_notification_not_ready=true")
         return 1
     if paperops_cockpit_notification.get("public_safe") is not True:
@@ -9643,12 +9680,14 @@ def main() -> int:
     if (
         paperops_cockpit_notification.get("validation_error_count") != 0
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paperops_cockpit_notification_validation_errors=true")
         return 1
     if (
         paperops_cockpit_notification.get("cockpit_upgrade_ready") is not True
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paperops_cockpit_notification_flag_false=true")
         return 1
@@ -9725,18 +9764,21 @@ def main() -> int:
     if (
         paper_live_certification.get("paper_live_control_plane_certified") is not True
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paper_live_control_plane_not_certified=true")
         return 1
     if (
         paper_live_certification.get("paper_live_certified") is not True
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paper_live_not_certified=true")
         return 1
     if (
         paper_live_certification.get("paper_live_operation_allowed") is not True
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paper_live_operation_not_allowed=true")
         return 1
@@ -9746,12 +9788,14 @@ def main() -> int:
         )
         is not True
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paper_live_unattended_delegation_not_enabled=true")
         return 1
     if (
         int(paper_live_certification.get("certification_blocker_count", 0) or 0) != 0
         and not no_current_paperops_setup
+        and not long_backtest_watch_only
     ):
         print("cockpit_status_paper_live_certification_blockers_present=true")
         return 1

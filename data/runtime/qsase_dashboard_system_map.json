@@ -38,6 +38,7 @@
       "data/runtime/qsase_akber_filter_integration.json",
       "data/runtime/qsase_shadow_strategy_simulator.json",
       "data/runtime/qsase_strategy_router_decisions.json",
+      "data/runtime/qadam_evidence_contracts_summary.json",
       "data/runtime/qsase_paperops_gate_interface.json",
       "data/runtime/qsase_component_attribution_ledger.json"
     ],
@@ -65,7 +66,26 @@
     ],
     [
       "data/runtime/qsase_self_model.json",
-      "data/runtime/qsase_learning_approval_queue.json"
+      "data/runtime/qsase_learning_approval_queue.json",
+      "data/runtime/qadam_self_healing_repair_queue.json"
+    ],
+    [
+      "data/runtime/qadam_long_backtest_lock.json",
+      "data/runtime/qadam_next_generation_backtest_dashboard_summary.json",
+      "data/runtime/qsase_whole_universe_backfill_backtest_dashboard_summary.json",
+      "data/runtime/qadam_evidence_contracts_dashboard_summary.json",
+      "data/runtime/qadam_world_model_dashboard_summary.json",
+      "data/runtime/qadam_pattern_engine_v2_dashboard_summary.json",
+      "data/runtime/qadam_strategy_evidence_map_dashboard_summary.json",
+      "data/runtime/qadam_strategy_foundry_v2_dashboard_summary.json",
+      "data/runtime/qadam_akber_filter_v2_dashboard_summary.json",
+      "data/runtime/qadam_shadow_simulator_v2_dashboard_summary.json",
+      "data/runtime/qadam_router_v2_dashboard_summary.json",
+      "data/runtime/qadam_paper_lifecycle_v2_dashboard_summary.json",
+      "data/runtime/qadam_learning_attribution_v2_dashboard_summary.json",
+      "data/runtime/qadam_dashboard_vnext_dashboard_summary.json",
+      "data/runtime/qadam_telegram_vnext_dashboard_summary.json",
+      "data/runtime/qadam_telegram_next_generation_dashboard_communications_mirror.json"
     ],
     [
       "data/runtime/qsase_dashboard_status.json"
@@ -171,7 +191,7 @@
       "to": "freshness"
     }
   ],
-  "generated_at": "2026-07-06T15:22:37.352582+00:00",
+  "generated_at": "2026-07-07T05:28:21.251063+00:00",
   "node_count": 14,
   "nodes": [
     {
@@ -204,7 +224,7 @@
       "label": "Current Portfolio",
       "node_id": "current_portfolio",
       "overview_detail_level": "summary_only",
-      "state": "current_portfolio_present"
+      "state": "current_portfolio_explicitly_empty"
     },
     {
       "artifact_refs": [
@@ -255,6 +275,7 @@
         "data/runtime/qsase_akber_filter_integration.json",
         "data/runtime/qsase_shadow_strategy_simulator.json",
         "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qadam_evidence_contracts_summary.json",
         "data/runtime/qsase_paperops_gate_interface.json",
         "data/runtime/qsase_component_attribution_ledger.json"
       ],
@@ -309,7 +330,8 @@
     {
       "artifact_refs": [
         "data/runtime/qsase_self_model.json",
-        "data/runtime/qsase_learning_approval_queue.json"
+        "data/runtime/qsase_learning_approval_queue.json",
+        "data/runtime/qadam_self_healing_repair_queue.json"
       ],
       "label": "Repair Queue",
       "node_id": "repair_queue",

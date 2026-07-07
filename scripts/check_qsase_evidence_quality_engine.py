@@ -77,6 +77,10 @@ def main() -> int:
     print(f"akber_pass_count={payload.get('akber_pass_count')}")
     print(f"akber_hold_count={payload.get('akber_hold_count')}")
     print(f"akber_missing_context_count={payload.get('akber_missing_context_count')}")
+    print(f"evidence_contracts_status={payload.get('evidence_contracts', {}).get('status')}")
+    print(f"evidence_contract_total_count={payload.get('evidence_contracts', {}).get('total_contract_count')}")
+    print(f"evidence_contract_missing_count={payload.get('evidence_contracts', {}).get('missing_evidence_count')}")
+    print(f"evidence_contract_downstream_reader_state={payload.get('evidence_contracts', {}).get('downstream_reader_state')}")
     print(f"router_paper_review_candidate_count={payload.get('router_paper_review_candidate_count')}")
     print(f"router_hold_count={payload.get('router_hold_count')}")
     print(

@@ -5,7 +5,7 @@
   "authority_state": "shadow_replay_research_only_no_order",
   "candidate_for_router_count": 0,
   "command_disabled": true,
-  "generated_at": "2026-07-06T09:36:53.935734+00:00",
+  "generated_at": "2026-07-06T19:13:10.228875+00:00",
   "latest_blocked_reason": "akber_filter_waiting_for_confirmation,historical_memory_has_missing_forward_windows,legacy_phase6_shadow_runner_blocked,strategy_foundry_has_probationary_hypotheses",
   "live_send_allowed": false,
   "no_paper_orders_created": true,

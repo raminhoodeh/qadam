@@ -94,7 +94,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.15,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -285,7 +285,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.15,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -476,7 +476,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.15,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -666,7 +666,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.15,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -856,7 +856,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.975,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -973,7 +973,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.975,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1090,7 +1090,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.95,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1209,7 +1209,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.95,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1328,7 +1328,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 1.0,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1443,7 +1443,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 1.0,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1558,7 +1558,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 1.0,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1671,7 +1671,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 1.0,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1784,7 +1784,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.875,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -1909,7 +1909,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 0.875,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -2034,7 +2034,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 1.0,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -2145,7 +2145,7 @@
       "effect_size_score": 0.258,
       "execution_allowed": false,
       "false_positive_risk": 1.0,
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "initial_strategy_labels": [
         "crude_oil_energy_security_disruption"
       ],
@@ -2240,7 +2240,7 @@
     "artifact_type": "qsase_full_universe_pattern_search_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-07-06T09:36:52.886513+00:00",
+    "generated_at": "2026-07-06T19:13:10.120027+00:00",
     "live_send_allowed": false,
     "no_paper_orders_created": true,
     "no_proof_credit_granted": true,
@@ -2293,7 +2293,7 @@
     "source_price_lags_evaluated": true,
     "strategy_sleeve_only_scan": false
   },
-  "generated_at": "2026-07-06T09:36:52.886513+00:00",
+  "generated_at": "2026-07-06T19:13:10.120027+00:00",
   "historical_memory_status": "qsase_historical_source_price_memory_ready_with_gaps",
   "hold_reasons": [
     "coverage_gaps_present",
@@ -2358,7 +2358,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "10d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -2576,7 +2576,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "1d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -2794,7 +2794,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "20d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -3012,7 +3012,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "3d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -3230,7 +3230,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "5d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -3448,7 +3448,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "60d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -3666,7 +3666,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "event_time_move"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -3883,7 +3883,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "pre_event_baseline"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -4100,7 +4100,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "10d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -4318,7 +4318,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "1d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -4536,7 +4536,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "20d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -4754,7 +4754,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "3d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -4972,7 +4972,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "5d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -5190,7 +5190,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "60d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -5408,7 +5408,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "event_time_move"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -5626,7 +5626,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "pre_event_baseline"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "defence"
@@ -5844,7 +5844,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "10d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -6042,7 +6042,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "1d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -6240,7 +6240,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "20d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -6438,7 +6438,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "3d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -6636,7 +6636,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "5d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -6834,7 +6834,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "60d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -7032,7 +7032,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "event_time_move"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -7230,7 +7230,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "pre_event_baseline"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "macro_watchlist"
@@ -7428,7 +7428,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "10d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -7626,7 +7626,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "1d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -7824,7 +7824,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "20d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -8022,7 +8022,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "3d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -8220,7 +8220,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "5d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -8418,7 +8418,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "60d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -8616,7 +8616,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "event_time_move"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -8814,7 +8814,7 @@
         "required_forward_outcome_count": 82,
         "time_window": "pre_event_baseline"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "prediction_markets"
@@ -9012,7 +9012,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "10d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -9230,7 +9230,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "1d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -9448,7 +9448,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "20d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -9666,7 +9666,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "3d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -9884,7 +9884,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "5d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -10102,7 +10102,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "60d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -10320,7 +10320,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "event_time_move"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -10538,7 +10538,7 @@
         "required_forward_outcome_count": 164,
         "time_window": "pre_event_baseline"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "semiconductors"
@@ -10756,7 +10756,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "10d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -10973,7 +10973,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "1d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -11190,7 +11190,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "20d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -11407,7 +11407,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "3d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -11624,7 +11624,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "5d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -11841,7 +11841,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "60d_forward"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -12058,7 +12058,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "event_time_move"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -12275,7 +12275,7 @@
         "required_forward_outcome_count": 123,
         "time_window": "pre_event_baseline"
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "silver"
@@ -12493,7 +12493,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -12567,7 +12567,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -12641,7 +12641,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -12715,7 +12715,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -12789,7 +12789,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -12863,7 +12863,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -12937,7 +12937,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13011,7 +13011,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13085,7 +13085,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13159,7 +13159,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13233,7 +13233,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13307,7 +13307,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13381,7 +13381,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13455,7 +13455,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13529,7 +13529,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13603,7 +13603,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13677,7 +13677,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13751,7 +13751,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13825,7 +13825,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13899,7 +13899,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -13973,7 +13973,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14047,7 +14047,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14121,7 +14121,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14195,7 +14195,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14269,7 +14269,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14343,7 +14343,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14417,7 +14417,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14491,7 +14491,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14565,7 +14565,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14639,7 +14639,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14713,7 +14713,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14787,7 +14787,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14861,7 +14861,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -14935,7 +14935,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15009,7 +15009,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15083,7 +15083,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15157,7 +15157,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15231,7 +15231,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15305,7 +15305,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15379,7 +15379,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15453,7 +15453,7 @@
         "minimum_sample_size": 8,
         "sample_size": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15525,7 +15525,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15602,7 +15602,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15679,7 +15679,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15758,7 +15758,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15837,7 +15837,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -15926,7 +15926,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16015,7 +16015,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16090,7 +16090,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16165,7 +16165,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16246,7 +16246,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16327,7 +16327,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16410,7 +16410,7 @@
         "distinct_market_family_count": 1,
         "minimum_market_family_count": 2
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16497,7 +16497,7 @@
           "pre_event_baseline"
         ]
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"
@@ -16694,7 +16694,7 @@
         "market_symbol": "CL=F",
         "paper_route_available_count": 0
       },
-      "generated_at": "2026-07-06T09:36:52.886513+00:00",
+      "generated_at": "2026-07-06T19:13:10.120027+00:00",
       "live_capital_enabled": false,
       "market_families": [
         "crude_oil"

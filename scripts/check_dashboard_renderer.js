@@ -99,6 +99,20 @@ class FakeElement {
     setAttribute(name, value) {
         this.attributes[name] = String(value);
     }
+
+    querySelector() {
+        return null;
+    }
+
+    querySelectorAll() {
+        return [];
+    }
+
+    addEventListener() {}
+
+    removeEventListener() {}
+
+    focus() {}
 }
 
 function clone(value) {

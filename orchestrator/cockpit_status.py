@@ -1653,6 +1653,22 @@ def _read_runtime_json(settings: Settings, filename: str) -> dict[str, Any] | No
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _long_backtest_watch_only_lock_active() -> bool:
+    path = Path(__file__).resolve().parents[1] / "data/runtime/qadam_long_backtest_lock.json"
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return (
+        payload.get("lock_type") == "qadam_next_generation_whole_universe_backfill_backtest"
+        and payload.get("status") == "active"
+        and payload.get("paperops_autonomous_runner_paused") is True
+        and payload.get("paperops_watch_only_mode") is True
+    )
+
+
 def _dashboard_status(raw_status: str) -> str:
     if raw_status in {
         "registered",
@@ -12995,23 +13011,35 @@ def validate_cockpit_status(payload: dict[str, Any]) -> None:
         rs10_final_paper_autonomy
     ):
         raise ValueError("RS-10 Final Paper Autonomy validation failed")
-    if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
-        raise ValueError("RS-10 Final Paper Autonomy is not certified")
-    if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
-        raise ValueError("RS-10 guarded paper autonomy is not allowed")
-    if (
-        rs10_final_paper_autonomy.get(
-            "multiple_paper_trades_per_day_allowed_when_gates_pass"
-        )
-        is not True
-    ):
-        raise ValueError("RS-10 multiple paper trades policy is not enabled")
-    if rs10_final_paper_autonomy.get("certification_blocker_count") != 0:
-        raise ValueError("RS-10 certification blockers present")
-    if rs10_final_paper_autonomy.get("safety_blocker_count") != 0:
-        raise ValueError("RS-10 safety blockers present")
-    if rs10_final_paper_autonomy.get("stale_blocker_in_current_count") != 0:
-        raise ValueError("RS-10 stale blocker is shown as current")
+    long_backtest_watch_only = _long_backtest_watch_only_lock_active()
+    if long_backtest_watch_only:
+        for key in (
+            "guarded_paper_autonomy_allowed",
+            "autonomy_currently_actionable",
+            "paper_submit_currently_allowed",
+            "paper_poll_currently_allowed",
+            "paper_exit_currently_allowed",
+        ):
+            if rs10_final_paper_autonomy.get(key) is not False:
+                raise ValueError(f"RS-10 must stay non-actionable during long backtest lock: {key}")
+    else:
+        if rs10_final_paper_autonomy.get("final_paper_autonomy_certified") is not True:
+            raise ValueError("RS-10 Final Paper Autonomy is not certified")
+        if rs10_final_paper_autonomy.get("guarded_paper_autonomy_allowed") is not True:
+            raise ValueError("RS-10 guarded paper autonomy is not allowed")
+        if (
+            rs10_final_paper_autonomy.get(
+                "multiple_paper_trades_per_day_allowed_when_gates_pass"
+            )
+            is not True
+        ):
+            raise ValueError("RS-10 multiple paper trades policy is not enabled")
+        if rs10_final_paper_autonomy.get("certification_blocker_count") != 0:
+            raise ValueError("RS-10 certification blockers present")
+        if rs10_final_paper_autonomy.get("safety_blocker_count") != 0:
+            raise ValueError("RS-10 safety blockers present")
+        if rs10_final_paper_autonomy.get("stale_blocker_in_current_count") != 0:
+            raise ValueError("RS-10 stale blocker is shown as current")
     for key in (
         "dashboard_command_authority",
         "telegram_command_authority",

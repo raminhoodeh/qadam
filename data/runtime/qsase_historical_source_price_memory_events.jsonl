@@ -7,3 +7,5 @@
 {"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T09:28:16.724786+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
 {"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T09:36:35.590626+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
 {"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T09:36:48.381940+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T18:50:47.452799+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}
+{"authority_flags_false": true, "event_type": "qsase_historical_source_price_memory_written", "generated_at": "2026-07-06T19:13:10.089001+00:00", "public_safe": true, "status": "qsase_historical_source_price_memory_ready_with_gaps"}

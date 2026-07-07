@@ -21,6 +21,27 @@ run_with_retry() {
   done
 }
 
+long_backtest_lock_active() {
+  "$PYTHON_BIN" -c '
+import json
+from pathlib import Path
+
+path = Path("data/runtime/qadam_long_backtest_lock.json")
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(1)
+
+active = (
+    payload.get("lock_type") == "qadam_next_generation_whole_universe_backfill_backtest"
+    and payload.get("status") == "active"
+    and payload.get("paperops_autonomous_runner_paused") is True
+    and payload.get("paperops_watch_only_mode") is True
+)
+raise SystemExit(0 if active else 1)
+'
+}
+
 cd "$ROOT"
 
 PYTHON_BIN="${QADAM_PYTHON:-python3}"
@@ -31,11 +52,16 @@ fi
 say "Refreshing dry-run receipt contract"
 "$PYTHON_BIN" scripts/check_paper_submit_receipt_contract.py
 run_with_retry 5 "$PYTHON_BIN" scripts/check_alpaca_paper_mirror.py --live
-"$PYTHON_BIN" scripts/check_paperops_paper_lifecycle_poller.py --poll-paper-orders
-"$PYTHON_BIN" scripts/check_paperops_paper_exit_path.py
-"$PYTHON_BIN" scripts/check_paper_live_certification.py
-"$PYTHON_BIN" scripts/check_paper_operational_cycle.py
-"$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
+if long_backtest_lock_active; then
+  say "Long backtest lock active; validating canonical PaperOps watch-only state"
+  "$PYTHON_BIN" scripts/run_paperops_autonomous_pass.py
+else
+  "$PYTHON_BIN" scripts/check_paperops_paper_lifecycle_poller.py --poll-paper-orders
+  "$PYTHON_BIN" scripts/check_paperops_paper_exit_path.py
+  "$PYTHON_BIN" scripts/check_paper_live_certification.py
+  "$PYTHON_BIN" scripts/check_paper_operational_cycle.py
+  "$PYTHON_BIN" scripts/check_paperops_30_day_operations.py
+fi
 "$PYTHON_BIN" scripts/check_paperops_completion_gaps.py
 "$PYTHON_BIN" scripts/check_evidence_packet_runtime.py
 "$PYTHON_BIN" scripts/check_qsase_evidence_quality_engine.py

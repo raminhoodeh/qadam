@@ -133,12 +133,12 @@ async function main() {
         "renderPortfolioTradeTimeline",
         "Paper Fund Status",
         "Current Portfolio",
-        "Portfolio status",
+        "portfolio status",
         "Open exposure",
-        "Trade History",
+        "Trading History",
         "Multi-Asset Funds",
-        "Fund Categories",
-        "How to read portfolio status",
+        "fund categories",
+        "How to read paper fund status",
         "pending paper order"
     ], "dashboard source");
 

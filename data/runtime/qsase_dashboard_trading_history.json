@@ -31,15 +31,49 @@
     "trade_candidate_created": false,
     "trade_intent_created": false
   },
-  "closed_trade_row_count": 40,
+  "closed_trade_row_count": 42,
   "command_disabled": true,
   "explicitly_empty": false,
-  "generated_at": "2026-07-06T15:22:37.352582+00:00",
+  "generated_at": "2026-07-07T05:28:21.251063+00:00",
   "paper_only": true,
   "paper_order_mirror_row_count": 30,
   "public_safe": true,
   "read_only": true,
   "rows": [
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T16:27:19.044159Z",
+      "direction": "sell",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "SMH",
+      "opened_at": "2026-07-06T16:27:15.335618Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "b67bdd9e-e8db-42b6-8c0a-7dede69b419a"
+    },
+    {
+      "artifact_refs": [
+        "data/runtime/paper_closed_trades.jsonl"
+      ],
+      "boundary": "mirrored_closed_paper_trade_not_new_proof_credit",
+      "closed_at": "2026-07-06T15:25:58.755042Z",
+      "direction": "sell",
+      "event_label": "Sell / close",
+      "event_type": "sell_or_close",
+      "instrument": "ITA",
+      "opened_at": "2026-07-06T15:25:58.33406Z",
+      "postmortem_status": "postmortem_due",
+      "realized_pnl": 0.0,
+      "row_type": "closed_paper_trade_mirror",
+      "source_intent_id": null,
+      "trade_id": "daf83e48-c89f-42f6-bef2-75be0eb3489f"
+    },
     {
       "artifact_refs": [
         "data/runtime/paper_closed_trades.jsonl"

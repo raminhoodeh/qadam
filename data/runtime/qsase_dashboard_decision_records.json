@@ -28,7 +28,7 @@
     "trade_intent_created": false
   },
   "command_disabled": true,
-  "generated_at": "2026-07-06T15:22:37.352582+00:00",
+  "generated_at": "2026-07-07T05:28:21.251063+00:00",
   "public_safe": true,
   "read_only": true,
   "record_count": 11,
@@ -288,6 +288,7 @@
         "data/runtime/qsase_akber_filter_integration.json",
         "data/runtime/qsase_shadow_strategy_simulator.json",
         "data/runtime/qsase_strategy_router_decisions.json",
+        "data/runtime/qadam_evidence_contracts_summary.json",
         "data/runtime/qsase_paperops_gate_interface.json",
         "data/runtime/qsase_component_attribution_ledger.json"
       ],
@@ -320,7 +321,7 @@
       },
       "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
       "blocker": "fresh point-in-time source-price evidence strong enough for Akber and Router to call a setup tradeable now",
-      "decision_record_id": "qsase-dashboard:cb5348cbf4ecf64b2de4",
+      "decision_record_id": "qsase-dashboard:0ba44af540e5c901d52a",
       "evidence": [],
       "headline": "Evidence Quality decides whether patterns are tradeable now.",
       "live_capital_enabled": false,
@@ -532,7 +533,8 @@
       "applied_change": false,
       "artifact_refs": [
         "data/runtime/qsase_self_model.json",
-        "data/runtime/qsase_learning_approval_queue.json"
+        "data/runtime/qsase_learning_approval_queue.json",
+        "data/runtime/qadam_self_healing_repair_queue.json"
       ],
       "authority": {
         "broker_write_allowed": false,
@@ -563,7 +565,7 @@
       },
       "authority_boundary": "read_only_dashboard_mirror_no_commands_no_orders_no_proof_no_live_capital",
       "blocker": "repair_or_review_needed",
-      "decision_record_id": "qsase-dashboard:3c0e240ae305f7b3cf01",
+      "decision_record_id": "qsase-dashboard:2bf82c3c80f66913c838",
       "evidence": [],
       "headline": "Repair queue separates defects from strategy discipline.",
       "live_capital_enabled": false,
@@ -571,7 +573,7 @@
       "next_allowed_action": "repair runtime/source gaps or review proposals before any change",
       "paper_order_created": false,
       "proof_credit_allowed": false,
-      "reason": "14 repair or approval rows are visible.",
+      "reason": "34 repair or approval rows are visible.",
       "schema_version": "qsase_dashboard_view_model.v1",
       "state": "repair_queue_visible",
       "strategy_family": "aggregate"

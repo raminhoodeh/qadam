@@ -245,7 +245,7 @@
     "credential_blocked_source_count": 0,
     "eligible_instrument_count": 19,
     "eligible_source_count": 41,
-    "generated_at": "2026-07-06T09:36:48.381940+00:00",
+    "generated_at": "2026-07-06T19:13:10.089001+00:00",
     "historical_backfill_blocked_count": 44,
     "historical_backfill_recorded_count": 65,
     "leakage_rejected_record_count": 0,
@@ -270,7 +270,7 @@
     "artifact_type": "qsase_historical_source_price_memory_dashboard_summary",
     "authority_flags_false": true,
     "command_disabled": true,
-    "generated_at": "2026-07-06T09:36:48.381940+00:00",
+    "generated_at": "2026-07-06T19:13:10.089001+00:00",
     "live_send_allowed": false,
     "memory_state_language": "Historical memory informs research. It is not paper proof ledger credit.",
     "paper_growth_trial_calendar_advanced": false,
@@ -325,7 +325,7 @@
       "requires_actual_guarded_paper_route": true
     }
   },
-  "generated_at": "2026-07-06T09:36:48.381940+00:00",
+  "generated_at": "2026-07-06T19:13:10.089001+00:00",
   "historical_backfill_ref": {
     "path": "data/runtime/historical_backfill_runs.jsonl",
     "read_only": true,
@@ -1878,7 +1878,7 @@
     "artifact_type": "qsase_point_in_time_replay_index",
     "command_disabled": true,
     "execution_allowed": false,
-    "generated_at": "2026-07-06T09:36:48.381940+00:00",
+    "generated_at": "2026-07-06T19:13:10.089001+00:00",
     "indices": {
       "by_asset_class": {
         "crude_oil": {
@@ -4257,7 +4257,7 @@
     "command_disabled": true,
     "coverage_ref": "data/runtime/qsase_historical_coverage_map.json",
     "execution_allowed": false,
-    "generated_at": "2026-07-06T09:36:48.381940+00:00",
+    "generated_at": "2026-07-06T19:13:10.089001+00:00",
     "input_artifacts": [
       "data/runtime/qsase_universal_source_price_matrix.json",
       "data/runtime/qsase_source_price_edges.jsonl",

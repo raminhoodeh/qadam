@@ -12,6 +12,11 @@ from typing import Any
 from orchestrator.config import Settings
 from orchestrator.edge_pattern_ledger import validate_edge_pattern_ledger
 from orchestrator.paper_account import OPEN_ORDER_STATUSES, PaperAccountMirrorStore
+from orchestrator.qadam_next_generation_safety_lock import (
+    LOCK_ARTIFACT,
+    is_long_backtest_lock_active,
+    read_long_backtest_lock,
+)
 from orchestrator.paperops_closed_trade_funnel import (
     build_paperops_closed_trade_funnel,
     validate_paperops_closed_trade_funnel,
@@ -204,6 +209,28 @@ def _unique(items: list[str]) -> list[str]:
     return list(dict.fromkeys(item for item in items if item))
 
 
+def _deep_get(payload: dict[str, Any], path: tuple[str, ...], default: Any = None) -> Any:
+    value: Any = payload
+    for key in path:
+        if not isinstance(value, dict):
+            return default
+        value = value.get(key)
+    return default if value is None else value
+
+
+def read_latest_paperops_autonomous_pass_summary(
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    path = runtime_summary_path(settings)
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
 def _paper_mirror_runtime() -> dict[str, Any]:
     try:
         store = PaperAccountMirrorStore()
@@ -284,6 +311,25 @@ def _status(command_results: list[dict[str, Any]], blockers: list[str]) -> str:
 
 
 def _self_healing_request(summary: dict[str, Any]) -> dict[str, Any]:
+    research_lock = summary.get("next_generation_research_lock")
+    if isinstance(research_lock, dict) and research_lock.get("active") is True:
+        return {
+            "enabled": True,
+            "needs_repair": False,
+            "codex_reprompt_required": False,
+            "status": "no_repair_needed_research_lock_active",
+            "trigger_reasons": [],
+            "failed_commands": [],
+            "blockers": [],
+            "validation_errors": [],
+            "repair_scope": SELF_HEAL_REPAIR_SCOPE,
+            "forbidden_actions": list(SELF_HEAL_FORBIDDEN_ACTIONS),
+            "repair_prompt": None,
+            "boundary": (
+                "The next-generation research lock is intentional. PaperOps is "
+                "watch-only and must not self-heal by bypassing the lock."
+            ),
+        }
     failed_commands = list(summary.get("failed_commands") or [])
     blockers = list(summary.get("blockers") or [])
     validation_errors = list(summary.get("validation_errors") or [])
@@ -319,6 +365,211 @@ def _self_healing_request(summary: dict[str, Any]) -> dict[str, Any]:
             "enable live capital, write secrets, or grant proof credit."
         ),
     }
+
+
+def build_research_lock_watch_only_summary(
+    *,
+    lock: dict[str, Any],
+    previous_summary: dict[str, Any] | None = None,
+    generated_at: str | None = None,
+    summary_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Build the canonical PaperOps summary without running PaperOps commands."""
+
+    generated = generated_at or now_utc()
+    previous = previous_summary if isinstance(previous_summary, dict) else {}
+    mirror_runtime = _paper_mirror_runtime()
+    run_day = _int(_deep_get(previous, ("paper_growth_trial", "run_day"), 0))
+    qualified_setup_count = _int(
+        _deep_get(previous, ("paper_proof_ledger", "qualified_setup_count"), 0)
+    )
+    closed_proof_trade_count = _int(
+        _deep_get(previous, ("paper_proof_ledger", "closed_proof_trade_count"), 0)
+    )
+    source_gap_visibility = previous.get("source_gap_visibility")
+    if not isinstance(source_gap_visibility, dict):
+        source_gap_visibility = {
+            "status": "watch_only_research_lock_active",
+            "optional_gap_count": 0,
+            "optional_gap_keys": [],
+            "required_gap_count": 0,
+            "trade_blocking_source_gap_count": 0,
+            "silent_blocker_count": 0,
+            "blocker_count": 0,
+        }
+    edge_pattern_ledger = previous.get("edge_pattern_ledger")
+    if not isinstance(edge_pattern_ledger, dict):
+        edge_pattern_ledger = {
+            "status": "watch_only_research_lock_active",
+            "sprint_day": 0,
+            "sprint_days_remaining": 0,
+            "candidate_pattern_count": 0,
+            "validated_edge_count": 0,
+            "criteria": "not_checked_during_research_lock",
+            "quantum_mode": "not_checked_during_research_lock",
+            "quantum_core_gate": False,
+            "source_count": 0,
+            "watched_instrument_count": 0,
+            "telegram_summary_status": "not_checked_during_research_lock",
+            "artifact_path": None,
+            "boundary": "Watch-only during next-generation historical research lock.",
+        }
+    submit_regression_guard = {
+        "status": "watch_only_research_lock_active",
+        "blocker_count": 0,
+        "fresh_eligible_submit_record_count": 0,
+        "duplicate_submit_record_count": 0,
+        "fresh_submitted_ledger_collision_count": 0,
+        "duplicate_misclassified_as_fresh_count": 0,
+        "source_stale_after_post_tolerance_count": 0,
+        "live_endpoint_called_count": 0,
+        "broker_post_called_count": 0,
+        "broker_write_allowed_count": 0,
+    }
+    summary = {
+        "schema_version": PAPEROPS_AUTONOMOUS_PASS_SCHEMA_VERSION,
+        "artifact_type": "paperops_autonomous_pass_summary",
+        "artifact_id": "paperops:autonomous-pass:latest",
+        "generated_at": generated,
+        "public_safe": True,
+        "summary_path": str(summary_path) if summary_path else None,
+        "user_facing_terms": {
+            "trial": "30-day paper growth trial",
+            "ledger": "paper proof ledger",
+        },
+        "status": "watch_only_research_lock_active",
+        "command_count": 0,
+        "command_passed_count": 0,
+        "command_failed_count": 0,
+        "failed_commands": [],
+        "next_generation_research_lock": {
+            "active": True,
+            "artifact": f"data/runtime/{LOCK_ARTIFACT}",
+            "lock_type": lock.get("lock_type"),
+            "status": lock.get("status"),
+            "started_at": lock.get("started_at"),
+            "reason": lock.get("reason"),
+            "paperops_watch_only_mode": lock.get("paperops_watch_only_mode") is True,
+            "phase_1_backfill_started": lock.get("phase_1_backfill_started") is True,
+        },
+        "paper_growth_trial": {
+            "run_id": _deep_get(previous, ("paper_growth_trial", "run_id")),
+            "run_state": _deep_get(previous, ("paper_growth_trial", "run_state"), "watch_only_research_lock_active"),
+            "run_day": run_day,
+            "completed_calendar_day_count": _int(
+                _deep_get(previous, ("paper_growth_trial", "completed_calendar_day_count"), 0)
+            ),
+            "calendar_days_remaining": _int(
+                _deep_get(previous, ("paper_growth_trial", "calendar_days_remaining"), 0)
+            ),
+            "actual_calendar_run": bool(
+                _deep_get(previous, ("paper_growth_trial", "actual_calendar_run"), True)
+            ),
+            "backfill_used": False,
+            "simulated_time_used": False,
+            "no_forced_trades": True,
+        },
+        "paper_proof_ledger": {
+            "qualified_setup_count": qualified_setup_count,
+            "submitted_paper_order_count": _int(
+                _deep_get(previous, ("paper_proof_ledger", "submitted_paper_order_count"), 0)
+            ),
+            "closed_proof_trade_count": closed_proof_trade_count,
+            "no_trade_rationale": "PaperOps is watch-only while the next-generation historical research lock is active.",
+        },
+        "paper_runtime": {
+            "fresh_eligible_submit_count": 0,
+            "duplicate_submit_count": 0,
+            "submitted_paper_order_count": 0,
+            "idle_reason": "long_backtest_research_lock_active",
+            "idempotency_guard_message": "research lock active: no paper submit route executed",
+            "open_position_count": _int(mirror_runtime.get("open_position_count")),
+            "closed_paper_trade_count": max(
+                _int(mirror_runtime.get("closed_paper_trade_count")),
+                _int(_deep_get(previous, ("paper_runtime", "closed_paper_trade_count"), 0)),
+            ),
+            "paper_order_count": _int(mirror_runtime.get("paper_order_count")),
+            "open_order_count": _int(mirror_runtime.get("open_order_count")),
+            "order_status_counts": mirror_runtime.get("order_status_counts", {}),
+            "paper_mirror_observed_at": mirror_runtime.get("observed_at"),
+            "paper_mirror_status": mirror_runtime.get("status"),
+        },
+        "first_week_paper_trade_mandate": {
+            "status": "watch_only_research_lock_active",
+            "active": False,
+            "day_number": 0,
+            "daily_target_trade_count": 0,
+            "minimum_notional_usd": 0.0,
+            "daily_ready_submit_count": 0,
+            "daily_submitted_count": 0,
+        },
+        "telegram_inbound": {
+            "record_count": 0,
+            "world_event_datapoint_count": 0,
+            "strategy_consideration_count": 0,
+            "boundary": "not_polled_during_research_lock",
+        },
+        "states": {
+            "paper_ops_cycle_state": "watch_only_research_lock_active",
+            "paper_ops_cycle_contract_check": "watch_only_research_lock_active",
+            "active_automation_state": "paused_by_long_backtest_lock",
+            "paper_live_certification_state": "not_checked_during_research_lock",
+            "closeout_status": "watch_only_research_lock_active",
+            "cockpit_mirror_state": "watch_only_research_lock_active",
+            "cockpit_paper_mirror_state": mirror_runtime.get("status"),
+            "quantum_provider_diagnostic_state": "not_checked_during_research_lock",
+        },
+        "safety": {
+            "live_capital_enabled": False,
+            "phase7_proof_credit_allowed": False,
+            "broker_post_called_count": 0,
+            "alpaca_post_called_count": 0,
+            "notification_live_send_allowed_count": 0,
+            "command_path_enabled_count": 0,
+        },
+        "blockers": [],
+        "blocker_count": 0,
+        "optional_gaps": [],
+        "optional_gap_count": 0,
+        "optional_coverage_gaps": [],
+        "source_gap_visibility": source_gap_visibility,
+        "edge_pattern_ledger": edge_pattern_ledger,
+        "closed_trade_funnel": {
+            "status": "watch_only_research_lock_active",
+            "blocked_stage": "research_lock",
+            "next_required_action": "Leave PaperOps watch-only until the research lock is explicitly released.",
+            "paper_order_allowed": False,
+            "broker_write_allowed": False,
+            "proof_credit_allowed": False,
+            "live_capital_enabled": False,
+        },
+        "close_to_ledger": {
+            "status": "watch_only_research_lock_active",
+            "closed_proof_trade_count": closed_proof_trade_count,
+            "proof_credit_allowed": False,
+            "live_capital_enabled": False,
+        },
+        "submit_regression_guard": submit_regression_guard,
+        "command_results": [],
+        "automation_report_lines": [
+            (
+                "30-day paper growth trial is watch-only while Qadam prepares "
+                "the whole-universe historical backfill and backtest."
+            ),
+            (
+                "Paper proof ledger is unchanged; historical research cannot "
+                "grant proof credit or simulate elapsed trial time."
+            ),
+            (
+                "PaperOps is paused by the long research lock and can report "
+                "existing account state only."
+            ),
+        ],
+    }
+    summary["validation_errors"] = validate_paperops_autonomous_pass_summary(summary)
+    summary["validation_error_count"] = len(summary["validation_errors"])
+    summary["self_healing"] = _self_healing_request(summary)
+    return summary
 
 
 def build_paperops_autonomous_pass_summary(
@@ -1096,6 +1347,27 @@ def validate_paperops_autonomous_pass_summary(summary: dict[str, Any]) -> list[s
         errors.append("paperops_autonomous_pass_optional_gap_promoted_to_blocker")
     if not set(summary.get("optional_coverage_gaps", []) or []).issubset(optional_gaps):
         errors.append("paperops_autonomous_pass_optional_coverage_gap_mismatch")
+    research_lock = summary.get("next_generation_research_lock")
+    research_lock_active = isinstance(research_lock, dict) and research_lock.get("active") is True
+    if research_lock_active:
+        if summary.get("status") != "watch_only_research_lock_active":
+            errors.append("paperops_autonomous_pass_research_lock_status_mismatch")
+        if summary.get("command_count") != 0:
+            errors.append("paperops_autonomous_pass_research_lock_ran_commands")
+        if summary.get("states", {}).get("active_automation_state") != "paused_by_long_backtest_lock":
+            errors.append("paperops_autonomous_pass_research_lock_active_runner_not_paused")
+        if summary.get("paper_runtime", {}).get("fresh_eligible_submit_count") != 0:
+            errors.append("paperops_autonomous_pass_research_lock_fresh_submit_nonzero")
+        if summary.get("paper_runtime", {}).get("submitted_paper_order_count") != 0:
+            errors.append("paperops_autonomous_pass_research_lock_submitted_nonzero")
+        if research_lock.get("paperops_watch_only_mode") is not True:
+            errors.append("paperops_autonomous_pass_research_lock_watch_only_missing")
+        report_text = "\n".join(summary.get("automation_report_lines", []) or [])
+        if "30-day paper growth trial" not in report_text:
+            errors.append("paperops_autonomous_pass_missing_paper_growth_trial_wording")
+        if "Paper proof ledger" not in report_text:
+            errors.append("paperops_autonomous_pass_missing_paper_proof_ledger_wording")
+        return sorted(set(errors))
     source_gap_visibility = summary.get("source_gap_visibility")
     if not isinstance(source_gap_visibility, dict):
         errors.append("paperops_autonomous_pass_source_gap_visibility_missing")
